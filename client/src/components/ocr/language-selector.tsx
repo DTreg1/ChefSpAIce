@@ -1,6 +1,6 @@
 /**
  * Language Selector Component
- * 
+ *
  * Dropdown for selecting OCR language for better text extraction
  */
 
@@ -56,11 +56,15 @@ export function LanguageSelector({
   onChange,
   languages = DEFAULT_LANGUAGES,
   disabled = false,
-  className
+  className,
 }: LanguageSelectorProps) {
-  const selectedLanguage = languages.find(lang => lang.code === value);
-  const popularLanguages = languages.filter(lang => POPULAR_LANGUAGES.includes(lang.code));
-  const otherLanguages = languages.filter(lang => !POPULAR_LANGUAGES.includes(lang.code));
+  const selectedLanguage = languages.find((lang) => lang.code === value);
+  const popularLanguages = languages.filter((lang) =>
+    POPULAR_LANGUAGES.includes(lang.code),
+  );
+  const otherLanguages = languages.filter(
+    (lang) => !POPULAR_LANGUAGES.includes(lang.code),
+  );
 
   return (
     <Select
@@ -76,11 +80,12 @@ export function LanguageSelector({
             {selectedLanguage && (
               <span>
                 {selectedLanguage.name}
-                {selectedLanguage.nativeName && selectedLanguage.nativeName !== selectedLanguage.name && (
-                  <span className="ml-1 text-muted-foreground">
-                    ({selectedLanguage.nativeName})
-                  </span>
-                )}
+                {selectedLanguage.nativeName &&
+                  selectedLanguage.nativeName !== selectedLanguage.name && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({selectedLanguage.nativeName})
+                    </span>
+                  )}
               </span>
             )}
           </SelectValue>
@@ -113,7 +118,7 @@ export function LanguageSelector({
             ))}
           </SelectGroup>
         )}
-        
+
         {otherLanguages.length > 0 && (
           <SelectGroup>
             <SelectLabel>All Languages</SelectLabel>
@@ -146,13 +151,23 @@ export function LanguageSelector({
 }
 
 // Language Badge Component for displaying selected language
-export function LanguageBadge({ code, className }: { code: string; className?: string }) {
-  const language = DEFAULT_LANGUAGES.find(lang => lang.code === code);
-  
+export function LanguageBadge({
+  code,
+  className,
+}: {
+  code: string;
+  className?: string;
+}) {
+  const language = DEFAULT_LANGUAGES.find((lang) => lang.code === code);
+
   if (!language) return null;
-  
+
   return (
-    <Badge variant="secondary" className={className} data-testid={`badge-${code}`}>
+    <Badge
+      variant="secondary"
+      className={className}
+      data-testid={`badge-${code}`}
+    >
       <Globe className="mr-1 h-3 w-3" />
       {language.nativeName || language.name}
     </Badge>

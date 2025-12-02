@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Shield, Activity, Users, FileText, AlertTriangle } from "lucide-react";
@@ -12,7 +18,7 @@ export default function ModerationDashboard() {
 
   // Check if user is admin
   const { data: user } = useQuery<{ isAdmin?: boolean }>({
-    queryKey: ['/api/auth/user']
+    queryKey: ["/api/auth/user"],
   });
 
   const isAdmin = user?.isAdmin || false;
@@ -23,8 +29,9 @@ export default function ModerationDashboard() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            You need administrator privileges to access the moderation dashboard.
-            Please contact your system administrator if you believe you should have access.
+            You need administrator privileges to access the moderation
+            dashboard. Please contact your system administrator if you believe
+            you should have access.
           </AlertDescription>
         </Alert>
       </div>
@@ -59,15 +66,27 @@ export default function ModerationDashboard() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
-            <Button variant="outline" size="sm" data-testid="button-review-queue">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-review-queue"
+            >
               <FileText className="h-4 w-4 mr-2" />
               Review Queue
             </Button>
-            <Button variant="outline" size="sm" data-testid="button-pending-appeals">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-pending-appeals"
+            >
               <Users className="h-4 w-4 mr-2" />
               Pending Appeals
             </Button>
-            <Button variant="outline" size="sm" data-testid="button-export-stats">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-export-stats"
+            >
               <Activity className="h-4 w-4 mr-2" />
               Export Statistics
             </Button>

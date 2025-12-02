@@ -14,52 +14,71 @@ interface VoiceControlProps {
   showHelper?: boolean;
 }
 
-export function VoiceControl({ className, showHelper = false }: VoiceControlProps) {
+export function VoiceControl({
+  className,
+  showHelper = false,
+}: VoiceControlProps) {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [showHelperPanel, setShowHelperPanel] = useState(showHelper);
   const [, navigate] = useLocation();
-  const { feedbackState, showFeedback, VoiceFeedbackComponent } = useVoiceFeedback();
+  const { feedbackState, showFeedback, VoiceFeedbackComponent } =
+    useVoiceFeedback();
 
-  const handleTranscript = useCallback((text: string) => {
-    setTranscript(text);
-    setIsListening(false);
-    showFeedback("processing", "Processing your command...");
-  }, [showFeedback]);
+  const handleTranscript = useCallback(
+    (text: string) => {
+      setTranscript(text);
+      setIsListening(false);
+      showFeedback("processing", "Processing your command...");
+    },
+    [showFeedback],
+  );
 
-  const handleCommand = useCallback((command: any) => {
-    if (command.interpretation?.success) {
-      showFeedback("success", command.interpretation.response || command.interpretation.actionTaken);
-      
-      // Handle navigation using Wouter
-      if (command.interpretation.navigationPath) {
-        setTimeout(() => {
-          // Add filter parameters if present
-          let path = command.interpretation.navigationPath;
-          if (command.interpretation.parameters?.filter) {
-            path += `?filter=${command.interpretation.parameters.filter}`;
-          }
-          navigate(path);
-        }, 1000);
+  const handleCommand = useCallback(
+    (command: any) => {
+      if (command.interpretation?.success) {
+        showFeedback(
+          "success",
+          command.interpretation.response || command.interpretation.actionTaken,
+        );
+
+        // Handle navigation using Wouter
+        if (command.interpretation.navigationPath) {
+          setTimeout(() => {
+            // Add filter parameters if present
+            let path = command.interpretation.navigationPath;
+            if (command.interpretation.parameters?.filter) {
+              path += `?filter=${command.interpretation.parameters.filter}`;
+            }
+            navigate(path);
+          }, 1000);
+        }
+      } else {
+        showFeedback(
+          "error",
+          "Failed to understand command. Please try again.",
+        );
       }
-    } else {
-      showFeedback("error", "Failed to understand command. Please try again.");
-    }
-    
-    // Clear transcript after a delay
-    setTimeout(() => {
-      setTranscript("");
-    }, 3000);
-  }, [showFeedback, navigate]);
 
-  const handleRecordingStateChange = useCallback((recording: boolean) => {
-    setIsListening(recording);
-    if (recording) {
-      showFeedback("listening");
-      setTranscript("");
-    }
-  }, [showFeedback]);
+      // Clear transcript after a delay
+      setTimeout(() => {
+        setTranscript("");
+      }, 3000);
+    },
+    [showFeedback, navigate],
+  );
+
+  const handleRecordingStateChange = useCallback(
+    (recording: boolean) => {
+      setIsListening(recording);
+      if (recording) {
+        showFeedback("listening");
+        setTranscript("");
+      }
+    },
+    [showFeedback],
+  );
 
   const handlePermissionAllow = useCallback(() => {
     setShowPermissionModal(false);
@@ -70,20 +89,23 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
     setShowPermissionModal(false);
   }, []);
 
-  const handleTryCommand = useCallback((exampleCommand: string) => {
-    setTranscript(exampleCommand);
-    handleTranscript(exampleCommand);
-  }, [handleTranscript]);
+  const handleTryCommand = useCallback(
+    (exampleCommand: string) => {
+      setTranscript(exampleCommand);
+      handleTranscript(exampleCommand);
+    },
+    [handleTranscript],
+  );
 
   return (
     <div className={cn("relative", className)}>
       {/* Main Voice Button */}
       <div className="flex items-center gap-2">
-        <VoiceButton 
+        <VoiceButton
           onTranscript={handleTranscript}
           onCommand={handleCommand}
         />
-        
+
         <Button
           size="icon"
           variant="ghost"
@@ -97,7 +119,7 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
       {/* Transcript Display */}
       {(transcript || isListening) && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 max-w-md w-full px-4">
-          <TranscriptDisplay 
+          <TranscriptDisplay
             transcript={transcript}
             isListening={isListening}
           />
@@ -117,9 +139,7 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
             >
               <X className="h-4 w-4" />
             </Button>
-            <VoiceCommandHelper 
-              onTryCommand={handleTryCommand}
-            />
+            <VoiceCommandHelper onTryCommand={handleTryCommand} />
           </div>
         </div>
       )}
@@ -144,34 +164,37 @@ export function VoiceBar({ className }: { className?: string }) {
   const [, navigate] = useLocation();
   const { showFeedback, VoiceFeedbackComponent } = useVoiceFeedback();
 
-  const handleTranscript = useCallback((text: string) => {
-    setTranscript(text);
-    showFeedback("processing");
-  }, [showFeedback]);
+  const handleTranscript = useCallback(
+    (text: string) => {
+      setTranscript(text);
+      showFeedback("processing");
+    },
+    [showFeedback],
+  );
 
-  const handleCommand = useCallback((command: any) => {
-    if (command.interpretation?.success) {
-      showFeedback("success", command.interpretation.response);
-      if (command.interpretation.navigationPath) {
-        // Add filter parameters if present
-        let path = command.interpretation.navigationPath;
-        if (command.interpretation.parameters?.filter) {
-          path += `?filter=${command.interpretation.parameters.filter}`;
+  const handleCommand = useCallback(
+    (command: any) => {
+      if (command.interpretation?.success) {
+        showFeedback("success", command.interpretation.response);
+        if (command.interpretation.navigationPath) {
+          // Add filter parameters if present
+          let path = command.interpretation.navigationPath;
+          if (command.interpretation.parameters?.filter) {
+            path += `?filter=${command.interpretation.parameters.filter}`;
+          }
+          navigate(path);
         }
-        navigate(path);
+      } else {
+        showFeedback("error");
       }
-    } else {
-      showFeedback("error");
-    }
-    setTimeout(() => setTranscript(""), 3000);
-  }, [showFeedback, navigate]);
+      setTimeout(() => setTranscript(""), 3000);
+    },
+    [showFeedback, navigate],
+  );
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <VoiceButton 
-        onTranscript={handleTranscript}
-        onCommand={handleCommand}
-      />
+      <VoiceButton onTranscript={handleTranscript} onCommand={handleCommand} />
       {transcript && (
         <span className="text-sm text-muted-foreground italic animate-in fade-in">
           "{transcript}"

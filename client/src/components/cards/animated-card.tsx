@@ -53,10 +53,7 @@ export function AnimatedCard({
         delay,
         ease: [0.4, 0, 0.2, 1],
       }}
-      className={cn(
-        "relative transition-all",
-        className
-      )}
+      className={cn("relative transition-all", className)}
     >
       {children}
     </motion.div>

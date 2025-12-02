@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface DataQualityIndicatorProps {
   score: number;
-  level: 'excellent' | 'good' | 'fair' | 'poor';
+  level: "excellent" | "good" | "fair" | "poor";
   missingFields: string[];
   message?: string;
   compact?: boolean;
@@ -16,17 +16,17 @@ export function DataQualityIndicator({
   level,
   missingFields,
   message,
-  compact = false
+  compact = false,
 }: DataQualityIndicatorProps) {
   const getIcon = () => {
     switch (level) {
-      case 'excellent':
+      case "excellent":
         return <CheckCircle className="w-4 h-4" />;
-      case 'good':
+      case "good":
         return <CheckCircle className="w-4 h-4" />;
-      case 'fair':
+      case "fair":
         return <AlertTriangle className="w-4 h-4" />;
-      case 'poor':
+      case "poor":
         return <XCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
@@ -35,38 +35,38 @@ export function DataQualityIndicator({
 
   const getColor = () => {
     switch (level) {
-      case 'excellent':
-        return 'text-green-600 dark:text-green-400';
-      case 'good':
-        return 'text-blue-600 dark:text-blue-400';
-      case 'fair':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'poor':
-        return 'text-red-600 dark:text-red-400';
+      case "excellent":
+        return "text-green-600 dark:text-green-400";
+      case "good":
+        return "text-blue-600 dark:text-blue-400";
+      case "fair":
+        return "text-yellow-600 dark:text-yellow-400";
+      case "poor":
+        return "text-red-600 dark:text-red-400";
       default:
-        return 'text-gray-600 dark:text-gray-400';
+        return "text-gray-600 dark:text-gray-400";
     }
   };
 
   const getBadgeVariant = () => {
     switch (level) {
-      case 'excellent':
-        return 'default';
-      case 'good':
-        return 'secondary';
-      case 'fair':
-        return 'outline';
-      case 'poor':
-        return 'destructive';
+      case "excellent":
+        return "default";
+      case "good":
+        return "secondary";
+      case "fair":
+        return "outline";
+      case "poor":
+        return "destructive";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
   if (compact) {
     return (
-      <Badge 
-        variant={getBadgeVariant()} 
+      <Badge
+        variant={getBadgeVariant()}
         className={cn("gap-1", getColor())}
         data-testid="badge-quality-indicator"
       >
@@ -81,23 +81,23 @@ export function DataQualityIndicator({
       <div className="flex items-center justify-between">
         <div className={cn("flex items-center gap-2", getColor())}>
           {getIcon()}
-          <span className="text-sm font-medium capitalize">{level} Data Quality</span>
+          <span className="text-sm font-medium capitalize">
+            {level} Data Quality
+          </span>
         </div>
         <span className="text-sm text-muted-foreground">{score}%</span>
       </div>
-      
+
       <Progress value={score} className="h-2" />
-      
-      {message && (
-        <p className="text-xs text-muted-foreground">{message}</p>
-      )}
-      
+
+      {message && <p className="text-xs text-muted-foreground">{message}</p>}
+
       {missingFields.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {missingFields.map((field) => (
-            <Badge 
-              key={field} 
-              variant="outline" 
+            <Badge
+              key={field}
+              variant="outline"
               className="text-xs"
               data-testid={`badge-missing-${field}`}
             >

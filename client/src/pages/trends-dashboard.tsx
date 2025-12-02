@@ -2,25 +2,38 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertCircle, 
-  Bell, 
-  Activity, 
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Bell,
+  Activity,
   BarChart3,
   Calendar,
   ChevronRight,
   Zap,
-  Info
+  Info,
 } from "lucide-react";
 import { TrendTimeline } from "@/components/trends/trend-timeline";
 import { TrendingTopics } from "@/components/trends/trending-topics";
@@ -63,26 +76,36 @@ export default function TrendsDashboard() {
   const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null);
 
   // Fetch current trends
-  const { data: currentTrends, isLoading: loadingCurrent } = useQuery<{ trends: Trend[] }>({
+  const { data: currentTrends, isLoading: loadingCurrent } = useQuery<{
+    trends: Trend[];
+  }>({
     queryKey: [API_ENDPOINTS.ai.analysis.trends.current],
     refetchInterval: 60000, // Refresh every minute
   });
 
   // Fetch emerging trends
-  const { data: emergingTrends, isLoading: loadingEmerging } = useQuery<{ trends: Trend[] }>({
+  const { data: emergingTrends, isLoading: loadingEmerging } = useQuery<{
+    trends: Trend[];
+  }>({
     queryKey: [API_ENDPOINTS.ai.analysis.trends.emerging],
     refetchInterval: 60000,
   });
 
   // Fetch user's trend alerts
-  const { data: userAlerts, isLoading: loadingAlerts } = useQuery<{ alerts: TrendAlert[] }>({
+  const { data: userAlerts, isLoading: loadingAlerts } = useQuery<{
+    alerts: TrendAlert[];
+  }>({
     queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`],
   });
 
   // Mutation to trigger trend analysis
   const analyzeTrends = useMutation({
     mutationFn: async (params: any) => {
-      return apiRequest(API_ENDPOINTS.ai.analysis.trends.analyze, "POST", params);
+      return apiRequest(
+        API_ENDPOINTS.ai.analysis.trends.analyze,
+        "POST",
+        params,
+      );
     },
     onSuccess: (data) => {
       toast({
@@ -90,9 +113,15 @@ export default function TrendsDashboard() {
         description: `Detected ${data.trends?.length || 0} new trends`,
       });
       // Invalidate all trend-related queries to refresh the dashboard
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.trends.current] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.trends.emerging] });
-      queryClient.invalidateQueries({ queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.trends.current],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.trends.emerging],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -106,14 +135,20 @@ export default function TrendsDashboard() {
   // Mutation to subscribe to alerts
   const subscribeToAlerts = useMutation({
     mutationFn: async (params: any) => {
-      return apiRequest(`${API_ENDPOINTS.ai.analysis.trends.current}/subscribe`, "POST", params);
+      return apiRequest(
+        `${API_ENDPOINTS.ai.analysis.trends.current}/subscribe`,
+        "POST",
+        params,
+      );
     },
     onSuccess: () => {
       toast({
         title: "Subscribed",
         description: "You'll be notified when this trend condition is met",
       });
-      queryClient.invalidateQueries({ queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`] });
+      queryClient.invalidateQueries({
+        queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -143,18 +178,24 @@ export default function TrendsDashboard() {
 
   // Get trend icon
   const getTrendIcon = (trend: Trend) => {
-    if (trend.growthRate > 20) return <TrendingUp className="w-4 h-4 text-green-500" />;
-    if (trend.growthRate < -20) return <TrendingDown className="w-4 h-4 text-red-500" />;
+    if (trend.growthRate > 20)
+      return <TrendingUp className="w-4 h-4 text-green-500" />;
+    if (trend.growthRate < -20)
+      return <TrendingDown className="w-4 h-4 text-red-500" />;
     return <Activity className="w-4 h-4 text-blue-500" />;
   };
 
   // Get status badge color
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      emerging: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      peaking: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      declining: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+      emerging:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+      active:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      peaking:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      declining:
+        "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
       ended: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
@@ -175,8 +216,13 @@ export default function TrendsDashboard() {
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Time Window</label>
-              <Select value={selectedTimeWindow} onValueChange={setSelectedTimeWindow}>
+              <label className="text-sm font-medium mb-2 block">
+                Time Window
+              </label>
+              <Select
+                value={selectedTimeWindow}
+                onValueChange={setSelectedTimeWindow}
+              >
                 <SelectTrigger data-testid="select-time-window">
                   <SelectValue placeholder="Select time window" />
                 </SelectTrigger>
@@ -190,8 +236,13 @@ export default function TrendsDashboard() {
             </div>
 
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Data Source</label>
-              <Select value={selectedDataSource} onValueChange={setSelectedDataSource}>
+              <label className="text-sm font-medium mb-2 block">
+                Data Source
+              </label>
+              <Select
+                value={selectedDataSource}
+                onValueChange={setSelectedDataSource}
+              >
                 <SelectTrigger data-testid="select-data-source">
                   <SelectValue placeholder="Select data source" />
                 </SelectTrigger>
@@ -205,7 +256,7 @@ export default function TrendsDashboard() {
               </Select>
             </div>
 
-            <Button 
+            <Button
               onClick={handleAnalyze}
               disabled={analyzeTrends.isPending}
               data-testid="button-analyze-trends"
@@ -238,10 +289,18 @@ export default function TrendsDashboard() {
       {/* Main Dashboard Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-          <TabsTrigger value="emerging" data-testid="tab-emerging">Emerging</TabsTrigger>
-          <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="predictions" data-testid="tab-predictions">Predictions</TabsTrigger>
+          <TabsTrigger value="overview" data-testid="tab-overview">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="emerging" data-testid="tab-emerging">
+            Emerging
+          </TabsTrigger>
+          <TabsTrigger value="timeline" data-testid="tab-timeline">
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger value="predictions" data-testid="tab-predictions">
+            Predictions
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -250,7 +309,9 @@ export default function TrendsDashboard() {
             {/* Key Metrics */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Trends</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Trends
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -265,7 +326,9 @@ export default function TrendsDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Emerging Trends</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Emerging Trends
+                </CardTitle>
                 <Zap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -280,12 +343,15 @@ export default function TrendsDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Alerts
+                </CardTitle>
                 <Bell className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {userAlerts?.alerts?.filter((a: TrendAlert) => a.isActive).length || 0}
+                  {userAlerts?.alerts?.filter((a: TrendAlert) => a.isActive)
+                    .length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Notification subscriptions
@@ -323,8 +389,9 @@ export default function TrendsDashboard() {
                         <div>
                           <h4 className="font-medium">{trend.trendName}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {trend.growthRate > 0 ? "+" : ""}{trend.growthRate.toFixed(1)}% growth
-                            • {(trend.confidence * 100).toFixed(0)}% confidence
+                            {trend.growthRate > 0 ? "+" : ""}
+                            {trend.growthRate.toFixed(1)}% growth •{" "}
+                            {(trend.confidence * 100).toFixed(0)}% confidence
                           </p>
                         </div>
                       </div>
@@ -346,7 +413,7 @@ export default function TrendsDashboard() {
           </Card>
 
           {/* Trending Topics Component */}
-          <TrendingTopics 
+          <TrendingTopics
             trends={currentTrends?.trends || []}
             onTrendClick={(trend: any) => setSelectedTrend(trend as Trend)}
           />
@@ -391,25 +458,32 @@ export default function TrendsDashboard() {
                       <CardContent>
                         <div className="grid grid-cols-3 gap-4 mb-4">
                           <div>
-                            <p className="text-sm text-muted-foreground">Growth Rate</p>
+                            <p className="text-sm text-muted-foreground">
+                              Growth Rate
+                            </p>
                             <p className="text-lg font-semibold">
-                              {trend.growthRate > 0 ? "+" : ""}{trend.growthRate.toFixed(1)}%
+                              {trend.growthRate > 0 ? "+" : ""}
+                              {trend.growthRate.toFixed(1)}%
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Confidence</p>
+                            <p className="text-sm text-muted-foreground">
+                              Confidence
+                            </p>
                             <p className="text-lg font-semibold">
                               {(trend.confidence * 100).toFixed(0)}%
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Started</p>
+                            <p className="text-sm text-muted-foreground">
+                              Started
+                            </p>
                             <p className="text-lg font-semibold">
                               {new Date(trend.startDate).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        
+
                         {trend.interpretation && (
                           <Alert>
                             <Info className="h-4 w-4" />
@@ -420,18 +494,26 @@ export default function TrendsDashboard() {
                           </Alert>
                         )}
 
-                        {trend.recommendations && trend.recommendations.length > 0 && (
-                          <div className="mt-4">
-                            <h5 className="text-sm font-medium mb-2">Recommendations</h5>
-                            <ul className="list-disc list-inside space-y-1">
-                              {trend.recommendations.map((rec: string, idx: number) => (
-                                <li key={idx} className="text-sm text-muted-foreground">
-                                  {rec}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        {trend.recommendations &&
+                          trend.recommendations.length > 0 && (
+                            <div className="mt-4">
+                              <h5 className="text-sm font-medium mb-2">
+                                Recommendations
+                              </h5>
+                              <ul className="list-disc list-inside space-y-1">
+                                {trend.recommendations.map(
+                                  (rec: string, idx: number) => (
+                                    <li
+                                      key={idx}
+                                      className="text-sm text-muted-foreground"
+                                    >
+                                      {rec}
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          )}
                       </CardContent>
                       <CardFooter className="pt-3">
                         <Button
@@ -449,7 +531,8 @@ export default function TrendsDashboard() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-8">
-                  No emerging trends detected yet. Trends with 300%+ growth will appear here.
+                  No emerging trends detected yet. Trends with 300%+ growth will
+                  appear here.
                 </p>
               )}
             </CardContent>
@@ -508,12 +591,15 @@ export default function TrendsDashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground">Growth Rate</p>
                     <p className="font-medium">
-                      {selectedTrend.growthRate > 0 ? "+" : ""}{selectedTrend.growthRate.toFixed(1)}%
+                      {selectedTrend.growthRate > 0 ? "+" : ""}
+                      {selectedTrend.growthRate.toFixed(1)}%
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Confidence</p>
-                    <p className="font-medium">{(selectedTrend.confidence * 100).toFixed(0)}%</p>
+                    <p className="font-medium">
+                      {(selectedTrend.confidence * 100).toFixed(0)}%
+                    </p>
                   </div>
                 </div>
 

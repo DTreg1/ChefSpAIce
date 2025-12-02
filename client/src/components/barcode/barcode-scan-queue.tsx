@@ -29,7 +29,11 @@ interface BarcodeScanQueueProps {
   onSubmitQueue: (items: ScannedItem[]) => void;
 }
 
-export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeScanQueueProps) {
+export function BarcodeScanQueue({
+  open,
+  onOpenChange,
+  onSubmitQueue,
+}: BarcodeScanQueueProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const scannerRef = useRef<any | null>(null);
@@ -37,33 +41,42 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
 
   const enrichBarcode = async (barcode: string, index: number) => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.barcode.search}/${barcode}`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_ENDPOINTS.barcode.search}/${barcode}`,
+        {
+          credentials: "include",
+        },
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setScannedItems(prev => prev.map((item, i) => 
-          i === index 
-            ? {
-                ...item,
-                imageUrl: data.images?.[0],
-                title: data.title,
-                brand: data.brand || data.manufacturer,
-                isEnriching: false,
-              }
-            : item
-        ));
+        setScannedItems((prev) =>
+          prev.map((item, i) =>
+            i === index
+              ? {
+                  ...item,
+                  imageUrl: data.images?.[0],
+                  title: data.title,
+                  brand: data.brand || data.manufacturer,
+                  isEnriching: false,
+                }
+              : item,
+          ),
+        );
       } else {
-        setScannedItems(prev => prev.map((item, i) => 
-          i === index ? { ...item, isEnriching: false } : item
-        ));
+        setScannedItems((prev) =>
+          prev.map((item, i) =>
+            i === index ? { ...item, isEnriching: false } : item,
+          ),
+        );
       }
     } catch (error) {
       console.error("Enrichment error:", error);
-      setScannedItems(prev => prev.map((item, i) => 
-        i === index ? { ...item, isEnriching: false } : item
-      ));
+      setScannedItems((prev) =>
+        prev.map((item, i) =>
+          i === index ? { ...item, isEnriching: false } : item,
+        ),
+      );
     }
   };
 
@@ -79,8 +92,8 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          setScannedItems(prev => {
-            if (prev.some(item => item.barcode === decodedText)) {
+          setScannedItems((prev) => {
+            if (prev.some((item) => item.barcode === decodedText)) {
               toast({
                 title: "Duplicate barcode",
                 description: "This item is already in the queue",
@@ -108,7 +121,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
         },
         () => {
           // Silent error for continuous scanning
-        }
+        },
       );
 
       setIsScanning(true);
@@ -124,7 +137,10 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
       }
       toast({
         title: "Camera error",
-        description: err instanceof Error ? err.message : "Failed to access camera. Please check permissions.",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Failed to access camera. Please check permissions.",
         variant: "destructive",
       });
     }
@@ -151,7 +167,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
   };
 
   const removeItem = (index: number) => {
-    setScannedItems(prev => prev.filter((_, i) => i !== index));
+    setScannedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearQueue = () => {
@@ -178,7 +194,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
     if (open && !isScanning) {
       setTimeout(() => startScanning(), 100);
     }
-    
+
     return () => {
       stopScanning();
     };
@@ -196,14 +212,15 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
             </Badge>
           </DialogTitle>
           <DialogDescription>
-            Point your camera at barcodes to add items to the queue. Each scan will be saved for batch submission.
+            Point your camera at barcodes to add items to the queue. Each scan
+            will be saved for batch submission.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex gap-4">
           <div className="flex-1 flex flex-col gap-4">
-            <div 
-              id="barcode-queue-reader" 
+            <div
+              id="barcode-queue-reader"
               className="w-full aspect-video bg-background border border-border rounded-lg overflow-hidden"
               data-testid="barcode-scanner-camera"
             />
@@ -248,15 +265,19 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
               )}
 
               {scannedItems.map((item, index) => (
-                <Card key={`${item.barcode}-${index}`} className="relative" data-testid={`queue-item-${index}`}>
+                <Card
+                  key={`${item.barcode}-${index}`}
+                  className="relative"
+                  data-testid={`queue-item-${index}`}
+                >
                   <CardContent className="p-3">
                     <div className="flex gap-3">
                       <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                         {item.isEnriching ? (
                           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         ) : item.imageUrl ? (
-                          <img 
-                            src={item.imageUrl} 
+                          <img
+                            src={item.imageUrl}
                             alt={item.title || item.barcode}
                             className="w-full h-full object-cover"
                           />

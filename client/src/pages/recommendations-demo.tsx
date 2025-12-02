@@ -11,7 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Sparkles, Plus, RefreshCw, TrendingUp, BookOpen, Package } from "lucide-react";
+import {
+  Sparkles,
+  Plus,
+  RefreshCw,
+  TrendingUp,
+  BookOpen,
+  Package,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +34,8 @@ const sampleContent = [
       category: "Technology",
       author: "AI Expert",
       readTime: 10,
-      tags: ["AI", "ML", "Deep Learning", "Neural Networks"]
-    }
+      tags: ["AI", "ML", "Deep Learning", "Neural Networks"],
+    },
   },
   {
     id: "article-2",
@@ -39,8 +46,8 @@ const sampleContent = [
       category: "Technology",
       author: "Deep Learning Specialist",
       readTime: 15,
-      tags: ["Neural Networks", "Deep Learning", "AI"]
-    }
+      tags: ["Neural Networks", "Deep Learning", "AI"],
+    },
   },
   {
     id: "article-3",
@@ -51,8 +58,8 @@ const sampleContent = [
       category: "Technology",
       author: "Data Scientist",
       readTime: 12,
-      tags: ["Data Science", "Analytics", "Big Data", "Statistics"]
-    }
+      tags: ["Data Science", "Analytics", "Big Data", "Statistics"],
+    },
   },
   {
     id: "recipe-1",
@@ -64,9 +71,9 @@ const sampleContent = [
       prepTime: 20,
       cookTime: 15,
       servings: 4,
-      tags: ["Pasta", "Italian", "Quick", "Easy"]
-    }
-  }
+      tags: ["Pasta", "Italian", "Quick", "Easy"],
+    },
+  },
 ];
 
 export default function RecommendationsDemo() {
@@ -81,7 +88,7 @@ export default function RecommendationsDemo() {
   const generateEmbeddings = useMutation({
     mutationFn: async () => {
       setGeneratingEmbeddings(true);
-      
+
       // Generate embeddings for all sample content
       for (const content of sampleContent) {
         await apiRequest("/api/content/embeddings/generate", "POST", {
@@ -90,11 +97,11 @@ export default function RecommendationsDemo() {
           text: content.text,
           metadata: {
             ...content.metadata,
-            title: content.title
-          }
+            title: content.title,
+          },
         });
       }
-      
+
       // If custom content is provided, generate embedding for it too
       if (customContent && customTitle) {
         await apiRequest("/api/content/embeddings/generate", "POST", {
@@ -103,11 +110,11 @@ export default function RecommendationsDemo() {
           text: customContent,
           metadata: {
             title: customTitle,
-            category: "Custom"
-          }
+            category: "Custom",
+          },
         });
       }
-      
+
       setGeneratingEmbeddings(false);
       return true;
     },
@@ -125,12 +132,12 @@ export default function RecommendationsDemo() {
         description: error.message || "Failed to generate embeddings",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleContentClick = (item: any) => {
     // Find the full content from sample data
-    const fullContent = sampleContent.find(c => c.id === item.id);
+    const fullContent = sampleContent.find((c) => c.id === item.id);
     if (fullContent) {
       setSelectedContent(fullContent);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -146,10 +153,11 @@ export default function RecommendationsDemo() {
           <h1 className="text-4xl font-bold">Content Recommendations Demo</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Explore AI-powered content recommendations using OpenAI embeddings and vector similarity search.
-          The system analyzes content semantically to find related items.
+          Explore AI-powered content recommendations using OpenAI embeddings and
+          vector similarity search. The system analyzes content semantically to
+          find related items.
         </p>
-        
+
         {/* Quick Actions */}
         <div className="flex items-center justify-center gap-4">
           <Button
@@ -192,7 +200,9 @@ export default function RecommendationsDemo() {
               <div className="flex items-center justify-between">
                 <div>
                   <Badge className="mb-2">{selectedContent.type}</Badge>
-                  <CardTitle className="text-2xl">{selectedContent.title}</CardTitle>
+                  <CardTitle className="text-2xl">
+                    {selectedContent.title}
+                  </CardTitle>
                 </div>
                 <BookOpen className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -201,7 +211,7 @@ export default function RecommendationsDemo() {
               <p className="text-muted-foreground leading-relaxed">
                 {selectedContent.text}
               </p>
-              
+
               {selectedContent.metadata && (
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
                   {selectedContent.metadata.tags?.map((tag: string) => (
@@ -221,10 +231,12 @@ export default function RecommendationsDemo() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sampleContent.map(content => (
+                {sampleContent.map((content) => (
                   <Button
                     key={content.id}
-                    variant={selectedContent.id === content.id ? "default" : "outline"}
+                    variant={
+                      selectedContent.id === content.id ? "default" : "outline"
+                    }
                     className="justify-start h-auto py-3 px-4"
                     onClick={() => setSelectedContent(content)}
                     data-testid={`select-content-${content.id}`}
@@ -276,24 +288,26 @@ export default function RecommendationsDemo() {
                       type: "article",
                       title: customTitle,
                       text: customContent,
-                      metadata: { 
+                      metadata: {
                         category: "Custom",
                         prepTime: 0,
                         cookTime: 0,
                         servings: 0,
-                        tags: []
-                      }
+                        tags: [],
+                      },
                     });
                     generateEmbeddings.mutate();
                   } else {
                     toast({
                       title: "Missing Information",
                       description: "Please enter both title and content",
-                      variant: "destructive"
+                      variant: "destructive",
                     });
                   }
                 }}
-                disabled={!customContent || !customTitle || generatingEmbeddings}
+                disabled={
+                  !customContent || !customTitle || generatingEmbeddings
+                }
                 data-testid="button-test-custom"
               >
                 Test Custom Content

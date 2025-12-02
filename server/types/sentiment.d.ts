@@ -1,10 +1,10 @@
 /**
  * Type declarations for sentiment module
- * 
+ *
  * A AFINN-based sentiment analysis library for Node.js
  */
 
-declare module 'sentiment' {
+declare module "sentiment" {
   interface SentimentResult {
     score: number;
     comparative: number;
@@ -22,7 +22,7 @@ declare module 'sentiment' {
 
   class Sentiment {
     constructor();
-    
+
     /**
      * Analyze the sentiment of a text string
      * @param text The text to analyze
@@ -30,7 +30,7 @@ declare module 'sentiment' {
      * @returns Sentiment analysis result
      */
     analyze(text: string, options?: SentimentOptions): SentimentResult;
-    
+
     /**
      * Register a new language for sentiment analysis
      * @param languageCode The language code (e.g., 'en', 'es')

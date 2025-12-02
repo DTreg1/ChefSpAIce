@@ -12,7 +12,7 @@ interface ObjectUploaderProps {
     url: string;
   }>;
   onComplete?: (
-    result: any // Type resolved at runtime
+    result: any, // Type resolved at runtime
   ) => void;
   buttonClassName?: string;
   children: ReactNode;
@@ -38,29 +38,35 @@ export function ObjectUploader({
       void Promise.all([
         import("@uppy/core"),
         import("@uppy/react"),
-        import("@uppy/aws-s3")
-      ]).then(([{ default: Uppy }, { DashboardModal: Modal }, { default: AwsS3 }]) => {
-        const uppyInstance = new Uppy({
-          restrictions: {
-            maxNumberOfFiles,
-            maxFileSize,
-            allowedFileTypes: ['image/*'],
-          },
-          autoProceed: false,
-        })
-          .use(AwsS3, {
-            shouldUseMultipart: false,
-            getUploadParameters: onGetUploadParameters,
+        import("@uppy/aws-s3"),
+      ]).then(
+        ([
+          { default: Uppy },
+          { DashboardModal: Modal },
+          { default: AwsS3 },
+        ]) => {
+          const uppyInstance = new Uppy({
+            restrictions: {
+              maxNumberOfFiles,
+              maxFileSize,
+              allowedFileTypes: ["image/*"],
+            },
+            autoProceed: false,
           })
-          .on("complete", (result) => {
-            onComplete?.(result);
-            setShowModal(false);
-          });
-        
-        setUppy(uppyInstance);
-        setDashboardModal(() => Modal);
-        setIsLoading(false);
-      });
+            .use(AwsS3, {
+              shouldUseMultipart: false,
+              getUploadParameters: onGetUploadParameters,
+            })
+            .on("complete", (result) => {
+              onComplete?.(result);
+              setShowModal(false);
+            });
+
+          setUppy(uppyInstance);
+          setDashboardModal(() => Modal);
+          setIsLoading(false);
+        },
+      );
     }
 
     return () => {
@@ -74,9 +80,9 @@ export function ObjectUploader({
 
   return (
     <div>
-      <Button 
+      <Button
         type="button"
-        onClick={() => setShowModal(true)} 
+        onClick={() => setShowModal(true)}
         className={buttonClassName}
         data-testid="button-upload-image"
       >
@@ -93,7 +99,8 @@ export function ObjectUploader({
               </div>
             </div>
           ) : (
-            DashboardModal && uppy && (
+            DashboardModal &&
+            uppy && (
               <DashboardModal
                 uppy={uppy}
                 open={showModal}

@@ -1,6 +1,6 @@
 /**
  * Face Detection Demo Page
- * 
+ *
  * Main page showcasing all face detection features including:
  * - Face detection with bounding boxes
  * - Privacy blur controls
@@ -8,14 +8,17 @@
  * - Face counting
  */
 
-import { useState } from 'react';
-import { Camera } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FaceDetector } from '@/components/face-detection/face-detector';
-import { PrivacyBlur, AnonymizeToggle } from '@/components/face-detection/privacy-blur';
-import { FaceCropper } from '@/components/face-detection/face-cropper';
-import { FaceCounter } from '@/components/face-detection/face-counter';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState } from "react";
+import { Camera } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FaceDetector } from "@/components/face-detection/face-detector";
+import {
+  PrivacyBlur,
+  AnonymizeToggle,
+} from "@/components/face-detection/privacy-blur";
+import { FaceCropper } from "@/components/face-detection/face-cropper";
+import { FaceCounter } from "@/components/face-detection/face-counter";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function FaceDetectionDemo() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -46,7 +49,10 @@ export default function FaceDetectionDemo() {
         <AlertDescription>
           <div className="space-y-2">
             <p className="font-semibold">Welcome to the Face Detection Demo!</p>
-            <p>This demo showcases advanced face detection capabilities including:</p>
+            <p>
+              This demo showcases advanced face detection capabilities
+              including:
+            </p>
             <ul className="list-disc pl-5 space-y-1 text-sm">
               <li>Real-time face detection with bounding boxes</li>
               <li>Privacy protection through face blurring</li>
@@ -59,10 +65,7 @@ export default function FaceDetectionDemo() {
 
       {/* Auto-Anonymize Toggle */}
       <div className="mb-6">
-        <AnonymizeToggle 
-          enabled={autoAnonymize}
-          onToggle={setAutoAnonymize}
-        />
+        <AnonymizeToggle enabled={autoAnonymize} onToggle={setAutoAnonymize} />
       </div>
 
       {/* Main Content Tabs */}
@@ -87,24 +90,15 @@ export default function FaceDetectionDemo() {
         </TabsContent>
 
         <TabsContent value="blur" className="space-y-4">
-          <PrivacyBlur 
-            imageFile={imageFile}
-            faceCount={faceCount}
-          />
+          <PrivacyBlur imageFile={imageFile} faceCount={faceCount} />
         </TabsContent>
 
         <TabsContent value="crop" className="space-y-4">
-          <FaceCropper 
-            imageFile={imageFile}
-            faceCount={faceCount}
-          />
+          <FaceCropper imageFile={imageFile} faceCount={faceCount} />
         </TabsContent>
 
         <TabsContent value="count" className="space-y-4">
-          <FaceCounter 
-            imageFile={imageFile}
-            onCountComplete={setFaceCount}
-          />
+          <FaceCounter imageFile={imageFile} onCountComplete={setFaceCount} />
         </TabsContent>
       </Tabs>
 

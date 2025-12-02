@@ -1,9 +1,9 @@
 /**
  * Smart Recipe Generator Component
- * 
+ *
  * AI-powered one-click recipe generation using intelligent inventory analysis.
  * Automatically prioritizes expiring items and abundant ingredients to reduce waste.
- * 
+ *
  * Features:
  * - Intelligent Inventory Analysis: Tracks expiring items, high-quantity items, and categories
  * - Waste Reduction: Prioritizes items expiring within 3 days in recipe generation
@@ -11,24 +11,24 @@
  * - Auto-Generation: Optional automatic recipe creation when multiple items are expiring
  * - Multi-Variant Display: Supports default, quick (icon-only), and sidebar presentations
  * - Visual Indicators: Shows expiring item count with pulsing badge
- * 
+ *
  * Inventory Analysis:
  * - Expiring Items: Items with ≤3 days until expiration
  * - High Quantity: Items with quantity > 5
  * - Categories: Groups items by USDA food category
  * - Smart Prioritization: Balances expiring items with abundant ingredients
- * 
+ *
  * API Integration:
  * - POST /api/recipes/generate: Generate recipe with smart request payload
  *   Payload includes: onlyUseOnHand, prioritizeExpiring, expiringItems[], abundantItems[]
  * - Auto-invalidates: /api/food-items, /api/recipes queries after generation
- * 
+ *
  * State Management:
  * - localStorage: Persists user preferences (PREFERENCE_KEY)
  * - sessionStorage: Prevents duplicate auto-generation per day
  * - Query: Fetches inventory from /api/food-items
  * - Mutation: Generates recipe and invalidates queries on success
- * 
+ *
  * User Preferences (Persistent):
  * - lastCuisineType: Preferred cuisine style
  * - lastDietaryRestrictions: Dietary limitations array
@@ -36,12 +36,12 @@
  * - lastCookingTime: Max cooking duration in minutes (default: "30")
  * - preferExpiringItems: Prioritize expiring ingredients (default: true)
  * - autoGenerateOnExpiring: Auto-generate when >2 items expiring (default: false)
- * 
+ *
  * Component Variants:
  * - default: Full button with badge showing expiring count
  * - quick: Icon-only button for toolbars (responsive: icon on mobile, text on desktop)
  * - sidebar: Full-width button optimized for sidebar navigation
- * 
+ *
  * User Flow:
  * 1. Component analyzes inventory on mount (expiring, abundant, categories)
  * 2. User clicks Smart Recipe button (or auto-generates if enabled)
@@ -51,32 +51,32 @@
  * 6. Invalidates queries and fetches updated recipe with inventory matching
  * 7. Shows success toast with context-specific message
  * 8. Calls onRecipeGenerated callback with updated recipe
- * 
+ *
  * Auto-Generation Logic:
  * - Triggered when: autoGenerateOnExpiring=true AND >2 items expiring
  * - Frequency: Once per calendar day (tracked in sessionStorage)
  * - Session Key: `auto-generated-${dateString}`
- * 
+ *
  * Error Handling:
  * - No inventory: Button disabled with tooltip explanation
  * - Generation failure: Shows destructive toast with error message
  * - Network errors: Caught and displayed in user-friendly format
- * 
+ *
  * Performance:
  * - Inventory analysis recalculated on foodItems change (via Array.reduce)
  * - Auto-generation check via useEffect (triggers when conditions met)
  * - Query invalidation after successful generation
- * 
+ *
  * @example
  * // Default variant with full features
- * <SmartRecipeGenerator 
- *   onRecipeGenerated={(recipe) => navigate(`/recipes/${recipe.id}`)} 
+ * <SmartRecipeGenerator
+ *   onRecipeGenerated={(recipe) => navigate(`/recipes/${recipe.id}`)}
  * />
- * 
+ *
  * @example
  * // Quick variant for header toolbar
  * <SmartRecipeGenerator variant="quick" />
- * 
+ *
  * @example
  * // Sidebar variant for navigation
  * <SmartRecipeGenerator variant="sidebar" />
@@ -103,7 +103,7 @@ interface SmartRecipeGeneratorProps {
 }
 
 // Store user preferences for smart recipe generation
-const PREFERENCE_KEY = 'smart-recipe-preferences';
+const PREFERENCE_KEY = "smart-recipe-preferences";
 
 interface SmartRecipePreferences {
   lastCuisineType?: string;
@@ -117,12 +117,14 @@ interface SmartRecipePreferences {
 function getPreferences(): SmartRecipePreferences {
   try {
     const stored = localStorage.getItem(PREFERENCE_KEY);
-    return stored ? JSON.parse(stored) : {
-      preferExpiringItems: true,
-      autoGenerateOnExpiring: false,
-      lastServingSize: 4,
-      lastCookingTime: "30",
-    };
+    return stored
+      ? JSON.parse(stored)
+      : {
+          preferExpiringItems: true,
+          autoGenerateOnExpiring: false,
+          lastServingSize: 4,
+          lastCookingTime: "30",
+        };
   } catch {
     return {
       preferExpiringItems: true,
@@ -137,86 +139,99 @@ function savePreferences(prefs: SmartRecipePreferences) {
   localStorage.setItem(PREFERENCE_KEY, JSON.stringify(prefs));
 }
 
-export function RecipeGenerator({ 
+export function RecipeGenerator({
   onRecipeGenerated,
-  variant = "default" 
+  variant = "default",
 }: SmartRecipeGeneratorProps) {
   const { toast } = useToast();
   const preferences = getPreferences();
 
-  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
+  const { data: foodItemsResponse } = useQuery<{
+    data: FoodItem[];
+    pagination?: unknown;
+  }>({
     queryKey: ["/api/food-items"],
   });
 
   // Extract the data array from the paginated response
-  const foodItems = Array.isArray(foodItemsResponse) 
-    ? foodItemsResponse 
+  const foodItems = Array.isArray(foodItemsResponse)
+    ? foodItemsResponse
     : foodItemsResponse?.data || [];
 
   // Calculate expiring items and analyze inventory
-  const inventoryAnalysis = foodItems.reduce((acc, item) => {
-    if (item.expirationDate) {
-      const daysUntilExpiration = Math.floor(
-        (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
-        (1000 * 60 * 60 * 24)
-      );
-      if (daysUntilExpiration <= 3) {
-        acc.expiring.push(item);
-        acc.expiringCount++;
+  const inventoryAnalysis = foodItems.reduce(
+    (acc, item) => {
+      if (item.expirationDate) {
+        const daysUntilExpiration = Math.floor(
+          (new Date(item.expirationDate).getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+        if (daysUntilExpiration <= 3) {
+          acc.expiring.push(item);
+          acc.expiringCount++;
+        }
       }
-    }
 
-    // Categorize by type for smart recipe suggestions
-    if (item.foodCategory) {
-      if (!acc.categories[item.foodCategory]) {
-        acc.categories[item.foodCategory] = [];
+      // Categorize by type for smart recipe suggestions
+      if (item.foodCategory) {
+        if (!acc.categories[item.foodCategory]) {
+          acc.categories[item.foodCategory] = [];
+        }
+        acc.categories[item.foodCategory].push(item);
       }
-      acc.categories[item.foodCategory].push(item);
-    }
 
-    // Track high-quantity items (quantity is stored as text)
-    if (parseFloat(item.quantity) > 5) {
-      acc.highQuantity.push(item);
-    }
+      // Track high-quantity items (quantity is stored as text)
+      if (parseFloat(item.quantity) > 5) {
+        acc.highQuantity.push(item);
+      }
 
-    return acc;
-  }, {
-    expiring: [] as FoodItem[],
-    expiringCount: 0,
-    categories: {} as Record<string, FoodItem[]>,
-    highQuantity: [] as FoodItem[]
-  });
+      return acc;
+    },
+    {
+      expiring: [] as FoodItem[],
+      expiringCount: 0,
+      categories: {} as Record<string, FoodItem[]>,
+      highQuantity: [] as FoodItem[],
+    },
+  );
 
   const smartGenerateRecipeMutation = useMutation({
     mutationFn: async () => {
       // Build intelligent request based on inventory analysis
       const smartRequest: any = {
         onlyUseOnHand: true, // ALWAYS only use ingredients we have!
-        prioritizeExpiring: preferences.preferExpiringItems && (inventoryAnalysis?.expiringCount ?? 0) > 0,
+        prioritizeExpiring:
+          preferences.preferExpiringItems &&
+          (inventoryAnalysis?.expiringCount ?? 0) > 0,
         servings: preferences.lastServingSize || 4,
         maxCookingTime: preferences.lastCookingTime || "30",
       };
 
       // Add expiring items to prioritize
       if ((inventoryAnalysis?.expiringCount ?? 0) > 0) {
-        smartRequest.expiringItems = inventoryAnalysis!.expiring.map((item: FoodItem) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
-          daysUntilExpiration: Math.floor(
-            (new Date(item.expirationDate!).getTime() - new Date().getTime()) / 
-            (1000 * 60 * 60 * 24)
-          )
-        }));
+        smartRequest.expiringItems = inventoryAnalysis!.expiring.map(
+          (item: FoodItem) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            daysUntilExpiration: Math.floor(
+              (new Date(item.expirationDate!).getTime() -
+                new Date().getTime()) /
+                (1000 * 60 * 60 * 24),
+            ),
+          }),
+        );
       }
 
       // Add high quantity items to use up
       if ((inventoryAnalysis?.highQuantity?.length ?? 0) > 0) {
-        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map((item: FoodItem) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit
-        }));
+        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map(
+          (item: FoodItem) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+          }),
+        );
       }
 
       // Add cuisine preference if remembered
@@ -229,7 +244,11 @@ export function RecipeGenerator({
         smartRequest.dietaryRestrictions = preferences.lastDietaryRestrictions;
       }
 
-      const response = await apiRequest("/api/recipes/generate", "POST", smartRequest);
+      const response = await apiRequest(
+        "/api/recipes/generate",
+        "POST",
+        smartRequest,
+      );
       return response;
     },
     onSuccess: async (recipe: Recipe) => {
@@ -248,13 +267,16 @@ export function RecipeGenerator({
       });
 
       // Find the newly generated recipe with updated matching
-      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find(
+        (r: Recipe) => r.id === recipe.id,
+      );
 
-      const smartMessage = (inventoryAnalysis?.expiringCount ?? 0) > 0
-        ? `Recipe ready to cook now using ${inventoryAnalysis!.expiringCount} expiring items - no shopping needed!`
-        : (inventoryAnalysis?.highQuantity?.length ?? 0) > 0
-        ? `Recipe ready using your abundant ingredients - start cooking immediately!`
-        : `Recipe ready using only what you have - no shopping required!`;
+      const smartMessage =
+        (inventoryAnalysis?.expiringCount ?? 0) > 0
+          ? `Recipe ready to cook now using ${inventoryAnalysis!.expiringCount} expiring items - no shopping needed!`
+          : (inventoryAnalysis?.highQuantity?.length ?? 0) > 0
+            ? `Recipe ready using your abundant ingredients - start cooking immediately!`
+            : `Recipe ready using only what you have - no shopping required!`;
 
       toast({
         title: "🪄 " + recipe.title,
@@ -266,7 +288,10 @@ export function RecipeGenerator({
     onError: (error: Error | unknown) => {
       toast({
         title: "Generation Failed",
-        description: error instanceof Error ? error.message : "Could not generate smart recipe",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not generate smart recipe",
         variant: "destructive",
       });
     },
@@ -325,9 +350,14 @@ export function RecipeGenerator({
           <TooltipContent>
             <p className="font-semibold">Smart Recipe (1-click)</p>
             {expiringCount > 0 ? (
-              <p className="text-xs">Create recipe using {expiringCount} expiring items - no shopping needed!</p>
+              <p className="text-xs">
+                Create recipe using {expiringCount} expiring items - no shopping
+                needed!
+              </p>
             ) : (
-              <p className="text-xs">Instant recipe using only what's in your kitchen</p>
+              <p className="text-xs">
+                Instant recipe using only what's in your kitchen
+              </p>
             )}
           </TooltipContent>
         </Tooltip>

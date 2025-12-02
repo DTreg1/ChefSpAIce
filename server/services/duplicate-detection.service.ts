@@ -1,24 +1,21 @@
-import { db } from '../db';
-import { 
-  userChats,
-  type ChatMessage
-} from '@shared/schema';
-import { 
-  contentEmbeddings, 
-  duplicatePairs, 
+import { db } from "../db";
+import { userChats, type ChatMessage } from "@shared/schema";
+import {
+  contentEmbeddings,
+  duplicatePairs,
   userRecipes,
   type InsertContentEmbedding,
   type InsertDuplicatePair,
-  type Recipe
-} from '../../shared/schema';
-import { eq, and, or, gte, desc } from 'drizzle-orm';
-import crypto from 'crypto';
-import { openai } from '../integrations/openai';
-import { cosineSimilarity } from '../utils/vectorMath';
+  type Recipe,
+} from "../../shared/schema";
+import { eq, and, or, gte, desc } from "drizzle-orm";
+import crypto from "crypto";
+import { openai } from "../integrations/openai";
+import { cosineSimilarity } from "../utils/vectorMath";
 
 export class DuplicateDetectionService {
   private static readonly SIMILARITY_THRESHOLD = 0.85;
-  private static readonly EMBEDDING_MODEL = 'text-embedding-ada-002';
+  private static readonly EMBEDDING_MODEL = "text-embedding-ada-002";
 
   /**
    * Generate embeddings for text content using OpenAI
@@ -31,8 +28,8 @@ export class DuplicateDetectionService {
       });
       return response.data[0].embedding;
     } catch (error) {
-      console.error('Error generating embedding:', error);
-      throw new Error('Failed to generate embedding');
+      console.error("Error generating embedding:", error);
+      throw new Error("Failed to generate embedding");
     }
   }
 
@@ -40,8 +37,8 @@ export class DuplicateDetectionService {
    * Generate a hash for content to quickly identify exact duplicates
    */
   private static generateSimilarityHash(content: string): string {
-    const normalizedContent = content.toLowerCase().replace(/\s+/g, ' ').trim();
-    return crypto.createHash('md5').update(normalizedContent).digest('hex');
+    const normalizedContent = content.toLowerCase().replace(/\s+/g, " ").trim();
+    return crypto.createHash("md5").update(normalizedContent).digest("hex");
   }
 
   /**
@@ -49,14 +46,14 @@ export class DuplicateDetectionService {
    */
   private static prepareContentText(content: any, contentType: string): string {
     switch (contentType) {
-      case 'recipe':
+      case "recipe":
         const recipe = content as Recipe;
-        return `${recipe.title} ${recipe.description || ''} ${recipe.ingredients?.join(' ') || ''} ${recipe.instructions?.join(' ') || ''}`;
-      
-      case 'chat':
+        return `${recipe.title} ${recipe.description || ""} ${recipe.ingredients?.join(" ") || ""} ${recipe.instructions?.join(" ") || ""}`;
+
+      case "chat":
         const chat = content as ChatMessage;
         return chat.content;
-      
+
       default:
         return JSON.stringify(content);
     }
@@ -69,7 +66,7 @@ export class DuplicateDetectionService {
     content: string,
     contentType: string,
     userId: string,
-    contentId?: string
+    contentId?: string,
   ): Promise<{
     isDuplicate: boolean;
     duplicates: Array<{
@@ -86,31 +83,31 @@ export class DuplicateDetectionService {
 
       // First, check for exact duplicates using hash
       let exactDuplicates: any[] = [];
-      if (contentType === 'recipe') {
+      if (contentType === "recipe") {
         const conditions = [
           eq(userRecipes.userId, userId),
-          eq(userRecipes.similarityHash, similarityHash)
+          eq(userRecipes.similarityHash, similarityHash),
         ];
-        
+
         exactDuplicates = await db
           .select()
           .from(userRecipes)
           .where(and(...conditions))
-          .then(results => 
-            contentId ? results.filter(r => r.id !== contentId) : results
+          .then((results) =>
+            contentId ? results.filter((r) => r.id !== contentId) : results,
           );
       }
 
       if (exactDuplicates.length > 0) {
         return {
           isDuplicate: true,
-          duplicates: exactDuplicates.map(d => ({
+          duplicates: exactDuplicates.map((d) => ({
             id: d.id,
             title: d.title,
             similarity: 1.0,
-            status: 'duplicate'
+            status: "duplicate",
           })),
-          similarityHash
+          similarityHash,
         };
       }
 
@@ -121,9 +118,7 @@ export class DuplicateDetectionService {
       const existingEmbeddings = await db
         .select()
         .from(contentEmbeddings)
-        .where(
-          eq(contentEmbeddings.contentType, contentType)
-        );
+        .where(eq(contentEmbeddings.contentType, contentType));
 
       const potentialDuplicates: Array<{
         id: string;
@@ -138,13 +133,13 @@ export class DuplicateDetectionService {
 
         const similarity = cosineSimilarity(
           embedding,
-          existing.embedding as number[]
+          existing.embedding as number[],
         );
 
         if (similarity >= this.SIMILARITY_THRESHOLD) {
           // Get content details
           let contentDetails: any = null;
-          if (contentType === 'recipe') {
+          if (contentType === "recipe") {
             const recipes = await db
               .select()
               .from(userRecipes)
@@ -157,14 +152,19 @@ export class DuplicateDetectionService {
             id: existing.contentId,
             title: contentDetails?.title || existing.metadata?.title,
             similarity,
-            status: 'pending'
+            status: "pending",
           });
 
           // Store duplicate pair for review
           const duplicatePair: InsertDuplicatePair = {
-            contentId1: contentId || 'pending',
+            contentId1: contentId || "pending",
             contentId2: existing.contentId,
-            contentType: contentType as 'recipe' | 'document' | 'article' | 'product' | 'media',
+            contentType: contentType as
+              | "recipe"
+              | "document"
+              | "article"
+              | "product"
+              | "media",
             similarity,
             isConfirmed: null,
             isDismissed: false,
@@ -182,7 +182,7 @@ export class DuplicateDetectionService {
             contentId,
             contentType,
             embedding,
-            embeddingType: 'full',
+            embeddingType: "full",
             metadata: {},
           })
           .onConflictDoNothing();
@@ -191,10 +191,10 @@ export class DuplicateDetectionService {
       return {
         isDuplicate: potentialDuplicates.length > 0,
         duplicates: potentialDuplicates,
-        similarityHash
+        similarityHash,
       };
     } catch (error) {
-      console.error('Error checking for duplicates:', error);
+      console.error("Error checking for duplicates:", error);
       throw error;
     }
   }
@@ -211,8 +211,8 @@ export class DuplicateDetectionService {
         .where(
           and(
             eq(duplicatePairs.isConfirmed, false),
-            eq(duplicatePairs.isDismissed, false)
-          )
+            eq(duplicatePairs.isDismissed, false),
+          ),
         )
         .orderBy(desc(duplicatePairs.similarity))
         .limit(limit);
@@ -223,7 +223,7 @@ export class DuplicateDetectionService {
           let content1Details: any = null;
           let content2Details: any = null;
 
-          if (pair.contentType === 'recipe') {
+          if (pair.contentType === "recipe") {
             const recipes1 = await db
               .select()
               .from(userRecipes)
@@ -242,14 +242,14 @@ export class DuplicateDetectionService {
           return {
             ...pair,
             content1: content1Details,
-            content2: content2Details
+            content2: content2Details,
           };
-        })
+        }),
       );
 
       return enrichedPairs;
     } catch (error) {
-      console.error('Error getting pending duplicates:', error);
+      console.error("Error getting pending duplicates:", error);
       throw error;
     }
   }
@@ -259,26 +259,26 @@ export class DuplicateDetectionService {
    */
   static async resolveDuplicate(
     duplicatePairId: string,
-    status: 'duplicate' | 'unique' | 'merged',
-    reviewedBy: string
+    status: "duplicate" | "unique" | "merged",
+    reviewedBy: string,
   ) {
     try {
-      const isConfirmed = status === 'duplicate';
-      const isDismissed = status === 'unique' || status === 'merged';
-      
+      const isConfirmed = status === "duplicate";
+      const isDismissed = status === "unique" || status === "merged";
+
       await db
         .update(duplicatePairs)
         .set({
           isConfirmed,
           isDismissed,
           reviewedBy,
-          reviewedAt: new Date()
+          reviewedAt: new Date(),
         })
         .where(eq(duplicatePairs.id, duplicatePairId));
 
       return { success: true };
     } catch (error) {
-      console.error('Error resolving duplicate:', error);
+      console.error("Error resolving duplicate:", error);
       throw error;
     }
   }
@@ -290,23 +290,24 @@ export class DuplicateDetectionService {
     try {
       // Note: userId filtering would require adding a userId column to duplicatePairs
       // For now, get all pairs
-      const allPairs = await db
-        .select()
-        .from(duplicatePairs);
+      const allPairs = await db.select().from(duplicatePairs);
 
       const stats = {
         total: allPairs.length,
-        pending: allPairs.filter(p => p.isConfirmed === null && !p.isDismissed).length,
-        confirmed: allPairs.filter(p => p.isConfirmed === true).length,
-        unique: allPairs.filter(p => p.isDismissed === true).length,
+        pending: allPairs.filter(
+          (p) => p.isConfirmed === null && !p.isDismissed,
+        ).length,
+        confirmed: allPairs.filter((p) => p.isConfirmed === true).length,
+        unique: allPairs.filter((p) => p.isDismissed === true).length,
         merged: 0, // Would need a separate merged field
-        averageSimilarity: 
-          allPairs.reduce((sum, p) => sum + p.similarity, 0) / allPairs.length || 0
+        averageSimilarity:
+          allPairs.reduce((sum, p) => sum + p.similarity, 0) /
+            allPairs.length || 0,
       };
 
       return stats;
     } catch (error) {
-      console.error('Error getting duplicate stats:', error);
+      console.error("Error getting duplicate stats:", error);
       throw error;
     }
   }
@@ -318,7 +319,7 @@ export class DuplicateDetectionService {
     contentId: string,
     contentType: string,
     content: any,
-    userId: string
+    userId: string,
   ) {
     try {
       const contentText = this.prepareContentText(content, contentType);
@@ -329,16 +330,16 @@ export class DuplicateDetectionService {
       const metadata = {
         title: content.title,
         category: content.category,
-        tags: content.tags
+        tags: content.tags,
       };
-      
+
       await db
         .insert(contentEmbeddings)
         .values({
           contentId,
           contentType,
           embedding,
-          embeddingType: 'full',
+          embeddingType: "full",
           metadata,
         })
         .onConflictDoUpdate({
@@ -346,12 +347,12 @@ export class DuplicateDetectionService {
           set: {
             embedding,
             metadata,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
 
       // Update similarity hash in content table
-      if (contentType === 'recipe') {
+      if (contentType === "recipe") {
         await db
           .update(userRecipes)
           .set({ similarityHash })
@@ -361,7 +362,7 @@ export class DuplicateDetectionService {
 
       return { success: true, similarityHash };
     } catch (error) {
-      console.error('Error updating content embedding:', error);
+      console.error("Error updating content embedding:", error);
       throw error;
     }
   }

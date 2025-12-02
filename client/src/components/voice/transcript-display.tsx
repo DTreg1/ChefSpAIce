@@ -8,10 +8,10 @@ interface TranscriptDisplayProps {
   className?: string;
 }
 
-export function TranscriptDisplay({ 
-  transcript, 
-  isListening, 
-  className 
+export function TranscriptDisplay({
+  transcript,
+  isListening,
+  className,
 }: TranscriptDisplayProps) {
   const [animatedTranscript, setAnimatedTranscript] = useState("");
 
@@ -37,11 +37,11 @@ export function TranscriptDisplay({
   if (!transcript && !isListening) return null;
 
   return (
-    <div 
+    <div
       className={cn(
         "bg-muted/50 backdrop-blur-sm border rounded-lg p-4 transition-all duration-300",
         isListening && "border-primary",
-        className
+        className,
       )}
       data-testid="transcript-display"
     >
@@ -56,13 +56,29 @@ export function TranscriptDisplay({
             {isListening ? "Listening..." : "You said:"}
           </p>
           <p className="text-base font-medium">
-            {animatedTranscript || (isListening && 
-              <span className="inline-flex gap-1">
-                <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
-                <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
-                <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
-              </span>
-            )}
+            {animatedTranscript ||
+              (isListening && (
+                <span className="inline-flex gap-1">
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  >
+                    .
+                  </span>
+                </span>
+              ))}
           </p>
         </div>
       </div>

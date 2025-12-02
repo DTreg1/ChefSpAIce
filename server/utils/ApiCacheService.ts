@@ -26,7 +26,7 @@ class ApiCacheServiceClass {
    */
   get<T = any>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -48,7 +48,7 @@ class ApiCacheServiceClass {
       data,
       timestamp: Date.now(),
       ttl: ttl || this.defaultTTL,
-      namespace
+      namespace,
     });
   }
 
@@ -77,8 +77,8 @@ class ApiCacheServiceClass {
       entries: Array.from(this.cache.entries()).map(([key, entry]) => ({
         key,
         namespace: entry.namespace,
-        age: Date.now() - entry.timestamp
-      }))
+        age: Date.now() - entry.timestamp,
+      })),
     };
   }
 

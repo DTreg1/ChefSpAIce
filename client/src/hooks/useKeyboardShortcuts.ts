@@ -14,7 +14,7 @@ interface KeyboardShortcut {
 
 export function useKeyboardShortcuts(
   shortcuts: KeyboardShortcut[],
-  enabled = true
+  enabled = true,
 ) {
   const { toast } = useToast();
 
@@ -39,9 +39,9 @@ export function useKeyboardShortcuts(
       for (const shortcut of shortcuts) {
         const ctrlOrCmd = e.ctrlKey || e.metaKey;
         const matchesModifiers =
-          (!shortcut.ctrl && !shortcut.cmd || 
-           (shortcut.ctrl && e.ctrlKey) || 
-           (shortcut.cmd && e.metaKey)) &&
+          ((!shortcut.ctrl && !shortcut.cmd) ||
+            (shortcut.ctrl && e.ctrlKey) ||
+            (shortcut.cmd && e.metaKey)) &&
           (!shortcut.shift || e.shiftKey) &&
           (!shortcut.alt || e.altKey);
 
@@ -138,7 +138,7 @@ export function useGlobalKeyboardShortcuts() {
       action: () => {
         // Focus search
         const searchInput = document.querySelector<HTMLInputElement>(
-          '[data-testid="input-search"]'
+          '[data-testid="input-search"]',
         );
         if (searchInput) {
           searchInput.focus();
@@ -147,7 +147,7 @@ export function useGlobalKeyboardShortcuts() {
           setLocation("/");
           setTimeout(() => {
             const chatInput = document.querySelector<HTMLTextAreaElement>(
-              '[data-testid="input-chat"]'
+              '[data-testid="input-chat"]',
             );
             if (chatInput) {
               chatInput.focus();
@@ -192,7 +192,7 @@ export function useGlobalKeyboardShortcuts() {
 // Hook for local component shortcuts
 export function useLocalKeyboardShortcuts(
   componentShortcuts: KeyboardShortcut[],
-  deps: any[] = []
+  deps: any[] = [],
 ) {
   useKeyboardShortcuts(componentShortcuts, true);
 }

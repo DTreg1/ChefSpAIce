@@ -141,14 +141,14 @@ import { API_ENDPOINTS, API_BASE } from "@/lib/api-endpoints";
 
 ### Endpoint Categories
 
-| Domain | Base Path | Description |
-|--------|-----------|-------------|
-| User | `/api/v1/...` | User-facing features |
-| AI Content | `/api/v1/ai/content/...` | Text generation, writing, drafts |
-| AI Analysis | `/api/v1/ai/analysis/...` | Sentiment, trends, predictions |
-| AI Media | `/api/v1/ai/media/...` | Images, OCR, voice, faces |
-| Platform | `/api/v1/...` | Analytics, notifications, feedback |
-| Admin | `/api/v1/admin/...` | Administrative functions |
+| Domain      | Base Path                 | Description                        |
+| ----------- | ------------------------- | ---------------------------------- |
+| User        | `/api/v1/...`             | User-facing features               |
+| AI Content  | `/api/v1/ai/content/...`  | Text generation, writing, drafts   |
+| AI Analysis | `/api/v1/ai/analysis/...` | Sentiment, trends, predictions     |
+| AI Media    | `/api/v1/ai/media/...`    | Images, OCR, voice, faces          |
+| Platform    | `/api/v1/...`             | Analytics, notifications, feedback |
+| Admin       | `/api/v1/admin/...`       | Administrative functions           |
 
 ### Correct Usage Examples
 
@@ -177,9 +177,9 @@ await apiRequest("POST", `${API_BASE}/donations/create-payment-intent`, { ... })
 
 ```typescript
 // ❌ WRONG: Hardcoded paths without versioning
-queryKey: ['/api/donations/stats']     // Missing /v1/
-queryKey: ['/api/sentiment/dashboard'] // Wrong path structure
-queryKey: ['/api/ml/duplicates']       // Non-existent route
+queryKey: ["/api/donations/stats"]; // Missing /v1/
+queryKey: ["/api/sentiment/dashboard"]; // Wrong path structure
+queryKey: ["/api/ml/duplicates"]; // Non-existent route
 ```
 
 ---
@@ -188,91 +188,91 @@ queryKey: ['/api/ml/duplicates']       // Non-existent route
 
 ### User Domain Endpoints
 
-| Feature | Endpoint | Method | Description |
-|---------|----------|--------|-------------|
-| **Inventory** | | | |
-| List items | `/api/v1/inventory` | GET | Get all food items |
-| Get item | `/api/v1/inventory/:id` | GET | Get single item |
-| Create item | `/api/v1/inventory` | POST | Add food item |
-| Update item | `/api/v1/inventory/:id` | PUT | Update item |
-| Delete item | `/api/v1/inventory/:id` | DELETE | Remove item |
-| Storage locations | `/api/v1/inventory/storage-locations` | GET | List storage locations |
-| **Recipes** | | | |
-| List recipes | `/api/v1/recipes` | GET | Get all recipes |
-| Get recipe | `/api/v1/recipes/:id` | GET | Get single recipe |
-| Generate recipe | `/api/v1/recipes/generate` | POST | AI recipe generation |
-| **Meal Plans** | | | |
-| List plans | `/api/v1/meal-plans` | GET | Get meal plans |
-| Create plan | `/api/v1/meal-plans` | POST | Create meal plan |
-| **Shopping List** | | | |
-| Get list | `/api/v1/shopping-list` | GET | Get shopping list |
-| Add item | `/api/v1/shopping-list/items` | POST | Add to list |
-| **Chat** | | | |
-| Send message | `/api/v1/chat` | POST | Send chat message |
-| Stream | `/api/v1/chat/stream` | GET (SSE) | Streaming responses |
-| History | `/api/v1/chat/messages` | GET | Get chat history |
-| **Profile** | | | |
-| Get profile | `/api/v1/profile` | GET | User profile |
-| Update | `/api/v1/profile` | PUT | Update profile |
-| Preferences | `/api/v1/profile/preferences` | GET/PUT | User preferences |
+| Feature           | Endpoint                              | Method    | Description            |
+| ----------------- | ------------------------------------- | --------- | ---------------------- |
+| **Inventory**     |                                       |           |                        |
+| List items        | `/api/v1/inventory`                   | GET       | Get all food items     |
+| Get item          | `/api/v1/inventory/:id`               | GET       | Get single item        |
+| Create item       | `/api/v1/inventory`                   | POST      | Add food item          |
+| Update item       | `/api/v1/inventory/:id`               | PUT       | Update item            |
+| Delete item       | `/api/v1/inventory/:id`               | DELETE    | Remove item            |
+| Storage locations | `/api/v1/inventory/storage-locations` | GET       | List storage locations |
+| **Recipes**       |                                       |           |                        |
+| List recipes      | `/api/v1/recipes`                     | GET       | Get all recipes        |
+| Get recipe        | `/api/v1/recipes/:id`                 | GET       | Get single recipe      |
+| Generate recipe   | `/api/v1/recipes/generate`            | POST      | AI recipe generation   |
+| **Meal Plans**    |                                       |           |                        |
+| List plans        | `/api/v1/meal-plans`                  | GET       | Get meal plans         |
+| Create plan       | `/api/v1/meal-plans`                  | POST      | Create meal plan       |
+| **Shopping List** |                                       |           |                        |
+| Get list          | `/api/v1/shopping-list`               | GET       | Get shopping list      |
+| Add item          | `/api/v1/shopping-list/items`         | POST      | Add to list            |
+| **Chat**          |                                       |           |                        |
+| Send message      | `/api/v1/chat`                        | POST      | Send chat message      |
+| Stream            | `/api/v1/chat/stream`                 | GET (SSE) | Streaming responses    |
+| History           | `/api/v1/chat/messages`               | GET       | Get chat history       |
+| **Profile**       |                                       |           |                        |
+| Get profile       | `/api/v1/profile`                     | GET       | User profile           |
+| Update            | `/api/v1/profile`                     | PUT       | Update profile         |
+| Preferences       | `/api/v1/profile/preferences`         | GET/PUT   | User preferences       |
 
 ### AI Domain Endpoints
 
-| Feature | Endpoint | Method | Description |
-|---------|----------|--------|-------------|
-| **Content** (`/api/v1/ai/content/`) | | | |
-| Generate | `/ai/content/generate` | POST | Text generation |
-| Summarize | `/ai/content/summarize` | POST | Content summarization |
-| Translate | `/ai/content/translate` | POST | Translation |
-| Drafts | `/ai/content/drafts/email` | POST | Email drafting |
-| Writing analyze | `/ai/content/writing/analyze` | POST | Writing analysis |
-| **Analysis** (`/api/v1/ai/analysis/`) | | | |
-| Sentiment | `/ai/analysis/sentiment` | POST | Sentiment analysis |
-| Trends | `/ai/analysis/trends/current` | GET | Current trends |
-| Predictions | `/ai/analysis/predict/user/:id` | GET | User predictions |
-| Insights | `/ai/analysis/insights/generate` | POST | Generate insights |
-| Natural query | `/ai/analysis/query/natural` | POST | Natural language query |
-| **Media** (`/api/v1/ai/media/`) | | | |
-| Image enhance | `/ai/media/images/enhance` | POST | Image enhancement |
-| OCR extract | `/ai/media/vision/ocr/extract` | POST | Text extraction |
-| Face detect | `/ai/media/vision/faces/detect` | POST | Face detection |
-| Alt text | `/ai/media/vision/alt-text` | POST | Generate alt text |
-| Voice transcribe | `/ai/media/voice/transcribe` | POST | Voice transcription |
+| Feature                               | Endpoint                         | Method | Description            |
+| ------------------------------------- | -------------------------------- | ------ | ---------------------- |
+| **Content** (`/api/v1/ai/content/`)   |                                  |        |                        |
+| Generate                              | `/ai/content/generate`           | POST   | Text generation        |
+| Summarize                             | `/ai/content/summarize`          | POST   | Content summarization  |
+| Translate                             | `/ai/content/translate`          | POST   | Translation            |
+| Drafts                                | `/ai/content/drafts/email`       | POST   | Email drafting         |
+| Writing analyze                       | `/ai/content/writing/analyze`    | POST   | Writing analysis       |
+| **Analysis** (`/api/v1/ai/analysis/`) |                                  |        |                        |
+| Sentiment                             | `/ai/analysis/sentiment`         | POST   | Sentiment analysis     |
+| Trends                                | `/ai/analysis/trends/current`    | GET    | Current trends         |
+| Predictions                           | `/ai/analysis/predict/user/:id`  | GET    | User predictions       |
+| Insights                              | `/ai/analysis/insights/generate` | POST   | Generate insights      |
+| Natural query                         | `/ai/analysis/query/natural`     | POST   | Natural language query |
+| **Media** (`/api/v1/ai/media/`)       |                                  |        |                        |
+| Image enhance                         | `/ai/media/images/enhance`       | POST   | Image enhancement      |
+| OCR extract                           | `/ai/media/vision/ocr/extract`   | POST   | Text extraction        |
+| Face detect                           | `/ai/media/vision/faces/detect`  | POST   | Face detection         |
+| Alt text                              | `/ai/media/vision/alt-text`      | POST   | Generate alt text      |
+| Voice transcribe                      | `/ai/media/voice/transcribe`     | POST   | Voice transcription    |
 
 ### Platform Domain Endpoints
 
-| Feature | Endpoint | Method | Description |
-|---------|----------|--------|-------------|
-| **Analytics** | | | |
-| Events | `/api/v1/analytics` | GET | Analytics data |
-| Track | `/api/v1/analytics/events` | POST | Track event |
-| **Notifications** | | | |
-| List | `/api/v1/notifications` | GET | Get notifications |
-| Mark read | `/api/v1/notifications/:id/read` | POST | Mark as read |
-| Push tokens | `/api/v1/push-tokens` | POST | Register token |
-| **Feedback** | | | |
-| Submit | `/api/v1/feedback` | POST | Submit feedback |
-| List | `/api/v1/feedback` | GET | Get feedback |
-| **Scheduling** | | | |
-| Schedules | `/api/v1/scheduling` | GET | List schedules |
-| Create | `/api/v1/scheduling` | POST | Create schedule |
-| **Donations** | | | |
-| Create intent | `/api/v1/donations/create-payment-intent` | POST | Start donation |
-| Stats | `/api/v1/donations/stats` | GET | Donation statistics |
-| Recent | `/api/v1/donations/recent` | GET | Recent donations |
+| Feature           | Endpoint                                  | Method | Description         |
+| ----------------- | ----------------------------------------- | ------ | ------------------- |
+| **Analytics**     |                                           |        |                     |
+| Events            | `/api/v1/analytics`                       | GET    | Analytics data      |
+| Track             | `/api/v1/analytics/events`                | POST   | Track event         |
+| **Notifications** |                                           |        |                     |
+| List              | `/api/v1/notifications`                   | GET    | Get notifications   |
+| Mark read         | `/api/v1/notifications/:id/read`          | POST   | Mark as read        |
+| Push tokens       | `/api/v1/push-tokens`                     | POST   | Register token      |
+| **Feedback**      |                                           |        |                     |
+| Submit            | `/api/v1/feedback`                        | POST   | Submit feedback     |
+| List              | `/api/v1/feedback`                        | GET    | Get feedback        |
+| **Scheduling**    |                                           |        |                     |
+| Schedules         | `/api/v1/scheduling`                      | GET    | List schedules      |
+| Create            | `/api/v1/scheduling`                      | POST   | Create schedule     |
+| **Donations**     |                                           |        |                     |
+| Create intent     | `/api/v1/donations/create-payment-intent` | POST   | Start donation      |
+| Stats             | `/api/v1/donations/stats`                 | GET    | Donation statistics |
+| Recent            | `/api/v1/donations/recent`                | GET    | Recent donations    |
 
 ### Admin Domain Endpoints
 
-| Feature | Endpoint | Method | Description |
-|---------|----------|--------|-------------|
-| Users | `/api/v1/admin/users` | GET | List users |
-| User | `/api/v1/admin/users/:id` | GET/PUT/DELETE | Manage user |
-| Experiments | `/api/v1/admin/experiments` | GET/POST | A/B tests |
-| Cohorts | `/api/v1/admin/cohorts` | GET/POST | User cohorts |
-| Maintenance | `/api/v1/admin/maintenance` | GET/POST | System maintenance |
-| Moderation | `/api/v1/admin/moderation` | GET/POST | Content moderation |
-| Pricing | `/api/v1/admin/pricing` | GET/POST | Pricing management |
-| Tickets | `/api/v1/admin/tickets` | GET/POST | Support tickets |
+| Feature     | Endpoint                    | Method         | Description        |
+| ----------- | --------------------------- | -------------- | ------------------ |
+| Users       | `/api/v1/admin/users`       | GET            | List users         |
+| User        | `/api/v1/admin/users/:id`   | GET/PUT/DELETE | Manage user        |
+| Experiments | `/api/v1/admin/experiments` | GET/POST       | A/B tests          |
+| Cohorts     | `/api/v1/admin/cohorts`     | GET/POST       | User cohorts       |
+| Maintenance | `/api/v1/admin/maintenance` | GET/POST       | System maintenance |
+| Moderation  | `/api/v1/admin/moderation`  | GET/POST       | Content moderation |
+| Pricing     | `/api/v1/admin/pricing`     | GET/POST       | Pricing management |
+| Tickets     | `/api/v1/admin/tickets`     | GET/POST       | Support tickets    |
 
 ---
 
@@ -293,7 +293,8 @@ const { data, isLoading } = useQuery({
 
 // POST/PUT/DELETE with useMutation
 const mutation = useMutation({
-  mutationFn: (data) => apiRequest("POST", API_ENDPOINTS.recipes.generate, data),
+  mutationFn: (data) =>
+    apiRequest("POST", API_ENDPOINTS.recipes.generate, data),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
   },
@@ -321,36 +322,36 @@ const data = await response.json();
 
 ```typescript
 // ❌ WRONG - Missing /v1/ prefix
-queryKey: ['/api/donations/stats']
-await apiRequest("GET", "/api/sentiment/dashboard")
+queryKey: ["/api/donations/stats"];
+await apiRequest("GET", "/api/sentiment/dashboard");
 
 // ✅ CORRECT - Use API_ENDPOINTS or full versioned path
-queryKey: [`${API_BASE}/donations/stats`]
-await apiRequest("GET", API_ENDPOINTS.ai.analysis.sentiment)
+queryKey: [`${API_BASE}/donations/stats`];
+await apiRequest("GET", API_ENDPOINTS.ai.analysis.sentiment);
 ```
 
 ### 2. Inconsistent Path Structures
 
 ```typescript
 // ❌ WRONG - Made-up paths that don't exist
-'/api/ml/categorize'           // No ML router
-'/api/faces/detect'            // Should be /ai/media/vision/faces/detect
-'/api/ocr/extract'             // Should be /ai/media/vision/ocr/extract
+"/api/ml/categorize"; // No ML router
+"/api/faces/detect"; // Should be /ai/media/vision/faces/detect
+"/api/ocr/extract"; // Should be /ai/media/vision/ocr/extract
 
 // ✅ CORRECT - Use documented paths
-API_ENDPOINTS.ai.media.vision.faces.detect
-API_ENDPOINTS.ai.media.vision.ocr.extract
+API_ENDPOINTS.ai.media.vision.faces.detect;
+API_ENDPOINTS.ai.media.vision.ocr.extract;
 ```
 
 ### 3. Duplicate Query Keys
 
 ```typescript
 // ❌ WRONG - String interpolation breaks cache invalidation
-queryKey: [`/api/recipes/${id}`]
+queryKey: [`/api/recipes/${id}`];
 
 // ✅ CORRECT - Array-based keys for proper invalidation
-queryKey: [API_ENDPOINTS.recipes.list, id]
-queryKey: ['/api/v1/recipes', id]
+queryKey: [API_ENDPOINTS.recipes.list, id];
+queryKey: ["/api/v1/recipes", id];
 ```
 
 ---
@@ -375,7 +376,7 @@ export const queryClient = new QueryClient({
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown
+  data?: unknown,
 ): Promise<Response> {
   // Centralized request handling with auth headers
 }
@@ -452,6 +453,7 @@ VITE_APP_URL=https://...
 ```
 
 Access in code:
+
 ```typescript
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 ```

@@ -13,7 +13,8 @@ import { useVisualEffects } from "@/hooks/useVisualEffects";
 import { hapticButton } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
-interface LiquidGlassButtonProps extends Omit<ButtonProps, 'children' | 'size'> {
+interface LiquidGlassButtonProps
+  extends Omit<ButtonProps, "children" | "size"> {
   icon: LucideIcon;
   title?: string;
   description?: string;
@@ -111,7 +112,7 @@ export function LiquidGlassButton({
     glassVariant === "clear"
       ? "liquid-glass-app-icon-clear"
       : "liquid-glass-container",
-    className
+    className,
   );
 
   // Horizontal layout with icon and text side-by-side
@@ -123,17 +124,10 @@ export function LiquidGlassButton({
           size={buttonSizeMap[size]}
           variant={buttonVariantMap[colorScheme]}
           onClick={handleClick}
-          className={cn(
-            "p-0 w-auto h-auto",
-            shapeClass,
-            glassClasses
-          )}
-          data-testid={`button-liquid-glass-${title?.toLowerCase()?.replace(/\s+/g, '-')}`}
+          className={cn("p-0 w-auto h-auto", shapeClass, glassClasses)}
+          data-testid={`button-liquid-glass-${title?.toLowerCase()?.replace(/\s+/g, "-")}`}
         >
-          <Icon
-            className={iconSizes[size]}
-            strokeWidth={1.5}
-          />
+          <Icon className={iconSizes[size]} strokeWidth={1.5} />
         </Button>
 
         {title && showTitle && (
@@ -180,24 +174,25 @@ export function LiquidGlassButton({
         size="icon"
         variant={buttonVariantMap[colorScheme]}
         onClick={handleClick}
-        className={cn(
-          shapeClass,
-          glassClasses,
-          "shadow-xl drop-shadow-lg"
-        )}
-        data-testid={`button-liquid-glass-${title?.toLowerCase()?.replace(/\s+/g, '-')}`}
+        className={cn(shapeClass, glassClasses, "shadow-xl drop-shadow-lg")}
+        data-testid={`button-liquid-glass-${title?.toLowerCase()?.replace(/\s+/g, "-")}`}
       >
-        <Icon
-          className={iconSizes[size]}
-          strokeWidth={1.5}
-        />
+        <Icon className={iconSizes[size]} strokeWidth={1.5} />
       </Button>
 
       {title && showTitle && (
         <motion.div
           className="text-center flex flex-col gap-0.5"
-          initial={!shouldDisableAnimation ? { opacity: 0, y: -4 } : { opacity: 1, y: 0 }}
-          animate={!shouldDisableAnimation ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+          initial={
+            !shouldDisableAnimation
+              ? { opacity: 0, y: -4 }
+              : { opacity: 1, y: 0 }
+          }
+          animate={
+            !shouldDisableAnimation
+              ? { opacity: 1, y: 0 }
+              : { opacity: 1, y: 0 }
+          }
           transition={{ duration: 0.3, delay: 0.05 }}
         >
           <span

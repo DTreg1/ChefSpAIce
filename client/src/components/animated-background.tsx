@@ -37,23 +37,29 @@ export function AnimatedBackground({
       "hsla(92, 25%, 35%, 0.3)",
     ];
 
-    const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 4 + 3,
-      duration: Math.random() * 20 + 20,
-      delay: Math.random() * 10,
-      path: ["up", "diagonal", "zigzag"][Math.floor(Math.random() * 3)] as Particle["path"],
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }));
+    const newParticles: Particle[] = Array.from(
+      { length: particleCount },
+      (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 4 + 3,
+        duration: Math.random() * 20 + 20,
+        delay: Math.random() * 10,
+        path: ["up", "diagonal", "zigzag"][
+          Math.floor(Math.random() * 3)
+        ] as Particle["path"],
+        color: colors[Math.floor(Math.random() * colors.length)],
+      }),
+    );
 
     setParticles(newParticles);
   }, [particleCount]);
 
   const gradientClasses = {
     primary: "gradient-animate",
-    secondary: "bg-gradient-to-br from-yellow-700/10 via-lime-600/10 to-amber-700/10",
+    secondary:
+      "bg-gradient-to-br from-yellow-700/10 via-lime-600/10 to-amber-700/10",
     vibrant: "gradient-animate",
     soft: "bg-gradient-to-br from-olive-400/5 via-lime-500/5 to-green-600/5",
   };
@@ -62,7 +68,7 @@ export function AnimatedBackground({
     <div
       className={cn(
         "fixed inset-0 overflow-hidden pointer-events-none",
-        className
+        className,
       )}
     >
       {/* Animated gradient background */}
@@ -70,7 +76,7 @@ export function AnimatedBackground({
         <div
           className={cn(
             "absolute inset-0 opacity-50",
-            gradientClasses[gradientType]
+            gradientClasses[gradientType],
           )}
         />
       )}
@@ -94,8 +100,8 @@ export function AnimatedBackground({
                   particle.path === "up"
                     ? "float-up"
                     : particle.path === "diagonal"
-                    ? "float-diagonal"
-                    : "float-up"
+                      ? "float-diagonal"
+                      : "float-up"
                 } ${particle.duration}s ${particle.delay}s linear infinite`,
                 boxShadow: `0 0 ${particle.size * 3}px ${particle.color}`,
               }}
@@ -105,7 +111,7 @@ export function AnimatedBackground({
       )}
 
       {/* Subtle noise texture overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E")`,

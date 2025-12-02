@@ -1,12 +1,25 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sparkles, Send, RotateCcw, MessageSquare } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type GeneratedDraft } from "@shared/schema";
@@ -18,7 +31,11 @@ const CONTEXT_TYPES = [
   { value: "email", label: "Email", icon: Send },
   { value: "message", label: "Message", icon: MessageSquare },
   { value: "comment", label: "Comment", icon: MessageSquare },
-  { value: "customer_complaint", label: "Customer Complaint", icon: MessageSquare },
+  {
+    value: "customer_complaint",
+    label: "Customer Complaint",
+    icon: MessageSquare,
+  },
 ];
 
 const QUICK_REPLIES = [
@@ -32,15 +49,24 @@ export function DraftingAssistant() {
   const [originalMessage, setOriginalMessage] = useState("");
   const [contextType, setContextType] = useState<string>("email");
   const [subject, setSubject] = useState("");
-  const [selectedTones, setSelectedTones] = useState<string[]>(["formal", "casual", "friendly"]);
+  const [selectedTones, setSelectedTones] = useState<string[]>([
+    "formal",
+    "casual",
+    "friendly",
+  ]);
   const [generatedDrafts, setGeneratedDrafts] = useState<GeneratedDraft[]>([]);
   const [editingDraft, setEditingDraft] = useState<GeneratedDraft | null>(null);
   const { toast } = useToast();
 
   // Generate drafts mutation
   const generateDraftsMutation = useMutation({
-    mutationFn: async (data: { originalMessage: string; contextType: string; tones: string[]; subject?: string; approach?: string }) =>
-      apiRequest<GeneratedDraft[]>("/api/drafts/generate", "POST", data),
+    mutationFn: async (data: {
+      originalMessage: string;
+      contextType: string;
+      tones: string[];
+      subject?: string;
+      approach?: string;
+    }) => apiRequest<GeneratedDraft[]>("/api/drafts/generate", "POST", data),
     onSuccess: (drafts) => {
       setGeneratedDrafts(drafts);
       toast({
@@ -60,8 +86,12 @@ export function DraftingAssistant() {
 
   // Submit feedback mutation
   const feedbackMutation = useMutation({
-    mutationFn: async (data: { draftId: string; selected: boolean; edited?: boolean; editedContent?: string }) =>
-      apiRequest("/api/drafts/feedback", "POST", data),
+    mutationFn: async (data: {
+      draftId: string;
+      selected: boolean;
+      edited?: boolean;
+      editedContent?: string;
+    }) => apiRequest("/api/drafts/feedback", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
     },
@@ -70,7 +100,11 @@ export function DraftingAssistant() {
   // Improve draft mutation
   const improveDraftMutation = useMutation({
     mutationFn: async (data: { draft: string; improvements: string[] }) =>
-      apiRequest<{ improved: string; changes: string[]; suggestions: string[] }>("/api/drafts/improve", "POST", data),
+      apiRequest<{
+        improved: string;
+        changes: string[];
+        suggestions: string[];
+      }>("/api/drafts/improve", "POST", data),
     onSuccess: (result) => {
       toast({
         title: "Draft Improved",
@@ -89,15 +123,16 @@ export function DraftingAssistant() {
       return;
     }
 
-    const tones = contextType === "customer_complaint"
-      ? ["apologetic", "solution-focused", "empathetic"]
-      : selectedTones;
+    const tones =
+      contextType === "customer_complaint"
+        ? ["apologetic", "solution-focused", "empathetic"]
+        : selectedTones;
 
-    generateDraftsMutation.mutate({ 
-      originalMessage, 
-      contextType, 
+    generateDraftsMutation.mutate({
+      originalMessage,
+      contextType,
       tones,
-      subject: subject.trim() || undefined
+      subject: subject.trim() || undefined,
     });
   };
 
@@ -165,14 +200,18 @@ export function DraftingAssistant() {
             Intelligent Drafting Assistant
           </CardTitle>
           <CardDescription>
-            Generate contextual responses with different tones for emails, messages, and comments
+            Generate contextual responses with different tones for emails,
+            messages, and comments
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="context-type">Context Type</Label>
             <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger id="context-type" data-testid="select-context-type">
+              <SelectTrigger
+                id="context-type"
+                data-testid="select-context-type"
+              >
                 <SelectValue placeholder="Select context type" />
               </SelectTrigger>
               <SelectContent>
@@ -217,14 +256,25 @@ export function DraftingAssistant() {
             <div className="space-y-2">
               <Label>Response Tones</Label>
               <div className="flex flex-wrap gap-2">
-                {["formal", "casual", "friendly", "apologetic", "solution-focused", "empathetic"].map((tone) => (
+                {[
+                  "formal",
+                  "casual",
+                  "friendly",
+                  "apologetic",
+                  "solution-focused",
+                  "empathetic",
+                ].map((tone) => (
                   <Badge
                     key={tone}
-                    variant={selectedTones.includes(tone) ? "default" : "outline"}
+                    variant={
+                      selectedTones.includes(tone) ? "default" : "outline"
+                    }
                     className="cursor-pointer hover-elevate"
                     onClick={() => {
                       if (selectedTones.includes(tone)) {
-                        setSelectedTones(selectedTones.filter((t) => t !== tone));
+                        setSelectedTones(
+                          selectedTones.filter((t) => t !== tone),
+                        );
                       } else if (selectedTones.length < 3) {
                         setSelectedTones([...selectedTones, tone]);
                       }
@@ -244,7 +294,8 @@ export function DraftingAssistant() {
           {contextType === "customer_complaint" && (
             <Alert>
               <AlertDescription>
-                Customer complaint responses will automatically use apologetic, solution-focused, and empathetic tones.
+                Customer complaint responses will automatically use apologetic,
+                solution-focused, and empathetic tones.
               </AlertDescription>
             </Alert>
           )}
@@ -269,11 +320,15 @@ export function DraftingAssistant() {
         <CardFooter className="gap-2">
           <Button
             onClick={handleGenerateDrafts}
-            disabled={!originalMessage.trim() || generateDraftsMutation.isPending}
+            disabled={
+              !originalMessage.trim() || generateDraftsMutation.isPending
+            }
             data-testid="button-generate-drafts"
           >
             <Sparkles className="h-4 w-4 mr-2" />
-            {generateDraftsMutation.isPending ? "Generating..." : "Generate Drafts"}
+            {generateDraftsMutation.isPending
+              ? "Generating..."
+              : "Generate Drafts"}
           </Button>
           <Button
             variant="outline"

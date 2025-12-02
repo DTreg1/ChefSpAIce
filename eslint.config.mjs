@@ -14,12 +14,13 @@ import { FlatCompat } from "@eslint/eslintrc";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all,
 });
 
-export default defineConfig([globalIgnores([
+export default defineConfig([
+  globalIgnores([
     "**/dist",
     "**/node_modules",
     "**/*.config.ts",
@@ -29,74 +30,81 @@ export default defineConfig([globalIgnores([
     "**/tailwind.config.ts",
     "**/postcss.config.ts",
     "**/client/public/**/*.js",
-]), {
-    extends: fixupConfigRules(compat.extends(
+  ]),
+  {
+    extends: fixupConfigRules(
+      compat.extends(
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:react/recommended",
         "plugin:react-hooks/recommended",
-    )),
+      ),
+    ),
 
     plugins: {
-        "@typescript-eslint": fixupPluginRules(typescriptEslint),
-        react: fixupPluginRules(react),
-        "react-hooks": fixupPluginRules(reactHooks),
-        "react-refresh": reactRefresh,
+      "@typescript-eslint": fixupPluginRules(typescriptEslint),
+      react: fixupPluginRules(react),
+      "react-hooks": fixupPluginRules(reactHooks),
+      "react-refresh": reactRefresh,
     },
 
     languageOptions: {
-        globals: {
-            ...globals.browser,
-            ...globals.node,
-        },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
 
-        parser: tsParser,
-        ecmaVersion: "latest",
-        sourceType: "module",
+      parser: tsParser,
+      ecmaVersion: "latest",
+      sourceType: "module",
 
-        parserOptions: {
-            ecmaFeatures: {
-                jsx: true,
-            },
-            project: true,  // This tells it to find the nearest tsconfig.json
-            tsconfigRootDir: __dirname,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
         },
+        project: true, // This tells it to find the nearest tsconfig.json
+        tsconfigRootDir: __dirname,
+      },
     },
 
     settings: {
-        react: {
-            version: "detect",
-        },
+      react: {
+        version: "detect",
+      },
     },
 
     rules: {
-        // React specific
-        "react/react-in-jsx-scope": "off",
-        "react/prop-types": "off",
-        "react/jsx-no-leaked-render": "error",
-        "react/jsx-curly-brace-presence": ["warn", { props: "never", children: "never" }],
+      // React specific
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
+      "react/jsx-no-leaked-render": "error",
+      "react/jsx-curly-brace-presence": [
+        "warn",
+        { props: "never", children: "never" },
+      ],
 
-        // TypeScript
-        "@typescript-eslint/no-unused-vars": ["error", {
-            argsIgnorePattern: "^_",
-            varsIgnorePattern: "^_",
-            caughtErrorsIgnorePattern: "^_"
-        }],
-        "@typescript-eslint/no-explicit-any": "warn", // Changed from "off" to "warn"
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/await-thenable": "error",
+      // TypeScript
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-explicit-any": "warn", // Changed from "off" to "warn"
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
 
-        // Code quality
-        "no-console": ["warn", { allow: ["warn", "error"] }],
-        "prefer-const": "error",
-        "no-debugger": process.env.NODE_ENV === "production" ? "error" : "warn",
+      // Code quality
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "prefer-const": "error",
+      "no-debugger": process.env.NODE_ENV === "production" ? "error" : "warn",
 
-        // React Hooks
-        "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "error", // Upgraded from "warn"
+      // React Hooks
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error", // Upgraded from "warn"
     },
-    ignores: [
-        "temp.js",
-        "config/*",
-    ],
-}]);
+    ignores: ["temp.js", "config/*"],
+  },
+]);

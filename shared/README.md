@@ -25,12 +25,14 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 ### Core Domains
 
 #### Authentication & Users (`auth.ts`) - 3 tables
+
 - `users` - User accounts and profiles
 - `sessions` - Session management
 - `oauthProviders` - OAuth provider links
 - Includes: user preferences, dietary restrictions, notification settings
 
 #### Food Management (`food.ts`) - 10 tables
+
 - `userInventory` - Food inventory items with expiration tracking
 - `userStorage` - Storage location definitions
 - `userRecipes` - User recipes and AI-generated recipes
@@ -43,6 +45,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `cookingTerms` - Cooking terminology glossary
 
 #### Notifications (`notifications.ts`) - 5 tables
+
 - `pushTokens` - Device push notification tokens
 - `notificationHistory` - Sent notification log
 - `scheduledNotifications` - Future notification queue
@@ -50,17 +53,20 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `notificationScores` - Engagement scoring
 
 #### Chat System (`chat.ts`) - 4 tables
+
 - `userChats` - Chat conversations
 - `chatMessages` - Individual messages
 - `messageContext` - Conversation context
 - `conversationMetadata` - Conversation summaries
 
 #### Billing (`billing.ts`) - 1 table
+
 - `donations` - User donations and payments
 
 ### Analytics Domains
 
 #### Analytics (`analytics.ts`) - 11 tables
+
 - `analyticsEvents` - User activity events
 - `analyticsSessions` - Session tracking
 - `userAnalytics` - Aggregated user metrics
@@ -74,6 +80,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `featureAdoption` - Feature usage tracking
 
 #### System Monitoring (`system.ts`) - 5 tables
+
 - `systemHealth` - System health metrics
 - `performanceMetrics` - Performance data
 - `errorLogs` - Error tracking
@@ -81,6 +88,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `resourceUsage` - Resource consumption
 
 #### Experiments (`experiments.ts`) - 6 tables
+
 - `abTests` - A/B test definitions
 - `abTestVariants` - Test variants
 - `abTestAssignments` - User assignments
@@ -91,6 +99,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 ### AI/ML Domains
 
 #### AI/ML Features (`ai-ml.ts`) - 14 tables
+
 - `voiceCommands` - Voice command history
 - `writingSessions` - Writing assistance sessions
 - `summarizations` - Content summaries
@@ -107,6 +116,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `modelVersions` - Model version tracking
 
 #### Image Processing (`images.ts`) - 7 tables
+
 - `userImages` - Uploaded images
 - `imageAnalysis` - Image analysis results
 - `altTextGenerations` - Alt text for accessibility
@@ -116,6 +126,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `imageMetadata` - Image EXIF and metadata
 
 #### Sentiment Analysis (`sentiment.ts`) - 5 tables
+
 - `sentimentAnalysis` - Sentiment scores
 - `sentimentTimeline` - Sentiment over time
 - `emotionDetection` - Emotion classifications
@@ -123,16 +134,19 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `sentimentAlerts` - Sentiment-based alerts
 
 #### Transcription (`transcription.ts`) - 2 tables
+
 - `transcriptions` - Audio transcriptions
 - `transcriptionSegments` - Transcription segments
 
 #### Extraction (`extraction.ts`) - 2 tables
+
 - `dataExtractions` - Extracted data
 - `extractionTemplates` - Extraction patterns
 
 ### Content Domains
 
 #### Content Management (`content.ts`) - 7 tables
+
 - `contentCategories` - Content categorization
 - `contentTags` - Tag assignments
 - `recommendations` - Content recommendations
@@ -142,6 +156,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `contentEmbeddings` - Vector embeddings
 
 #### Forms (`forms.ts`) - 7 tables
+
 - `formDefinitions` - Form schemas
 - `formSubmissions` - Form responses
 - `formFields` - Field definitions
@@ -151,12 +166,14 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `formTemplates` - Reusable form templates
 
 #### Scheduling (`scheduling.ts`) - 4 tables
+
 - `schedulingPreferences` - User availability
 - `meetingSuggestions` - AI meeting suggestions
 - `calendarSync` - Calendar integrations
 - `scheduledEvents` - Scheduled events
 
 #### Pricing (`pricing.ts`) - 3 tables
+
 - `pricingHistory` - Price tracking
 - `priceAlerts` - Price alerts
 - `pricePredictions` - Price predictions
@@ -164,6 +181,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 ### Security Domains
 
 #### Security (`security.ts`) - 8 tables
+
 - `moderationResults` - Content moderation
 - `moderationQueue` - Moderation queue
 - `fraudDetection` - Fraud alerts
@@ -174,6 +192,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 - `blockedContent` - Blocked content list
 
 #### Support (`support.ts`) - 5 tables
+
 - `supportTickets` - Support tickets
 - `ticketMessages` - Ticket communications
 - `knowledgeBase` - Help articles
@@ -183,18 +202,21 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 ## Key Technologies
 
 ### Drizzle ORM
+
 - Type-safe SQL query builder
 - Schema-first approach
 - PostgreSQL dialect with Neon serverless
 - Automatic migrations
 
 ### Zod Validation
+
 - Runtime type validation
 - Automatic schema generation from Drizzle tables
 - Insert/update schemas for each table
 - Type inference for TypeScript
 
 ### PostgreSQL Features
+
 - JSONB columns for flexible data
 - Full-text search indexes
 - Foreign key constraints with cascade deletes
@@ -229,7 +251,7 @@ type User = typeof users.$inferSelect;
 type InsertUser = typeof users.$inferInsert;
 
 // Using Zod schemas
-import { createInsertSchema } from 'drizzle-zod';
+import { createInsertSchema } from "drizzle-zod";
 const insertUserSchema = createInsertSchema(users);
 type InsertUserZod = z.infer<typeof insertUserSchema>;
 ```
@@ -240,8 +262,12 @@ type InsertUserZod = z.infer<typeof insertUserSchema>;
 export const tableName = pgTable(
   "table_name",
   {
-    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
     name: text("name").notNull(),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow(),
@@ -250,7 +276,7 @@ export const tableName = pgTable(
   (table) => [
     index("table_name_user_id_idx").on(table.userId),
     uniqueIndex("table_name_unique_idx").on(table.userId, table.name),
-  ]
+  ],
 );
 ```
 
@@ -291,7 +317,7 @@ interface TimeSeriesPoint {
 // Confidence scoring
 interface ConfidenceScore {
   score: number;
-  level?: 'low' | 'medium' | 'high' | 'very_high';
+  level?: "low" | "medium" | "high" | "very_high";
   threshold?: number;
 }
 
@@ -319,15 +345,15 @@ Table references across domains:
 
 Common JSONB column patterns:
 
-| Column | Usage |
-|--------|-------|
-| `metadata` | General-purpose metadata storage |
-| `preferences` | User or feature preferences |
-| `settings` | Configuration settings |
-| `context` | Contextual information for AI |
-| `result` | API response storage |
-| `nutrients` | Nutrition data |
-| `ingredients` | Recipe ingredients |
+| Column        | Usage                            |
+| ------------- | -------------------------------- |
+| `metadata`    | General-purpose metadata storage |
+| `preferences` | User or feature preferences      |
+| `settings`    | Configuration settings           |
+| `context`     | Contextual information for AI    |
+| `result`      | API response storage             |
+| `nutrients`   | Nutrition data                   |
+| `ingredients` | Recipe ingredients               |
 
 ## Indexes and Performance
 
@@ -353,13 +379,17 @@ Each table includes appropriate indexes for:
 ## Common Conventions
 
 ### User Context
+
 Most tables include a `userId` field:
+
 ```typescript
-userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" })
+userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" });
 ```
 
 ### Timestamps
+
 Standard timestamp fields:
+
 ```typescript
 createdAt: timestamp("created_at").defaultNow(),
 updatedAt: timestamp("updated_at").defaultNow(),
@@ -367,11 +397,13 @@ deletedAt: timestamp("deleted_at"), // For soft deletes
 ```
 
 ### Status Enums
+
 Common status patterns:
+
 ```typescript
-status: text("status", { 
-  enum: ["pending", "processing", "completed", "failed"] 
-})
+status: text("status", {
+  enum: ["pending", "processing", "completed", "failed"],
+});
 ```
 
 ## Security Considerations

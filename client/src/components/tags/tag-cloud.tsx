@@ -1,6 +1,6 @@
 /**
  * TagCloud Component
- * 
+ *
  * Displays popular tags in a visually engaging cloud format.
  * Features:
  * - Dynamic font sizing based on usage count
@@ -48,16 +48,16 @@ export function TagCloud({
   // Calculate tag sizes based on usage count
   const tagSizes = useMemo(() => {
     if (!trendingTags?.tags) return [];
-    
+
     const tags = trendingTags.tags;
     const maxCount = Math.max(...tags.map((t: TagData) => t.usageCount), 1);
     const minCount = Math.min(...tags.map((t: TagData) => t.usageCount), 0);
     const range = maxCount - minCount || 1;
-    
+
     return tags.map((tag: TagData) => {
       // Calculate relative size (0.5 to 1.5)
       const relativeSize = 0.5 + ((tag.usageCount - minCount) / range) * 1;
-      
+
       // Determine variant based on usage
       let variant: "default" | "secondary" | "outline" = "outline";
       if (tag.usageCount > maxCount * 0.7) {
@@ -65,7 +65,7 @@ export function TagCloud({
       } else if (tag.usageCount > maxCount * 0.4) {
         variant = "secondary";
       }
-      
+
       return {
         ...tag,
         fontSize: `${relativeSize}rem`,
@@ -96,7 +96,7 @@ export function TagCloud({
         <Tag className="h-4 w-4" />
         <span>Popular Tags</span>
       </div>
-      
+
       <div className="flex flex-wrap gap-2 justify-center items-center">
         {tagSizes.map((tag) => (
           <Badge
@@ -111,13 +111,11 @@ export function TagCloud({
             data-testid={`tag-cloud-${tag.name}`}
           >
             {tag.name}
-            <span className="ml-1 opacity-60 text-xs">
-              ({tag.usageCount})
-            </span>
+            <span className="ml-1 opacity-60 text-xs">({tag.usageCount})</span>
           </Badge>
         ))}
       </div>
-      
+
       {limit < (trendingTags?.tags?.length || 0) && (
         <p className="text-center text-sm text-muted-foreground">
           Showing top {limit} tags

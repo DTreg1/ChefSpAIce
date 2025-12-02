@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -14,7 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { SummaryCard, SummaryToggle, SummaryLength, BulletSummary, QuickBulletList, KeyPoints, InlineKeyPoints } from "@/components/summaries";
+import {
+  SummaryCard,
+  SummaryToggle,
+  SummaryLength,
+  BulletSummary,
+  QuickBulletList,
+  KeyPoints,
+  InlineKeyPoints,
+} from "@/components/summaries";
 import { Loader2, FileText, Sparkles, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,7 +66,9 @@ The transformation brought by AI and ML is not a distant possibility but a prese
 export default function SummarizationDemo() {
   const { toast } = useToast();
   const [content, setContent] = useState(sampleContent);
-  const [summaryType, setSummaryType] = useState<'tldr' | 'bullet' | 'paragraph'>('tldr');
+  const [summaryType, setSummaryType] = useState<
+    "tldr" | "bullet" | "paragraph"
+  >("tldr");
   const [summaryLength, setSummaryLength] = useState(2);
   const [extractKeyPoints, setExtractKeyPoints] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -61,7 +77,7 @@ export default function SummarizationDemo() {
 
   const summarizeMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('/api/summarize', 'POST', data);
+      const response = await apiRequest("/api/summarize", "POST", data);
       return response;
     },
     onSuccess: (data) => {
@@ -75,17 +91,19 @@ export default function SummarizationDemo() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate summary",
+        description:
+          error instanceof Error ? error.message : "Failed to generate summary",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleGenerateSummary = () => {
     if (content.trim().length < 50) {
       toast({
         title: "Content too short",
-        description: "Please enter at least 50 characters of content to summarize",
+        description:
+          "Please enter at least 50 characters of content to summarize",
         variant: "destructive",
       });
       return;
@@ -95,7 +113,7 @@ export default function SummarizationDemo() {
       content: content.trim(),
       type: summaryType,
       length: summaryLength,
-      extractKeyPoints
+      extractKeyPoints,
     });
   };
 
@@ -117,7 +135,10 @@ export default function SummarizationDemo() {
     }
   };
 
-  const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = content
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -127,7 +148,8 @@ export default function SummarizationDemo() {
           AI Summarization Demo
         </h1>
         <p className="text-muted-foreground">
-          Test the AI-powered summarization feature with custom content or use our sample article
+          Test the AI-powered summarization feature with custom content or use
+          our sample article
         </p>
       </div>
 
@@ -154,7 +176,11 @@ export default function SummarizationDemo() {
                     onClick={handleCopyContent}
                     data-testid="button-copy-content"
                   >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -171,8 +197,14 @@ export default function SummarizationDemo() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="summary-type">Summary Format</Label>
-                    <Select value={summaryType} onValueChange={(value: any) => setSummaryType(value)}>
-                      <SelectTrigger id="summary-type" data-testid="select-summary-type">
+                    <Select
+                      value={summaryType}
+                      onValueChange={(value: any) => setSummaryType(value)}
+                    >
+                      <SelectTrigger
+                        id="summary-type"
+                        data-testid="select-summary-type"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -203,7 +235,9 @@ export default function SummarizationDemo() {
 
                 <Button
                   onClick={handleGenerateSummary}
-                  disabled={summarizeMutation.isPending || content.trim().length < 50}
+                  disabled={
+                    summarizeMutation.isPending || content.trim().length < 50
+                  }
                   className="w-full"
                   data-testid="button-generate-summary"
                 >
@@ -245,21 +279,24 @@ export default function SummarizationDemo() {
                 }}
               />
 
-              {summaryType === 'bullet' && (
+              {summaryType === "bullet" && (
                 <BulletSummary
-                  bullets={summaryResult.summary.split('\n').filter((line: string) => line.trim())}
+                  bullets={summaryResult.summary
+                    .split("\n")
+                    .filter((line: string) => line.trim())}
                   title="Summary Points"
                   variant="checkmarks"
                 />
               )}
 
-              {summaryResult.keyPoints && summaryResult.keyPoints.length > 0 && (
-                <KeyPoints
-                  keyPoints={summaryResult.keyPoints}
-                  variant="highlight"
-                  showCopyButton={true}
-                />
-              )}
+              {summaryResult.keyPoints &&
+                summaryResult.keyPoints.length > 0 && (
+                  <KeyPoints
+                    keyPoints={summaryResult.keyPoints}
+                    variant="highlight"
+                    showCopyButton={true}
+                  />
+                )}
             </>
           )}
 
@@ -270,7 +307,8 @@ export default function SummarizationDemo() {
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Your summary will appear here</p>
                   <p className="text-sm mt-2">
-                    Click "Generate Summary" to create a concise version of your content
+                    Click "Generate Summary" to create a concise version of your
+                    content
                   </p>
                 </div>
               </CardContent>
@@ -282,7 +320,7 @@ export default function SummarizationDemo() {
       {/* Component Examples */}
       <div className="mt-12 space-y-6">
         <h2 className="text-2xl font-bold">Component Showcase</h2>
-        
+
         <Tabs defaultValue="toggle" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="toggle">Toggle Button</TabsTrigger>
@@ -290,7 +328,7 @@ export default function SummarizationDemo() {
             <TabsTrigger value="keypoints">Key Points</TabsTrigger>
             <TabsTrigger value="inline">Inline Display</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="toggle" className="space-y-4">
             <Card>
               <CardHeader>
@@ -317,7 +355,7 @@ export default function SummarizationDemo() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="bullets" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <BulletSummary
@@ -325,7 +363,7 @@ export default function SummarizationDemo() {
                   "AI and ML are transforming industries",
                   "Three types of machine learning exist",
                   "Ethical concerns need addressing",
-                  "Future looks promising but uncertain"
+                  "Future looks promising but uncertain",
                 ]}
                 title="Default Style"
                 variant="default"
@@ -335,27 +373,27 @@ export default function SummarizationDemo() {
                   "Started in the 1950s with Turing Test",
                   "Experienced multiple AI winters and springs",
                   "Current surge driven by big data and computing power",
-                  "Applications span from healthcare to transportation"
+                  "Applications span from healthcare to transportation",
                 ]}
                 title="Numbered Style"
                 variant="numbered"
               />
             </div>
           </TabsContent>
-          
+
           <TabsContent value="keypoints" className="space-y-4">
             <KeyPoints
               keyPoints={[
                 "AI has evolved from science fiction to daily reality",
                 "Machine learning enables computers to learn from data",
                 "Ethical challenges include bias and transparency",
-                "Global competition drives massive investment"
+                "Global competition drives massive investment",
               ]}
               variant="cards"
               showCopyButton={true}
             />
           </TabsContent>
-          
+
           <TabsContent value="inline" className="space-y-4">
             <Card>
               <CardHeader>
@@ -367,17 +405,17 @@ export default function SummarizationDemo() {
                     "Revolutionary Technology",
                     "Industry Transformation",
                     "Ethical Considerations",
-                    "Future Potential"
+                    "Future Potential",
                   ]}
                 />
-                
+
                 <div className="mt-6">
                   <h4 className="font-semibold mb-2">Quick Bullet List</h4>
                   <QuickBulletList
                     bullets={[
                       "Supervised learning for labeled data",
                       "Unsupervised learning for pattern discovery",
-                      "Reinforcement learning for decision making"
+                      "Reinforcement learning for decision making",
                     ]}
                   />
                 </div>

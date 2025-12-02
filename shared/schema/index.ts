@@ -1,9 +1,9 @@
 /**
  * Centralized Schema Exports
- * 
+ *
  * Re-exports all domain-specific schemas from a single entry point.
  * This maintains backward compatibility while organizing tables into logical domains.
- * 
+ *
  * Domain Structure:
  * - auth.ts: Authentication & user management (3 tables)
  * - food.ts: Food inventory & recipes (10 tables)
@@ -23,63 +23,69 @@
  * - pricing.ts: Pricing management (3 tables)
  * - transcription.ts: Transcription services (2 tables)
  * - billing.ts: Billing & donations (1 table)
- * 
+ *
  * Total: 104 tables organized into 18 domain modules
  */
 
 // ==================== Domain Exports ====================
 
 // Core domains
-export * from './auth';
-export * from './food';
-export * from './notifications';
-export * from './analytics';
-export * from './system';
-export * from './support';
-export * from './billing';
-export * from './chat';
+export * from "./auth";
+export * from "./food";
+export * from "./notifications";
+export * from "./analytics";
+export * from "./system";
+export * from "./support";
+export * from "./billing";
+export * from "./chat";
 
 // AI/ML domains
-export * from './ai-ml';
-export * from './images';
-export * from './sentiment';
-export * from './transcription';
-export * from './extraction';
+export * from "./ai-ml";
+export * from "./images";
+export * from "./sentiment";
+export * from "./transcription";
+export * from "./extraction";
 
 // Content & UX domains
-export * from './content';
-export * from './forms';
-export * from './scheduling';
+export * from "./content";
+export * from "./forms";
+export * from "./scheduling";
 
 // Advanced features
-export * from './experiments';
-export * from './security';
-export * from './pricing';
+export * from "./experiments";
+export * from "./security";
+export * from "./pricing";
 
 // ==================== Cross-Domain References ====================
 
 // These imports are needed for cross-domain foreign key references
 // They're re-exported to maintain the existing API surface
-import { users } from './auth';
-import { userRecipes } from './food';
-import { pushTokens } from './notifications';
-import { analyticsInsights } from './analytics';
-import { trends } from './analytics';
-import { userPredictions } from './analytics';
+import { users } from "./auth";
+import { userRecipes } from "./food";
+import { pushTokens } from "./notifications";
+import { analyticsInsights } from "./analytics";
+import { trends } from "./analytics";
+import { userPredictions } from "./analytics";
 
 // Re-export for backward compatibility
-export { users, userRecipes, pushTokens, analyticsInsights, trends, userPredictions };
-
+export {
+  users,
+  userRecipes,
+  pushTokens,
+  analyticsInsights,
+  trends,
+  userPredictions,
+};
 
 // ==================== Compatibility Aliases ====================
 // These provide backward compatibility for incorrect type names that were used
 
 // Fix notification type name mismatches
 // The correct singular forms from notifications.ts
-import { 
+import {
   type NotificationPreference,
-  type InsertNotificationPreference 
-} from './notifications';
+  type InsertNotificationPreference,
+} from "./notifications";
 
 // Export compatibility aliases for incorrect plural names
 export type NotificationPreferences = NotificationPreference;
@@ -104,7 +110,7 @@ export interface MetadataBase {
 
 export interface ConfidenceScore {
   score: number;
-  level?: 'low' | 'medium' | 'high' | 'very_high';
+  level?: "low" | "medium" | "high" | "very_high";
   threshold?: number;
 }
 
@@ -153,14 +159,14 @@ export interface Message {
 }
 
 // ==================== Helper/Computed Types (Not DB-Backed) ====================
-// 
+//
 // The following types are NOT backed by database tables.
 // They are helper types for computed/aggregated data used in API responses and UI.
 // DO NOT attempt to use these with direct database operations.
 
 /**
  * Helper type for API responses - NOT a database table
- * 
+ *
  * Conversation with metadata type
  * Used for displaying conversation lists with message counts and last activity
  * This is computed from chat message data, not a standalone table
@@ -177,7 +183,7 @@ export interface ConversationWithMetadata {
 
 /**
  * Helper type for analytics aggregation - NOT a database table
- * 
+ *
  * Feedback analytics aggregation type
  * Used for analyzing user feedback trends
  * This is computed from userFeedback table data, not a standalone table

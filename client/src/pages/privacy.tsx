@@ -1,5 +1,14 @@
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, Eye, Database, Globe, Mail, AlertCircle, UserCheck } from "lucide-react";
+import {
+  Shield,
+  Lock,
+  Eye,
+  Database,
+  Globe,
+  Mail,
+  AlertCircle,
+  UserCheck,
+} from "lucide-react";
 import { PageTransition } from "@/components/layout";
 import { AnimatedCard } from "@/components/cards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,8 +24,8 @@ export default function Privacy() {
         "Recipe preferences and dietary restrictions",
         "Meal planning and shopping list data",
         "Usage analytics to improve the service",
-        "Feedback and support communications"
-      ]
+        "Feedback and support communications",
+      ],
     },
     {
       icon: Lock,
@@ -27,8 +36,8 @@ export default function Privacy() {
         "Generate shopping lists based on your meal plans",
         "Improve our AI models and service quality",
         "Send important service updates and notifications",
-        "Respond to your support requests"
-      ]
+        "Respond to your support requests",
+      ],
     },
     {
       icon: Shield,
@@ -39,8 +48,8 @@ export default function Privacy() {
         "Regular security audits and updates",
         "Access controls and authentication requirements",
         "Secure cloud infrastructure with redundancy",
-        "No storage of payment card details (handled by Stripe)"
-      ]
+        "No storage of payment card details (handled by Stripe)",
+      ],
     },
     {
       icon: Globe,
@@ -51,8 +60,8 @@ export default function Privacy() {
         "USDA FoodData Central for nutrition information",
         "Google Cloud for secure data storage",
         "Analytics services for usage insights",
-        "Email services for notifications"
-      ]
+        "Email services for notifications",
+      ],
     },
     {
       icon: Eye,
@@ -63,8 +72,8 @@ export default function Privacy() {
         "Delete your account and associated data",
         "Export your data in a portable format",
         "Opt-out of non-essential communications",
-        "Control sharing preferences"
-      ]
+        "Control sharing preferences",
+      ],
     },
     {
       icon: UserCheck,
@@ -75,9 +84,9 @@ export default function Privacy() {
         "Aggregated analytics data may be retained",
         "Legal obligations may require longer retention",
         "Backup data purged on regular schedule",
-        "You can request immediate deletion"
-      ]
-    }
+        "You can request immediate deletion",
+      ],
+    },
   ];
 
   return (
@@ -97,8 +106,8 @@ export default function Privacy() {
       <Alert className="border-primary/50">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Your privacy is important to us. This policy explains how we collect, use, and protect your information
-          when you use ChefSpAIce.
+          Your privacy is important to us. This policy explains how we collect,
+          use, and protect your information when you use ChefSpAIce.
         </AlertDescription>
       </Alert>
 
@@ -108,13 +117,16 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            ChefSpAIce is committed to protecting your privacy and ensuring the security of your personal information.
-            We believe in transparency about our data practices and giving you control over your information.
+            ChefSpAIce is committed to protecting your privacy and ensuring the
+            security of your personal information. We believe in transparency
+            about our data practices and giving you control over your
+            information.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            This Privacy Policy describes how we collect, use, share, and protect information when you use our 
-            application. By using ChefSpAIce, you agree to the collection and use of information in accordance with 
-            this policy.
+            This Privacy Policy describes how we collect, use, share, and
+            protect information when you use our application. By using
+            ChefSpAIce, you agree to the collection and use of information in
+            accordance with this policy.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -154,30 +166,35 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            We use cookies and similar tracking technologies to improve your experience:
+            We use cookies and similar tracking technologies to improve your
+            experience:
           </p>
           <ul className="space-y-2">
             <li className="flex items-start gap-2">
               <span className="text-primary mt-1">•</span>
               <span className="text-muted-foreground">
-                <strong>Essential cookies:</strong> Required for authentication and core functionality
+                <strong>Essential cookies:</strong> Required for authentication
+                and core functionality
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary mt-1">•</span>
               <span className="text-muted-foreground">
-                <strong>Preference cookies:</strong> Remember your settings and preferences
+                <strong>Preference cookies:</strong> Remember your settings and
+                preferences
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary mt-1">•</span>
               <span className="text-muted-foreground">
-                <strong>Analytics cookies:</strong> Help us understand usage patterns (anonymized)
+                <strong>Analytics cookies:</strong> Help us understand usage
+                patterns (anonymized)
               </span>
             </li>
           </ul>
           <p className="text-muted-foreground">
-            You can control cookie preferences in your browser settings. Disabling cookies may affect functionality.
+            You can control cookie preferences in your browser settings.
+            Disabling cookies may affect functionality.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -188,9 +205,10 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            ChefSpAIce is not intended for use by children under 13 years of age. We do not knowingly collect 
-            personal information from children under 13. If you believe we have collected information from 
-            a child under 13, please contact us immediately.
+            ChefSpAIce is not intended for use by children under 13 years of
+            age. We do not knowingly collect personal information from children
+            under 13. If you believe we have collected information from a child
+            under 13, please contact us immediately.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -201,9 +219,11 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Your information may be transferred to and maintained on servers located outside of your state, 
-            province, country, or other governmental jurisdiction. We ensure appropriate safeguards are in 
-            place to protect your information in accordance with this Privacy Policy.
+            Your information may be transferred to and maintained on servers
+            located outside of your state, province, country, or other
+            governmental jurisdiction. We ensure appropriate safeguards are in
+            place to protect your information in accordance with this Privacy
+            Policy.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -214,8 +234,9 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            We may update our Privacy Policy from time to time. We will notify you of any changes by posting 
-            the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. Continued use of the 
+            We may update our Privacy Policy from time to time. We will notify
+            you of any changes by posting the new Privacy Policy on this page
+            and updating the &quot;Last updated&quot; date. Continued use of the
             service after changes indicates acceptance of the updated policy.
           </p>
         </CardContent>
@@ -227,7 +248,8 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            If you have questions or concerns about this Privacy Policy or our data practices, please contact us:
+            If you have questions or concerns about this Privacy Policy or our
+            data practices, please contact us:
           </p>
           <div className="space-y-2 text-muted-foreground">
             <p>Email: privacy@aichef.app</p>

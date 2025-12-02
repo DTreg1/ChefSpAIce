@@ -19,7 +19,7 @@ export const SummaryToggle = memo(function SummaryToggle({
   disabled = false,
   className = "",
   size = "default",
-  variant = "outline"
+  variant = "outline",
 }: SummaryToggleProps) {
   return (
     <Button

@@ -1,13 +1,41 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar, ChevronLeft, ChevronRight, Users, TrendingUp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  TrendingUp,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { format, addDays, startOfWeek, addWeeks, getHours, setHours, setMinutes, isSameDay, startOfMonth, endOfMonth } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  addWeeks,
+  getHours,
+  setHours,
+  setMinutes,
+  isSameDay,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
 import type { MeetingEvents } from "@shared/schema";
 
 interface AvailabilityGridProps {
@@ -29,26 +57,24 @@ export function AvailabilityGrid({
   userId,
   participants = [],
   startDate: _startDate,
-  endDate: _endDate
+  endDate: _endDate,
 }: AvailabilityGridProps) {
   const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
 
   // Calculate date range based on navigation state (currentWeek) - not props
   // This ensures query keys are stable and tied to actual navigation
   const dateRange = useMemo(() => {
-    const start = viewMode === 'month' 
-      ? startOfMonth(currentWeek) 
-      : currentWeek;
-    const end = viewMode === 'month' 
-      ? endOfMonth(currentWeek) 
-      : addDays(currentWeek, 7);
-    
+    const start =
+      viewMode === "month" ? startOfMonth(currentWeek) : currentWeek;
+    const end =
+      viewMode === "month" ? endOfMonth(currentWeek) : addDays(currentWeek, 7);
+
     return {
       startDate: start,
       endDate: end,
       startISO: start.toISOString(),
-      endISO: end.toISOString()
+      endISO: end.toISOString(),
     };
   }, [currentWeek, viewMode]);
 
@@ -59,30 +85,31 @@ export function AvailabilityGrid({
       const params = new URLSearchParams({
         startTime: dateRange.startISO,
         endTime: dateRange.endISO,
-        status: "confirmed"
+        status: "confirmed",
       });
       const response = await fetch(`/api/schedule/events?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json() as Promise<MeetingEvents[]>;
-    }
+    },
   });
 
   // Calculate availability grid data
   const gridData = useMemo(() => {
     const slots: TimeSlot[][] = [];
-    const daysToShow = viewMode === 'week' ? 7 : 30;
+    const daysToShow = viewMode === "week" ? 7 : 30;
     const hoursToShow = 12; // 8 AM to 8 PM
-    
+
     for (let day = 0; day < daysToShow; day++) {
       const daySlots: TimeSlot[] = [];
       const currentDate = addDays(currentWeek, day);
-      
-      for (let hour = 8; hour < 20; hour++) { // 8 AM to 8 PM
+
+      for (let hour = 8; hour < 20; hour++) {
+        // 8 AM to 8 PM
         const slotTime = setMinutes(setHours(currentDate, hour), 0);
         const slotEnd = setMinutes(setHours(currentDate, hour + 1), 0);
-        
+
         // Find events that overlap with this time slot
-        const overlappingEvents = events.filter(event => {
+        const overlappingEvents = events.filter((event) => {
           const eventStart = new Date(event.startTime);
           const eventEnd = new Date(event.endTime);
           return (
@@ -91,22 +118,22 @@ export function AvailabilityGrid({
             (eventStart <= slotTime && eventEnd >= slotEnd)
           );
         });
-        
+
         // Calculate availability (0 = busy, 1 = free)
         const availability = overlappingEvents.length === 0 ? 1 : 0;
-        
+
         daySlots.push({
           date: slotTime,
           hour,
           availability,
           conflicts: overlappingEvents.length,
-          events: overlappingEvents
+          events: overlappingEvents,
         });
       }
-      
+
       slots.push(daySlots);
     }
-    
+
     return slots;
   }, [events, currentWeek, viewMode]);
 
@@ -122,32 +149,33 @@ export function AvailabilityGrid({
   // Calculate overall availability stats
   const stats = useMemo(() => {
     const totalSlots = gridData.flat().length;
-    const freeSlots = gridData.flat().filter(s => s.availability === 1).length;
-    const busySlots = gridData.flat().filter(s => s.conflicts > 0).length;
+    const freeSlots = gridData
+      .flat()
+      .filter((s) => s.availability === 1).length;
+    const busySlots = gridData.flat().filter((s) => s.conflicts > 0).length;
     const availability = totalSlots > 0 ? (freeSlots / totalSlots) * 100 : 0;
-    
+
     // Find peak busy hours
     const hourCounts: Record<number, number> = {};
-    gridData.flat().forEach(slot => {
+    gridData.flat().forEach((slot) => {
       if (slot.conflicts > 0) {
         hourCounts[slot.hour] = (hourCounts[slot.hour] || 0) + 1;
       }
     });
-    
-    const peakHour = Object.entries(hourCounts)
-      .sort((a, b) => b[1] - a[1])[0];
-    
+
+    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+
     return {
       availability: availability.toFixed(1),
       freeSlots,
       busySlots,
-      peakHour: peakHour ? `${peakHour[0]}:00` : null
+      peakHour: peakHour ? `${peakHour[0]}:00` : null,
     };
   }, [gridData]);
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    setCurrentWeek(prev => 
-      direction === 'next' ? addWeeks(prev, 1) : addWeeks(prev, -1)
+  const navigateWeek = (direction: "prev" | "next") => {
+    setCurrentWeek((prev) =>
+      direction === "next" ? addWeeks(prev, 1) : addWeeks(prev, -1),
     );
   };
 
@@ -163,18 +191,19 @@ export function AvailabilityGrid({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigateWeek('prev')}
+              onClick={() => navigateWeek("prev")}
               data-testid="button-prev-week"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-normal">
-              {format(currentWeek, "MMM d")} - {format(addDays(currentWeek, 6), "MMM d, yyyy")}
+              {format(currentWeek, "MMM d")} -{" "}
+              {format(addDays(currentWeek, 6), "MMM d, yyyy")}
             </span>
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigateWeek('next')}
+              onClick={() => navigateWeek("next")}
               data-testid="button-next-week"
             >
               <ChevronRight className="h-4 w-4" />
@@ -190,16 +219,22 @@ export function AvailabilityGrid({
           {/* Statistics */}
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Overall Availability</p>
+              <p className="text-sm text-muted-foreground">
+                Overall Availability
+              </p>
               <p className="text-2xl font-bold">{stats.availability}%</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Free Slots</p>
-              <p className="text-2xl font-bold text-green-600">{stats.freeSlots}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {stats.freeSlots}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Busy Slots</p>
-              <p className="text-2xl font-bold text-red-600">{stats.busySlots}</p>
+              <p className="text-2xl font-bold text-red-600">
+                {stats.busySlots}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Peak Hour</p>
@@ -213,13 +248,14 @@ export function AvailabilityGrid({
               <TabsTrigger value="heatmap">Heat Map</TabsTrigger>
               <TabsTrigger value="list">List View</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="heatmap">
               <div className="border rounded-lg p-4">
                 {/* Time labels */}
                 <div className="flex gap-1 mb-2">
-                  <div className="w-20"></div> {/* Empty space for day labels */}
-                  {Array.from({ length: 12 }, (_, i) => i + 8).map(hour => (
+                  <div className="w-20"></div>{" "}
+                  {/* Empty space for day labels */}
+                  {Array.from({ length: 12 }, (_, i) => i + 8).map((hour) => (
                     <div
                       key={hour}
                       className="flex-1 text-center text-xs text-muted-foreground"
@@ -228,7 +264,7 @@ export function AvailabilityGrid({
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Grid */}
                 <ScrollArea className="h-[400px]">
                   {gridData.slice(0, 7).map((daySlots, dayIndex) => (
@@ -242,7 +278,7 @@ export function AvailabilityGrid({
                           {format(daySlots[0].date, "MMM d")}
                         </div>
                       </div>
-                      
+
                       {/* Hour slots */}
                       {daySlots.map((slot, hourIndex) => (
                         <TooltipProvider key={hourIndex}>
@@ -251,7 +287,7 @@ export function AvailabilityGrid({
                               <div
                                 className={`flex-1 h-12 rounded cursor-pointer transition-all hover:opacity-80 ${getHeatMapColor(
                                   slot.availability,
-                                  slot.conflicts
+                                  slot.conflicts,
                                 )}`}
                                 data-testid={`slot-${dayIndex}-${hourIndex}`}
                               />
@@ -259,11 +295,14 @@ export function AvailabilityGrid({
                             <TooltipContent>
                               <div className="space-y-1">
                                 <p className="font-medium">
-                                  {format(slot.date, "EEE, MMM d")} at {slot.hour}:00
+                                  {format(slot.date, "EEE, MMM d")} at{" "}
+                                  {slot.hour}:00
                                 </p>
                                 {slot.conflicts > 0 ? (
                                   <>
-                                    <p className="text-sm">{slot.conflicts} conflict(s)</p>
+                                    <p className="text-sm">
+                                      {slot.conflicts} conflict(s)
+                                    </p>
                                     {slot.events.slice(0, 2).map((event, i) => (
                                       <p key={i} className="text-xs">
                                         • {event.title}
@@ -271,7 +310,9 @@ export function AvailabilityGrid({
                                     ))}
                                   </>
                                 ) : (
-                                  <p className="text-sm text-green-600">Available</p>
+                                  <p className="text-sm text-green-600">
+                                    Available
+                                  </p>
                                 )}
                               </div>
                             </TooltipContent>
@@ -281,7 +322,7 @@ export function AvailabilityGrid({
                     </div>
                   ))}
                 </ScrollArea>
-                
+
                 {/* Legend */}
                 <div className="flex items-center gap-4 mt-4 pt-4 border-t">
                   <div className="text-sm text-muted-foreground">Legend:</div>
@@ -304,12 +345,13 @@ export function AvailabilityGrid({
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="list">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
-                  {gridData.flat()
-                    .filter(slot => slot.conflicts > 0)
+                  {gridData
+                    .flat()
+                    .filter((slot) => slot.conflicts > 0)
                     .sort((a, b) => b.conflicts - a.conflicts)
                     .slice(0, 20)
                     .map((slot, index) => (
@@ -319,14 +361,20 @@ export function AvailabilityGrid({
                       >
                         <div className="space-y-1">
                           <p className="font-medium">
-                            {format(slot.date, "EEEE, MMMM d")} at {slot.hour}:00
+                            {format(slot.date, "EEEE, MMMM d")} at {slot.hour}
+                            :00
                           </p>
                           <div className="flex items-center gap-2">
                             <Badge variant="destructive" className="text-xs">
-                              {slot.conflicts} conflict{slot.conflicts > 1 ? 's' : ''}
+                              {slot.conflicts} conflict
+                              {slot.conflicts > 1 ? "s" : ""}
                             </Badge>
                             {slot.events.slice(0, 2).map((event, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
+                              <Badge
+                                key={i}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {event.title}
                               </Badge>
                             ))}
@@ -341,7 +389,7 @@ export function AvailabilityGrid({
               </ScrollArea>
             </TabsContent>
           </Tabs>
-          
+
           {/* Insights */}
           <div className="p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2 mb-2">

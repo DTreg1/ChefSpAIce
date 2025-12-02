@@ -21,7 +21,10 @@ interface CookingTermHighlighterProps {
   className?: string;
 }
 
-export function CookingTermHighlighter({ text, className = "" }: CookingTermHighlighterProps) {
+export function CookingTermHighlighter({
+  text,
+  className = "",
+}: CookingTermHighlighterProps) {
   // Fetch all cooking terms from the API
   const { data: cookingTerms = [], isLoading } = useQuery<CookingTerm[]>({
     queryKey: ["/api/cooking-terms"],
@@ -35,7 +38,7 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
 
     // Create a map for quick lookup (case-insensitive)
     const termMap = new Map<string, CookingTerm>();
-    cookingTerms.forEach(term => {
+    cookingTerms.forEach((term) => {
       // Add the main term
       termMap.set(term.term.toLowerCase(), term);
       // Also add related terms if available
@@ -47,19 +50,21 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
     });
 
     // Sort terms by length (longest first) to match longer terms before shorter ones
-    const sortedTerms = Array.from(termMap.keys()).sort((a, b) => b.length - a.length);
+    const sortedTerms = Array.from(termMap.keys()).sort(
+      (a, b) => b.length - a.length,
+    );
 
     // Build a regex pattern to match all terms (case-insensitive, word boundaries)
-    const escapedTerms = sortedTerms.map(term => 
-      term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special regex characters
+    const escapedTerms = sortedTerms.map(
+      (term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), // Escape special regex characters
     );
-    
+
     if (escapedTerms.length === 0) {
       return <span className={className}>{text}</span>;
     }
 
     // Create regex with word boundaries to match whole words only
-    const pattern = new RegExp(`\\b(${escapedTerms.join('|')})\\b`, 'gi');
+    const pattern = new RegExp(`\\b(${escapedTerms.join("|")})\\b`, "gi");
 
     // Split text by the pattern and build highlighted content
     const parts = [];
@@ -67,28 +72,28 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
     let match;
 
     const textCopy = text;
-    
+
     while ((match = pattern.exec(textCopy)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
         parts.push(
           <span key={`text-${lastIndex}`}>
             {textCopy.substring(lastIndex, match.index)}
-          </span>
+          </span>,
         );
       }
 
       // Add the highlighted term
       const matchedText = match[0];
       const termData = termMap.get(matchedText.toLowerCase());
-      
+
       if (termData) {
         parts.push(
           <HighlightedTerm
             key={`term-${match.index}`}
             term={matchedText}
             data={termData}
-          />
+          />,
         );
       }
 
@@ -98,9 +103,7 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
     // Add remaining text
     if (lastIndex < textCopy.length) {
       parts.push(
-        <span key={`text-${lastIndex}`}>
-          {textCopy.substring(lastIndex)}
-        </span>
+        <span key={`text-${lastIndex}`}>{textCopy.substring(lastIndex)}</span>,
       );
     }
 
@@ -120,7 +123,9 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   // Determine the category badge color
-  const getCategoryBadgeVariant = (category: string): "default" | "secondary" | "outline" => {
+  const getCategoryBadgeVariant = (
+    category: string,
+  ): "default" | "secondary" | "outline" => {
     switch (category) {
       case "knife_skills":
         return "default";
@@ -137,7 +142,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
   const formatCategory = (category: string): string => {
     return category
       .split("_")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
@@ -158,11 +163,16 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
           </TooltipTrigger>
           <TooltipContent className="max-w-sm">
             <p className="text-sm">{data.shortDefinition}</p>
-            <p className="text-xs text-muted-foreground mt-1">Click for detailed instructions</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Click for detailed instructions
+            </p>
           </TooltipContent>
         </Tooltip>
-        
-        <PopoverContent className="w-96 max-h-[600px] overflow-y-auto" align="start">
+
+        <PopoverContent
+          className="w-96 max-h-[600px] overflow-y-auto"
+          align="start"
+        >
           <div className="space-y-3">
             {/* Header */}
             <div className="space-y-2">
@@ -172,7 +182,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
                   {formatCategory(data.category)}
                 </Badge>
               </div>
-              
+
               {/* Metadata badges */}
               <div className="flex gap-2 flex-wrap">
                 {!!data.difficulty && (
@@ -189,7 +199,9 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             {/* Definition */}
             <div>
               <h4 className="font-semibold mb-2 text-sm">How to {data.term}</h4>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.longDefinition || data.shortDefinition}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {data.longDefinition || data.shortDefinition}
+              </p>
             </div>
 
             {/* Example */}
@@ -201,7 +213,9 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
                     <Utensils className="w-4 h-4" />
                     Example
                   </h4>
-                  <p className="text-sm text-muted-foreground">{data.example}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {data.example}
+                  </p>
                 </div>
               </>
             )}
@@ -232,7 +246,9 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
               <>
                 <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm">Related Techniques</h4>
+                  <h4 className="font-semibold mb-2 text-sm">
+                    Related Techniques
+                  </h4>
                   <div className="flex gap-2 flex-wrap">
                     {data.relatedTerms.map((relatedTerm, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">

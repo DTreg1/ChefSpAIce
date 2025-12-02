@@ -1,6 +1,6 @@
 /**
  * System Health Dashboard
- * 
+ *
  * Real-time monitoring of system components with predictive maintenance
  * insights using TensorFlow.js LSTM anomaly detection.
  */
@@ -8,13 +8,25 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ComponentHealth } from "@/components/component-health";
 import {
@@ -30,7 +42,7 @@ import {
   TrendingUp,
   Wifi,
   Wrench,
-  Zap
+  Zap,
 } from "lucide-react";
 import {
   LineChart,
@@ -48,7 +60,7 @@ import {
   RadialBarChart,
   RadialBar,
   PolarGrid,
-  PolarRadiusAxis
+  PolarRadiusAxis,
 } from "recharts";
 import { format, formatDistance } from "date-fns";
 
@@ -56,7 +68,7 @@ import { format, formatDistance } from "date-fns";
 interface ComponentStatus {
   name: string;
   health: number;
-  status: 'healthy' | 'warning' | 'critical';
+  status: "healthy" | "warning" | "critical";
   activePredictions: number;
   lastMaintenance: string | null;
   metrics: {
@@ -71,7 +83,7 @@ interface SystemHealth {
   components: Record<string, number>;
   issues: number;
   recommendations: string[];
-  status: 'healthy' | 'warning' | 'critical';
+  status: "healthy" | "warning" | "critical";
   criticalIssues: number;
   upcomingMaintenance: number;
   timestamp: string;
@@ -84,7 +96,7 @@ interface MaintenancePrediction {
   predictedIssue: string;
   probability: number;
   recommendedDate: string;
-  urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+  urgencyLevel: "low" | "medium" | "high" | "critical";
   estimatedDowntime?: number;
   preventiveActions?: string[];
   status: string;
@@ -105,113 +117,143 @@ const componentIcons: Record<string, any> = {
   server: Server,
   cache: HardDrive,
   api: Wifi,
-  storage: Shield
+  storage: Shield,
 };
 
 const statusColors: Record<string, string> = {
   healthy: "text-green-500",
   warning: "text-yellow-500",
-  critical: "text-red-500"
+  critical: "text-red-500",
 };
 
 const urgencyColors: Record<string, string> = {
   low: "bg-blue-100 text-blue-800",
   medium: "bg-yellow-100 text-yellow-800",
   high: "bg-orange-100 text-orange-800",
-  critical: "bg-red-100 text-red-800"
+  critical: "bg-red-100 text-red-800",
 };
 
 export default function SystemHealthDashboard() {
   const { toast } = useToast();
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(
+    null,
+  );
   const [showComponentDetails, setShowComponentDetails] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Fetch system health
-  const { data: health, isLoading: healthLoading, refetch: refetchHealth } = useQuery<SystemHealth>({
-    queryKey: ['/api/maintenance/health'],
-    refetchInterval: autoRefresh ? 30000 : false // Auto-refresh every 30s if enabled
+  const {
+    data: health,
+    isLoading: healthLoading,
+    refetch: refetchHealth,
+  } = useQuery<SystemHealth>({
+    queryKey: ["/api/maintenance/health"],
+    refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30s if enabled
   });
 
   // Fetch components status
-  const { data: components, isLoading: componentsLoading } = useQuery<{ components: ComponentStatus[] }>({
-    queryKey: ['/api/maintenance/components'],
-    refetchInterval: autoRefresh ? 30000 : false
+  const { data: components, isLoading: componentsLoading } = useQuery<{
+    components: ComponentStatus[];
+  }>({
+    queryKey: ["/api/maintenance/components"],
+    refetchInterval: autoRefresh ? 30000 : false,
   });
 
   // Fetch predictions
-  const { data: predictions, isLoading: predictionsLoading } = useQuery<{ predictions: MaintenancePrediction[]; grouped: Record<string, MaintenancePrediction[]> }>({
-    queryKey: ['/api/maintenance/predict'],
-    refetchInterval: autoRefresh ? 60000 : false // Auto-refresh every minute
+  const { data: predictions, isLoading: predictionsLoading } = useQuery<{
+    predictions: MaintenancePrediction[];
+    grouped: Record<string, MaintenancePrediction[]>;
+  }>({
+    queryKey: ["/api/maintenance/predict"],
+    refetchInterval: autoRefresh ? 60000 : false, // Auto-refresh every minute
   });
 
   // Fetch recent metrics
   const { data: metrics } = useQuery<{ metrics: SystemMetric[] }>({
-    queryKey: ['/api/maintenance/metrics', { limit: 100 }],
-    refetchInterval: autoRefresh ? 10000 : false // Auto-refresh every 10s
+    queryKey: ["/api/maintenance/metrics", { limit: 100 }],
+    refetchInterval: autoRefresh ? 10000 : false, // Auto-refresh every 10s
   });
 
   // Analyze component mutation
   const analyzeMutation = useMutation({
     mutationFn: (component: string) =>
-      apiRequest('/api/maintenance/analyze', 'POST', { component }),
+      apiRequest("/api/maintenance/analyze", "POST", { component }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
       toast({
         title: "Analysis Complete",
-        description: "Component analysis completed successfully"
+        description: "Component analysis completed successfully",
       });
     },
     onError: () => {
       toast({
         title: "Analysis Failed",
         description: "Failed to analyze component",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Initialize models mutation
   const initializeMutation = useMutation({
-    mutationFn: () =>
-      apiRequest('/api/maintenance/initialize', 'POST'),
+    mutationFn: () => apiRequest("/api/maintenance/initialize", "POST"),
     onSuccess: () => {
       toast({
         title: "Models Initialized",
-        description: "Predictive maintenance models are ready"
+        description: "Predictive maintenance models are ready",
       });
-    }
+    },
   });
 
   // Simulate metrics mutation (for testing)
   const simulateMutation = useMutation({
-    mutationFn: ({ component, anomaly }: { component: string; anomaly: boolean }) =>
-      apiRequest('/api/maintenance/simulate', 'POST', { component, anomaly }),
+    mutationFn: ({
+      component,
+      anomaly,
+    }: {
+      component: string;
+      anomaly: boolean;
+    }) =>
+      apiRequest("/api/maintenance/simulate", "POST", { component, anomaly }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
+    },
   });
 
   // Prepare chart data
-  const metricsChartData = metrics?.metrics?.slice(0, 50).reverse().map((m: SystemMetric) => ({
-    time: format(new Date(m.timestamp), 'HH:mm'),
-    value: m.value,
-    anomalyScore: (m.anomalyScore || 0) * 100,
-    component: m.component
-  })) || [];
+  const metricsChartData =
+    metrics?.metrics
+      ?.slice(0, 50)
+      .reverse()
+      .map((m: SystemMetric) => ({
+        time: format(new Date(m.timestamp), "HH:mm"),
+        value: m.value,
+        anomalyScore: (m.anomalyScore || 0) * 100,
+        component: m.component,
+      })) || [];
 
-  const healthRadialData = health ? [{
-    name: 'System Health',
-    value: health.score,
-    fill: health.score >= 80 ? '#10b981' : health.score >= 60 ? '#f59e0b' : '#ef4444'
-  }] : [];
+  const healthRadialData = health
+    ? [
+        {
+          name: "System Health",
+          value: health.score,
+          fill:
+            health.score >= 80
+              ? "#10b981"
+              : health.score >= 60
+                ? "#f59e0b"
+                : "#ef4444",
+        },
+      ]
+    : [];
 
-  const componentHealthData = components?.components?.map((c: ComponentStatus) => ({
-    name: c.name,
-    health: c.health,
-    anomalies: c.metrics.anomalies,
-    predictions: c.activePredictions
-  })) || [];
+  const componentHealthData =
+    components?.components?.map((c: ComponentStatus) => ({
+      name: c.name,
+      health: c.health,
+      anomalies: c.metrics.anomalies,
+      predictions: c.activePredictions,
+    })) || [];
 
   return (
     <div className="p-6 space-y-6">
@@ -222,7 +264,8 @@ export default function SystemHealthDashboard() {
             System Health Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Real-time monitoring and predictive maintenance powered by TensorFlow.js
+            Real-time monitoring and predictive maintenance powered by
+            TensorFlow.js
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -232,8 +275,10 @@ export default function SystemHealthDashboard() {
             onClick={() => setAutoRefresh(!autoRefresh)}
             data-testid="button-auto-refresh"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            {autoRefresh ? 'Auto-Refresh On' : 'Auto-Refresh Off'}
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${autoRefresh ? "animate-spin" : ""}`}
+            />
+            {autoRefresh ? "Auto-Refresh On" : "Auto-Refresh Off"}
           </Button>
           <Button
             variant="outline"
@@ -266,25 +311,49 @@ export default function SystemHealthDashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" data={healthRadialData}>
+              <RadialBarChart
+                cx="50%"
+                cy="50%"
+                innerRadius="60%"
+                outerRadius="90%"
+                data={healthRadialData}
+              >
                 <PolarGrid stroke="none" />
                 <PolarRadiusAxis tick={false} axisLine={false} />
                 <RadialBar dataKey="value" cornerRadius={10} />
-                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-3xl font-bold">
+                <text
+                  x="50%"
+                  y="50%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="text-3xl font-bold"
+                >
                   {health?.score || 0}%
                 </text>
-                <text x="50%" y="50%" dy={25} textAnchor="middle" className="text-sm text-muted-foreground">
-                  {health?.status || 'Unknown'}
+                <text
+                  x="50%"
+                  y="50%"
+                  dy={25}
+                  textAnchor="middle"
+                  className="text-sm text-muted-foreground"
+                >
+                  {health?.status || "Unknown"}
                 </text>
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-2 mt-4">
               <div className="text-center">
-                <div className="text-2xl font-semibold">{health?.criticalIssues || 0}</div>
-                <div className="text-xs text-muted-foreground">Critical Issues</div>
+                <div className="text-2xl font-semibold">
+                  {health?.criticalIssues || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Critical Issues
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-semibold">{health?.upcomingMaintenance || 0}</div>
+                <div className="text-2xl font-semibold">
+                  {health?.upcomingMaintenance || 0}
+                </div>
                 <div className="text-xs text-muted-foreground">Scheduled</div>
               </div>
             </div>
@@ -295,7 +364,9 @@ export default function SystemHealthDashboard() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>System Alerts & Recommendations</CardTitle>
-            <CardDescription>AI-powered insights for system optimization</CardDescription>
+            <CardDescription>
+              AI-powered insights for system optimization
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {(health?.criticalIssues || 0) > 0 && (
@@ -303,7 +374,8 @@ export default function SystemHealthDashboard() {
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 <AlertTitle>Critical Issues Detected</AlertTitle>
                 <AlertDescription>
-                  {health?.criticalIssues || 0} critical maintenance issues require immediate attention.
+                  {health?.criticalIssues || 0} critical maintenance issues
+                  require immediate attention.
                 </AlertDescription>
               </Alert>
             )}
@@ -315,7 +387,9 @@ export default function SystemHealthDashboard() {
             )) || (
               <Alert className="border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <AlertDescription>All systems operating normally</AlertDescription>
+                <AlertDescription>
+                  All systems operating normally
+                </AlertDescription>
               </Alert>
             )}
           </CardContent>
@@ -326,7 +400,9 @@ export default function SystemHealthDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Component Health Status</CardTitle>
-          <CardDescription>Individual component monitoring and anomaly detection</CardDescription>
+          <CardDescription>
+            Individual component monitoring and anomaly detection
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -336,7 +412,9 @@ export default function SystemHealthDashboard() {
                 <Card
                   key={component.name}
                   className={`cursor-pointer transition-all hover-elevate ${
-                    selectedComponent === component.name ? 'ring-2 ring-primary' : ''
+                    selectedComponent === component.name
+                      ? "ring-2 ring-primary"
+                      : ""
                   }`}
                   onClick={() => setSelectedComponent(component.name)}
                   onDoubleClick={() => {
@@ -347,13 +425,23 @@ export default function SystemHealthDashboard() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <Icon className={`w-5 h-5 ${statusColors[component.status]}`} />
-                      <Badge variant={component.status === 'healthy' ? 'default' : 'destructive'}>
+                      <Icon
+                        className={`w-5 h-5 ${statusColors[component.status]}`}
+                      />
+                      <Badge
+                        variant={
+                          component.status === "healthy"
+                            ? "default"
+                            : "destructive"
+                        }
+                      >
                         {component.health}%
                       </Badge>
                     </div>
                     <div className="space-y-1">
-                      <div className="font-semibold capitalize">{component.name}</div>
+                      <div className="font-semibold capitalize">
+                        {component.name}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {component.metrics.anomalies} anomalies
                       </div>
@@ -394,7 +482,12 @@ export default function SystemHealthDashboard() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => simulateMutation.mutate({ component: selectedComponent, anomaly: false })}
+                onClick={() =>
+                  simulateMutation.mutate({
+                    component: selectedComponent,
+                    anomaly: false,
+                  })
+                }
                 data-testid="button-simulate-normal"
               >
                 Simulate Normal
@@ -402,7 +495,12 @@ export default function SystemHealthDashboard() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => simulateMutation.mutate({ component: selectedComponent, anomaly: true })}
+                onClick={() =>
+                  simulateMutation.mutate({
+                    component: selectedComponent,
+                    anomaly: true,
+                  })
+                }
                 data-testid="button-simulate-anomaly"
               >
                 Simulate Anomaly
@@ -472,71 +570,86 @@ export default function SystemHealthDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {predictions?.grouped?.critical?.map((pred: MaintenancePrediction) => (
-                  <Alert key={pred.id} className="border-red-200">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <div className="ml-2">
-                      <AlertTitle>
-                        <Badge className={urgencyColors[pred.urgencyLevel]}>
-                          {pred.urgencyLevel.toUpperCase()}
-                        </Badge>
-                        <span className="ml-2">{pred.component}: {pred.predictedIssue}</span>
-                      </AlertTitle>
-                      <AlertDescription>
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center text-sm">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Recommended: {format(new Date(pred.recommendedDate), 'PPP')}
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <TrendingUp className="w-3 h-3 mr-1" />
-                            Probability: {Math.round(pred.probability * 100)}%
-                          </div>
-                          {pred.estimatedDowntime && (
+                {predictions?.grouped?.critical?.map(
+                  (pred: MaintenancePrediction) => (
+                    <Alert key={pred.id} className="border-red-200">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <div className="ml-2">
+                        <AlertTitle>
+                          <Badge className={urgencyColors[pred.urgencyLevel]}>
+                            {pred.urgencyLevel.toUpperCase()}
+                          </Badge>
+                          <span className="ml-2">
+                            {pred.component}: {pred.predictedIssue}
+                          </span>
+                        </AlertTitle>
+                        <AlertDescription>
+                          <div className="mt-2 space-y-1">
                             <div className="flex items-center text-sm">
-                              <Wrench className="w-3 h-3 mr-1" />
-                              Est. Downtime: {pred.estimatedDowntime} minutes
+                              <Clock className="w-3 h-3 mr-1" />
+                              Recommended:{" "}
+                              {format(new Date(pred.recommendedDate), "PPP")}
+                            </div>
+                            <div className="flex items-center text-sm">
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                              Probability: {Math.round(pred.probability * 100)}%
+                            </div>
+                            {pred.estimatedDowntime && (
+                              <div className="flex items-center text-sm">
+                                <Wrench className="w-3 h-3 mr-1" />
+                                Est. Downtime: {pred.estimatedDowntime} minutes
+                              </div>
+                            )}
+                          </div>
+                          {pred.preventiveActions && (
+                            <div className="mt-2">
+                              <div className="text-sm font-semibold">
+                                Preventive Actions:
+                              </div>
+                              <ul className="text-sm list-disc list-inside">
+                                {pred.preventiveActions.map((action, idx) => (
+                                  <li key={idx}>{action}</li>
+                                ))}
+                              </ul>
                             </div>
                           )}
-                        </div>
-                        {pred.preventiveActions && (
-                          <div className="mt-2">
-                            <div className="text-sm font-semibold">Preventive Actions:</div>
-                            <ul className="text-sm list-disc list-inside">
-                              {pred.preventiveActions.map((action, idx) => (
-                                <li key={idx}>{action}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </AlertDescription>
-                    </div>
-                  </Alert>
-                ))}
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  ),
+                )}
 
-                {predictions?.grouped?.high?.map((pred: MaintenancePrediction) => (
-                  <Alert key={pred.id} className="border-orange-200">
-                    <Activity className="h-4 w-4 text-orange-500" />
-                    <div className="ml-2">
-                      <AlertTitle>
-                        <Badge className={urgencyColors[pred.urgencyLevel]}>
-                          {pred.urgencyLevel.toUpperCase()}
-                        </Badge>
-                        <span className="ml-2">{pred.component}: {pred.predictedIssue}</span>
-                      </AlertTitle>
-                      <AlertDescription className="text-sm">
-                        Scheduled for {format(new Date(pred.recommendedDate), 'PPP')}
-                        {pred.estimatedDowntime && ` • ${pred.estimatedDowntime} min downtime`}
-                      </AlertDescription>
-                    </div>
-                  </Alert>
-                ))}
+                {predictions?.grouped?.high?.map(
+                  (pred: MaintenancePrediction) => (
+                    <Alert key={pred.id} className="border-orange-200">
+                      <Activity className="h-4 w-4 text-orange-500" />
+                      <div className="ml-2">
+                        <AlertTitle>
+                          <Badge className={urgencyColors[pred.urgencyLevel]}>
+                            {pred.urgencyLevel.toUpperCase()}
+                          </Badge>
+                          <span className="ml-2">
+                            {pred.component}: {pred.predictedIssue}
+                          </span>
+                        </AlertTitle>
+                        <AlertDescription className="text-sm">
+                          Scheduled for{" "}
+                          {format(new Date(pred.recommendedDate), "PPP")}
+                          {pred.estimatedDowntime &&
+                            ` • ${pred.estimatedDowntime} min downtime`}
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  ),
+                )}
 
-                {(!predictions?.predictions || predictions.predictions.length === 0) && (
+                {(!predictions?.predictions ||
+                  predictions.predictions.length === 0) && (
                   <Alert className="border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     <AlertDescription>
-                      No maintenance predictions at this time. All systems stable.
+                      No maintenance predictions at this time. All systems
+                      stable.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -564,7 +677,11 @@ export default function SystemHealthDashboard() {
                   <Legend />
                   <Bar dataKey="health" fill="#10b981" name="Health Score" />
                   <Bar dataKey="anomalies" fill="#f59e0b" name="Anomalies" />
-                  <Bar dataKey="predictions" fill="#ef4444" name="Predictions" />
+                  <Bar
+                    dataKey="predictions"
+                    fill="#ef4444"
+                    name="Predictions"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -573,7 +690,10 @@ export default function SystemHealthDashboard() {
       </Tabs>
 
       {/* Component Health Details Dialog */}
-      <Dialog open={showComponentDetails} onOpenChange={setShowComponentDetails}>
+      <Dialog
+        open={showComponentDetails}
+        onOpenChange={setShowComponentDetails}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="capitalize">

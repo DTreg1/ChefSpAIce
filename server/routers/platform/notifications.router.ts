@@ -1,5 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import {
+  getAuthenticatedUserId,
+  sendError,
+  sendSuccess,
+} from "../../types/request-helpers";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../../db";
 import { notificationHistory } from "@shared/schema";
@@ -17,7 +21,7 @@ router.post("/track", isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { notificationId, status  } = req.body || {};
+    const { notificationId, status } = req.body || {};
 
     if (!status) {
       return res.status(400).json({ error: "Status is required" });
@@ -45,7 +49,7 @@ router.get("/history", isAuthenticated, async (req, res) => {
 
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
-    const includeDismissed = req.query.includeDismissed === 'true';
+    const includeDismissed = req.query.includeDismissed === "true";
 
     let query = db
       .select()
@@ -63,8 +67,8 @@ router.get("/history", isAuthenticated, async (req, res) => {
         .where(
           and(
             eq(notificationHistory.userId, userId),
-            isNull(notificationHistory.dismissedAt)
-          )
+            isNull(notificationHistory.dismissedAt),
+          ),
         )
         .orderBy(desc(notificationHistory.sentAt))
         .limit(limit)
@@ -95,8 +99,8 @@ router.get("/unread-count", isAuthenticated, async (req, res) => {
       .where(
         and(
           eq(notificationHistory.userId, userId),
-          eq(notificationHistory.status, 'delivered')
-        )
+          eq(notificationHistory.status, "delivered"),
+        ),
       );
 
     res.json({ count: unreadNotifications.length });
@@ -120,14 +124,14 @@ router.post("/:id/mark-read", isAuthenticated, async (req, res) => {
     const [updated] = await db
       .update(notificationHistory)
       .set({
-        status: 'opened',
+        status: "opened",
         openedAt: new Date(),
       })
       .where(
         and(
           eq(notificationHistory.id, id),
-          eq(notificationHistory.userId, userId)
-        )
+          eq(notificationHistory.userId, userId),
+        ),
       )
       .returning();
 

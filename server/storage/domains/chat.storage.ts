@@ -1,7 +1,7 @@
 /**
  * Chat Domain Storage
  * Handles chat messages and AI assistant interactions
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (ChatDomainStorage) for dependency injection and testing
  * - Export singleton INSTANCE (chatStorage) for convenience in production code
@@ -13,12 +13,15 @@ import { db } from "../../db";
 import {
   chatMessages,
   type ChatMessage,
-  type InsertChatMessage
+  type InsertChatMessage,
 } from "@shared/schema";
 import type { IChatStorage } from "../interfaces/IChatStorage";
 
 export class ChatDomainStorage implements IChatStorage {
-  async getChatMessages(userId: string, limit: number = 100): Promise<ChatMessage[]> {
+  async getChatMessages(
+    userId: string,
+    limit: number = 100,
+  ): Promise<ChatMessage[]> {
     return await db
       .select()
       .from(chatMessages)
@@ -26,7 +29,7 @@ export class ChatDomainStorage implements IChatStorage {
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
   }
-  
+
   async getChatMessagesPaginated(
     userId: string,
     limit: number,
@@ -51,7 +54,7 @@ export class ChatDomainStorage implements IChatStorage {
       total: totalResult[0]?.count ?? 0,
     };
   }
-  
+
   async createChatMessage(
     userId: string,
     message: Omit<InsertChatMessage, "id" | "userId">,
@@ -65,14 +68,12 @@ export class ChatDomainStorage implements IChatStorage {
         metadata: message.metadata,
       })
       .returning();
-    
+
     return created;
   }
-  
+
   async deleteChatHistory(userId: string): Promise<void> {
-    await db
-      .delete(chatMessages)
-      .where(eq(chatMessages.userId, userId));
+    await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
   }
 }
 

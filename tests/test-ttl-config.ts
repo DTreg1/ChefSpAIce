@@ -1,5 +1,5 @@
 // Test TTL configuration parsing
-import { ApiCacheService } from '../utils/ApiCacheService';
+import { ApiCacheService } from "../utils/ApiCacheService";
 
 // console.log('=== TTL Configuration Test ===\n');
 
@@ -19,8 +19,8 @@ const defaultConfig = (defaultCache as any).config;
 
 // Test 2: Override with days
 // console.log('\nTest 2: Override with days');
-process.env.CACHE_TTL_FOOD_DAYS = '60';  // 60 days
-process.env.CACHE_TTL_SEARCH_DAYS = '14'; // 14 days
+process.env.CACHE_TTL_FOOD_DAYS = "60"; // 60 days
+process.env.CACHE_TTL_SEARCH_DAYS = "14"; // 14 days
 
 const customCache = new ApiCacheService();
 const customConfig = (customCache as any).config;
@@ -31,8 +31,8 @@ const customConfig = (customCache as any).config;
 
 // Test 3: Backward compatibility with milliseconds
 // console.log('\nTest 3: Backward compatibility with milliseconds');
-process.env.CACHE_TTL_FOOD_DAYS = '86400000';  // 1 day in milliseconds
-process.env.CACHE_TTL_SEARCH_DAYS = '604800000'; // 7 days in milliseconds
+process.env.CACHE_TTL_FOOD_DAYS = "86400000"; // 1 day in milliseconds
+process.env.CACHE_TTL_SEARCH_DAYS = "604800000"; // 7 days in milliseconds
 
 const msCache = new ApiCacheService();
 const msConfig = (msCache as any).config;
@@ -44,21 +44,21 @@ const msConfig = (msCache as any).config;
 // Test 4: Verify required TTLs
 // console.log('\nTest 4: Verify Required TTL Values');
 // Reset to required values
-process.env.CACHE_TTL_FOOD_DAYS = '30';
-process.env.CACHE_TTL_SEARCH_DAYS = '7';
-process.env.CACHE_TTL_NUTRIENTS_DAYS = '90';
-process.env.CACHE_TTL_BRANDED_DAYS = '14';
-process.env.CACHE_TTL_BARCODE_DAYS = '14';
+process.env.CACHE_TTL_FOOD_DAYS = "30";
+process.env.CACHE_TTL_SEARCH_DAYS = "7";
+process.env.CACHE_TTL_NUTRIENTS_DAYS = "90";
+process.env.CACHE_TTL_BRANDED_DAYS = "14";
+process.env.CACHE_TTL_BARCODE_DAYS = "14";
 
 const requiredCache = new ApiCacheService();
 const requiredConfig = (requiredCache as any).config;
 
 const requiredTTLs = {
-  'usda.food': 30,
-  'usda.search': 7,
-  'usda.nutrients': 90,
-  'usda.branded': 14,
-  'barcode': 14
+  "usda.food": 30,
+  "usda.search": 7,
+  "usda.nutrients": 90,
+  "usda.branded": 14,
+  barcode: 14,
 };
 
 let allCorrect = true;

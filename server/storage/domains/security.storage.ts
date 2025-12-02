@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/security.storage.ts
  * @description Security, moderation, fraud detection, and privacy storage operations
- * 
+ *
  * Domain: Security & Trust
  * Scope: Content moderation, fraud detection, suspicious activity tracking, privacy settings
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (SecurityStorage) for dependency injection and testing
  * - Export singleton INSTANCE (securityStorage) for convenience in production code
@@ -13,7 +13,11 @@
 
 import { db } from "../../db";
 import { and, eq, desc, sql, gte, lte, or, type SQL } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { ISecurityStorage } from "../interfaces/ISecurityStorage";
 import {
   moderationLogs,
@@ -48,7 +52,7 @@ import {
 
 /**
  * Security Storage
- * 
+ *
  * Manages content moderation, fraud detection, and privacy settings.
  * Provides comprehensive security monitoring and threat prevention capabilities.
  */
@@ -85,7 +89,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async updateModerationLog(
     id: string,
-    updates: Partial<InsertModerationLog>
+    updates: Partial<InsertModerationLog>,
   ): Promise<void> {
     const updateData: Record<string, unknown> = {
       ...updates,
@@ -104,7 +108,7 @@ export class SecurityStorage implements ISecurityStorage {
       status?: string;
       severity?: string;
       contentType?: string;
-    }
+    },
   ): Promise<ModerationLog[]> {
     // Build where conditions
     const conditions: SQL<unknown>[] = [];
@@ -155,7 +159,7 @@ export class SecurityStorage implements ISecurityStorage {
     if (timeRange) {
       conditions.push(
         gte(moderationLogs.createdAt, timeRange.start),
-        lte(moderationLogs.createdAt, timeRange.end)
+        lte(moderationLogs.createdAt, timeRange.end),
       );
     }
 
@@ -167,21 +171,30 @@ export class SecurityStorage implements ISecurityStorage {
         : await query;
 
     const totalChecked = logs.length;
-    const totalBlocked = logs.filter((log) => log.actionTaken === "blocked").length;
-    const totalFlagged = logs.filter((log) => log.actionTaken === "flagged").length;
+    const totalBlocked = logs.filter(
+      (log) => log.actionTaken === "blocked",
+    ).length;
+    const totalFlagged = logs.filter(
+      (log) => log.actionTaken === "flagged",
+    ).length;
 
     // Get appeals
     const appealsQuery = db.select().from(moderationAppeals);
-    const appeals = conditions.length > 0
-      ? await appealsQuery.where(and(...conditions.map(c => 
-          // Map createdAt conditions to moderationAppeals.createdAt
-          sql`${moderationAppeals.createdAt} ${c}`.as('condition')
-        )))
-      : await appealsQuery;
+    const appeals =
+      conditions.length > 0
+        ? await appealsQuery.where(
+            and(
+              ...conditions.map((c) =>
+                // Map createdAt conditions to moderationAppeals.createdAt
+                sql`${moderationAppeals.createdAt} ${c}`.as("condition"),
+              ),
+            ),
+          )
+        : await appealsQuery;
 
     const totalAppeals = appeals.length;
     const appealsApproved = appeals.filter(
-      (appeal) => appeal.decision === "approved"
+      (appeal) => appeal.decision === "approved",
     ).length;
 
     // Calculate breakdowns
@@ -229,7 +242,7 @@ export class SecurityStorage implements ISecurityStorage {
   // ==================== Blocked Content ====================
 
   async createBlockedContent(
-    content: InsertBlockedContent
+    content: InsertBlockedContent,
   ): Promise<BlockedContent> {
     const [result] = await db
       .insert(blockedContent)
@@ -252,7 +265,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async getBlockedContent(
     userId: string,
-    filters?: { status?: string }
+    filters?: { status?: string },
   ): Promise<BlockedContent[]> {
     const conditions: SQL<unknown>[] = [eq(blockedContent.userId, userId)];
 
@@ -274,7 +287,7 @@ export class SecurityStorage implements ISecurityStorage {
   // ==================== Moderation Appeals ====================
 
   async createModerationAppeal(
-    appeal: InsertModerationAppeal
+    appeal: InsertModerationAppeal,
   ): Promise<ModerationAppeal> {
     const [result] = await db
       .insert(moderationAppeals)
@@ -294,12 +307,12 @@ export class SecurityStorage implements ISecurityStorage {
 
   async updateModerationAppeal(
     id: string,
-    updates: Partial<InsertModerationAppeal>
+    updates: Partial<InsertModerationAppeal>,
   ): Promise<void> {
     await db
       .update(moderationAppeals)
       .set({
-        ...(updates),
+        ...updates,
         updatedAt: new Date(),
       })
       .where(eq(moderationAppeals.id, id));
@@ -307,7 +320,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async getModerationAppeals(
     userId: string,
-    filters?: { status?: string }
+    filters?: { status?: string },
   ): Promise<ModerationAppeal[]> {
     const conditions: SQL<unknown>[] = [eq(moderationAppeals.userId, userId)];
 
@@ -326,7 +339,7 @@ export class SecurityStorage implements ISecurityStorage {
     id: string,
     decision: "approved" | "rejected" | "partially_approved",
     decisionReason: string,
-    decidedBy: string
+    decidedBy: string,
   ): Promise<void> {
     await db
       .update(moderationAppeals)
@@ -344,16 +357,13 @@ export class SecurityStorage implements ISecurityStorage {
   // ==================== Fraud Detection ====================
 
   async createFraudScore(score: InsertFraudScore): Promise<FraudScore> {
-    const [result] = await db
-      .insert(fraudScores)
-      .values([score])
-      .returning();
+    const [result] = await db.insert(fraudScores).values([score]).returning();
     return result;
   }
 
   async getFraudScores(
     userId: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<FraudScore[]> {
     const scores = await db
       .select()
@@ -375,7 +385,7 @@ export class SecurityStorage implements ISecurityStorage {
   }
 
   async createFraudDetectionResult(
-    result: InsertFraudDetectionResult
+    result: InsertFraudDetectionResult,
   ): Promise<FraudDetectionResult> {
     const [created] = await db
       .insert(fraudDetectionResults)
@@ -390,7 +400,7 @@ export class SecurityStorage implements ISecurityStorage {
       analysisType?: string;
       riskLevel?: string;
       startDate?: Date;
-    }
+    },
   ): Promise<FraudDetectionResult[]> {
     const conditions: SQL<unknown>[] = [
       eq(fraudDetectionResults.userId, userId),
@@ -398,13 +408,19 @@ export class SecurityStorage implements ISecurityStorage {
 
     if (filters?.analysisType) {
       conditions.push(
-        eq(fraudDetectionResults.analysisType, filters.analysisType as typeof fraudDetectionResults.analysisType._.data)
+        eq(
+          fraudDetectionResults.analysisType,
+          filters.analysisType as typeof fraudDetectionResults.analysisType._.data,
+        ),
       );
     }
 
     if (filters?.riskLevel) {
       conditions.push(
-        eq(fraudDetectionResults.riskLevel, filters.riskLevel as typeof fraudDetectionResults.riskLevel._.data)
+        eq(
+          fraudDetectionResults.riskLevel,
+          filters.riskLevel as typeof fraudDetectionResults.riskLevel._.data,
+        ),
       );
     }
 
@@ -421,7 +437,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async getHighRiskUsers(
     threshold: number = 0.75,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<Array<{ userId: string; score: number; timestamp: Date }>> {
     // Get latest fraud score for each user
     const results = await db
@@ -445,7 +461,7 @@ export class SecurityStorage implements ISecurityStorage {
   // ==================== Suspicious Activities ====================
 
   async createSuspiciousActivity(
-    activity: InsertSuspiciousActivity
+    activity: InsertSuspiciousActivity,
   ): Promise<SuspiciousActivity> {
     const [result] = await db
       .insert(suspiciousActivities)
@@ -456,7 +472,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async getSuspiciousActivities(
     userId?: string,
-    isAdmin: boolean = false
+    isAdmin: boolean = false,
   ): Promise<SuspiciousActivity[]> {
     // Filter by userId if provided or if not admin
     if (userId && !isAdmin) {
@@ -480,7 +496,7 @@ export class SecurityStorage implements ISecurityStorage {
   async updateSuspiciousActivity(
     activityId: string,
     status: "pending" | "reviewing" | "confirmed" | "dismissed" | "escalated",
-    resolvedAt?: Date
+    resolvedAt?: Date,
   ): Promise<void> {
     await db
       .update(suspiciousActivities)
@@ -493,7 +509,7 @@ export class SecurityStorage implements ISecurityStorage {
 
   async getSuspiciousActivitiesByType(
     activityType: string,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<SuspiciousActivity[]> {
     return await db
       .select()
@@ -523,7 +539,7 @@ export class SecurityStorage implements ISecurityStorage {
   }
 
   async getActiveRestrictions(
-    userId: string
+    userId: string,
   ): Promise<FraudReview | undefined> {
     const [review] = await db
       .select()
@@ -534,14 +550,14 @@ export class SecurityStorage implements ISecurityStorage {
           or(
             eq(fraudReviews.decision, "restricted"),
             eq(fraudReviews.decision, "flagged"),
-            eq(fraudReviews.decision, "monitor")
+            eq(fraudReviews.decision, "monitor"),
           ),
           // Only get active restrictions (not expired)
           or(
             sql`${fraudReviews.expiresAt} IS NULL`,
-            gte(fraudReviews.expiresAt, new Date())
-          )
-        )
+            gte(fraudReviews.expiresAt, new Date()),
+          ),
+        ),
       )
       .orderBy(desc(fraudReviews.reviewedAt))
       .limit(1);
@@ -552,17 +568,19 @@ export class SecurityStorage implements ISecurityStorage {
     userId: string,
     reviewerId: string,
     reason: string,
-    restrictions?: FraudReviewRestrictions
+    restrictions?: FraudReviewRestrictions,
   ): Promise<FraudReview> {
     const [review] = await db
       .insert(fraudReviews)
-      .values([{
-        userId,
-        reviewerId,
-        decision: "banned",
-        notes: reason,
-        restrictions,
-      }])
+      .values([
+        {
+          userId,
+          reviewerId,
+          decision: "banned",
+          notes: reason,
+          restrictions,
+        },
+      ])
       .returning();
     return review;
   }
@@ -639,7 +657,7 @@ export class SecurityStorage implements ISecurityStorage {
       riskLevelCounts[a.riskLevel] = (riskLevelCounts[a.riskLevel] || 0) + 1;
     });
     const riskDistribution = Object.entries(riskLevelCounts).map(
-      ([level, count]) => ({ level, count })
+      ([level, count]) => ({ level, count }),
     );
 
     // Get reviews count
@@ -664,7 +682,7 @@ export class SecurityStorage implements ISecurityStorage {
   // ==================== Privacy Settings ====================
 
   async getPrivacySettings(
-    userId: string
+    userId: string,
   ): Promise<PrivacySettings | undefined> {
     const cacheKey = `privacy:${userId}`;
     const cached = this.getCached<PrivacySettings>(cacheKey);
@@ -685,18 +703,18 @@ export class SecurityStorage implements ISecurityStorage {
 
   async upsertPrivacySettings(
     userId: string,
-    settings: Omit<InsertPrivacySettings, "userId">
+    settings: Omit<InsertPrivacySettings, "userId">,
   ): Promise<PrivacySettings> {
     const insertData = {
       ...settings,
       userId,
     } as typeof privacySettings.$inferInsert;
-    
+
     const updateData: Record<string, unknown> = {
       ...settings,
       updatedAt: new Date(),
     };
-    
+
     const [upserted] = await db
       .insert(privacySettings)
       .values([insertData])
@@ -724,7 +742,9 @@ export class SecurityStorage implements ISecurityStorage {
    * @param request - The privacy request data
    * @returns The created privacy request
    */
-  async logPrivacyRequest(request: InsertPrivacyRequest): Promise<PrivacyRequest> {
+  async logPrivacyRequest(
+    request: InsertPrivacyRequest,
+  ): Promise<PrivacyRequest> {
     const [result] = await db
       .insert(privacyRequests)
       .values(request)
@@ -788,7 +808,7 @@ export class SecurityStorage implements ISecurityStorage {
     requestId: string,
     status: string,
     processedBy: string,
-    completionNotes?: string
+    completionNotes?: string,
   ): Promise<PrivacyRequest> {
     const [result] = await db
       .update(privacyRequests)
@@ -809,7 +829,9 @@ export class SecurityStorage implements ISecurityStorage {
    * @param requestId - The privacy request ID
    * @returns The privacy request or undefined if not found
    */
-  async getPrivacyRequestById(requestId: string): Promise<PrivacyRequest | undefined> {
+  async getPrivacyRequestById(
+    requestId: string,
+  ): Promise<PrivacyRequest | undefined> {
     const [result] = await db
       .select()
       .from(privacyRequests)

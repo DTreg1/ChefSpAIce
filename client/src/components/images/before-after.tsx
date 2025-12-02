@@ -1,11 +1,17 @@
 /**
  * Before/After Image Comparison Component
- * 
+ *
  * Interactive slider to compare original and processed images.
  */
 
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Maximize2, Minimize2 } from "lucide-react";
@@ -19,21 +25,22 @@ interface BeforeAfterProps {
   processingTime?: number;
 }
 
-export function BeforeAfter({ 
-  originalUrl, 
+export function BeforeAfter({
+  originalUrl,
   processedUrl,
   originalSize,
   processedSize,
-  processingTime 
+  processingTime,
 }: BeforeAfterProps) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate compression ratio
-  const compressionRatio = originalSize && processedSize
-    ? ((1 - processedSize / originalSize) * 100).toFixed(1)
-    : null;
+  const compressionRatio =
+    originalSize && processedSize
+      ? ((1 - processedSize / originalSize) * 100).toFixed(1)
+      : null;
 
   // Toggle fullscreen
   const toggleFullscreen = () => {
@@ -69,20 +76,16 @@ export function BeforeAfter({
               Slide to compare original and processed images
             </CardDescription>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {compressionRatio && (
-              <Badge variant="secondary">
-                {compressionRatio}% smaller
-              </Badge>
+              <Badge variant="secondary">{compressionRatio}% smaller</Badge>
             )}
-            
+
             {processingTime && (
-              <Badge variant="outline">
-                {processingTime}ms
-              </Badge>
+              <Badge variant="outline">{processingTime}ms</Badge>
             )}
-            
+
             <Button
               size="icon"
               variant="ghost"
@@ -99,7 +102,7 @@ export function BeforeAfter({
         </div>
       </CardHeader>
       <CardContent>
-        <div 
+        <div
           ref={containerRef}
           className="relative aspect-square rounded-lg overflow-hidden bg-muted"
           data-testid="comparison-container"
@@ -111,7 +114,7 @@ export function BeforeAfter({
               alt="Original"
               className="w-full h-full object-contain"
             />
-            
+
             {/* Label */}
             <div className="absolute top-4 left-4">
               <Badge variant="secondary">Original</Badge>
@@ -119,7 +122,7 @@ export function BeforeAfter({
           </div>
 
           {/* Processed Image (Overlay) */}
-          <div 
+          <div
             className="absolute inset-0 overflow-hidden"
             style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
           >
@@ -128,7 +131,7 @@ export function BeforeAfter({
               alt="Processed"
               className="w-full h-full object-contain"
             />
-            
+
             {/* Label */}
             <div className="absolute top-4 right-4">
               <Badge>Processed</Badge>
@@ -136,7 +139,7 @@ export function BeforeAfter({
           </div>
 
           {/* Slider Line */}
-          <div 
+          <div
             className="absolute top-0 bottom-0 w-0.5 bg-primary"
             style={{ left: `${sliderPosition}%` }}
           >
@@ -159,7 +162,7 @@ export function BeforeAfter({
             className="w-full"
             data-testid="comparison-slider"
           />
-          
+
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>Original</span>
             <span>{sliderPosition}%</span>

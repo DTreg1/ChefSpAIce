@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +24,10 @@ interface VoiceCommandHelperProps {
   onTryCommand?: (command: string) => void;
 }
 
-export function VoiceCommandHelper({ 
-  className, 
+export function VoiceCommandHelper({
+  className,
   compact = false,
-  onTryCommand 
+  onTryCommand,
 }: VoiceCommandHelperProps) {
   const [commands, setCommands] = useState<CommandExample[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +39,13 @@ export function VoiceCommandHelper({
 
   const fetchAvailableCommands = async () => {
     try {
-      const response = await fetch('/api/voice/commands', {
-        credentials: 'include'
+      const response = await fetch("/api/voice/commands", {
+        credentials: "include",
       });
       const data = await response.json();
       setCommands(data);
     } catch (error) {
-      console.error('Failed to fetch voice commands:', error);
+      console.error("Failed to fetch voice commands:", error);
     } finally {
       setLoading(false);
     }
@@ -51,16 +57,20 @@ export function VoiceCommandHelper({
     search: "Search",
     add: "Add Items",
     show: "Display Info",
-    create: "Create New"
+    create: "Create New",
   };
 
-  const filteredCommands = selectedCategory === "all" 
-    ? commands 
-    : commands.filter(cmd => cmd.command === selectedCategory);
+  const filteredCommands =
+    selectedCategory === "all"
+      ? commands
+      : commands.filter((cmd) => cmd.command === selectedCategory);
 
   if (compact) {
     return (
-      <div className={cn("inline-flex items-center gap-2", className)} data-testid="voice-helper-compact">
+      <div
+        className={cn("inline-flex items-center gap-2", className)}
+        data-testid="voice-helper-compact"
+      >
         <HelpCircle className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">
           Try saying: "Show me my recent orders" or "Add milk to shopping list"
@@ -76,9 +86,7 @@ export function VoiceCommandHelper({
           <Mic className="h-5 w-5" />
           Voice Commands
         </CardTitle>
-        <CardDescription>
-          Available voice commands you can use
-        </CardDescription>
+        <CardDescription>Available voice commands you can use</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex gap-2 mb-4 flex-wrap">
@@ -98,9 +106,13 @@ export function VoiceCommandHelper({
         <ScrollArea className="h-[300px]">
           <div className="space-y-3">
             {loading ? (
-              <div className="text-sm text-muted-foreground">Loading commands...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading commands...
+              </div>
             ) : filteredCommands.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No commands available</div>
+              <div className="text-sm text-muted-foreground">
+                No commands available
+              </div>
             ) : (
               filteredCommands.map((cmd, index) => (
                 <div
@@ -142,7 +154,8 @@ export function VoiceCommandHelper({
 
         <div className="mt-4 pt-4 border-t">
           <p className="text-xs text-muted-foreground">
-            <strong>Tip:</strong> Commands are processed using AI, so you can use natural language variations.
+            <strong>Tip:</strong> Commands are processed using AI, so you can
+            use natural language variations.
           </p>
         </div>
       </CardContent>

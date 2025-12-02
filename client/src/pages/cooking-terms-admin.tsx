@@ -2,17 +2,46 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Edit2, Trash2, Search, ChefHat, Utensils, Sparkles, Clock, Info } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  ChefHat,
+  Utensils,
+  Sparkles,
+  Clock,
+  Info,
+} from "lucide-react";
 import type { CookingTerm, InsertCookingTerm } from "@shared/schema";
 
 export default function CookingTermsAdmin() {
@@ -38,7 +67,7 @@ export default function CookingTermsAdmin() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: InsertCookingTerm) => 
+    mutationFn: (data: InsertCookingTerm) =>
       apiRequest("/api/cooking-terms", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
@@ -52,7 +81,10 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create cooking term",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create cooking term",
         variant: "destructive",
       });
     },
@@ -60,8 +92,13 @@ export default function CookingTermsAdmin() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<InsertCookingTerm> }) =>
-      apiRequest(`/api/cooking-terms/${id}`, "PUT", data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<InsertCookingTerm>;
+    }) => apiRequest(`/api/cooking-terms/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
       toast({
@@ -74,7 +111,10 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update cooking term",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update cooking term",
         variant: "destructive",
       });
     },
@@ -94,7 +134,10 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete cooking term",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete cooking term",
         variant: "destructive",
       });
     },
@@ -144,7 +187,10 @@ export default function CookingTermsAdmin() {
     }
 
     if (editingTerm) {
-      updateMutation.mutate({ id: String(editingTerm.id), data: formData as InsertCookingTerm });
+      updateMutation.mutate({
+        id: String(editingTerm.id),
+        data: formData as InsertCookingTerm,
+      });
     } else {
       createMutation.mutate(formData as InsertCookingTerm);
     }
@@ -164,15 +210,20 @@ export default function CookingTermsAdmin() {
   };
 
   const handleArrayInput = (field: keyof InsertCookingTerm, value: string) => {
-    const items = value.split(",").map(item => item.trim()).filter(Boolean);
-    setFormData(prev => ({ ...prev, [field]: items }));
+    const items = value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    setFormData((prev) => ({ ...prev, [field]: items }));
   };
 
   // Filter terms based on search and category
-  const filteredTerms = cookingTerms.filter(term => {
-    const matchesSearch = term.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         term.shortDefinition?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || term.category === selectedCategory;
+  const filteredTerms = cookingTerms.filter((term) => {
+    const matchesSearch =
+      term.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      term.shortDefinition?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || term.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -192,7 +243,7 @@ export default function CookingTermsAdmin() {
   const formatCategory = (category: string): string => {
     return category
       .split("_")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
@@ -202,7 +253,9 @@ export default function CookingTermsAdmin() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-3xl font-serif">Cooking Terms Management</CardTitle>
+              <CardTitle className="text-3xl font-serif">
+                Cooking Terms Management
+              </CardTitle>
               <CardDescription className="mt-2">
                 Manage the cooking terms knowledge bank for recipe instructions
               </CardDescription>
@@ -226,8 +279,14 @@ export default function CookingTermsAdmin() {
                 data-testid="input-search-terms"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger
+                className="w-[200px]"
+                data-testid="select-category-filter"
+              >
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -241,38 +300,45 @@ export default function CookingTermsAdmin() {
 
           {/* Terms List */}
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading cooking terms...</div>
+            <div className="text-center py-8 text-muted-foreground">
+              Loading cooking terms...
+            </div>
           ) : filteredTerms.length === 0 ? (
             <div className="text-center py-8">
-              {searchQuery || selectedCategory !== "all" 
-                ? <div className="text-muted-foreground">No cooking terms found matching your criteria</div>
-                : (
-                  <div className="space-y-4">
-                    <div className="text-muted-foreground">No cooking terms yet. Add your first one!</div>
-                    {cookingTerms.length === 0 && (
-                      <div className="p-4 bg-secondary/20 rounded-lg border border-secondary max-w-md mx-auto">
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Get started quickly by seeding the database with 22 common cooking terms
-                        </p>
-                        <Button
-                          onClick={() => seedMutation.mutate()}
-                          disabled={seedMutation.isPending}
-                          data-testid="button-seed-terms"
-                          className="gap-2"
-                        >
-                          {seedMutation.isPending ? (
-                            <>Loading...</>
-                          ) : (
-                            <>
-                              <Plus className="w-4 h-4" />
-                              Seed Initial Terms
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
+              {searchQuery || selectedCategory !== "all" ? (
+                <div className="text-muted-foreground">
+                  No cooking terms found matching your criteria
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-muted-foreground">
+                    No cooking terms yet. Add your first one!
                   </div>
-                )}
+                  {cookingTerms.length === 0 && (
+                    <div className="p-4 bg-secondary/20 rounded-lg border border-secondary max-w-md mx-auto">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Get started quickly by seeding the database with 22
+                        common cooking terms
+                      </p>
+                      <Button
+                        onClick={() => seedMutation.mutate()}
+                        disabled={seedMutation.isPending}
+                        data-testid="button-seed-terms"
+                        className="gap-2"
+                      >
+                        {seedMutation.isPending ? (
+                          <>Loading...</>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4" />
+                            Seed Initial Terms
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -308,7 +374,7 @@ export default function CookingTermsAdmin() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {term.shortDefinition}
                     </p>
@@ -341,18 +407,25 @@ export default function CookingTermsAdmin() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isAddDialogOpen || !!editingTerm} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddDialogOpen(false);
-          setEditingTerm(null);
-          resetForm();
-        }
-      }}>
+      <Dialog
+        open={isAddDialogOpen || !!editingTerm}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddDialogOpen(false);
+            setEditingTerm(null);
+            resetForm();
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTerm ? "Edit Cooking Term" : "Add New Cooking Term"}</DialogTitle>
+            <DialogTitle>
+              {editingTerm ? "Edit Cooking Term" : "Add New Cooking Term"}
+            </DialogTitle>
             <DialogDescription>
-              {editingTerm ? "Update the cooking term details below" : "Add a new cooking term to the knowledge bank"}
+              {editingTerm
+                ? "Update the cooking term details below"
+                : "Add a new cooking term to the knowledge bank"}
             </DialogDescription>
           </DialogHeader>
 
@@ -369,7 +442,9 @@ export default function CookingTermsAdmin() {
                 <Input
                   id="term"
                   value={formData.term}
-                  onChange={(e) => setFormData(prev => ({ ...prev, term: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, term: e.target.value }))
+                  }
                   placeholder="e.g., julienne, sauté, blanch"
                   data-testid="input-term"
                 />
@@ -377,27 +452,40 @@ export default function CookingTermsAdmin() {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category: value }))
+                  }
                 >
                   <SelectTrigger id="category" data-testid="select-category">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="knife_skills">Knife Skills</SelectItem>
-                    <SelectItem value="cooking_methods">Cooking Methods</SelectItem>
-                    <SelectItem value="prep_techniques">Prep Techniques</SelectItem>
+                    <SelectItem value="cooking_methods">
+                      Cooking Methods
+                    </SelectItem>
+                    <SelectItem value="prep_techniques">
+                      Prep Techniques
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shortDef">Short Definition * (for tooltip)</Label>
+                <Label htmlFor="shortDef">
+                  Short Definition * (for tooltip)
+                </Label>
                 <Textarea
                   id="shortDef"
                   value={formData.shortDefinition}
-                  onChange={(e) => setFormData(prev => ({ ...prev, shortDefinition: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      shortDefinition: e.target.value,
+                    }))
+                  }
                   placeholder="Brief 1-2 sentence description"
                   rows={2}
                   data-testid="textarea-short-definition"
@@ -409,7 +497,12 @@ export default function CookingTermsAdmin() {
                 <Textarea
                   id="longDef"
                   value={formData.longDefinition}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longDefinition: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      longDefinition: e.target.value,
+                    }))
+                  }
                   placeholder="Detailed step-by-step instructions"
                   rows={6}
                   data-testid="textarea-long-definition"
@@ -420,11 +513,16 @@ export default function CookingTermsAdmin() {
             <TabsContent value="details" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="difficulty">Difficulty Level</Label>
-                <Select 
-                  value={formData.difficulty || "beginner"} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}
+                <Select
+                  value={formData.difficulty || "beginner"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, difficulty: value }))
+                  }
                 >
-                  <SelectTrigger id="difficulty" data-testid="select-difficulty">
+                  <SelectTrigger
+                    id="difficulty"
+                    data-testid="select-difficulty"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -440,7 +538,12 @@ export default function CookingTermsAdmin() {
                 <Input
                   id="timeEstimate"
                   value={formData.timeEstimate || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timeEstimate: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      timeEstimate: e.target.value,
+                    }))
+                  }
                   placeholder="e.g., 2-3 minutes"
                   data-testid="input-time-estimate"
                 />
@@ -473,11 +576,15 @@ export default function CookingTermsAdmin() {
 
             <TabsContent value="additional" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="relatedTerms">Related Terms (comma-separated)</Label>
+                <Label htmlFor="relatedTerms">
+                  Related Terms (comma-separated)
+                </Label>
                 <Textarea
                   id="relatedTerms"
                   value={formData.relatedTerms?.join(", ") || ""}
-                  onChange={(e) => handleArrayInput("relatedTerms", e.target.value)}
+                  onChange={(e) =>
+                    handleArrayInput("relatedTerms", e.target.value)
+                  }
                   placeholder="e.g., dice, mince, chop"
                   rows={2}
                   data-testid="textarea-related-terms"
@@ -502,11 +609,14 @@ export default function CookingTermsAdmin() {
           </Tabs>
 
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => {
-              setIsAddDialogOpen(false);
-              setEditingTerm(null);
-              resetForm();
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddDialogOpen(false);
+                setEditingTerm(null);
+                resetForm();
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleSubmit} data-testid="button-submit-term">

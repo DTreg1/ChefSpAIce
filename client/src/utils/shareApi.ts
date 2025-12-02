@@ -1,5 +1,5 @@
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
+import { Share } from "@capacitor/share";
+import { Capacitor } from "@capacitor/core";
 
 export interface ShareOptions {
   title?: string;
@@ -13,9 +13,9 @@ class ShareService {
     if (Capacitor.isNativePlatform()) {
       return true;
     }
-    
+
     // Check if Web Share API is available
-    return 'share' in navigator;
+    return "share" in navigator;
   }
 
   async shareRecipe(recipe: {
@@ -25,30 +25,30 @@ class ShareService {
     url?: string;
   }): Promise<void> {
     const text = this.formatRecipeText(recipe);
-    
+
     await this.share({
       title: `Recipe: ${recipe.title}`,
       text,
       url: recipe.url || window.location.href,
-      dialogTitle: 'Share this recipe'
+      dialogTitle: "Share this recipe",
     });
   }
 
   async shareShoppingList(items: string[]): Promise<void> {
     const text = this.formatShoppingListText(items);
-    
+
     await this.share({
-      title: 'My Shopping List',
+      title: "My Shopping List",
       text,
-      dialogTitle: 'Share shopping list'
+      dialogTitle: "Share shopping list",
     });
   }
 
   async shareText(text: string, title?: string): Promise<void> {
     await this.share({
-      title: title || 'Share from ChefSpAIce',
+      title: title || "Share from ChefSpAIce",
       text,
-      dialogTitle: 'Share'
+      dialogTitle: "Share",
     });
   }
 
@@ -60,23 +60,26 @@ class ShareService {
           title: options.title,
           text: options.text,
           url: options.url,
-          dialogTitle: options.dialogTitle
+          dialogTitle: options.dialogTitle,
         });
-      } else if ('share' in navigator) {
+      } else if ("share" in navigator) {
         // Use Web Share API on web
         await navigator.share({
           title: options.title,
           text: options.text,
-          url: options.url
+          url: options.url,
         });
       } else {
         // Fallback: copy to clipboard
-        await this.fallbackToClipboard(options.text || '');
+        await this.fallbackToClipboard(options.text || "");
       }
     } catch (error: Error | unknown) {
       // User cancelled or error occurred
-      if ((error instanceof Error ? error.message : String(error)) !== 'Share canceled') {
-        console.error('Error sharing:', String(error));
+      if (
+        (error instanceof Error ? error.message : String(error)) !==
+        "Share canceled"
+      ) {
+        console.error("Error sharing:", String(error));
         throw error;
       }
     }
@@ -88,8 +91,8 @@ class ShareService {
       // console.log('Content copied to clipboard');
       // You might want to show a toast notification here
     } catch (error) {
-      console.error('Failed to copy to clipboard:', String(error));
-      throw new Error('Sharing not supported on this device');
+      console.error("Failed to copy to clipboard:", String(error));
+      throw new Error("Sharing not supported on this device");
     }
   }
 
@@ -99,31 +102,31 @@ class ShareService {
     instructions: string[];
   }): string {
     let text = `🍳 ${recipe.title}\n\n`;
-    
-    text += '📝 Ingredients:\n';
+
+    text += "📝 Ingredients:\n";
     recipe.ingredients.forEach((ing, i) => {
       text += `${i + 1}. ${ing}\n`;
     });
-    
-    text += '\n👨‍🍳 Instructions:\n';
+
+    text += "\n👨‍🍳 Instructions:\n";
     recipe.instructions.forEach((inst, i) => {
       text += `${i + 1}. ${inst}\n`;
     });
-    
-    text += '\n✨ Shared from ChefSpAIce - Your Smart Kitchen Assistant';
-    
+
+    text += "\n✨ Shared from ChefSpAIce - Your Smart Kitchen Assistant";
+
     return text;
   }
 
   private formatShoppingListText(items: string[]): string {
-    let text = '🛒 Shopping List\n\n';
-    
+    let text = "🛒 Shopping List\n\n";
+
     items.forEach((item, _i) => {
       text += `☐ ${item}\n`;
     });
-    
-    text += '\n✨ Shared from ChefSpAIce';
-    
+
+    text += "\n✨ Shared from ChefSpAIce";
+
     return text;
   }
 }

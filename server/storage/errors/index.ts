@@ -1,8 +1,8 @@
 /**
  * Storage Errors Module
- * 
+ *
  * Re-exports all storage error classes and utilities for convenient importing.
- * 
+ *
  * @example
  * import {
  *   StorageError,
@@ -14,7 +14,7 @@
  *   wrapDatabaseError,
  *   isStorageError,
  * } from '../errors';
- * 
+ *
  * @module server/storage/errors
  */
 
@@ -29,4 +29,4 @@ export {
   isStorageError,
   type StorageErrorContext,
   type ConstraintType,
-} from './StorageError';
+} from "./StorageError";

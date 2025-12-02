@@ -22,13 +22,17 @@ interface NaturalQueryInputProps {
   onQueryConverted?: (result: QueryConversionResult) => void;
 }
 
-export function NaturalQueryInput({ onQueryConverted }: NaturalQueryInputProps) {
+export function NaturalQueryInput({
+  onQueryConverted,
+}: NaturalQueryInputProps) {
   const [query, setQuery] = useState("");
   const { toast } = useToast();
 
   const convertMutation = useMutation({
     mutationFn: async (naturalQuery: string) => {
-      const response = await apiRequest("/api/query/natural", "POST", { naturalQuery });
+      const response = await apiRequest("/api/query/natural", "POST", {
+        naturalQuery,
+      });
       return response;
     },
     onSuccess: (data: QueryConversionResult) => {
@@ -42,7 +46,8 @@ export function NaturalQueryInput({ onQueryConverted }: NaturalQueryInputProps) 
     onError: (error) => {
       toast({
         title: "Conversion failed",
-        description: error instanceof Error ? error.message : "Failed to convert query",
+        description:
+          error instanceof Error ? error.message : "Failed to convert query",
         variant: "destructive",
       });
     },
@@ -108,8 +113,8 @@ export function NaturalQueryInput({ onQueryConverted }: NaturalQueryInputProps) 
               ))}
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!query.trim() || convertMutation.isPending}
               data-testid="button-convert-query"
             >
@@ -129,7 +134,9 @@ export function NaturalQueryInput({ onQueryConverted }: NaturalQueryInputProps) 
         </form>
 
         <div className="pt-2">
-          <p className="text-sm text-muted-foreground mb-2">Try these examples:</p>
+          <p className="text-sm text-muted-foreground mb-2">
+            Try these examples:
+          </p>
           <div className="flex flex-wrap gap-2">
             {exampleQueries.map((example, index) => (
               <Badge

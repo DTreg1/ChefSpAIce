@@ -1,48 +1,66 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import {
   FileSearch,
   Wand2,
   Users,
   CheckSquare,
   Upload,
   Settings,
-  Sparkles
-} from 'lucide-react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { TemplateBuilder } from '@/components/extraction/template-builder';
-import { ExtractionPreview } from '@/components/extraction/extraction-preview';
-import { BatchProcessor } from '@/components/extraction/batch-processor';
-import { DataValidator } from '@/components/extraction/data-validator';
+  Sparkles,
+} from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { TemplateBuilder } from "@/components/extraction/template-builder";
+import { ExtractionPreview } from "@/components/extraction/extraction-preview";
+import { BatchProcessor } from "@/components/extraction/batch-processor";
+import { DataValidator } from "@/components/extraction/data-validator";
 
 export default function ExtractionPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('extract');
-  const [inputText, setInputText] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [activeTab, setActiveTab] = useState("extract");
+  const [inputText, setInputText] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [latestExtraction, setLatestExtraction] = useState<any>(null);
 
   // Fetch templates
-  const { data: templatesData, isLoading: templatesLoading } = useQuery<{ templates: any[] }>({
-    queryKey: ['/api/extract/templates']
+  const { data: templatesData, isLoading: templatesLoading } = useQuery<{
+    templates: any[];
+  }>({
+    queryKey: ["/api/extract/templates"],
   });
 
   // Single extraction mutation
   const extractMutation = useMutation({
-    mutationFn: async (data: { text: string, templateId?: string, customSchema?: any }) => {
-      return apiRequest('/api/extract/data', 'POST', {
+    mutationFn: async (data: {
+      text: string;
+      templateId?: string;
+      customSchema?: any;
+    }) => {
+      return apiRequest("/api/extract/data", "POST", {
         text: data.text,
         templateId: data.templateId,
         customSchema: data.customSchema,
-        sourceType: 'email'
+        sourceType: "email",
       });
     },
     onSuccess: (data) => {
@@ -51,44 +69,45 @@ export default function ExtractionPage() {
         title: "Extraction Complete",
         description: `Successfully extracted data with ${(data.extraction.confidence * 100).toFixed(1)}% confidence`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/extract/history'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/extract/stats'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/extract/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/extract/stats"] });
     },
     onError: (error: any) => {
       toast({
         title: "Extraction Failed",
         description: error.message || "Failed to extract data from text",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Save template mutation
   const saveTemplateMutation = useMutation({
     mutationFn: async (template: any) => {
-      return apiRequest('/api/extract/template', 'POST', template);
+      return apiRequest("/api/extract/template", "POST", template);
     },
     onSuccess: (data) => {
       toast({
         title: "Template Saved",
         description: `Template "${data.template.name}" has been saved successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/extract/templates'] });
-      setActiveTab('extract');
+      queryClient.invalidateQueries({ queryKey: ["/api/extract/templates"] });
+      setActiveTab("extract");
     },
     onError: (error: any) => {
       toast({
         title: "Failed to Save Template",
-        description: error.message || "An error occurred while saving the template",
-        variant: "destructive"
+        description:
+          error.message || "An error occurred while saving the template",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Validate extraction
   const handleValidate = () => {
     if (!latestExtraction) return;
-    
+
     toast({
       title: "Extraction Validated",
       description: "The extraction has been marked as validated",
@@ -99,9 +118,9 @@ export default function ExtractionPage() {
   // Correct extraction
   const handleCorrect = () => {
     if (!latestExtraction) return;
-    
+
     // Navigate to validator tab
-    setActiveTab('validate');
+    setActiveTab("validate");
   };
 
   // Extract text
@@ -110,7 +129,7 @@ export default function ExtractionPage() {
       toast({
         title: "No Text Provided",
         description: "Please enter some text to extract data from",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -123,49 +142,50 @@ export default function ExtractionPage() {
             name: "customerName",
             type: "string",
             description: "The full name of the customer",
-            required: true
+            required: true,
           },
           {
             name: "items",
             type: "array",
             description: "List of ordered items with name and quantity",
-            required: true
+            required: true,
           },
           {
             name: "quantities",
             type: "array",
             description: "Quantities for each item ordered",
-            required: true
+            required: true,
           },
           {
             name: "deliveryAddress",
             type: "string",
-            description: "Complete delivery address including street, city, state, and zip",
-            required: true
+            description:
+              "Complete delivery address including street, city, state, and zip",
+            required: true,
           },
           {
             name: "orderTotal",
             type: "number",
             description: "Total order amount in dollars",
-            required: false
+            required: false,
           },
           {
             name: "orderDate",
             type: "date",
             description: "Date when the order was placed",
-            required: false
-          }
-        ]
+            required: false,
+          },
+        ],
       };
 
       extractMutation.mutate({
         text: inputText,
-        customSchema: orderSchema
+        customSchema: orderSchema,
       });
     } else {
       extractMutation.mutate({
         text: inputText,
-        templateId: selectedTemplateId
+        templateId: selectedTemplateId,
       });
     }
   };
@@ -182,13 +202,14 @@ export default function ExtractionPage() {
             Data Extraction System
           </h1>
           <p className="text-muted-foreground mt-1">
-            Extract structured data from unstructured text with 95% accuracy using AI
+            Extract structured data from unstructured text with 95% accuracy
+            using AI
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setActiveTab('templates')}
+          onClick={() => setActiveTab("templates")}
           data-testid="button-manage-templates"
         >
           <Settings className="w-4 h-4 mr-1" />
@@ -201,8 +222,9 @@ export default function ExtractionPage() {
         <Sparkles className="h-4 w-4" />
         <AlertTitle>Powered by OpenAI GPT-3.5</AlertTitle>
         <AlertDescription>
-          This system uses Replit AI Integrations to extract structured data from emails, documents, and messages.
-          No API key required - usage is billed to your Replit credits.
+          This system uses Replit AI Integrations to extract structured data
+          from emails, documents, and messages. No API key required - usage is
+          billed to your Replit credits.
         </AlertDescription>
       </Alert>
 
@@ -243,14 +265,18 @@ export default function ExtractionPage() {
                   <Label>Template (Optional)</Label>
                   <Select
                     value={selectedTemplateId || "default"}
-                    onValueChange={(val) => setSelectedTemplateId(val === "default" ? "" : val)}
+                    onValueChange={(val) =>
+                      setSelectedTemplateId(val === "default" ? "" : val)
+                    }
                     disabled={templatesLoading}
                   >
                     <SelectTrigger data-testid="select-template">
                       <SelectValue placeholder="Use default order extraction" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Default Order Extraction</SelectItem>
+                      <SelectItem value="default">
+                        Default Order Extraction
+                      </SelectItem>
                       {templates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name}
@@ -259,7 +285,7 @@ export default function ExtractionPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Text to Extract From</Label>
                   <Textarea
@@ -273,7 +299,7 @@ Hi, this is John Smith. I'd like to order 3 pizzas and 2 sodas for delivery to 1
                     data-testid="textarea-input"
                   />
                 </div>
-                
+
                 <Button
                   onClick={handleExtract}
                   disabled={!inputText.trim() || extractMutation.isPending}
@@ -327,7 +353,7 @@ Hi, this is John Smith. I'd like to order 3 pizzas and 2 sodas for delivery to 1
 
         {/* Batch Process Tab */}
         <TabsContent value="batch">
-          <BatchProcessor 
+          <BatchProcessor
             templates={templates}
             onComplete={(results) => {
               toast({

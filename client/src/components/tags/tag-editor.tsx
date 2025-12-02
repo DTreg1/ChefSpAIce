@@ -1,6 +1,6 @@
 /**
  * TagEditor Component
- * 
+ *
  * Comprehensive tag management interface for content.
  * Features:
  * - View existing tags with relevance scores
@@ -11,12 +11,32 @@
  */
 
 import { useState } from "react";
-import { Tag as TagIcon, Plus, Trash2, Sparkles, Link, Loader2 } from "lucide-react";
+import {
+  Tag as TagIcon,
+  Plus,
+  Trash2,
+  Sparkles,
+  Link,
+  Loader2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -50,15 +70,18 @@ export function TagEditor({
   className,
 }: TagEditorProps) {
   const { toast } = useToast();
-  const [selectedTags, setSelectedTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedTags, setSelectedTags] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [generatedSuggestions, setGeneratedSuggestions] = useState<any[]>([]);
 
   // Fetch existing tags
-  const { data: existingTags = { tags: [] }, isLoading: tagsLoading } = useQuery<ContentTagsResponse>({
-    queryKey: [API_ENDPOINTS.ml.content.tags(contentId), contentType],
-    staleTime: 1000 * 60, // Cache for 1 minute
-  });
+  const { data: existingTags = { tags: [] }, isLoading: tagsLoading } =
+    useQuery<ContentTagsResponse>({
+      queryKey: [API_ENDPOINTS.ml.content.tags(contentId), contentType],
+      staleTime: 1000 * 60, // Cache for 1 minute
+    });
 
   // Generate tags mutation
   const generateTagsMutation = useMutation({
@@ -90,19 +113,21 @@ export function TagEditor({
   // Add tags mutation
   const addTagsMutation = useMutation({
     mutationFn: async (tags: Array<{ id: string; name: string }>) => {
-      const promises = tags.map(tag => 
+      const promises = tags.map((tag) =>
         apiRequest(API_ENDPOINTS.ml.tags.assign, "POST", {
           contentId,
           contentType,
           tagId: tag.id,
           relevanceScore: 1.0,
           isManual: true,
-        })
+        }),
       );
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ml.content.tags(contentId)],
+      });
       setSelectedTags([]);
       toast({
         title: "Tags added",
@@ -121,10 +146,15 @@ export function TagEditor({
   // Remove tag mutation
   const removeTagMutation = useMutation({
     mutationFn: async (tagId: string) => {
-      return apiRequest(API_ENDPOINTS.ml.content.removeTag(contentId, tagId), "DELETE");
+      return apiRequest(
+        API_ENDPOINTS.ml.content.removeTag(contentId, tagId),
+        "DELETE",
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ml.content.tags(contentId)],
+      });
       toast({
         title: "Tag removed",
         description: "Tag has been successfully removed.",
@@ -142,7 +172,10 @@ export function TagEditor({
   // Get related tags for a specific tag
   const getRelatedTags = async (tagId: string) => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.ml.tags.related(tagId), "GET");
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.tags.related(tagId),
+        "GET",
+      );
       return response.tags;
     } catch (error) {
       console.error("Error fetching related tags:", error);
@@ -157,11 +190,11 @@ export function TagEditor({
   };
 
   const handleTagCloudClick = (tag: any) => {
-    const exists = selectedTags.some(t => t.id === tag.id);
+    const exists = selectedTags.some((t) => t.id === tag.id);
     if (exists) {
-      setSelectedTags(prev => prev.filter(t => t.id !== tag.id));
+      setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id));
     } else {
-      setSelectedTags(prev => [...prev, { id: tag.id, name: tag.name }]);
+      setSelectedTags((prev) => [...prev, { id: tag.id, name: tag.name }]);
     }
   };
 
@@ -179,7 +212,7 @@ export function TagEditor({
             AI Suggestions
           </TabsTrigger>
         </TabsList>
-        
+
         {/* Current Tags Tab */}
         <TabsContent value="current" className="space-y-4">
           <Card>
@@ -207,17 +240,18 @@ export function TagEditor({
                           <TagIcon className="mr-1 h-3 w-3" />
                           {tagItem.tag.name}
                         </Badge>
-                        
+
                         <span className="text-sm text-muted-foreground">
-                          Relevance: {Math.round((tagItem.relevanceScore || 0) * 100)}%
+                          Relevance:{" "}
+                          {Math.round((tagItem.relevanceScore || 0) * 100)}%
                         </span>
-                        
+
                         {tagItem.isManual && (
                           <Badge variant="outline" className="text-xs">
                             Manual
                           </Badge>
                         )}
-                        
+
                         {/* Related Tags Dialog */}
                         <Dialog>
                           <DialogTrigger asChild>
@@ -232,7 +266,9 @@ export function TagEditor({
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Related to "{tagItem.tag.name}"</DialogTitle>
+                              <DialogTitle>
+                                Related to "{tagItem.tag.name}"
+                              </DialogTitle>
                               <DialogDescription>
                                 Tags commonly used together
                               </DialogDescription>
@@ -241,7 +277,7 @@ export function TagEditor({
                           </DialogContent>
                         </Dialog>
                       </div>
-                      
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -262,7 +298,7 @@ export function TagEditor({
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Add Tags Tab */}
         <TabsContent value="add" className="space-y-4">
           <Card>
@@ -279,13 +315,13 @@ export function TagEditor({
                 placeholder="Search or create tags..."
                 maxTags={10}
               />
-              
+
               <TagCloud
                 onTagClick={handleTagCloudClick}
-                selectedTags={selectedTags.map(t => t.id)}
+                selectedTags={selectedTags.map((t) => t.id)}
                 limit={15}
               />
-              
+
               {selectedTags.length > 0 && (
                 <Button
                   onClick={handleAddTags}
@@ -301,7 +337,8 @@ export function TagEditor({
                   ) : (
                     <>
                       <Plus className="mr-2 h-4 w-4" />
-                      Add {selectedTags.length} Tag{selectedTags.length > 1 ? 's' : ''}
+                      Add {selectedTags.length} Tag
+                      {selectedTags.length > 1 ? "s" : ""}
                     </>
                   )}
                 </Button>
@@ -309,7 +346,7 @@ export function TagEditor({
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* AI Suggestions Tab */}
         <TabsContent value="suggestions" className="space-y-4">
           {!showSuggestions ? (
@@ -352,7 +389,9 @@ export function TagEditor({
               contentType={contentType}
               suggestions={generatedSuggestions}
               onUpdate={() => {
-                queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
+                queryClient.invalidateQueries({
+                  queryKey: [API_ENDPOINTS.ml.content.tags(contentId)],
+                });
                 setShowSuggestions(false);
                 setGeneratedSuggestions([]);
               }}
@@ -366,10 +405,11 @@ export function TagEditor({
 
 // Component for displaying related tags
 function RelatedTagsList({ tagId }: { tagId: string }) {
-  const { data: relatedTags = { tags: [] }, isLoading } = useQuery<ContentTagsResponse>({
-    queryKey: [API_ENDPOINTS.ml.tags.related(tagId)],
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
+  const { data: relatedTags = { tags: [] }, isLoading } =
+    useQuery<ContentTagsResponse>({
+      queryKey: [API_ENDPOINTS.ml.tags.related(tagId)],
+      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    });
 
   if (isLoading) {
     return (

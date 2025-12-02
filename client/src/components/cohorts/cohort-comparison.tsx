@@ -1,11 +1,47 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Activity, Users, Eye, MousePointer, AlertCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Users,
+  Eye,
+  MousePointer,
+  AlertCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { Cohort } from "@shared/schema";
@@ -26,37 +62,45 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "retention_day_7",
     "retention_day_30",
-    "engagement_score"
+    "engagement_score",
   ]);
-  
+
   const comparisonQuery = useQuery({
-    queryKey: [API_ENDPOINTS.admin.cohorts.list, 'compare', cohorts.map(c => c.id), selectedMetrics],
+    queryKey: [
+      API_ENDPOINTS.admin.cohorts.list,
+      "compare",
+      cohorts.map((c) => c.id),
+      selectedMetrics,
+    ],
     queryFn: async () => {
       if (cohorts.length < 2) return null;
-      
-      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.list}/compare`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cohortIds: cohorts.map(c => c.id),
-          metrics: selectedMetrics,
-        }),
-      });
-      
+
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.cohorts.list}/compare`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cohortIds: cohorts.map((c) => c.id),
+            metrics: selectedMetrics,
+          }),
+        },
+      );
+
       if (!response.ok) throw new Error("Failed to compare cohorts");
-      
+
       const data = await response.json();
       return data.comparison;
     },
     enabled: cohorts.length >= 2 && selectedMetrics.length > 0,
   });
-  
+
   const getMetricIcon = (metricKey: string) => {
-    const metric = METRICS.find(m => m.key === metricKey);
+    const metric = METRICS.find((m) => m.key === metricKey);
     const Icon = metric?.icon || Activity;
     return <Icon className="h-4 w-4" />;
   };
-  
+
   const formatMetricValue = (value: number, metricKey: string) => {
     if (metricKey.includes("retention") || metricKey.includes("rate")) {
       return `${value.toFixed(1)}%`;
@@ -66,7 +110,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
     }
     return value.toFixed(2);
   };
-  
+
   if (cohorts.length < 2) {
     return (
       <Card>
@@ -79,7 +123,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
       </Card>
     );
   }
-  
+
   if (comparisonQuery.isLoading) {
     return (
       <Card>
@@ -95,7 +139,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
       </Card>
     );
   }
-  
+
   if (comparisonQuery.error) {
     return (
       <Card>
@@ -113,45 +157,54 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
       </Card>
     );
   }
-  
+
   const comparisonData = comparisonQuery.data || [];
-  
+
   // Prepare data for charts
-  const barChartData = selectedMetrics.map(metric => ({
-    metric: METRICS.find(m => m.key === metric)?.label || metric,
+  const barChartData = selectedMetrics.map((metric) => ({
+    metric: METRICS.find((m) => m.key === metric)?.label || metric,
     ...cohorts.reduce((acc: any, cohort, index: number) => {
-      const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
+      const cohortData = comparisonData.find(
+        (d: any) => d.cohortId === cohort.id,
+      );
       return {
         ...acc,
         [cohort.cohortName]: cohortData?.metrics[metric] || 0,
       };
     }, {}),
   }));
-  
+
   const lineChartData = cohorts.map((cohort, index: number) => {
-    const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
+    const cohortData = comparisonData.find(
+      (d: any) => d.cohortId === cohort.id,
+    );
     return {
       name: cohort.cohortName,
-      ...selectedMetrics.reduce((acc, metric) => ({
-        ...acc,
-        [metric]: cohortData?.metrics[metric] || 0,
-      }), {}),
+      ...selectedMetrics.reduce(
+        (acc, metric) => ({
+          ...acc,
+          [metric]: cohortData?.metrics[metric] || 0,
+        }),
+        {},
+      ),
     };
   });
-  
-  const radarChartData = selectedMetrics.map(metric => ({
-    metric: METRICS.find(m => m.key === metric)?.label || metric,
+
+  const radarChartData = selectedMetrics.map((metric) => ({
+    metric: METRICS.find((m) => m.key === metric)?.label || metric,
     ...cohorts.reduce((acc: any, cohort) => {
-      const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
+      const cohortData = comparisonData.find(
+        (d: any) => d.cohortId === cohort.id,
+      );
       return {
         ...acc,
         [cohort.cohortName]: cohortData?.metrics[metric] || 0,
       };
     }, {}),
   }));
-  
+
   const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
-  
+
   return (
     <Card>
       <CardHeader>
@@ -172,7 +225,9 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
                 className="cursor-pointer"
                 onClick={() => {
                   if (isSelected) {
-                    setSelectedMetrics(selectedMetrics.filter(m => m !== metric.key));
+                    setSelectedMetrics(
+                      selectedMetrics.filter((m) => m !== metric.key),
+                    );
                   } else {
                     setSelectedMetrics([...selectedMetrics, metric.key]);
                   }
@@ -185,27 +240,37 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
             );
           })}
         </div>
-        
+
         {/* Charts */}
         <Tabs defaultValue="bar" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="bar" data-testid="tab-bar">Bar Chart</TabsTrigger>
-            <TabsTrigger value="line" data-testid="tab-line">Line Chart</TabsTrigger>
-            <TabsTrigger value="radar" data-testid="tab-radar">Radar Chart</TabsTrigger>
+            <TabsTrigger value="bar" data-testid="tab-bar">
+              Bar Chart
+            </TabsTrigger>
+            <TabsTrigger value="line" data-testid="tab-line">
+              Line Chart
+            </TabsTrigger>
+            <TabsTrigger value="radar" data-testid="tab-radar">
+              Radar Chart
+            </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="bar" className="space-y-4">
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={barChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="metric" />
                 <YAxis />
-                <Tooltip formatter={(value: number, name: string) => {
-                  const metricKey = selectedMetrics.find(m => 
-                    METRICS.find(metric => metric.label === name)?.key === m
-                  );
-                  return formatMetricValue(value, metricKey || "");
-                }} />
+                <Tooltip
+                  formatter={(value: number, name: string) => {
+                    const metricKey = selectedMetrics.find(
+                      (m) =>
+                        METRICS.find((metric) => metric.label === name)?.key ===
+                        m,
+                    );
+                    return formatMetricValue(value, metricKey || "");
+                  }}
+                />
                 <Legend />
                 {cohorts.map((cohort, index) => (
                   <Bar
@@ -217,23 +282,27 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
               </BarChart>
             </ResponsiveContainer>
           </TabsContent>
-          
+
           <TabsContent value="line" className="space-y-4">
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={lineChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value: number, name: string) => 
-                  formatMetricValue(value, name)
-                } />
+                <Tooltip
+                  formatter={(value: number, name: string) =>
+                    formatMetricValue(value, name)
+                  }
+                />
                 <Legend />
                 {selectedMetrics.map((metric, index) => (
                   <Line
                     key={metric}
                     type="monotone"
                     dataKey={metric}
-                    name={METRICS.find(m => m.key === metric)?.label || metric}
+                    name={
+                      METRICS.find((m) => m.key === metric)?.label || metric
+                    }
                     stroke={COLORS[index % COLORS.length]}
                     strokeWidth={2}
                   />
@@ -241,7 +310,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
               </LineChart>
             </ResponsiveContainer>
           </TabsContent>
-          
+
           <TabsContent value="radar" className="space-y-4">
             <ResponsiveContainer width="100%" height={400}>
               <RadarChart data={radarChartData}>
@@ -264,25 +333,31 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
             </ResponsiveContainer>
           </TabsContent>
         </Tabs>
-        
+
         {/* Summary Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {cohorts.map((cohort, index) => {
-            const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
+            const cohortData = comparisonData.find(
+              (d: any) => d.cohortId === cohort.id,
+            );
             const metrics = cohortData?.metrics || {};
-            
+
             // Calculate average performance
-            const avgPerformance = selectedMetrics.length > 0
-              ? selectedMetrics.reduce((sum, metric) => sum + (metrics[metric] || 0), 0) / selectedMetrics.length
-              : 0;
-            
+            const avgPerformance =
+              selectedMetrics.length > 0
+                ? selectedMetrics.reduce(
+                    (sum, metric) => sum + (metrics[metric] || 0),
+                    0,
+                  ) / selectedMetrics.length
+                : 0;
+
             // Find best performing metric
             const bestMetric = selectedMetrics.reduce((best, metric) => {
               const value = metrics[metric] || 0;
               const bestValue = metrics[best] || 0;
               return value > bestValue ? metric : best;
             }, selectedMetrics[0]);
-            
+
             return (
               <Card key={cohort.id} data-testid={`card-cohort-${cohort.id}`}>
                 <CardHeader className="pb-3">
@@ -293,20 +368,31 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Users</span>
+                      <span className="text-xs text-muted-foreground">
+                        Users
+                      </span>
                       <Badge variant="secondary">{cohort.userCount}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Avg Performance</span>
-                      <span className="text-sm font-medium">{avgPerformance.toFixed(1)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Avg Performance
+                      </span>
+                      <span className="text-sm font-medium">
+                        {avgPerformance.toFixed(1)}
+                      </span>
                     </div>
                     {bestMetric && (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Best Metric</span>
+                        <span className="text-xs text-muted-foreground">
+                          Best Metric
+                        </span>
                         <div className="flex items-center gap-1">
                           {getMetricIcon(bestMetric)}
                           <span className="text-sm font-medium">
-                            {formatMetricValue(metrics[bestMetric] || 0, bestMetric)}
+                            {formatMetricValue(
+                              metrics[bestMetric] || 0,
+                              bestMetric,
+                            )}
                           </span>
                         </div>
                       </div>

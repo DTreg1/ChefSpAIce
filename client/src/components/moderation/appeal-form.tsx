@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,26 +26,27 @@ interface AppealFormProps {
 }
 
 const appealTypes = [
-  { 
-    value: "false_positive", 
-    label: "False Positive", 
-    description: "The content was incorrectly flagged and contains no violations" 
+  {
+    value: "false_positive",
+    label: "False Positive",
+    description:
+      "The content was incorrectly flagged and contains no violations",
   },
-  { 
-    value: "context_needed", 
-    label: "Context Needed", 
-    description: "The content needs context to be properly understood" 
+  {
+    value: "context_needed",
+    label: "Context Needed",
+    description: "The content needs context to be properly understood",
   },
-  { 
-    value: "technical_error", 
-    label: "Technical Error", 
-    description: "There was a technical issue with the moderation" 
+  {
+    value: "technical_error",
+    label: "Technical Error",
+    description: "There was a technical issue with the moderation",
   },
-  { 
-    value: "other", 
-    label: "Other", 
-    description: "Another reason not listed above" 
-  }
+  {
+    value: "other",
+    label: "Other",
+    description: "Another reason not listed above",
+  },
 ];
 
 export function AppealForm({
@@ -53,7 +54,7 @@ export function AppealForm({
   onClose,
   blockedContentId,
   contentPreview,
-  violationCategories = []
+  violationCategories = [],
 }: AppealFormProps) {
   const [appealType, setAppealType] = useState("false_positive");
   const [appealReason, setAppealReason] = useState("");
@@ -66,17 +67,18 @@ export function AppealForm({
         throw new Error("Please provide a reason for your appeal");
       }
 
-      const response = await apiRequest('/api/moderate/appeal', 'POST', {
+      const response = await apiRequest("/api/moderate/appeal", "POST", {
         blockedContentId,
         reason: appealReason,
-        additionalContext: `Type: ${appealType}\n${additionalContext}`.trim()
+        additionalContext: `Type: ${appealType}\n${additionalContext}`.trim(),
       });
       return response;
     },
     onSuccess: (data) => {
       toast({
         title: "Appeal Submitted",
-        description: "Your appeal has been submitted and will be reviewed soon."
+        description:
+          "Your appeal has been submitted and will be reviewed soon.",
       });
       onClose();
       // Reset form
@@ -87,10 +89,11 @@ export function AppealForm({
     onError: (error) => {
       toast({
         title: "Failed to Submit Appeal",
-        description: error instanceof Error ? error.message : "Please try again later.",
-        variant: "destructive"
+        description:
+          error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleSubmit = () => {
@@ -103,8 +106,8 @@ export function AppealForm({
         <DialogHeader>
           <DialogTitle>Appeal Moderation Decision</DialogTitle>
           <DialogDescription>
-            Submit an appeal if you believe your content was incorrectly moderated.
-            Our team will review your appeal within 24-48 hours.
+            Submit an appeal if you believe your content was incorrectly
+            moderated. Our team will review your appeal within 24-48 hours.
           </DialogDescription>
         </DialogHeader>
 
@@ -137,20 +140,23 @@ export function AppealForm({
           {/* Appeal Type */}
           <div className="space-y-2">
             <Label>Appeal Type</Label>
-            <RadioGroup 
-              value={appealType} 
+            <RadioGroup
+              value={appealType}
               onValueChange={setAppealType}
               data-testid="radio-appeal-type"
             >
               {appealTypes.map((type) => (
                 <div key={type.value} className="flex items-start space-x-2">
-                  <RadioGroupItem 
-                    value={type.value} 
+                  <RadioGroupItem
+                    value={type.value}
                     id={type.value}
                     className="mt-1"
                   />
                   <div className="space-y-1">
-                    <Label htmlFor={type.value} className="font-normal cursor-pointer">
+                    <Label
+                      htmlFor={type.value}
+                      className="font-normal cursor-pointer"
+                    >
                       {type.label}
                     </Label>
                     <p className="text-xs text-muted-foreground">
@@ -207,7 +213,9 @@ export function AppealForm({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={submitAppealMutation.isPending || appealReason.length < 10}
+            disabled={
+              submitAppealMutation.isPending || appealReason.length < 10
+            }
             data-testid="button-submit-appeal"
           >
             {submitAppealMutation.isPending ? (

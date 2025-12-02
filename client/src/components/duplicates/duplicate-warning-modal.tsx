@@ -1,7 +1,20 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -21,7 +34,7 @@ interface DuplicateWarningModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   duplicates: DuplicateItem[];
-  contentType: 'recipe' | 'chat' | 'inventory';
+  contentType: "recipe" | "chat" | "inventory";
   onProceed: () => void;
   onEdit: () => void;
   onMerge?: (targetId: string) => void;
@@ -34,24 +47,26 @@ export function DuplicateWarningModal({
   contentType,
   onProceed,
   onEdit,
-  onMerge
+  onMerge,
 }: DuplicateWarningModalProps) {
-  const [selectedMergeTarget, setSelectedMergeTarget] = useState<string | null>(null);
+  const [selectedMergeTarget, setSelectedMergeTarget] = useState<string | null>(
+    null,
+  );
 
   const getContentTypeName = () => {
     switch (contentType) {
-      case 'recipe':
-        return 'recipe';
-      case 'chat':
-        return 'message';
-      case 'inventory':
-        return 'item';
+      case "recipe":
+        return "recipe";
+      case "chat":
+        return "message";
+      case "inventory":
+        return "item";
       default:
-        return 'content';
+        return "content";
     }
   };
 
-  const highestSimilarity = Math.max(...duplicates.map(d => d.similarity));
+  const highestSimilarity = Math.max(...duplicates.map((d) => d.similarity));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -62,7 +77,10 @@ export function DuplicateWarningModal({
             Duplicate Content Detected
           </DialogTitle>
           <DialogDescription>
-            We found {duplicates.length} existing {getContentTypeName()}{duplicates.length > 1 ? 's' : ''} that {duplicates.length > 1 ? 'are' : 'is'} very similar to what you're trying to submit.
+            We found {duplicates.length} existing {getContentTypeName()}
+            {duplicates.length > 1 ? "s" : ""} that{" "}
+            {duplicates.length > 1 ? "are" : "is"} very similar to what you're
+            trying to submit.
           </DialogDescription>
         </DialogHeader>
 
@@ -70,18 +88,22 @@ export function DuplicateWarningModal({
           <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <AlertDescription className="text-amber-800 dark:text-amber-200">
-              The highest similarity is <strong>{Math.round(highestSimilarity * 100)}%</strong> with existing content.
-              This may be a duplicate. Please review before proceeding.
+              The highest similarity is{" "}
+              <strong>{Math.round(highestSimilarity * 100)}%</strong> with
+              existing content. This may be a duplicate. Please review before
+              proceeding.
             </AlertDescription>
           </Alert>
 
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-3">
               {duplicates.map((duplicate) => (
-                <Card 
-                  key={duplicate.id} 
+                <Card
+                  key={duplicate.id}
                   className={`cursor-pointer transition-all ${
-                    selectedMergeTarget === duplicate.id ? 'ring-2 ring-primary' : ''
+                    selectedMergeTarget === duplicate.id
+                      ? "ring-2 ring-primary"
+                      : ""
                   }`}
                   onClick={() => setSelectedMergeTarget(duplicate.id)}
                   data-testid={`card-duplicate-${duplicate.id}`}
@@ -91,8 +113,14 @@ export function DuplicateWarningModal({
                       <CardTitle className="text-sm font-medium">
                         {duplicate.title || `Untitled ${getContentTypeName()}`}
                       </CardTitle>
-                      <Badge 
-                        variant={duplicate.similarity >= 0.95 ? "destructive" : duplicate.similarity >= 0.85 ? "secondary" : "outline"}
+                      <Badge
+                        variant={
+                          duplicate.similarity >= 0.95
+                            ? "destructive"
+                            : duplicate.similarity >= 0.85
+                              ? "secondary"
+                              : "outline"
+                        }
                         data-testid={`badge-similarity-${duplicate.id}`}
                       >
                         {Math.round(duplicate.similarity * 100)}% similar

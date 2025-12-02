@@ -1,6 +1,6 @@
 /**
  * ToneSelector Component
- * 
+ *
  * Interactive slider to adjust writing tone from formal to casual.
  * Provides visual feedback and descriptions for each tone level.
  */
@@ -11,7 +11,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type WritingTone = "formal" | "professional" | "casual" | "friendly" | "academic";
+export type WritingTone =
+  | "formal"
+  | "professional"
+  | "casual"
+  | "friendly"
+  | "academic";
 
 interface ToneSelectorProps {
   currentTone: WritingTone;
@@ -20,7 +25,12 @@ interface ToneSelectorProps {
   className?: string;
 }
 
-const tones: { value: WritingTone; label: string; description: string; icon: string }[] = [
+const tones: {
+  value: WritingTone;
+  label: string;
+  description: string;
+  icon: string;
+}[] = [
   {
     value: "formal",
     label: "Formal",
@@ -59,8 +69,8 @@ export function ToneSelector({
   onToneChange,
   className,
 }: ToneSelectorProps) {
-  const currentIndex = tones.findIndex(t => t.value === targetTone);
-  
+  const currentIndex = tones.findIndex((t) => t.value === targetTone);
+
   const handleSliderChange = (value: number[]) => {
     const index = Math.min(Math.max(0, value[0]), tones.length - 1);
     onToneChange(tones[index].value);
@@ -97,7 +107,9 @@ export function ToneSelector({
               key={tone.value}
               className={cn(
                 "flex flex-col items-center gap-1 cursor-pointer transition-all",
-                index === currentIndex ? "scale-110" : "opacity-60 hover:opacity-100"
+                index === currentIndex
+                  ? "scale-110"
+                  : "opacity-60 hover:opacity-100",
               )}
               onClick={() => onToneChange(tone.value)}
               data-testid={`button-tone-${tone.value}`}

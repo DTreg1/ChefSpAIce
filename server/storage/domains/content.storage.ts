@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/content.storage.ts
  * @description Content categorization, tagging, and organization storage operations
- * 
+ *
  * Domain: Content Organization & Discovery
  * Scope: Categories, tags, embeddings, duplicate detection, related content
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (ContentStorage) for dependency injection and testing
  * - Export singleton INSTANCE (contentStorage) for convenience in production code
@@ -12,8 +12,24 @@
  */
 
 import { db } from "../../db";
-import { and, eq, desc, asc, sql, gte, lte, or, ne, isNull, type SQL } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  and,
+  eq,
+  desc,
+  asc,
+  sql,
+  gte,
+  lte,
+  or,
+  ne,
+  isNull,
+  type SQL,
+} from "drizzle-orm";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { IContentStorage } from "../interfaces/IContentStorage";
 import {
   categories,
@@ -41,7 +57,7 @@ import {
 
 /**
  * Content Storage
- * 
+ *
  * Manages hierarchical categories, flexible tagging, vector embeddings,
  * duplicate detection, and related content recommendations for content organization.
  */
@@ -83,21 +99,18 @@ export class ContentStorage implements IContentStorage {
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
-    const [result] = await db
-      .insert(categories)
-      .values(category)
-      .returning();
+    const [result] = await db.insert(categories).values(category).returning();
     return result;
   }
 
   async updateCategory(
     id: number,
-    updates: Partial<Category>
+    updates: Partial<Category>,
   ): Promise<Category> {
     const [result] = await db
       .update(categories)
       .set({
-        ...(updates),
+        ...updates,
         updatedAt: new Date(),
       })
       .where(eq(categories.id, id))
@@ -115,14 +128,18 @@ export class ContentStorage implements IContentStorage {
       .select()
       .from(categories)
       .where(eq(categories.isActive, true))
-      .orderBy(asc(categories.parentId), asc(categories.sortOrder), asc(categories.name));
+      .orderBy(
+        asc(categories.parentId),
+        asc(categories.sortOrder),
+        asc(categories.name),
+      );
   }
 
   // ==================== Content Categories ====================
 
   async getContentCategories(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<ContentCategory[]> {
     return await db
       .select()
@@ -130,22 +147,19 @@ export class ContentStorage implements IContentStorage {
       .where(
         and(
           eq(contentCategories.contentId, contentId),
-          eq(contentCategories.contentType, contentType)
-        )
+          eq(contentCategories.contentType, contentType),
+        ),
       );
   }
 
   async assignContentCategory(
-    assignment: InsertContentCategory
+    assignment: InsertContentCategory,
   ): Promise<ContentCategory> {
     const [result] = await db
       .insert(contentCategories)
       .values(assignment)
       .onConflictDoUpdate({
-        target: [
-          contentCategories.contentId,
-          contentCategories.categoryId,
-        ],
+        target: [contentCategories.contentId, contentCategories.categoryId],
         set: {
           isPrimary: assignment.isPrimary,
         },
@@ -156,22 +170,22 @@ export class ContentStorage implements IContentStorage {
 
   async removeContentCategory(
     contentId: string,
-    categoryId: number
+    categoryId: number,
   ): Promise<void> {
     await db
       .delete(contentCategories)
       .where(
         and(
           eq(contentCategories.contentId, contentId),
-          eq(contentCategories.categoryId, categoryId)
-        )
+          eq(contentCategories.categoryId, categoryId),
+        ),
       );
   }
 
   async getContentByCategory(
     categoryId: number,
     contentType?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<ContentCategory[]> {
     const conditions: SQL<unknown>[] = [
       eq(contentCategories.categoryId, categoryId),
@@ -190,7 +204,7 @@ export class ContentStorage implements IContentStorage {
 
   async setPrimaryCategory(
     contentId: string,
-    categoryId: number
+    categoryId: number,
   ): Promise<ContentCategory> {
     // First, unset any existing primary category for this content
     await db
@@ -205,8 +219,8 @@ export class ContentStorage implements IContentStorage {
       .where(
         and(
           eq(contentCategories.contentId, contentId),
-          eq(contentCategories.categoryId, categoryId)
-        )
+          eq(contentCategories.categoryId, categoryId),
+        ),
       )
       .returning();
     return result;
@@ -256,18 +270,11 @@ export class ContentStorage implements IContentStorage {
   }
 
   async getAllTags(): Promise<Tag[]> {
-    return await db
-      .select()
-      .from(tags)
-      .orderBy(desc(tags.usageCount));
+    return await db.select().from(tags).orderBy(desc(tags.usageCount));
   }
 
   async getTag(id: number): Promise<Tag | undefined> {
-    const [tag] = await db
-      .select()
-      .from(tags)
-      .where(eq(tags.id, id))
-      .limit(1);
+    const [tag] = await db.select().from(tags).where(eq(tags.id, id)).limit(1);
     return tag;
   }
 
@@ -315,12 +322,12 @@ export class ContentStorage implements IContentStorage {
             ...contentWithTag.map((c) =>
               and(
                 eq(contentTags.contentId, c.contentId),
-                eq(contentTags.contentType, c.contentType)
-              )
-            )
+                eq(contentTags.contentType, c.contentType),
+              ),
+            ),
           ),
-          ne(contentTags.tagId, tagId)
-        )
+          ne(contentTags.tagId, tagId),
+        ),
       )
       .limit(limit * 2);
 
@@ -348,7 +355,9 @@ export class ContentStorage implements IContentStorage {
     } else if (increment < 0) {
       await db
         .update(tags)
-        .set({ usageCount: sql`GREATEST(0, ${tags.usageCount} + ${increment})` })
+        .set({
+          usageCount: sql`GREATEST(0, ${tags.usageCount} + ${increment})`,
+        })
         .where(eq(tags.id, tagId));
     }
   }
@@ -357,7 +366,7 @@ export class ContentStorage implements IContentStorage {
 
   async getContentTags(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<Array<ContentTag & { tag: Tag }>> {
     const results = await db
       .select({
@@ -369,8 +378,8 @@ export class ContentStorage implements IContentStorage {
       .where(
         and(
           eq(contentTags.contentId, contentId),
-          eq(contentTags.contentType, contentType)
-        )
+          eq(contentTags.contentType, contentType),
+        ),
       );
 
     return results.map((r) => ({
@@ -397,7 +406,7 @@ export class ContentStorage implements IContentStorage {
     await db
       .delete(contentTags)
       .where(
-        and(eq(contentTags.contentId, contentId), eq(contentTags.tagId, tagId))
+        and(eq(contentTags.contentId, contentId), eq(contentTags.tagId, tagId)),
       );
 
     // Decrement usage count
@@ -410,7 +419,7 @@ export class ContentStorage implements IContentStorage {
   async getContentByTag(
     tagId: number,
     contentType?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<ContentTag[]> {
     const conditions: SQL<unknown>[] = [eq(contentTags.tagId, tagId)];
 
@@ -428,7 +437,7 @@ export class ContentStorage implements IContentStorage {
   async bulkAssignTags(
     contentId: string,
     contentType: string,
-    tagNames: string[]
+    tagNames: string[],
   ): Promise<ContentTag[]> {
     const results: ContentTag[] = [];
 
@@ -448,7 +457,7 @@ export class ContentStorage implements IContentStorage {
   // ==================== Content Embeddings ====================
 
   async upsertContentEmbedding(
-    embedding: InsertContentEmbedding
+    embedding: InsertContentEmbedding,
   ): Promise<ContentEmbedding> {
     // Ensure embedding is a regular array for database compatibility
     const embeddingArray: number[] = Array.isArray(embedding.embedding)
@@ -462,10 +471,7 @@ export class ContentStorage implements IContentStorage {
         embedding: embeddingArray,
       } as any)
       .onConflictDoUpdate({
-        target: [
-          contentEmbeddings.contentId,
-          contentEmbeddings.contentType,
-        ],
+        target: [contentEmbeddings.contentId, contentEmbeddings.contentType],
         set: {
           embedding: embeddingArray,
           embeddingType: embedding.embeddingType,
@@ -480,7 +486,7 @@ export class ContentStorage implements IContentStorage {
 
   async getContentEmbedding(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<ContentEmbedding | undefined> {
     const [result] = await db
       .select()
@@ -488,8 +494,8 @@ export class ContentStorage implements IContentStorage {
       .where(
         and(
           eq(contentEmbeddings.contentId, contentId),
-          eq(contentEmbeddings.contentType, contentType)
-        )
+          eq(contentEmbeddings.contentType, contentType),
+        ),
       )
       .limit(1);
     return result;
@@ -498,7 +504,7 @@ export class ContentStorage implements IContentStorage {
   async searchByEmbedding(
     queryEmbedding: number[],
     contentType: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<Array<ContentEmbedding & { similarity: number }>> {
     // Calculate cosine similarity in PostgreSQL
     // This is a simplified version - in production you'd use pgvector extension
@@ -528,15 +534,15 @@ export class ContentStorage implements IContentStorage {
 
   async deleteContentEmbedding(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<void> {
     await db
       .delete(contentEmbeddings)
       .where(
         and(
           eq(contentEmbeddings.contentId, contentId),
-          eq(contentEmbeddings.contentType, contentType)
-        )
+          eq(contentEmbeddings.contentType, contentType),
+        ),
       );
   }
 
@@ -549,15 +555,15 @@ export class ContentStorage implements IContentStorage {
       .where(
         or(
           eq(duplicatePairs.contentId1, contentId),
-          eq(duplicatePairs.contentId2, contentId)
-        )
+          eq(duplicatePairs.contentId2, contentId),
+        ),
       )
       .orderBy(desc(duplicatePairs.similarity));
   }
 
   async getPendingDuplicates(
     contentType?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<DuplicatePair[]> {
     const conditions: SQL<unknown>[] = [
       isNull(duplicatePairs.isConfirmed),
@@ -577,10 +583,7 @@ export class ContentStorage implements IContentStorage {
   }
 
   async createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair> {
-    const [result] = await db
-      .insert(duplicatePairs)
-      .values(pair)
-      .returning();
+    const [result] = await db.insert(duplicatePairs).values(pair).returning();
     return result;
   }
 
@@ -588,7 +591,7 @@ export class ContentStorage implements IContentStorage {
     pairId: string,
     isConfirmed: boolean | null,
     isDismissed: boolean,
-    reviewedBy: string
+    reviewedBy: string,
   ): Promise<DuplicatePair> {
     const [result] = await db
       .update(duplicatePairs)
@@ -606,11 +609,11 @@ export class ContentStorage implements IContentStorage {
   async findPotentialDuplicates(
     contentId: string,
     contentType: string,
-    similarityThreshold: number = 0.85
+    similarityThreshold: number = 0.85,
   ): Promise<DuplicatePair[]> {
     // Get embedding for the content
     const embedding = await this.getContentEmbedding(contentId, contentType);
-    
+
     if (!embedding) {
       return [];
     }
@@ -619,13 +622,13 @@ export class ContentStorage implements IContentStorage {
     const similar = await this.searchByEmbedding(
       embedding.embedding,
       contentType,
-      20
+      20,
     );
 
     // Filter by similarity threshold and exclude self
     const potentialDuplicates = similar.filter(
       (item) =>
-        item.contentId !== contentId && item.similarity >= similarityThreshold
+        item.contentId !== contentId && item.similarity >= similarityThreshold,
     );
 
     // Create duplicate pairs for high-similarity items
@@ -638,13 +641,13 @@ export class ContentStorage implements IContentStorage {
           or(
             and(
               eq(duplicatePairs.contentId1, contentId),
-              eq(duplicatePairs.contentId2, item.contentId)
+              eq(duplicatePairs.contentId2, item.contentId),
             ),
             and(
               eq(duplicatePairs.contentId1, item.contentId),
-              eq(duplicatePairs.contentId2, contentId)
-            )
-          )
+              eq(duplicatePairs.contentId2, contentId),
+            ),
+          ),
         )
         .limit(1);
 
@@ -666,7 +669,7 @@ export class ContentStorage implements IContentStorage {
 
   async getRelatedContent(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<RelatedContentCache | undefined> {
     const [result] = await db
       .select()
@@ -675,15 +678,15 @@ export class ContentStorage implements IContentStorage {
         and(
           eq(relatedContentCache.contentId, contentId),
           eq(relatedContentCache.contentType, contentType),
-          gte(relatedContentCache.expiresAt, new Date())
-        )
+          gte(relatedContentCache.expiresAt, new Date()),
+        ),
       )
       .limit(1);
     return result;
   }
 
   async cacheRelatedContent(
-    cache: InsertRelatedContentCache
+    cache: InsertRelatedContentCache,
   ): Promise<RelatedContentCache> {
     // Delete old cache entries for this content
     await db
@@ -691,8 +694,8 @@ export class ContentStorage implements IContentStorage {
       .where(
         and(
           eq(relatedContentCache.contentId, cache.contentId),
-          eq(relatedContentCache.contentType, cache.contentType)
-        )
+          eq(relatedContentCache.contentType, cache.contentType),
+        ),
       );
 
     // Insert new cache entry
@@ -706,15 +709,15 @@ export class ContentStorage implements IContentStorage {
 
   async invalidateRelatedContentCache(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<void> {
     await db
       .delete(relatedContentCache)
       .where(
         and(
           eq(relatedContentCache.contentId, contentId),
-          eq(relatedContentCache.contentType, contentType)
-        )
+          eq(relatedContentCache.contentType, contentType),
+        ),
       );
   }
 
@@ -809,7 +812,7 @@ export class ContentStorage implements IContentStorage {
 
   async getContentOrganization(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<{
     categories: Category[];
     tags: Tag[];
@@ -818,7 +821,7 @@ export class ContentStorage implements IContentStorage {
     // Get categories
     const contentCats = await this.getContentCategories(contentId, contentType);
     const categoryIds = contentCats.map((cc) => cc.categoryId);
-    
+
     const categoriesData =
       categoryIds.length > 0
         ? await db
@@ -827,7 +830,9 @@ export class ContentStorage implements IContentStorage {
             .where(or(...categoryIds.map((id) => eq(categories.id, id))))
         : [];
 
-    const primaryCategoryId = contentCats.find((cc) => cc.isPrimary)?.categoryId;
+    const primaryCategoryId = contentCats.find(
+      (cc) => cc.isPrimary,
+    )?.categoryId;
     const primaryCategory = primaryCategoryId
       ? categoriesData.find((c) => c.id === primaryCategoryId) || null
       : null;

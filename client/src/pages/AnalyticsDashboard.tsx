@@ -1,13 +1,39 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, LineChart, TrendingUp, Activity, Users, DollarSign, RefreshCw } from "lucide-react";
-import { InsightCard, AnomalyAlert, InsightDigest, AskAnalytics, PerformanceMetrics } from "@/components/analytics";
+import {
+  BarChart,
+  LineChart,
+  TrendingUp,
+  Activity,
+  Users,
+  DollarSign,
+  RefreshCw,
+} from "lucide-react";
+import {
+  InsightCard,
+  AnomalyAlert,
+  InsightDigest,
+  AskAnalytics,
+  PerformanceMetrics,
+} from "@/components/analytics";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { AnalyticsInsight } from "@shared/schema";
@@ -17,25 +43,25 @@ function generateSampleData(metricName: string, days: number = 30) {
   const data = [];
   const baseValue = Math.floor(Math.random() * 1000) + 500;
   const today = new Date();
-  
+
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    
+
     // Add some variation and occasional spikes
     let value = baseValue + Math.floor(Math.random() * 200) - 100;
-    
+
     // Create a spike on day 7 (Tuesday if today is Sunday)
     if (i === 7) {
       value = Math.floor(baseValue * 1.4); // 40% spike
     }
-    
+
     data.push({
-      date: date.toISOString().split('T')[0],
-      value: Math.max(0, value)
+      date: date.toISOString().split("T")[0],
+      value: Math.max(0, value),
     });
   }
-  
+
   return data;
 }
 
@@ -44,26 +70,41 @@ export default function AnalyticsDashboard() {
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Fetch insights
-  const { data: insights = [], isLoading: insightsLoading, refetch: refetchInsights } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.analysis.insights.all, selectedCategory, selectedPeriod],
+  const {
+    data: insights = [],
+    isLoading: insightsLoading,
+    refetch: refetchInsights,
+  } = useQuery({
+    queryKey: [
+      API_ENDPOINTS.ai.analysis.insights.all,
+      selectedCategory,
+      selectedPeriod,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (selectedCategory !== "all") params.append("category", selectedCategory);
+      if (selectedCategory !== "all")
+        params.append("category", selectedCategory);
       params.append("period", selectedPeriod);
       params.append("limit", "50");
-      
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}?${params.toString()}`, "GET");
+
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.insights.all}?${params.toString()}`,
+        "GET",
+      );
       return response as AnalyticsInsight[];
-    }
+    },
   });
 
   // Fetch daily summary
   const { data: dailySummary = [] } = useQuery({
     queryKey: [API_ENDPOINTS.ai.analysis.insights.daily],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.daily, "GET");
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.analysis.insights.daily,
+        "GET",
+      );
       return response as AnalyticsInsight[];
-    }
+    },
   });
 
   // Generate insight mutation
@@ -73,21 +114,30 @@ export default function AnalyticsDashboard() {
       return apiRequest(API_ENDPOINTS.ai.analysis.insights.generate, "POST", {
         metricName,
         dataPoints,
-        period: "30 days"
+        period: "30 days",
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.insights.all] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.insights.daily] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.insights.all],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.insights.daily],
+      });
+    },
   });
 
   // Auto-generate sample insights on mount
   useEffect(() => {
     if (!insights || insights.length === 0) {
       // Generate sample insights for demonstration
-      const sampleMetrics = ["website_traffic", "conversion_rate", "revenue", "user_engagement"];
-      sampleMetrics.forEach(metric => {
+      const sampleMetrics = [
+        "website_traffic",
+        "conversion_rate",
+        "revenue",
+        "user_engagement",
+      ];
+      sampleMetrics.forEach((metric) => {
         generateInsightMutation.mutate(metric);
       });
     }
@@ -96,9 +146,13 @@ export default function AnalyticsDashboard() {
   // Calculate stats
   const stats = {
     totalInsights: insights.length,
-    anomalies: insights.filter((i: AnalyticsInsight) => i.insightType === "anomaly").length,
+    anomalies: insights.filter(
+      (i: AnalyticsInsight) => i.insightType === "anomaly",
+    ).length,
     unreadInsights: insights.filter((i: AnalyticsInsight) => !i.isRead).length,
-    criticalInsights: insights.filter((i: AnalyticsInsight) => i.severity === "critical").length,
+    criticalInsights: insights.filter(
+      (i: AnalyticsInsight) => i.severity === "critical",
+    ).length,
   };
 
   return (
@@ -106,12 +160,14 @@ export default function AnalyticsDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Analytics Insights</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">
+            Analytics Insights
+          </h1>
           <p className="text-muted-foreground mt-1">
             AI-powered insights to understand your data trends and patterns
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => refetchInsights()}
           variant="outline"
           data-testid="button-refresh"
@@ -128,49 +184,64 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Insights</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Insights
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="text-total-insights">{stats.totalInsights}</span>
+              <span
+                className="text-2xl font-bold"
+                data-testid="text-total-insights"
+              >
+                {stats.totalInsights}
+              </span>
               <Activity className="w-4 h-4 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Anomalies</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400" data-testid="text-anomalies">
+              <span
+                className="text-2xl font-bold text-yellow-600 dark:text-yellow-400"
+                data-testid="text-anomalies"
+              >
                 {stats.anomalies}
               </span>
               <TrendingUp className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Unread</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="text-unread">{stats.unreadInsights}</span>
+              <span className="text-2xl font-bold" data-testid="text-unread">
+                {stats.unreadInsights}
+              </span>
               <Badge variant="outline">New</Badge>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Critical</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-red-600 dark:text-red-400" data-testid="text-critical">
+              <span
+                className="text-2xl font-bold text-red-600 dark:text-red-400"
+                data-testid="text-critical"
+              >
                 {stats.criticalInsights}
               </span>
               <Badge variant="destructive">High</Badge>
@@ -206,7 +277,7 @@ export default function AnalyticsDashboard() {
           </SelectContent>
         </Select>
 
-        <Button 
+        <Button
           variant="outline"
           onClick={() => generateInsightMutation.mutate("website_traffic")}
           disabled={generateInsightMutation.isPending}
@@ -219,16 +290,24 @@ export default function AnalyticsDashboard() {
       {/* Main Content Tabs */}
       <Tabs defaultValue="insights" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="insights" data-testid="tab-insights">All Insights</TabsTrigger>
-          <TabsTrigger value="digest" data-testid="tab-digest">Daily Digest</TabsTrigger>
-          <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
-          <TabsTrigger value="ask" data-testid="tab-ask">Ask Analytics</TabsTrigger>
+          <TabsTrigger value="insights" data-testid="tab-insights">
+            All Insights
+          </TabsTrigger>
+          <TabsTrigger value="digest" data-testid="tab-digest">
+            Daily Digest
+          </TabsTrigger>
+          <TabsTrigger value="performance" data-testid="tab-performance">
+            Performance
+          </TabsTrigger>
+          <TabsTrigger value="ask" data-testid="tab-ask">
+            Ask Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="insights" className="space-y-4">
           {insightsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map(i => (
+              {[1, 2, 3, 4].map((i) => (
                 <Card key={i}>
                   <CardHeader>
                     <Skeleton className="h-4 w-[200px]" />
@@ -246,10 +325,13 @@ export default function AnalyticsDashboard() {
                 <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Start generating insights to see AI-powered analysis of your metrics
+                  Start generating insights to see AI-powered analysis of your
+                  metrics
                 </p>
-                <Button 
-                  onClick={() => generateInsightMutation.mutate("website_traffic")}
+                <Button
+                  onClick={() =>
+                    generateInsightMutation.mutate("website_traffic")
+                  }
                   disabled={generateInsightMutation.isPending}
                 >
                   Generate First Insight

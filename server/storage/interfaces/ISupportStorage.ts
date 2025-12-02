@@ -32,10 +32,13 @@ export interface ISupportStorage {
   resolveTicket(
     ticketId: string,
     resolutionNotes: string,
-    timeToResolution: number
+    timeToResolution: number,
   ): Promise<Ticket>;
   closeTicket(ticketId: string, satisfactionRating?: number): Promise<Ticket>;
-  getTicketStats(startDate?: Date, endDate?: Date): Promise<{
+  getTicketStats(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     total: number;
     byStatus: Record<string, number>;
     byPriority: Record<string, number>;
@@ -50,7 +53,7 @@ export interface ISupportStorage {
   createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule>;
   updateRoutingRule(
     ruleId: string,
-    updates: Partial<RoutingRule>
+    updates: Partial<RoutingRule>,
   ): Promise<RoutingRule>;
   deleteRoutingRule(ruleId: string): Promise<void>;
   applyRoutingRules(ticket: Ticket): Promise<{
@@ -66,15 +69,15 @@ export interface ISupportStorage {
   createTicketRouting(routing: InsertTicketRouting): Promise<TicketRouting>;
   updateTicketRouting(
     routingId: string,
-    updates: Partial<TicketRouting>
+    updates: Partial<TicketRouting>,
   ): Promise<TicketRouting | null>;
   getAllRoutingsWithOutcomes(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<TicketRouting[]>;
   getRoutingMetrics(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     totalTickets: number;
     averageConfidence: number;
@@ -91,10 +94,7 @@ export interface ISupportStorage {
   getAgentsByExpertise(expertiseArea: string): Promise<AgentExpertise[]>;
   upsertAgentExpertise(agent: InsertAgentExpertise): Promise<AgentExpertise>;
   updateAgentWorkload(agentId: string, delta: number): Promise<void>;
-  updateAgentAvailability(
-    agentId: string,
-    availability: string
-  ): Promise<void>;
+  updateAgentAvailability(agentId: string, availability: string): Promise<void>;
   getAgentWorkloadStats(): Promise<
     Array<{
       agentId: string;

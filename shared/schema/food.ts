@@ -262,7 +262,7 @@ export type NutritionInfo = z.infer<typeof nutritionInfoSchema>;
 // ==================== USDA Food Data Schema ====================
 // Schema for USDA FoodData Central API response - lenient to handle raw API data
 export const usdaFoodDataSchema = z.object({
-  fdcId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  fdcId: z.union([z.string(), z.number()]).transform((val) => String(val)),
   gtinUpc: z.string().optional(),
   description: z.string(),
   dataType: z.string().optional(),
@@ -378,10 +378,9 @@ export const userAppliances = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    applianceId: text("appliance_id").references(
-      () => applianceLibrary.id,
-      { onDelete: "set null" },
-    ), // nullable for custom appliances
+    applianceId: text("appliance_id").references(() => applianceLibrary.id, {
+      onDelete: "set null",
+    }), // nullable for custom appliances
     customName: text("custom_name"), // for custom appliances not in library
     category: text("category").notNull(), // 'cooking', 'refrigeration', 'prep', 'small'
     brand: text("brand"),
@@ -498,7 +497,12 @@ export const insertShoppingItemSchema = createInsertSchema(userShopping).extend(
 export type InsertShoppingItem = z.infer<typeof insertShoppingItemSchema>;
 export type ShoppingItem = typeof userShopping.$inferSelect;
 
-export const applianceCategorySchema = z.enum(['cooking', 'refrigeration', 'prep', 'small']);
+export const applianceCategorySchema = z.enum([
+  "cooking",
+  "refrigeration",
+  "prep",
+  "small",
+]);
 
 export const insertUserApplianceSchema = createInsertSchema(userAppliances, {
   category: applianceCategorySchema,
@@ -512,12 +516,17 @@ export const insertCookingTermSchema = createInsertSchema(cookingTerms);
 export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
 
-export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary, {
-  category: applianceCategorySchema,
-  defaultSettings: z.record(z.unknown()).nullable().optional(),
-}).omit({ id: true, createdAt: true });
+export const insertApplianceLibrarySchema = createInsertSchema(
+  applianceLibrary,
+  {
+    category: applianceCategorySchema,
+    defaultSettings: z.record(z.unknown()).nullable().optional(),
+  },
+).omit({ id: true, createdAt: true });
 
-export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema>;
+export type InsertApplianceLibrary = z.infer<
+  typeof insertApplianceLibrarySchema
+>;
 export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 
 // Backward compatibility aliases

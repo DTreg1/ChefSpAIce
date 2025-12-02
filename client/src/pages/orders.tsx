@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Package, ChevronRight, Filter } from "lucide-react";
@@ -13,35 +19,35 @@ const mockOrders = [
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     items: ["Milk", "Bread", "Eggs"],
     status: "delivered",
-    total: 12.50
+    total: 12.5,
   },
   {
     id: "2",
     date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     items: ["Chicken", "Vegetables", "Rice"],
     status: "delivered",
-    total: 28.75
+    total: 28.75,
   },
   {
     id: "3",
     date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     items: ["Pasta", "Tomato Sauce", "Cheese"],
     status: "delivered",
-    total: 15.00
+    total: 15.0,
   },
   {
     id: "4",
     date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     items: ["Fruits", "Yogurt", "Granola"],
     status: "delivered",
-    total: 22.30
-  }
+    total: 22.3,
+  },
 ];
 
 export default function Orders() {
   const [location] = useLocation();
   const [filter, setFilter] = useState<string>("all");
-  
+
   // Check if we came from voice command with filter
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -52,12 +58,15 @@ export default function Orders() {
   }, [location]);
 
   // Filter orders based on selected filter
-  const filteredOrders = filter === "recent" 
-    ? mockOrders.filter(order => {
-        const daysDiff = Math.floor((Date.now() - order.date.getTime()) / (1000 * 60 * 60 * 24));
-        return daysDiff <= 7;
-      })
-    : mockOrders;
+  const filteredOrders =
+    filter === "recent"
+      ? mockOrders.filter((order) => {
+          const daysDiff = Math.floor(
+            (Date.now() - order.date.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          return daysDiff <= 7;
+        })
+      : mockOrders;
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -106,24 +115,32 @@ export default function Orders() {
           <Card>
             <CardContent className="text-center py-8">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No orders found for the selected filter</p>
+              <p className="text-muted-foreground">
+                No orders found for the selected filter
+              </p>
             </CardContent>
           </Card>
         ) : (
           filteredOrders.map((order) => (
-            <Card key={order.id} className="hover-elevate" data-testid={`order-${order.id}`}>
+            <Card
+              key={order.id}
+              className="hover-elevate"
+              data-testid={`order-${order.id}`}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">
-                      Order #{order.id}
-                    </CardTitle>
+                    <CardTitle className="text-lg">Order #{order.id}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
                       <Calendar className="h-3 w-3" />
                       {format(order.date, "PPP")}
                     </CardDescription>
                   </div>
-                  <Badge variant={order.status === "delivered" ? "default" : "secondary"}>
+                  <Badge
+                    variant={
+                      order.status === "delivered" ? "default" : "secondary"
+                    }
+                  >
                     {order.status}
                   </Badge>
                 </div>

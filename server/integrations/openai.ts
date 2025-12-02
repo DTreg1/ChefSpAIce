@@ -10,16 +10,20 @@ const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 let openai: OpenAI;
 
 if (!baseURL || !apiKey) {
-  console.error('[OpenAI] Missing AI Integrations configuration.');
-  console.error('[OpenAI] Ensure AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY are set.');
-  
+  console.error("[OpenAI] Missing AI Integrations configuration.");
+  console.error(
+    "[OpenAI] Ensure AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY are set.",
+  );
+
   // Create a stub that will throw meaningful errors when AI features are actually used
   openai = new Proxy({} as OpenAI, {
     get: (_target, _prop) => {
       return () => {
-        throw new Error('OpenAI is not configured. Please set AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY environment variables.');
+        throw new Error(
+          "OpenAI is not configured. Please set AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY environment variables.",
+        );
       };
-    }
+    },
   });
 } else {
   openai = new OpenAI({

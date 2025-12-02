@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
-import { ToastAction } from '@/components/ui/toast';
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { ToastAction } from "@/components/ui/toast";
 
 export function PushNotificationHandler() {
   const { toast } = useToast();
@@ -16,16 +16,16 @@ export function PushNotificationHandler() {
       // Determine emoji/prefix based on notification type
       const getPrefix = (type: string) => {
         switch (type) {
-          case 'expiring-food':
-            return '⏰ ';
-          case 'recipe-suggestion':
-            return '👨‍🍳 ';
-          case 'meal-reminder':
-            return '🍽️ ';
-          case 'test':
-            return '🧪 ';
+          case "expiring-food":
+            return "⏰ ";
+          case "recipe-suggestion":
+            return "👨‍🍳 ";
+          case "meal-reminder":
+            return "🍽️ ";
+          case "test":
+            return "🧪 ";
           default:
-            return '🔔 ';
+            return "🔔 ";
         }
       };
 
@@ -51,17 +51,28 @@ export function PushNotificationHandler() {
     // Listen for notification actions (when user taps notification)
     const handleNotificationAction = (event: Event) => {
       // console.log('Notification action handled in React');
-      
       // Navigation is handled by the push notification service
       // This event is mainly for tracking and UI updates
     };
 
-    window.addEventListener('push-notification-received', handleNotificationReceived);
-    window.addEventListener('push-notification-action', handleNotificationAction);
+    window.addEventListener(
+      "push-notification-received",
+      handleNotificationReceived,
+    );
+    window.addEventListener(
+      "push-notification-action",
+      handleNotificationAction,
+    );
 
     return () => {
-      window.removeEventListener('push-notification-received', handleNotificationReceived);
-      window.removeEventListener('push-notification-action', handleNotificationAction);
+      window.removeEventListener(
+        "push-notification-received",
+        handleNotificationReceived,
+      );
+      window.removeEventListener(
+        "push-notification-action",
+        handleNotificationAction,
+      );
     };
   }, [toast, setLocation]);
 

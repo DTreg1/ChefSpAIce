@@ -1,18 +1,12 @@
 import { memo } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Circle,
-  CheckCircle2,
-  ChevronRight,
-  Hash,
-  Zap
-} from "lucide-react";
+import { Circle, CheckCircle2, ChevronRight, Hash, Zap } from "lucide-react";
 
 interface BulletSummaryProps {
   bullets: string[];
   title?: string;
-  variant?: 'default' | 'numbered' | 'checkmarks' | 'arrows' | 'simple';
+  variant?: "default" | "numbered" | "checkmarks" | "arrows" | "simple";
   showIcon?: boolean;
   className?: string;
   onBulletClick?: (index: number, bullet: string) => void;
@@ -21,20 +15,20 @@ interface BulletSummaryProps {
 export const BulletSummary = memo(function BulletSummary({
   bullets,
   title,
-  variant = 'default',
+  variant = "default",
   showIcon = true,
   className = "",
-  onBulletClick
+  onBulletClick,
 }: BulletSummaryProps) {
   const getIcon = (index: number) => {
     switch (variant) {
-      case 'numbered':
+      case "numbered":
         return <Hash className="h-4 w-4 text-primary" />;
-      case 'checkmarks':
+      case "checkmarks":
         return <CheckCircle2 className="h-4 w-4 text-primary" />;
-      case 'arrows':
+      case "arrows":
         return <ChevronRight className="h-4 w-4 text-primary" />;
-      case 'simple':
+      case "simple":
         return null;
       default:
         return <Circle className="h-3 w-3 text-primary" />;
@@ -43,9 +37,9 @@ export const BulletSummary = memo(function BulletSummary({
 
   const formatBullet = (bullet: string, index: number) => {
     // Remove existing bullet characters if any
-    const cleanBullet = bullet.replace(/^[•\-*]\s*/, '').trim();
-    
-    if (variant === 'numbered') {
+    const cleanBullet = bullet.replace(/^[•\-*]\s*/, "").trim();
+
+    if (variant === "numbered") {
       return `${index + 1}. ${cleanBullet}`;
     }
     return cleanBullet;
@@ -82,29 +76,29 @@ export const BulletSummary = memo(function BulletSummary({
           </CardTitle>
         </CardHeader>
       )}
-      
+
       <CardContent className={title ? "pt-3" : "pt-6"}>
         <ul className="space-y-3">
           {bullets.map((bullet, index) => {
             const formattedBullet = formatBullet(bullet, index);
             const icon = getIcon(index);
             const isClickable = !!onBulletClick;
-            
+
             return (
               <li
                 key={index}
                 className={`
                   flex items-start gap-3
-                  ${isClickable ? 'cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors' : ''}
+                  ${isClickable ? "cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors" : ""}
                 `}
-                onClick={isClickable ? () => handleBulletClick(index, formattedBullet) : undefined}
+                onClick={
+                  isClickable
+                    ? () => handleBulletClick(index, formattedBullet)
+                    : undefined
+                }
                 data-testid={`bullet-point-${index}`}
               >
-                {icon && (
-                  <span className="mt-1 flex-shrink-0">
-                    {icon}
-                  </span>
-                )}
+                {icon && <span className="mt-1 flex-shrink-0">{icon}</span>}
                 <span className="flex-1 text-sm leading-relaxed">
                   {formattedBullet}
                 </span>
@@ -126,19 +120,19 @@ interface QuickBulletListProps {
 export const QuickBulletList = memo(function QuickBulletList({
   bullets,
   className = "",
-  bulletClassName = ""
+  bulletClassName = "",
 }: QuickBulletListProps) {
   return (
     <ul className={`space-y-2 ${className}`}>
       {bullets.map((bullet, index) => (
-        <li 
-          key={index} 
+        <li
+          key={index}
           className={`flex items-start gap-2 ${bulletClassName}`}
           data-testid={`quick-bullet-${index}`}
         >
           <span className="text-muted-foreground mt-0.5">•</span>
           <span className="flex-1">
-            {bullet.replace(/^[•\-*]\s*/, '').trim()}
+            {bullet.replace(/^[•\-*]\s*/, "").trim()}
           </span>
         </li>
       ))}

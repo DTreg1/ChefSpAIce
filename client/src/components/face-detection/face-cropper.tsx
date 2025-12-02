@@ -1,19 +1,25 @@
 /**
  * FaceCropper Component
- * 
+ *
  * Component for cropping individual faces from group photos.
  * Useful for extracting avatar images from group photos.
  */
 
-import { useState } from 'react';
-import { Crop, Download, UserSquare, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useState } from "react";
+import { Crop, Download, UserSquare, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FaceCropperProps {
   imageFile: File | null;
@@ -34,7 +40,9 @@ interface CropResponse {
 }
 
 export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
-  const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(null);
+  const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(
+    null,
+  );
   const [padding, setPadding] = useState(20);
   const [croppedFaces, setCroppedFaces] = useState<CroppedFace[]>([]);
   const { toast } = useToast();
@@ -42,29 +50,33 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
   // Mutation for cropping faces
   const cropFacesMutation = useMutation({
     mutationFn: async (faceIndex?: number) => {
-      if (!imageFile) throw new Error('No image file provided');
-      
+      if (!imageFile) throw new Error("No image file provided");
+
       const formData = new FormData();
-      formData.append('image', imageFile);
-      formData.append('padding', padding.toString());
+      formData.append("image", imageFile);
+      formData.append("padding", padding.toString());
       if (faceIndex !== undefined) {
-        formData.append('faceIndex', faceIndex.toString());
+        formData.append("faceIndex", faceIndex.toString());
       }
-      
-      return apiRequest('/api/faces/crop', 'POST', formData) as Promise<CropResponse>;
+
+      return apiRequest(
+        "/api/faces/crop",
+        "POST",
+        formData,
+      ) as Promise<CropResponse>;
     },
     onSuccess: (data) => {
       setCroppedFaces(data.croppedFaces);
       toast({
-        title: 'Faces Cropped Successfully',
-        description: `Extracted ${data.faceCount} face${data.faceCount !== 1 ? 's' : ''} from the image`,
+        title: "Faces Cropped Successfully",
+        description: `Extracted ${data.faceCount} face${data.faceCount !== 1 ? "s" : ""} from the image`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Crop Failed',
-        description: error.message || 'Failed to crop faces',
-        variant: 'destructive',
+        title: "Crop Failed",
+        description: error.message || "Failed to crop faces",
+        variant: "destructive",
       });
     },
   });
@@ -78,7 +90,7 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
 
   // Download cropped face
   const handleDownload = (imageUrl: string, index: number) => {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = imageUrl;
     link.download = `face-${index + 1}.png`;
     document.body.appendChild(link);
@@ -100,9 +112,7 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
       <CardContent className="space-y-6">
         {/* Padding Control */}
         <div className="space-y-2">
-          <Label htmlFor="crop-padding">
-            Crop Padding: {padding}px
-          </Label>
+          <Label htmlFor="crop-padding">Crop Padding: {padding}px</Label>
           <Slider
             id="crop-padding"
             min={0}
@@ -165,8 +175,8 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
             <Label>Cropped Faces</Label>
             <div className="grid grid-cols-3 gap-4">
               {croppedFaces.map((face, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="relative group"
                   data-testid={`div-cropped-face-${index}`}
                 >

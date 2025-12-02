@@ -10,12 +10,12 @@ The chat storage has stub methods because the `chat_messages` table doesn't exis
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `getChatMessages(userId, limit)` | Fetch user's chat history |
+| Method                                            | Description                             |
+| ------------------------------------------------- | --------------------------------------- |
+| `getChatMessages(userId, limit)`                  | Fetch user's chat history               |
 | `getChatMessagesPaginated(userId, limit, offset)` | Paginated chat history with total count |
-| `createChatMessage(userId, message)` | Save new chat message |
-| `deleteChatHistory(userId)` | Clear user's chat history |
+| `createChatMessage(userId, message)`              | Save new chat message                   |
+| `deleteChatHistory(userId)`                       | Clear user's chat history               |
 
 ---
 

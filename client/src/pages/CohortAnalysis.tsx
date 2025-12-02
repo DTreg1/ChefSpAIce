@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,46 +17,58 @@ import { RetentionTable } from "@/components/cohorts/retention-table";
 import { CohortComparison } from "@/components/cohorts/cohort-comparison";
 import { InsightCards } from "@/components/cohorts/insight-cards";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
-import { Users, Plus, Sparkles, TrendingUp, Calendar, Filter, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Sparkles,
+  TrendingUp,
+  Calendar,
+  Filter,
+  RefreshCw,
+} from "lucide-react";
 import type { Cohort } from "@shared/schema";
 
 export default function CohortAnalysis() {
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>("");
   const [showBuilder, setShowBuilder] = useState(false);
-  
+
   const cohortsQuery = useQuery({
     queryKey: [API_ENDPOINTS.admin.cohorts.list],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.list}?isActive=true`);
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.cohorts.list}?isActive=true`,
+      );
       if (!response.ok) throw new Error("Failed to fetch cohorts");
       const data = await response.json();
       return data.cohorts as Cohort[];
     },
   });
-  
-  const selectedCohorts = (cohortsQuery.data || []).filter(c => 
-    selectedCohortIds.includes(c.id)
+
+  const selectedCohorts = (cohortsQuery.data || []).filter((c) =>
+    selectedCohortIds.includes(c.id),
   );
-  
-  const activeCohort = (cohortsQuery.data || []).find(c => c.id === activeCohortId);
-  
+
+  const activeCohort = (cohortsQuery.data || []).find(
+    (c) => c.id === activeCohortId,
+  );
+
   const toggleCohortSelection = (cohortId: string) => {
     if (selectedCohortIds.includes(cohortId)) {
-      setSelectedCohortIds(selectedCohortIds.filter(id => id !== cohortId));
+      setSelectedCohortIds(selectedCohortIds.filter((id) => id !== cohortId));
     } else {
       setSelectedCohortIds([...selectedCohortIds, cohortId]);
     }
   };
-  
+
   const selectAllCohorts = () => {
-    setSelectedCohortIds((cohortsQuery.data || []).map(c => c.id));
+    setSelectedCohortIds((cohortsQuery.data || []).map((c) => c.id));
   };
-  
+
   const clearSelection = () => {
     setSelectedCohortIds([]);
   };
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -61,10 +79,11 @@ export default function CohortAnalysis() {
             Cohort Analysis
           </h1>
           <p className="text-muted-foreground">
-            Analyze user segments, track behavior patterns, and generate AI insights
+            Analyze user segments, track behavior patterns, and generate AI
+            insights
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setShowBuilder(!showBuilder)}
           data-testid="button-toggle-builder"
         >
@@ -72,21 +91,21 @@ export default function CohortAnalysis() {
           {showBuilder ? "Hide Builder" : "New Cohort"}
         </Button>
       </div>
-      
+
       {/* Cohort Builder */}
       {showBuilder && (
         <div className="mb-6">
           <CohortBuilder />
         </div>
       )}
-      
+
       {/* Cohort Selection */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Select Cohorts</h2>
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               onClick={selectAllCohorts}
               disabled={cohortsQuery.isLoading}
@@ -94,8 +113,8 @@ export default function CohortAnalysis() {
             >
               Select All
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               onClick={clearSelection}
               disabled={selectedCohortIds.length === 0}
@@ -110,12 +129,14 @@ export default function CohortAnalysis() {
               disabled={cohortsQuery.isFetching}
               data-testid="button-refresh"
             >
-              <RefreshCw className={`h-3 w-3 mr-1 ${cohortsQuery.isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3 w-3 mr-1 ${cohortsQuery.isFetching ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
           </div>
         </div>
-        
+
         {cohortsQuery.isLoading ? (
           <div className="flex gap-2">
             {[1, 2, 3, 4].map((i) => (
@@ -154,7 +175,7 @@ export default function CohortAnalysis() {
           </div>
         )}
       </div>
-      
+
       {/* Main Content */}
       {selectedCohorts.length > 0 && (
         <Tabs defaultValue="retention" className="w-full">
@@ -180,24 +201,27 @@ export default function CohortAnalysis() {
               Members
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="retention" className="space-y-4 mt-6">
             <RetentionTable cohorts={selectedCohorts} />
           </TabsContent>
-          
+
           <TabsContent value="comparison" className="space-y-4 mt-6">
             <CohortComparison cohorts={selectedCohorts} />
           </TabsContent>
-          
+
           <TabsContent value="insights" className="space-y-4 mt-6">
             {selectedCohorts.length === 1 ? (
-              <InsightCards 
-                cohortId={selectedCohorts[0].id} 
+              <InsightCards
+                cohortId={selectedCohorts[0].id}
                 cohortName={selectedCohorts[0].cohortName}
               />
             ) : (
               <div className="space-y-4">
-                <Select value={activeCohortId} onValueChange={setActiveCohortId}>
+                <Select
+                  value={activeCohortId}
+                  onValueChange={setActiveCohortId}
+                >
                   <SelectTrigger data-testid="select-cohort-insights">
                     <SelectValue placeholder="Select a cohort to view insights" />
                   </SelectTrigger>
@@ -209,26 +233,29 @@ export default function CohortAnalysis() {
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 {activeCohort && (
-                  <InsightCards 
-                    cohortId={activeCohort.id} 
+                  <InsightCards
+                    cohortId={activeCohort.id}
                     cohortName={activeCohort.cohortName}
                   />
                 )}
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="timeline" className="space-y-4 mt-6">
             {selectedCohorts.length === 1 ? (
-              <CohortTimeline 
-                cohortId={selectedCohorts[0].id} 
+              <CohortTimeline
+                cohortId={selectedCohorts[0].id}
                 cohortName={selectedCohorts[0].cohortName}
               />
             ) : (
               <div className="space-y-4">
-                <Select value={activeCohortId} onValueChange={setActiveCohortId}>
+                <Select
+                  value={activeCohortId}
+                  onValueChange={setActiveCohortId}
+                >
                   <SelectTrigger data-testid="select-cohort-timeline">
                     <SelectValue placeholder="Select a cohort to view timeline" />
                   </SelectTrigger>
@@ -240,17 +267,17 @@ export default function CohortAnalysis() {
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 {activeCohort && (
-                  <CohortTimeline 
-                    cohortId={activeCohort.id} 
+                  <CohortTimeline
+                    cohortId={activeCohort.id}
                     cohortName={activeCohort.cohortName}
                   />
                 )}
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="members" className="space-y-4 mt-6">
             <div className="space-y-4">
               <Select value={activeCohortId} onValueChange={setActiveCohortId}>
@@ -265,10 +292,10 @@ export default function CohortAnalysis() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               {activeCohort && (
-                <CohortMembers 
-                  cohortId={activeCohort.id} 
+                <CohortMembers
+                  cohortId={activeCohort.id}
                   cohortName={activeCohort.cohortName}
                 />
               )}
@@ -281,20 +308,28 @@ export default function CohortAnalysis() {
 }
 
 // Cohort Members Component
-function CohortMembers({ cohortId, cohortName }: { cohortId: string; cohortName: string }) {
+function CohortMembers({
+  cohortId,
+  cohortName,
+}: {
+  cohortId: string;
+  cohortName: string;
+}) {
   const [page, setPage] = useState(0);
   const limit = 20;
-  
+
   const membersQuery = useQuery({
-    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), 'members', page],
+    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), "members", page],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohortId)}/members?limit=${limit}&offset=${page * limit}`);
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.cohorts.item(cohortId)}/members?limit=${limit}&offset=${page * limit}`,
+      );
       if (!response.ok) throw new Error("Failed to fetch members");
       const data = await response.json();
       return data;
     },
   });
-  
+
   if (membersQuery.isLoading) {
     return (
       <div className="space-y-2">
@@ -304,7 +339,7 @@ function CohortMembers({ cohortId, cohortName }: { cohortId: string; cohortName:
       </div>
     );
   }
-  
+
   if (membersQuery.error) {
     return (
       <p className="text-sm text-destructive">
@@ -312,10 +347,10 @@ function CohortMembers({ cohortId, cohortName }: { cohortId: string; cohortName:
       </p>
     );
   }
-  
+
   const { users = [], total = 0 } = membersQuery.data || {};
   const totalPages = Math.ceil(total / limit);
-  
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -344,7 +379,7 @@ function CohortMembers({ cohortId, cohortName }: { cohortId: string; cohortName:
           </Button>
         </div>
       </div>
-      
+
       <div className="border rounded-lg overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted">

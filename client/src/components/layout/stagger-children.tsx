@@ -37,7 +37,10 @@ const itemVariants = {
   },
 };
 
-export function StaggerContainer({ children, className }: StaggerChildrenProps) {
+export function StaggerContainer({
+  children,
+  className,
+}: StaggerChildrenProps) {
   return (
     <motion.div
       initial="initial"
@@ -50,7 +53,13 @@ export function StaggerContainer({ children, className }: StaggerChildrenProps) 
   );
 }
 
-export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
+export function StaggerItem({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div variants={itemVariants} className={className}>
       {children}

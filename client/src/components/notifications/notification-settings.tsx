@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, AlertCircle, CheckCircle } from 'lucide-react';
-import { pushNotificationService } from '@/utils/pushNotifications';
-import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Bell, BellOff, AlertCircle, CheckCircle } from "lucide-react";
+import { pushNotificationService } from "@/utils/pushNotifications";
+import { useToast } from "@/hooks/use-toast";
 
 export function NotificationSettings() {
-  const [permissionState, setPermissionState] = useState<string>('unknown');
+  const [permissionState, setPermissionState] = useState<string>("unknown");
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -27,41 +33,47 @@ export function NotificationSettings() {
       const customEvent = event as CustomEvent;
       const { state, message } = customEvent.detail;
       setPermissionState(state);
-      
-      if (state === 'denied') {
+
+      if (state === "denied") {
         setError(message);
         toast({
-          title: '🔔 Notifications Disabled',
+          title: "🔔 Notifications Disabled",
           description: message,
-          variant: 'destructive',
+          variant: "destructive",
         });
-      } else if (state === 'granted') {
+      } else if (state === "granted") {
         setError(null);
         toast({
-          title: '✅ Notifications Enabled',
+          title: "✅ Notifications Enabled",
           description: message,
         });
       }
     };
 
-    window.addEventListener('push-notification-permission', handlePermissionChange);
+    window.addEventListener(
+      "push-notification-permission",
+      handlePermissionChange,
+    );
 
     return () => {
-      window.removeEventListener('push-notification-permission', handlePermissionChange);
+      window.removeEventListener(
+        "push-notification-permission",
+        handlePermissionChange,
+      );
     };
   }, [toast]);
 
   const handleEnableNotifications = async () => {
     setIsInitializing(true);
     setError(null);
-    
+
     try {
       await pushNotificationService.initialize();
-      
+
       if (pushNotificationService.isReady()) {
         toast({
-          title: '✅ Notifications Enabled',
-          description: 'You will now receive important updates from ChefSpAIce',
+          title: "✅ Notifications Enabled",
+          description: "You will now receive important updates from ChefSpAIce",
         });
       } else {
         const err = pushNotificationService.getInitializationError();
@@ -73,9 +85,9 @@ export function NotificationSettings() {
       const error = err as Error;
       setError(error.message);
       toast({
-        title: '❌ Failed to Enable Notifications',
+        title: "❌ Failed to Enable Notifications",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsInitializing(false);
@@ -84,21 +96,21 @@ export function NotificationSettings() {
 
   const getStatusBadge = () => {
     switch (permissionState) {
-      case 'granted':
+      case "granted":
         return (
           <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
             <CheckCircle className="w-3 h-3 mr-1" />
             Enabled
           </Badge>
         );
-      case 'denied':
+      case "denied":
         return (
           <Badge variant="destructive">
             <BellOff className="w-3 h-3 mr-1" />
             Disabled
           </Badge>
         );
-      case 'prompt':
+      case "prompt":
         return (
           <Badge variant="outline">
             <Bell className="w-3 h-3 mr-1" />
@@ -125,7 +137,8 @@ export function NotificationSettings() {
               Push Notifications
             </CardTitle>
             <CardDescription>
-              Get notified about expiring food, recipe suggestions, and meal reminders
+              Get notified about expiring food, recipe suggestions, and meal
+              reminders
             </CardDescription>
           </div>
           {getStatusBadge()}
@@ -139,7 +152,7 @@ export function NotificationSettings() {
           </div>
         )}
 
-        {permissionState !== 'granted' && (
+        {permissionState !== "granted" && (
           <Button
             onClick={handleEnableNotifications}
             disabled={isInitializing}
@@ -147,11 +160,11 @@ export function NotificationSettings() {
             data-testid="button-enable-notifications"
           >
             <Bell className="w-4 h-4 mr-2" />
-            {isInitializing ? 'Enabling...' : 'Enable Notifications'}
+            {isInitializing ? "Enabling..." : "Enable Notifications"}
           </Button>
         )}
 
-        {permissionState === 'granted' && (
+        {permissionState === "granted" && (
           <div className="text-sm text-muted-foreground">
             Notifications are enabled. You'll receive updates about:
             <ul className="list-disc list-inside mt-2 space-y-1">
@@ -162,7 +175,7 @@ export function NotificationSettings() {
           </div>
         )}
 
-        {permissionState === 'denied' && (
+        {permissionState === "denied" && (
           <div className="text-sm text-muted-foreground">
             To enable notifications, please update your browser settings:
             <ol className="list-decimal list-inside mt-2 space-y-1">

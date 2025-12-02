@@ -1,14 +1,14 @@
-import apn from '@parse/node-apn';
-import { NotificationPayload } from './push-notification.service';
-import fs from 'fs';
-import path from 'path';
+import apn from "@parse/node-apn";
+import { NotificationPayload } from "./push-notification.service";
+import fs from "fs";
+import path from "path";
 
 /**
  * Apple Push Notification Service (APNs) for iOS Push Notifications
- * 
+ *
  * This service handles all iOS push notification operations using the node-apn library.
  * It manages connection to APNs, token validation, notification sending, and error handling.
- * 
+ *
  * Features:
  * - Authenticate with APNs using P8 certificates (recommended) or P12 certificates
  * - Send rich notifications with title, body, sound, badge, and custom data
@@ -21,7 +21,7 @@ import path from 'path';
 export class ApnsService {
   private static provider: apn.Provider | null = null;
   private static isInitialized = false;
-  private static bundleId: string = '';
+  private static bundleId: string = "";
 
   /**
    * Initialize APNs Provider
@@ -38,8 +38,8 @@ export class ApnsService {
       const apnsTeamId = process.env.APNS_TEAM_ID;
       const apnsKeyFile = process.env.APNS_KEY_FILE;
       const apnsKeyContent = process.env.APNS_KEY_CONTENT; // Base64 encoded P8 key
-      const apnsBundleId = process.env.APNS_BUNDLE_ID || 'com.chefspaice.app';
-      const apnsProduction = process.env.APNS_PRODUCTION === 'true';
+      const apnsBundleId = process.env.APNS_BUNDLE_ID || "com.chefspaice.app";
+      const apnsProduction = process.env.APNS_PRODUCTION === "true";
 
       // Alternative: P12 certificate authentication (legacy)
       const apnsCertFile = process.env.APNS_CERT_FILE;
@@ -48,24 +48,24 @@ export class ApnsService {
 
       if (!apnsKeyId && !apnsCertFile && !apnsCertContent && !apnsKeyContent) {
         console.warn(
-          '⚠️  APNs credentials not configured. iOS push notifications will NOT work.\n' +
-          '   To enable iOS push notifications:\n' +
-          '   1. Enroll in Apple Developer Program\n' +
-          '   2. Create an App ID with Push Notifications capability\n' +
-          '   3. Create an APNs Authentication Key (.p8 file) - Recommended\n' +
-          '   4. Set environment variables:\n' +
-          '      For P8 Key (recommended):\n' +
-          '      - APNS_KEY_ID=<Your Key ID>\n' +
-          '      - APNS_TEAM_ID=<Your Team ID>\n' +
-          '      - APNS_KEY_FILE=<Path to .p8 file> OR APNS_KEY_CONTENT=<Base64 encoded key>\n' +
-          '      - APNS_BUNDLE_ID=<Your app bundle ID>\n' +
-          '      - APNS_PRODUCTION=true (for production) or false (for development)\n' +
-          '      \n' +
-          '      For P12 Certificate (legacy):\n' +
-          '      - APNS_CERT_FILE=<Path to .p12 file> OR APNS_CERT_CONTENT=<Base64 encoded cert>\n' +
-          '      - APNS_CERT_PASSPHRASE=<Certificate passphrase>\n' +
-          '      - APNS_BUNDLE_ID=<Your app bundle ID>\n' +
-          '      - APNS_PRODUCTION=true (for production) or false (for development)\n'
+          "⚠️  APNs credentials not configured. iOS push notifications will NOT work.\n" +
+            "   To enable iOS push notifications:\n" +
+            "   1. Enroll in Apple Developer Program\n" +
+            "   2. Create an App ID with Push Notifications capability\n" +
+            "   3. Create an APNs Authentication Key (.p8 file) - Recommended\n" +
+            "   4. Set environment variables:\n" +
+            "      For P8 Key (recommended):\n" +
+            "      - APNS_KEY_ID=<Your Key ID>\n" +
+            "      - APNS_TEAM_ID=<Your Team ID>\n" +
+            "      - APNS_KEY_FILE=<Path to .p8 file> OR APNS_KEY_CONTENT=<Base64 encoded key>\n" +
+            "      - APNS_BUNDLE_ID=<Your app bundle ID>\n" +
+            "      - APNS_PRODUCTION=true (for production) or false (for development)\n" +
+            "      \n" +
+            "      For P12 Certificate (legacy):\n" +
+            "      - APNS_CERT_FILE=<Path to .p12 file> OR APNS_CERT_CONTENT=<Base64 encoded cert>\n" +
+            "      - APNS_CERT_PASSPHRASE=<Certificate passphrase>\n" +
+            "      - APNS_BUNDLE_ID=<Your app bundle ID>\n" +
+            "      - APNS_PRODUCTION=true (for production) or false (for development)\n",
         );
         return;
       }
@@ -73,9 +73,10 @@ export class ApnsService {
       this.bundleId = apnsBundleId;
 
       // Check if we have valid credentials before creating options
-      const hasP8Auth = apnsKeyId && apnsTeamId && (apnsKeyFile || apnsKeyContent);
-      const hasP12Auth = (apnsCertFile || apnsCertContent);
-      
+      const hasP8Auth =
+        apnsKeyId && apnsTeamId && (apnsKeyFile || apnsKeyContent);
+      const hasP12Auth = apnsCertFile || apnsCertContent;
+
       if (!hasP8Auth && !hasP12Auth) {
         // No valid credentials, skip initialization
         return;
@@ -90,36 +91,43 @@ export class ApnsService {
         try {
           if (apnsKeyContent) {
             // Check if this is a dummy credential - silently skip
-            if (apnsKeyId === 'dummy-key-id' || apnsTeamId === 'dummy-team-id' || 
-                apnsKeyContent.includes('MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2')) {
+            if (
+              apnsKeyId === "dummy-key-id" ||
+              apnsTeamId === "dummy-team-id" ||
+              apnsKeyContent.includes(
+                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2",
+              )
+            ) {
               this.isInitialized = true;
               return;
             }
-            
+
             // If key content is provided, write it to a temp file (node-apn requires file path)
-            const tempKeyPath = path.join('/tmp', `apns-key-${Date.now()}.p8`);
+            const tempKeyPath = path.join("/tmp", `apns-key-${Date.now()}.p8`);
             let keyData: string;
-            
+
             // Try to decode from base64 first, if that fails, use as-is
             try {
-              keyData = Buffer.from(apnsKeyContent, 'base64').toString('utf-8');
+              keyData = Buffer.from(apnsKeyContent, "base64").toString("utf-8");
             } catch {
               keyData = apnsKeyContent; // Use as-is if not base64
             }
-            
+
             // Validate that the key looks like a P8 key
-            if (!keyData.includes('BEGIN PRIVATE KEY')) {
-              console.error('❌ APNs key content does not appear to be a valid P8 key');
+            if (!keyData.includes("BEGIN PRIVATE KEY")) {
+              console.error(
+                "❌ APNs key content does not appear to be a valid P8 key",
+              );
               return;
             }
-            
+
             fs.writeFileSync(tempKeyPath, keyData);
             options.token = {
               key: tempKeyPath,
               keyId: apnsKeyId,
               teamId: apnsTeamId,
             };
-            
+
             // Clean up temp file after a delay
             setTimeout(() => {
               try {
@@ -134,31 +142,36 @@ export class ApnsService {
               console.error(`❌ APNs key file not found: ${apnsKeyFile}`);
               return;
             }
-            
+
             options.token = {
               key: apnsKeyFile,
               keyId: apnsKeyId,
               teamId: apnsTeamId,
             };
           } else {
-            console.error('❌ APNs key ID and team ID provided but no key file or content');
+            console.error(
+              "❌ APNs key ID and team ID provided but no key file or content",
+            );
             return;
           }
         } catch (keyError) {
-          console.error('❌ Failed to process APNs P8 key:', keyError);
+          console.error("❌ Failed to process APNs P8 key:", keyError);
           return;
         }
       }
       // P12 Certificate authentication (legacy)
       else if (apnsCertFile || apnsCertContent) {
         let certPath = apnsCertFile;
-        
+
         // If cert content is provided, write it to a temp file
         if (apnsCertContent) {
-          const tempCertPath = path.join('/tmp', `apns-cert-${Date.now()}.p12`);
-          fs.writeFileSync(tempCertPath, Buffer.from(apnsCertContent, 'base64'));
+          const tempCertPath = path.join("/tmp", `apns-cert-${Date.now()}.p12`);
+          fs.writeFileSync(
+            tempCertPath,
+            Buffer.from(apnsCertContent, "base64"),
+          );
           certPath = tempCertPath;
-          
+
           // Clean up temp file after a delay
           setTimeout(() => {
             try {
@@ -168,7 +181,7 @@ export class ApnsService {
             }
           }, 60000);
         }
-        
+
         options.pfx = certPath;
         if (apnsCertPassphrase) {
           options.passphrase = apnsCertPassphrase;
@@ -178,36 +191,41 @@ export class ApnsService {
       // Create APNs provider
       this.provider = new apn.Provider(options);
       this.isInitialized = true;
-      
+
       // console.log(`✅ APNs initialized for ${apnsProduction ? 'production' : 'development'} environment`);
       // console.log(`   Bundle ID: ${this.bundleId}`);
     } catch (error) {
-      console.error('❌ Failed to initialize APNs:', error);
+      console.error("❌ Failed to initialize APNs:", error);
     }
   }
 
   /**
    * Send push notification to iOS device
-   * 
+   *
    * @param token - APNs device token (64 character hex string)
    * @param payload - Notification content
    * @returns Promise<void>
    * @throws Error with specific APNs error codes
    */
-  static async sendNotification(token: string, payload: NotificationPayload): Promise<void> {
+  static async sendNotification(
+    token: string,
+    payload: NotificationPayload,
+  ): Promise<void> {
     if (!this.isInitialized || !this.provider) {
-      throw new Error('APNs is not initialized. Cannot send iOS notifications.');
+      throw new Error(
+        "APNs is not initialized. Cannot send iOS notifications.",
+      );
     }
 
     try {
       // Validate token format (APNs tokens are 64 hex characters)
       if (!token || !token.match(/^[0-9a-fA-F]{64}$/)) {
-        throw new Error('Invalid APNs token format');
+        throw new Error("Invalid APNs token format");
       }
 
       // Create APNs notification
       const notification = new apn.Notification();
-      
+
       // Alert content
       notification.alert = {
         title: payload.title,
@@ -215,12 +233,12 @@ export class ApnsService {
       };
 
       // Badge number
-      if (typeof payload.badge === 'number') {
+      if (typeof payload.badge === "number") {
         notification.badge = payload.badge;
       }
 
       // Sound
-      notification.sound = 'default';
+      notification.sound = "default";
 
       // Custom payload data
       if (payload.data) {
@@ -256,12 +274,12 @@ export class ApnsService {
           category?: string;
         }
         const extendedNotification = notification as ExtendedNotification;
-        if (payload.actions.some(a => a.action === 'view')) {
-          extendedNotification.category = 'VIEW_ACTION';
-        } else if (payload.actions.some(a => a.action === 'dismiss')) {
-          extendedNotification.category = 'DISMISS_ACTION';
+        if (payload.actions.some((a) => a.action === "view")) {
+          extendedNotification.category = "VIEW_ACTION";
+        } else if (payload.actions.some((a) => a.action === "dismiss")) {
+          extendedNotification.category = "DISMISS_ACTION";
         }
-        
+
         // Pass actions in payload for app to handle
         notification.payload = {
           ...notification.payload,
@@ -274,38 +292,41 @@ export class ApnsService {
 
       // Send the notification
       const result = await this.provider.send(notification, token);
-      
+
       // Check for failures
       if (result.failed.length > 0) {
         const failure = result.failed[0];
-        console.error('❌ APNs notification failed:', failure);
-        
+        console.error("❌ APNs notification failed:", failure);
+
         // Handle specific error codes
-        if (failure.status === 400 && failure.response?.reason === 'BadDeviceToken') {
-          throw new Error('INVALID_TOKEN');
+        if (
+          failure.status === 400 &&
+          failure.response?.reason === "BadDeviceToken"
+        ) {
+          throw new Error("INVALID_TOKEN");
         } else if (failure.status === 410) {
-          throw new Error('UNREGISTERED');
-        } else if (failure.response?.reason === 'DeviceTokenNotForTopic') {
-          throw new Error('WRONG_BUNDLE_ID');
-        } else if (failure.response?.reason === 'TooManyRequests') {
-          throw new Error('RATE_LIMIT_EXCEEDED');
-        } else if (failure.response?.reason === 'PayloadTooLarge') {
-          throw new Error('PAYLOAD_TOO_LARGE');
+          throw new Error("UNREGISTERED");
+        } else if (failure.response?.reason === "DeviceTokenNotForTopic") {
+          throw new Error("WRONG_BUNDLE_ID");
+        } else if (failure.response?.reason === "TooManyRequests") {
+          throw new Error("RATE_LIMIT_EXCEEDED");
+        } else if (failure.response?.reason === "PayloadTooLarge") {
+          throw new Error("PAYLOAD_TOO_LARGE");
         }
-        
-        throw new Error(failure.response?.reason || 'UNKNOWN_ERROR');
+
+        throw new Error(failure.response?.reason || "UNKNOWN_ERROR");
       }
 
       // console.log('✅ APNs notification sent successfully');
     } catch (error: Error | unknown) {
-      console.error('❌ APNs notification error:', error);
+      console.error("❌ APNs notification error:", error);
       throw error;
     }
   }
 
   /**
    * Validate APNs device token
-   * 
+   *
    * @param token - Device token to validate
    * @returns Promise<boolean> - true if valid format, false otherwise
    */
@@ -317,63 +338,68 @@ export class ApnsService {
   /**
    * Send silent notification (background update)
    * Used to wake up the app and fetch new content
-   * 
+   *
    * @param token - APNs device token
    * @param data - Custom data payload
    */
   static async sendSilentNotification(token: string, data: any): Promise<void> {
     if (!this.isInitialized || !this.provider) {
-      throw new Error('APNs is not initialized');
+      throw new Error("APNs is not initialized");
     }
 
     try {
       const notification = new apn.Notification();
-      
+
       // Content available flag triggers background fetch
       notification.contentAvailable = true;
-      
+
       // No alert, sound, or badge for silent notifications (already undefined by default)
-      
+
       // Custom data
       notification.payload = data;
-      
+
       // Topic
       notification.topic = this.bundleId;
-      
+
       // Priority 5 for background notifications
       notification.priority = 5;
-      
+
       // Send
       const result = await this.provider.send(notification, token);
-      
+
       if (result.failed.length > 0) {
-        throw new Error(result.failed[0].response?.reason || 'Silent notification failed');
+        throw new Error(
+          result.failed[0].response?.reason || "Silent notification failed",
+        );
       }
-      
+
       // console.log('✅ APNs silent notification sent');
     } catch (error) {
-      console.error('❌ APNs silent notification error:', error);
+      console.error("❌ APNs silent notification error:", error);
       throw error;
     }
   }
 
   /**
    * Send notification to multiple devices
-   * 
+   *
    * @param tokens - Array of device tokens
    * @param payload - Notification content
    * @returns Object with success and failure details
    */
   static async sendMultiple(
-    tokens: string[], 
-    payload: NotificationPayload
-  ): Promise<{ sent: string[]; failed: Array<{token: string; error: string}> }> {
+    tokens: string[],
+    payload: NotificationPayload,
+  ): Promise<{
+    sent: string[];
+    failed: Array<{ token: string; error: string }>;
+  }> {
     if (!this.isInitialized || !this.provider) {
-      throw new Error('APNs is not initialized');
+      throw new Error("APNs is not initialized");
     }
 
     const sent: string[] = [];
-    const failed: Array<{token: string; error: string}> = [];
+    const failed: Array<{ token: string; error: string }> = [];
 
     // APNs provider handles batching internally
     for (const token of tokens) {
@@ -383,7 +409,7 @@ export class ApnsService {
       } catch (error: Error | unknown) {
         failed.push({
           token,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -407,23 +433,30 @@ export class ApnsService {
   /**
    * Get APNs service status
    */
-  static getStatus(): { 
-    initialized: boolean; 
-    hasCredentials: boolean; 
-    environment: 'production' | 'development' | 'not-configured';
+  static getStatus(): {
+    initialized: boolean;
+    hasCredentials: boolean;
+    environment: "production" | "development" | "not-configured";
     bundleId: string;
   } {
-    const hasP8Credentials = !!(process.env.APNS_KEY_ID && process.env.APNS_TEAM_ID && 
-                               (process.env.APNS_KEY_FILE || process.env.APNS_KEY_CONTENT));
-    const hasP12Credentials = !!(process.env.APNS_CERT_FILE || process.env.APNS_CERT_CONTENT);
-    
+    const hasP8Credentials = !!(
+      process.env.APNS_KEY_ID &&
+      process.env.APNS_TEAM_ID &&
+      (process.env.APNS_KEY_FILE || process.env.APNS_KEY_CONTENT)
+    );
+    const hasP12Credentials = !!(
+      process.env.APNS_CERT_FILE || process.env.APNS_CERT_CONTENT
+    );
+
     return {
       initialized: this.isInitialized,
       hasCredentials: hasP8Credentials || hasP12Credentials,
-      environment: this.isInitialized 
-        ? (process.env.APNS_PRODUCTION === 'true' ? 'production' : 'development')
-        : 'not-configured',
-      bundleId: this.bundleId || process.env.APNS_BUNDLE_ID || 'not-configured',
+      environment: this.isInitialized
+        ? process.env.APNS_PRODUCTION === "true"
+          ? "production"
+          : "development"
+        : "not-configured",
+      bundleId: this.bundleId || process.env.APNS_BUNDLE_ID || "not-configured",
     };
   }
 }

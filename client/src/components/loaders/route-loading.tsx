@@ -7,7 +7,7 @@ import {
   ShoppingListSkeleton,
   StorageSkeleton,
   GridSkeleton,
-  CardSkeleton
+  CardSkeleton,
 } from "./skeletons";
 
 export function RouteLoading() {
@@ -15,27 +15,51 @@ export function RouteLoading() {
 
   // Show specific skeleton based on the route
   if (location.includes("/nutrition")) {
-    return <div className="p-6"><NutritionSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <NutritionSkeleton />
+      </div>
+    );
   }
-  
+
   if (location.includes("/meal-planner")) {
-    return <div className="p-6"><MealPlannerSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <MealPlannerSkeleton />
+      </div>
+    );
   }
-  
+
   if (location.includes("/cookbook")) {
-    return <div className="p-6"><RecipeListSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <RecipeListSkeleton />
+      </div>
+    );
   }
-  
+
   if (location.includes("/shopping-list")) {
-    return <div className="p-6"><ShoppingListSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <ShoppingListSkeleton />
+      </div>
+    );
   }
-  
+
   if (location.includes("/storage")) {
-    return <div className="p-6"><StorageSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <StorageSkeleton />
+      </div>
+    );
   }
-  
+
   if (location.includes("/food-groups") || location.includes("/appliances")) {
-    return <div className="p-6"><GridSkeleton /></div>;
+    return (
+      <div className="p-6">
+        <GridSkeleton />
+      </div>
+    );
   }
 
   // Default loading spinner for other routes

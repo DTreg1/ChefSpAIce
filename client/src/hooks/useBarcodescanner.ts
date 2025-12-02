@@ -65,7 +65,7 @@
  *     setScannedCode(barcode);
  *     setIsScanning(false);
  *     await stopScanning();
- *     
+ *
  *     // Look up product by barcode
  *     const product = await fetch(`/api/barcode/${barcode}`).then(r => r.json());
  *     // console.log('Product found:', product);
@@ -117,42 +117,52 @@ interface UseBarcodeScannerOptions {
   onError?: (error: string) => void;
 }
 
-export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions) {
+export function useBarcodeScanner({
+  onScan,
+  onError,
+}: UseBarcodeScannerOptions) {
   const scannerRef = useRef<any | null>(null); // Type resolved at runtime
   const isInitializedRef = useRef(false);
 
-  const startScanning = useCallback(async (elementId: string) => {
-    if (isInitializedRef.current && scannerRef.current) {
-      return; // Already scanning
-    }
+  const startScanning = useCallback(
+    async (elementId: string) => {
+      if (isInitializedRef.current && scannerRef.current) {
+        return; // Already scanning
+      }
 
-    try {
-      // Dynamically import Html5Qrcode when needed
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode(elementId);
-      scannerRef.current = scanner;
-      isInitializedRef.current = true;
+      try {
+        // Dynamically import Html5Qrcode when needed
+        const { Html5Qrcode } = await import("html5-qrcode");
+        const scanner = new Html5Qrcode(elementId);
+        scannerRef.current = scanner;
+        isInitializedRef.current = true;
 
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          onScan(decodedText);
-        },
-        () => {
-          // Silent error for continuous scanning attempts
-        }
-      );
-    } catch (err: Error | unknown) {
-      console.error("Scanner start error:", err);
-      isInitializedRef.current = false;
-      scannerRef.current = null;
-      onError?.(err instanceof Error ? err.message : "Failed to access camera. Please check permissions.");
-    }
-  }, [onScan, onError]);
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText) => {
+            onScan(decodedText);
+          },
+          () => {
+            // Silent error for continuous scanning attempts
+          },
+        );
+      } catch (err: Error | unknown) {
+        console.error("Scanner start error:", err);
+        isInitializedRef.current = false;
+        scannerRef.current = null;
+        onError?.(
+          err instanceof Error
+            ? err.message
+            : "Failed to access camera. Please check permissions.",
+        );
+      }
+    },
+    [onScan, onError],
+  );
 
   const stopScanning = useCallback(async () => {
     if (scannerRef.current && isInitializedRef.current) {

@@ -10,14 +10,14 @@ Image processing job and preset methods are stubs because the tables don't exist
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `createImageProcessingJob(job)` | Create processing job |
-| `updateImageProcessingJob(jobId, data)` | Update job status |
-| `getImageProcessingJob(jobId)` | Get single job |
-| `getImageProcessingJobs(filters)` | Get jobs with filters |
-| `getImagePresets()` | Get all presets |
-| `createImagePreset(preset)` | Create preset |
+| Method                                  | Description           |
+| --------------------------------------- | --------------------- |
+| `createImageProcessingJob(job)`         | Create processing job |
+| `updateImageProcessingJob(jobId, data)` | Update job status     |
+| `getImageProcessingJob(jobId)`          | Get single job        |
+| `getImageProcessingJobs(filters)`       | Get jobs with filters |
+| `getImagePresets()`                     | Get all presets       |
+| `createImagePreset(preset)`             | Create preset         |
 
 ---
 

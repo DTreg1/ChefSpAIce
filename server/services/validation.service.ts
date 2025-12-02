@@ -1,6 +1,11 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db";
-import { validationRules, validationErrors, ValidationRule, ValidationError } from "@shared/schema/forms";
+import {
+  validationRules,
+  validationErrors,
+  ValidationRule,
+  ValidationError,
+} from "@shared/schema/forms";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -73,7 +78,7 @@ class ValidationService {
 
     // Get validation rules for this field type
     const rules = await this.getRulesForFieldType(fieldType);
-    
+
     // Start with basic validation
     const result: ValidationResult = {
       isValid: true,
@@ -85,13 +90,17 @@ class ValidationService {
 
     // Special handling for phone numbers
     if (fieldType === "phone") {
-      const phoneResult = await this.validatePhoneNumber(value, context?.locale);
+      const phoneResult = await this.validatePhoneNumber(
+        value,
+        context?.locale,
+      );
       return phoneResult;
     }
 
     // Apply regex patterns
     if (VALIDATION_PATTERNS[fieldType as keyof typeof VALIDATION_PATTERNS]) {
-      const pattern = VALIDATION_PATTERNS[fieldType as keyof typeof VALIDATION_PATTERNS];
+      const pattern =
+        VALIDATION_PATTERNS[fieldType as keyof typeof VALIDATION_PATTERNS];
       if (!pattern.test(value)) {
         result.isValid = false;
         result.errors?.push(`Invalid ${fieldType} format`);
@@ -111,8 +120,13 @@ class ValidationService {
     }
 
     // Get AI suggestions if validation failed
-    if (!result.isValid && rules.some(r => r.aiConfig?.enabled)) {
-      const aiSuggestions = await this.getAISuggestions(fieldType, value, result.errors?.[0], context);
+    if (!result.isValid && rules.some((r) => r.aiConfig?.enabled)) {
+      const aiSuggestions = await this.getAISuggestions(
+        fieldType,
+        value,
+        result.errors?.[0],
+        context,
+      );
       result.suggestions?.push(...aiSuggestions);
     }
 
@@ -134,7 +148,10 @@ class ValidationService {
   /**
    * Special validation for phone numbers with intelligent suggestions
    */
-  private async validatePhoneNumber(value: string, locale?: string): Promise<ValidationResult> {
+  private async validatePhoneNumber(
+    value: string,
+    locale?: string,
+  ): Promise<ValidationResult> {
     const cleanValue = value.replace(/[\s\-\(\)\.]/g, "");
     const result: ValidationResult = {
       isValid: false,
@@ -147,7 +164,7 @@ class ValidationService {
     // Check if it's too short (missing area code)
     if (cleanValue.length === 7) {
       result.errors?.push("Phone number is missing an area code");
-      
+
       // Suggest common area codes based on locale or provide generic suggestions
       const commonAreaCodes = ["212", "310", "415", "312", "202"];
       for (const areaCode of commonAreaCodes.slice(0, 3)) {
@@ -164,14 +181,14 @@ class ValidationService {
           action: "apply_suggestion",
         });
       }
-      
+
       return result;
     }
 
     // Check if it's a valid US number
     if (cleanValue.length === 10 && PHONE_PATTERNS.US.regex.test(value)) {
       result.isValid = true;
-      
+
       // Offer formatting suggestions
       const formatted = `(${cleanValue.slice(0, 3)}) ${cleanValue.slice(3, 6)}-${cleanValue.slice(6)}`;
       if (value !== formatted) {
@@ -181,7 +198,7 @@ class ValidationService {
           action: "format",
         });
       }
-      
+
       return result;
     }
 
@@ -194,13 +211,13 @@ class ValidationService {
         result.errors?.push("Invalid international phone number format");
         result.formatHints = ["Use format: +[country code] [number]"];
       }
-      
+
       return result;
     }
 
     // Invalid format
     result.errors?.push("Invalid phone number format");
-    
+
     // Try to detect what they might have meant
     if (cleanValue.length === 11 && cleanValue.startsWith("1")) {
       // US number with country code
@@ -224,7 +241,11 @@ class ValidationService {
   /**
    * Apply a single validation rule
    */
-  private async applyRule(rule: ValidationRule, value: string, context?: any): Promise<ValidationResult> {
+  private async applyRule(
+    rule: ValidationRule,
+    value: string,
+    context?: any,
+  ): Promise<ValidationResult> {
     const result: ValidationResult = {
       isValid: true,
       errors: [],
@@ -238,11 +259,16 @@ class ValidationService {
       const { min, max } = rule.rules.lengthConstraints;
       if (min && value.length < min) {
         result.isValid = false;
-        result.errors?.push(rule.errorMessages?.tooShort || `Must be at least ${min} characters`);
+        result.errors?.push(
+          rule.errorMessages?.tooShort || `Must be at least ${min} characters`,
+        );
       }
       if (max && value.length > max) {
         result.isValid = false;
-        result.errors?.push(rule.errorMessages?.tooLong || `Must be no more than ${max} characters`);
+        result.errors?.push(
+          rule.errorMessages?.tooLong ||
+            `Must be no more than ${max} characters`,
+        );
       }
     }
 
@@ -258,13 +284,17 @@ class ValidationService {
       }
       if (!matched && rule.rules.patterns.length > 0) {
         result.isValid = false;
-        result.errors?.push(rule.errorMessages?.invalidFormat || rule.errorMessages?.default || "Invalid format");
+        result.errors?.push(
+          rule.errorMessages?.invalidFormat ||
+            rule.errorMessages?.default ||
+            "Invalid format",
+        );
       }
     }
 
     // Add quick fixes from rule suggestions
     if (rule.suggestions?.quickFixes) {
-      result.quickFixes = rule.suggestions.quickFixes.map(fix => ({
+      result.quickFixes = rule.suggestions.quickFixes.map((fix) => ({
         ...fix,
         value: fix.value || value,
       }));
@@ -280,7 +310,7 @@ class ValidationService {
     fieldType: string,
     value: string,
     error?: string,
-    context?: any
+    context?: any,
   ): Promise<Array<{ value: string; confidence: number; reasoning: string }>> {
     try {
       if (!process.env.OPENAI_API_KEY) {
@@ -304,7 +334,8 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
         messages: [
           {
             role: "system",
-            content: "You are a form validation expert. Provide helpful, accurate suggestions for correcting invalid form inputs.",
+            content:
+              "You are a form validation expert. Provide helpful, accurate suggestions for correcting invalid form inputs.",
           },
           {
             role: "user",
@@ -335,7 +366,12 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
    */
   async validateForm(params: {
     formId: string;
-    fields: Array<{ name: string; type: string; value: string; required?: boolean }>;
+    fields: Array<{
+      name: string;
+      type: string;
+      value: string;
+      required?: boolean;
+    }>;
     userId?: string;
     context?: any;
   }) {
@@ -343,10 +379,13 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
     const formContext = {
       ...params.context,
       formId: params.formId,
-      otherFields: params.fields.reduce((acc, field) => {
-        acc[field.name] = field.value;
-        return acc;
-      }, {} as Record<string, string>),
+      otherFields: params.fields.reduce(
+        (acc, field) => {
+          acc[field.name] = field.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      ),
     };
 
     // Validate each field
@@ -376,15 +415,15 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       });
     }
 
-    const isFormValid = Object.values(results).every(r => r.isValid);
+    const isFormValid = Object.values(results).every((r) => r.isValid);
 
     return {
       isValid: isFormValid,
       fields: results,
       summary: {
         totalFields: params.fields.length,
-        validFields: Object.values(results).filter(r => r.isValid).length,
-        invalidFields: Object.values(results).filter(r => !r.isValid).length,
+        validFields: Object.values(results).filter((r) => r.isValid).length,
+        invalidFields: Object.values(results).filter((r) => !r.isValid).length,
       },
     };
   }
@@ -403,12 +442,14 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       params.fieldType,
       params.currentValue,
       params.errorType,
-      params.context
+      params.context,
     );
 
     return {
       suggestions,
-      formatHints: VALIDATION_PATTERNS[params.fieldType as keyof typeof VALIDATION_PATTERNS]
+      formatHints: VALIDATION_PATTERNS[
+        params.fieldType as keyof typeof VALIDATION_PATTERNS
+      ]
         ? [`Format: ${params.fieldType}`]
         : [],
     };
@@ -423,7 +464,11 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
     originalValue: string;
     suggestedValue?: string;
     finalValue: string;
-    userResolution: "accepted_suggestion" | "manual_correction" | "ignored" | "abandoned";
+    userResolution:
+      | "accepted_suggestion"
+      | "manual_correction"
+      | "ignored"
+      | "abandoned";
     userId?: string;
     context?: any;
     resolutionTime?: number;
@@ -452,7 +497,12 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
     const rules = await db
       .select()
       .from(validationRules)
-      .where(and(eq(validationRules.fieldType, fieldType), eq(validationRules.isActive, true)))
+      .where(
+        and(
+          eq(validationRules.fieldType, fieldType),
+          eq(validationRules.isActive, true),
+        ),
+      )
       .orderBy(desc(validationRules.priority));
 
     return rules;
@@ -471,10 +521,16 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
 
     const stats = {
       totalErrors: errors.length,
-      acceptedSuggestions: errors.filter(e => e.userResolution === "accepted_suggestion").length,
-      manualCorrections: errors.filter(e => e.userResolution === "manual_correction").length,
-      ignoredErrors: errors.filter(e => e.userResolution === "ignored").length,
-      abandonedForms: errors.filter(e => e.userResolution === "abandoned").length,
+      acceptedSuggestions: errors.filter(
+        (e) => e.userResolution === "accepted_suggestion",
+      ).length,
+      manualCorrections: errors.filter(
+        (e) => e.userResolution === "manual_correction",
+      ).length,
+      ignoredErrors: errors.filter((e) => e.userResolution === "ignored")
+        .length,
+      abandonedForms: errors.filter((e) => e.userResolution === "abandoned")
+        .length,
       averageResolutionTime: 0, // Resolution time tracking not implemented yet
       commonErrors: this.groupErrorsByType(errors),
     };
@@ -510,7 +566,11 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
     originalValue: string;
     suggestedValue?: string;
     finalValue: string;
-    userResolution: "accepted_suggestion" | "manual_correction" | "ignored" | "abandoned";
+    userResolution:
+      | "accepted_suggestion"
+      | "manual_correction"
+      | "ignored"
+      | "abandoned";
     userId?: string;
     context?: any;
     resolutionTime?: number;
@@ -526,51 +586,66 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
 
       // Calculate pattern metrics
       const metrics = {
-        acceptanceRate: recentCorrections.filter(e => e.userResolution === "accepted_suggestion").length / recentCorrections.length,
-        correctionRate: recentCorrections.filter(e => e.userResolution === "manual_correction").length / recentCorrections.length,
-        ignoreRate: recentCorrections.filter(e => e.userResolution === "ignored").length / recentCorrections.length,
+        acceptanceRate:
+          recentCorrections.filter(
+            (e) => e.userResolution === "accepted_suggestion",
+          ).length / recentCorrections.length,
+        correctionRate:
+          recentCorrections.filter(
+            (e) => e.userResolution === "manual_correction",
+          ).length / recentCorrections.length,
+        ignoreRate:
+          recentCorrections.filter((e) => e.userResolution === "ignored")
+            .length / recentCorrections.length,
       };
 
       // 2. Update validation rules based on patterns
       if (params.userResolution === "manual_correction" && params.finalValue) {
         // Learn from manual corrections to improve rules
         const existingRules = await this.getRulesForFieldType(params.fieldType);
-        
+
         // Check if we need to create a new rule or update existing ones
         const shouldUpdateRules = metrics.correctionRate > 0.3; // If more than 30% need manual correction
-        
+
         if (shouldUpdateRules) {
           // Create or update a rule based on the correction pattern
-          const rulePattern = this.extractPatternFromCorrection(params.originalValue, params.finalValue);
-          
+          const rulePattern = this.extractPatternFromCorrection(
+            params.originalValue,
+            params.finalValue,
+          );
+
           if (rulePattern) {
             // Check if a similar pattern exists in existing rules
-            const hasExistingPattern = existingRules.some(r => {
-              return r.rules?.patterns?.some(p => p.regex === rulePattern);
+            const hasExistingPattern = existingRules.some((r) => {
+              return r.rules?.patterns?.some((p) => p.regex === rulePattern);
             });
-            
+
             if (!hasExistingPattern) {
               // Create new rule with the learned pattern
               await db.insert(validationRules).values({
                 fieldType: params.fieldType,
                 rules: {
-                  patterns: [{ 
-                    regex: rulePattern, 
-                    description: `Learned from user corrections` 
-                  }]
+                  patterns: [
+                    {
+                      regex: rulePattern,
+                      description: `Learned from user corrections`,
+                    },
+                  ],
                 },
                 errorMessages: {
                   default: `Format should match: ${rulePattern}`,
-                  invalidFormat: `Please use the correct format`
+                  invalidFormat: `Please use the correct format`,
                 },
                 suggestions: {
-                  formatHints: [`Expected format based on previous corrections`]
+                  formatHints: [
+                    `Expected format based on previous corrections`,
+                  ],
                 },
                 aiConfig: {
                   enabled: true,
                   modelPreference: "gpt-3.5-turbo",
                   temperature: 0.3,
-                  maxSuggestions: 3
+                  maxSuggestions: 3,
                 },
                 priority: 5,
                 isActive: true,
@@ -583,14 +658,15 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       // 3. Update AI prompt optimization based on success rates
       if (metrics.acceptanceRate < 0.5) {
         // If AI suggestions are rarely accepted, flag for prompt improvement
-        console.log(`Low AI suggestion acceptance rate (${metrics.acceptanceRate}) for field type: ${params.fieldType}`);
+        console.log(
+          `Low AI suggestion acceptance rate (${metrics.acceptanceRate}) for field type: ${params.fieldType}`,
+        );
         // In a production system, this would trigger a review of the AI prompts
         // or send feedback to a prompt optimization service
       }
 
       // 4. Store learning metrics for monitoring
       console.log(`ML Training metrics for ${params.fieldType}:`, metrics);
-      
     } catch (error) {
       console.error("Error in ML model training:", error);
       // Don't throw - training failures shouldn't break validation
@@ -600,28 +676,34 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
   /**
    * Extract pattern from correction for rule learning
    */
-  private extractPatternFromCorrection(original: string, corrected: string): string | null {
+  private extractPatternFromCorrection(
+    original: string,
+    corrected: string,
+  ): string | null {
     // Simple pattern extraction - in production, this would use more sophisticated ML
     if (!original || !corrected) return null;
-    
+
     // Check for common formatting patterns
     if (corrected.includes("-") && !original.includes("-")) {
       // Learning hyphenation pattern (e.g., phone numbers)
-      const segments = corrected.split("-").map(s => `\\d{${s.length}}`);
+      const segments = corrected.split("-").map((s) => `\\d{${s.length}}`);
       return segments.join("-");
     }
-    
+
     if (corrected.includes("/") && !original.includes("/")) {
       // Learning date pattern
-      const segments = corrected.split("/").map(s => `\\d{${s.length}}`);
+      const segments = corrected.split("/").map((s) => `\\d{${s.length}}`);
       return segments.join("/");
     }
-    
+
     // Check for capitalization patterns
-    if (corrected[0] === corrected[0].toUpperCase() && original[0] !== original[0].toUpperCase()) {
+    if (
+      corrected[0] === corrected[0].toUpperCase() &&
+      original[0] !== original[0].toUpperCase()
+    ) {
       return "^[A-Z].*"; // First letter should be capitalized
     }
-    
+
     return null;
   }
 
@@ -656,23 +738,33 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
           updatedAt: new Date(),
         })
         .where(eq(validationRules.id, ruleData.id));
-      
+
       return ruleData;
     } else {
       // Create new rule - ensure required fields are provided
       const newRuleData = {
-        fieldType: ruleData.fieldType || 'custom',
+        fieldType: ruleData.fieldType || "custom",
         rules: ruleData.rules || { patterns: [] },
-        errorMessages: ruleData.errorMessages || { default: 'Please enter a valid value' },
+        errorMessages: ruleData.errorMessages || {
+          default: "Please enter a valid value",
+        },
         suggestions: ruleData.suggestions || { formatHints: [] },
-        aiConfig: ruleData.aiConfig || { useAI: true, model: 'gpt-3.5-turbo', temperature: 0.3, maxSuggestions: 3 },
+        aiConfig: ruleData.aiConfig || {
+          useAI: true,
+          model: "gpt-3.5-turbo",
+          temperature: 0.3,
+          maxSuggestions: 3,
+        },
         priority: ruleData.priority || 10,
         isActive: ruleData.isActive !== undefined ? ruleData.isActive : true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
-      const [newRule] = await db.insert(validationRules).values(newRuleData).returning();
+
+      const [newRule] = await db
+        .insert(validationRules)
+        .values(newRuleData)
+        .returning();
       return newRule;
     }
   }

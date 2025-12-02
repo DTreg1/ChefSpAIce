@@ -3,7 +3,7 @@
  * Eliminates need for 'as any' in database operations
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Helper to create type-safe insert data
@@ -18,7 +18,9 @@ export function createInsertData<T>(schema: z.ZodSchema<T>, data: unknown): T {
  * Helper to create partial update data
  * Removes undefined values for clean updates
  */
-export function createUpdateData<T extends Record<string, any>>(data: T): Partial<T> {
+export function createUpdateData<T extends Record<string, any>>(
+  data: T,
+): Partial<T> {
   const cleaned = {} as Partial<T>;
   for (const key in data) {
     if (data[key] !== undefined) {
@@ -34,9 +36,9 @@ export function createUpdateData<T extends Record<string, any>>(data: T): Partia
  */
 export function prepareBatchInsert<T>(
   schema: z.ZodSchema<T>,
-  items: unknown[]
+  items: unknown[],
 ): T[] {
-  return items.map(item => schema.parse(item));
+  return items.map((item) => schema.parse(item));
 }
 
 /**
@@ -44,7 +46,7 @@ export function prepareBatchInsert<T>(
  */
 export function hasProperty<T extends object, K extends PropertyKey>(
   obj: T,
-  key: K
+  key: K,
 ): obj is T & Record<K, unknown> {
   return key in obj;
 }
@@ -54,7 +56,7 @@ export function hasProperty<T extends object, K extends PropertyKey>(
  */
 export function safeJsonParse<T>(
   json: string,
-  schema?: z.ZodSchema<T>
+  schema?: z.ZodSchema<T>,
 ): T | null {
   try {
     const parsed = JSON.parse(json);
@@ -71,7 +73,7 @@ export function safeJsonParse<T>(
  * Type-safe metadata builder
  */
 export function buildMetadata<T extends Record<string, any>>(
-  data: T
+  data: T,
 ): Record<string, any> {
   return { ...data };
 }
@@ -89,7 +91,7 @@ export interface ApiResponse<T> {
  * Type guard for API responses
  */
 export function isApiError<T>(
-  response: ApiResponse<T>
+  response: ApiResponse<T>,
 ): response is ApiResponse<T> & { error: string } {
   return !response.success && !!response.error;
 }
@@ -99,7 +101,7 @@ export function isApiError<T>(
  */
 export function transformExternalData<S, T>(
   source: S,
-  transformer: (data: S) => T
+  transformer: (data: S) => T,
 ): T {
   return transformer(source);
 }

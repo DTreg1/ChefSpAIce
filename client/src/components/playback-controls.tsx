@@ -3,15 +3,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Volume2, 
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
   VolumeX,
   RotateCcw,
-  Maximize2
+  Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +46,7 @@ export function PlaybackControls({
   // Initialize audio element
   useEffect(() => {
     if (!audioRef.current) return;
-    
+
     if (audioBlob) {
       const url = URL.createObjectURL(audioBlob);
       audioRef.current.src = url;
@@ -62,7 +62,7 @@ export function PlaybackControls({
       const time = audioRef.current.currentTime;
       setCurrentTime(time);
       onTimeUpdate?.(time);
-      
+
       if (isPlaying) {
         animationRef.current = requestAnimationFrame(updateTime);
       }
@@ -72,7 +72,7 @@ export function PlaybackControls({
   // Play/Pause
   const togglePlayPause = async () => {
     if (!audioRef.current) return;
-    
+
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -98,8 +98,11 @@ export function PlaybackControls({
   // Skip forward/backward
   const skip = (seconds: number) => {
     if (!audioRef.current) return;
-    
-    const newTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + seconds));
+
+    const newTime = Math.max(
+      0,
+      Math.min(duration, audioRef.current.currentTime + seconds),
+    );
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
     onSeek?.(newTime);
@@ -108,7 +111,7 @@ export function PlaybackControls({
   // Seek to position
   const seekTo = (value: number[]) => {
     if (!audioRef.current) return;
-    
+
     const time = value[0];
     audioRef.current.currentTime = time;
     setCurrentTime(time);
@@ -121,7 +124,7 @@ export function PlaybackControls({
     const currentIndex = rates.indexOf(playbackRate);
     const nextIndex = (currentIndex + 1) % rates.length;
     const newRate = rates[nextIndex];
-    
+
     setPlaybackRate(newRate);
     if (audioRef.current) {
       audioRef.current.playbackRate = newRate;
@@ -198,7 +201,7 @@ export function PlaybackControls({
         }}
         data-testid="audio-element"
       />
-      
+
       <div className="space-y-4">
         {/* Time Display and Progress */}
         <div className="space-y-2">
@@ -206,7 +209,10 @@ export function PlaybackControls({
             <span className="font-mono" data-testid="text-current-time">
               {formatTime(currentTime)}
             </span>
-            <span className="font-mono text-muted-foreground" data-testid="text-duration">
+            <span
+              className="font-mono text-muted-foreground"
+              data-testid="text-duration"
+            >
               {formatTime(actualDuration)}
             </span>
           </div>
@@ -220,7 +226,7 @@ export function PlaybackControls({
             data-testid="slider-seek"
           />
         </div>
-        
+
         {/* Main Controls */}
         <div className="flex items-center justify-center gap-2">
           <Button
@@ -232,7 +238,7 @@ export function PlaybackControls({
           >
             <SkipBack className="h-4 w-4" />
           </Button>
-          
+
           <Button
             size="icon"
             onClick={togglePlayPause}
@@ -247,7 +253,7 @@ export function PlaybackControls({
               <Play className="h-5 w-5" />
             )}
           </Button>
-          
+
           <Button
             size="icon"
             variant="ghost"
@@ -258,7 +264,7 @@ export function PlaybackControls({
             <SkipForward className="h-4 w-4" />
           </Button>
         </div>
-        
+
         {/* Additional Controls */}
         <div className="flex items-center justify-between">
           {/* Playback Speed */}
@@ -273,7 +279,7 @@ export function PlaybackControls({
             >
               {playbackRate}x
             </Button>
-            
+
             <Button
               size="icon"
               variant="ghost"
@@ -285,7 +291,7 @@ export function PlaybackControls({
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Volume Control */}
           <div className="flex items-center gap-2">
             <Button
@@ -313,7 +319,7 @@ export function PlaybackControls({
             />
           </div>
         </div>
-        
+
         {/* Status Indicator */}
         {isPlaying && (
           <div className="flex items-center justify-center">
@@ -336,24 +342,24 @@ interface TimestampJumpProps {
 
 export function TimestampJump({ onJump, className }: TimestampJumpProps) {
   const [inputValue, setInputValue] = useState("");
-  
+
   const handleJump = () => {
     // Parse timestamp format (mm:ss or mm:ss.ms)
     const parts = inputValue.split(":");
     if (parts.length !== 2) return;
-    
+
     const minutes = parseInt(parts[0], 10);
     const secondsParts = parts[1].split(".");
     const seconds = parseInt(secondsParts[0], 10);
     const milliseconds = secondsParts[1] ? parseInt(secondsParts[1], 10) : 0;
-    
+
     if (isNaN(minutes) || isNaN(seconds)) return;
-    
+
     const totalSeconds = minutes * 60 + seconds + milliseconds / 1000;
     onJump(totalSeconds);
     setInputValue("");
   };
-  
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <input

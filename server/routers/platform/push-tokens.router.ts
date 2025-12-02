@@ -1,5 +1,9 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import {
+  getAuthenticatedUserId,
+  sendError,
+  sendSuccess,
+} from "../../types/request-helpers";
 import { eq, and } from "drizzle-orm";
 import { db } from "../../db";
 import { pushTokens } from "@shared/schema";
@@ -14,7 +18,10 @@ const router = Router();
 router.get("/vapid-public-key", async (_req: Request, res: Response) => {
   try {
     const status = PushNotificationCoreService.getStatus();
-    res.json({ publicKey: status.publicKey, configured: status.vapidConfigured });
+    res.json({
+      publicKey: status.publicKey,
+      configured: status.vapidConfigured,
+    });
   } catch (error) {
     console.error("Error getting VAPID public key:", error);
     res.status(500).json({ error: "Failed to get VAPID public key" });
@@ -30,17 +37,20 @@ router.post("/register", isAuthenticated, async (req: Request, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { token, subscription, platform, deviceInfo  } = req.body || {};
+    const { token, subscription, platform, deviceInfo } = req.body || {};
 
     // Accept either 'token' (for native) or 'subscription' (for web)
     const tokenData = token || subscription;
-    
+
     if (!tokenData || !platform) {
-      return res.status(400).json({ error: "Token/subscription and platform are required" });
+      return res
+        .status(400)
+        .json({ error: "Token/subscription and platform are required" });
     }
 
     // Normalize token data to string for storage
-    const tokenString = typeof tokenData === 'string' ? tokenData : JSON.stringify(tokenData);
+    const tokenString =
+      typeof tokenData === "string" ? tokenData : JSON.stringify(tokenData);
 
     // Check if token already exists
     const existingToken = await db
@@ -50,8 +60,8 @@ router.post("/register", isAuthenticated, async (req: Request, res) => {
         and(
           eq(pushTokens.userId, userId),
           eq(pushTokens.platform, platform),
-          eq(pushTokens.token, tokenString)
-        )
+          eq(pushTokens.token, tokenString),
+        ),
       );
 
     if (existingToken.length > 0) {
@@ -98,7 +108,7 @@ router.delete("/unregister", isAuthenticated, async (req: Request, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { platform  } = req.body || {};
+    const { platform } = req.body || {};
 
     if (!platform) {
       return res.status(400).json({ error: "Platform is required" });
@@ -111,7 +121,9 @@ router.delete("/unregister", isAuthenticated, async (req: Request, res) => {
         isActive: false,
         updatedAt: new Date(),
       })
-      .where(and(eq(pushTokens.userId, userId), eq(pushTokens.platform, platform)));
+      .where(
+        and(eq(pushTokens.userId, userId), eq(pushTokens.platform, platform)),
+      );
 
     res.json({ message: "Tokens unregistered" });
   } catch (error) {
@@ -130,7 +142,7 @@ router.put("/:id/status", isAuthenticated, async (req: Request, res) => {
     }
 
     const { id } = req.params;
-    const { isActive  } = req.body || {};
+    const { isActive } = req.body || {};
 
     if (typeof isActive !== "boolean") {
       return res.status(400).json({ error: "isActive must be a boolean" });
@@ -189,13 +201,15 @@ router.post("/test", isAuthenticated, async (req: Request, res) => {
     }
 
     // Dynamically import to avoid circular dependencies
-    const { default: PushNotificationService } = await import("../../services/push-notification.service");
-    
+    const { default: PushNotificationService } = await import(
+      "../../services/push-notification.service"
+    );
+
     const result = await PushNotificationService.sendTestNotification(userId);
-    res.json({ 
-      message: "Test notification sent", 
-      sent: result.sent, 
-      failed: result.failed 
+    res.json({
+      message: "Test notification sent",
+      sent: result.sent,
+      failed: result.failed,
     });
   } catch (error) {
     console.error("Error sending test notification:", error);
@@ -204,48 +218,63 @@ router.post("/test", isAuthenticated, async (req: Request, res) => {
 });
 
 // Trigger expiring food notifications (admin only)
-router.post("/trigger-expiring", isAuthenticated, adminOnly, async (req: Request, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+router.post(
+  "/trigger-expiring",
+  isAuthenticated,
+  adminOnly,
+  async (req: Request, res) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
 
-    const { default: NotificationScheduler } = await import("../../services/push-notification-scheduler.service");
-    
-    const result = await NotificationScheduler.triggerExpiringFoodNotifications();
-    res.json({ 
-      message: "Expiring food notifications triggered", 
-      totalSent: result.totalSent,
-      usersNotified: result.usersNotified
-    });
-  } catch (error) {
-    console.error("Error triggering expiring food notifications:", error);
-    res.status(500).json({ error: "Failed to trigger notifications" });
-  }
-});
+      const { default: NotificationScheduler } = await import(
+        "../../services/push-notification-scheduler.service"
+      );
+
+      const result =
+        await NotificationScheduler.triggerExpiringFoodNotifications();
+      res.json({
+        message: "Expiring food notifications triggered",
+        totalSent: result.totalSent,
+        usersNotified: result.usersNotified,
+      });
+    } catch (error) {
+      console.error("Error triggering expiring food notifications:", error);
+      res.status(500).json({ error: "Failed to trigger notifications" });
+    }
+  },
+);
 
 // Trigger recipe suggestions (admin only)
-router.post("/trigger-recipes", isAuthenticated, adminOnly, async (req: Request, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+router.post(
+  "/trigger-recipes",
+  isAuthenticated,
+  adminOnly,
+  async (req: Request, res) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
 
-    const { default: NotificationScheduler } = await import("../../services/push-notification-scheduler.service");
-    
-    const result = await NotificationScheduler.triggerRecipeSuggestions();
-    res.json({ 
-      message: "Recipe suggestions triggered", 
-      totalSent: result.totalSent,
-      usersNotified: result.usersNotified
-    });
-  } catch (error) {
-    console.error("Error triggering recipe suggestions:", error);
-    res.status(500).json({ error: "Failed to trigger suggestions" });
-  }
-});
+      const { default: NotificationScheduler } = await import(
+        "../../services/push-notification-scheduler.service"
+      );
+
+      const result = await NotificationScheduler.triggerRecipeSuggestions();
+      res.json({
+        message: "Recipe suggestions triggered",
+        totalSent: result.totalSent,
+        usersNotified: result.usersNotified,
+      });
+    } catch (error) {
+      console.error("Error triggering recipe suggestions:", error);
+      res.status(500).json({ error: "Failed to trigger suggestions" });
+    }
+  },
+);
 
 // Get push notification services status
 router.get("/status", isAuthenticated, async (req: Request, res) => {

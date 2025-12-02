@@ -1,11 +1,11 @@
 /**
  * Lightweight Prediction Service
- * 
+ *
  * Replaces heavy TensorFlow models with simple, rule-based algorithms
  * that don't block the server startup
  */
 
-import type { UserMetrics } from './prediction.service';
+import type { UserMetrics } from "./prediction.service";
 
 /**
  * Rule-based churn prediction
@@ -16,7 +16,9 @@ export function predictChurnLightweight(metrics: UserMetrics): number {
   let weightSum = 0;
 
   // Days since last active (weight: 0.35)
-  const daysSinceActive = Math.floor((Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysSinceActive = Math.floor(
+    (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
   if (daysSinceActive > 30) churnScore += 0.35;
   else if (daysSinceActive > 14) churnScore += 0.25;
   else if (daysSinceActive > 7) churnScore += 0.15;
@@ -30,22 +32,22 @@ export function predictChurnLightweight(metrics: UserMetrics): number {
 
   // Average session duration in seconds (weight: 0.15)
   if (metrics.averageSessionDuration < 60) churnScore += 0.15;
-  else if (metrics.averageSessionDuration < 180) churnScore += 0.10;
+  else if (metrics.averageSessionDuration < 180) churnScore += 0.1;
   else if (metrics.averageSessionDuration < 300) churnScore += 0.05;
   weightSum += 0.15;
 
   // Feature adoption (weight: 0.15)
   const featuresUsed = Object.keys(metrics.featureUsageCount).length;
   if (featuresUsed < 2) churnScore += 0.15;
-  else if (featuresUsed < 4) churnScore += 0.10;
+  else if (featuresUsed < 4) churnScore += 0.1;
   else if (featuresUsed < 6) churnScore += 0.05;
   weightSum += 0.15;
 
   // Activity trend (weight: 0.10)
-  if (metrics.activityTrend < -0.5) churnScore += 0.10;
+  if (metrics.activityTrend < -0.5) churnScore += 0.1;
   else if (metrics.activityTrend < -0.2) churnScore += 0.07;
   else if (metrics.activityTrend < 0) churnScore += 0.03;
-  weightSum += 0.10;
+  weightSum += 0.1;
 
   // Normalize score
   return Math.min(1, Math.max(0, churnScore));
@@ -59,15 +61,16 @@ export function calculateEngagementProbability(
   hour: number,
   dayOfWeek: number,
   notificationType: string,
-  userActiveHours?: number[]
+  userActiveHours?: number[],
 ): number {
   let score = 0.5; // Base score
 
   // If we have user's active hours history, use it
   if (userActiveHours && userActiveHours.length > 0) {
-    const avgActiveHour = userActiveHours.reduce((a, b) => a + b, 0) / userActiveHours.length;
+    const avgActiveHour =
+      userActiveHours.reduce((a, b) => a + b, 0) / userActiveHours.length;
     const hourDiff = Math.abs(hour - avgActiveHour);
-    
+
     // Score based on proximity to user's typical active time
     if (hourDiff <= 1) score = 0.9;
     else if (hourDiff <= 2) score = 0.7;
@@ -76,7 +79,11 @@ export function calculateEngagementProbability(
   } else {
     // Use general patterns
     // Peak hours: 8-10am, 12-1pm, 6-9pm
-    if ((hour >= 8 && hour <= 10) || (hour === 12) || (hour >= 18 && hour <= 21)) {
+    if (
+      (hour >= 8 && hour <= 10) ||
+      hour === 12 ||
+      (hour >= 18 && hour <= 21)
+    ) {
       score = 0.8;
     }
     // Good hours: 10am-12pm, 2-6pm
@@ -86,8 +93,7 @@ export function calculateEngagementProbability(
     // Off hours: late night/early morning
     else if (hour >= 22 || hour < 7) {
       score = 0.2;
-    }
-    else {
+    } else {
       score = 0.4;
     }
   }
@@ -103,22 +109,25 @@ export function calculateEngagementProbability(
 
   // Adjust for notification type
   switch (notificationType) {
-    case 'expiring_food':
+    case "expiring_food":
       // Higher score during meal prep times
-      if ((hour >= 16 && hour <= 19) || (hour >= 9 && hour <= 11)) score += 0.15;
+      if ((hour >= 16 && hour <= 19) || (hour >= 9 && hour <= 11))
+        score += 0.15;
       break;
-    case 'meal_reminder':
+    case "meal_reminder":
       // Peak at meal times
-      if ((hour === 7) || (hour === 12) || (hour === 18)) score += 0.2;
+      if (hour === 7 || hour === 12 || hour === 18) score += 0.2;
       break;
-    case 'recipe_suggestion':
+    case "recipe_suggestion":
       // Best before meal prep times
-      if ((hour >= 15 && hour <= 17) || (hour === 10)) score += 0.15;
+      if ((hour >= 15 && hour <= 17) || hour === 10) score += 0.15;
       break;
-    case 'shopping_alert':
+    case "shopping_alert":
       // Weekend mornings or weekday evenings
-      if ((dayOfWeek === 0 || dayOfWeek === 6) && hour >= 9 && hour <= 12) score += 0.2;
-      else if (dayOfWeek !== 0 && dayOfWeek !== 6 && hour >= 17 && hour <= 20) score += 0.15;
+      if ((dayOfWeek === 0 || dayOfWeek === 6) && hour >= 9 && hour <= 12)
+        score += 0.2;
+      else if (dayOfWeek !== 0 && dayOfWeek !== 6 && hour >= 17 && hour <= 20)
+        score += 0.15;
       break;
   }
 
@@ -132,23 +141,25 @@ export function calculateEngagementProbability(
 export function detectSimpleTrend(values: number[]): {
   growthRate: number;
   strength: number;
-  direction: 'up' | 'down' | 'stable';
+  direction: "up" | "down" | "stable";
 } {
   if (values.length < 3) {
-    return { growthRate: 0, strength: 0, direction: 'stable' };
+    return { growthRate: 0, strength: 0, direction: "stable" };
   }
 
   // Calculate simple moving averages
   const windowSize = Math.min(Math.floor(values.length / 3), 7);
-  const recentAvg = values.slice(-windowSize).reduce((a, b) => a + b, 0) / windowSize;
-  const historicalAvg = values.slice(0, windowSize).reduce((a, b) => a + b, 0) / windowSize;
+  const recentAvg =
+    values.slice(-windowSize).reduce((a, b) => a + b, 0) / windowSize;
+  const historicalAvg =
+    values.slice(0, windowSize).reduce((a, b) => a + b, 0) / windowSize;
 
   // Avoid division by zero
   if (historicalAvg === 0) {
-    return { 
-      growthRate: recentAvg > 0 ? 100 : 0, 
-      strength: recentAvg > 0 ? 0.5 : 0, 
-      direction: recentAvg > 0 ? 'up' : 'stable' 
+    return {
+      growthRate: recentAvg > 0 ? 100 : 0,
+      strength: recentAvg > 0 ? 0.5 : 0,
+      direction: recentAvg > 0 ? "up" : "stable",
     };
   }
 
@@ -158,20 +169,21 @@ export function detectSimpleTrend(values: number[]): {
   // Calculate trend strength (0-1) based on consistency
   let consistentIncreases = 0;
   let consistentDecreases = 0;
-  
+
   for (let i = 1; i < values.length; i++) {
     if (values[i] > values[i - 1]) consistentIncreases++;
     else if (values[i] < values[i - 1]) consistentDecreases++;
   }
 
-  const consistency = Math.max(consistentIncreases, consistentDecreases) / (values.length - 1);
-  const strength = Math.min(1, consistency * Math.abs(growthRate) / 100);
+  const consistency =
+    Math.max(consistentIncreases, consistentDecreases) / (values.length - 1);
+  const strength = Math.min(1, (consistency * Math.abs(growthRate)) / 100);
 
   // Determine direction
-  let direction: 'up' | 'down' | 'stable';
-  if (growthRate > 10) direction = 'up';
-  else if (growthRate < -10) direction = 'down';
-  else direction = 'stable';
+  let direction: "up" | "down" | "stable";
+  if (growthRate > 10) direction = "up";
+  else if (growthRate < -10) direction = "down";
+  else direction = "stable";
 
   return { growthRate, strength, direction };
 }
@@ -190,13 +202,13 @@ export function detectAnomalies(values: number[]): {
 
   // Calculate mean and standard deviation
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
+  const squaredDiffs = values.map((v) => Math.pow(v - mean, 2));
   const variance = squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
   const stdDev = Math.sqrt(variance);
 
   // Find anomalies (z-score > 2)
   const anomalies: { index: number; value: number; zscore: number }[] = [];
-  
+
   if (stdDev > 0) {
     values.forEach((value, index) => {
       const zscore = Math.abs((value - mean) / stdDev);
@@ -207,7 +219,10 @@ export function detectAnomalies(values: number[]): {
   }
 
   // Calculate overall anomaly score
-  const anomalyScore = Math.min(1, anomalies.length / Math.max(1, values.length * 0.1));
+  const anomalyScore = Math.min(
+    1,
+    anomalies.length / Math.max(1, values.length * 0.1),
+  );
 
   return { anomalyScore, anomalies };
 }
@@ -215,7 +230,10 @@ export function detectAnomalies(values: number[]): {
 /**
  * Detect seasonal patterns using autocorrelation
  */
-export function detectSeasonality(values: number[], periodLength = 7): {
+export function detectSeasonality(
+  values: number[],
+  periodLength = 7,
+): {
   hasSeasonality: boolean;
   strength: number;
   period: number;
@@ -227,27 +245,28 @@ export function detectSeasonality(values: number[], periodLength = 7): {
   // Calculate autocorrelation for the specified period
   let correlation = 0;
   let count = 0;
-  
+
   for (let i = periodLength; i < values.length; i++) {
     correlation += values[i] * values[i - periodLength];
     count++;
   }
-  
+
   if (count > 0) {
     correlation = correlation / count;
-    
+
     // Normalize correlation
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-    
+    const variance =
+      values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+
     if (variance > 0) {
       const normalizedCorrelation = correlation / variance;
       const strength = Math.min(1, Math.abs(normalizedCorrelation));
-      
+
       return {
         hasSeasonality: strength > 0.3,
         strength,
-        period: periodLength
+        period: periodLength,
       };
     }
   }

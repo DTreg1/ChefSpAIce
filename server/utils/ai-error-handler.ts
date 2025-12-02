@@ -1,6 +1,6 @@
 /**
  * AI Error Handler
- * 
+ *
  * Comprehensive error handling for OpenAI API interactions.
  * Provides structured errors, retry logic, and user-friendly messages.
  */
@@ -15,10 +15,10 @@ export class AIError extends Error {
     public statusCode: number,
     public retryable: boolean,
     public userMessage: string,
-    public retryAfter?: number // For rate limiting
+    public retryAfter?: number, // For rate limiting
   ) {
     super(message);
-    this.name = 'AIError';
+    this.name = "AIError";
     Error.captureStackTrace(this, this.constructor);
   }
 }
@@ -27,16 +27,16 @@ export class AIError extends Error {
  * Error codes for categorizing AI errors
  */
 export enum AIErrorCode {
-  RATE_LIMIT = 'RATE_LIMIT',
-  AUTH_ERROR = 'AUTH_ERROR',
-  SERVER_ERROR = 'SERVER_ERROR',
-  CONTENT_POLICY = 'CONTENT_POLICY',
-  TIMEOUT = 'TIMEOUT',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  INVALID_RESPONSE = 'INVALID_RESPONSE',
-  CONTEXT_LENGTH_EXCEEDED = 'CONTEXT_LENGTH_EXCEEDED',
-  CIRCUIT_OPEN = 'CIRCUIT_OPEN',
-  UNKNOWN = 'UNKNOWN'
+  RATE_LIMIT = "RATE_LIMIT",
+  AUTH_ERROR = "AUTH_ERROR",
+  SERVER_ERROR = "SERVER_ERROR",
+  CONTENT_POLICY = "CONTENT_POLICY",
+  TIMEOUT = "TIMEOUT",
+  NETWORK_ERROR = "NETWORK_ERROR",
+  INVALID_RESPONSE = "INVALID_RESPONSE",
+  CONTEXT_LENGTH_EXCEEDED = "CONTEXT_LENGTH_EXCEEDED",
+  CIRCUIT_OPEN = "CIRCUIT_OPEN",
+  UNKNOWN = "UNKNOWN",
 }
 
 /**
@@ -70,34 +70,34 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   const data = err?.response?.data || err?.data;
   const headers = err?.response?.headers || err?.headers;
   const errorInfo = data?.error || data;
-  const message = errorInfo?.message || err?.message || 'Unknown error';
+  const message = errorInfo?.message || err?.message || "Unknown error";
 
   // Handle OpenAI API errors
   if (status) {
     // Rate limiting (429)
     if (status === 429) {
-      const retryAfter = headers?.['retry-after'] 
-        ? parseInt(headers['retry-after']) * 1000 
+      const retryAfter = headers?.["retry-after"]
+        ? parseInt(headers["retry-after"]) * 1000
         : 60000; // Default to 60 seconds
-      
+
       return new AIError(
-        'Rate limit exceeded',
+        "Rate limit exceeded",
         AIErrorCode.RATE_LIMIT,
         429,
         true,
-        'Too many requests. Please wait a moment and try again.',
-        retryAfter
+        "Too many requests. Please wait a moment and try again.",
+        retryAfter,
       );
     }
 
     // Invalid API key (401)
     if (status === 401) {
       return new AIError(
-        'Invalid API key',
+        "Invalid API key",
         AIErrorCode.AUTH_ERROR,
         401,
         false,
-        'Authentication error. Please check your API configuration.'
+        "Authentication error. Please check your API configuration.",
       );
     }
 
@@ -108,32 +108,40 @@ export function handleOpenAIError(error: Error | unknown): AIError {
         AIErrorCode.SERVER_ERROR,
         status,
         true,
-        'AI service temporarily unavailable. Please try again in a few moments.'
+        "AI service temporarily unavailable. Please try again in a few moments.",
       );
     }
 
     // Content policy violation (400)
     if (status === 400) {
-      const lowerMessage = message?.toLowerCase() || '';
-      
-      if (lowerMessage.includes('content_policy') || lowerMessage.includes('content policy')) {
+      const lowerMessage = message?.toLowerCase() || "";
+
+      if (
+        lowerMessage.includes("content_policy") ||
+        lowerMessage.includes("content policy")
+      ) {
         return new AIError(
-          'Content policy violation',
+          "Content policy violation",
           AIErrorCode.CONTENT_POLICY,
           400,
           false,
-          'Your request violates content policy. Please rephrase your message.'
+          "Your request violates content policy. Please rephrase your message.",
         );
       }
 
       // Context length exceeded
-      if (lowerMessage.includes('context_length_exceeded') || lowerMessage.includes('context') || lowerMessage.includes('token') || lowerMessage.includes('length')) {
+      if (
+        lowerMessage.includes("context_length_exceeded") ||
+        lowerMessage.includes("context") ||
+        lowerMessage.includes("token") ||
+        lowerMessage.includes("length")
+      ) {
         return new AIError(
-          'Context length exceeded',
+          "Context length exceeded",
           AIErrorCode.CONTEXT_LENGTH_EXCEEDED,
           400,
           false,
-          'The conversation is too long. Please start a new chat or clear some messages.'
+          "The conversation is too long. Please start a new chat or clear some messages.",
         );
       }
     }
@@ -141,63 +149,70 @@ export function handleOpenAIError(error: Error | unknown): AIError {
     // Model not found or other 404 errors
     if (status === 404) {
       return new AIError(
-        'Model or endpoint not found',
+        "Model or endpoint not found",
         AIErrorCode.UNKNOWN,
         404,
         false,
-        'The requested AI model or service is not available.'
+        "The requested AI model or service is not available.",
       );
     }
   }
 
   // Network errors
-  if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ECONNRESET') {
+  if (
+    err.code === "ECONNREFUSED" ||
+    err.code === "ENOTFOUND" ||
+    err.code === "ECONNRESET"
+  ) {
     return new AIError(
       `Network error: ${err.code}`,
       AIErrorCode.NETWORK_ERROR,
       503,
       true,
-      'Network connection failed. Please check your internet connection.'
+      "Network connection failed. Please check your internet connection.",
     );
   }
 
   // Timeout errors
-  if (err.code === 'ETIMEDOUT' || err.code === 'ECONNABORTED' || 
-      (err.message && err.message.toLowerCase().includes('timeout'))) {
+  if (
+    err.code === "ETIMEDOUT" ||
+    err.code === "ECONNABORTED" ||
+    (err.message && err.message.toLowerCase().includes("timeout"))
+  ) {
     return new AIError(
-      'Request timeout',
+      "Request timeout",
       AIErrorCode.TIMEOUT,
       504,
       true,
-      'Request took too long. Please try again.'
+      "Request took too long. Please try again.",
     );
   }
 
   // Invalid response format
-  if (err.message && err.message.includes('JSON')) {
+  if (err.message && err.message.includes("JSON")) {
     return new AIError(
-      'Invalid response format',
+      "Invalid response format",
       AIErrorCode.INVALID_RESPONSE,
       502,
       true,
-      'Received invalid response from AI service. Please try again.'
+      "Received invalid response from AI service. Please try again.",
     );
   }
 
   // Default unknown error
   return new AIError(
-    err.message || 'Unknown error occurred',
+    err.message || "Unknown error occurred",
     AIErrorCode.UNKNOWN,
     500,
     false,
-    'An unexpected error occurred. Please try again later.'
+    "An unexpected error occurred. Please try again later.",
   );
 }
 
-import { 
+import {
   retryWithBackoff as genericRetryWithBackoff,
-  type RetryConfig as BaseRetryConfig 
-} from './retry-handler';
+  type RetryConfig as BaseRetryConfig,
+} from "./retry-handler";
 
 /**
  * AI-specific retry configuration
@@ -206,28 +221,30 @@ export interface RetryConfig extends BaseRetryConfig {}
 
 /**
  * Retry a function with exponential backoff (AI-specific)
- * 
+ *
  * Wraps the generic retry function with AI-specific error handling.
  * Converts errors to AIError and checks retryability.
  */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  config: RetryConfig = {}
+  config: RetryConfig = {},
 ): Promise<T> {
   // Use AI-specific retry condition
   const aiRetryConfig: RetryConfig = {
     ...config,
     retryCondition: (error) => {
-      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
+      const aiError =
+        error instanceof AIError ? error : handleOpenAIError(error);
       return aiError.retryable;
     },
     onRetry: (attempt, error, delay) => {
-      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
+      const aiError =
+        error instanceof AIError ? error : handleOpenAIError(error);
       console.log(
         `[AI Retry] Attempt ${attempt}/${config.maxRetries || 3} failed. ` +
-        `Retrying in ${delay}ms. Error: ${aiError.code}`
+          `Retrying in ${delay}ms. Error: ${aiError.code}`,
       );
-    }
+    },
   };
 
   try {
@@ -259,26 +276,29 @@ export function isRetryableError(error: Error | unknown): boolean {
 export function formatErrorForLogging(error: Error | unknown): object {
   if (error instanceof AIError) {
     return {
-      type: 'AIError',
+      type: "AIError",
       code: error.code,
       statusCode: error.statusCode,
       message: error.message,
       userMessage: error.userMessage,
       retryable: error.retryable,
       retryAfter: error.retryAfter,
-      stack: error.stack
+      stack: error.stack,
     };
   }
 
   // Cast error to ExtendedError to safely access properties
-  const err = error as ExtendedError & { constructor?: { name?: string }, stack?: string };
-  
+  const err = error as ExtendedError & {
+    constructor?: { name?: string };
+    stack?: string;
+  };
+
   return {
-    type: err?.constructor?.name || 'Unknown',
-    message: err?.message || 'Unknown error',
+    type: err?.constructor?.name || "Unknown",
+    message: err?.message || "Unknown error",
     code: err?.code,
     status: err?.status,
-    stack: err?.stack
+    stack: err?.stack,
   };
 }
 
@@ -292,12 +312,12 @@ export function createErrorResponse(error: Error | unknown): {
   retryAfter?: number;
 } {
   const aiError = error instanceof AIError ? error : handleOpenAIError(error);
-  
+
   return {
     error: aiError.userMessage,
     code: aiError.code,
     retryable: aiError.retryable,
-    retryAfter: aiError.retryAfter
+    retryAfter: aiError.retryAfter,
   };
 }
 
@@ -306,13 +326,13 @@ export function createErrorResponse(error: Error | unknown): {
  */
 export function sanitizeErrorMessage(message: string): string {
   // Remove API keys
-  message = message.replace(/sk-[a-zA-Z0-9]{48}/g, 'sk-***');
-  
+  message = message.replace(/sk-[a-zA-Z0-9]{48}/g, "sk-***");
+
   // Remove URLs that might contain secrets
-  message = message.replace(/https?:\/\/[^\s]*api[^\s]*/gi, '[API_URL]');
-  
+  message = message.replace(/https?:\/\/[^\s]*api[^\s]*/gi, "[API_URL]");
+
   // Remove potential tokens
-  message = message.replace(/Bearer\s+[^\s]+/gi, 'Bearer [TOKEN]');
-  
+  message = message.replace(/Bearer\s+[^\s]+/gi, "Bearer [TOKEN]");
+
   return message;
 }

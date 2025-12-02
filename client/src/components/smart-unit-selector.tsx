@@ -51,7 +51,7 @@ export function SmartUnitSelector({
   const allUnits = getAllAvailableUnits();
   const filteredUnits = searchQuery
     ? allUnits.filter((unit) =>
-        unit.toLowerCase().includes(searchQuery.toLowerCase())
+        unit.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : allUnits;
 
@@ -62,10 +62,10 @@ export function SmartUnitSelector({
         foodName,
         foodCategory,
         servingSizeUnit,
-        usdaData
+        usdaData,
       );
       setSuggestion(newSuggestion);
-      
+
       // Auto-select the primary suggestion if no value is set
       if (!value && newSuggestion.primary) {
         onChange(newSuggestion.primary);
@@ -121,7 +121,7 @@ export function SmartUnitSelector({
               aria-expanded={open}
               className={cn(
                 "justify-between flex-1",
-                !value && "text-muted-foreground"
+                !value && "text-muted-foreground",
               )}
               data-testid={dataTestId || "button-unit-selector"}
             >
@@ -160,16 +160,15 @@ export function SmartUnitSelector({
                           size="sm"
                           className={cn(
                             "h-7",
-                            index === 0 && suggestion.confidence === "high" &&
-                              "ring-1 ring-primary"
+                            index === 0 &&
+                              suggestion.confidence === "high" &&
+                              "ring-1 ring-primary",
                           )}
                           onClick={() => handleSelectUnit(unit)}
                           data-testid={`button-unit-suggested-${unit}`}
                         >
                           {formatUnitDisplay(unit)}
-                          {value === unit && (
-                            <Check className="ml-1 h-3 w-3" />
-                          )}
+                          {value === unit && <Check className="ml-1 h-3 w-3" />}
                         </Button>
                       ))}
                     </div>
@@ -198,7 +197,7 @@ export function SmartUnitSelector({
                         size="sm"
                         className={cn(
                           "h-7 justify-start",
-                          isSuggested && !searchQuery && "font-medium"
+                          isSuggested && !searchQuery && "font-medium",
                         )}
                         onClick={() => handleSelectUnit(unit)}
                         data-testid={`button-unit-${unit}`}
@@ -233,7 +232,8 @@ export function SmartUnitSelector({
 
       {value && !isCurrentUnitSuggested && suggestedUnits.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Tip: "{suggestedUnits[0]}" is commonly used for {foodName || "this type of item"}
+          Tip: "{suggestedUnits[0]}" is commonly used for{" "}
+          {foodName || "this type of item"}
         </p>
       )}
     </div>

@@ -6,17 +6,17 @@ import { applianceLibraryData } from "../data/appliance-library-data";
 export async function initializeApplianceLibrary() {
   try {
     // console.log("Initializing appliance library...");
-    
+
     // Check if library is already populated
     const existingCount = await db.$count(applianceLibrary);
-    
+
     if (existingCount > 0) {
       // console.log(`Appliance library already has ${existingCount} items`);
       return;
     }
-    
+
     // Insert all items
-    const insertData = applianceLibraryData.map(item => ({
+    const insertData = applianceLibraryData.map((item) => ({
       name: item.name,
       category: item.category,
       subcategory: item.subcategory,
@@ -27,9 +27,9 @@ export async function initializeApplianceLibrary() {
       isCommon: item.isCommon,
       searchTerms: item.searchTerms,
     }));
-    
+
     await db.insert(applianceLibrary).values(insertData as any);
-    
+
     // console.log(`Successfully initialized appliance library with ${insertData.length} items`);
   } catch (error) {
     console.error("Error initializing appliance library:", error);

@@ -1,5 +1,9 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import {
+  getAuthenticatedUserId,
+  sendError,
+  sendSuccess,
+} from "../../types/request-helpers";
 import { z } from "zod";
 import { storage } from "../../storage/index";
 // Import authentication and authorization middleware
@@ -8,7 +12,11 @@ import { isModerator } from "../../middleware/rbac.middleware";
 import { validateBody, validateQuery } from "../../middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
 import { ModerationService } from "../../services/moderation.service";
-import type { InsertModerationLog, InsertBlockedContent, InsertModerationAppeal } from "@shared/schema";
+import type {
+  InsertModerationLog,
+  InsertBlockedContent,
+  InsertModerationAppeal,
+} from "@shared/schema";
 
 const router = Router();
 const moderationService = new ModerationService();
@@ -32,29 +40,30 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { content, contentType, contentId } = req.body;
-    
+
     try {
       // Check content for violations
       const result = await moderationService.checkContent(
         content,
         contentType,
         userId,
-        contentId
+        contentId,
       );
-      
+
       // Determine if content is blocked or flagged
-      const isBlocked = result.action === 'blocked';
-      const isFlagged = result.action === 'flagged' || result.action === 'warning';
-      
+      const isBlocked = result.action === "blocked";
+      const isFlagged =
+        result.action === "flagged" || result.action === "warning";
+
       // Create moderation log
       const logEntry: InsertModerationLog = {
         userId,
         contentType,
-        contentId: contentId || '',
+        contentId: contentId || "",
         content,
-        actionTaken: result.action === 'approved' ? "approved" : result.action,
+        actionTaken: result.action === "approved" ? "approved" : result.action,
         severity: result.severity,
         categories: result.categories,
         confidence: result.confidence,
@@ -62,9 +71,9 @@ router.post(
         toxicityScores: result.toxicityScores,
         manualReview: result.requiresManualReview || false,
       };
-      
+
       const log = await storage.admin.security.createModerationLog(logEntry);
-      
+
       // If content is blocked, create blocked content entry
       if (isBlocked) {
         const blockedEntry: InsertBlockedContent = {
@@ -78,10 +87,10 @@ router.post(
           status: "blocked",
           autoBlocked: true,
         };
-        
+
         await storage.admin.security.createBlockedContent(blockedEntry);
       }
-      
+
       res.json({
         allowed: result.approved,
         blocked: isBlocked,
@@ -97,7 +106,7 @@ router.post(
       console.error("Error checking content for moderation:", error);
       res.status(500).json({ error: "Failed to check content" });
     }
-  })
+  }),
 );
 
 // ==================== Moderation Queue ====================
@@ -107,7 +116,9 @@ router.post(
  * Get moderation queue (admin/moderator only)
  */
 const queueQuerySchema = z.object({
-  status: z.enum(["pending_review", "under_review", "resolved", "escalated"]).optional(),
+  status: z
+    .enum(["pending_review", "under_review", "resolved", "escalated"])
+    .optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).optional(),
   contentType: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
@@ -122,28 +133,32 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { status, severity, contentType, page, limit } = req.query;
-    
+
     // Get user to check if admin
     const user = await storage.user.user.getUserById(userId);
     const isAdmin = user?.isAdmin || false;
-    
+
     // Get moderation queue with validated params
     const parsedPage = Number(page) || 1;
     const parsedLimit = Number(limit) || 20;
-    
-    const logs = await storage.admin.security.getModerationQueue(userId, isAdmin, {
-      status: status as string | undefined,
-      severity: severity as string | undefined,
-      contentType: contentType as string | undefined,
-    });
-    
+
+    const logs = await storage.admin.security.getModerationQueue(
+      userId,
+      isAdmin,
+      {
+        status: status as string | undefined,
+        severity: severity as string | undefined,
+        contentType: contentType as string | undefined,
+      },
+    );
+
     // Apply pagination
     const startIndex = (parsedPage - 1) * parsedLimit;
     const endIndex = startIndex + parsedLimit;
     const paginatedLogs = logs.slice(startIndex, endIndex);
-    
+
     res.json({
       data: paginatedLogs,
       pagination: {
@@ -153,7 +168,7 @@ router.get(
         totalPages: Math.ceil(logs.length / parsedLimit),
       },
     });
-  })
+  }),
 );
 
 // ==================== Moderation Action ====================
@@ -177,9 +192,9 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const moderatorId = getAuthenticatedUserId(req);
     if (!moderatorId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { logId, action, reason, notes } = req.body;
-    
+
     try {
       // Update moderation log based on action
       const updates: Partial<InsertModerationLog> = {
@@ -188,14 +203,15 @@ router.post(
         reviewNotes: notes,
         manualReview: true,
       };
-      
+
       switch (action) {
         case "approve":
           updates.actionTaken = "approved";
           break;
         case "block":
           updates.actionTaken = "blocked";
-          updates.overrideReason = reason || "Content violates community guidelines";
+          updates.overrideReason =
+            reason || "Content violates community guidelines";
           break;
         case "escalate":
           updates.manualReview = true; // Mark for further review
@@ -204,9 +220,9 @@ router.post(
           updates.actionTaken = "approved";
           break;
       }
-      
+
       await storage.admin.security.updateModerationLog(logId, updates);
-      
+
       res.json({
         success: true,
         action,
@@ -217,7 +233,7 @@ router.post(
       console.error("Error taking moderation action:", error);
       res.status(500).json({ error: "Failed to process moderation action" });
     }
-  })
+  }),
 );
 
 // ==================== Appeals ====================
@@ -239,9 +255,9 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { blockedContentId, reason, additionalContext } = req.body;
-    
+
     try {
       const appeal: InsertModerationAppeal = {
         blockedContentId,
@@ -253,9 +269,10 @@ router.post(
         appealType: "false_positive", // Default type
         userNotified: false,
       };
-      
-      const createdAppeal = await storage.admin.security.createModerationAppeal(appeal);
-      
+
+      const createdAppeal =
+        await storage.admin.security.createModerationAppeal(appeal);
+
       res.json({
         success: true,
         appealId: createdAppeal.id,
@@ -265,7 +282,7 @@ router.post(
       console.error("Error submitting appeal:", error);
       res.status(500).json({ error: "Failed to submit appeal" });
     }
-  })
+  }),
 );
 
 /**
@@ -278,28 +295,28 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { id } = req.params;
-    
+
     try {
       const appeal = await storage.admin.security.getModerationAppeal(id);
-      
+
       if (!appeal) {
         return res.status(404).json({ error: "Appeal not found" });
       }
-      
+
       // Check if user owns the appeal or is admin
       const user = await storage.user.user.getUserById(userId);
       if (appeal.userId !== userId && !user?.isAdmin) {
         return res.status(403).json({ error: "Access denied" });
       }
-      
+
       res.json(appeal);
     } catch (error) {
       console.error("Error fetching appeal:", error);
       res.status(500).json({ error: "Failed to fetch appeal" });
     }
-  })
+  }),
 );
 
 /**
@@ -319,10 +336,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const reviewerId = getAuthenticatedUserId(req);
     if (!reviewerId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { id } = req.params;
     const { decision, reviewNotes } = req.body;
-    
+
     try {
       const updates: Partial<InsertModerationAppeal> = {
         status: decision,
@@ -331,17 +348,20 @@ router.post(
         decisionReason: reviewNotes,
         decision,
       };
-      
+
       await storage.admin.security.updateModerationAppeal(id, updates);
-      
+
       // If appeal is approved, restore the blocked content
       if (decision === "approved") {
         const appeal = await storage.admin.security.getModerationAppeal(id);
         if (appeal && appeal.blockedContentId) {
-          await storage.admin.security.restoreBlockedContent(appeal.blockedContentId, reviewerId);
+          await storage.admin.security.restoreBlockedContent(
+            appeal.blockedContentId,
+            reviewerId,
+          );
         }
       }
-      
+
       res.json({
         success: true,
         decision,
@@ -351,7 +371,7 @@ router.post(
       console.error("Error reviewing appeal:", error);
       res.status(500).json({ error: "Failed to review appeal" });
     }
-  })
+  }),
 );
 
 // ==================== Statistics ====================
@@ -373,7 +393,7 @@ router.get(
   validateQuery(statsQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { startDate, endDate, period } = req.query;
-    
+
     try {
       // Calculate time range based on period or custom dates
       let timeRange;
@@ -385,7 +405,7 @@ router.get(
       } else if (period) {
         const now = new Date();
         const start = new Date();
-        
+
         switch (period) {
           case "day":
             start.setDate(start.getDate() - 1);
@@ -400,12 +420,12 @@ router.get(
             start.setFullYear(start.getFullYear() - 1);
             break;
         }
-        
+
         timeRange = { start, end: now };
       }
-      
+
       const stats = await storage.admin.security.getModerationStats(timeRange);
-      
+
       res.json({
         ...stats,
         timeRange,
@@ -415,7 +435,7 @@ router.get(
       console.error("Error fetching moderation stats:", error);
       res.status(500).json({ error: "Failed to fetch moderation statistics" });
     }
-  })
+  }),
 );
 
 export default router;

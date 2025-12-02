@@ -1,6 +1,6 @@
 /**
  * Storage Facades Unit Tests
- * 
+ *
  * Tests for the storage facade classes including:
  * - UserStorage facade delegation
  * - AdminStorage facade delegation
@@ -8,249 +8,253 @@
  * - Domain storage composition
  */
 
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
+import { describe, it, beforeEach } from "node:test";
+import assert from "node:assert";
 
-describe('Storage Facades', () => {
-  describe('UserStorage Facade', () => {
-    it('should expose user domain storage', () => {
+describe("Storage Facades", () => {
+  describe("UserStorage Facade", () => {
+    it("should expose user domain storage", () => {
       const userFacade = {
         user: { getUserById: async () => ({}) },
-        food: { getFoodItems: async () => ([]) },
-        recipes: { getRecipes: async () => ([]) },
-        inventory: { getInventory: async () => ([]) },
-        chat: { getMessages: async () => ([]) },
-        notifications: { getNotifications: async () => ([]) },
-        scheduling: { getSchedules: async () => ([]) },
+        food: { getFoodItems: async () => [] },
+        recipes: { getRecipes: async () => [] },
+        inventory: { getInventory: async () => [] },
+        chat: { getMessages: async () => [] },
+        notifications: { getNotifications: async () => [] },
+        scheduling: { getSchedules: async () => [] },
       };
 
       assert.ok(userFacade.user);
-      assert.ok(typeof userFacade.user.getUserById === 'function');
+      assert.ok(typeof userFacade.user.getUserById === "function");
     });
 
-    it('should expose food domain storage', () => {
+    it("should expose food domain storage", () => {
       const userFacade = {
-        food: { getFoodItems: async () => ([]) },
+        food: { getFoodItems: async () => [] },
       };
 
       assert.ok(userFacade.food);
-      assert.ok(typeof userFacade.food.getFoodItems === 'function');
+      assert.ok(typeof userFacade.food.getFoodItems === "function");
     });
 
-    it('should expose recipes domain storage', () => {
+    it("should expose recipes domain storage", () => {
       const userFacade = {
-        recipes: { getRecipes: async () => ([]) },
+        recipes: { getRecipes: async () => [] },
       };
 
       assert.ok(userFacade.recipes);
-      assert.ok(typeof userFacade.recipes.getRecipes === 'function');
+      assert.ok(typeof userFacade.recipes.getRecipes === "function");
     });
 
-    it('should expose inventory domain storage', () => {
+    it("should expose inventory domain storage", () => {
       const userFacade = {
-        inventory: { getInventory: async () => ([]) },
+        inventory: { getInventory: async () => [] },
       };
 
       assert.ok(userFacade.inventory);
-      assert.ok(typeof userFacade.inventory.getInventory === 'function');
+      assert.ok(typeof userFacade.inventory.getInventory === "function");
     });
 
-    it('should expose chat domain storage', () => {
+    it("should expose chat domain storage", () => {
       const userFacade = {
-        chat: { getMessages: async () => ([]) },
+        chat: { getMessages: async () => [] },
       };
 
       assert.ok(userFacade.chat);
-      assert.ok(typeof userFacade.chat.getMessages === 'function');
+      assert.ok(typeof userFacade.chat.getMessages === "function");
     });
 
-    it('should expose notifications domain storage', () => {
+    it("should expose notifications domain storage", () => {
       const userFacade = {
-        notifications: { getNotifications: async () => ([]) },
+        notifications: { getNotifications: async () => [] },
       };
 
       assert.ok(userFacade.notifications);
-      assert.ok(typeof userFacade.notifications.getNotifications === 'function');
+      assert.ok(
+        typeof userFacade.notifications.getNotifications === "function",
+      );
     });
 
-    it('should expose scheduling domain storage', () => {
+    it("should expose scheduling domain storage", () => {
       const userFacade = {
-        scheduling: { getSchedules: async () => ([]) },
+        scheduling: { getSchedules: async () => [] },
       };
 
       assert.ok(userFacade.scheduling);
-      assert.ok(typeof userFacade.scheduling.getSchedules === 'function');
+      assert.ok(typeof userFacade.scheduling.getSchedules === "function");
     });
 
-    it('should wrap domain storage with error boundary proxy', () => {
+    it("should wrap domain storage with error boundary proxy", () => {
       const mockDomainStorage = {
-        someMethod: async () => 'result',
+        someMethod: async () => "result",
       };
 
-      const isWrapped = typeof mockDomainStorage.someMethod === 'function';
+      const isWrapped = typeof mockDomainStorage.someMethod === "function";
       assert.ok(isWrapped);
     });
   });
 
-  describe('AdminStorage Facade', () => {
-    it('should expose user admin operations', () => {
+  describe("AdminStorage Facade", () => {
+    it("should expose user admin operations", () => {
       const adminFacade = {
-        user: { getAllUsers: async () => ([]) },
-        moderation: { getModerationLogs: async () => ([]) },
+        user: { getAllUsers: async () => [] },
+        moderation: { getModerationLogs: async () => [] },
         analytics: { getAnalytics: async () => ({}) },
         billing: { getBillingInfo: async () => ({}) },
-        support: { getTickets: async () => ([]) },
-        fraud: { getFraudScores: async () => ([]) },
-        experiments: { getExperiments: async () => ([]) },
+        support: { getTickets: async () => [] },
+        fraud: { getFraudScores: async () => [] },
+        experiments: { getExperiments: async () => [] },
       };
 
       assert.ok(adminFacade.user);
-      assert.ok(typeof adminFacade.user.getAllUsers === 'function');
+      assert.ok(typeof adminFacade.user.getAllUsers === "function");
     });
 
-    it('should expose moderation operations', () => {
+    it("should expose moderation operations", () => {
       const adminFacade = {
-        moderation: { 
-          getModerationLogs: async () => ([]),
+        moderation: {
+          getModerationLogs: async () => [],
           createModerationLog: async () => ({}),
         },
       };
 
       assert.ok(adminFacade.moderation);
-      assert.ok(typeof adminFacade.moderation.getModerationLogs === 'function');
+      assert.ok(typeof adminFacade.moderation.getModerationLogs === "function");
     });
 
-    it('should expose analytics operations', () => {
+    it("should expose analytics operations", () => {
       const adminFacade = {
-        analytics: { 
+        analytics: {
           getAnalytics: async () => ({}),
           trackEvent: async () => {},
         },
       };
 
       assert.ok(adminFacade.analytics);
-      assert.ok(typeof adminFacade.analytics.getAnalytics === 'function');
+      assert.ok(typeof adminFacade.analytics.getAnalytics === "function");
     });
 
-    it('should expose billing operations', () => {
+    it("should expose billing operations", () => {
       const adminFacade = {
-        billing: { 
+        billing: {
           getBillingInfo: async () => ({}),
           processDonation: async () => ({}),
         },
       };
 
       assert.ok(adminFacade.billing);
-      assert.ok(typeof adminFacade.billing.getBillingInfo === 'function');
+      assert.ok(typeof adminFacade.billing.getBillingInfo === "function");
     });
 
-    it('should expose support operations', () => {
+    it("should expose support operations", () => {
       const adminFacade = {
-        support: { 
-          getTickets: async () => ([]),
+        support: {
+          getTickets: async () => [],
           updateTicket: async () => ({}),
         },
       };
 
       assert.ok(adminFacade.support);
-      assert.ok(typeof adminFacade.support.getTickets === 'function');
+      assert.ok(typeof adminFacade.support.getTickets === "function");
     });
 
-    it('should expose fraud detection operations', () => {
+    it("should expose fraud detection operations", () => {
       const adminFacade = {
-        fraud: { 
-          getFraudScores: async () => ([]),
+        fraud: {
+          getFraudScores: async () => [],
           reportSuspiciousActivity: async () => {},
         },
       };
 
       assert.ok(adminFacade.fraud);
-      assert.ok(typeof adminFacade.fraud.getFraudScores === 'function');
+      assert.ok(typeof adminFacade.fraud.getFraudScores === "function");
     });
 
-    it('should expose experiments operations', () => {
+    it("should expose experiments operations", () => {
       const adminFacade = {
-        experiments: { 
-          getExperiments: async () => ([]),
+        experiments: {
+          getExperiments: async () => [],
           createExperiment: async () => ({}),
         },
       };
 
       assert.ok(adminFacade.experiments);
-      assert.ok(typeof adminFacade.experiments.getExperiments === 'function');
+      assert.ok(typeof adminFacade.experiments.getExperiments === "function");
     });
   });
 
-  describe('PlatformStorage Facade', () => {
-    it('should expose system operations', () => {
+  describe("PlatformStorage Facade", () => {
+    it("should expose system operations", () => {
       const platformFacade = {
-        system: { 
+        system: {
           getSystemHealth: async () => ({}),
-          getSystemMetrics: async () => ([]),
+          getSystemMetrics: async () => [],
         },
       };
 
       assert.ok(platformFacade.system);
-      assert.ok(typeof platformFacade.system.getSystemHealth === 'function');
+      assert.ok(typeof platformFacade.system.getSystemHealth === "function");
     });
 
-    it('should expose content operations', () => {
+    it("should expose content operations", () => {
       const platformFacade = {
-        content: { 
-          getCategories: async () => ([]),
+        content: {
+          getCategories: async () => [],
           createCategory: async () => ({}),
         },
       };
 
       assert.ok(platformFacade.content);
-      assert.ok(typeof platformFacade.content.getCategories === 'function');
+      assert.ok(typeof platformFacade.content.getCategories === "function");
     });
 
-    it('should expose pricing operations', () => {
+    it("should expose pricing operations", () => {
       const platformFacade = {
-        pricing: { 
-          getPricingRules: async () => ([]),
+        pricing: {
+          getPricingRules: async () => [],
           updatePricingRule: async () => ({}),
         },
       };
 
       assert.ok(platformFacade.pricing);
-      assert.ok(typeof platformFacade.pricing.getPricingRules === 'function');
+      assert.ok(typeof platformFacade.pricing.getPricingRules === "function");
     });
 
-    it('should expose AI/ML operations', () => {
+    it("should expose AI/ML operations", () => {
       const platformFacade = {
-        ai: { 
-          getVoiceCommands: async () => ([]),
+        ai: {
+          getVoiceCommands: async () => [],
           createTranscription: async () => ({}),
         },
       };
 
       assert.ok(platformFacade.ai);
-      assert.ok(typeof platformFacade.ai.getVoiceCommands === 'function');
+      assert.ok(typeof platformFacade.ai.getVoiceCommands === "function");
     });
 
-    it('should expose privacy operations', () => {
+    it("should expose privacy operations", () => {
       const platformFacade = {
-        privacy: { 
+        privacy: {
           getPrivacySettings: async () => ({}),
           updatePrivacySettings: async () => ({}),
         },
       };
 
       assert.ok(platformFacade.privacy);
-      assert.ok(typeof platformFacade.privacy.getPrivacySettings === 'function');
+      assert.ok(
+        typeof platformFacade.privacy.getPrivacySettings === "function",
+      );
     });
   });
 
-  describe('Facade Delegation Pattern', () => {
-    it('should delegate method calls to domain storage', async () => {
+  describe("Facade Delegation Pattern", () => {
+    it("should delegate method calls to domain storage", async () => {
       let delegatedCalled = false;
-      
+
       const mockDomainStorage = {
         method: async () => {
           delegatedCalled = true;
-          return 'result';
+          return "result";
         },
       };
 
@@ -259,27 +263,27 @@ describe('Storage Facades', () => {
       assert.ok(delegatedCalled);
     });
 
-    it('should pass arguments correctly to domain storage', async () => {
+    it("should pass arguments correctly to domain storage", async () => {
       let receivedArgs: unknown[] = [];
-      
+
       const mockDomainStorage = {
         method: async (...args: unknown[]) => {
           receivedArgs = args;
-          return 'result';
+          return "result";
         },
       };
 
-      await mockDomainStorage.method('arg1', 'arg2', { option: true });
+      await mockDomainStorage.method("arg1", "arg2", { option: true });
 
       assert.strictEqual(receivedArgs.length, 3);
-      assert.strictEqual(receivedArgs[0], 'arg1');
-      assert.strictEqual(receivedArgs[1], 'arg2');
+      assert.strictEqual(receivedArgs[0], "arg1");
+      assert.strictEqual(receivedArgs[1], "arg2");
       assert.deepStrictEqual(receivedArgs[2], { option: true });
     });
 
-    it('should return domain storage results unchanged', async () => {
-      const expectedResult = { id: 'user-123', name: 'Test User' };
-      
+    it("should return domain storage results unchanged", async () => {
+      const expectedResult = { id: "user-123", name: "Test User" };
+
       const mockDomainStorage = {
         method: async () => expectedResult,
       };
@@ -289,9 +293,9 @@ describe('Storage Facades', () => {
       assert.deepStrictEqual(result, expectedResult);
     });
 
-    it('should propagate errors from domain storage', async () => {
-      const expectedError = new Error('Domain error');
-      
+    it("should propagate errors from domain storage", async () => {
+      const expectedError = new Error("Domain error");
+
       const mockDomainStorage = {
         method: async () => {
           throw expectedError;
@@ -309,52 +313,52 @@ describe('Storage Facades', () => {
     });
   });
 
-  describe('Facade Error Context Enrichment', () => {
-    it('should add facade name to error context', () => {
-      const facadeName = 'user';
+  describe("Facade Error Context Enrichment", () => {
+    it("should add facade name to error context", () => {
+      const facadeName = "user";
       const errorContext = {
         facade: facadeName,
-        domain: 'recipes',
-        operation: 'getRecipes',
+        domain: "recipes",
+        operation: "getRecipes",
       };
 
-      assert.strictEqual(errorContext.facade, 'user');
+      assert.strictEqual(errorContext.facade, "user");
     });
 
-    it('should add domain name to error context', () => {
+    it("should add domain name to error context", () => {
       const errorContext = {
-        facade: 'admin',
-        domain: 'moderation',
-        operation: 'ban',
+        facade: "admin",
+        domain: "moderation",
+        operation: "ban",
       };
 
-      assert.strictEqual(errorContext.domain, 'moderation');
+      assert.strictEqual(errorContext.domain, "moderation");
     });
 
-    it('should add operation name to error context', () => {
+    it("should add operation name to error context", () => {
       const errorContext = {
-        facade: 'platform',
-        domain: 'system',
-        operation: 'getMetrics',
+        facade: "platform",
+        domain: "system",
+        operation: "getMetrics",
       };
 
-      assert.strictEqual(errorContext.operation, 'getMetrics');
+      assert.strictEqual(errorContext.operation, "getMetrics");
     });
   });
 
-  describe('Facade Singleton Export', () => {
-    it('should export class for dependency injection', () => {
+  describe("Facade Singleton Export", () => {
+    it("should export class for dependency injection", () => {
       class MockUserStorage {
         user = { getUserById: async () => ({}) };
       }
 
       const instance = new MockUserStorage();
-      
+
       assert.ok(instance);
       assert.ok(instance.user);
     });
 
-    it('should export singleton for convenience', () => {
+    it("should export singleton for convenience", () => {
       const singleton = {
         user: { getUserById: async () => ({}) },
       };
@@ -365,8 +369,8 @@ describe('Storage Facades', () => {
     });
   });
 
-  describe('Domain Storage Composition', () => {
-    it('should create fresh domain storage instances', () => {
+  describe("Domain Storage Composition", () => {
+    it("should create fresh domain storage instances", () => {
       class MockFacade {
         domain1: object;
         domain2: object;
@@ -383,10 +387,10 @@ describe('Storage Facades', () => {
       assert.notStrictEqual(facade1.domain1, facade2.domain1);
     });
 
-    it('should wrap each domain with proxy separately', () => {
+    it("should wrap each domain with proxy separately", () => {
       const facade = {
-        domain1: new Proxy({ name: 'domain1' }, {}),
-        domain2: new Proxy({ name: 'domain2' }, {}),
+        domain1: new Proxy({ name: "domain1" }, {}),
+        domain2: new Proxy({ name: "domain2" }, {}),
       };
 
       assert.ok(facade.domain1);
@@ -396,4 +400,4 @@ describe('Storage Facades', () => {
   });
 });
 
-console.log('Storage Facades tests loaded successfully');
+console.log("Storage Facades tests loaded successfully");

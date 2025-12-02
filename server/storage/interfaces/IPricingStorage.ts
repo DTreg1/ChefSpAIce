@@ -17,11 +17,9 @@ export interface IPricingStorage {
   createPricingRule(rule: InsertPricingRules): Promise<PricingRules>;
   updatePricingRule(
     id: string,
-    rule: Partial<InsertPricingRules>
+    rule: Partial<InsertPricingRules>,
   ): Promise<PricingRules>;
-  getPricingRuleByProduct(
-    productId: string
-  ): Promise<PricingRules | undefined>;
+  getPricingRuleByProduct(productId: string): Promise<PricingRules | undefined>;
   getPricingRule(id: string): Promise<PricingRules | undefined>;
   getActivePricingRules(): Promise<PricingRules[]>;
   deletePricingRule(id: string): Promise<void>;
@@ -35,12 +33,12 @@ export interface IPricingStorage {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<PriceHistory[]>;
   getLatestPrice(productId: string): Promise<PriceHistory | undefined>;
   getPriceChangeTrend(
     productId: string,
-    days: number
+    days: number,
   ): Promise<{
     averageChange: number;
     trend: "increasing" | "stable" | "decreasing";
@@ -49,26 +47,23 @@ export interface IPricingStorage {
 
   // ==================== Pricing Performance ====================
   recordPricingPerformance(
-    performance: InsertPricingPerformance
+    performance: InsertPricingPerformance,
   ): Promise<PricingPerformance>;
   getPricingPerformance(
     productId: string,
     params?: {
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<PricingPerformance[]>;
   getPerformanceByPricePoint(
     productId: string,
     pricePoint: number,
-    tolerance?: number
+    tolerance?: number,
   ): Promise<PricingPerformance[]>;
 
   // ==================== Metrics & Analytics ====================
-  getPricingMetrics(params?: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<{
+  getPricingMetrics(params?: { startDate?: Date; endDate?: Date }): Promise<{
     totalRevenue: number;
     averageConversionRate: number;
     averagePriceChange: number;
@@ -80,7 +75,7 @@ export interface IPricingStorage {
   }>;
   getProductRevenueBreakdown(
     productId: string,
-    period: "week" | "month" | "year"
+    period: "week" | "month" | "year",
   ): Promise<{
     totalRevenue: number;
     totalUnitsSold: number;
@@ -121,7 +116,7 @@ export interface IPricingStorage {
       targetRevenue?: number;
       targetConversion?: number;
       includeCompetition?: boolean;
-    }
+    },
   ): Promise<{
     recommendedPrice: number;
     confidence: number;
@@ -136,7 +131,7 @@ export interface IPricingStorage {
     productId: string,
     optimizationParams?: {
       includeCompetition?: boolean;
-    }
+    },
   ): Promise<{
     previousPrice: number;
     newPrice: number;

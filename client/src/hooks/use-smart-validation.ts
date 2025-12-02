@@ -42,7 +42,11 @@ export function useSmartValidation() {
       value: string;
       context?: any;
     }) => {
-      const response = await apiRequest(API_ENDPOINTS.validation.field, "POST", params);
+      const response = await apiRequest(
+        API_ENDPOINTS.validation.field,
+        "POST",
+        params,
+      );
       return response;
     },
   });
@@ -51,10 +55,19 @@ export function useSmartValidation() {
   const validateFormMutation = useMutation({
     mutationFn: async (params: {
       formId: string;
-      fields: Array<{ name: string; type: string; value: string; required?: boolean }>;
+      fields: Array<{
+        name: string;
+        type: string;
+        value: string;
+        required?: boolean;
+      }>;
       context?: any;
     }) => {
-      const response = await apiRequest(API_ENDPOINTS.validation.form, "POST", params);
+      const response = await apiRequest(
+        API_ENDPOINTS.validation.form,
+        "POST",
+        params,
+      );
       return response;
     },
   });
@@ -67,11 +80,19 @@ export function useSmartValidation() {
       originalValue: string;
       suggestedValue?: string;
       finalValue: string;
-      userResolution: "accepted_suggestion" | "manual_correction" | "ignored" | "abandoned";
+      userResolution:
+        | "accepted_suggestion"
+        | "manual_correction"
+        | "ignored"
+        | "abandoned";
       context?: any;
       resolutionTime?: number;
     }) => {
-      const response = await apiRequest(API_ENDPOINTS.validation.learn, "POST", params);
+      const response = await apiRequest(
+        API_ENDPOINTS.validation.learn,
+        "POST",
+        params,
+      );
       return response;
     },
   });
@@ -88,7 +109,7 @@ export function useSmartValidation() {
         debounce?: number;
         context?: any;
         immediate?: boolean;
-      }
+      },
     ) => {
       const { debounce = 500, context, immediate } = options || {};
 
@@ -98,7 +119,7 @@ export function useSmartValidation() {
       }
 
       // Update state immediately with the value
-      setValidationState(prev => ({
+      setValidationState((prev) => ({
         ...prev,
         [fieldName]: {
           ...prev[fieldName],
@@ -112,7 +133,7 @@ export function useSmartValidation() {
 
       // Validate after debounce or immediately
       const validate = async () => {
-        setValidationState(prev => ({
+        setValidationState((prev) => ({
           ...prev,
           [fieldName]: {
             ...prev[fieldName],
@@ -128,7 +149,7 @@ export function useSmartValidation() {
             context,
           });
 
-          setValidationState(prev => ({
+          setValidationState((prev) => ({
             ...prev,
             [fieldName]: {
               value,
@@ -141,7 +162,7 @@ export function useSmartValidation() {
           return result;
         } catch (error) {
           console.error("Validation error:", error);
-          setValidationState(prev => ({
+          setValidationState((prev) => ({
             ...prev,
             [fieldName]: {
               ...prev[fieldName],
@@ -158,7 +179,7 @@ export function useSmartValidation() {
         debounceTimers.current[fieldName] = setTimeout(validate, debounce);
       }
     },
-    [validateFieldMutation]
+    [validateFieldMutation],
   );
 
   /**
@@ -167,8 +188,13 @@ export function useSmartValidation() {
   const validateForm = useCallback(
     async (
       formId: string,
-      fields: Array<{ name: string; type: string; value: string; required?: boolean }>,
-      context?: any
+      fields: Array<{
+        name: string;
+        type: string;
+        value: string;
+        required?: boolean;
+      }>,
+      context?: any,
     ) => {
       const result = await validateFormMutation.mutateAsync({
         formId,
@@ -178,7 +204,7 @@ export function useSmartValidation() {
 
       // Update state for all fields
       if (result.fields) {
-        setValidationState(prev => {
+        setValidationState((prev) => {
           const newState = { ...prev };
           for (const field of fields) {
             newState[field.name] = {
@@ -194,7 +220,7 @@ export function useSmartValidation() {
 
       return result;
     },
-    [validateFormMutation]
+    [validateFormMutation],
   );
 
   /**
@@ -205,7 +231,7 @@ export function useSmartValidation() {
       fieldName: string,
       fieldType: string,
       suggestedValue: string,
-      action?: string
+      action?: string,
     ) => {
       const originalValue = validationState[fieldName]?.value || "";
       const resolutionTime = resolutionStartTime.current[fieldName]
@@ -224,7 +250,7 @@ export function useSmartValidation() {
       });
 
       // Update the field value and clear validation
-      setValidationState(prev => ({
+      setValidationState((prev) => ({
         ...prev,
         [fieldName]: {
           value: suggestedValue,
@@ -236,18 +262,14 @@ export function useSmartValidation() {
 
       return suggestedValue;
     },
-    [validationState, learnFromCorrectionMutation]
+    [validationState, learnFromCorrectionMutation],
   );
 
   /**
    * Record manual correction
    */
   const recordManualCorrection = useCallback(
-    async (
-      fieldName: string,
-      fieldType: string,
-      finalValue: string
-    ) => {
+    async (fieldName: string, fieldType: string, finalValue: string) => {
       const originalValue = validationState[fieldName]?.value || "";
       const resolutionTime = resolutionStartTime.current[fieldName]
         ? Date.now() - resolutionStartTime.current[fieldName]
@@ -262,14 +284,14 @@ export function useSmartValidation() {
         resolutionTime,
       });
     },
-    [validationState, learnFromCorrectionMutation]
+    [validationState, learnFromCorrectionMutation],
   );
 
   /**
    * Clear validation for a field
    */
   const clearValidation = useCallback((fieldName: string) => {
-    setValidationState(prev => {
+    setValidationState((prev) => {
       const newState = { ...prev };
       delete newState[fieldName];
       return newState;
@@ -282,7 +304,9 @@ export function useSmartValidation() {
   const clearAllValidations = useCallback(() => {
     setValidationState({});
     // Clear all debounce timers
-    Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+    Object.values(debounceTimers.current).forEach((timer) =>
+      clearTimeout(timer),
+    );
     debounceTimers.current = {};
   }, []);
 
@@ -291,14 +315,16 @@ export function useSmartValidation() {
    */
   const getFieldState = useCallback(
     (fieldName: string) => {
-      return validationState[fieldName] || {
-        value: "",
-        result: undefined,
-        isValidating: false,
-        hasBeenValidated: false,
-      };
+      return (
+        validationState[fieldName] || {
+          value: "",
+          result: undefined,
+          isValidating: false,
+          hasBeenValidated: false,
+        }
+      );
     },
-    [validationState]
+    [validationState],
   );
 
   /**
@@ -306,7 +332,7 @@ export function useSmartValidation() {
    */
   const isFormValid = useCallback(() => {
     const fields = Object.values(validationState);
-    return fields.every(field => !field.result || field.result.isValid);
+    return fields.every((field) => !field.result || field.result.isValid);
   }, [validationState]);
 
   return {
@@ -319,6 +345,7 @@ export function useSmartValidation() {
     getFieldState,
     isFormValid,
     validationState,
-    isValidating: validateFieldMutation.isPending || validateFormMutation.isPending,
+    isValidating:
+      validateFieldMutation.isPending || validateFormMutation.isPending,
   };
 }

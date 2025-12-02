@@ -1,9 +1,9 @@
 /**
  * Push Notification Core Service
- * 
+ *
  * Consolidated service for all push notification operations across platforms.
  * Handles Web Push (VAPID), iOS (APNs), and Android (FCM).
- * 
+ *
  * Features:
  * - Multi-platform support (web, iOS, Android)
  * - Multi-device support per user
@@ -16,7 +16,12 @@
 import webpush from "web-push";
 import { eq, and, lt } from "drizzle-orm";
 import { db } from "../db";
-import { pushTokens, users, userInventory, notificationHistory } from "@shared/schema";
+import {
+  pushTokens,
+  users,
+  userInventory,
+  notificationHistory,
+} from "@shared/schema";
 import { storage } from "../storage/index";
 import crypto from "crypto";
 import type { PushToken } from "@shared/schema";
@@ -37,21 +42,25 @@ const loadPlatformServices = async () => {
 };
 
 // Configure web push
-const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY || "BKd0F0KpK_3Yw2c4lxVhQGNqPWnMGqWXA1kapi6VLEsL0VBs9K8PtRmUugKM8qCqX7EMz_2lPcrecNaRc9LbKxo";
-const privateVapidKey = process.env.VAPID_PRIVATE_KEY || "your-private-key-here";
+const publicVapidKey =
+  process.env.VITE_VAPID_PUBLIC_KEY ||
+  "BKd0F0KpK_3Yw2c4lxVhQGNqPWnMGqWXA1kapi6VLEsL0VBs9K8PtRmUugKM8qCqX7EMz_2lPcrecNaRc9LbKxo";
+const privateVapidKey =
+  process.env.VAPID_PRIVATE_KEY || "your-private-key-here";
 const vapidSubject = process.env.VAPID_SUBJECT || "mailto:admin@chefspaice.com";
 
 // Validate VAPID configuration
-const isVapidConfigured = privateVapidKey !== "your-private-key-here" && publicVapidKey.length > 20;
+const isVapidConfigured =
+  privateVapidKey !== "your-private-key-here" && publicVapidKey.length > 20;
 if (!isVapidConfigured) {
   console.warn(
-    '⚠️  VAPID keys are not properly configured. Web push notifications will NOT work.\n' +
-    '   To enable web push notifications:\n' +
-    '   1. Generate VAPID keys using: npx web-push generate-vapid-keys\n' +
-    '   2. Set environment variables:\n' +
-    '      - VITE_VAPID_PUBLIC_KEY=<your-public-key>\n' +
-    '      - VAPID_PRIVATE_KEY=<your-private-key>\n' +
-    '      - VAPID_SUBJECT=mailto:your-email@domain.com\n'
+    "⚠️  VAPID keys are not properly configured. Web push notifications will NOT work.\n" +
+      "   To enable web push notifications:\n" +
+      "   1. Generate VAPID keys using: npx web-push generate-vapid-keys\n" +
+      "   2. Set environment variables:\n" +
+      "      - VITE_VAPID_PUBLIC_KEY=<your-public-key>\n" +
+      "      - VAPID_PRIVATE_KEY=<your-private-key>\n" +
+      "      - VAPID_SUBJECT=mailto:your-email@domain.com\n",
   );
 }
 
@@ -91,22 +100,26 @@ const BATCH_SIZE = 100;
 
 /**
  * Push Notification Core Service
- * 
+ *
  * Unified service for sending push notifications across all platforms.
  */
 export class PushNotificationCoreService {
-  
   /**
    * Send a push notification to a specific user's devices
    */
-  static async sendToUser(userId: string, payload: NotificationPayload): Promise<BatchSendResult> {
+  static async sendToUser(
+    userId: string,
+    payload: NotificationPayload,
+  ): Promise<BatchSendResult> {
     try {
       await loadPlatformServices();
-      
+
       const tokens = await db
         .select()
         .from(pushTokens)
-        .where(and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)));
+        .where(
+          and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)),
+        );
 
       if (tokens.length === 0) {
         return { sent: 0, failed: 0, invalidTokens: [] };
@@ -123,9 +136,9 @@ export class PushNotificationCoreService {
    * Send notifications to multiple tokens with batching
    */
   private static async sendToTokens(
-    userId: string, 
-    tokens: PushToken[], 
-    payload: NotificationPayload
+    userId: string,
+    tokens: PushToken[],
+    payload: NotificationPayload,
   ): Promise<BatchSendResult> {
     let sent = 0;
     let failed = 0;
@@ -134,18 +147,18 @@ export class PushNotificationCoreService {
     // Process in batches to avoid overwhelming the service
     for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
       const batch = tokens.slice(i, i + BATCH_SIZE);
-      
+
       const batchPromises = batch.map(async (token) => {
         try {
           const result = await this.sendToSingleToken(token, payload);
-          
+
           if (result.success) {
             sent++;
             await this.recordNotificationSuccess(userId, token, payload);
           } else {
             failed++;
             await this.recordNotificationFailure(userId, token, payload);
-            
+
             if (result.shouldRemoveToken) {
               invalidTokens.push(token.token);
               await this.deactivateToken(token.id);
@@ -153,9 +166,12 @@ export class PushNotificationCoreService {
           }
         } catch (error) {
           failed++;
-          console.error(`Failed to send notification to token ${token.id}:`, error);
+          console.error(
+            `Failed to send notification to token ${token.id}:`,
+            error,
+          );
           await this.recordNotificationFailure(userId, token, payload);
-          
+
           if (this.isTokenInvalidError(error)) {
             invalidTokens.push(token.token);
             await this.deactivateToken(token.id);
@@ -173,15 +189,15 @@ export class PushNotificationCoreService {
    * Send notification to a single token based on platform
    */
   private static async sendToSingleToken(
-    token: PushToken, 
-    payload: NotificationPayload
+    token: PushToken,
+    payload: NotificationPayload,
   ): Promise<PushNotificationResult> {
     switch (token.platform) {
-      case 'web':
+      case "web":
         return this.sendWebPush(token.token, payload);
-      case 'ios':
+      case "ios":
         return this.sendApnsPush(token.token, payload);
-      case 'android':
+      case "android":
         return this.sendFcmPush(token.token, payload);
       default:
         console.warn(`Unknown platform: ${token.platform}`);
@@ -193,8 +209,8 @@ export class PushNotificationCoreService {
    * Send Web Push notification
    */
   private static async sendWebPush(
-    tokenString: string, 
-    payload: NotificationPayload
+    tokenString: string,
+    payload: NotificationPayload,
   ): Promise<PushNotificationResult> {
     try {
       const subscription = JSON.parse(tokenString);
@@ -209,8 +225,8 @@ export class PushNotificationCoreService {
    * Send APNs notification (iOS)
    */
   private static async sendApnsPush(
-    tokenString: string, 
-    payload: NotificationPayload
+    tokenString: string,
+    payload: NotificationPayload,
   ): Promise<PushNotificationResult> {
     try {
       await ApnsService.sendNotification(tokenString, payload);
@@ -224,8 +240,8 @@ export class PushNotificationCoreService {
    * Send FCM notification (Android)
    */
   private static async sendFcmPush(
-    tokenString: string, 
-    payload: NotificationPayload
+    tokenString: string,
+    payload: NotificationPayload,
   ): Promise<PushNotificationResult> {
     try {
       await FcmService.sendNotification(tokenString, payload);
@@ -240,7 +256,7 @@ export class PushNotificationCoreService {
    */
   private static handleSendError(error: Error | any): PushNotificationResult {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     const invalidTokenPatterns = [
       /invalid.?registration/i,
       /not.?registered/i,
@@ -250,10 +266,10 @@ export class PushNotificationCoreService {
       /invalid.?recipient/i,
       /mismatch.?sender/i,
     ];
-    
-    const shouldRemoveToken = 
-      (error.statusCode === 410) || 
-      invalidTokenPatterns.some(pattern => pattern.test(errorMessage));
+
+    const shouldRemoveToken =
+      error.statusCode === 410 ||
+      invalidTokenPatterns.some((pattern) => pattern.test(errorMessage));
 
     return {
       success: false,
@@ -267,7 +283,7 @@ export class PushNotificationCoreService {
    */
   private static isTokenInvalidError(error: any): boolean {
     if (error?.statusCode === 410) return true;
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
     const invalidPatterns = [
       /invalid.?registration/i,
@@ -276,8 +292,8 @@ export class PushNotificationCoreService {
       /bad.?device.?token/i,
       /unregistered/i,
     ];
-    
-    return invalidPatterns.some(pattern => pattern.test(errorMessage));
+
+    return invalidPatterns.some((pattern) => pattern.test(errorMessage));
   }
 
   /**
@@ -294,18 +310,18 @@ export class PushNotificationCoreService {
    * Record successful notification in history
    */
   private static async recordNotificationSuccess(
-    userId: string, 
-    token: PushToken, 
-    payload: NotificationPayload
+    userId: string,
+    token: PushToken,
+    payload: NotificationPayload,
   ): Promise<void> {
     await db.insert(notificationHistory).values({
       id: crypto.randomUUID(),
       userId,
-      type: payload.tag || 'notification',
+      type: payload.tag || "notification",
       title: payload.title,
       body: payload.body,
       data: payload.data,
-      status: 'sent',
+      status: "sent",
       platform: token.platform,
       pushTokenId: token.id,
     });
@@ -320,18 +336,18 @@ export class PushNotificationCoreService {
    * Record failed notification in history
    */
   private static async recordNotificationFailure(
-    userId: string, 
-    token: PushToken, 
-    payload: NotificationPayload
+    userId: string,
+    token: PushToken,
+    payload: NotificationPayload,
   ): Promise<void> {
     await db.insert(notificationHistory).values({
       id: crypto.randomUUID(),
       userId,
-      type: payload.tag || 'notification',
+      type: payload.tag || "notification",
       title: payload.title,
       body: payload.body,
       data: payload.data,
-      status: 'failed',
+      status: "failed",
       platform: token.platform,
       pushTokenId: token.id,
     });
@@ -344,7 +360,10 @@ export class PushNotificationCoreService {
   /**
    * Send expiring food notifications to all eligible users
    */
-  static async sendExpiringFoodNotifications(): Promise<{ totalSent: number; usersNotified: number }> {
+  static async sendExpiringFoodNotifications(): Promise<{
+    totalSent: number;
+    usersNotified: number;
+  }> {
     try {
       const usersWithNotifications = await db
         .select()
@@ -352,8 +371,8 @@ export class PushNotificationCoreService {
         .where(
           and(
             eq(users.notificationsEnabled, true),
-            eq(users.notifyExpiringFood, true)
-          )
+            eq(users.notifyExpiringFood, true),
+          ),
         );
 
       const today = new Date();
@@ -369,39 +388,43 @@ export class PushNotificationCoreService {
           .where(
             and(
               eq(userInventory.userId, user.id),
-              lt(userInventory.expirationDate, threeDaysFromNow.toISOString().split('T')[0])
-            )
+              lt(
+                userInventory.expirationDate,
+                threeDaysFromNow.toISOString().split("T")[0],
+              ),
+            ),
           );
 
         if (expiringItems.length === 0) continue;
 
-        const todayStr = today.toISOString().split('T')[0];
-        const threeDaysStr = threeDaysFromNow.toISOString().split('T')[0];
-        
+        const todayStr = today.toISOString().split("T")[0];
+        const threeDaysStr = threeDaysFromNow.toISOString().split("T")[0];
+
         const expiredItems = expiringItems.filter(
-          item => item.expirationDate && item.expirationDate < todayStr
+          (item) => item.expirationDate && item.expirationDate < todayStr,
         );
         const todayItems = expiringItems.filter(
-          item => item.expirationDate && item.expirationDate === todayStr
+          (item) => item.expirationDate && item.expirationDate === todayStr,
         );
         const soonItems = expiringItems.filter(
-          item => item.expirationDate && 
+          (item) =>
+            item.expirationDate &&
             item.expirationDate > todayStr &&
-            item.expirationDate < threeDaysStr
+            item.expirationDate < threeDaysStr,
         );
 
         let notificationBody = "";
-        
+
         if (expiredItems.length > 0) {
-          notificationBody += `${expiredItems.length} item${expiredItems.length > 1 ? 's have' : ' has'} expired. `;
+          notificationBody += `${expiredItems.length} item${expiredItems.length > 1 ? "s have" : " has"} expired. `;
         }
-        
+
         if (todayItems.length > 0) {
-          notificationBody += `${todayItems.length} item${todayItems.length > 1 ? 's expire' : ' expires'} today. `;
+          notificationBody += `${todayItems.length} item${todayItems.length > 1 ? "s expire" : " expires"} today. `;
         }
-        
+
         if (soonItems.length > 0) {
-          notificationBody += `${soonItems.length} item${soonItems.length > 1 ? 's expire' : ' expires'} soon.`;
+          notificationBody += `${soonItems.length} item${soonItems.length > 1 ? "s expire" : " expires"} soon.`;
         }
 
         const notification: NotificationPayload = {
@@ -413,15 +436,18 @@ export class PushNotificationCoreService {
           data: {
             type: "expiring-food",
             url: "/inventory",
-            itemCount: expiringItems.length
+            itemCount: expiringItems.length,
           },
           actions: [
             { action: "view", title: "View Items" },
-            { action: "dismiss", title: "Dismiss" }
-          ]
+            { action: "dismiss", title: "Dismiss" },
+          ],
         };
 
-        const result = await PushNotificationCoreService.sendToUser(user.id, notification);
+        const result = await PushNotificationCoreService.sendToUser(
+          user.id,
+          notification,
+        );
         totalSent += result.sent;
       }
 
@@ -435,7 +461,10 @@ export class PushNotificationCoreService {
   /**
    * Send recipe suggestion notifications
    */
-  static async sendRecipeSuggestions(): Promise<{ totalSent: number; usersNotified: number }> {
+  static async sendRecipeSuggestions(): Promise<{
+    totalSent: number;
+    usersNotified: number;
+  }> {
     try {
       const usersWithNotifications = await db
         .select()
@@ -443,8 +472,8 @@ export class PushNotificationCoreService {
         .where(
           and(
             eq(users.notificationsEnabled, true),
-            eq(users.notifyRecipeSuggestions, true)
-          )
+            eq(users.notifyRecipeSuggestions, true),
+          ),
         );
 
       let totalSent = 0;
@@ -465,15 +494,18 @@ export class PushNotificationCoreService {
           tag: "recipe-suggestion",
           data: {
             type: "recipe-suggestion",
-            url: "/chat"
+            url: "/chat",
           },
           actions: [
             { action: "view", title: "View Recipes" },
-            { action: "later", title: "Maybe Later" }
-          ]
+            { action: "later", title: "Maybe Later" },
+          ],
         };
 
-        const result = await PushNotificationCoreService.sendToUser(user.id, notification);
+        const result = await PushNotificationCoreService.sendToUser(
+          user.id,
+          notification,
+        );
         totalSent += result.sent;
       }
 
@@ -488,9 +520,9 @@ export class PushNotificationCoreService {
    * Send meal reminder notifications
    */
   static async sendMealReminder(
-    userId: string, 
-    mealName: string, 
-    mealTime: string
+    userId: string,
+    mealName: string,
+    mealTime: string,
   ): Promise<BatchSendResult> {
     try {
       const notification: NotificationPayload = {
@@ -503,12 +535,12 @@ export class PushNotificationCoreService {
           type: "meal-reminder",
           url: "/meal-planning",
           mealName,
-          mealTime
+          mealTime,
         },
         actions: [
           { action: "start-cooking", title: "Start Cooking" },
-          { action: "snooze", title: "Remind in 30 min" }
-        ]
+          { action: "snooze", title: "Remind in 30 min" },
+        ],
       };
 
       return await PushNotificationCoreService.sendToUser(userId, notification);
@@ -531,8 +563,8 @@ export class PushNotificationCoreService {
         tag: "test",
         data: {
           type: "test",
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
 
       return await PushNotificationCoreService.sendToUser(userId, notification);

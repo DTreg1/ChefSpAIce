@@ -228,7 +228,9 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
   const { toast } = useToast();
 
-  const { data: storageLocations } = useStorageLocations() as { data: StorageLocation[] | undefined };
+  const { data: storageLocations } = useStorageLocations() as {
+    data: StorageLocation[] | undefined;
+  };
 
   // Set default storage location when dialog opens
   useEffect(() => {
@@ -359,15 +361,27 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const addItemMutation = useMutation({
-    mutationFn: async (data: Omit<InsertFoodItem, 'userId'>) => {
-      const response = await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
+    mutationFn: async (data: Omit<InsertFoodItem, "userId">) => {
+      const response = await apiRequest(
+        API_ENDPOINTS.inventory.foodItems,
+        "POST",
+        data,
+      );
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.tracking] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.foodItems],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.storageLocations],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.data],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.tracking],
+      });
       toast({
         title: "Success",
         description: "Food item added to inventory",
@@ -437,7 +451,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     onError: (error: Error | unknown) => {
       toast({
         title: "Analysis Error",
-        description: error instanceof Error ? error.message : "Failed to analyze the image",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to analyze the image",
         variant: "destructive",
       });
     },
@@ -610,12 +627,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setSelectedUpc(food.gtinUpc || null);
     setSearchQuery(food.description);
     setImageUrl(null);
-    
-    const suggestedDays = getSuggestedShelfLife(food.foodCategory, food.dataType);
+
+    const suggestedDays = getSuggestedShelfLife(
+      food.foodCategory,
+      food.dataType,
+    );
     const suggestedDate = new Date();
     suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
     setExpirationDate(suggestedDate.toISOString().split("T")[0]);
-    
+
     const suggestedLocationId = getSuggestedStorageLocation(
       food.foodCategory,
       food.description,
@@ -635,17 +655,21 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
       if (response.ok) {
         const enriched = await response.json();
-        
+
         if (enriched.imageUrl) {
           setImageUrl(enriched.imageUrl);
         }
-        
+
         // Update selected food with enriched serving size data if available
-        if (enriched.servingSize && enriched.servingSizeUnit && !food.servingSize) {
+        if (
+          enriched.servingSize &&
+          enriched.servingSizeUnit &&
+          !food.servingSize
+        ) {
           setSelectedFood((prev: any) => ({
             ...prev,
             servingSize: enriched.servingSize,
-            servingSizeUnit: enriched.servingSizeUnit
+            servingSizeUnit: enriched.servingSizeUnit,
           }));
         }
       }
@@ -661,20 +685,20 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       foodCategory: product.category,
       dataType: "Branded",
       servingSize: 1,
-      servingSizeUnit: "piece"
+      servingSizeUnit: "piece",
     });
     setSearchQuery(product.title || "Unknown Product");
     setSelectedUpc(product.barcode_number || null);
-    
+
     if (product.images && product.images[0]) {
       setImageUrl(product.images[0]);
     }
-    
+
     const suggestedDays = getSuggestedShelfLife(product.category);
     const suggestedDate = new Date();
     suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
     setExpirationDate(suggestedDate.toISOString().split("T")[0]);
-    
+
     const suggestedLocationId = getSuggestedStorageLocation(
       product.category,
       product.title,
@@ -689,57 +713,57 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     // Parse quantity and unit from the quantity string for serving size
     let servingSize = 1;
     let servingSizeUnit = "serving";
-    
+
     if (product.quantity) {
       let quantityStr = product.quantity;
-      
+
       // Detect multi-pack patterns (e.g., "6x250g", "6 x 250g", "6x 250 g")
       if (/\d\s*[x×]\s*\d/i.test(quantityStr)) {
         const parts = quantityStr.split(/\s*[x×]\s*/i);
         quantityStr = parts[parts.length - 1]; // Take the last part (the per-unit size)
       }
-      
+
       // Extract number and unit (e.g., "250 g", "500ml", "12oz")
       const quantityMatch = quantityStr.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?/);
       if (quantityMatch) {
         servingSize = parseFloat(quantityMatch[1]);
-        
+
         // Normalize unit abbreviations
         const rawUnit = quantityMatch[2]?.toLowerCase() || "piece";
         const unitMap: Record<string, string> = {
-          'g': 'gram',
-          'kg': 'kilogram',
-          'ml': 'milliliter',
-          'l': 'liter',
-          'oz': 'ounce',
-          'lb': 'pound',
-          'mg': 'milligram',
-          'fl': 'fluid ounce',
+          g: "gram",
+          kg: "kilogram",
+          ml: "milliliter",
+          l: "liter",
+          oz: "ounce",
+          lb: "pound",
+          mg: "milligram",
+          fl: "fluid ounce",
         };
         servingSizeUnit = unitMap[rawUnit] || rawUnit;
       }
     }
-    
+
     setSelectedFood({
       description: product.product_name || "Unknown Product",
       brandOwner: product.brands,
       foodCategory: product.categories,
       dataType: "Open Food Facts",
       servingSize,
-      servingSizeUnit
+      servingSizeUnit,
     });
     setSearchQuery(product.product_name || "Unknown Product");
     setSelectedUpc(product.code || null);
-    
+
     if (product.image_url) {
       setImageUrl(product.image_url);
     }
-    
+
     const suggestedDays = getSuggestedShelfLife(product.categories);
     const suggestedDate = new Date();
     suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
     setExpirationDate(suggestedDate.toISOString().split("T")[0]);
-    
+
     const suggestedLocationId = getSuggestedStorageLocation(
       product.categories,
       product.product_name,
@@ -813,27 +837,32 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         <DialogHeader>
           <DialogTitle>Add Food Item</DialogTitle>
           <DialogDescription>
-            Search across USDA, Barcode Lookup, and Open Food Facts databases for comprehensive food information.
+            Search across USDA, Barcode Lookup, and Open Food Facts databases
+            for comprehensive food information.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <Tabs defaultValue="unified" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="unified" data-testid="tab-unified-search">Unified Search</TabsTrigger>
-              <TabsTrigger value="advanced" data-testid="tab-advanced-search">Advanced USDA</TabsTrigger>
+              <TabsTrigger value="unified" data-testid="tab-unified-search">
+                Unified Search
+              </TabsTrigger>
+              <TabsTrigger value="advanced" data-testid="tab-advanced-search">
+                Advanced USDA
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="unified" className="space-y-4">
-              <UnifiedFoodSearch
-                onSelectUSDA={handleSelectUSDA}
-              />
-              
+              <UnifiedFoodSearch onSelectUSDA={handleSelectUSDA} />
+
               {/* Form fields for unified search */}
               {selectedFood && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="description-unified">Food Description *</Label>
+                    <Label htmlFor="description-unified">
+                      Food Description *
+                    </Label>
                     <Input
                       id="description-unified"
                       value={searchQuery}
@@ -846,17 +875,18 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   {imageUrl && (
                     <div className="space-y-2">
                       <Label>Product Image</Label>
-                      <img 
-                        src={imageUrl} 
+                      <img
+                        src={imageUrl}
                         alt={searchQuery}
                         className="w-full max-w-xs rounded-lg border border-border"
                       />
                     </div>
                   )}
 
-
                   <div className="space-y-2">
-                    <Label id="storage-location-label-unified">Storage Location *</Label>
+                    <Label id="storage-location-label-unified">
+                      Storage Location *
+                    </Label>
                     <ToggleGroup
                       type="single"
                       value={storageLocationId}
@@ -879,7 +909,9 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="expiration-unified">Expiration Date *</Label>
+                    <Label htmlFor="expiration-unified">
+                      Expiration Date *
+                    </Label>
                     <Input
                       id="expiration-unified"
                       type="date"
@@ -888,7 +920,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                       data-testid="input-expiration"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Auto-suggested based on food type. Always verify with the package label.
+                      Auto-suggested based on food type. Always verify with the
+                      package label.
                     </p>
                   </div>
                 </>
@@ -915,296 +948,349 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               </div>
 
               {searchResults && searchResults.foods.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Search Results</Label>
-                <span className="text-sm text-muted-foreground">
-                  {searchResults.totalHits} total results
-                </span>
-              </div>
-              <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
-                {/* Sort foods to prioritize those with complete data */}
-                {searchResults.foods
-                  .sort((a: USDAFoodItem, b: USDAFoodItem) => {
-                    // Calculate completeness score for each item
-                    const scoreA = (a.nutrition ? 3 : 0) + 
-                                   (a.servingSize ? 2 : 0) + 
-                                   (a.servingSizeUnit ? 2 : 0) +
-                                   (a.brandOwner ? 1 : 0) +
-                                   (a.ingredients ? 1 : 0);
-                    const scoreB = (b.nutrition ? 3 : 0) + 
-                                   (b.servingSize ? 2 : 0) + 
-                                   (b.servingSizeUnit ? 2 : 0) +
-                                   (b.brandOwner ? 1 : 0) +
-                                   (b.ingredients ? 1 : 0);
-                    return scoreB - scoreA; // Higher score first
-                  })
-                  .map((food: USDAFoodItem) => (
-                  <button
-                    key={food.fdcId}
-                    onClick={() => {
-                      setSelectedFood(food);
-                      setSelectedUpc(food.gtinUpc || null);
-                      setSearchQuery(food.description);
-                      // Auto-suggest expiration date based on food category
-                      const suggestedDays = getSuggestedShelfLife(
-                        food.foodCategory,
-                        food.dataType,
-                      );
-                      const suggestedDate = new Date();
-                      suggestedDate.setDate(
-                        suggestedDate.getDate() + suggestedDays,
-                      );
-                      setExpirationDate(
-                        suggestedDate.toISOString().split("T")[0],
-                      );
-                      // Auto-select storage location based on food category and description
-                      const suggestedLocationId = getSuggestedStorageLocation(
-                        food.foodCategory,
-                        food.description,
-                        storageLocations,
-                      );
-                      if (suggestedLocationId) {
-                        setStorageLocationId(suggestedLocationId);
-                      }
-                    }}
-                    className={`w-full p-3 text-left hover-elevate border-b border-border last:border-0 ${
-                      selectedFood?.fdcId === food.fdcId ? "bg-accent" : ""
-                    }`}
-                    data-testid={`button-select-food-${food.fdcId}`}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="font-medium flex-1">{food.description}</div>
-                        {/* Data completeness indicator */}
-                        {food.nutrition && food.servingSize && food.servingSizeUnit && (
-                          <Badge variant="default" className="ml-2 shrink-0">
-                            Complete Data
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {/* Primary information row */}
-                      <div className="flex flex-wrap gap-2">
-                        {food.brandOwner && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                            {food.brandOwner}
-                          </span>
-                        )}
-                        {food.gtinUpc && (
-                          <span className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded font-mono">
-                            UPC: {food.gtinUpc}
-                          </span>
-                        )}
-                        {food.foodCategory && (
-                          <span className="text-xs bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded">
-                            {food.foodCategory}
-                          </span>
-                        )}
-                      </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Search Results</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {searchResults.totalHits} total results
+                    </span>
+                  </div>
+                  <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
+                    {/* Sort foods to prioritize those with complete data */}
+                    {searchResults.foods
+                      .sort((a: USDAFoodItem, b: USDAFoodItem) => {
+                        // Calculate completeness score for each item
+                        const scoreA =
+                          (a.nutrition ? 3 : 0) +
+                          (a.servingSize ? 2 : 0) +
+                          (a.servingSizeUnit ? 2 : 0) +
+                          (a.brandOwner ? 1 : 0) +
+                          (a.ingredients ? 1 : 0);
+                        const scoreB =
+                          (b.nutrition ? 3 : 0) +
+                          (b.servingSize ? 2 : 0) +
+                          (b.servingSizeUnit ? 2 : 0) +
+                          (b.brandOwner ? 1 : 0) +
+                          (b.ingredients ? 1 : 0);
+                        return scoreB - scoreA; // Higher score first
+                      })
+                      .map((food: USDAFoodItem) => (
+                        <button
+                          key={food.fdcId}
+                          onClick={() => {
+                            setSelectedFood(food);
+                            setSelectedUpc(food.gtinUpc || null);
+                            setSearchQuery(food.description);
+                            // Auto-suggest expiration date based on food category
+                            const suggestedDays = getSuggestedShelfLife(
+                              food.foodCategory,
+                              food.dataType,
+                            );
+                            const suggestedDate = new Date();
+                            suggestedDate.setDate(
+                              suggestedDate.getDate() + suggestedDays,
+                            );
+                            setExpirationDate(
+                              suggestedDate.toISOString().split("T")[0],
+                            );
+                            // Auto-select storage location based on food category and description
+                            const suggestedLocationId =
+                              getSuggestedStorageLocation(
+                                food.foodCategory,
+                                food.description,
+                                storageLocations,
+                              );
+                            if (suggestedLocationId) {
+                              setStorageLocationId(suggestedLocationId);
+                            }
+                          }}
+                          className={`w-full p-3 text-left hover-elevate border-b border-border last:border-0 ${
+                            selectedFood?.fdcId === food.fdcId
+                              ? "bg-accent"
+                              : ""
+                          }`}
+                          data-testid={`button-select-food-${food.fdcId}`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between">
+                              <div className="font-medium flex-1">
+                                {food.description}
+                              </div>
+                              {/* Data completeness indicator */}
+                              {food.nutrition &&
+                                food.servingSize &&
+                                food.servingSizeUnit && (
+                                  <Badge
+                                    variant="default"
+                                    className="ml-2 shrink-0"
+                                  >
+                                    Complete Data
+                                  </Badge>
+                                )}
+                            </div>
 
-                      {/* Detailed information grid */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        {food.servingSize && food.servingSizeUnit && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Serving:</span>
-                            <span className="font-medium">{food.servingSize} {food.servingSizeUnit}</span>
-                          </div>
-                        )}
-                        {food.nutrition?.calories !== undefined && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Calories:</span>
-                            <span className="font-medium">{Math.round(food.nutrition.calories)}</span>
-                          </div>
-                        )}
-                        {food.nutrition?.protein !== undefined && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Protein:</span>
-                            <span className="font-medium">{food.nutrition.protein}g</span>
-                          </div>
-                        )}
-                        {food.nutrition?.carbohydrates !== undefined && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Carbs:</span>
-                            <span className="font-medium">{food.nutrition.carbohydrates}g</span>
-                          </div>
-                        )}
-                        {food.nutrition?.fat !== undefined && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Fat:</span>
-                            <span className="font-medium">{food.nutrition.fat}g</span>
-                          </div>
-                        )}
-                                      </div>
+                            {/* Primary information row */}
+                            <div className="flex flex-wrap gap-2">
+                              {food.brandOwner && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                  {food.brandOwner}
+                                </span>
+                              )}
+                              {food.gtinUpc && (
+                                <span className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded font-mono">
+                                  UPC: {food.gtinUpc}
+                                </span>
+                              )}
+                              {food.foodCategory && (
+                                <span className="text-xs bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded">
+                                  {food.foodCategory}
+                                </span>
+                              )}
+                            </div>
 
-                      {/* Ingredients preview if available */}
-                      {food.ingredients && (
-                        <div className="text-xs">
-                          <span className="text-muted-foreground">Ingredients: </span>
-                          <span className="line-clamp-1">{food.ingredients}</span>
-                        </div>
-                      )}
+                            {/* Detailed information grid */}
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                              {food.servingSize && food.servingSizeUnit && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Serving:
+                                  </span>
+                                  <span className="font-medium">
+                                    {food.servingSize} {food.servingSizeUnit}
+                                  </span>
+                                </div>
+                              )}
+                              {food.nutrition?.calories !== undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Calories:
+                                  </span>
+                                  <span className="font-medium">
+                                    {Math.round(food.nutrition.calories)}
+                                  </span>
+                                </div>
+                              )}
+                              {food.nutrition?.protein !== undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Protein:
+                                  </span>
+                                  <span className="font-medium">
+                                    {food.nutrition.protein}g
+                                  </span>
+                                </div>
+                              )}
+                              {food.nutrition?.carbohydrates !== undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Carbs:
+                                  </span>
+                                  <span className="font-medium">
+                                    {food.nutrition.carbohydrates}g
+                                  </span>
+                                </div>
+                              )}
+                              {food.nutrition?.fat !== undefined && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Fat:
+                                  </span>
+                                  <span className="font-medium">
+                                    {food.nutrition.fat}g
+                                  </span>
+                                </div>
+                              )}
+                            </div>
 
-                      {/* Footer with metadata */}
-                      <div className="flex justify-between items-center pt-1">
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {food.dataType} • ID: {food.fdcId}
-                        </span>
-                      </div>
+                            {/* Ingredients preview if available */}
+                            {food.ingredients && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">
+                                  Ingredients:{" "}
+                                </span>
+                                <span className="line-clamp-1">
+                                  {food.ingredients}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Footer with metadata */}
+                            <div className="flex justify-between items-center pt-1">
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {food.dataType} • ID: {food.fdcId}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {searchResults.totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Page {currentPage} of {searchResults.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(searchResults.totalPages, prev + 1),
+                          )
+                        }
+                        disabled={currentPage === searchResults.totalPages}
+                      >
+                        Next
+                      </Button>
                     </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Pagination Controls */}
-              {searchResults.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {searchResults.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) =>
-                        Math.min(searchResults.totalPages, prev + 1),
-                      )
-                    }
-                    disabled={currentPage === searchResults.totalPages}
-                  >
-                    Next
-                  </Button>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Display nutrition information if selected food has nutrition data */}
-          {selectedFood?.nutrition && (
-            <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
-              <h4 className="font-medium text-sm">
-                Nutrition Information (per {selectedFood.servingSize} {selectedFood.servingSizeUnit})
-              </h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Calories:</span>
-                  <span className="font-medium">
-                    {Math.round(selectedFood.nutrition.calories)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Protein:</span>
-                  <span className="font-medium">
-                    {selectedFood.nutrition.protein}{selectedFood.servingSizeUnit}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Carbs:</span>
-                  <span className="font-medium">
-                    {selectedFood.nutrition.carbs}{selectedFood.servingSizeUnit}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fat:</span>
-                  <span className="font-medium">
-                    {selectedFood.nutrition.fat}{selectedFood.servingSizeUnit}
-                  </span>
-                </div>
-                {selectedFood.nutrition.fiber !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Fiber:</span>
-                    <span className="font-medium">
-                      {selectedFood.nutrition.fiber}{selectedFood.servingSizeUnit}
-                    </span>
+              {/* Display nutrition information if selected food has nutrition data */}
+              {selectedFood?.nutrition && (
+                <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
+                  <h4 className="font-medium text-sm">
+                    Nutrition Information (per {selectedFood.servingSize}{" "}
+                    {selectedFood.servingSizeUnit})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Calories:</span>
+                      <span className="font-medium">
+                        {Math.round(selectedFood.nutrition.calories)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Protein:</span>
+                      <span className="font-medium">
+                        {selectedFood.nutrition.protein}
+                        {selectedFood.servingSizeUnit}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Carbs:</span>
+                      <span className="font-medium">
+                        {selectedFood.nutrition.carbs}
+                        {selectedFood.servingSizeUnit}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fat:</span>
+                      <span className="font-medium">
+                        {selectedFood.nutrition.fat}
+                        {selectedFood.servingSizeUnit}
+                      </span>
+                    </div>
+                    {selectedFood.nutrition.fiber !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Fiber:</span>
+                        <span className="font-medium">
+                          {selectedFood.nutrition.fiber}
+                          {selectedFood.servingSizeUnit}
+                        </span>
+                      </div>
+                    )}
+                    {selectedFood.nutrition.sugar !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Sugar:</span>
+                        <span className="font-medium">
+                          {selectedFood.nutrition.sugar}
+                          {selectedFood.servingSizeUnit}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {selectedFood.nutrition.sugar !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sugar:</span>
-                    <span className="font-medium">
-                      {selectedFood.nutrition.sugar}{selectedFood.servingSizeUnit}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {/* Display selected food's serving information */}
-          {selectedFood && (
-            <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-              <h4 className="font-medium text-sm">Selected Item Information</h4>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Serving Size:</span>
-                  <span className="font-medium">
-                    {selectedFood.servingSize || "1"} {selectedFood.servingSizeUnit || "serving"}
-                  </span>
+              {/* Display selected food's serving information */}
+              {selectedFood && (
+                <div className="bg-card border border-border rounded-lg p-4 space-y-2">
+                  <h4 className="font-medium text-sm">
+                    Selected Item Information
+                  </h4>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Serving Size:
+                      </span>
+                      <span className="font-medium">
+                        {selectedFood.servingSize || "1"}{" "}
+                        {selectedFood.servingSizeUnit || "serving"}
+                      </span>
+                    </div>
+                    {selectedFood.brandOwner && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Brand:</span>
+                        <span className="font-medium">
+                          {selectedFood.brandOwner}
+                        </span>
+                      </div>
+                    )}
+                    {selectedFood.ingredients && (
+                      <div className="mt-2">
+                        <span className="text-muted-foreground">
+                          Ingredients:
+                        </span>
+                        <p className="text-xs mt-1 line-clamp-2">
+                          {selectedFood.ingredients}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {selectedFood.brandOwner && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Brand:</span>
-                    <span className="font-medium">{selectedFood.brandOwner}</span>
-                  </div>
-                )}
-                {selectedFood.ingredients && (
-                  <div className="mt-2">
-                    <span className="text-muted-foreground">Ingredients:</span>
-                    <p className="text-xs mt-1 line-clamp-2">{selectedFood.ingredients}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+              )}
 
-          <div className="space-y-2">
-            <Label id="storage-location-label">Storage Location *</Label>
-            <ToggleGroup
-              type="single"
-              value={storageLocationId}
-              onValueChange={setStorageLocationId}
-              aria-labelledby="storage-location-label"
-              className="flex flex-wrap gap-2 justify-start"
-            >
-              {storageLocations?.map((location) => (
-                <ToggleGroupItem
-                  key={location.id}
-                  value={location.id}
-                  aria-label={`Select ${location.name}`}
-                  className="rounded-full"
-                  data-testid={`button-storage-${location.name.toLowerCase()}`}
+              <div className="space-y-2">
+                <Label id="storage-location-label">Storage Location *</Label>
+                <ToggleGroup
+                  type="single"
+                  value={storageLocationId}
+                  onValueChange={setStorageLocationId}
+                  aria-labelledby="storage-location-label"
+                  className="flex flex-wrap gap-2 justify-start"
                 >
-                  {location.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+                  {storageLocations?.map((location) => (
+                    <ToggleGroupItem
+                      key={location.id}
+                      value={location.id}
+                      aria-label={`Select ${location.name}`}
+                      className="rounded-full"
+                      data-testid={`button-storage-${location.name.toLowerCase()}`}
+                    >
+                      {location.name}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="expiration">Expiration Date *</Label>
-            <Input
-              id="expiration"
-              type="date"
-              value={expirationDate}
-              onChange={(e) => setExpirationDate(e.target.value)}
-              data-testid="input-expiration"
-            />
-            <p className="text-xs text-muted-foreground">
-              Auto-suggested based on food type. Always verify with the package
-              label.
-            </p>
-          </div>
-          </TabsContent>
+              <div className="space-y-2">
+                <Label htmlFor="expiration">Expiration Date *</Label>
+                <Input
+                  id="expiration"
+                  type="date"
+                  value={expirationDate}
+                  onChange={(e) => setExpirationDate(e.target.value)}
+                  data-testid="input-expiration"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Auto-suggested based on food type. Always verify with the
+                  package label.
+                </p>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
 

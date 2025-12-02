@@ -1,7 +1,7 @@
 /**
  * Sentiment Analysis Dashboard
- * 
- * Comprehensive dashboard for monitoring overall user satisfaction trends, 
+ *
+ * Comprehensive dashboard for monitoring overall user satisfaction trends,
  * identifying pain points, and alerting on significant sentiment changes
  */
 
@@ -9,7 +9,13 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS, API_BASE } from "@/lib/api-endpoints";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +24,18 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { SentimentIndicator, type SentimentData } from "@/components/sentiment/sentiment-indicator";
+import {
+  SentimentIndicator,
+  type SentimentData,
+} from "@/components/sentiment/sentiment-indicator";
 import { EmotionTags } from "@/components/sentiment/emotion-tags";
 import { SentimentTrendChart } from "@/components/sentiment/sentiment-trend-chart";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  BrainIcon, 
-  TrendingUpIcon, 
+import {
+  BrainIcon,
+  TrendingUpIcon,
   TrendingDownIcon,
-  BarChartIcon, 
+  BarChartIcon,
   ActivityIcon,
   RefreshCwIcon,
   SendIcon,
@@ -41,9 +50,9 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  AlertCircleIcon
+  AlertCircleIcon,
 } from "lucide-react";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -86,7 +95,7 @@ interface SentimentInsights {
 interface SentimentMetrics {
   id: string;
   period: string;
-  periodType: 'day' | 'week' | 'month';
+  periodType: "day" | "week" | "month";
   avgSentiment: number;
   totalItems: number;
   percentageChange?: number;
@@ -106,12 +115,16 @@ interface SentimentMetrics {
 
 interface SentimentAlert {
   id: string;
-  alertType: 'sentiment_drop' | 'sustained_negative' | 'volume_spike' | 'category_issue';
+  alertType:
+    | "sentiment_drop"
+    | "sustained_negative"
+    | "volume_spike"
+    | "category_issue";
   threshold: number;
   currentValue: number;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   message: string;
-  status: 'active' | 'acknowledged' | 'resolved';
+  status: "active" | "acknowledged" | "resolved";
   metadata?: {
     percentageChange?: number;
     previousValue?: number;
@@ -148,46 +161,75 @@ interface DashboardData {
 export default function SentimentDashboard() {
   const { toast } = useToast();
   const [testText, setTestText] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<SentimentAnalysis | null>(null);
+  const [analysisResult, setAnalysisResult] =
+    useState<SentimentAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [periodType, setPeriodType] = useState<'day' | 'week' | 'month'>('week');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'personal' | 'global'>('global');
+  const [periodType, setPeriodType] = useState<"day" | "week" | "month">(
+    "week",
+  );
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"personal" | "global">("global");
 
   // Fetch dashboard data with metrics and alerts
-  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'dashboard', selectedPeriod, periodType],
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    refetch: refetchDashboard,
+  } = useQuery({
+    queryKey: [
+      API_ENDPOINTS.ai.analysis.sentiment,
+      "dashboard",
+      selectedPeriod,
+      periodType,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedPeriod) {
-        params.append('period', selectedPeriod);
-        params.append('periodType', periodType);
+        params.append("period", selectedPeriod);
+        params.append("periodType", periodType);
       }
-      
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/dashboard?${params}`, 'GET');
+
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.sentiment}/dashboard?${params}`,
+        "GET",
+      );
       return response as DashboardData;
-    }
+    },
   });
 
   // Fetch active alerts
-  const { data: activeAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'alerts', 'active'],
+  const {
+    data: activeAlerts,
+    isLoading: alertsLoading,
+    refetch: refetchAlerts,
+  } = useQuery({
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, "alerts", "active"],
     queryFn: async () => {
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/alerts/active?limit=10`, 'GET');
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/active?limit=10`,
+        "GET",
+      );
       return response.alerts as SentimentAlert[];
-    }
+    },
   });
 
   // Fetch sentiment insights
-  const { data: insights, isLoading: insightsLoading, refetch: refetchInsights } = useQuery({
+  const {
+    data: insights,
+    isLoading: insightsLoading,
+    refetch: refetchInsights,
+  } = useQuery({
     queryKey: [API_ENDPOINTS.ai.analysis.insights.all, viewMode],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (viewMode === 'global') params.append('global', 'true');
-      
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}?${params}`, 'GET');
+      if (viewMode === "global") params.append("global", "true");
+
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.insights.all}?${params}`,
+        "GET",
+      );
       return response.insights as SentimentInsights;
-    }
+    },
   });
 
   // Fetch sentiment trends
@@ -195,47 +237,65 @@ export default function SentimentDashboard() {
     queryKey: [API_ENDPOINTS.ai.analysis.trends.current, periodType, viewMode],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.append('periodType', periodType);
-      if (viewMode === 'global') params.append('global', 'true');
-      params.append('limit', '30');
-      
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.trends.current}?${params}`, 'GET');
+      params.append("periodType", periodType);
+      if (viewMode === "global") params.append("global", "true");
+      params.append("limit", "30");
+
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.trends.current}?${params}`,
+        "GET",
+      );
       return response.trends;
-    }
+    },
   });
 
   // Fetch user's sentiment history
   const { data: history, isLoading: historyLoading } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'user', 'current'],
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, "user", "current"],
     queryFn: async () => {
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/user/current`, 'GET');
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.sentiment}/user/current`,
+        "GET",
+      );
       return response.analyses as SentimentAnalysis[];
-    }
+    },
   });
 
   // Fetch sentiment breakdown
   const { data: breakdown, isLoading: breakdownLoading } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'breakdown', selectedPeriod, periodType],
+    queryKey: [
+      API_ENDPOINTS.ai.analysis.sentiment,
+      "breakdown",
+      selectedPeriod,
+      periodType,
+    ],
     queryFn: async () => {
       if (!selectedPeriod) return null;
-      
+
       const params = new URLSearchParams();
-      params.append('period', selectedPeriod);
-      params.append('periodType', periodType);
-      
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/breakdown?${params}`, 'GET');
+      params.append("period", selectedPeriod);
+      params.append("periodType", periodType);
+
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.sentiment}/breakdown?${params}`,
+        "GET",
+      );
       return response.breakdown;
     },
-    enabled: !!selectedPeriod
+    enabled: !!selectedPeriod,
   });
 
   // Mutation for analyzing text
   const analyzeMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest(API_ENDPOINTS.ai.analysis.sentiment, 'POST', { 
-        content: text,
-        contentType: 'test'
-      });
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.analysis.sentiment,
+        "POST",
+        {
+          content: text,
+          contentType: "test",
+        },
+      );
       return response.analysis as SentimentAnalysis;
     },
     onSuccess: (data) => {
@@ -245,7 +305,9 @@ export default function SentimentDashboard() {
         description: `Sentiment: ${data.sentiment} (${Math.round(data.confidence * 100)}% confidence)`,
       });
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.sentiment],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -253,22 +315,39 @@ export default function SentimentDashboard() {
         description: error.message || "Failed to analyze sentiment",
         variant: "destructive",
       });
-    }
+    },
   });
 
   // Mutation for acknowledging alerts
   const acknowledgeAlertMutation = useMutation({
-    mutationFn: async ({ alertId, status }: { alertId: string; status: 'acknowledged' | 'resolved' }) => {
-      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/alerts/${alertId}`, 'PATCH', { status });
+    mutationFn: async ({
+      alertId,
+      status,
+    }: {
+      alertId: string;
+      status: "acknowledged" | "resolved";
+    }) => {
+      const response = await apiRequest(
+        `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/${alertId}`,
+        "PATCH",
+        { status },
+      );
       return response.alert;
     },
     onSuccess: (data, variables) => {
       toast({
-        title: variables.status === 'acknowledged' ? "Alert acknowledged" : "Alert resolved",
+        title:
+          variables.status === "acknowledged"
+            ? "Alert acknowledged"
+            : "Alert resolved",
         description: "Alert status updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'alerts'] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'dashboard'] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.sentiment, "alerts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.analysis.sentiment, "dashboard"],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -276,7 +355,7 @@ export default function SentimentDashboard() {
         description: error.message || "Could not update alert status",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleAnalyze = () => {
@@ -288,14 +367,15 @@ export default function SentimentDashboard() {
       });
       return;
     }
-    
+
     setIsAnalyzing(true);
     analyzeMutation.mutate(testText);
     setIsAnalyzing(false);
   };
 
   const handleExampleAnalysis = () => {
-    const exampleText = "The product arrived late but quality exceeded expectations!";
+    const exampleText =
+      "The product arrived late but quality exceeded expectations!";
     setTestText(exampleText);
     setIsAnalyzing(true);
     analyzeMutation.mutate(exampleText);
@@ -307,22 +387,28 @@ export default function SentimentDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="page-title">
+          <h1
+            className="text-3xl font-bold flex items-center gap-2"
+            data-testid="page-title"
+          >
             <BrainIcon className="w-8 h-8" />
             Sentiment Tracking Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
-            Monitor user satisfaction trends, identify pain points, and track sentiment changes
+            Monitor user satisfaction trends, identify pain points, and track
+            sentiment changes
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setViewMode(viewMode === 'personal' ? 'global' : 'personal')}
+            onClick={() =>
+              setViewMode(viewMode === "personal" ? "global" : "personal")
+            }
             data-testid="view-mode-toggle"
           >
-            {viewMode === 'personal' ? (
+            {viewMode === "personal" ? (
               <>
                 <UserIcon className="w-4 h-4 mr-1" />
                 Personal
@@ -358,51 +444,64 @@ export default function SentimentDashboard() {
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
             {activeAlerts.slice(0, 4).map((alert) => (
-              <Alert 
-                key={alert.id} 
+              <Alert
+                key={alert.id}
                 className={`border-l-4 ${
-                  alert.severity === 'critical' 
-                    ? 'border-l-red-500' 
-                    : alert.severity === 'high'
-                    ? 'border-l-orange-500'
-                    : alert.severity === 'medium'
-                    ? 'border-l-yellow-500'
-                    : 'border-l-blue-500'
+                  alert.severity === "critical"
+                    ? "border-l-red-500"
+                    : alert.severity === "high"
+                      ? "border-l-orange-500"
+                      : alert.severity === "medium"
+                        ? "border-l-yellow-500"
+                        : "border-l-blue-500"
                 }`}
               >
                 <AlertTriangleIcon className="h-4 w-4" />
                 <div className="flex-1">
                   <AlertTitle className="flex items-center justify-between">
                     <span>{alert.message}</span>
-                    <Badge variant={alert.severity === 'critical' ? 'destructive' : 'outline'}>
+                    <Badge
+                      variant={
+                        alert.severity === "critical"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
                       {alert.severity}
                     </Badge>
                   </AlertTitle>
                   <AlertDescription className="mt-2 space-y-2">
-                    {alert.alertType === 'sentiment_drop' && alert.metadata?.percentageChange && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <TrendingDownIcon className="w-4 h-4 text-red-500" />
-                        <span>{Math.abs(alert.metadata.percentageChange)}% drop detected</span>
-                      </div>
-                    )}
+                    {alert.alertType === "sentiment_drop" &&
+                      alert.metadata?.percentageChange && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <TrendingDownIcon className="w-4 h-4 text-red-500" />
+                          <span>
+                            {Math.abs(alert.metadata.percentageChange)}% drop
+                            detected
+                          </span>
+                        </div>
+                      )}
                     {alert.metadata?.relatedIssues && (
                       <div className="text-sm">
-                        <span className="font-medium">Related issues:</span> {alert.metadata.relatedIssues.join(', ')}
+                        <span className="font-medium">Related issues:</span>{" "}
+                        {alert.metadata.relatedIssues.join(", ")}
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(alert.triggeredAt), 'MMM dd, HH:mm')}
+                        {format(new Date(alert.triggeredAt), "MMM dd, HH:mm")}
                       </span>
-                      {alert.status === 'active' && (
+                      {alert.status === "active" && (
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => acknowledgeAlertMutation.mutate({ 
-                              alertId: alert.id, 
-                              status: 'acknowledged' 
-                            })}
+                            onClick={() =>
+                              acknowledgeAlertMutation.mutate({
+                                alertId: alert.id,
+                                status: "acknowledged",
+                              })
+                            }
                             data-testid={`acknowledge-alert-${alert.id}`}
                           >
                             <CheckCircleIcon className="w-3 h-3 mr-1" />
@@ -411,10 +510,12 @@ export default function SentimentDashboard() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => acknowledgeAlertMutation.mutate({ 
-                              alertId: alert.id, 
-                              status: 'resolved' 
-                            })}
+                            onClick={() =>
+                              acknowledgeAlertMutation.mutate({
+                                alertId: alert.id,
+                                status: "resolved",
+                              })
+                            }
                             data-testid={`resolve-alert-${alert.id}`}
                           >
                             <XCircleIcon className="w-3 h-3 mr-1" />
@@ -436,18 +537,24 @@ export default function SentimentDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Average Sentiment</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                Average Sentiment
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="text-2xl font-bold">
-                  {dashboardData.metrics.avgSentiment > 0 ? '+' : ''}
+                  {dashboardData.metrics.avgSentiment > 0 ? "+" : ""}
                   {dashboardData.metrics.avgSentiment.toFixed(2)}
                 </div>
                 {dashboardData.metrics.percentageChange !== undefined && (
-                  <div className={`flex items-center text-sm ${
-                    dashboardData.metrics.percentageChange < 0 ? 'text-red-500' : 'text-green-500'
-                  }`}>
+                  <div
+                    className={`flex items-center text-sm ${
+                      dashboardData.metrics.percentageChange < 0
+                        ? "text-red-500"
+                        : "text-green-500"
+                    }`}
+                  >
                     {dashboardData.metrics.percentageChange < 0 ? (
                       <ChevronDownIcon className="w-4 h-4" />
                     ) : (
@@ -458,17 +565,22 @@ export default function SentimentDashboard() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Period: {dashboardData.metrics.period} ({dashboardData.metrics.periodType})
+                Period: {dashboardData.metrics.period} (
+                {dashboardData.metrics.periodType})
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Total Analyzed</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                Total Analyzed
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.metrics.totalItems}</div>
+              <div className="text-2xl font-bold">
+                {dashboardData.metrics.totalItems}
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Items in period
               </p>
@@ -477,19 +589,25 @@ export default function SentimentDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Alert Status</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                Alert Status
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 {dashboardData.metrics.alertTriggered ? (
                   <>
                     <AlertCircleIcon className="w-5 h-5 text-orange-500" />
-                    <span className="text-lg font-semibold text-orange-500">Active</span>
+                    <span className="text-lg font-semibold text-orange-500">
+                      Active
+                    </span>
                   </>
                 ) : (
                   <>
                     <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                    <span className="text-lg font-semibold text-green-500">Normal</span>
+                    <span className="text-lg font-semibold text-green-500">
+                      Normal
+                    </span>
                   </>
                 )}
               </div>
@@ -501,20 +619,26 @@ export default function SentimentDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Top Pain Point</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                Top Pain Point
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {dashboardData.metrics.painPoints && dashboardData.metrics.painPoints.length > 0 ? (
+              {dashboardData.metrics.painPoints &&
+              dashboardData.metrics.painPoints.length > 0 ? (
                 <>
                   <div className="text-lg font-semibold truncate">
                     {dashboardData.metrics.painPoints[0].issue}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Impact: {dashboardData.metrics.painPoints[0].impact.toFixed(1)}%
+                    Impact:{" "}
+                    {dashboardData.metrics.painPoints[0].impact.toFixed(1)}%
                   </p>
                 </>
               ) : (
-                <div className="text-sm text-muted-foreground">No issues detected</div>
+                <div className="text-sm text-muted-foreground">
+                  No issues detected
+                </div>
               )}
             </CardContent>
           </Card>
@@ -542,16 +666,16 @@ export default function SentimentDashboard() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={handleAnalyze} 
+            <Button
+              onClick={handleAnalyze}
               disabled={isAnalyzing || !testText.trim()}
               data-testid="button-analyze"
             >
               <SendIcon className="w-4 h-4 mr-2" />
               Analyze
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleExampleAnalysis}
               data-testid="button-example"
             >
@@ -561,7 +685,10 @@ export default function SentimentDashboard() {
 
           {/* Analysis Result */}
           {analysisResult && (
-            <div className="mt-4 p-4 border rounded-lg space-y-3" data-testid="analysis-result">
+            <div
+              className="mt-4 p-4 border rounded-lg space-y-3"
+              data-testid="analysis-result"
+            >
               <SentimentIndicator
                 data={analysisResult}
                 size="lg"
@@ -569,18 +696,19 @@ export default function SentimentDashboard() {
                 showEmotions
                 showAspects
               />
-              {analysisResult.keywords && analysisResult.keywords.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Keywords:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {analysisResult.keywords.map((keyword, idx) => (
-                      <Badge key={idx} variant="secondary">
-                        {keyword}
-                      </Badge>
-                    ))}
+              {analysisResult.keywords &&
+                analysisResult.keywords.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium mb-1">Keywords:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {analysisResult.keywords.map((keyword, idx) => (
+                        <Badge key={idx} variant="secondary">
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </CardContent>
@@ -627,15 +755,27 @@ export default function SentimentDashboard() {
                   <CardHeader>
                     <CardTitle className="text-sm">Overall Sentiment</CardTitle>
                     <div className="text-2xl font-bold">
-                      {insights.overallSentiment > 0 ? '+' : ''}
+                      {insights.overallSentiment > 0 ? "+" : ""}
                       {insights.overallSentiment.toFixed(2)}
                     </div>
-                    <Badge variant={insights.overallSentiment > 0 ? "default" : insights.overallSentiment < 0 ? "destructive" : "secondary"}>
-                      {insights.overallSentiment > 0 ? 'Positive' : insights.overallSentiment < 0 ? 'Negative' : 'Neutral'}
+                    <Badge
+                      variant={
+                        insights.overallSentiment > 0
+                          ? "default"
+                          : insights.overallSentiment < 0
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
+                      {insights.overallSentiment > 0
+                        ? "Positive"
+                        : insights.overallSentiment < 0
+                          ? "Negative"
+                          : "Neutral"}
                     </Badge>
                   </CardHeader>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Positive Rate</CardTitle>
@@ -644,7 +784,7 @@ export default function SentimentDashboard() {
                     </div>
                   </CardHeader>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Negative Rate</CardTitle>
@@ -653,7 +793,7 @@ export default function SentimentDashboard() {
                     </div>
                   </CardHeader>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Mixed Sentiment</CardTitle>
@@ -673,7 +813,11 @@ export default function SentimentDashboard() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {insights.topTopics.map((topic, idx) => (
-                        <Badge key={idx} variant="outline" data-testid={`topic-${idx}`}>
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          data-testid={`topic-${idx}`}
+                        >
                           {topic}
                         </Badge>
                       ))}
@@ -684,7 +828,9 @@ export default function SentimentDashboard() {
             </>
           ) : (
             <Alert>
-              <AlertDescription>No sentiment data available yet</AlertDescription>
+              <AlertDescription>
+                No sentiment data available yet
+              </AlertDescription>
             </Alert>
           )}
         </TabsContent>
@@ -697,11 +843,13 @@ export default function SentimentDashboard() {
             <SentimentTrendChart
               data={trends}
               periodType={periodType}
-              title={`${viewMode === 'global' ? 'Global' : 'Personal'} Sentiment Trends`}
+              title={`${viewMode === "global" ? "Global" : "Personal"} Sentiment Trends`}
               description="Track sentiment changes over time"
               height={400}
               showCounts
-              onPeriodChange={(period) => setPeriodType(period as "day" | "week" | "month")}
+              onPeriodChange={(period) =>
+                setPeriodType(period as "day" | "week" | "month")
+              }
             />
           ) : (
             <Alert>
@@ -714,16 +862,20 @@ export default function SentimentDashboard() {
         <TabsContent value="emotions" className="space-y-4">
           {insightsLoading ? (
             <Skeleton className="h-64 w-full" />
-          ) : insights && insights.topEmotions && insights.topEmotions.length > 0 ? (
+          ) : insights &&
+            insights.topEmotions &&
+            insights.topEmotions.length > 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>Dominant Emotions</CardTitle>
-                <CardDescription>Most frequently detected emotions</CardDescription>
+                <CardDescription>
+                  Most frequently detected emotions
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {insights.topEmotions.map((emotion, idx) => (
                   <div key={idx} className="flex items-center justify-between">
-                    <EmotionTags 
+                    <EmotionTags
                       emotions={{ [emotion.emotion]: emotion.avgIntensity }}
                       maxItems={1}
                     />
@@ -759,14 +911,17 @@ export default function SentimentDashboard() {
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {item.content}
                         </p>
-                        <SentimentIndicator 
+                        <SentimentIndicator
                           data={item}
                           size="sm"
                           showEmotions
                         />
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {format(new Date(item.analyzedAt), 'MMM dd, yyyy HH:mm')}
+                        {format(
+                          new Date(item.analyzedAt),
+                          "MMM dd, yyyy HH:mm",
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -775,7 +930,9 @@ export default function SentimentDashboard() {
             </div>
           ) : (
             <Alert>
-              <AlertDescription>No analysis history available yet</AlertDescription>
+              <AlertDescription>
+                No analysis history available yet
+              </AlertDescription>
             </Alert>
           )}
         </TabsContent>

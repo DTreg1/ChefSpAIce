@@ -7,6 +7,7 @@ This document contains prompts you can copy and paste into the chat to fix the i
 ## 1. Critical: apiRequest Parameter Order Bug
 
 ### Prompt 1.1: Fix All apiRequest Calls
+
 ```
 Fix the apiRequest parameter order bug across all components. The apiRequest helper expects arguments in the order (path, method, body) but multiple components are calling it as (method, path, body).
 
@@ -27,6 +28,7 @@ Also search for any other files that may have this issue using grep for patterns
 ## 2. Critical: RetentionTable Data Mapping Bug
 
 ### Prompt 2.1: Fix RetentionTable Query Mapper
+
 ```
 Fix the RetentionTable component in client/src/components/cohorts/RetentionTable.tsx.
 
@@ -42,6 +44,7 @@ This will fix the table rendering as empty and tooltips/charts breaking.
 ## 3. Critical: State Synchronization Issues
 
 ### Prompt 3.1: Fix DraftEditor State Sync
+
 ```
 Fix DraftEditor in client/src/components/DraftEditor.tsx to resynchronize with new draft props.
 
@@ -51,6 +54,7 @@ Add a useEffect keyed on draft.id (and tone metadata) to reset the local state w
 ```
 
 ### Prompt 3.2: Fix SummaryCard State Sync
+
 ```
 Fix both SummaryCard components:
 - client/src/components/summaries/SummaryCard.tsx
@@ -62,6 +66,7 @@ Add useEffect hooks to keep editedText in sync with incoming props, depending on
 ```
 
 ### Prompt 3.3: Fix SignificanceCalculator State
+
 ```
 Fix SignificanceCalculator in client/src/components/ab-testing/SignificanceCalculator.tsx.
 
@@ -75,6 +80,7 @@ Add a useEffect to reset the analysis state when test.id changes.
 ## 4. Performance: Batch Processing and Query Keys
 
 ### Prompt 4.1: Fix BatchProcessor Performance
+
 ```
 Fix BatchProcessor in client/src/components/extraction/BatchProcessor.tsx for performance.
 
@@ -87,6 +93,7 @@ Refactor the processing loop to:
 ```
 
 ### Prompt 4.2: Fix ConflictResolver Query Keys
+
 ```
 Fix ConflictResolver in client/src/components/scheduling/ConflictResolver.tsx.
 
@@ -96,6 +103,7 @@ Persist the date range in state or serialize the dates once so the query key rem
 ```
 
 ### Prompt 4.3: Fix AvailabilityGrid Query Updates
+
 ```
 Fix AvailabilityGrid in client/src/components/scheduling/AvailabilityGrid.tsx.
 
@@ -109,6 +117,7 @@ Wire the scheduling fetches to the actual navigation state so the query updates 
 ## 5. Logic/State Management Issues
 
 ### Prompt 5.1: Fix MeetingInsights Filters
+
 ```
 Fix MeetingInsights in client/src/components/scheduling/MeetingInsights.tsx.
 
@@ -118,6 +127,7 @@ Update the API call to include these parameters so filtering works properly.
 ```
 
 ### Prompt 5.2: Fix RevenueImpact Number Parsing
+
 ```
 Fix RevenueImpact in client/src/components/pricing/RevenueImpact.tsx.
 
@@ -129,6 +139,7 @@ Either:
 ```
 
 ### Prompt 5.3: Fix ActivityPrivacyControls Hydration
+
 ```
 Fix ActivityPrivacyControls in client/src/components/ActivityPrivacyControls.tsx.
 
@@ -138,6 +149,7 @@ The component must fetch the persisted policy on mount using useQuery and merge 
 ```
 
 ### Prompt 5.4: Fix AIErrorMonitor Timestamps
+
 ```
 Fix AIErrorMonitor in client/src/components/ai-error-monitor.tsx.
 
@@ -147,6 +159,7 @@ Ensure the query's select phase parses timestamps (convert ISO strings to Date o
 ```
 
 ### Prompt 5.5: Fix OfflineIndicator Initialization
+
 ```
 Fix OfflineIndicator in client/src/components/offline-indicator.tsx.
 
@@ -156,6 +169,7 @@ Initialize the toast state based on navigator.onLine, or trigger the visibility 
 ```
 
 ### Prompt 5.6: Fix ContentCard Date Formatting
+
 ```
 Fix ContentCard in client/src/components/ContentCard.tsx.
 
@@ -169,6 +183,7 @@ Update formatDate to guard against undefined/invalid timestamps by returning "Un
 ## 6. API Response Validation
 
 ### Prompt 6.1: Add Response Validation to Analytics Components
+
 ```
 Add proper API response validation to these analytics and cohort components:
 - client/src/components/cohorts/CohortTimeline.tsx
@@ -185,6 +200,7 @@ Add explicit status checks (if (!response.ok) throw new Error(...)) and surface 
 ## 7. Resource Cleanup Issues
 
 ### Prompt 7.1: Fix SuccessAnimation Timer Leak
+
 ```
 Fix SuccessAnimation in client/src/components/success-animation.tsx.
 
@@ -194,6 +210,7 @@ Add a ref to store the interval handle and clear it in the useEffect cleanup fun
 ```
 
 ### Prompt 7.2: Fix ThemeToggle Cleanup
+
 ```
 Fix ThemeToggle in client/src/components/theme-toggle.tsx.
 
@@ -207,6 +224,7 @@ Add an event listener with proper cleanup in the useEffect return function, and 
 ## 8. Compliance Issues
 
 ### Prompt 8.1: Remove Emojis from EmotionTags
+
 ```
 Fix EmotionTags in client/src/components/sentiment/EmotionTags.tsx.
 
@@ -220,6 +238,7 @@ Replace all emoji literals with Lucide/react icon equivalents that respect themi
 ```
 
 ### Prompt 8.2: Remove Emojis from TranslatedContent
+
 ```
 Fix TranslatedContent in client/src/components/TranslatedContent.tsx.
 
@@ -229,6 +248,7 @@ Replace them with semantic badges or Lucide icons so the UI complies with shared
 ```
 
 ### Prompt 8.3: Refactor LiquidGlassButton
+
 ```
 Refactor LiquidGlassButton in client/src/components/liquid-glass.tsx.
 
@@ -242,6 +262,7 @@ Refactor to wrap the existing <Button> component from @/components/ui/button and
 ## 9. Clipboard Error Handling
 
 ### Prompt 9.1: Improve Clipboard Error Handling
+
 ```
 Improve clipboard error handling in these components:
 - client/src/components/DraftSuggestions.tsx
@@ -257,6 +278,7 @@ Surface copy failures via the existing toast system (use useToast hook) so users
 ## 10. Complete All Fixes (Batch)
 
 ### Prompt 10.1: Fix All Critical Issues
+
 ```
 Fix all critical issues identified in the component review:
 
@@ -268,6 +290,7 @@ Ensure all fixes are tested and working.
 ```
 
 ### Prompt 10.2: Fix All Performance Issues
+
 ```
 Fix all performance issues identified in the component review:
 
@@ -279,6 +302,7 @@ Ensure all fixes maintain existing functionality while improving performance.
 ```
 
 ### Prompt 10.3: Fix All Logic Issues
+
 ```
 Fix all logic/state management issues:
 
@@ -293,6 +317,7 @@ Test each fix to ensure proper functionality.
 ```
 
 ### Prompt 10.4: Fix All Cleanup and Compliance Issues
+
 ```
 Fix all resource cleanup and compliance issues:
 

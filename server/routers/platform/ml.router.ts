@@ -1,5 +1,8 @@
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { mlService } from "../../services/ml.service";
 import { DuplicateDetectionService } from "../../services/duplicate-detection.service";
 import { openai } from "../../integrations/openai";
@@ -8,109 +11,140 @@ import { ApiError } from "../../utils/apiError";
 
 const router = Router();
 
-router.post("/search/semantic", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const { query, contentType = 'recipe' } = req.body;
-    
-    if (!query) {
-      return res.status(400).json({ error: "Query is required" });
-    }
-    
-    const results = await mlService.semanticSearch(query, contentType, userId, 10);
-    
-    res.json({ 
-      results: results.map(r => ({
-        contentId: r.content.contentId,
-        contentType: r.content.contentType,
-        content: r.content.metadata,
-        similarity: r.similarity,
-      }))
-    });
-  } catch (error) {
-    console.error("Error in semantic search:", error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : "Semantic search failed" 
-    });
-  }
-});
+router.post(
+  "/search/semantic",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-router.post("/search/feedback", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    res.json({ success: true, message: "Feedback recorded" });
-  } catch (error) {
-    console.error("Error recording feedback:", error);
-    res.status(500).json({ error: "Failed to record feedback" });
-  }
-});
+      const { query, contentType = "recipe" } = req.body;
 
-router.post("/natural-query", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const { query } = req.body;
-    
-    if (!query) {
-      return res.status(400).json({ error: "Query is required" });
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      const results = await mlService.semanticSearch(
+        query,
+        contentType,
+        userId,
+        10,
+      );
+
+      res.json({
+        results: results.map((r) => ({
+          contentId: r.content.contentId,
+          contentType: r.content.contentType,
+          content: r.content.metadata,
+          similarity: r.similarity,
+        })),
+      });
+    } catch (error) {
+      console.error("Error in semantic search:", error);
+      res.status(500).json({
+        error:
+          error instanceof Error ? error.message : "Semantic search failed",
+      });
     }
-    
-    const results = await mlService.naturalLanguageToSQL(query, userId);
-    res.json(results);
-  } catch (error) {
-    console.error("Error processing natural language query:", error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : "Query processing failed" 
-    });
-  }
-});
+  },
+);
+
+router.post(
+  "/search/feedback",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      res.json({ success: true, message: "Feedback recorded" });
+    } catch (error) {
+      console.error("Error recording feedback:", error);
+      res.status(500).json({ error: "Failed to record feedback" });
+    }
+  },
+);
+
+router.post(
+  "/natural-query",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const { query } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      const results = await mlService.naturalLanguageToSQL(query, userId);
+      res.json(results);
+    } catch (error) {
+      console.error("Error processing natural language query:", error);
+      res.status(500).json({
+        error:
+          error instanceof Error ? error.message : "Query processing failed",
+      });
+    }
+  },
+);
 
 router.get("/related", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { contentId, contentType } = req.query;
-    
+
     if (!contentId || !contentType) {
-      return res.status(400).json({ error: "contentId and contentType are required" });
+      return res
+        .status(400)
+        .json({ error: "contentId and contentType are required" });
     }
-    
+
     const related = await mlService.findRelatedContent(
-      contentId as string, 
+      contentId as string,
       contentType as string,
-      userId
+      userId,
     );
-    
+
     res.json(related);
   } catch (error) {
     console.error("Error fetching related content:", error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : "Failed to fetch related content" 
+    res.status(500).json({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch related content",
     });
   }
 });
 
-router.post("/embeddings/update", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    await mlService.updateUserEmbeddings(userId);
-    
-    res.json({ success: true, message: "Embeddings updated successfully" });
-  } catch (error) {
-    console.error("Error updating embeddings:", error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : "Failed to update embeddings" 
-    });
-  }
-});
+router.post(
+  "/embeddings/update",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      await mlService.updateUserEmbeddings(userId);
+
+      res.json({ success: true, message: "Embeddings updated successfully" });
+    } catch (error) {
+      console.error("Error updating embeddings:", error);
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update embeddings",
+      });
+    }
+  },
+);
 
 router.post(
   "/categorize",
@@ -164,7 +198,7 @@ Response must be valid JSON only.`;
     }
 
     res.json(result);
-  })
+  }),
 );
 
 router.post(
@@ -205,7 +239,9 @@ Return JSON: { "category": "...", "confidence": 0.0-1.0 }`;
             max_tokens: 100,
           });
 
-          const parsed = JSON.parse(completion.choices[0].message?.content || "{}");
+          const parsed = JSON.parse(
+            completion.choices[0].message?.content || "{}",
+          );
           return {
             id: item.id,
             category: parsed.category || "uncategorized",
@@ -218,11 +254,11 @@ Return JSON: { "category": "...", "confidence": 0.0-1.0 }`;
             confidence: 0,
           };
         }
-      })
+      }),
     );
 
     res.json({ results });
-  })
+  }),
 );
 
 router.post(
@@ -263,7 +299,7 @@ Tags should be lowercase, single words or short phrases.`;
     }
 
     res.json({ tags: tags.slice(0, maxTags) });
-  })
+  }),
 );
 
 router.post(
@@ -276,8 +312,8 @@ router.post(
     const { contentId, contentType, tags } = req.body || {};
 
     if (!contentId || !contentType || !tags) {
-      return res.status(400).json({ 
-        error: "contentId, contentType, and tags are required" 
+      return res.status(400).json({
+        error: "contentId, contentType, and tags are required",
       });
     }
 
@@ -287,7 +323,7 @@ router.post(
       contentType,
       assignedTags: tags,
     });
-  })
+  }),
 );
 
 router.get(
@@ -304,7 +340,7 @@ router.get(
       relatedTags: [],
       contentCount: 0,
     });
-  })
+  }),
 );
 
 router.get(
@@ -320,7 +356,7 @@ router.get(
       contentId,
       tags: [],
     });
-  })
+  }),
 );
 
 router.delete(
@@ -337,7 +373,7 @@ router.delete(
       contentId,
       removedTag: tagId,
     });
-  })
+  }),
 );
 
 router.get(
@@ -350,13 +386,16 @@ router.get(
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
     try {
-      const duplicates = await DuplicateDetectionService.getPendingDuplicates(userId, limit);
+      const duplicates = await DuplicateDetectionService.getPendingDuplicates(
+        userId,
+        limit,
+      );
       res.json({ duplicates });
     } catch (error) {
       console.error("Error fetching duplicates:", error);
       throw new ApiError("Failed to fetch duplicates", 500);
     }
-  })
+  }),
 );
 
 router.post(
@@ -370,7 +409,7 @@ router.post(
 
     try {
       const stats = await DuplicateDetectionService.getDuplicateStats(userId);
-      
+
       res.json({
         success: true,
         message: "Duplicate scan initiated",
@@ -381,7 +420,7 @@ router.post(
       console.error("Error scanning for duplicates:", error);
       throw new ApiError("Failed to scan for duplicates", 500);
     }
-  })
+  }),
 );
 
 router.post(
@@ -394,15 +433,15 @@ router.post(
     const { duplicatePairId, resolution } = req.body || {};
 
     if (!duplicatePairId || !resolution) {
-      return res.status(400).json({ 
-        error: "duplicatePairId and resolution are required" 
+      return res.status(400).json({
+        error: "duplicatePairId and resolution are required",
       });
     }
 
     const validResolutions = ["duplicate", "unique", "merged"];
     if (!validResolutions.includes(resolution)) {
-      return res.status(400).json({ 
-        error: "resolution must be one of: duplicate, unique, merged" 
+      return res.status(400).json({
+        error: "resolution must be one of: duplicate, unique, merged",
       });
     }
 
@@ -410,7 +449,7 @@ router.post(
       await DuplicateDetectionService.resolveDuplicate(
         duplicatePairId,
         resolution,
-        userId
+        userId,
       );
 
       res.json({
@@ -422,7 +461,7 @@ router.post(
       console.error("Error resolving duplicate:", error);
       res.status(500).json({ error: "Failed to resolve duplicate" });
     }
-  })
+  }),
 );
 
 router.get(
@@ -437,7 +476,7 @@ router.get(
       byContentType: {},
       recentlyAdded: 0,
     });
-  })
+  }),
 );
 
 export default router;

@@ -13,14 +13,14 @@ export function VoiceActivityIndicator({
   isListening = false,
   isSpeaking = false,
   isProcessing = false,
-  className
+  className,
 }: VoiceActivityIndicatorProps) {
   const [pulseScale, setPulseScale] = useState(1);
 
   useEffect(() => {
     if (isListening) {
       const interval = setInterval(() => {
-        setPulseScale(prev => prev === 1 ? 1.2 : 1);
+        setPulseScale((prev) => (prev === 1 ? 1.2 : 1));
       }, 500);
       return () => clearInterval(interval);
     }
@@ -44,7 +44,9 @@ export function VoiceActivityIndicator({
             <div className="w-full h-full bg-green-500 rounded-full animate-ping opacity-25" />
           </div>
         </div>
-        <span className="text-sm font-medium text-green-600 dark:text-green-400">Speaking...</span>
+        <span className="text-sm font-medium text-green-600 dark:text-green-400">
+          Speaking...
+        </span>
       </div>
     );
   }
@@ -53,15 +55,17 @@ export function VoiceActivityIndicator({
     return (
       <div className={cn("flex items-center gap-2", className)}>
         <div className="relative">
-          <Mic 
-            className="w-5 h-5 text-red-500 transition-transform" 
+          <Mic
+            className="w-5 h-5 text-red-500 transition-transform"
             style={{ transform: `scale(${pulseScale})` }}
           />
           <div className="absolute inset-0 -z-10">
             <div className="w-full h-full bg-red-500 rounded-full animate-ping opacity-25" />
           </div>
         </div>
-        <span className="text-sm font-medium text-red-600 dark:text-red-400">Listening...</span>
+        <span className="text-sm font-medium text-red-600 dark:text-red-400">
+          Listening...
+        </span>
       </div>
     );
   }

@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,23 +23,27 @@ export function AskAnalytics() {
   const explainMutation = useMutation({
     mutationFn: async (metricName: string) => {
       try {
-        const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.explain, "POST", { metricName });
-        
+        const response = await apiRequest(
+          API_ENDPOINTS.ai.analysis.insights.explain,
+          "POST",
+          { metricName },
+        );
+
         // Validate API response structure
-        if (!response || typeof response !== 'object') {
+        if (!response || typeof response !== "object") {
           throw new Error("Invalid response format from server");
         }
-        
+
         // Check for error response from API
         const data = response as { explanation?: string; error?: string };
         if (data.error) {
           throw new Error(data.error);
         }
-        
-        if (typeof data.explanation !== 'string') {
+
+        if (typeof data.explanation !== "string") {
           throw new Error("Missing or invalid explanation in response");
         }
-        
+
         return { explanation: data.explanation };
       } catch (error) {
         // Re-throw with a user-friendly message
@@ -53,10 +63,11 @@ export function AskAnalytics() {
     onError: (error: Error) => {
       toast({
         title: "Request failed",
-        description: error.message || "Failed to get explanation. Please try again.",
+        description:
+          error.message || "Failed to get explanation. Please try again.",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,11 +82,14 @@ export function AskAnalytics() {
     "What is conversion rate?",
     "What does traffic mean?",
     "What is page load time?",
-    "What is user engagement?"
+    "What is user engagement?",
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
-    const metricName = suggestion.replace("What is ", "").replace("?", "").replace(" ", "_");
+    const metricName = suggestion
+      .replace("What is ", "")
+      .replace("?", "")
+      .replace(" ", "_");
     setQuestion(metricName);
     explainMutation.mutate(metricName);
   };
@@ -88,10 +102,11 @@ export function AskAnalytics() {
           Ask About Metrics
         </CardTitle>
         <CardDescription>
-          Get plain-language explanations of your metrics and what they mean for your business
+          Get plain-language explanations of your metrics and what they mean for
+          your business
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
@@ -102,8 +117,8 @@ export function AskAnalytics() {
               disabled={explainMutation.isPending}
               data-testid="input-metric-question"
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!question.trim() || explainMutation.isPending}
               data-testid="button-ask-submit"
             >
@@ -141,9 +156,7 @@ export function AskAnalytics() {
         {explainMutation.isPending && (
           <Alert className="mt-4">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <AlertDescription>
-              Getting explanation...
-            </AlertDescription>
+            <AlertDescription>Getting explanation...</AlertDescription>
           </Alert>
         )}
 
@@ -151,7 +164,10 @@ export function AskAnalytics() {
         {explanation && !explainMutation.isPending && (
           <Alert className="mt-4 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/20">
             <HelpCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <AlertDescription className="text-sm" data-testid="text-explanation">
+            <AlertDescription
+              className="text-sm"
+              data-testid="text-explanation"
+            >
               {explanation}
             </AlertDescription>
           </Alert>

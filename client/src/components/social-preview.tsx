@@ -1,16 +1,23 @@
 /**
  * SocialPreview Component
- * 
+ *
  * Shows how an excerpt will appear on different social media platforms
  * (Twitter, LinkedIn, Facebook) with platform-specific styling.
- * 
+ *
  * @module client/src/components/social-preview
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ThumbsUp } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+  ThumbsUp,
+} from "lucide-react";
 
 interface SocialPreviewProps {
   excerpt: string;
@@ -25,7 +32,11 @@ interface SocialPreviewProps {
   };
 }
 
-export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPreviewProps) {
+export function SocialPreview({
+  excerpt,
+  platform,
+  metadata = {},
+}: SocialPreviewProps) {
   const {
     title = "Your Content Title",
     description = excerpt,
@@ -36,7 +47,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
   } = metadata;
 
   // Twitter/X Preview
-  if (platform === 'twitter') {
+  if (platform === "twitter") {
     return (
       <Card className="max-w-[600px]" data-testid="preview-twitter">
         <CardContent className="p-4">
@@ -49,16 +60,18 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold">{author}</span>
-                  <Badge variant="secondary" className="text-xs px-1">@{author.toLowerCase().replace(/\s/g, '')}</Badge>
-                  <span className="text-sm text-muted-foreground">· {timestamp}</span>
+                  <Badge variant="secondary" className="text-xs px-1">
+                    @{author.toLowerCase().replace(/\s/g, "")}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    · {timestamp}
+                  </span>
                 </div>
                 <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
               </div>
-              
-              <p className="mt-2 text-sm whitespace-pre-wrap">
-                {excerpt}
-              </p>
-              
+
+              <p className="mt-2 text-sm whitespace-pre-wrap">{excerpt}</p>
+
               {imageUrl && (
                 <div className="mt-3 rounded-xl overflow-hidden bg-muted aspect-video">
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -66,7 +79,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
                   </div>
                 </div>
               )}
-              
+
               <div className="flex items-center justify-between mt-4 text-muted-foreground">
                 <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
                   <MessageCircle className="h-4 w-4" />
@@ -92,7 +105,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
   }
 
   // LinkedIn Preview
-  if (platform === 'linkedin') {
+  if (platform === "linkedin") {
     return (
       <Card className="max-w-[600px]" data-testid="preview-linkedin">
         <CardContent className="p-4">
@@ -104,17 +117,19 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
             <div className="flex-1">
               <div>
                 <p className="font-semibold">{author}</p>
-                <p className="text-xs text-muted-foreground">Professional Title</p>
-                <p className="text-xs text-muted-foreground">{timestamp} • 🌐</p>
+                <p className="text-xs text-muted-foreground">
+                  Professional Title
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {timestamp} • 🌐
+                </p>
               </div>
             </div>
             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
           </div>
-          
-          <p className="mt-3 text-sm whitespace-pre-wrap">
-            {excerpt}
-          </p>
-          
+
+          <p className="mt-3 text-sm whitespace-pre-wrap">{excerpt}</p>
+
           {imageUrl && (
             <div className="mt-3 -mx-4">
               <div className="bg-muted aspect-video flex items-center justify-center text-muted-foreground">
@@ -122,7 +137,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
               </div>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between mt-4 pt-3 border-t">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -132,7 +147,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
               <span>• 4 comments</span>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-around mt-3 pt-3 border-t text-muted-foreground">
             <button className="flex items-center gap-2 hover:text-blue-600 transition-colors">
               <ThumbsUp className="h-4 w-4" />
@@ -153,7 +168,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
   }
 
   // Facebook Preview
-  if (platform === 'facebook') {
+  if (platform === "facebook") {
     return (
       <Card className="max-w-[600px]" data-testid="preview-facebook">
         <CardContent className="p-4">
@@ -167,22 +182,22 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
               <p className="text-xs text-muted-foreground">{timestamp}</p>
             </div>
           </div>
-          
-          <p className="mt-3 text-sm whitespace-pre-wrap">
-            {excerpt}
-          </p>
-          
+
+          <p className="mt-3 text-sm whitespace-pre-wrap">{excerpt}</p>
+
           {imageUrl && (
             <div className="mt-3 -mx-4">
               <div className="bg-muted aspect-video flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <p className="text-lg font-medium">{title}</p>
-                  <p className="text-sm mt-2">{description.substring(0, 100)}...</p>
+                  <p className="text-sm mt-2">
+                    {description.substring(0, 100)}...
+                  </p>
                 </div>
               </div>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between mt-4 pt-3 border-t text-sm text-muted-foreground">
             <div className="flex items-center gap-3">
               <span>👍❤️ 42</span>
@@ -192,7 +207,7 @@ export function SocialPreview({ excerpt, platform, metadata = {} }: SocialPrevie
               <span>3 shares</span>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-around mt-3 pt-3 border-t">
             <button className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 transition-colors">
               <ThumbsUp className="h-4 w-4" />

@@ -1,12 +1,29 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,16 +63,20 @@ export function CohortBuilder() {
   const [behaviorEvent, setBehaviorEvent] = useState("");
   const [behaviorMinCount, setBehaviorMinCount] = useState("");
   const [behaviorTimeframe, setBehaviorTimeframe] = useState("");
-  const [customFilters, setCustomFilters] = useState<Array<{ field: string; operator: string; value: string | number; }>>([]);
-  
+  const [customFilters, setCustomFilters] = useState<
+    Array<{ field: string; operator: string; value: string | number }>
+  >([]);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const createCohortMutation = useMutation({
-    mutationFn: (cohort: Partial<InsertCohort>) => 
+    mutationFn: (cohort: Partial<InsertCohort>) =>
       apiRequest(API_ENDPOINTS.admin.cohorts.create, "POST", cohort),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.admin.cohorts.list],
+      });
       toast({
         title: "Cohort created",
         description: "Your cohort has been created successfully.",
@@ -79,24 +100,28 @@ export function CohortBuilder() {
       });
     },
   });
-  
+
   const addCustomFilter = () => {
     setCustomFilters([
       ...customFilters,
-      { field: "", operator: "equals", value: "" }
+      { field: "", operator: "equals", value: "" },
     ]);
   };
-  
+
   const removeCustomFilter = (index: number) => {
     setCustomFilters(customFilters.filter((_, i) => i !== index));
   };
-  
-  const updateCustomFilter = (index: number, field: keyof typeof customFilters[0], value: any) => {
+
+  const updateCustomFilter = (
+    index: number,
+    field: keyof (typeof customFilters)[0],
+    value: any,
+  ) => {
     const updated = [...customFilters];
     updated[index] = { ...updated[index], [field]: value };
     setCustomFilters(updated);
   };
-  
+
   const handleSubmit = () => {
     if (!name) {
       toast({
@@ -106,9 +131,9 @@ export function CohortBuilder() {
       });
       return;
     }
-    
+
     const definition: any = {};
-    
+
     // Add date range if specified
     if (startDate && endDate) {
       definition.signupDateRange = {
@@ -116,12 +141,12 @@ export function CohortBuilder() {
         end: endDate.toISOString(),
       };
     }
-    
+
     // Add source if specified
     if (source) {
       definition.source = source;
     }
-    
+
     // Add behavior filters if specified
     if (behaviorEvent) {
       definition.userBehavior = {
@@ -130,12 +155,15 @@ export function CohortBuilder() {
         ...(behaviorTimeframe && { timeframe: parseInt(behaviorTimeframe) }),
       };
     }
-    
+
     // Add custom filters if any
-    if (customFilters.length > 0 && customFilters.every(f => f.field && f.value)) {
+    if (
+      customFilters.length > 0 &&
+      customFilters.every((f) => f.field && f.value)
+    ) {
       definition.customFilters = customFilters;
     }
-    
+
     const criteria: CohortCriteria = {
       ...(definition.signupDateRange && {
         dateRange: {
@@ -144,18 +172,24 @@ export function CohortBuilder() {
         },
       }),
       ...(definition.userBehavior && {
-        behaviorPatterns: [{
-          event: definition.userBehavior.event,
-          frequency: definition.userBehavior.minCount || 1,
-          timeframe: `${definition.userBehavior.timeframe || 30} days`,
-        }],
+        behaviorPatterns: [
+          {
+            event: definition.userBehavior.event,
+            frequency: definition.userBehavior.minCount || 1,
+            timeframe: `${definition.userBehavior.timeframe || 30} days`,
+          },
+        ],
       }),
-      ...(definition.customFilters && definition.customFilters.length > 0 && {
-        userAttributes: definition.customFilters.reduce((acc: any, filter: any) => {
-          acc[filter.field] = filter.value;
-          return acc;
-        }, {}),
-      }),
+      ...(definition.customFilters &&
+        definition.customFilters.length > 0 && {
+          userAttributes: definition.customFilters.reduce(
+            (acc: any, filter: any) => {
+              acc[filter.field] = filter.value;
+              return acc;
+            },
+            {},
+          ),
+        }),
     };
 
     createCohortMutation.mutate({
@@ -165,7 +199,7 @@ export function CohortBuilder() {
       isActive,
     });
   };
-  
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -191,7 +225,7 @@ export function CohortBuilder() {
                 data-testid="input-cohort-name"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -202,7 +236,7 @@ export function CohortBuilder() {
                 data-testid="input-cohort-description"
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <Label htmlFor="active">Active</Label>
               <Switch
@@ -213,16 +247,24 @@ export function CohortBuilder() {
               />
             </div>
           </div>
-          
+
           {/* Filtering Options */}
           <Tabs defaultValue="dates" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="dates" data-testid="tab-dates">Signup Date</TabsTrigger>
-              <TabsTrigger value="source" data-testid="tab-source">Source</TabsTrigger>
-              <TabsTrigger value="behavior" data-testid="tab-behavior">Behavior</TabsTrigger>
-              <TabsTrigger value="custom" data-testid="tab-custom">Custom</TabsTrigger>
+              <TabsTrigger value="dates" data-testid="tab-dates">
+                Signup Date
+              </TabsTrigger>
+              <TabsTrigger value="source" data-testid="tab-source">
+                Source
+              </TabsTrigger>
+              <TabsTrigger value="behavior" data-testid="tab-behavior">
+                Behavior
+              </TabsTrigger>
+              <TabsTrigger value="custom" data-testid="tab-custom">
+                Custom
+              </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="dates" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -235,7 +277,11 @@ export function CohortBuilder() {
                         data-testid="button-start-date"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                        {startDate ? (
+                          format(startDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -248,7 +294,7 @@ export function CohortBuilder() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>End Date</Label>
                   <Popover>
@@ -259,7 +305,11 @@ export function CohortBuilder() {
                         data-testid="button-end-date"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                        {endDate ? (
+                          format(endDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -273,7 +323,7 @@ export function CohortBuilder() {
                   </Popover>
                 </div>
               </div>
-              
+
               {(startDate || endDate) && (
                 <div className="flex gap-2">
                   <Badge variant="secondary">
@@ -284,7 +334,7 @@ export function CohortBuilder() {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="source" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="source">Acquisition Source</Label>
@@ -302,14 +352,10 @@ export function CohortBuilder() {
                   </SelectContent>
                 </Select>
               </div>
-              
-              {source && (
-                <Badge variant="secondary">
-                  Source: {source}
-                </Badge>
-              )}
+
+              {source && <Badge variant="secondary">Source: {source}</Badge>}
             </TabsContent>
-            
+
             <TabsContent value="behavior" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="event">Event Type</Label>
@@ -320,14 +366,16 @@ export function CohortBuilder() {
                   <SelectContent>
                     <SelectItem value="page_view">Page View</SelectItem>
                     <SelectItem value="button_click">Button Click</SelectItem>
-                    <SelectItem value="form_submission">Form Submission</SelectItem>
+                    <SelectItem value="form_submission">
+                      Form Submission
+                    </SelectItem>
                     <SelectItem value="purchase">Purchase</SelectItem>
                     <SelectItem value="signup">Signup</SelectItem>
                     <SelectItem value="login">Login</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="min-count">Minimum Count</Label>
@@ -340,7 +388,7 @@ export function CohortBuilder() {
                     data-testid="input-min-count"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="timeframe">Within Days</Label>
                   <Input
@@ -353,7 +401,7 @@ export function CohortBuilder() {
                   />
                 </div>
               </div>
-              
+
               {behaviorEvent && (
                 <Badge variant="secondary">
                   {behaviorEvent}
@@ -362,7 +410,7 @@ export function CohortBuilder() {
                 </Badge>
               )}
             </TabsContent>
-            
+
             <TabsContent value="custom" className="space-y-4">
               <div className="space-y-4">
                 {customFilters.map((filter, index) => (
@@ -370,29 +418,38 @@ export function CohortBuilder() {
                     <Input
                       placeholder="Field"
                       value={filter.field}
-                      onChange={(e) => updateCustomFilter(index, "field", e.target.value)}
+                      onChange={(e) =>
+                        updateCustomFilter(index, "field", e.target.value)
+                      }
                       className="flex-1"
                       data-testid={`input-field-${index}`}
                     />
                     <Select
                       value={filter.operator}
-                      onValueChange={(value) => updateCustomFilter(index, "operator", value)}
+                      onValueChange={(value) =>
+                        updateCustomFilter(index, "operator", value)
+                      }
                     >
-                      <SelectTrigger className="w-32" data-testid={`select-operator-${index}`}>
+                      <SelectTrigger
+                        className="w-32"
+                        data-testid={`select-operator-${index}`}
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="equals">=</SelectItem>
                         <SelectItem value="not_equals">≠</SelectItem>
-                        <SelectItem value="greater">{'>'}</SelectItem>
-                        <SelectItem value="less">{'<'}</SelectItem>
+                        <SelectItem value="greater">{">"}</SelectItem>
+                        <SelectItem value="less">{"<"}</SelectItem>
                         <SelectItem value="contains">Contains</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
                       placeholder="Value"
                       value={filter.value}
-                      onChange={(e) => updateCustomFilter(index, "value", e.target.value)}
+                      onChange={(e) =>
+                        updateCustomFilter(index, "value", e.target.value)
+                      }
                       className="flex-1"
                       data-testid={`input-value-${index}`}
                     />
@@ -406,7 +463,7 @@ export function CohortBuilder() {
                     </Button>
                   </div>
                 ))}
-                
+
                 <Button
                   variant="outline"
                   onClick={addCustomFilter}
@@ -422,7 +479,7 @@ export function CohortBuilder() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           onClick={handleSubmit}
           disabled={createCohortMutation.isPending}
           className="w-full"

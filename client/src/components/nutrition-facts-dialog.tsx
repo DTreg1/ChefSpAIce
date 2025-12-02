@@ -17,29 +17,33 @@ interface NutritionFactsDialogProps {
   item: FoodItem;
 }
 
-export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFactsDialogProps) {
+export function NutritionFactsDialog({
+  open,
+  onOpenChange,
+  item,
+}: NutritionFactsDialogProps) {
   let nutrition: NutritionInfo | null = null;
   let ingredients: string | null = null;
   let brand: string | null = null;
   let foodCategory: string | null = null;
   let dataType: string | null = null;
-  
+
   // First, check if we have rich USDA data
-  if ((item).usdaData) {
-    const usdaData = (item).usdaData;
-    
+  if (item.usdaData) {
+    const usdaData = item.usdaData;
+
     // Extract additional information from USDA data
     ingredients = usdaData.ingredients || null;
     brand = usdaData.brandOwner || null;
     foodCategory = usdaData.foodCategory || null;
     dataType = usdaData.dataType || null;
-    
+
     // Use nutrition from USDA data if available
     if (usdaData.nutrition) {
       nutrition = usdaData.nutrition;
     }
   }
-  
+
   // Fall back to basic nutrition field if no USDA data
   if (!nutrition) {
     try {
@@ -64,7 +68,7 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
             Detailed nutritional information for {item.name}
           </DialogDescription>
         </DialogHeader>
-        
+
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="space-y-6 p-1">
             {/* Brand and Category Info */}
@@ -77,9 +81,7 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
                   </Badge>
                 )}
                 {!!foodCategory && (
-                  <Badge variant="secondary">
-                    {foodCategory}
-                  </Badge>
+                  <Badge variant="secondary">{foodCategory}</Badge>
                 )}
                 {!!dataType && (
                   <Badge variant="outline" className="text-xs">
@@ -89,12 +91,12 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
                 )}
               </div>
             )}
-            
+
             {/* Nutrition Label */}
             <div className="flex justify-center">
               <NutritionFactsLabel nutrition={nutrition} foodName={item.name} />
             </div>
-            
+
             {/* Ingredients List */}
             {!!ingredients && (
               <div className="space-y-2 border-t border-border pt-4">
@@ -104,12 +106,12 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
                 </p>
               </div>
             )}
-            
+
             {/* Additional Information */}
             <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
               <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
-              {!!(item).usdaData?.fdcId && (
-                <p>USDA FoodData Central ID: {(item).usdaData.fdcId}</p>
+              {!!item.usdaData?.fdcId && (
+                <p>USDA FoodData Central ID: {item.usdaData.fdcId}</p>
               )}
             </div>
           </div>

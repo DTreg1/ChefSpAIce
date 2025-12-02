@@ -1,19 +1,25 @@
 /**
  * FaceDetector Component
- * 
+ *
  * Main component for face detection functionality.
  * Displays uploaded images with face bounding boxes and detection results.
  */
 
-import { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, AlertCircle, User, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { API_ENDPOINTS } from '@/lib/api-endpoints';
+import { useState, useRef, useEffect } from "react";
+import { Upload, Camera, AlertCircle, User, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface FaceDetection {
   boundingBox: {
@@ -47,23 +53,27 @@ export function FaceDetector() {
   const detectFacesMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('image', file);
-      
-      return apiRequest(API_ENDPOINTS.ai.media.vision.faces.detect, 'POST', formData) as Promise<DetectionResponse>;
+      formData.append("image", file);
+
+      return apiRequest(
+        API_ENDPOINTS.ai.media.vision.faces.detect,
+        "POST",
+        formData,
+      ) as Promise<DetectionResponse>;
     },
     onSuccess: (data) => {
       setDetections(data.detections);
       toast({
-        title: 'Face Detection Complete',
-        description: `Detected ${data.faceCount} face${data.faceCount !== 1 ? 's' : ''} in the image`,
+        title: "Face Detection Complete",
+        description: `Detected ${data.faceCount} face${data.faceCount !== 1 ? "s" : ""} in the image`,
       });
       drawBoundingBoxes();
     },
     onError: (error: any) => {
       toast({
-        title: 'Detection Failed',
-        description: error.message || 'Failed to detect faces',
-        variant: 'destructive',
+        title: "Detection Failed",
+        description: error.message || "Failed to detect faces",
+        variant: "destructive",
       });
     },
   });
@@ -74,9 +84,9 @@ export function FaceDetector() {
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         toast({
-          title: 'File Too Large',
-          description: 'Please select an image smaller than 10MB',
-          variant: 'destructive',
+          title: "File Too Large",
+          description: "Please select an image smaller than 10MB",
+          variant: "destructive",
         });
         return;
       }
@@ -94,14 +104,15 @@ export function FaceDetector() {
 
   // Draw bounding boxes on canvas
   const drawBoundingBoxes = () => {
-    if (!imageRef.current || !canvasRef.current || detections.length === 0) return;
+    if (!imageRef.current || !canvasRef.current || detections.length === 0)
+      return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const img = imageRef.current;
-    
+
     // Set canvas dimensions to match image
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
@@ -112,25 +123,25 @@ export function FaceDetector() {
     // Draw bounding boxes for each face
     detections.forEach((face, index) => {
       const { x, y, width, height } = face.boundingBox;
-      
+
       // Draw rectangle
-      ctx.strokeStyle = '#10b981'; // Green color
+      ctx.strokeStyle = "#10b981"; // Green color
       ctx.lineWidth = 3;
       ctx.strokeRect(x, y, width, height);
 
       // Draw face number label
-      ctx.fillStyle = '#10b981';
+      ctx.fillStyle = "#10b981";
       ctx.fillRect(x, y - 25, 80, 25);
-      ctx.fillStyle = 'white';
-      ctx.font = '16px sans-serif';
+      ctx.fillStyle = "white";
+      ctx.font = "16px sans-serif";
       ctx.fillText(`Face ${index + 1}`, x + 5, y - 7);
 
       // Draw confidence score
       const confidence = (face.probability * 100).toFixed(1);
-      ctx.fillStyle = '#10b981';
+      ctx.fillStyle = "#10b981";
       ctx.fillRect(x, y + height, 100, 20);
-      ctx.fillStyle = 'white';
-      ctx.font = '14px sans-serif';
+      ctx.fillStyle = "white";
+      ctx.font = "14px sans-serif";
       ctx.fillText(`${confidence}% conf`, x + 5, y + height + 15);
     });
   };
@@ -223,7 +234,7 @@ export function FaceDetector() {
             <canvas
               ref={canvasRef}
               className="absolute top-0 left-0 w-full h-full pointer-events-none"
-              style={{ maxWidth: '100%', height: 'auto' }}
+              style={{ maxWidth: "100%", height: "auto" }}
               data-testid="canvas-overlay"
             />
           </div>
@@ -234,11 +245,15 @@ export function FaceDetector() {
           <Alert data-testid="alert-results">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>{detections.length} face{detections.length !== 1 ? 's' : ''} detected</strong>
+              <strong>
+                {detections.length} face{detections.length !== 1 ? "s" : ""}{" "}
+                detected
+              </strong>
               <div className="mt-2 space-y-1 text-sm">
                 {detections.map((face, index) => (
                   <div key={index} data-testid={`text-face-${index}`}>
-                    Face {index + 1}: {(face.probability * 100).toFixed(1)}% confidence
+                    Face {index + 1}: {(face.probability * 100).toFixed(1)}%
+                    confidence
                   </div>
                 ))}
               </div>

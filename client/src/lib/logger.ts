@@ -1,17 +1,17 @@
 /**
  * Production-ready logging service
- * 
+ *
  * Centralized logging with levels, formatting, and remote error tracking
  */
 
-import { API_ENDPOINTS } from '@/lib/api-endpoints';
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  NONE = 4
+  NONE = 4,
 }
 
 interface LogEntry {
@@ -48,21 +48,21 @@ class Logger {
 
   private setupErrorHandlers() {
     // Track unhandled errors
-    window.addEventListener('error', (event) => {
-      this.error('Unhandled error', {
+    window.addEventListener("error", (event) => {
+      this.error("Unhandled error", {
         message: event.message,
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        error: event.error
+        error: event.error,
       });
     });
 
     // Track unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      this.error('Unhandled promise rejection', {
+    window.addEventListener("unhandledrejection", (event) => {
+      this.error("Unhandled promise rejection", {
         reason: event.reason,
-        promise: event.promise
+        promise: event.promise,
       });
     });
   }
@@ -71,10 +71,14 @@ class Logger {
     return level >= this.logLevel;
   }
 
-  private formatMessage(level: LogLevel, message: string, context?: string): string {
+  private formatMessage(
+    level: LogLevel,
+    message: string,
+    context?: string,
+  ): string {
     const timestamp = new Date().toISOString();
     const levelStr = LogLevel[level];
-    const contextStr = context ? `[${context}]` : '';
+    const contextStr = context ? `[${context}]` : "";
     return `[${timestamp}] ${levelStr} ${contextStr} ${message}`;
   }
 
@@ -105,15 +109,15 @@ class Logger {
 
     try {
       const response = await fetch(API_ENDPOINTS.logs, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...entry,
           userAgent: navigator.userAgent,
-          url: window.location.href
-        })
+          url: window.location.href,
+        }),
       });
       // Use response to avoid unused variable warning
       if (!response.ok) {
@@ -135,7 +139,7 @@ class Logger {
       timestamp: new Date(),
       data,
       context,
-      stack: level === LogLevel.ERROR ? new Error().stack : undefined
+      stack: level === LogLevel.ERROR ? new Error().stack : undefined,
     };
 
     // Add to buffer
@@ -198,10 +202,12 @@ class Logger {
   // Create a child logger with context
   createContext(context: string) {
     return {
-      debug: (message: string, data?: any) => this.debug(message, data, context),
+      debug: (message: string, data?: any) =>
+        this.debug(message, data, context),
       info: (message: string, data?: any) => this.info(message, data, context),
       warn: (message: string, data?: any) => this.warn(message, data, context),
-      error: (message: string, data?: any) => this.error(message, data, context)
+      error: (message: string, data?: any) =>
+        this.error(message, data, context),
     };
   }
 }

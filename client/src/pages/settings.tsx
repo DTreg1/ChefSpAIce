@@ -10,18 +10,74 @@ import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { CacheStorage } from "@/lib/cacheStorage";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, Clock, Camera, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  X,
+  LogOut,
+  Refrigerator,
+  Snowflake,
+  Pizza,
+  UtensilsCrossed,
+  Activity,
+  AlertTriangle,
+  Plus,
+  Package,
+  Trash2,
+  CreditCard,
+  Calendar,
+  Users,
+  ChefHat,
+  Palette,
+  User2,
+  Settings2,
+  Shield,
+  Database,
+  Bell,
+  Clock,
+  Camera,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { NotificationSettings, IntelligentNotificationSettings } from "@/components/notifications";
+import {
+  NotificationSettings,
+  IntelligentNotificationSettings,
+} from "@/components/notifications";
 import ActivityTimeline from "@/components/activity-timeline";
 import ActivityPrivacyControls from "@/components/activity-privacy-controls";
 import type { User } from "@shared/schema";
@@ -34,13 +90,27 @@ const storageAreaOptions = [
 ];
 
 const dietaryOptions = [
-  "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", 
-  "Keto", "Paleo", "Low-Carb", "Halal", "Kosher"
+  "Vegetarian",
+  "Vegan",
+  "Gluten-Free",
+  "Dairy-Free",
+  "Keto",
+  "Paleo",
+  "Low-Carb",
+  "Halal",
+  "Kosher",
 ];
 
 const allergenOptions = [
-  "Peanuts", "Tree Nuts", "Shellfish", "Fish", 
-  "Eggs", "Milk", "Soy", "Wheat", "Sesame"
+  "Peanuts",
+  "Tree Nuts",
+  "Shellfish",
+  "Fish",
+  "Eggs",
+  "Milk",
+  "Soy",
+  "Wheat",
+  "Sesame",
 ];
 
 const cookingSkillOptions = [
@@ -50,7 +120,9 @@ const cookingSkillOptions = [
 ];
 
 const preferenceSchema = z.object({
-  storageAreasEnabled: z.array(z.string()).min(1, "Please select at least one storage area"),
+  storageAreasEnabled: z
+    .array(z.string())
+    .min(1, "Please select at least one storage area"),
   householdSize: z.number().int().min(1).max(20),
   cookingSkillLevel: z.enum(["beginner", "intermediate", "advanced"]),
   preferredUnits: z.enum(["metric", "imperial"]),
@@ -63,7 +135,9 @@ const preferenceSchema = z.object({
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>([]);
+  const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>(
+    [],
+  );
   const [customStorageInput, setCustomStorageInput] = useState("");
   const [isAddingStorage, setIsAddingStorage] = useState(false);
   const isAddingStorageRef = useRef(false);
@@ -78,18 +152,18 @@ export default function Settings() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("picture", file);
-      
+
       const response = await fetch(API_ENDPOINTS.users.profilePicture, {
         method: "POST",
         body: formData,
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to upload profile picture");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -114,12 +188,12 @@ export default function Settings() {
         method: "DELETE",
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to remove profile picture");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -189,8 +263,13 @@ export default function Settings() {
       form.reset({
         storageAreasEnabled: storageAreas,
         householdSize: preferences.householdSize || 2,
-        cookingSkillLevel: (preferences.cookingSkillLevel as "beginner" | "intermediate" | "advanced") || "beginner",
-        preferredUnits: (preferences.preferredUnits as "metric" | "imperial") || "imperial",
+        cookingSkillLevel:
+          (preferences.cookingSkillLevel as
+            | "beginner"
+            | "intermediate"
+            | "advanced") || "beginner",
+        preferredUnits:
+          (preferences.preferredUnits as "metric" | "imperial") || "imperial",
         dietaryRestrictions: dietary,
         allergens: allergens,
         foodsToAvoid: foodsToAvoid,
@@ -203,9 +282,11 @@ export default function Settings() {
   // Sync selectedStorageAreas when storageLocations change to ensure newly added custom areas are selected
   useEffect(() => {
     if (storageLocations && selectedStorageAreas.length > 0) {
-      const availableNames = storageLocations.map(loc => loc.name);
-      const validSelected = selectedStorageAreas.filter(name => availableNames.includes(name));
-      
+      const availableNames = storageLocations.map((loc) => loc.name);
+      const validSelected = selectedStorageAreas.filter((name) =>
+        availableNames.includes(name),
+      );
+
       // Only update if there's a difference to avoid infinite loops
       if (validSelected.length !== selectedStorageAreas.length) {
         setSelectedStorageAreas(validSelected);
@@ -249,7 +330,8 @@ export default function Settings() {
       queryClient.invalidateQueries();
       toast({
         title: "Account Reset",
-        description: "All your data has been cleared. Redirecting to onboarding...",
+        description:
+          "All your data has been cleared. Redirecting to onboarding...",
       });
       setTimeout(() => {
         window.location.href = "/";
@@ -266,7 +348,7 @@ export default function Settings() {
 
   const toggleStorageArea = (area: string) => {
     const newSelected = selectedStorageAreas.includes(area)
-      ? selectedStorageAreas.filter(s => s !== area)
+      ? selectedStorageAreas.filter((s) => s !== area)
       : [...selectedStorageAreas, area];
     setSelectedStorageAreas(newSelected);
     form.setValue("storageAreasEnabled", newSelected);
@@ -274,7 +356,7 @@ export default function Settings() {
 
   const toggleDietary = (option: string) => {
     const newSelected = selectedDietary.includes(option)
-      ? selectedDietary.filter(d => d !== option)
+      ? selectedDietary.filter((d) => d !== option)
       : [...selectedDietary, option];
     setSelectedDietary(newSelected);
     form.setValue("dietaryRestrictions", newSelected);
@@ -282,7 +364,7 @@ export default function Settings() {
 
   const toggleAllergen = (option: string) => {
     const newSelected = selectedAllergens.includes(option)
-      ? selectedAllergens.filter(a => a !== option)
+      ? selectedAllergens.filter((a) => a !== option)
       : [...selectedAllergens, option];
     setSelectedAllergens(newSelected);
     form.setValue("allergens", newSelected);
@@ -298,24 +380,33 @@ export default function Settings() {
   };
 
   const removeFoodToAvoid = (food: string) => {
-    const newList = foodsToAvoidList.filter(f => f !== food);
+    const newList = foodsToAvoidList.filter((f) => f !== food);
     setFoodsToAvoidList(newList);
     form.setValue("foodsToAvoid", newList);
   };
 
   const addCustomStorage = async () => {
-    if (!customStorageInput.trim() || !storageLocations || isAddingStorageRef.current) {
+    if (
+      !customStorageInput.trim() ||
+      !storageLocations ||
+      isAddingStorageRef.current
+    ) {
       return;
     }
 
     const newStorageName = customStorageInput.trim();
     const newStorageNameLower = newStorageName.toLowerCase();
-    
+
     // Check against both existing storage locations AND pending additions
-    const storageNames = storageLocations.map(loc => loc.name.toLowerCase());
-    const pendingNames = Array.from(pendingStorageNamesRef.current).map(n => n.toLowerCase());
-    
-    if (storageNames.includes(newStorageNameLower) || pendingNames.includes(newStorageNameLower)) {
+    const storageNames = storageLocations.map((loc) => loc.name.toLowerCase());
+    const pendingNames = Array.from(pendingStorageNamesRef.current).map((n) =>
+      n.toLowerCase(),
+    );
+
+    if (
+      storageNames.includes(newStorageNameLower) ||
+      pendingNames.includes(newStorageNameLower)
+    ) {
       toast({
         title: "Already Exists",
         description: "This storage area already exists or is being added.",
@@ -328,31 +419,37 @@ export default function Settings() {
     isAddingStorageRef.current = true;
     setIsAddingStorage(true);
     pendingStorageNamesRef.current.add(newStorageName);
-    
+
     try {
       await apiRequest("/api/storage-locations", "POST", {
         name: newStorageName,
         icon: "package",
       });
-      
+
       // Await the refetch to ensure fresh data
-      await queryClient.refetchQueries({ queryKey: ["/api/storage-locations"] });
-      
+      await queryClient.refetchQueries({
+        queryKey: ["/api/storage-locations"],
+      });
+
       // Use functional updates to avoid clobbering concurrent user edits
-      setSelectedStorageAreas(prev => [...prev, newStorageName]);
-      form.setValue("storageAreasEnabled", (form.getValues("storageAreasEnabled") || []).concat(newStorageName));
+      setSelectedStorageAreas((prev) => [...prev, newStorageName]);
+      form.setValue(
+        "storageAreasEnabled",
+        (form.getValues("storageAreasEnabled") || []).concat(newStorageName),
+      );
       setCustomStorageInput("");
-      
+
       toast({
         title: "Success",
         description: "Custom storage area added.",
       });
     } catch (error: unknown) {
       const err = error as { message?: string; status?: number } | null;
-      const errorMsg = err?.message?.includes("already exists") || err?.status === 409
-        ? "This storage area already exists."
-        : "Failed to add custom storage area.";
-      
+      const errorMsg =
+        err?.message?.includes("already exists") || err?.status === 409
+          ? "This storage area already exists."
+          : "Failed to add custom storage area.";
+
       toast({
         title: "Error",
         description: errorMsg,
@@ -384,16 +481,33 @@ export default function Settings() {
   return (
     <div className="h-full overflow-auto">
       <div className="container max-w-4xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-8" data-testid="text-settings-title">Settings</h1>
+        <h1
+          className="text-3xl font-bold mb-8"
+          data-testid="text-settings-title"
+        >
+          Settings
+        </h1>
 
-        <Accordion type="single" collapsible className="space-y-4" defaultValue="profile">
+        <Accordion
+          type="single"
+          collapsible
+          className="space-y-4"
+          defaultValue="profile"
+        >
           {/* Profile Section */}
-          <AccordionItem value="profile" className="border rounded-lg" data-testid="section-profile">
+          <AccordionItem
+            value="profile"
+            className="border rounded-lg"
+            data-testid="section-profile"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <User2 className="w-5 h-5 text-muted-foreground" />
                 <span className="font-semibold">Profile</span>
-                <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                >
                   {user?.email || "Guest"}
                 </Badge>
               </div>
@@ -404,7 +518,9 @@ export default function Settings() {
                   <div className="relative group">
                     <Avatar className="w-32 h-32 border-4 border-border rounded-md">
                       <AvatarImage src={user?.profileImageUrl || undefined} />
-                      <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
+                      <AvatarFallback className="text-3xl rounded-md">
+                        {getUserInitials()}
+                      </AvatarFallback>
                     </Avatar>
                     <input
                       ref={fileInputRef}
@@ -446,15 +562,21 @@ export default function Settings() {
                     </Button>
                   )}
                 </div>
-                
+
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h2 className="text-2xl font-bold mb-1" data-testid="text-profile-name">
-                      {user?.firstName && user?.lastName 
+                    <h2
+                      className="text-2xl font-bold mb-1"
+                      data-testid="text-profile-name"
+                    >
+                      {user?.firstName && user?.lastName
                         ? `${user.firstName} ${user.lastName}`
                         : user?.email || "User"}
                     </h2>
-                    <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
+                    <p
+                      className="text-sm text-muted-foreground"
+                      data-testid="text-profile-email"
+                    >
                       {user?.email}
                     </p>
                   </div>
@@ -464,7 +586,10 @@ export default function Settings() {
                       <CreditCard className="w-4 h-4 mt-0.5 text-muted-foreground" />
                       <div>
                         <div className="text-muted-foreground">Member ID</div>
-                        <div className="font-mono text-xs" data-testid="text-member-id">
+                        <div
+                          className="font-mono text-xs"
+                          data-testid="text-member-id"
+                        >
                           {user?.id?.slice(0, 8).toUpperCase() || "N/A"}
                         </div>
                       </div>
@@ -473,13 +598,21 @@ export default function Settings() {
                     <div className="flex items-start gap-2">
                       <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
                       <div>
-                        <div className="text-muted-foreground">Member Since</div>
-                        <div className="font-medium" data-testid="text-member-since">
-                          {user?.createdAt 
-                            ? new Date(user.createdAt).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })
+                        <div className="text-muted-foreground">
+                          Member Since
+                        </div>
+                        <div
+                          className="font-medium"
+                          data-testid="text-member-since"
+                        >
+                          {user?.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
                             : "N/A"}
                         </div>
                       </div>
@@ -488,9 +621,17 @@ export default function Settings() {
                     <div className="flex items-start gap-2">
                       <Users className="w-4 h-4 mt-0.5 text-muted-foreground" />
                       <div>
-                        <div className="text-muted-foreground">Household Size</div>
-                        <div className="font-medium" data-testid="text-household-size">
-                          {preferences?.householdSize || 2} {(preferences?.householdSize || 2) === 1 ? 'person' : 'people'}
+                        <div className="text-muted-foreground">
+                          Household Size
+                        </div>
+                        <div
+                          className="font-medium"
+                          data-testid="text-household-size"
+                        >
+                          {preferences?.householdSize || 2}{" "}
+                          {(preferences?.householdSize || 2) === 1
+                            ? "person"
+                            : "people"}
                         </div>
                       </div>
                     </div>
@@ -498,8 +639,13 @@ export default function Settings() {
                     <div className="flex items-start gap-2">
                       <ChefHat className="w-4 h-4 mt-0.5 text-muted-foreground" />
                       <div>
-                        <div className="text-muted-foreground">Cooking Level</div>
-                        <div className="font-medium capitalize" data-testid="text-cooking-level">
+                        <div className="text-muted-foreground">
+                          Cooking Level
+                        </div>
+                        <div
+                          className="font-medium capitalize"
+                          data-testid="text-cooking-level"
+                        >
                           {preferences?.cookingSkillLevel || "Beginner"}
                         </div>
                       </div>
@@ -513,8 +659,11 @@ export default function Settings() {
                       variant="outline"
                       onClick={async () => {
                         CacheStorage.clear();
-                        await fetch("/api/auth/logout", { method: 'POST', credentials: 'include' });
-                        window.location.href = '/';
+                        await fetch("/api/auth/logout", {
+                          method: "POST",
+                          credentials: "include",
+                        });
+                        window.location.href = "/";
                       }}
                       data-testid="button-logout"
                     >
@@ -528,21 +677,30 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Preferences Section */}
-          <AccordionItem value="preferences" className="border rounded-lg" data-testid="section-preferences">
+          <AccordionItem
+            value="preferences"
+            className="border rounded-lg"
+            data-testid="section-preferences"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Settings2 className="w-5 h-5 text-muted-foreground" />
                 <span className="font-semibold">General Preferences</span>
-                {(preferences?.householdSize || preferences?.cookingSkillLevel) && (
+                {(preferences?.householdSize ||
+                  preferences?.cookingSkillLevel) && (
                   <span className="text-sm text-muted-foreground ml-2">
-                    {preferences?.householdSize} people • {preferences?.cookingSkillLevel}
+                    {preferences?.householdSize} people •{" "}
+                    {preferences?.cookingSkillLevel}
                   </span>
                 )}
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6 pt-4"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -556,7 +714,9 @@ export default function Settings() {
                               min={1}
                               max={20}
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
                               data-testid="input-household-size"
                             />
                           </FormControl>
@@ -573,7 +733,10 @@ export default function Settings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Cooking Skill Level</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-cooking-skill">
                                 <SelectValue placeholder="Select your skill level" />
@@ -581,7 +744,11 @@ export default function Settings() {
                             </FormControl>
                             <SelectContent>
                               {cookingSkillOptions.map((skill) => (
-                                <SelectItem key={skill.value} value={skill.value} data-testid={`option-skill-${skill.value}`}>
+                                <SelectItem
+                                  key={skill.value}
+                                  value={skill.value}
+                                  data-testid={`option-skill-${skill.value}`}
+                                >
                                   {skill.label}
                                 </SelectItem>
                               ))}
@@ -601,15 +768,28 @@ export default function Settings() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Preferred Measurement Units</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-units">
                               <SelectValue placeholder="Select unit system" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="imperial" data-testid="option-units-imperial">Imperial (cups, oz, °F)</SelectItem>
-                            <SelectItem value="metric" data-testid="option-units-metric">Metric (ml, g, °C)</SelectItem>
+                            <SelectItem
+                              value="imperial"
+                              data-testid="option-units-imperial"
+                            >
+                              Imperial (cups, oz, °F)
+                            </SelectItem>
+                            <SelectItem
+                              value="metric"
+                              data-testid="option-units-metric"
+                            >
+                              Metric (ml, g, °C)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
@@ -631,12 +811,15 @@ export default function Settings() {
                             min={1}
                             max={14}
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
                             data-testid="input-expiration-days"
                           />
                         </FormControl>
                         <FormDescription>
-                          Get notified when food items will expire within this many days
+                          Get notified when food items will expire within this
+                          many days
                         </FormDescription>
                       </FormItem>
                     )}
@@ -655,13 +838,23 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Dietary & Allergens Section */}
-          <AccordionItem value="dietary" className="border rounded-lg" data-testid="section-dietary">
+          <AccordionItem
+            value="dietary"
+            className="border rounded-lg"
+            data-testid="section-dietary"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-muted-foreground" />
-                <span className="font-semibold">Dietary Restrictions & Allergens</span>
-                {(selectedDietary.length > 0 || selectedAllergens.length > 0) && (
-                  <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                <span className="font-semibold">
+                  Dietary Restrictions & Allergens
+                </span>
+                {(selectedDietary.length > 0 ||
+                  selectedAllergens.length > 0) && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                  >
                     {selectedDietary.length + selectedAllergens.length} active
                   </Badge>
                 )}
@@ -676,7 +869,11 @@ export default function Settings() {
                       {dietaryOptions.map((option) => (
                         <Badge
                           key={option}
-                          variant={selectedDietary.includes(option) ? "default" : "outline"}
+                          variant={
+                            selectedDietary.includes(option)
+                              ? "default"
+                              : "outline"
+                          }
                           className="cursor-pointer hover-elevate active-elevate-2"
                           onClick={() => toggleDietary(option)}
                           data-testid={`badge-dietary-${option.toLowerCase()}`}
@@ -696,7 +893,11 @@ export default function Settings() {
                       {allergenOptions.map((option) => (
                         <Badge
                           key={option}
-                          variant={selectedAllergens.includes(option) ? "destructive" : "outline"}
+                          variant={
+                            selectedAllergens.includes(option)
+                              ? "destructive"
+                              : "outline"
+                          }
                           className="cursor-pointer hover-elevate active-elevate-2"
                           onClick={() => toggleAllergen(option)}
                           data-testid={`badge-allergen-${option.toLowerCase()}`}
@@ -713,7 +914,8 @@ export default function Settings() {
                   <div className="space-y-4">
                     <FormLabel>Foods to Always Avoid</FormLabel>
                     <FormDescription>
-                      Add specific foods or ingredients you want to avoid in recipes
+                      Add specific foods or ingredients you want to avoid in
+                      recipes
                     </FormDescription>
                     <div className="flex gap-2">
                       <Input
@@ -722,7 +924,7 @@ export default function Settings() {
                         value={foodToAvoid}
                         onChange={(e) => setFoodToAvoid(e.target.value)}
                         onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === "Enter") {
                             e.preventDefault();
                             addFoodToAvoid();
                           }
@@ -746,7 +948,7 @@ export default function Settings() {
                             variant="secondary"
                             className="cursor-pointer hover-elevate active-elevate-2"
                             onClick={() => removeFoodToAvoid(food)}
-                            data-testid={`badge-avoid-${food.toLowerCase().replace(/\s+/g, '-')}`}
+                            data-testid={`badge-avoid-${food.toLowerCase().replace(/\s+/g, "-")}`}
                           >
                             {food}
                             <X className="w-3 h-3 ml-1" />
@@ -762,7 +964,9 @@ export default function Settings() {
                     disabled={saveMutation.isPending}
                     data-testid="button-save-dietary"
                   >
-                    {saveMutation.isPending ? "Saving..." : "Save Dietary Preferences"}
+                    {saveMutation.isPending
+                      ? "Saving..."
+                      : "Save Dietary Preferences"}
                   </Button>
                 </form>
               </Form>
@@ -770,13 +974,20 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Storage Areas Section */}
-          <AccordionItem value="storage" className="border rounded-lg" data-testid="section-storage">
+          <AccordionItem
+            value="storage"
+            className="border rounded-lg"
+            data-testid="section-storage"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Database className="w-5 h-5 text-muted-foreground" />
                 <span className="font-semibold">Storage Areas</span>
                 {selectedStorageAreas.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                  >
                     {selectedStorageAreas.length} active
                   </Badge>
                 )}
@@ -794,7 +1005,11 @@ export default function Settings() {
                       return (
                         <Badge
                           key={area.name}
-                          variant={selectedStorageAreas.includes(area.name) ? "default" : "outline"}
+                          variant={
+                            selectedStorageAreas.includes(area.name)
+                              ? "default"
+                              : "outline"
+                          }
                           className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
                           onClick={() => toggleStorageArea(area.name)}
                           data-testid={`badge-storage-${area.name.toLowerCase()}`}
@@ -807,25 +1022,34 @@ export default function Settings() {
                         </Badge>
                       );
                     })}
-                    {storageLocations?.filter(loc => 
-                      !storageAreaOptions.some(opt => opt.name === loc.name)
-                    ).map((customLoc) => (
-                      <Badge
-                        key={customLoc.id}
-                        variant={selectedStorageAreas.includes(customLoc.name) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
-                        onClick={() => toggleStorageArea(customLoc.name)}
-                        data-testid={`badge-storage-${customLoc.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        <Package className="w-3.5 h-3.5" />
-                        {customLoc.name}
-                        {selectedStorageAreas.includes(customLoc.name) && (
-                          <X className="w-3 h-3 ml-0.5" />
-                        )}
-                      </Badge>
-                    ))}
+                    {storageLocations
+                      ?.filter(
+                        (loc) =>
+                          !storageAreaOptions.some(
+                            (opt) => opt.name === loc.name,
+                          ),
+                      )
+                      .map((customLoc) => (
+                        <Badge
+                          key={customLoc.id}
+                          variant={
+                            selectedStorageAreas.includes(customLoc.name)
+                              ? "default"
+                              : "outline"
+                          }
+                          className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
+                          onClick={() => toggleStorageArea(customLoc.name)}
+                          data-testid={`badge-storage-${customLoc.name.toLowerCase().replace(/\s+/g, "-")}`}
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                          {customLoc.name}
+                          {selectedStorageAreas.includes(customLoc.name) && (
+                            <X className="w-3 h-3 ml-0.5" />
+                          )}
+                        </Badge>
+                      ))}
                   </div>
-                  
+
                   <div className="flex gap-2 pt-2">
                     <Input
                       type="text"
@@ -833,7 +1057,7 @@ export default function Settings() {
                       value={customStorageInput}
                       onChange={(e) => setCustomStorageInput(e.target.value)}
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.preventDefault();
                           addCustomStorage();
                         }
@@ -850,7 +1074,7 @@ export default function Settings() {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   {form.formState.errors.storageAreasEnabled && (
                     <p className="text-sm text-destructive">
                       {form.formState.errors.storageAreasEnabled.message}
@@ -863,7 +1087,9 @@ export default function Settings() {
                     disabled={saveMutation.isPending}
                     data-testid="button-save-storage"
                   >
-                    {saveMutation.isPending ? "Saving..." : "Save Storage Areas"}
+                    {saveMutation.isPending
+                      ? "Saving..."
+                      : "Save Storage Areas"}
                   </Button>
                 </form>
               </Form>
@@ -871,7 +1097,11 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Appearance Section */}
-          <AccordionItem value="appearance" className="border rounded-lg" data-testid="section-appearance">
+          <AccordionItem
+            value="appearance"
+            className="border rounded-lg"
+            data-testid="section-appearance"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Palette className="w-5 h-5 text-muted-foreground" />
@@ -894,7 +1124,11 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Notifications Section */}
-          <AccordionItem value="notifications" className="border rounded-lg" data-testid="section-notifications">
+          <AccordionItem
+            value="notifications"
+            className="border rounded-lg"
+            data-testid="section-notifications"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-muted-foreground" />
@@ -910,7 +1144,11 @@ export default function Settings() {
           </AccordionItem>
 
           {/* API Usage Section */}
-          <AccordionItem value="api-usage" className="border rounded-lg" data-testid="section-api-usage">
+          <AccordionItem
+            value="api-usage"
+            className="border rounded-lg"
+            data-testid="section-api-usage"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Activity className="w-5 h-5 text-muted-foreground" />
@@ -928,11 +1166,17 @@ export default function Settings() {
           </AccordionItem>
 
           {/* Activity History Section */}
-          <AccordionItem value="activity-history" className="border rounded-lg" data-testid="section-activity-history">
+          <AccordionItem
+            value="activity-history"
+            className="border rounded-lg"
+            data-testid="section-activity-history"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-muted-foreground" />
-                <span className="font-semibold">Activity History & Privacy</span>
+                <span className="font-semibold">
+                  Activity History & Privacy
+                </span>
                 <span className="text-sm text-muted-foreground ml-2">
                   Manage your activity data
                 </span>
@@ -942,10 +1186,12 @@ export default function Settings() {
               <div className="pt-4">
                 <ActivityPrivacyControls />
                 <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                  <ActivityTimeline 
-                    showFilters={true} 
-                    limit={50} 
+                  <h3 className="text-lg font-semibold mb-4">
+                    Recent Activity
+                  </h3>
+                  <ActivityTimeline
+                    showFilters={true}
+                    limit={50}
                     className="border-0 shadow-none p-0"
                   />
                 </div>
@@ -955,12 +1201,19 @@ export default function Settings() {
 
           {/* Admin Management Section - Only visible to admins */}
           {user?.isAdmin && (
-            <AccordionItem value="admin-management" className="border rounded-lg" data-testid="section-admin">
+            <AccordionItem
+              value="admin-management"
+              className="border rounded-lg"
+              data-testid="section-admin"
+            >
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-muted-foreground" />
                   <span className="font-semibold">Admin Management</span>
-                  <Badge variant="default" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                  <Badge
+                    variant="default"
+                    className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                  >
                     Admin Only
                   </Badge>
                 </div>
@@ -974,7 +1227,11 @@ export default function Settings() {
           )}
 
           {/* Danger Zone Section */}
-          <AccordionItem value="danger-zone" className="border border-destructive/50 rounded-lg" data-testid="section-danger">
+          <AccordionItem
+            value="danger-zone"
+            className="border border-destructive/50 rounded-lg"
+            data-testid="section-danger"
+          >
             <AccordionTrigger className="px-6 py-4 hover:no-underline text-destructive">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5" />
@@ -986,24 +1243,32 @@ export default function Settings() {
                 <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                   <h4 className="font-medium mb-2">Reset Account Data</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You&apos;ll be able to start fresh with the onboarding process.
+                    This will permanently delete all your data including food
+                    items, recipes, chat history, meal plans, and preferences.
+                    You&apos;ll be able to start fresh with the onboarding
+                    process.
                   </p>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         disabled={resetMutation.isPending}
                         data-testid="button-reset-account"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        {resetMutation.isPending ? "Resetting..." : "Reset Account"}
+                        {resetMutation.isPending
+                          ? "Resetting..."
+                          : "Reset Account"}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete:
+                          This action cannot be undone. This will permanently
+                          delete:
                           <ul className="list-disc list-inside mt-2 space-y-1">
                             <li>All your food inventory items</li>
                             <li>All saved recipes</li>
@@ -1012,11 +1277,16 @@ export default function Settings() {
                             <li>All custom storage locations</li>
                             <li>All preferences and settings</li>
                           </ul>
-                          <p className="mt-3 font-medium">You will be redirected to onboarding to set up your account again.</p>
+                          <p className="mt-3 font-medium">
+                            You will be redirected to onboarding to set up your
+                            account again.
+                          </p>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel data-testid="button-cancel-reset">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel data-testid="button-cancel-reset">
+                          Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => resetMutation.mutate()}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1060,7 +1330,6 @@ interface UsageLog {
 }
 
 function ApiUsageSection() {
-  
   const { data: rateLimits, isLoading: limitsLoading } = useQuery<RateLimits>({
     queryKey: [API_ENDPOINTS.barcode.rateLimits],
   });
@@ -1074,11 +1343,15 @@ function ApiUsageSection() {
   });
 
   if (limitsLoading || statsLoading) {
-    return <div className="text-sm text-muted-foreground">Loading usage data...</div>;
+    return (
+      <div className="text-sm text-muted-foreground">Loading usage data...</div>
+    );
   }
 
-  const usagePercentage = rateLimits 
-    ? ((rateLimits.allowed_requests - rateLimits.remaining_requests) / rateLimits.allowed_requests) * 100
+  const usagePercentage = rateLimits
+    ? ((rateLimits.allowed_requests - rateLimits.remaining_requests) /
+        rateLimits.allowed_requests) *
+      100
     : 0;
 
   const isNearLimit = usagePercentage >= 80;
@@ -1089,9 +1362,12 @@ function ApiUsageSection() {
         <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
           <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-destructive">API Quota Warning</p>
+            <p className="text-sm font-medium text-destructive">
+              API Quota Warning
+            </p>
             <p className="text-sm text-destructive/80">
-              You&apos;ve used {usagePercentage.toFixed(0)}% of your monthly API quota. Consider upgrading your plan or reducing usage.
+              You&apos;ve used {usagePercentage.toFixed(0)}% of your monthly API
+              quota. Consider upgrading your plan or reducing usage.
             </p>
           </div>
         </div>
@@ -1099,7 +1375,9 @@ function ApiUsageSection() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="p-4 border border-border rounded-lg">
-          <div className="text-sm text-muted-foreground">Remaining Requests</div>
+          <div className="text-sm text-muted-foreground">
+            Remaining Requests
+          </div>
           <div className="text-2xl font-semibold mt-1">
             {rateLimits?.remaining_requests || 0}
           </div>
@@ -1122,11 +1400,15 @@ function ApiUsageSection() {
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Successful</div>
-              <div className="text-lg font-semibold text-green-600 dark:text-green-400">{stats.successfulCalls}</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                {stats.successfulCalls}
+              </div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Failed</div>
-              <div className="text-lg font-semibold text-destructive">{stats.failedCalls}</div>
+              <div className="text-lg font-semibold text-destructive">
+                {stats.failedCalls}
+              </div>
             </div>
           </div>
         </div>
@@ -1140,10 +1422,15 @@ function ApiUsageSection() {
               <div key={log.id} className="p-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant={log.success ? "default" : "destructive"} className="text-xs">
+                    <Badge
+                      variant={log.success ? "default" : "destructive"}
+                      className="text-xs"
+                    >
                       {log.endpoint}
                     </Badge>
-                    <span className="text-muted-foreground text-xs">{log.queryParams}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {log.queryParams}
+                    </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {new Date(log.timestamp).toLocaleDateString()}
@@ -1179,15 +1466,27 @@ function AdminManagementSection() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
-  const [userToToggleAdmin, setUserToToggleAdmin] = useState<AdminUser | null>(null);
+  const [userToToggleAdmin, setUserToToggleAdmin] = useState<AdminUser | null>(
+    null,
+  );
 
   const { data: usersData, isLoading } = useQuery<AdminUsersResponse>({
     queryKey: ["/api/admin/users"],
   });
 
   const toggleAdminMutation = useMutation({
-    mutationFn: async ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) => {
-      const response = await apiRequest(`/api/admin/users/${userId}/admin`, "PATCH", { isAdmin: makeAdmin });
+    mutationFn: async ({
+      userId,
+      makeAdmin,
+    }: {
+      userId: string;
+      makeAdmin: boolean;
+    }) => {
+      const response = await apiRequest(
+        `/api/admin/users/${userId}/admin`,
+        "PATCH",
+        { isAdmin: makeAdmin },
+      );
       return response;
     },
     onSuccess: (_, variables) => {
@@ -1195,8 +1494,8 @@ function AdminManagementSection() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Success",
-        description: variables.makeAdmin 
-          ? "User promoted to admin successfully." 
+        description: variables.makeAdmin
+          ? "User promoted to admin successfully."
           : "User demoted from admin successfully.",
       });
       setUserToToggleAdmin(null);
@@ -1204,7 +1503,9 @@ function AdminManagementSection() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: (error instanceof Error ? error.message : String(error)) || "Failed to update admin status.",
+        description:
+          (error instanceof Error ? error.message : String(error)) ||
+          "Failed to update admin status.",
         variant: "destructive",
       });
       setUserToToggleAdmin(null);
@@ -1213,7 +1514,11 @@ function AdminManagementSection() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await apiRequest(`/api/admin/users/${userId}`, "DELETE", null);
+      const response = await apiRequest(
+        `/api/admin/users/${userId}`,
+        "DELETE",
+        null,
+      );
       return response;
     },
     onSuccess: () => {
@@ -1227,7 +1532,9 @@ function AdminManagementSection() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: (error instanceof Error ? error.message : String(error)) || "Failed to delete user.",
+        description:
+          (error instanceof Error ? error.message : String(error)) ||
+          "Failed to delete user.",
         variant: "destructive",
       });
       setUserToDelete(null);
@@ -1252,7 +1559,9 @@ function AdminManagementSection() {
   };
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading users...</div>;
+    return (
+      <div className="text-sm text-muted-foreground">Loading users...</div>
+    );
   }
 
   if (!usersData || usersData.users.length === 0) {
@@ -1268,40 +1577,62 @@ function AdminManagementSection() {
             Manage user accounts and admin privileges
           </p>
         </div>
-        <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
-          {usersData.total} {usersData.total === 1 ? 'User' : 'Users'}
+        <Badge
+          variant="secondary"
+          className="no-default-hover-elevate no-default-active-elevate"
+        >
+          {usersData.total} {usersData.total === 1 ? "User" : "Users"}
         </Badge>
       </div>
 
       <div className="border border-border rounded-lg divide-y divide-border">
         {usersData.users.map((user) => {
           const isCurrentUser = user.id === currentUser?.id;
-          
+
           return (
-            <div key={user.id} className="p-4 flex items-center justify-between gap-4" data-testid={`user-row-${user.id}`}>
+            <div
+              key={user.id}
+              className="p-4 flex items-center justify-between gap-4"
+              data-testid={`user-row-${user.id}`}
+            >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <Avatar className="w-10 h-10 border border-border rounded-md flex-shrink-0">
                   <AvatarImage src={user.profileImageUrl || undefined} />
-                  <AvatarFallback className="rounded-md">{getUserInitials(user)}</AvatarFallback>
+                  <AvatarFallback className="rounded-md">
+                    {getUserInitials(user)}
+                  </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium truncate" data-testid={`text-user-name-${user.id}`}>
+                    <span
+                      className="font-medium truncate"
+                      data-testid={`text-user-name-${user.id}`}
+                    >
                       {getUserDisplayName(user)}
                     </span>
                     {user.isAdmin && (
-                      <Badge variant="default" className="no-default-hover-elevate no-default-active-elevate" data-testid={`badge-admin-${user.id}`}>
+                      <Badge
+                        variant="default"
+                        className="no-default-hover-elevate no-default-active-elevate"
+                        data-testid={`badge-admin-${user.id}`}
+                      >
                         Admin
                       </Badge>
                     )}
                     {isCurrentUser && (
-                      <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
+                      <Badge
+                        variant="secondary"
+                        className="no-default-hover-elevate no-default-active-elevate"
+                      >
                         You
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground truncate" data-testid={`text-user-email-${user.id}`}>
+                  <p
+                    className="text-sm text-muted-foreground truncate"
+                    data-testid={`text-user-email-${user.id}`}
+                  >
                     {user.email}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -1323,7 +1654,7 @@ function AdminManagementSection() {
                       <Shield className="w-4 h-4 mr-2" />
                       {user.isAdmin ? "Demote" : "Promote"}
                     </Button>
-                    
+
                     <Button
                       variant="destructive"
                       size="sm"
@@ -1342,7 +1673,10 @@ function AdminManagementSection() {
       </div>
 
       {/* Confirm Admin Toggle Dialog */}
-      <AlertDialog open={!!userToToggleAdmin} onOpenChange={() => setUserToToggleAdmin(null)}>
+      <AlertDialog
+        open={!!userToToggleAdmin}
+        onOpenChange={() => setUserToToggleAdmin(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -1352,14 +1686,20 @@ function AdminManagementSection() {
               {userToToggleAdmin?.isAdmin ? (
                 <>
                   Are you sure you want to remove admin privileges from{" "}
-                  <span className="font-medium">{userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}</span>?
-                  They will lose access to admin features including user management.
+                  <span className="font-medium">
+                    {userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}
+                  </span>
+                  ? They will lose access to admin features including user
+                  management.
                 </>
               ) : (
                 <>
                   Are you sure you want to grant admin privileges to{" "}
-                  <span className="font-medium">{userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}</span>?
-                  They will have full access to manage users and system settings.
+                  <span className="font-medium">
+                    {userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}
+                  </span>
+                  ? They will have full access to manage users and system
+                  settings.
                 </>
               )}
             </AlertDialogDescription>
@@ -1386,14 +1726,21 @@ function AdminManagementSection() {
       </AlertDialog>
 
       {/* Confirm Delete User Dialog */}
-      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+      <AlertDialog
+        open={!!userToDelete}
+        onOpenChange={() => setUserToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User Account</AlertDialogTitle>
             <AlertDialogDescription>
               Are you absolutely sure you want to delete{" "}
-              <span className="font-medium">{userToDelete && getUserDisplayName(userToDelete)}</span>&apos;s account?
-              <br /><br />
+              <span className="font-medium">
+                {userToDelete && getUserDisplayName(userToDelete)}
+              </span>
+              &apos;s account?
+              <br />
+              <br />
               This action cannot be undone. This will permanently delete:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>User account and profile</li>

@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Middleware
- * 
+ *
  * Centralizes rate limiting configuration and middleware for the application.
  * Provides different rate limiting strategies for various API endpoints.
  */
@@ -55,13 +55,13 @@ export const barcodeRateLimiter = rateLimiters.expensive.middleware();
 
 /**
  * Custom rate limiter factory
- * 
+ *
  * Creates a custom rate limiter with specified configuration.
  * Useful for endpoints with unique rate limiting requirements.
- * 
+ *
  * @param options - Rate limiting configuration
  * @returns Express middleware function
- * 
+ *
  * @example
  * const uploadLimiter = createCustomRateLimiter({
  *   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -78,30 +78,30 @@ export function createCustomRateLimiter(options: {
 }) {
   // Import the createRateLimiter function from the base rateLimit module
   const { createRateLimiter } = require("./rateLimit");
-  
+
   // Create a new rate limiter with the provided options
   const customLimiter = createRateLimiter({
     windowMs: options.windowMs,
     max: options.max,
-    message: options.message || 'Too many requests, please try again later',
+    message: options.message || "Too many requests, please try again later",
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: options.skipSuccessfulRequests || false,
     skipFailedRequests: options.skipFailedRequests || false,
   });
-  
+
   return customLimiter.middleware();
 }
 
 /**
  * Dynamic rate limiter
- * 
+ *
  * Applies different rate limits based on user type or request properties.
  * Premium users might get higher limits, for example.
- * 
+ *
  * @param getLimit - Function to determine rate limit based on request
  * @returns Express middleware function
- * 
+ *
  * @example
  * const dynamicLimiter = createDynamicRateLimiter(async (req) => {
  *   const user = await getUserFromRequest(req);
@@ -109,12 +109,12 @@ export function createCustomRateLimiter(options: {
  * });
  */
 export function createDynamicRateLimiter(
-  getLimit: (req: Request) => Promise<number> | number
+  getLimit: (req: Request) => Promise<number> | number,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const limit = await getLimit(req);
-      
+
       // Apply the appropriate limiter based on the limit
       if (limit > 500) {
         return rateLimiters.general.middleware()(req, res, next);
@@ -133,13 +133,13 @@ export function createDynamicRateLimiter(
 
 /**
  * Bypass rate limiter for specific conditions
- * 
+ *
  * Allows bypassing rate limits for certain requests (e.g., admin users).
- * 
+ *
  * @param shouldBypass - Function to determine if rate limit should be bypassed
  * @param limiter - The rate limiter to apply if not bypassed
  * @returns Express middleware function
- * 
+ *
  * @example
  * const conditionalLimiter = bypassRateLimiter(
  *   async (req) => {
@@ -151,7 +151,7 @@ export function createDynamicRateLimiter(
  */
 export function bypassRateLimiter(
   shouldBypass: (req: Request) => Promise<boolean> | boolean,
-  limiter: (req: Request, res: Response, next: NextFunction) => void
+  limiter: (req: Request, res: Response, next: NextFunction) => void,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -170,13 +170,13 @@ export function bypassRateLimiter(
 
 /**
  * Compose multiple rate limiters
- * 
+ *
  * Applies multiple rate limiters in sequence.
  * Useful for endpoints that need both general and specific limits.
- * 
+ *
  * @param limiters - Array of rate limiter middleware functions
  * @returns Express middleware function
- * 
+ *
  * @example
  * const combinedLimiter = composeRateLimiters([
  *   apiRateLimiter,    // General API limit
@@ -184,20 +184,20 @@ export function bypassRateLimiter(
  * ]);
  */
 export function composeRateLimiters(
-  limiters: Array<(req: Request, res: Response, next: NextFunction) => void>
+  limiters: Array<(req: Request, res: Response, next: NextFunction) => void>,
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     let index = 0;
-    
+
     function runNext(): void {
       if (index >= limiters.length) {
         return next();
       }
-      
+
       const currentLimiter = limiters[index++];
       currentLimiter(req, res, runNext);
     }
-    
+
     runNext();
   };
 }

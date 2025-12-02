@@ -105,24 +105,38 @@ const SORT_OPTIONS = [
 const PAGE_SIZES = [3, 5, 10];
 
 // Helper function to get suggested expiration date based on food category
-function getSuggestedExpirationDays(dataType?: string, description?: string): number {
-  const desc = description?.toLowerCase() || '';
-  
+function getSuggestedExpirationDays(
+  dataType?: string,
+  description?: string,
+): number {
+  const desc = description?.toLowerCase() || "";
+
   // Frozen foods
-  if (desc.includes('frozen')) return 90;
-  
+  if (desc.includes("frozen")) return 90;
+
   // Fresh produce
-  if (desc.includes('fresh') || desc.includes('produce')) return 7;
-  
+  if (desc.includes("fresh") || desc.includes("produce")) return 7;
+
   // Dairy
-  if (desc.includes('milk') || desc.includes('yogurt') || desc.includes('cheese')) return 14;
-  
+  if (
+    desc.includes("milk") ||
+    desc.includes("yogurt") ||
+    desc.includes("cheese")
+  )
+    return 14;
+
   // Meat
-  if (desc.includes('meat') || desc.includes('chicken') || desc.includes('beef') || desc.includes('pork')) return 3;
-  
+  if (
+    desc.includes("meat") ||
+    desc.includes("chicken") ||
+    desc.includes("beef") ||
+    desc.includes("pork")
+  )
+    return 3;
+
   // Canned/packaged
-  if (desc.includes('canned') || desc.includes('packaged')) return 365;
-  
+  if (desc.includes("canned") || desc.includes("packaged")) return 365;
+
   // Default
   return 21;
 }
@@ -144,7 +158,7 @@ export default function FdcSearch() {
   const [showScannerDialog, setShowScannerDialog] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
-  
+
   // Barcode scanner functions (copied from camera-test)
   const startBarcodeScanner = async () => {
     try {
@@ -171,7 +185,7 @@ export default function FdcSearch() {
         },
         () => {
           // Silent error for continuous scanning
-        }
+        },
       );
 
       setIsScanning(true);
@@ -181,7 +195,7 @@ export default function FdcSearch() {
       toast({
         title: "Scanner Error",
         description: error.message || "Failed to access camera",
-        variant: "destructive"
+        variant: "destructive",
       });
       setBarcodeScannerOpen(false);
     }
@@ -204,11 +218,11 @@ export default function FdcSearch() {
   // Check URL params on mount to see if we should open barcode scanner
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('scanBarcode') === 'true') {
+    if (params.get("scanBarcode") === "true") {
       // Open scanner dialog on mount
       setShowScannerDialog(true);
       // Clean up URL
-      window.history.replaceState({}, '', '/fdc-search');
+      window.history.replaceState({}, "", "/fdc-search");
     }
   }, []);
 
@@ -223,10 +237,13 @@ export default function FdcSearch() {
       stopBarcodeScanner();
     }
   }, [showScannerDialog]);
-  
+
   // Add to inventory state
-  const [addToInventoryFood, setAddToInventoryFood] = useState<FoodItem | null>(null);
-  const [selectedStorageLocation, setSelectedStorageLocation] = useState<string>("");
+  const [addToInventoryFood, setAddToInventoryFood] = useState<FoodItem | null>(
+    null,
+  );
+  const [selectedStorageLocation, setSelectedStorageLocation] =
+    useState<string>("");
   const [expirationDate, setExpirationDate] = useState<string>("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("item");
@@ -240,7 +257,7 @@ export default function FdcSearch() {
       setIsTyping(false);
     },
     400,
-    []
+    [],
   );
 
   // Handle input changes with debouncing
@@ -286,10 +303,10 @@ export default function FdcSearch() {
       queryKey: ["/api/fdc/food", selectedFood],
       enabled: !!selectedFood && detailsOpen,
     });
-  
+
   // Storage locations query
   const { data: storageLocations } = useStorageLocations();
-  
+
   // Add to inventory mutation
   const addToInventoryMutation = useMutation({
     mutationFn: async (data: {
@@ -303,7 +320,7 @@ export default function FdcSearch() {
       foodCategory?: string;
       nutrition?: string;
     }) => {
-      return apiRequest('/api/food-items', 'POST', data);
+      return apiRequest("/api/food-items", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
@@ -312,7 +329,8 @@ export default function FdcSearch() {
       toast({
         title: "Item added!",
         description: `${addToInventoryFood?.description} has been added to your inventory.`,
-        className: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+        className:
+          "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
       });
       setAddToInventoryFood(null);
       setSelectedStorageLocation("");
@@ -341,21 +359,29 @@ export default function FdcSearch() {
     setSelectedFood(fdcId);
     setDetailsOpen(true);
   };
-  
+
   const handleAddToInventory = (food: FoodItem) => {
-    const suggestedExpDays = getSuggestedExpirationDays(food.dataType, food.description);
-    const defaultExpDate = format(addDays(new Date(), suggestedExpDays), 'yyyy-MM-dd');
-    
+    const suggestedExpDays = getSuggestedExpirationDays(
+      food.dataType,
+      food.description,
+    );
+    const defaultExpDate = format(
+      addDays(new Date(), suggestedExpDays),
+      "yyyy-MM-dd",
+    );
+
     setAddToInventoryFood(food);
     setExpirationDate(defaultExpDate);
-    
+
     // Set default storage location
     if (storageLocations && storageLocations.length > 0) {
-      const fridgeLocation = storageLocations.find(loc => loc.name.toLowerCase() === 'fridge');
+      const fridgeLocation = storageLocations.find(
+        (loc) => loc.name.toLowerCase() === "fridge",
+      );
       setSelectedStorageLocation(fridgeLocation?.id || storageLocations[0].id);
     }
   };
-  
+
   const handleConfirmAddToInventory = async () => {
     if (!addToInventoryFood || !selectedStorageLocation || !expirationDate) {
       toast({
@@ -365,13 +391,15 @@ export default function FdcSearch() {
       });
       return;
     }
-    
+
     // Get full food details if available
-    const foodDetailsToSave = await queryClient.fetchQuery<FoodDetails>({
-      queryKey: ["/api/fdc/food", addToInventoryFood.fdcId],
-      staleTime: 5 * 60 * 1000, // Use cached data if available within 5 minutes
-    }).catch(() => null);
-    
+    const foodDetailsToSave = await queryClient
+      .fetchQuery<FoodDetails>({
+        queryKey: ["/api/fdc/food", addToInventoryFood.fdcId],
+        staleTime: 5 * 60 * 1000, // Use cached data if available within 5 minutes
+      })
+      .catch(() => null);
+
     const itemData = {
       fdcId: addToInventoryFood.fdcId,
       name: addToInventoryFood.description,
@@ -381,17 +409,40 @@ export default function FdcSearch() {
       expirationDate,
       usdaData: foodDetailsToSave || undefined,
       foodCategory: foodDetailsToSave?.dataType || addToInventoryFood.dataType,
-      nutrition: foodDetailsToSave?.nutrients ? JSON.stringify({
-        calories: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "208")?.value || 0,
-        protein: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "203")?.value || 0,
-        carbs: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "205")?.value || 0,
-        fat: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "204")?.value || 0,
-        fiber: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "291")?.value || 0,
-        sugar: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "269")?.value || 0,
-        sodium: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "307")?.value || 0,
-      }) : undefined,
+      nutrition: foodDetailsToSave?.nutrients
+        ? JSON.stringify({
+            calories:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "208",
+              )?.value || 0,
+            protein:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "203",
+              )?.value || 0,
+            carbs:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "205",
+              )?.value || 0,
+            fat:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "204",
+              )?.value || 0,
+            fiber:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "291",
+              )?.value || 0,
+            sugar:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "269",
+              )?.value || 0,
+            sodium:
+              foodDetailsToSave.nutrients.find(
+                (n: FoodNutrient) => n.nutrientNumber === "307",
+              )?.value || 0,
+          })
+        : undefined,
     };
-    
+
     addToInventoryMutation.mutate(itemData);
   };
 
@@ -425,8 +476,7 @@ export default function FdcSearch() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters =
-    brandOwners.length > 0 || sortBy !== "";
+  const hasActiveFilters = brandOwners.length > 0 || sortBy !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -501,25 +551,25 @@ export default function FdcSearch() {
                 value={searchQuery}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
                 className="flex-1"
-              data-testid="input-search"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setBarcodeScannerOpen(true)}
-              data-testid="button-scan-barcode"
-            >
-              <ScanLine className="w-4 h-4" />
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSearching}
-              data-testid="button-search"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
+                data-testid="input-search"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setBarcodeScannerOpen(true)}
+                data-testid="button-scan-barcode"
+              >
+                <ScanLine className="w-4 h-4" />
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSearching}
+                data-testid="button-search"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Search
+              </Button>
             </div>
             {(isTyping || isSearching) && (
               <div className="text-sm text-muted-foreground">
@@ -584,7 +634,11 @@ export default function FdcSearch() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-[140px]" id="sort-by" data-testid="select-sort-by">
+                  <SelectTrigger
+                    className="w-[140px]"
+                    id="sort-by"
+                    data-testid="select-sort-by"
+                  >
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -608,7 +662,11 @@ export default function FdcSearch() {
                   data-testid="button-toggle-sort-order"
                   className="shrink-0"
                 >
-                  {sortOrder === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                  {sortOrder === "asc" ? (
+                    <ArrowUp className="w-4 h-4" />
+                  ) : (
+                    <ArrowDown className="w-4 h-4" />
+                  )}
                 </Button>
 
                 <Select
@@ -618,7 +676,11 @@ export default function FdcSearch() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-[100px]" id="page-size" data-testid="select-page-size">
+                  <SelectTrigger
+                    className="w-[100px]"
+                    id="page-size"
+                    data-testid="select-page-size"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -631,10 +693,13 @@ export default function FdcSearch() {
                 </Select>
               </div>
             </div>
-            
+
             {hasActiveFilters && (
               <div className="flex items-center justify-between gap-4 mt-4">
-                <div className="flex flex-wrap gap-2" data-testid="active-filters">
+                <div
+                  className="flex flex-wrap gap-2"
+                  data-testid="active-filters"
+                >
                   {brandOwners.map((brand) => (
                     <Badge key={brand} variant="secondary" className="gap-1">
                       Brand: {brand}
@@ -646,7 +711,8 @@ export default function FdcSearch() {
                   ))}
                   {sortBy && (
                     <Badge variant="secondary" className="gap-1">
-                      Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
+                      Sort:{" "}
+                      {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
                       {sortOrder})
                       <X
                         className="w-3 h-3 cursor-pointer hover-elevate"
@@ -745,7 +811,7 @@ export default function FdcSearch() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div 
+                    <div
                       className="flex-1 cursor-pointer"
                       onClick={() => handleViewDetails(food.fdcId)}
                     >
@@ -917,9 +983,12 @@ export default function FdcSearch() {
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Add to Inventory Dialog */}
-      <Dialog open={!!addToInventoryFood} onOpenChange={(open) => !open && setAddToInventoryFood(null)}>
+      <Dialog
+        open={!!addToInventoryFood}
+        onOpenChange={(open) => !open && setAddToInventoryFood(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add to Inventory</DialogTitle>
@@ -927,11 +996,14 @@ export default function FdcSearch() {
               Add "{addToInventoryFood?.description}" to your inventory
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Storage Location */}
             <div className="space-y-2">
-              <Label htmlFor="storage-location" className="flex items-center gap-2">
+              <Label
+                htmlFor="storage-location"
+                className="flex items-center gap-2"
+              >
                 <MapPin className="w-4 h-4" />
                 Storage Location
               </Label>
@@ -939,7 +1011,10 @@ export default function FdcSearch() {
                 value={selectedStorageLocation}
                 onValueChange={setSelectedStorageLocation}
               >
-                <SelectTrigger id="storage-location" data-testid="select-storage-location">
+                <SelectTrigger
+                  id="storage-location"
+                  data-testid="select-storage-location"
+                >
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
@@ -951,7 +1026,7 @@ export default function FdcSearch() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Quantity and Unit */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -987,7 +1062,7 @@ export default function FdcSearch() {
                 </Select>
               </div>
             </div>
-            
+
             {/* Expiration Date */}
             <div className="space-y-2">
               <Label htmlFor="expiration" className="flex items-center gap-2">
@@ -1002,11 +1077,11 @@ export default function FdcSearch() {
                 data-testid="input-expiration"
               />
               <p className="text-xs text-muted-foreground">
-                Suggested based on {addToInventoryFood?.dataType || 'food type'}
+                Suggested based on {addToInventoryFood?.dataType || "food type"}
               </p>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -1017,18 +1092,24 @@ export default function FdcSearch() {
             </Button>
             <Button
               onClick={handleConfirmAddToInventory}
-              disabled={!selectedStorageLocation || !expirationDate || addToInventoryMutation.isPending}
+              disabled={
+                !selectedStorageLocation ||
+                !expirationDate ||
+                addToInventoryMutation.isPending
+              }
               data-testid="button-confirm-add"
             >
-              {addToInventoryMutation.isPending ? "Adding..." : "Add to Inventory"}
+              {addToInventoryMutation.isPending
+                ? "Adding..."
+                : "Add to Inventory"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Success Animation Overlay */}
       {showSuccess && <SuccessAnimation />}
-      
+
       {/* Barcode Scanner Dialog */}
       <BarcodeScannerDialog
         open={barcodeScannerOpen}

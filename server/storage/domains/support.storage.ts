@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/support.storage.ts
  * @description Support ticket and help desk management storage operations
- * 
+ *
  * Domain: Support & Customer Service
  * Scope: Ticket management, routing, agent expertise, help desk analytics
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (SupportStorage) for dependency injection and testing
  * - Export singleton INSTANCE (supportStorage) for convenience in production code
@@ -13,7 +13,11 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, ne } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { ISupportStorage } from "../interfaces/ISupportStorage";
 import {
   tickets,
@@ -38,7 +42,7 @@ import {
 
 /**
  * Support Storage
- * 
+ *
  * Manages support tickets, routing rules, agent expertise, and help desk operations.
  * Provides comprehensive ticketing system with intelligent routing and workload management.
  */
@@ -91,7 +95,7 @@ export class SupportStorage implements ISupportStorage {
 
   async getUserTickets(userId: string, status?: string): Promise<Ticket[]> {
     const conditions = [eq(tickets.userId, userId)];
-    
+
     if (status) {
       conditions.push(eq(tickets.status, status));
     }
@@ -113,7 +117,7 @@ export class SupportStorage implements ISupportStorage {
 
   async updateTicket(
     ticketId: string,
-    updates: Partial<Ticket>
+    updates: Partial<Ticket>,
   ): Promise<Ticket> {
     const [updatedTicket] = await db
       .update(tickets)
@@ -157,7 +161,7 @@ export class SupportStorage implements ISupportStorage {
   async resolveTicket(
     ticketId: string,
     resolutionNotes: string,
-    timeToResolution: number
+    timeToResolution: number,
   ): Promise<Ticket> {
     const [updatedTicket] = await db
       .update(tickets)
@@ -175,10 +179,10 @@ export class SupportStorage implements ISupportStorage {
 
   async closeTicket(
     ticketId: string,
-    satisfactionRating?: number
+    satisfactionRating?: number,
   ): Promise<Ticket> {
     const ticket = await this.getTicket(ticketId);
-    
+
     const [closedTicket] = await db
       .update(tickets)
       .set({
@@ -198,7 +202,10 @@ export class SupportStorage implements ISupportStorage {
     return closedTicket;
   }
 
-  async getTicketStats(startDate?: Date, endDate?: Date): Promise<{
+  async getTicketStats(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     total: number;
     byStatus: Record<string, number>;
     byPriority: Record<string, number>;
@@ -215,9 +222,13 @@ export class SupportStorage implements ISupportStorage {
       conditions.push(lte(tickets.createdAt, endDate));
     }
 
-    const filteredTickets = conditions.length > 0
-      ? await db.select().from(tickets).where(and(...conditions))
-      : await db.select().from(tickets);
+    const filteredTickets =
+      conditions.length > 0
+        ? await db
+            .select()
+            .from(tickets)
+            .where(and(...conditions))
+        : await db.select().from(tickets);
 
     const byStatus: Record<string, number> = {};
     const byPriority: Record<string, number> = {};
@@ -248,8 +259,10 @@ export class SupportStorage implements ISupportStorage {
       byStatus,
       byPriority,
       byCategory,
-      averageResolutionTime: resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
-      averageSatisfactionRating: ratedCount > 0 ? totalSatisfaction / ratedCount : 0,
+      averageResolutionTime:
+        resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
+      averageSatisfactionRating:
+        ratedCount > 0 ? totalSatisfaction / ratedCount : 0,
     };
   }
 
@@ -286,7 +299,7 @@ export class SupportStorage implements ISupportStorage {
 
   async updateRoutingRule(
     ruleId: string,
-    updates: Partial<RoutingRule>
+    updates: Partial<RoutingRule>,
   ): Promise<RoutingRule> {
     const [updatedRule] = await db
       .update(routingRules)
@@ -323,10 +336,16 @@ export class SupportStorage implements ISupportStorage {
       let matches = true;
 
       // Check conditions
-      if (rule.conditions.priority && !rule.conditions.priority.includes(ticket.priority)) {
+      if (
+        rule.conditions.priority &&
+        !rule.conditions.priority.includes(ticket.priority)
+      ) {
         matches = false;
       }
-      if (rule.conditions.category && !rule.conditions.category.includes(ticket.category)) {
+      if (
+        rule.conditions.category &&
+        !rule.conditions.category.includes(ticket.category)
+      ) {
         matches = false;
       }
 
@@ -362,7 +381,7 @@ export class SupportStorage implements ISupportStorage {
   }
 
   async createTicketRouting(
-    routing: InsertTicketRouting
+    routing: InsertTicketRouting,
   ): Promise<TicketRouting> {
     const [newRouting] = await db
       .insert(ticketRouting)
@@ -373,7 +392,7 @@ export class SupportStorage implements ISupportStorage {
 
   async updateTicketRouting(
     routingId: string,
-    updates: Partial<TicketRouting>
+    updates: Partial<TicketRouting>,
   ): Promise<TicketRouting | null> {
     const result = await db
       .update(ticketRouting)
@@ -385,7 +404,7 @@ export class SupportStorage implements ISupportStorage {
 
   async getAllRoutingsWithOutcomes(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<TicketRouting[]> {
     const conditions = [];
 
@@ -396,9 +415,13 @@ export class SupportStorage implements ISupportStorage {
       conditions.push(lte(ticketRouting.routedAt, endDate));
     }
 
-    const routings = conditions.length > 0
-      ? await db.select().from(ticketRouting).where(and(...conditions))
-      : await db.select().from(ticketRouting);
+    const routings =
+      conditions.length > 0
+        ? await db
+            .select()
+            .from(ticketRouting)
+            .where(and(...conditions))
+        : await db.select().from(ticketRouting);
 
     // Filter for routings with outcomes recorded
     return routings.filter((routing) => {
@@ -408,7 +431,7 @@ export class SupportStorage implements ISupportStorage {
 
   async getRoutingMetrics(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     totalTickets: number;
     averageConfidence: number;
@@ -426,9 +449,13 @@ export class SupportStorage implements ISupportStorage {
       conditions.push(lte(tickets.createdAt, endDate));
     }
 
-    const filteredTickets = conditions.length > 0
-      ? await db.select().from(tickets).where(and(...conditions))
-      : await db.select().from(tickets);
+    const filteredTickets =
+      conditions.length > 0
+        ? await db
+            .select()
+            .from(tickets)
+            .where(and(...conditions))
+        : await db.select().from(tickets);
 
     // Group by category
     const byCategory: Record<string, number> = {};
@@ -447,11 +474,13 @@ export class SupportStorage implements ISupportStorage {
           byAgent[ticket.assignedTo] = { count: 0, avgTime: 0 };
         }
         byAgent[ticket.assignedTo].count++;
-        
+
         if (ticket.timeToResolution) {
-          byAgent[ticket.assignedTo].avgTime = 
-            ((byAgent[ticket.assignedTo].avgTime * (byAgent[ticket.assignedTo].count - 1)) + 
-             ticket.timeToResolution) / byAgent[ticket.assignedTo].count;
+          byAgent[ticket.assignedTo].avgTime =
+            (byAgent[ticket.assignedTo].avgTime *
+              (byAgent[ticket.assignedTo].count - 1) +
+              ticket.timeToResolution) /
+            byAgent[ticket.assignedTo].count;
           totalResolutionTime += ticket.timeToResolution;
           resolvedCount++;
         }
@@ -462,7 +491,8 @@ export class SupportStorage implements ISupportStorage {
       totalTickets: filteredTickets.length,
       averageConfidence: 0.85, // Placeholder - would calculate from routing data
       routingAccuracy: 0.9, // Placeholder - would calculate from actual feedback
-      averageResolutionTime: resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
+      averageResolutionTime:
+        resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
       byCategory,
       byAgent,
     };
@@ -492,8 +522,8 @@ export class SupportStorage implements ISupportStorage {
       .where(
         and(
           ne(agentExpertise.availability, "offline"),
-          sql`${agentExpertise.currentTicketCount} < ${agentExpertise.maxConcurrentTickets}`
-        )
+          sql`${agentExpertise.currentTicketCount} < ${agentExpertise.maxConcurrentTickets}`,
+        ),
       );
   }
 
@@ -506,7 +536,7 @@ export class SupportStorage implements ISupportStorage {
   }
 
   async upsertAgentExpertise(
-    agent: InsertAgentExpertise
+    agent: InsertAgentExpertise,
   ): Promise<AgentExpertise> {
     const existingAgent = await this.getAgent(agent.agentId);
 
@@ -542,7 +572,7 @@ export class SupportStorage implements ISupportStorage {
     if (agent) {
       const newLoad = Math.max(0, (agent.currentTicketCount || 0) + delta);
       const maxCapacity = agent.maxConcurrentTickets || 10;
-      
+
       await db
         .update(agentExpertise)
         .set({
@@ -556,7 +586,7 @@ export class SupportStorage implements ISupportStorage {
 
   async updateAgentAvailability(
     agentId: string,
-    availability: string
+    availability: string,
   ): Promise<void> {
     await db
       .update(agentExpertise)
@@ -582,8 +612,9 @@ export class SupportStorage implements ISupportStorage {
       agentId: agent.agentId,
       currentLoad: agent.currentTicketCount || 0,
       maxCapacity: agent.maxConcurrentTickets || 10,
-      utilization: 
-        ((agent.currentTicketCount || 0) / (agent.maxConcurrentTickets || 10)) * 100,
+      utilization:
+        ((agent.currentTicketCount || 0) / (agent.maxConcurrentTickets || 10)) *
+        100,
       avgSatisfactionScore: agent.satisfactionScore || 0,
     }));
   }
@@ -598,7 +629,7 @@ export class SupportStorage implements ISupportStorage {
    */
   async addTicketResponse(
     ticketId: string,
-    response: Omit<InsertTicketResponse, "ticketId">
+    response: Omit<InsertTicketResponse, "ticketId">,
   ): Promise<TicketResponse> {
     const [newResponse] = await db
       .insert(ticketResponses)
@@ -607,13 +638,13 @@ export class SupportStorage implements ISupportStorage {
         ...response,
       })
       .returning();
-    
+
     // Update ticket's updatedAt timestamp
     await db
       .update(tickets)
       .set({ updatedAt: new Date() })
       .where(eq(tickets.id, ticketId));
-    
+
     return newResponse;
   }
 
@@ -681,7 +712,9 @@ export class SupportStorage implements ISupportStorage {
    * @param logId - The moderation log ID
    * @returns The moderation log entry or undefined if not found
    */
-  async getModerationLogById(logId: string): Promise<AdminModerationLog | undefined> {
+  async getModerationLogById(
+    logId: string,
+  ): Promise<AdminModerationLog | undefined> {
     const [log] = await db
       .select()
       .from(adminModerationLogs)
@@ -694,7 +727,9 @@ export class SupportStorage implements ISupportStorage {
    * @param userId - The user ID being moderated
    * @returns Array of moderation logs for the user ordered by createdAt descending
    */
-  async getUserModerationHistory(userId: string): Promise<AdminModerationLog[]> {
+  async getUserModerationHistory(
+    userId: string,
+  ): Promise<AdminModerationLog[]> {
     return await db
       .select()
       .from(adminModerationLogs)
@@ -707,7 +742,9 @@ export class SupportStorage implements ISupportStorage {
    * @param log - The moderation log data
    * @returns The created moderation log
    */
-  async createModerationLog(log: InsertAdminModerationLog): Promise<AdminModerationLog> {
+  async createModerationLog(
+    log: InsertAdminModerationLog,
+  ): Promise<AdminModerationLog> {
     const [newLog] = await db
       .insert(adminModerationLogs)
       .values(log)

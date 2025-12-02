@@ -14,18 +14,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Info, 
-  ChefHat, 
-  Wrench, 
-  Lightbulb, 
+import {
+  Info,
+  ChefHat,
+  Wrench,
+  Lightbulb,
   ExternalLink,
   BookOpen,
   Star,
   Clock,
   Users,
   ChevronRight,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -41,13 +41,13 @@ interface CookingTermTooltipProps {
   onRelatedTermClick?: (term: string) => void;
 }
 
-export function CookingTermTooltip({ 
-  term, 
-  children, 
+export function CookingTermTooltip({
+  term,
+  children,
   className = "",
   usePopover = false,
   showGlossaryLink = true,
-  onRelatedTermClick
+  onRelatedTermClick,
 }: CookingTermTooltipProps) {
   const [open, setOpen] = useState(false);
   const [showFullDefinition, setShowFullDefinition] = useState(false);
@@ -65,42 +65,45 @@ export function CookingTermTooltip({
 
   // Category colors and icons
   const getCategoryConfig = (category: string) => {
-    const configs: Record<string, { color: string; icon: any; bgClass: string }> = {
+    const configs: Record<
+      string,
+      { color: string; icon: any; bgClass: string }
+    > = {
       knife_skills: {
         color: "default",
         icon: ChefHat,
-        bgClass: "bg-gray-50 dark:bg-gray-900"
+        bgClass: "bg-gray-50 dark:bg-gray-900",
       },
       cooking_methods: {
         color: "secondary",
         icon: Clock,
-        bgClass: "bg-yellow-50 dark:bg-yellow-900/20"
+        bgClass: "bg-yellow-50 dark:bg-yellow-900/20",
       },
       prep_techniques: {
         color: "outline",
         icon: Wrench,
-        bgClass: "bg-blue-50 dark:bg-blue-900/20"
+        bgClass: "bg-blue-50 dark:bg-blue-900/20",
       },
       baking_pastry: {
         color: "secondary",
         icon: Sparkles,
-        bgClass: "bg-purple-50 dark:bg-purple-900/20"
+        bgClass: "bg-purple-50 dark:bg-purple-900/20",
       },
       sauces_liquids: {
         color: "default",
         icon: ChefHat,
-        bgClass: "bg-indigo-50 dark:bg-indigo-900/20"
+        bgClass: "bg-indigo-50 dark:bg-indigo-900/20",
       },
       heat_doneness: {
         color: "destructive",
         icon: Clock,
-        bgClass: "bg-red-50 dark:bg-red-900/20"
+        bgClass: "bg-red-50 dark:bg-red-900/20",
       },
       kitchen_tools: {
         color: "outline",
         icon: Wrench,
-        bgClass: "bg-green-50 dark:bg-green-900/20"
-      }
+        bgClass: "bg-green-50 dark:bg-green-900/20",
+      },
     };
     return configs[category] || configs.knife_skills;
   };
@@ -112,25 +115,25 @@ export function CookingTermTooltip({
         return {
           color: "text-green-600 dark:text-green-400",
           icon: "⭐",
-          label: "Beginner"
+          label: "Beginner",
         };
       case "intermediate":
         return {
           color: "text-yellow-600 dark:text-yellow-400",
           icon: "⭐⭐",
-          label: "Intermediate"
+          label: "Intermediate",
         };
       case "advanced":
         return {
           color: "text-red-600 dark:text-red-400",
           icon: "⭐⭐⭐",
-          label: "Advanced"
+          label: "Advanced",
         };
       default:
         return {
           color: "text-gray-600 dark:text-gray-400",
           icon: "",
-          label: ""
+          label: "",
         };
     }
   };
@@ -138,7 +141,7 @@ export function CookingTermTooltip({
   const formatCategory = (category: string) => {
     return category
       .split("_")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
@@ -146,17 +149,20 @@ export function CookingTermTooltip({
   const difficultyConfig = getDifficultyConfig(termData.difficulty);
   const CategoryIcon = categoryConfig.icon;
 
-  const handleRelatedTermClick = useCallback((relatedTerm: string) => {
-    if (onRelatedTermClick) {
-      onRelatedTermClick(relatedTerm);
-      setOpen(false);
-    } else {
-      toast({
-        title: "Related term",
-        description: `Look for "${relatedTerm}" in the glossary!`,
-      });
-    }
-  }, [onRelatedTermClick, toast]);
+  const handleRelatedTermClick = useCallback(
+    (relatedTerm: string) => {
+      if (onRelatedTermClick) {
+        onRelatedTermClick(relatedTerm);
+        setOpen(false);
+      } else {
+        toast({
+          title: "Related term",
+          description: `Look for "${relatedTerm}" in the glossary!`,
+        });
+      }
+    },
+    [onRelatedTermClick, toast],
+  );
 
   const content = (
     <ScrollArea className="max-h-[500px]">
@@ -170,12 +176,23 @@ export function CookingTermTooltip({
                 {termData.term}
               </h4>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={categoryConfig.color as "default" | "outline" | "destructive" | "secondary"} className="text-xs">
+                <Badge
+                  variant={
+                    categoryConfig.color as
+                      | "default"
+                      | "outline"
+                      | "destructive"
+                      | "secondary"
+                  }
+                  className="text-xs"
+                >
                   {formatCategory(termData.category)}
                 </Badge>
                 {!!termData.difficulty && !!difficultyConfig.label && (
                   <div className="flex items-center gap-1">
-                    <span className={`text-xs font-medium ${difficultyConfig.color}`}>
+                    <span
+                      className={`text-xs font-medium ${difficultyConfig.color}`}
+                    >
                       {difficultyConfig.icon} {difficultyConfig.label}
                     </span>
                   </div>
@@ -190,7 +207,7 @@ export function CookingTermTooltip({
           <p className="text-sm leading-relaxed">
             {termData.shortDefinition || termData.longDefinition}
           </p>
-          
+
           {!!termData.example && (
             <>
               {!showFullDefinition ? (
@@ -232,7 +249,6 @@ export function CookingTermTooltip({
             </ul>
           </div>
         )}
-
 
         {/* Related terms section */}
         {termData.relatedTerms && termData.relatedTerms.length > 0 && (
@@ -287,9 +303,7 @@ export function CookingTermTooltip({
             <Info className="w-3 h-3 text-primary/50" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-80">
-          {content}
-        </PopoverContent>
+        <PopoverContent className="w-80">{content}</PopoverContent>
       </Popover>
     );
   }
@@ -323,10 +337,10 @@ interface CookingTermsParserProps {
   usePopover?: boolean;
 }
 
-export function CookingTermsParser({ 
-  text, 
+export function CookingTermsParser({
+  text,
   className = "",
-  usePopover = false 
+  usePopover = false,
 }: CookingTermsParserProps) {
   const [parsedContent, setParsedContent] = useState<React.ReactNode[]>([]);
 
@@ -351,7 +365,7 @@ export function CookingTermsParser({
         elements.push(
           <span key={`text-${index}`}>
             {text.substring(lastIndex, termData.startIndex)}
-          </span>
+          </span>,
         );
       }
 
@@ -363,7 +377,7 @@ export function CookingTermsParser({
           usePopover={usePopover}
         >
           {text.substring(termData.startIndex, termData.endIndex)}
-        </CookingTermTooltip>
+        </CookingTermTooltip>,
       );
 
       lastIndex = termData.endIndex;
@@ -371,11 +385,7 @@ export function CookingTermsParser({
 
     // Add any remaining text
     if (lastIndex < text.length) {
-      elements.push(
-        <span key="text-end">
-          {text.substring(lastIndex)}
-        </span>
-      );
+      elements.push(<span key="text-end">{text.substring(lastIndex)}</span>);
     }
 
     setParsedContent(elements);

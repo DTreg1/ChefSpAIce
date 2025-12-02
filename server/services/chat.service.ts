@@ -1,12 +1,12 @@
 /**
  * Chat Service
- * 
+ *
  * Handles business logic for AI chat interactions including:
  * - Message persistence (user and assistant messages)
  * - Context building (inventory, chat history)
  * - OpenAI API interactions (streaming and non-streaming)
  * - Cooking term detection in responses
- * 
+ *
  * Router layer handles SSE presentation concerns.
  */
 
@@ -19,7 +19,7 @@ const SYSTEM_PROMPT = `You are ChefSpAIce, a helpful cooking assistant. You prov
 
 export interface ChatContext {
   systemPrompt: string;
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }
 
 export interface DetectedTerm {
@@ -66,28 +66,34 @@ class ChatService {
   async buildChatContext(
     userId: string,
     includeInventory: boolean = false,
-    historyLimit: number = 10
+    historyLimit: number = 10,
   ): Promise<ChatContext> {
     let inventoryContext = "";
-    
+
     if (includeInventory) {
       const items = await storage.getFoodItems(userId);
       if (items.length > 0) {
         inventoryContext = `\n\nUser's current food inventory:\n${items
-          .map((item: any) => `- ${item.name}: ${item.quantity} ${item.unit || ""} (${item.foodCategory || "uncategorized"})`)
+          .map(
+            (item: any) =>
+              `- ${item.name}: ${item.quantity} ${item.unit || ""} (${item.foodCategory || "uncategorized"})`,
+          )
           .join("\n")}`;
       }
     }
 
     const history = await storage.getChatMessages(userId, historyLimit);
-    
-    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
       {
         role: "system",
         content: `${SYSTEM_PROMPT}${inventoryContext}`,
       },
       ...history.reverse().map((msg: ChatMessage) => ({
-        role: msg.role as 'user' | 'assistant',
+        role: msg.role as "user" | "assistant",
         content: msg.content,
       })),
     ];
@@ -103,11 +109,11 @@ class ChatService {
    * Returns the full response content
    */
   async createChatCompletion(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-    config: ChatStreamConfig = {}
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    config: ChatStreamConfig = {},
   ): Promise<string> {
     if (!openai) {
-      throw new Error('OpenAI not configured');
+      throw new Error("OpenAI not configured");
     }
 
     const response = await openai.chat.completions.create({
@@ -126,11 +132,11 @@ class ChatService {
    * Returns an async iterable for streaming chunks
    */
   async createChatStream(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-    config: ChatStreamConfig = {}
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    config: ChatStreamConfig = {},
   ): Promise<AsyncIterable<string>> {
     if (!openai) {
-      throw new Error('OpenAI not configured');
+      throw new Error("OpenAI not configured");
     }
 
     const stream = await openai.chat.completions.create({
@@ -149,7 +155,7 @@ class ChatService {
             yield content;
           }
         }
-      }
+      },
     };
   }
 
@@ -160,20 +166,20 @@ class ChatService {
     try {
       const matches = await termDetector.detectTerms(content, {
         maxMatches: 50,
-        contextAware: true
+        contextAware: true,
       });
 
-      return matches.map(match => ({
+      return matches.map((match) => ({
         term: match.originalTerm,
         termId: String(match.termId),
         category: match.category,
         shortDefinition: match.shortDefinition,
         difficulty: match.difficulty,
         start: match.start,
-        end: match.end
+        end: match.end,
       }));
     } catch (error) {
-      console.error('[ChatService] Error detecting cooking terms:', error);
+      console.error("[ChatService] Error detecting cooking terms:", error);
       return [];
     }
   }
@@ -183,30 +189,32 @@ class ChatService {
    */
   async generateTitle(content: string): Promise<string> {
     if (!openai) {
-      return content.substring(0, 30) + '...';
+      return content.substring(0, 30) + "...";
     }
 
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: "gpt-4o-mini",
         messages: [
           {
-            role: 'system',
-            content: 'Generate a very short (3-5 words) title for this conversation based on the first message. Just return the title, no quotes or extra text.'
+            role: "system",
+            content:
+              "Generate a very short (3-5 words) title for this conversation based on the first message. Just return the title, no quotes or extra text.",
           },
           {
-            role: 'user',
-            content: content
-          }
+            role: "user",
+            content: content,
+          },
         ],
         max_tokens: 20,
       });
 
-      const title = response.choices[0]?.message?.content?.trim() || 'New Conversation';
+      const title =
+        response.choices[0]?.message?.content?.trim() || "New Conversation";
       return title.substring(0, 50);
     } catch (error) {
-      console.error('[ChatService] Error generating title:', error);
-      return content.substring(0, 30) + '...';
+      console.error("[ChatService] Error generating title:", error);
+      return content.substring(0, 30) + "...";
     }
   }
 
@@ -231,7 +239,7 @@ class ChatService {
   async sendMessage(
     userId: string,
     userMessage: string,
-    options: { includeInventory?: boolean; historyLimit?: number } = {}
+    options: { includeInventory?: boolean; historyLimit?: number } = {},
   ): Promise<{
     response: string;
     detectedTerms: DetectedTerm[];
@@ -241,7 +249,7 @@ class ChatService {
     const context = await this.buildChatContext(
       userId,
       options.includeInventory || false,
-      options.historyLimit || 10
+      options.historyLimit || 10,
     );
 
     const response = await this.createChatCompletion(context.messages);

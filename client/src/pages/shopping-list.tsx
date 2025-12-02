@@ -46,7 +46,9 @@ export default function ShoppingList() {
     return date.toLocaleDateString("en-CA");
   }, [endDate]);
 
-  const { data: shoppingListResponse, isLoading } = useQuery<ShoppingItem[] | { items: ShoppingItem[] }>({
+  const { data: shoppingListResponse, isLoading } = useQuery<
+    ShoppingItem[] | { items: ShoppingItem[] }
+  >({
     queryKey: [API_ENDPOINTS.shoppingList.items],
   });
 
@@ -84,9 +86,9 @@ export default function ShoppingList() {
   };
 
   // Handle both array response and object response with items property
-  const items: ShoppingItem[] = Array.isArray(shoppingListResponse) 
-    ? shoppingListResponse 
-    : (shoppingListResponse?.items || []);
+  const items: ShoppingItem[] = Array.isArray(shoppingListResponse)
+    ? shoppingListResponse
+    : shoppingListResponse?.items || [];
   const uncheckedCount =
     items.filter((item) => !checkedItems.has(item.name || String(item.id)))
       .length || 0;
@@ -245,7 +247,7 @@ export default function ShoppingList() {
                         </div>
                         {item.quantity && (
                           <div className="text-sm text-muted-foreground mt-1">
-                            Quantity: {item.quantity} {item.unit || ''}
+                            Quantity: {item.quantity} {item.unit || ""}
                           </div>
                         )}
                         {item.recipeId && (

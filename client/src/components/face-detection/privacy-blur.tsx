@@ -1,21 +1,27 @@
 /**
  * PrivacyBlur Component
- * 
+ *
  * Component for blurring faces in images for privacy protection.
  * Allows users to select which faces to blur and adjust blur intensity.
  */
 
-import { useState } from 'react';
-import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { API_ENDPOINTS } from '@/lib/api-endpoints';
+import { useState } from "react";
+import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface PrivacyBlurProps {
   imageFile: File | null;
@@ -31,7 +37,11 @@ interface BlurResponse {
   excludedFaces: number[];
 }
 
-export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlurProps) {
+export function PrivacyBlur({
+  imageFile,
+  faceCount,
+  onBlurComplete,
+}: PrivacyBlurProps) {
   const [blurIntensity, setBlurIntensity] = useState(10);
   const [excludedFaces, setExcludedFaces] = useState<Set<number>>(new Set());
   const [blurredImage, setBlurredImage] = useState<string | null>(null);
@@ -40,28 +50,35 @@ export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlu
   // Mutation for blurring faces
   const blurFacesMutation = useMutation({
     mutationFn: async () => {
-      if (!imageFile) throw new Error('No image file provided');
-      
+      if (!imageFile) throw new Error("No image file provided");
+
       const formData = new FormData();
-      formData.append('image', imageFile);
-      formData.append('blurIntensity', blurIntensity.toString());
-      formData.append('excludeIndexes', JSON.stringify(Array.from(excludedFaces)));
-      
-      return apiRequest(API_ENDPOINTS.ai.media.vision.faces.blur, 'POST', formData) as Promise<BlurResponse>;
+      formData.append("image", imageFile);
+      formData.append("blurIntensity", blurIntensity.toString());
+      formData.append(
+        "excludeIndexes",
+        JSON.stringify(Array.from(excludedFaces)),
+      );
+
+      return apiRequest(
+        API_ENDPOINTS.ai.media.vision.faces.blur,
+        "POST",
+        formData,
+      ) as Promise<BlurResponse>;
     },
     onSuccess: (data) => {
       setBlurredImage(data.blurredImageUrl);
       onBlurComplete?.(data.blurredImageUrl);
       toast({
-        title: 'Privacy Blur Applied',
+        title: "Privacy Blur Applied",
         description: `Faces blurred successfully with intensity ${data.blurIntensity}`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Blur Failed',
-        description: error.message || 'Failed to blur faces',
-        variant: 'destructive',
+        title: "Blur Failed",
+        description: error.message || "Failed to blur faces",
+        variant: "destructive",
       });
     },
   });
@@ -195,7 +212,7 @@ export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlu
 
 /**
  * AnonymizeToggle Component
- * 
+ *
  * Simple toggle component for enabling/disabling automatic face anonymization.
  */
 
@@ -206,7 +223,10 @@ interface AnonymizeToggleProps {
 
 export function AnonymizeToggle({ enabled, onToggle }: AnonymizeToggleProps) {
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg" data-testid="div-anonymize-toggle">
+    <div
+      className="flex items-center justify-between p-4 border rounded-lg"
+      data-testid="div-anonymize-toggle"
+    >
       <div className="space-y-0.5">
         <Label htmlFor="anonymize-toggle" className="text-base cursor-pointer">
           Auto-Anonymize Faces

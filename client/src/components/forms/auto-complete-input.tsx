@@ -1,9 +1,9 @@
 /**
  * AutoCompleteInput Component
- * 
+ *
  * Smart input field with ML-powered auto-completion suggestions.
  * Learns from user behavior and provides context-aware predictions.
- * 
+ *
  * Features:
  * - Real-time suggestions as user types
  * - Keyboard navigation (arrow keys, enter, escape)
@@ -135,7 +135,9 @@ export function AutoCompleteInput({
           type: "context" as const,
           metadata: { source: "context-aware" },
         }));
-        setSuggestions((prev) => [...contextSuggestions, ...prev].slice(0, maxSuggestions));
+        setSuggestions((prev) =>
+          [...contextSuggestions, ...prev].slice(0, maxSuggestions),
+        );
       }
     },
   });
@@ -203,11 +205,13 @@ export function AutoCompleteInput({
     if (debouncedValue.length >= minCharsForSuggestions) {
       fetchSuggestions().then((result) => {
         if (result.data?.suggestions) {
-          const basicSuggestions = result.data.suggestions.map((s: string, index: number) => ({
-            value: s,
-            type: index < 5 ? "personal" : "global",
-            metadata: {},
-          }));
+          const basicSuggestions = result.data.suggestions.map(
+            (s: string, index: number) => ({
+              value: s,
+              type: index < 5 ? "personal" : "global",
+              metadata: {},
+            }),
+          );
           setSuggestions(basicSuggestions.slice(0, maxSuggestions));
           setIsOpen(basicSuggestions.length > 0);
         }
@@ -232,14 +236,14 @@ export function AutoCompleteInput({
         case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev < suggestions.length - 1 ? prev + 1 : 0
+            prev < suggestions.length - 1 ? prev + 1 : 0,
           );
           break;
 
         case "ArrowUp":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : suggestions.length - 1
+            prev > 0 ? prev - 1 : suggestions.length - 1,
           );
           break;
 
@@ -266,7 +270,7 @@ export function AutoCompleteInput({
           break;
       }
     },
-    [isOpen, suggestions, selectedIndex]
+    [isOpen, suggestions, selectedIndex],
   );
 
   // Select a suggestion
@@ -288,7 +292,7 @@ export function AutoCompleteInput({
       // Focus back on input
       inputRef.current?.focus();
     },
-    [onChange, enableLearning, recordFeedback]
+    [onChange, enableLearning, recordFeedback],
   );
 
   // Handle input blur
@@ -357,15 +361,12 @@ export function AutoCompleteInput({
           }}
           placeholder={placeholder}
           disabled={disabled}
-          className={cn(
-            "pr-8",
-            className
-          )}
+          className={cn("pr-8", className)}
           autoFocus={autoFocus}
           autoComplete="off"
           data-testid={`input-${name}`}
         />
-        
+
         {suggestions.length > 0 && (
           <Button
             type="button"
@@ -379,7 +380,7 @@ export function AutoCompleteInput({
             <ChevronDown
               className={cn(
                 "h-4 w-4 transition-transform",
-                isOpen && "rotate-180"
+                isOpen && "rotate-180",
               )}
             />
           </Button>
@@ -394,7 +395,7 @@ export function AutoCompleteInput({
                 key={`${suggestion.value}-${index}`}
                 className={cn(
                   "flex cursor-pointer items-center justify-between px-3 py-2 hover:bg-muted",
-                  selectedIndex === index && "bg-muted"
+                  selectedIndex === index && "bg-muted",
                 )}
                 onMouseEnter={() => setSelectedIndex(index)}
                 onClick={() => selectSuggestion(suggestion)}
@@ -404,18 +405,18 @@ export function AutoCompleteInput({
                   {getIcon(suggestion.type)}
                   <span className="text-sm">{suggestion.value}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {showConfidence && suggestion.confidence && (
                     <Badge variant="outline" className="text-xs">
                       {Math.round(suggestion.confidence * 100)}%
                     </Badge>
                   )}
-                  
+
                   <span className="text-xs text-muted-foreground">
                     {getTypeLabel(suggestion.type)}
                   </span>
-                  
+
                   {suggestion.metadata?.lastUsed && (
                     <Clock className="h-3 w-3 text-muted-foreground" />
                   )}
@@ -423,7 +424,7 @@ export function AutoCompleteInput({
               </li>
             ))}
           </ul>
-          
+
           {enableLearning && (
             <div className="border-t px-3 py-2">
               <p className="text-xs text-muted-foreground">

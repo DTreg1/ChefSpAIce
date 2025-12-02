@@ -7,21 +7,25 @@ This guide provides step-by-step prompts to reorganize and clean up the `client/
 ## Phase 1: Audit & Identify Duplicates
 
 ### Step 1.1: Audit Notification Components
+
 ```
 Audit the notification components: compare NotificationSettings.tsx vs notification-settings.tsx and any components in a notifications/ folder. Identify which is actually used in the codebase, remove the unused duplicate, and consolidate into a single notifications/ folder.
 ```
 
 ### Step 1.2: Audit Summary Components
+
 ```
 Audit the summary components: compare the root-level summary-card.tsx, summary-toggle.tsx, summary-length-selector.tsx against equivalents in the summaries/ folder. Identify which versions are imported, remove duplicates, and ensure all summary components live in a single summaries/ folder.
 ```
 
 ### Step 1.3: Audit Tag Components
+
 ```
 Audit tag-related components: TagCloud.tsx, TagEditor.tsx, TagInput.tsx, TagSuggestions.tsx and any tag-oriented directories. Identify duplicates, determine which are actively used, remove unused versions, and consolidate into a single tags/ folder.
 ```
 
 ### Step 1.4: Audit Loading/Skeleton Components
+
 ```
 Audit loading and skeleton components: skeleton-loader.tsx, food-card-skeleton.tsx, recipe-card-skeleton.tsx, loading-dots.tsx, and any others. Consolidate into a single shared/loaders/ folder with a unified skeleton system. Update all imports across the codebase.
 ```
@@ -31,26 +35,31 @@ Audit loading and skeleton components: skeleton-loader.tsx, food-card-skeleton.t
 ## Phase 2: Create Feature-Based Folder Structure
 
 ### Step 2.1: Organize Chat Components
+
 ```
 Move all chat-related components into a chat/ folder: ChatInterface.tsx, chat-input.tsx, chat-message.tsx, ConversationSidebar.tsx, and any other chat-related files. Create an index.ts barrel file to export all public components. Update all imports in the codebase.
 ```
 
 ### Step 2.2: Organize Recipe Components
+
 ```
 Move all recipe-related components into a recipes/ folder. This includes recipe cards, recipe forms, recipe lists, and any recipe-specific UI. Create an index.ts barrel file. Update all imports across the codebase.
 ```
 
 ### Step 2.3: Organize Inventory Components
+
 ```
 Move all inventory-related components into an inventory/ folder. Include any inventory lists, inventory forms, inventory cards, and related UI. Create an index.ts barrel file. Update all imports.
 ```
 
 ### Step 2.4: Organize Voice Components
+
 ```
 Consolidate all voice-related components into a voice/ folder. Include voice input, voice commands, speech recognition UI, and related components. Create an index.ts barrel file. Update all imports.
 ```
 
 ### Step 2.5: Organize Analytics Components
+
 ```
 Ensure all analytics components are properly organized in the analytics/ folder. Move any stray analytics-related components from the root. Create or update the index.ts barrel file. Update all imports.
 ```
@@ -60,16 +69,19 @@ Ensure all analytics components are properly organized in the analytics/ folder.
 ## Phase 3: Create Shared Components Structure
 
 ### Step 3.1: Create Shared Forms Folder
+
 ```
 Create a shared/forms/ folder for reusable form components used across multiple features. Move form helpers, form fields, and generic form components here. Create an index.ts barrel file.
 ```
 
 ### Step 3.2: Create Shared Cards Folder
+
 ```
 Create a shared/cards/ folder for generic card components that are reused across features. Move generic card skeletons, empty state cards, and base card variants here. Create an index.ts barrel file.
 ```
 
 ### Step 3.3: Create Shared Layout Folder
+
 ```
 Create a shared/layout/ folder for layout components like empty-state.tsx, page headers, section wrappers, and other layout utilities. Create an index.ts barrel file.
 ```
@@ -79,11 +91,13 @@ Create a shared/layout/ folder for layout components like empty-state.tsx, page 
 ## Phase 4: Naming Convention Cleanup
 
 ### Step 4.1: Standardize File Names
+
 ```
 Standardize all component file names to use kebab-case (lowercase with hyphens). Rename any PascalCase files like ChatInterface.tsx to chat-interface.tsx, TagCloud.tsx to tag-cloud.tsx, etc. Update all imports after renaming.
 ```
 
 ### Step 4.2: Verify Export Names
+
 ```
 Ensure all component exports use PascalCase even though file names are kebab-case. For example, chat-interface.tsx should export ChatInterface. Verify consistency across all renamed files.
 ```
@@ -93,11 +107,13 @@ Ensure all component exports use PascalCase even though file names are kebab-cas
 ## Phase 5: Remove Unused Components
 
 ### Step 5.1: Identify Unused Components
+
 ```
 Search the entire codebase to identify any components in client/src/components that are never imported or used. List all unused components but do not delete them yet.
 ```
 
 ### Step 5.2: Remove Confirmed Unused Components
+
 ```
 Delete the following unused components that were identified in the previous step: [PASTE THE LIST FROM STEP 5.1]. Verify the app still builds and runs correctly.
 ```
@@ -107,11 +123,13 @@ Delete the following unused components that were identified in the previous step
 ## Phase 6: Create Barrel Files
 
 ### Step 6.1: Add Index Files to All Feature Folders
+
 ```
 Add index.ts barrel files to each feature folder (chat/, recipes/, inventory/, voice/, analytics/, notifications/, summaries/, tags/) that export all public components. This simplifies imports like: import { ChatInterface, ChatMessage } from '@/components/chat'
 ```
 
 ### Step 6.2: Update Imports to Use Barrel Files
+
 ```
 Update all imports across the codebase to use the new barrel file imports instead of direct file paths. For example, change: import { ChatInterface } from '@/components/chat/chat-interface' to: import { ChatInterface } from '@/components/chat'
 ```
@@ -121,16 +139,19 @@ Update all imports across the codebase to use the new barrel file imports instea
 ## Phase 7: Final Verification
 
 ### Step 7.1: Verify Build
+
 ```
 Run the build and verify there are no import errors or missing components. Fix any broken imports.
 ```
 
 ### Step 7.2: Test All Features
+
 ```
 Test each major feature (chat, recipes, inventory, voice, analytics, notifications) to ensure the component reorganization hasn't broken any functionality.
 ```
 
 ### Step 7.3: Update replit.md
+
 ```
 Update replit.md to document the new component folder structure so future development follows the established conventions.
 ```

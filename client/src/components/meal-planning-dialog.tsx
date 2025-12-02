@@ -2,15 +2,39 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, CalendarPlus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,11 +58,11 @@ const mealPlanFormSchema = z.object({
 
 type MealPlanFormValues = z.infer<typeof mealPlanFormSchema>;
 
-export function MealPlanningDialog({ 
-  recipeId, 
-  recipeTitle, 
+export function MealPlanningDialog({
+  recipeId,
+  recipeTitle,
   defaultServings = 1,
-  trigger 
+  trigger,
 }: MealPlanningDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -57,7 +81,7 @@ export function MealPlanningDialog({
       // Normalize date to midnight and convert to YYYY-MM-DD
       const normalizedDate = new Date(values.date);
       normalizedDate.setHours(0, 0, 0, 0);
-      const dateStr = normalizedDate.toLocaleDateString('en-CA');
+      const dateStr = normalizedDate.toLocaleDateString("en-CA");
 
       const mealPlan = {
         date: dateStr,
@@ -98,13 +122,20 @@ export function MealPlanningDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm" data-testid="button-schedule-meal">
+          <Button
+            variant="outline"
+            size="sm"
+            data-testid="button-schedule-meal"
+          >
             <CalendarPlus className="w-4 h-4 mr-2" />
             Schedule
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-muted" data-testid="dialog-meal-planning">
+      <DialogContent
+        className="sm:max-w-md bg-muted"
+        data-testid="dialog-meal-planning"
+      >
         <DialogHeader>
           <DialogTitle>Schedule Meal</DialogTitle>
           <DialogDescription>
@@ -139,7 +170,11 @@ export function MealPlanningDialog({
                           data-testid="button-select-date"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -193,7 +228,9 @@ export function MealPlanningDialog({
                       type="number"
                       min="1"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 1)
+                      }
                       data-testid="input-servings"
                     />
                   </FormControl>
@@ -235,7 +272,9 @@ export function MealPlanningDialog({
                 disabled={createMealPlanMutation.isPending}
                 data-testid="button-confirm-schedule"
               >
-                {createMealPlanMutation.isPending ? "Scheduling..." : "Schedule Meal"}
+                {createMealPlanMutation.isPending
+                  ? "Scheduling..."
+                  : "Schedule Meal"}
               </Button>
             </div>
           </form>

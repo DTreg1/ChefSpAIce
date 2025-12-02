@@ -1,23 +1,38 @@
 /**
  * Inventory Domain Storage
- * 
+ *
  * Handles all inventory-related database operations including:
  * - Food items management
  * - Storage locations
  * - Expiration tracking
  * - Onboarding inventory
- * 
+ *
  * This module is extracted from the monolithic storage.ts as part of the
  * domain-driven refactoring to improve maintainability and testability.
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (InventoryDomainStorage) for dependency injection and testing
  * - Export singleton INSTANCE (inventoryStorage) for convenience in production code
  * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
-import { and, eq, gte, isNull, lte, or, sql, desc, asc, ilike } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  and,
+  eq,
+  gte,
+  isNull,
+  lte,
+  or,
+  sql,
+  desc,
+  asc,
+  ilike,
+} from "drizzle-orm";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import { db } from "../../db";
 import {
   users,
@@ -44,7 +59,11 @@ import {
 
 const DOMAIN = "inventory";
 
-function createContext(operation: string, entityId?: string | number, entityType: string = "FoodItem"): StorageErrorContext {
+function createContext(
+  operation: string,
+  entityId?: string | number,
+  entityType: string = "FoodItem",
+): StorageErrorContext {
   return { domain: DOMAIN, operation, entityId, entityType };
 }
 
@@ -84,7 +103,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
       this.defaultInventoryInitialized.add(userId);
     } catch (error) {
-      console.error(`[${DOMAIN}] Failed to initialize default data for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Failed to initialize default data for user ${userId}:`,
+        error,
+      );
     }
   }
 
@@ -101,13 +123,13 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = today.toISOString().split("T")[0];
 
       let conditions;
       if (filter === "expiring") {
         const sevenDaysFromNow = new Date(today);
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-        const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0];
+        const sevenDaysStr = sevenDaysFromNow.toISOString().split("T")[0];
 
         conditions = and(
           eq(userInventory.userId, userId),
@@ -131,7 +153,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
       return items;
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting food items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting food items for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -150,12 +175,12 @@ export class InventoryDomainStorage implements IInventoryStorage {
       let whereClause = eq(userInventory.userId, userId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = today.toISOString().split("T")[0];
 
       if (filter === "expiring") {
         const sevenDaysFromNow = new Date(today);
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-        const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0];
+        const sevenDaysStr = sevenDaysFromNow.toISOString().split("T")[0];
 
         whereClause = and(
           eq(userInventory.userId, userId),
@@ -187,7 +212,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
         total: countResult?.count || 0,
       };
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting paginated food items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting paginated food items for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -201,9 +229,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       const [item] = await db
         .select()
         .from(userInventory)
-        .where(
-          and(eq(userInventory.userId, userId), eq(userInventory.id, id)),
-        );
+        .where(and(eq(userInventory.userId, userId), eq(userInventory.id, id)));
 
       return item;
     } catch (error) {
@@ -249,9 +275,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
           ...updates,
           updatedAt: new Date(),
         })
-        .where(
-          and(eq(userInventory.userId, userId), eq(userInventory.id, id)),
-        )
+        .where(and(eq(userInventory.userId, userId), eq(userInventory.id, id)))
         .returning();
 
       return updated;
@@ -266,9 +290,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     try {
       await db
         .delete(userInventory)
-        .where(
-          and(eq(userInventory.userId, userId), eq(userInventory.id, id)),
-        );
+        .where(and(eq(userInventory.userId, userId), eq(userInventory.id, id)));
     } catch (error) {
       console.error(`[${DOMAIN}] Error deleting food item ${id}:`, error);
       throw wrapDatabaseError(error, context);
@@ -289,7 +311,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
         .filter((c): c is string => c !== null && c !== undefined)
         .sort();
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting food categories for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting food categories for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -306,11 +331,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = today.toISOString().split("T")[0];
 
       const futureDate = new Date(today);
       futureDate.setDate(futureDate.getDate() + daysAhead);
-      const futureDateStr = futureDate.toISOString().split('T')[0];
+      const futureDateStr = futureDate.toISOString().split("T")[0];
 
       const expiringSoon = await db
         .select()
@@ -340,7 +365,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
         expired,
       };
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting expiring items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting expiring items for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -348,7 +376,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
   // ============= Storage Locations =============
 
   async getStorageLocations(userId: string): Promise<UserStorageType[]> {
-    const context = createContext("getStorageLocations", undefined, "StorageLocation");
+    const context = createContext(
+      "getStorageLocations",
+      undefined,
+      "StorageLocation",
+    );
     context.additionalInfo = { userId };
     try {
       await this.ensureDefaultInventoryForUser(userId);
@@ -379,7 +411,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
         itemCount: countMap.get(loc.id) || 0,
       }));
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting storage locations for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting storage locations for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -417,15 +452,21 @@ export class InventoryDomainStorage implements IInventoryStorage {
       "id" | "userId" | "createdAt" | "updatedAt"
     >,
   ): Promise<UserStorageType> {
-    const context = createContext("createStorageLocation", undefined, "StorageLocation");
+    const context = createContext(
+      "createStorageLocation",
+      undefined,
+      "StorageLocation",
+    );
     context.additionalInfo = { userId, name: location.name };
     try {
       const [user] = await db.select().from(users).where(eq(users.id, userId));
       if (!user) {
-        throw new StorageNotFoundError(
-          `User with ID ${userId} not found`,
-          { domain: DOMAIN, operation: "createStorageLocation", entityId: userId, entityType: "User" }
-        );
+        throw new StorageNotFoundError(`User with ID ${userId} not found`, {
+          domain: DOMAIN,
+          operation: "createStorageLocation",
+          entityId: userId,
+          entityType: "User",
+        });
       }
 
       const [maxSort] = await db
@@ -460,7 +501,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
     id: string,
     updates: Partial<UserStorageType>,
   ): Promise<UserStorageType | undefined> {
-    const context = createContext("updateStorageLocation", id, "StorageLocation");
+    const context = createContext(
+      "updateStorageLocation",
+      id,
+      "StorageLocation",
+    );
     try {
       const [existing] = await db
         .select()
@@ -470,7 +515,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       if (!existing) {
         throw new StorageNotFoundError(
           `Storage location with ID ${id} not found`,
-          context
+          context,
         );
       }
 
@@ -478,7 +523,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         throw new StorageValidationError(
           "Cannot unset default storage location",
           context,
-          ["isDefault"]
+          ["isDefault"],
         );
       }
 
@@ -495,14 +540,21 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
       return updated;
     } catch (error) {
-      console.error(`[${DOMAIN}] Error updating storage location ${id}:`, error);
+      console.error(
+        `[${DOMAIN}] Error updating storage location ${id}:`,
+        error,
+      );
       if (error instanceof StorageError) throw error;
       throw wrapDatabaseError(error, context);
     }
   }
 
   async deleteStorageLocation(userId: string, id: string): Promise<void> {
-    const context = createContext("deleteStorageLocation", id, "StorageLocation");
+    const context = createContext(
+      "deleteStorageLocation",
+      id,
+      "StorageLocation",
+    );
     try {
       const [location] = await db
         .select()
@@ -512,7 +564,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       if (!location) {
         throw new StorageNotFoundError(
           `Storage location with ID ${id} not found`,
-          context
+          context,
         );
       }
 
@@ -520,7 +572,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         throw new StorageValidationError(
           "Cannot delete default storage locations",
           context,
-          ["isDefault"]
+          ["isDefault"],
         );
       }
 
@@ -539,7 +591,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
           "Cannot delete storage location with items. Move or delete items first.",
           context,
           "foreign_key",
-          undefined
+          undefined,
         );
       }
 
@@ -547,17 +599,23 @@ export class InventoryDomainStorage implements IInventoryStorage {
         .delete(userStorage)
         .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
     } catch (error) {
-      console.error(`[${DOMAIN}] Error deleting storage location ${id}:`, error);
+      console.error(
+        `[${DOMAIN}] Error deleting storage location ${id}:`,
+        error,
+      );
       if (error instanceof StorageError) throw error;
       throw wrapDatabaseError(error, context);
     }
   }
 
-
   // ============= Shopping List Operations =============
 
   async getShoppingItems(userId: string): Promise<ShoppingItem[]> {
-    const context = createContext("getShoppingItems", undefined, "ShoppingItem");
+    const context = createContext(
+      "getShoppingItems",
+      undefined,
+      "ShoppingItem",
+    );
     context.additionalInfo = { userId };
     try {
       return await db
@@ -566,7 +624,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
         .where(eq(userShopping.userId, userId))
         .orderBy(asc(userShopping.isPurchased), asc(userShopping.name));
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting shopping list items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting shopping list items for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -576,45 +637,58 @@ export class InventoryDomainStorage implements IInventoryStorage {
     grouped: { [category: string]: ShoppingItem[] };
     totals: { category: string; count: number }[];
   }> {
-    const context = createContext("getGroupedShoppingItems", undefined, "ShoppingItem");
+    const context = createContext(
+      "getGroupedShoppingItems",
+      undefined,
+      "ShoppingItem",
+    );
     context.additionalInfo = { userId };
     try {
       const items = await this.getShoppingItems(userId);
-      
-      const grouped = items.reduce((acc, item) => {
-        const category = item.category || 'Other';
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(item);
-        return acc;
-      }, {} as { [category: string]: ShoppingItem[] });
-      
-      const totals = Object.entries(grouped).map(([category, categoryItems]) => ({
-        category,
-        count: categoryItems.length
-      }));
-      
+
+      const grouped = items.reduce(
+        (acc, item) => {
+          const category = item.category || "Other";
+          if (!acc[category]) {
+            acc[category] = [];
+          }
+          acc[category].push(item);
+          return acc;
+        },
+        {} as { [category: string]: ShoppingItem[] },
+      );
+
+      const totals = Object.entries(grouped).map(
+        ([category, categoryItems]) => ({
+          category,
+          count: categoryItems.length,
+        }),
+      );
+
       return {
         items,
         grouped,
-        totals
+        totals,
       };
     } catch (error) {
-      console.error(`[${DOMAIN}] Error getting grouped shopping list items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error getting grouped shopping list items for user ${userId}:`,
+        error,
+      );
       if (error instanceof StorageError) throw error;
       throw wrapDatabaseError(error, context);
     }
   }
 
   async createShoppingItem(item: InsertShoppingItem): Promise<ShoppingItem> {
-    const context = createContext("createShoppingItem", undefined, "ShoppingItem");
+    const context = createContext(
+      "createShoppingItem",
+      undefined,
+      "ShoppingItem",
+    );
     context.additionalInfo = { userId: item.userId, name: item.name };
     try {
-      const [newItem] = await db
-        .insert(userShopping)
-        .values(item)
-        .returning();
+      const [newItem] = await db.insert(userShopping).values(item).returning();
       return newItem;
     } catch (error) {
       console.error(`[${DOMAIN}] Error creating shopping list item:`, error);
@@ -625,26 +699,24 @@ export class InventoryDomainStorage implements IInventoryStorage {
   async updateShoppingItem(
     userId: string,
     id: string,
-    updates: Partial<ShoppingItem>
+    updates: Partial<ShoppingItem>,
   ): Promise<ShoppingItem | undefined> {
     const context = createContext("updateShoppingItem", id, "ShoppingItem");
     try {
       const { id: _id, userId: _userId, ...safeUpdates } = updates;
-      
+
       const [updated] = await db
         .update(userShopping)
         .set(safeUpdates)
-        .where(
-          and(
-            eq(userShopping.id, id),
-            eq(userShopping.userId, userId)
-          )
-        )
+        .where(and(eq(userShopping.id, id), eq(userShopping.userId, userId)))
         .returning();
-      
+
       return updated;
     } catch (error) {
-      console.error(`[${DOMAIN}] Error updating shopping list item ${id}:`, error);
+      console.error(
+        `[${DOMAIN}] Error updating shopping list item ${id}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -654,20 +726,22 @@ export class InventoryDomainStorage implements IInventoryStorage {
     try {
       await db
         .delete(userShopping)
-        .where(
-          and(
-            eq(userShopping.id, id),
-            eq(userShopping.userId, userId)
-          )
-        );
+        .where(and(eq(userShopping.id, id), eq(userShopping.userId, userId)));
     } catch (error) {
-      console.error(`[${DOMAIN}] Error deleting shopping list item ${id}:`, error);
+      console.error(
+        `[${DOMAIN}] Error deleting shopping list item ${id}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
 
   async clearCheckedShoppingItems(userId: string): Promise<number> {
-    const context = createContext("clearCheckedShoppingItems", undefined, "ShoppingItem");
+    const context = createContext(
+      "clearCheckedShoppingItems",
+      undefined,
+      "ShoppingItem",
+    );
     context.additionalInfo = { userId };
     try {
       const itemsToDelete = await db
@@ -676,24 +750,27 @@ export class InventoryDomainStorage implements IInventoryStorage {
         .where(
           and(
             eq(userShopping.userId, userId),
-            eq(userShopping.isPurchased, true)
-          )
+            eq(userShopping.isPurchased, true),
+          ),
         );
-      
+
       if (itemsToDelete.length > 0) {
         await db
           .delete(userShopping)
           .where(
             and(
               eq(userShopping.userId, userId),
-              eq(userShopping.isPurchased, true)
-            )
+              eq(userShopping.isPurchased, true),
+            ),
           );
       }
-      
+
       return itemsToDelete.length;
     } catch (error) {
-      console.error(`[${DOMAIN}] Error clearing checked shopping list items for user ${userId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error clearing checked shopping list items for user ${userId}:`,
+        error,
+      );
       throw wrapDatabaseError(error, context);
     }
   }
@@ -701,40 +778,45 @@ export class InventoryDomainStorage implements IInventoryStorage {
   async addMissingIngredientsToShoppingList(
     userId: string,
     recipeId: string,
-    servings?: number
+    servings?: number,
   ): Promise<{ added: number; skipped: number }> {
-    const context = createContext("addMissingIngredientsToShoppingList", recipeId, "Recipe");
+    const context = createContext(
+      "addMissingIngredientsToShoppingList",
+      recipeId,
+      "Recipe",
+    );
     context.additionalInfo = { userId, servings };
     try {
       const [recipe] = await db
         .select()
         .from(userRecipes)
         .where(
-          and(
-            eq(userRecipes.id, recipeId),
-            eq(userRecipes.userId, userId)
-          )
+          and(eq(userRecipes.id, recipeId), eq(userRecipes.userId, userId)),
         );
-      
+
       if (!recipe) {
         throw new StorageNotFoundError(
           `Recipe with ID ${recipeId} not found`,
-          context
+          context,
         );
       }
-      
+
       const ingredients = recipe.ingredients || [];
-      const servingMultiplier = servings ? (servings / (recipe.servings || 1)) : 1;
-      
+      const servingMultiplier = servings
+        ? servings / (recipe.servings || 1)
+        : 1;
+
       const existingItems = await this.getShoppingItems(userId);
-      const existingNames = new Set(existingItems.map(item => item.name?.toLowerCase()));
-      
+      const existingNames = new Set(
+        existingItems.map((item) => item.name?.toLowerCase()),
+      );
+
       let added = 0;
       let skipped = 0;
-      
+
       for (const ingredient of ingredients) {
         const ingredientName = ingredient.toLowerCase();
-        
+
         if (existingNames.has(ingredientName)) {
           skipped++;
         } else {
@@ -742,22 +824,24 @@ export class InventoryDomainStorage implements IInventoryStorage {
             userId,
             name: ingredient,
             quantity: servingMultiplier.toString(),
-            category: 'Ingredients',
+            category: "Ingredients",
             isPurchased: false,
-            notes: `From recipe: ${recipe.title}`
+            notes: `From recipe: ${recipe.title}`,
           });
           added++;
         }
       }
-      
+
       return { added, skipped };
     } catch (error) {
-      console.error(`[${DOMAIN}] Error adding ingredients to shopping list for recipe ${recipeId}:`, error);
+      console.error(
+        `[${DOMAIN}] Error adding ingredients to shopping list for recipe ${recipeId}:`,
+        error,
+      );
       if (error instanceof StorageError) throw error;
       throw wrapDatabaseError(error, context);
     }
   }
-
 }
 
 export const inventoryStorage = new InventoryDomainStorage();

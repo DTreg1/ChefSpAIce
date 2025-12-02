@@ -1,6 +1,6 @@
 /**
  * Database Mocking Utilities for Storage Layer Unit Tests
- * 
+ *
  * Provides mock implementations for database operations to enable
  * isolated unit testing of storage classes without actual database connections.
  */
@@ -22,7 +22,7 @@ export interface MockFn<T = unknown, Args extends unknown[] = unknown[]> {
   (...args: Args): T;
   mock: {
     calls: Args[];
-    results: { type: 'return' | 'throw'; value: unknown }[];
+    results: { type: "return" | "throw"; value: unknown }[];
   };
   mockClear(): MockFn<T, Args>;
   mockReset(): MockFn<T, Args>;
@@ -37,10 +37,10 @@ export interface MockFn<T = unknown, Args extends unknown[] = unknown[]> {
  * Creates a mock function similar to Jest's jest.fn()
  */
 export function createMockFn<T = unknown, Args extends unknown[] = unknown[]>(
-  implementation?: (...args: Args) => T
+  implementation?: (...args: Args) => T,
 ): MockFn<T, Args> {
   const calls: Args[] = [];
-  const results: { type: 'return' | 'throw'; value: unknown }[] = [];
+  const results: { type: "return" | "throw"; value: unknown }[] = [];
   let mockImplementation = implementation;
   let mockReturnValue: T | undefined;
   let mockResolvedValue: unknown;
@@ -61,22 +61,22 @@ export function createMockFn<T = unknown, Args extends unknown[] = unknown[]>(
       } else {
         result = undefined as T;
       }
-      results.push({ type: 'return', value: result });
+      results.push({ type: "return", value: result });
       return result;
     } catch (error) {
-      results.push({ type: 'throw', value: error });
+      results.push({ type: "throw", value: error });
       throw error;
     }
   } as MockFn<T, Args>;
 
   mockFn.mock = { calls, results };
-  
+
   mockFn.mockClear = () => {
     calls.length = 0;
     results.length = 0;
     return mockFn;
   };
-  
+
   mockFn.mockReset = () => {
     mockFn.mockClear();
     mockImplementation = undefined;
@@ -85,27 +85,27 @@ export function createMockFn<T = unknown, Args extends unknown[] = unknown[]>(
     mockRejectedValue = undefined;
     return mockFn;
   };
-  
+
   mockFn.mockImplementation = (fn: (...args: Args) => T) => {
     mockImplementation = fn;
     return mockFn;
   };
-  
+
   mockFn.mockReturnValue = (value: T) => {
     mockReturnValue = value;
     return mockFn;
   };
-  
+
   mockFn.mockReturnThis = () => {
     mockReturnValue = mockFn as unknown as T;
     return mockFn;
   };
-  
+
   mockFn.mockResolvedValue = (value: unknown) => {
     mockResolvedValue = value;
     return mockFn;
   };
-  
+
   mockFn.mockRejectedValue = (value: unknown) => {
     mockRejectedValue = value;
     return mockFn;
@@ -120,14 +120,26 @@ export function createMockFn<T = unknown, Args extends unknown[] = unknown[]>(
 export function createMockDb(config: MockDbConfig = {}) {
   const createChainableMock = () => {
     const chain: Record<string, unknown> = {};
-    
+
     const methods = [
-      'select', 'from', 'where', 'orderBy', 'limit', 'offset',
-      'leftJoin', 'rightJoin', 'innerJoin', 'groupBy', 'having',
-      'onConflictDoUpdate', 'onConflictDoNothing', 'values', 'set'
+      "select",
+      "from",
+      "where",
+      "orderBy",
+      "limit",
+      "offset",
+      "leftJoin",
+      "rightJoin",
+      "innerJoin",
+      "groupBy",
+      "having",
+      "onConflictDoUpdate",
+      "onConflictDoNothing",
+      "values",
+      "set",
     ];
 
-    methods.forEach(method => {
+    methods.forEach((method) => {
       chain[method] = createMockFn(() => chain);
     });
 
@@ -214,12 +226,12 @@ export function createMockDb(config: MockDbConfig = {}) {
  */
 export function createMockUser(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    firstName: 'Test',
-    lastName: 'User',
+    id: "test-user-id",
+    email: "test@example.com",
+    firstName: "Test",
+    lastName: "User",
     profileImageUrl: null,
-    primaryProvider: 'email',
+    primaryProvider: "email",
     primaryProviderId: null,
     googleId: null,
     appleId: null,
@@ -228,16 +240,16 @@ export function createMockUser(overrides: Record<string, unknown> = {}) {
     foodsToAvoid: [],
     favoriteCategories: [],
     householdSize: 2,
-    cookingSkillLevel: 'beginner',
-    preferredUnits: 'imperial',
+    cookingSkillLevel: "beginner",
+    preferredUnits: "imperial",
     expirationAlertDays: 3,
-    storageAreasEnabled: ['Fridge', 'Pantry'],
+    storageAreasEnabled: ["Fridge", "Pantry"],
     hasCompletedOnboarding: false,
     notificationsEnabled: false,
     notifyExpiringFood: true,
     notifyRecipeSuggestions: false,
     notifyMealReminders: true,
-    notificationTime: '09:00',
+    notificationTime: "09:00",
     isAdmin: false,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -250,19 +262,19 @@ export function createMockUser(overrides: Record<string, unknown> = {}) {
  */
 export function createMockRecipe(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-recipe-id',
-    userId: 'test-user-id',
-    title: 'Test Recipe',
-    description: 'A test recipe description',
-    ingredients: ['ingredient1', 'ingredient2'],
-    instructions: ['Step 1', 'Step 2'],
+    id: "test-recipe-id",
+    userId: "test-user-id",
+    title: "Test Recipe",
+    description: "A test recipe description",
+    ingredients: ["ingredient1", "ingredient2"],
+    instructions: ["Step 1", "Step 2"],
     prepTime: 15,
     cookTime: 30,
     servings: 4,
-    category: 'main',
-    cuisine: 'american',
-    difficulty: 'easy',
-    source: 'manual',
+    category: "main",
+    cuisine: "american",
+    difficulty: "easy",
+    source: "manual",
     rating: null,
     isFavorite: false,
     imageUrl: null,
@@ -277,11 +289,11 @@ export function createMockRecipe(overrides: Record<string, unknown> = {}) {
  */
 export function createMockMealPlan(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-meal-plan-id',
-    userId: 'test-user-id',
-    recipeId: 'test-recipe-id',
-    date: '2024-01-15',
-    mealType: 'dinner',
+    id: "test-meal-plan-id",
+    userId: "test-user-id",
+    recipeId: "test-recipe-id",
+    date: "2024-01-15",
+    mealType: "dinner",
     servings: 4,
     isCompleted: false,
     notes: null,
@@ -296,10 +308,10 @@ export function createMockMealPlan(overrides: Record<string, unknown> = {}) {
  */
 export function createMockSession(overrides: Record<string, unknown> = {}) {
   return {
-    sid: 'test-session-id',
+    sid: "test-session-id",
     sess: {
       cookie: { originalMaxAge: 86400000 },
-      passport: { user: 'test-user-id' },
+      passport: { user: "test-user-id" },
     },
     expire: new Date(Date.now() + 86400000),
     ...overrides,
@@ -309,16 +321,20 @@ export function createMockSession(overrides: Record<string, unknown> = {}) {
 /**
  * Creates a mock inventory item for testing
  */
-export function createMockInventoryItem(overrides: Record<string, unknown> = {}) {
+export function createMockInventoryItem(
+  overrides: Record<string, unknown> = {},
+) {
   return {
-    id: 'test-inventory-id',
-    userId: 'test-user-id',
-    name: 'Test Food Item',
-    category: 'produce',
+    id: "test-inventory-id",
+    userId: "test-user-id",
+    name: "Test Food Item",
+    category: "produce",
     quantity: 2,
-    unit: 'pieces',
-    storageLocation: 'Fridge',
-    expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    unit: "pieces",
+    storageLocation: "Fridge",
+    expirationDate: new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
     purchaseDate: new Date().toISOString(),
     notes: null,
     createdAt: new Date().toISOString(),
@@ -332,14 +348,14 @@ export function createMockInventoryItem(overrides: Record<string, unknown> = {})
  */
 export function createMockDonation(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-donation-id',
-    userId: 'test-user-id',
+    id: "test-donation-id",
+    userId: "test-user-id",
     amount: 1000,
-    currency: 'usd',
-    status: 'completed',
-    stripePaymentIntentId: 'pi_test123',
-    stripeCustomerId: 'cus_test123',
-    message: 'Test donation',
+    currency: "usd",
+    status: "completed",
+    stripePaymentIntentId: "pi_test123",
+    stripeCustomerId: "cus_test123",
+    message: "Test donation",
     isAnonymous: false,
     createdAt: new Date(),
     completedAt: new Date(),
@@ -352,13 +368,13 @@ export function createMockDonation(overrides: Record<string, unknown> = {}) {
  */
 export function createMockTicket(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-ticket-id',
-    userId: 'test-user-id',
-    subject: 'Test support ticket',
-    description: 'Test ticket description',
-    status: 'open',
-    priority: 'medium',
-    category: 'general',
+    id: "test-ticket-id",
+    userId: "test-user-id",
+    subject: "Test support ticket",
+    description: "Test ticket description",
+    status: "open",
+    priority: "medium",
+    category: "general",
     assignedTo: null,
     resolvedAt: null,
     resolution: null,
@@ -373,10 +389,10 @@ export function createMockTicket(overrides: Record<string, unknown> = {}) {
  */
 export function createMockPricingRule(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-rule-id',
-    name: 'Test Rule',
-    productId: 'product-123',
-    type: 'percentage',
+    id: "test-rule-id",
+    name: "Test Rule",
+    productId: "product-123",
+    type: "percentage",
     value: 10,
     isActive: true,
     priority: 1,
@@ -392,15 +408,15 @@ export function createMockPricingRule(overrides: Record<string, unknown> = {}) {
  */
 export function createMockAbTest(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'test-ab-test-id',
-    name: 'Test A/B Test',
-    description: 'Test description',
-    status: 'active',
-    variants: ['control', 'treatment'],
+    id: "test-ab-test-id",
+    name: "Test A/B Test",
+    description: "Test description",
+    status: "active",
+    variants: ["control", "treatment"],
     trafficAllocation: { control: 50, treatment: 50 },
     startDate: new Date(),
     endDate: null,
-    createdBy: 'admin-user-id',
+    createdBy: "admin-user-id",
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

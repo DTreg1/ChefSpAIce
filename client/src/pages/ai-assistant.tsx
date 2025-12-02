@@ -10,7 +10,12 @@ import { FeedbackButtons } from "@/components/feedback-buttons";
 import { AIErrorDisplay, ConnectionStatus } from "@/components/ai-errors";
 import { QuickActions } from "@/components/quick-actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, RotateCcw, MessageSquare, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -65,12 +70,16 @@ export default function AIAssistant() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeUI | null>(null);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
-  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
-  const [pendingQuickAction, setPendingQuickAction] = useState<string | null>(null);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(
+    null,
+  );
+  const [pendingQuickAction, setPendingQuickAction] = useState<string | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
-  
+
   const {
     error: aiError,
     isRetrying,
@@ -78,7 +87,7 @@ export default function AIAssistant() {
     canRetry,
     handleError: handleAIError,
     clearError: clearAIError,
-    retry: retryLastMessage
+    retry: retryLastMessage,
   } = useAIErrorHandler({
     showToast: false,
     maxRetries: 3,
@@ -86,9 +95,9 @@ export default function AIAssistant() {
       if (lastFailedMessage) {
         handleSendMessage(lastFailedMessage);
       }
-    }
+    },
   });
-  
+
   const {
     displayContent: streamingContent,
     appendChunk,
@@ -98,7 +107,7 @@ export default function AIAssistant() {
   } = useStreamedContent({
     batchInterval: 100,
   });
-  
+
   const { user } = useAuth();
 
   const handleSendMessage = async (
@@ -165,7 +174,7 @@ export default function AIAssistant() {
         const chunk = decoder.decode(value);
         buffer += chunk;
         const lines = buffer.split("\n");
-        
+
         buffer = lines.pop() || "";
 
         for (const line of lines) {
@@ -174,7 +183,7 @@ export default function AIAssistant() {
             if (data === "[DONE]") {
               completeStreaming();
               const finalContent = getFullContent();
-              
+
               const aiMessage: ChatMessageUI = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
@@ -205,8 +214,7 @@ export default function AIAssistant() {
               if (parsed.content) {
                 appendChunk(parsed.content);
               }
-            } catch (e) {
-            }
+            } catch (e) {}
           }
         }
       }
@@ -215,20 +223,23 @@ export default function AIAssistant() {
         abortControllerRef.current = null;
         return;
       }
-      
+
       setLastFailedMessage(content);
-      
+
       if (error instanceof Response) {
         const aiErr = await parseAPIError(error);
         handleAIError(aiErr);
       } else {
         handleAIError({
-          message: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to send message. Please try again.",
           code: "NETWORK_ERROR",
-          retryable: true
+          retryable: true,
         });
       }
-      
+
       setIsStreaming(false);
       resetStreaming();
       abortControllerRef.current = null;
@@ -290,7 +301,7 @@ export default function AIAssistant() {
 
   useEffect(() => {
     if (chatHistory) {
-      const uiMessages: ChatMessageUI[] = chatHistory.map(msg => ({
+      const uiMessages: ChatMessageUI[] = chatHistory.map((msg) => ({
         ...msg,
         timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
         attachments: [],
@@ -373,7 +384,9 @@ export default function AIAssistant() {
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Chat History</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Chat History
+              </CardTitle>
               {messages.length > 0 && (
                 <Button
                   variant="ghost"
@@ -439,7 +452,8 @@ export default function AIAssistant() {
                 <div>
                   <CardTitle>AI Assistant</CardTitle>
                   <CardDescription>
-                    Ask me anything about recipes, cooking, or managing your kitchen
+                    Ask me anything about recipes, cooking, or managing your
+                    kitchen
                   </CardDescription>
                 </div>
               </div>
@@ -456,7 +470,9 @@ export default function AIAssistant() {
                     New Chat
                   </Button>
                 )}
-                <UnifiedRecipeDialog onRecipeGenerated={handleRecipeGenerated} />
+                <UnifiedRecipeDialog
+                  onRecipeGenerated={handleRecipeGenerated}
+                />
               </div>
             </div>
           </CardHeader>
@@ -475,7 +491,7 @@ export default function AIAssistant() {
               <div className="mb-4">
                 <ExpirationAlert />
               </div>
-              
+
               {/* AI Error Display */}
               {aiError && (
                 <div className="mb-4">
@@ -502,29 +518,33 @@ export default function AIAssistant() {
                       content={message.content}
                       userProfileImageUrl={user?.profileImageUrl || undefined}
                       userInitials={getUserInitials()}
-                      timestamp={new Date(message.timestamp || message.createdAt || Date.now()).toLocaleTimeString(
-                        [],
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
+                      timestamp={new Date(
+                        message.timestamp || message.createdAt || Date.now(),
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     >
                       <>
-                        {hasRecipeMetadata(message.metadata) && generatedRecipe && (
-                          <RecipeCard
-                            id={generatedRecipe.id}
-                            title={generatedRecipe.title}
-                            prepTime={generatedRecipe.prepTime || undefined}
-                            cookTime={generatedRecipe.cookTime || undefined}
-                            servings={generatedRecipe.servings || undefined}
-                            ingredients={generatedRecipe.ingredients}
-                            instructions={generatedRecipe.instructions}
-                            usedIngredients={generatedRecipe.usedIngredients || []}
-                            missingIngredients={generatedRecipe.missingIngredients || []}
-                            showControls={true}
-                          />
-                        )}
+                        {hasRecipeMetadata(message.metadata) &&
+                          generatedRecipe && (
+                            <RecipeCard
+                              id={generatedRecipe.id}
+                              title={generatedRecipe.title}
+                              prepTime={generatedRecipe.prepTime || undefined}
+                              cookTime={generatedRecipe.cookTime || undefined}
+                              servings={generatedRecipe.servings || undefined}
+                              ingredients={generatedRecipe.ingredients}
+                              instructions={generatedRecipe.instructions}
+                              usedIngredients={
+                                generatedRecipe.usedIngredients || []
+                              }
+                              missingIngredients={
+                                generatedRecipe.missingIngredients || []
+                              }
+                              showControls={true}
+                            />
+                          )}
                         {message.role === "assistant" && (
                           <FeedbackButtons
                             contextId={message.id}
@@ -583,7 +603,7 @@ export default function AIAssistant() {
           </div>
         </Card>
       </div>
-      
+
       <ConnectionStatus />
     </div>
   );

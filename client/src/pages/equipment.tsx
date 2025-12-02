@@ -6,10 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, ChefHat, Utensils, Package2, Home, Check, Plus, X } from "lucide-react";
+import {
+  Search,
+  ChefHat,
+  Utensils,
+  Package2,
+  Home,
+  Check,
+  Plus,
+  X,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { ApplianceLibrary, UserAppliance } from "@shared/schema";
 
@@ -34,12 +49,16 @@ export default function Equipment() {
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set("category", selectedCategory);
-      return fetch(`/api/appliance-library?${params}`).then(res => res.json()) as Promise<ApplianceLibrary[]>;
+      return fetch(`/api/appliance-library?${params}`).then((res) =>
+        res.json(),
+      ) as Promise<ApplianceLibrary[]>;
     },
   });
 
   // Fetch user's current appliances
-  const { data: userAppliances, isLoading: userAppliancesLoading } = useQuery<UserAppliance[]>({
+  const { data: userAppliances, isLoading: userAppliancesLoading } = useQuery<
+    UserAppliance[]
+  >({
     queryKey: ["/api/user-appliances"],
   });
 
@@ -49,7 +68,7 @@ export default function Equipment() {
       const userApplianceIds = new Set(
         userAppliances
           .map((ua: UserAppliance) => ua.applianceId)
-          .filter((id): id is string => id !== null)
+          .filter((id): id is string => id !== null),
       );
       setSelectedItems(userApplianceIds);
     }
@@ -95,37 +114,39 @@ export default function Equipment() {
     const userApplianceIds = new Set(
       userAppliances
         ?.map((ua: UserAppliance) => ua.applianceId)
-        .filter((id): id is string => id !== null) || []
+        .filter((id): id is string => id !== null) || [],
     );
-    
+
     const toAdd: string[] = [];
     const toRemove: string[] = [];
-    
+
     // Find items to add
-    selectedItems.forEach(id => {
+    selectedItems.forEach((id) => {
       if (!userApplianceIds.has(id)) {
         toAdd.push(id);
       }
     });
-    
+
     // Find items to remove
-    userApplianceIds.forEach(id => {
+    userApplianceIds.forEach((id) => {
       if (!selectedItems.has(id)) {
         // We need to find the actual user appliance ID to remove
-        const userAppliance = userAppliances?.find((ua: UserAppliance) => ua.applianceId === id);
+        const userAppliance = userAppliances?.find(
+          (ua: UserAppliance) => ua.applianceId === id,
+        );
         if (userAppliance) {
           toRemove.push(userAppliance.id);
         }
       }
     });
-    
+
     if (toAdd.length > 0 || toRemove.length > 0) {
       batchUpdateMutation.mutate({ add: toAdd, remove: toRemove });
     }
   };
 
   // Filter library items based on search
-  const filteredLibrary = library?.filter(item => {
+  const filteredLibrary = library?.filter((item) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -136,14 +157,17 @@ export default function Equipment() {
   });
 
   // Group items by category
-  const groupedItems = filteredLibrary?.reduce((acc, item) => {
-    const category = item.category || "Other";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, ApplianceLibrary[]>);
+  const groupedItems = filteredLibrary?.reduce(
+    (acc, item) => {
+      const category = item.category || "Other";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    },
+    {} as Record<string, ApplianceLibrary[]>,
+  );
 
   const isLoading = libraryLoading || userAppliancesLoading;
 
@@ -155,7 +179,8 @@ export default function Equipment() {
             My Kitchen Equipment
           </CardTitle>
           <CardDescription>
-            Select the appliances, cookware, bakeware, and utensils you have available. This helps us suggest recipes tailored to your kitchen.
+            Select the appliances, cookware, bakeware, and utensils you have
+            available. This helps us suggest recipes tailored to your kitchen.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -174,11 +199,11 @@ export default function Equipment() {
           {/* Category Tabs */}
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
             <TabsList className="grid w-full grid-cols-4">
-              {CATEGORIES.map(category => {
+              {CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 return (
-                  <TabsTrigger 
-                    key={category.value} 
+                  <TabsTrigger
+                    key={category.value}
                     value={category.value}
                     data-testid={`tab-${category.value}`}
                   >
@@ -189,55 +214,66 @@ export default function Equipment() {
               })}
             </TabsList>
 
-            {CATEGORIES.map(category => (
+            {CATEGORIES.map((category) => (
               <TabsContent key={category.value} value={category.value}>
                 <ScrollArea className="h-[500px] pr-4">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-40">
-                      <p className="text-muted-foreground">Loading equipment...</p>
+                      <p className="text-muted-foreground">
+                        Loading equipment...
+                      </p>
                     </div>
-                  ) : !groupedItems || Object.keys(groupedItems).length === 0 ? (
+                  ) : !groupedItems ||
+                    Object.keys(groupedItems).length === 0 ? (
                     <div className="flex items-center justify-center h-40">
                       <p className="text-muted-foreground">
-                        {searchQuery ? "No equipment found matching your search." : "No equipment available in this category."}
+                        {searchQuery
+                          ? "No equipment found matching your search."
+                          : "No equipment available in this category."}
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {Object.entries(groupedItems).map(([subcategory, items]) => (
-                        <div key={subcategory}>
-                          <h3 className="font-semibold text-sm text-muted-foreground mb-3">
-                            {subcategory}
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {items.map(item => (
-                              <div
-                                key={item.id}
-                                className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate cursor-pointer"
-                                onClick={() => handleItemToggle(item.id)}
-                                data-testid={`equipment-item-${item.id}`}
-                              >
-                                <Checkbox
-                                  checked={selectedItems.has(item.id)}
-                                  onCheckedChange={() => handleItemToggle(item.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  data-testid={`checkbox-${item.id}`}
-                                />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-medium text-sm">{item.name}</p>
+                      {Object.entries(groupedItems).map(
+                        ([subcategory, items]) => (
+                          <div key={subcategory}>
+                            <h3 className="font-semibold text-sm text-muted-foreground mb-3">
+                              {subcategory}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate cursor-pointer"
+                                  onClick={() => handleItemToggle(item.id)}
+                                  data-testid={`equipment-item-${item.id}`}
+                                >
+                                  <Checkbox
+                                    checked={selectedItems.has(item.id)}
+                                    onCheckedChange={() =>
+                                      handleItemToggle(item.id)
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    data-testid={`checkbox-${item.id}`}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-medium text-sm">
+                                        {item.name}
+                                      </p>
+                                    </div>
+                                    {item.description && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {item.description}
+                                      </p>
+                                    )}
                                   </div>
-                                  {item.description && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {item.description}
-                                    </p>
-                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   )}
                 </ScrollArea>
@@ -250,7 +286,9 @@ export default function Equipment() {
             <div className="text-sm text-muted-foreground">
               {selectedItems.size} items selected
               {hasChanges && (
-                <Badge variant="secondary" className="ml-2">Unsaved changes</Badge>
+                <Badge variant="secondary" className="ml-2">
+                  Unsaved changes
+                </Badge>
               )}
             </div>
             <div className="flex gap-2">

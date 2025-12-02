@@ -1,16 +1,16 @@
 /**
  * Logger Service
- * 
+ *
  * Centralized logging service for consistent application-wide logging.
  * Provides structured logging with different log levels and contexts.
- * 
+ *
  * Features:
  * - Log levels: error, warn, info, debug
  * - Contextual logging with module/service names
  * - Environment-based log level configuration
  * - Structured output for production environments
  * - Human-readable output for development
- * 
+ *
  * Usage:
  * ```typescript
  * const logger = new Logger('MyService');
@@ -23,7 +23,7 @@ enum LogLevel {
   ERROR = 0,
   WARN = 1,
   INFO = 2,
-  DEBUG = 3
+  DEBUG = 3,
 }
 
 interface LogContext {
@@ -37,8 +37,9 @@ class Logger {
   static {
     // Set log level based on environment
     const envLogLevel = process.env.LOG_LEVEL?.toUpperCase();
-    Logger.globalLogLevel = LogLevel[envLogLevel as keyof typeof LogLevel] ?? 
-      (process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG);
+    Logger.globalLogLevel =
+      LogLevel[envLogLevel as keyof typeof LogLevel] ??
+      (process.env.NODE_ENV === "production" ? LogLevel.INFO : LogLevel.DEBUG);
   }
 
   constructor(context: string) {
@@ -49,53 +50,62 @@ class Logger {
     return level <= Logger.globalLogLevel;
   }
 
-  private formatMessage(level: string, message: string, data?: LogContext): string {
+  private formatMessage(
+    level: string,
+    message: string,
+    data?: LogContext,
+  ): string {
     const timestamp = new Date().toISOString();
-    
-    if (process.env.NODE_ENV === 'production') {
+
+    if (process.env.NODE_ENV === "production") {
       // Structured JSON output for production
       return JSON.stringify({
         timestamp,
         level,
         context: this.context,
         message,
-        ...data
+        ...data,
       });
     }
 
     // Human-readable output for development
-    const dataStr = data ? ` ${JSON.stringify(data)}` : '';
+    const dataStr = data ? ` ${JSON.stringify(data)}` : "";
     return `[${timestamp}] [${level}] [${this.context}] ${message}${dataStr}`;
   }
 
   error(message: string, data?: LogContext): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      console.error(this.formatMessage('ERROR', message, data));
+      console.error(this.formatMessage("ERROR", message, data));
     }
   }
 
   warn(message: string, data?: LogContext): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      console.warn(this.formatMessage('WARN', message, data));
+      console.warn(this.formatMessage("WARN", message, data));
     }
   }
 
   info(message: string, data?: LogContext): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.info(this.formatMessage('INFO', message, data));
+      console.info(this.formatMessage("INFO", message, data));
     }
   }
 
   debug(message: string, data?: LogContext): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.log(this.formatMessage('DEBUG', message, data));
+      console.log(this.formatMessage("DEBUG", message, data));
     }
   }
 
   /**
    * Log performance metrics
    */
-  metric(name: string, value: number, unit: string = 'ms', tags?: LogContext): void {
+  metric(
+    name: string,
+    value: number,
+    unit: string = "ms",
+    tags?: LogContext,
+  ): void {
     if (this.shouldLog(LogLevel.INFO)) {
       this.info(`Metric: ${name}`, { value, unit, ...tags });
     }

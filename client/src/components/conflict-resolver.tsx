@@ -1,11 +1,11 @@
 /**
  * Conflict Resolver Component
- * 
+ *
  * Helps users resolve conflicts between local and remote versions
  */
 
-import { useState } from 'react';
-import { GitBranch, FileText, ArrowRight, Check, X } from 'lucide-react';
+import { useState } from "react";
+import { GitBranch, FileText, ArrowRight, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,28 +13,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ConflictResolverProps {
   isOpen: boolean;
   onClose: () => void;
   localContent: string;
   remoteContent: string;
-  onResolve: (resolvedContent: string, strategy: ConflictResolutionStrategy) => void;
+  onResolve: (
+    resolvedContent: string,
+    strategy: ConflictResolutionStrategy,
+  ) => void;
 }
 
-export type ConflictResolutionStrategy = 
-  | 'keep-local'
-  | 'keep-remote'
-  | 'merge-both'
-  | 'custom';
+export type ConflictResolutionStrategy =
+  | "keep-local"
+  | "keep-remote"
+  | "merge-both"
+  | "custom";
 
 export function ConflictResolver({
   isOpen,
@@ -43,9 +46,10 @@ export function ConflictResolver({
   remoteContent,
   onResolve,
 }: ConflictResolverProps) {
-  const [selectedStrategy, setSelectedStrategy] = useState<ConflictResolutionStrategy>('keep-local');
-  const [customContent, setCustomContent] = useState('');
-  const [activeTab, setActiveTab] = useState('compare');
+  const [selectedStrategy, setSelectedStrategy] =
+    useState<ConflictResolutionStrategy>("keep-local");
+  const [customContent, setCustomContent] = useState("");
+  const [activeTab, setActiveTab] = useState("compare");
 
   // Calculate differences
   const localWords = localContent.split(/\s+/).length;
@@ -56,14 +60,14 @@ export function ConflictResolver({
   // Generate merged content
   const getMergedContent = (): string => {
     switch (selectedStrategy) {
-      case 'keep-local':
+      case "keep-local":
         return localContent;
-      case 'keep-remote':
+      case "keep-remote":
         return remoteContent;
-      case 'merge-both':
+      case "merge-both":
         // Simple merge strategy - append remote after local with separator
         return `${localContent}\n\n--- Merged Content ---\n\n${remoteContent}`;
-      case 'custom':
+      case "custom":
         return customContent || localContent;
       default:
         return localContent;
@@ -78,33 +82,33 @@ export function ConflictResolver({
 
   const handleCancel = () => {
     // Default to keeping local changes if cancelled
-    onResolve(localContent, 'keep-local');
+    onResolve(localContent, "keep-local");
     onClose();
   };
 
   // Find common lines for diff display
   const getSimpleDiff = () => {
-    const localLines = localContent.split('\n');
-    const remoteLines = remoteContent.split('\n');
+    const localLines = localContent.split("\n");
+    const remoteLines = remoteContent.split("\n");
     const maxLines = Math.max(localLines.length, remoteLines.length);
-    
+
     const diff = [];
     for (let i = 0; i < maxLines; i++) {
-      const localLine = localLines[i] || '';
-      const remoteLine = remoteLines[i] || '';
-      
+      const localLine = localLines[i] || "";
+      const remoteLine = remoteLines[i] || "";
+
       if (localLine === remoteLine) {
-        diff.push({ type: 'same', content: localLine });
+        diff.push({ type: "same", content: localLine });
       } else {
         if (localLine) {
-          diff.push({ type: 'local', content: localLine });
+          diff.push({ type: "local", content: localLine });
         }
         if (remoteLine) {
-          diff.push({ type: 'remote', content: remoteLine });
+          diff.push({ type: "remote", content: remoteLine });
         }
       }
     }
-    
+
     return diff;
   };
 
@@ -134,7 +138,9 @@ export function ConflictResolver({
               {/* Local Version */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">Your Version (Local)</Label>
+                  <Label className="text-base font-medium">
+                    Your Version (Local)
+                  </Label>
                   <div className="flex gap-2">
                     <Badge variant="outline">{localWords} words</Badge>
                     <Badge variant="outline">{localChars} chars</Badge>
@@ -150,7 +156,9 @@ export function ConflictResolver({
               {/* Remote Version */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">Saved Version (Remote)</Label>
+                  <Label className="text-base font-medium">
+                    Saved Version (Remote)
+                  </Label>
                   <div className="flex gap-2">
                     <Badge variant="outline">{remoteWords} words</Badge>
                     <Badge variant="outline">{remoteChars} chars</Badge>
@@ -169,21 +177,27 @@ export function ConflictResolver({
               <Label className="text-base font-medium">Differences</Label>
               <ScrollArea className="h-32 border rounded-md p-3 bg-muted/30">
                 <div className="space-y-1 font-mono text-sm">
-                  {getSimpleDiff().slice(0, 20).map((line, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        'px-2 py-0.5 rounded',
-                        line.type === 'local' && 'bg-green-500/20 text-green-700 dark:text-green-300',
-                        line.type === 'remote' && 'bg-red-500/20 text-red-700 dark:text-red-300',
-                        line.type === 'same' && 'opacity-60'
-                      )}
-                    >
-                      {line.type === 'local' && '+ '}
-                      {line.type === 'remote' && '- '}
-                      {line.content || <span className="opacity-30">(empty line)</span>}
-                    </div>
-                  ))}
+                  {getSimpleDiff()
+                    .slice(0, 20)
+                    .map((line, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "px-2 py-0.5 rounded",
+                          line.type === "local" &&
+                            "bg-green-500/20 text-green-700 dark:text-green-300",
+                          line.type === "remote" &&
+                            "bg-red-500/20 text-red-700 dark:text-red-300",
+                          line.type === "same" && "opacity-60",
+                        )}
+                      >
+                        {line.type === "local" && "+ "}
+                        {line.type === "remote" && "- "}
+                        {line.content || (
+                          <span className="opacity-30">(empty line)</span>
+                        )}
+                      </div>
+                    ))}
                 </div>
               </ScrollArea>
             </div>
@@ -192,11 +206,17 @@ export function ConflictResolver({
           <TabsContent value="resolution" className="space-y-4 mt-4">
             <RadioGroup
               value={selectedStrategy}
-              onValueChange={(value) => setSelectedStrategy(value as ConflictResolutionStrategy)}
+              onValueChange={(value) =>
+                setSelectedStrategy(value as ConflictResolutionStrategy)
+              }
               className="space-y-3"
             >
               <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <RadioGroupItem value="keep-local" id="keep-local" className="mt-1" />
+                <RadioGroupItem
+                  value="keep-local"
+                  id="keep-local"
+                  className="mt-1"
+                />
                 <div className="flex-1">
                   <Label htmlFor="keep-local" className="cursor-pointer">
                     <div className="font-medium">Keep Your Changes</div>
@@ -209,7 +229,11 @@ export function ConflictResolver({
               </div>
 
               <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <RadioGroupItem value="keep-remote" id="keep-remote" className="mt-1" />
+                <RadioGroupItem
+                  value="keep-remote"
+                  id="keep-remote"
+                  className="mt-1"
+                />
                 <div className="flex-1">
                   <Label htmlFor="keep-remote" className="cursor-pointer">
                     <div className="font-medium">Use Saved Version</div>
@@ -221,12 +245,17 @@ export function ConflictResolver({
               </div>
 
               <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <RadioGroupItem value="merge-both" id="merge-both" className="mt-1" />
+                <RadioGroupItem
+                  value="merge-both"
+                  id="merge-both"
+                  className="mt-1"
+                />
                 <div className="flex-1">
                   <Label htmlFor="merge-both" className="cursor-pointer">
                     <div className="font-medium">Merge Both Versions</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Combine both versions with a separator (you can edit later)
+                      Combine both versions with a separator (you can edit
+                      later)
                     </div>
                   </Label>
                 </div>
@@ -246,7 +275,7 @@ export function ConflictResolver({
               </div>
             </RadioGroup>
 
-            {selectedStrategy === 'custom' && (
+            {selectedStrategy === "custom" && (
               <div className="space-y-2">
                 <Label>Edit Merged Content</Label>
                 <textarea
@@ -263,7 +292,7 @@ export function ConflictResolver({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">Final Result</Label>
-                <Badge>{selectedStrategy.replace('-', ' ')}</Badge>
+                <Badge>{selectedStrategy.replace("-", " ")}</Badge>
               </div>
               <ScrollArea className="h-96 border rounded-md p-4 bg-muted/30">
                 <pre className="whitespace-pre-wrap font-mono text-sm">
@@ -285,7 +314,7 @@ export function ConflictResolver({
           </Button>
           <Button
             onClick={handleResolve}
-            disabled={selectedStrategy === 'custom' && !customContent}
+            disabled={selectedStrategy === "custom" && !customContent}
             data-testid="button-resolve-conflict"
           >
             <Check className="w-4 h-4 mr-2" />

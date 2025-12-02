@@ -24,7 +24,7 @@ interface NavigationToastOptions {
 export function toastWithLoader({
   title,
   description,
-  text = "Processing..."
+  text = "Processing...",
 }: LoadingToastOptions) {
   const toastData = toast({
     title,
@@ -66,7 +66,10 @@ export function toastWithLoader({
       description: options.description,
       className: variantClasses[options.variant || "default"],
       action: options.action ? (
-        <ToastAction altText={options.action.label} onClick={options.action.onClick}>
+        <ToastAction
+          altText={options.action.label}
+          onClick={options.action.onClick}
+        >
           {options.action.label}
         </ToastAction>
       ) : undefined,
@@ -96,7 +99,10 @@ export function toastWithNavigation(options: NavigationToastOptions) {
     description: options.description,
     className: variantClasses[options.variant || "default"],
     action: options.action ? (
-      <ToastAction altText={options.action.label} onClick={options.action.onClick}>
+      <ToastAction
+        altText={options.action.label}
+        onClick={options.action.onClick}
+      >
         {options.action.label}
       </ToastAction>
     ) : undefined,
@@ -110,7 +116,7 @@ export const chefToasts = {
   expiringItems: (count: number, navigate: () => void) => {
     toastWithNavigation({
       title: "Items Expiring Soon",
-      description: `${count} item${count > 1 ? 's' : ''} will expire in the next few days`,
+      description: `${count} item${count > 1 ? "s" : ""} will expire in the next few days`,
       variant: "warning",
       action: {
         label: "View Items",
@@ -136,7 +142,7 @@ export const chefToasts = {
   shoppingListUpdated: (itemCount: number, navigate: () => void) => {
     toastWithNavigation({
       title: "Shopping List Updated",
-      description: `${itemCount} item${itemCount > 1 ? 's' : ''} added to your shopping list`,
+      description: `${itemCount} item${itemCount > 1 ? "s" : ""} added to your shopping list`,
       variant: "default",
       action: {
         label: "View List",
@@ -183,10 +189,12 @@ export const chefToasts = {
       title: "Error",
       description: message,
       variant: "destructive",
-      action: onRetry ? {
-        label: "Retry",
-        onClick: onRetry,
-      } : undefined,
+      action: onRetry
+        ? {
+            label: "Retry",
+            onClick: onRetry,
+          }
+        : undefined,
     });
   },
 

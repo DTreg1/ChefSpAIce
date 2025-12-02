@@ -1,20 +1,26 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Sparkles, 
-  Target, 
-  TrendingUp, 
-  Clock, 
+import {
+  Sparkles,
+  Target,
+  TrendingUp,
+  Clock,
   Calendar,
   CheckCircle,
   AlertCircle,
-  Zap
+  Zap,
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -27,11 +33,11 @@ interface ScheduleOptimizerProps {
 }
 
 interface Optimization {
-  type: 'reschedule' | 'group' | 'add_break' | 'cancel';
+  type: "reschedule" | "group" | "add_break" | "cancel";
   eventId?: string;
   suggestion: string;
   newTime?: string;
-  impact: 'high' | 'medium' | 'low';
+  impact: "high" | "medium" | "low";
   savings?: { time: number; energy: number };
 }
 
@@ -39,13 +45,15 @@ export function ScheduleOptimizer({
   userId,
   dateRange = {
     start: new Date(),
-    end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
-  }
+    end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
+  },
 }: ScheduleOptimizerProps) {
   const [optimizations, setOptimizations] = useState<Optimization[]>([]);
   const [insights, setInsights] = useState<string[]>([]);
   const [optimizing, setOptimizing] = useState(false);
-  const [applyingOptimization, setApplyingOptimization] = useState<string | null>(null);
+  const [applyingOptimization, setApplyingOptimization] = useState<
+    string | null
+  >(null);
   const { toast } = useToast();
 
   // Optimize schedule mutation
@@ -53,7 +61,7 @@ export function ScheduleOptimizer({
     mutationFn: async () => {
       const response = await apiRequest("/api/schedule/optimize", "POST", {
         startDate: dateRange.start.toISOString(),
-        endDate: dateRange.end.toISOString()
+        endDate: dateRange.end.toISOString(),
       });
       return response as { optimizations: Optimization[]; insights: string[] };
     },
@@ -62,16 +70,16 @@ export function ScheduleOptimizer({
       setInsights(data.insights || []);
       toast({
         title: "Optimization complete",
-        description: `Found ${data.optimizations?.length || 0} optimization opportunities`
+        description: `Found ${data.optimizations?.length || 0} optimization opportunities`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Optimization failed",
         description: error.message || "Could not optimize schedule",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleOptimize = async () => {
@@ -84,30 +92,34 @@ export function ScheduleOptimizer({
   };
 
   const applyOptimization = async (optimization: Optimization) => {
-    setApplyingOptimization(optimization.eventId || 'applying');
+    setApplyingOptimization(optimization.eventId || "applying");
     try {
       // Apply the optimization
       if (optimization.eventId && optimization.newTime) {
-        await apiRequest(`/api/schedule/events/${optimization.eventId}`, "PUT", {
-          startTime: optimization.newTime
-        });
+        await apiRequest(
+          `/api/schedule/events/${optimization.eventId}`,
+          "PUT",
+          {
+            startTime: optimization.newTime,
+          },
+        );
       }
-      
+
       toast({
         title: "Optimization applied",
-        description: optimization.suggestion
+        description: optimization.suggestion,
       });
-      
+
       // Remove from list
-      setOptimizations(prev => prev.filter(o => o !== optimization));
-      
+      setOptimizations((prev) => prev.filter((o) => o !== optimization));
+
       // Refresh events
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/events"] });
     } catch (error) {
       toast({
         title: "Failed to apply",
         description: "Could not apply this optimization",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setApplyingOptimization(null);
@@ -116,30 +128,42 @@ export function ScheduleOptimizer({
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'reschedule': return <Calendar className="h-4 w-4" />;
-      case 'group': return <Target className="h-4 w-4" />;
-      case 'add_break': return <Clock className="h-4 w-4" />;
-      case 'cancel': return <AlertCircle className="h-4 w-4" />;
-      default: return <Zap className="h-4 w-4" />;
+      case "reschedule":
+        return <Calendar className="h-4 w-4" />;
+      case "group":
+        return <Target className="h-4 w-4" />;
+      case "add_break":
+        return <Clock className="h-4 w-4" />;
+      case "cancel":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <Zap className="h-4 w-4" />;
     }
   };
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'high': return 'default';
-      case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'outline';
+      case "high":
+        return "default";
+      case "medium":
+        return "secondary";
+      case "low":
+        return "outline";
+      default:
+        return "outline";
     }
   };
 
   // Calculate total potential savings
-  const totalSavings = optimizations.reduce((acc, opt) => {
-    return {
-      time: acc.time + (opt.savings?.time || 0),
-      energy: acc.energy + (opt.savings?.energy || 0)
-    };
-  }, { time: 0, energy: 0 });
+  const totalSavings = optimizations.reduce(
+    (acc, opt) => {
+      return {
+        time: acc.time + (opt.savings?.time || 0),
+        energy: acc.energy + (opt.savings?.energy || 0),
+      };
+    },
+    { time: 0, energy: 0 },
+  );
 
   return (
     <Card className="w-full" data-testid="schedule-optimizer">
@@ -159,14 +183,15 @@ export function ScheduleOptimizer({
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="metrics">Metrics</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="optimize" className="space-y-4">
             {/* Optimization button and status */}
             <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
               <div className="space-y-1">
                 <p className="font-medium">Schedule Analysis</p>
                 <p className="text-sm text-muted-foreground">
-                  Analyze {format(dateRange.start, "MMM d")} - {format(dateRange.end, "MMM d")}
+                  Analyze {format(dateRange.start, "MMM d")} -{" "}
+                  {format(dateRange.end, "MMM d")}
                 </p>
               </div>
               <Button
@@ -188,26 +213,32 @@ export function ScheduleOptimizer({
                 )}
               </Button>
             </div>
-            
+
             {/* Optimization results */}
             {optimizations.length > 0 && (
               <>
                 {/* Summary */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Optimizations Found</p>
+                    <p className="text-sm text-muted-foreground">
+                      Optimizations Found
+                    </p>
                     <p className="text-2xl font-bold">{optimizations.length}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Time Saved</p>
-                    <p className="text-2xl font-bold">{totalSavings.time} min</p>
+                    <p className="text-2xl font-bold">
+                      {totalSavings.time} min
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Energy Saved</p>
+                    <p className="text-sm text-muted-foreground">
+                      Energy Saved
+                    </p>
                     <p className="text-2xl font-bold">{totalSavings.energy}%</p>
                   </div>
                 </div>
-                
+
                 {/* Optimization list */}
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-3">
@@ -217,11 +248,11 @@ export function ScheduleOptimizer({
                         className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex gap-3 flex-1">
-                          <div className="mt-1">
-                            {getTypeIcon(opt.type)}
-                          </div>
+                          <div className="mt-1">{getTypeIcon(opt.type)}</div>
                           <div className="space-y-2 flex-1">
-                            <p className="font-medium text-sm">{opt.suggestion}</p>
+                            <p className="font-medium text-sm">
+                              {opt.suggestion}
+                            </p>
                             <div className="flex items-center gap-2">
                               <Badge variant={getImpactColor(opt.impact)}>
                                 {opt.impact} impact
@@ -247,7 +278,9 @@ export function ScheduleOptimizer({
                           size="sm"
                           variant="outline"
                           onClick={() => applyOptimization(opt)}
-                          disabled={applyingOptimization === (opt.eventId || 'applying')}
+                          disabled={
+                            applyingOptimization === (opt.eventId || "applying")
+                          }
                           data-testid={`apply-optimization-${index}`}
                         >
                           Apply
@@ -256,7 +289,7 @@ export function ScheduleOptimizer({
                     ))}
                   </div>
                 </ScrollArea>
-                
+
                 {/* Apply all button */}
                 <div className="flex justify-end pt-4 border-t">
                   <Button
@@ -273,17 +306,18 @@ export function ScheduleOptimizer({
                 </div>
               </>
             )}
-            
+
             {optimizations.length === 0 && !optimizing && (
               <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Click "Optimize Now" to analyze your schedule and find improvement opportunities
+                  Click "Optimize Now" to analyze your schedule and find
+                  improvement opportunities
                 </AlertDescription>
               </Alert>
             )}
           </TabsContent>
-          
+
           <TabsContent value="insights" className="space-y-4">
             {insights.length > 0 ? (
               <ScrollArea className="h-[400px]">
@@ -308,7 +342,7 @@ export function ScheduleOptimizer({
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="metrics" className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -318,7 +352,7 @@ export function ScheduleOptimizer({
                 </div>
                 <Progress value={65} />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Focus Time</span>
@@ -326,7 +360,7 @@ export function ScheduleOptimizer({
                 </div>
                 <Progress value={35} />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Break Time</span>
@@ -334,7 +368,7 @@ export function ScheduleOptimizer({
                 </div>
                 <Progress value={20} />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Schedule Health</span>
@@ -342,10 +376,11 @@ export function ScheduleOptimizer({
                 </div>
                 <Progress value={75} className="bg-green-100" />
               </div>
-              
+
               <Alert>
                 <AlertDescription>
-                  Your schedule health is good, but could benefit from more focus time blocks and regular breaks.
+                  Your schedule health is good, but could benefit from more
+                  focus time blocks and regular breaks.
                 </AlertDescription>
               </Alert>
             </div>

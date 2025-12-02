@@ -1,11 +1,17 @@
 /**
  * Batch Uploader Component
- * 
+ *
  * Handles multiple image uploads with batch processing capabilities.
  */
 
 import { useState, useRef, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -17,17 +23,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { 
-  Upload, 
-  X, 
-  CheckCircle2, 
+import {
+  Upload,
+  X,
+  CheckCircle2,
   AlertCircle,
   Loader2,
   Download,
   FolderOpen,
   FileImage,
   Play,
-  Pause
+  Pause,
 } from "lucide-react";
 
 interface ImageFile {
@@ -53,13 +59,13 @@ export function BatchUploader({
   maxFiles = 20,
   maxFileSize = 10,
   acceptedFormats = ["image/jpeg", "image/png", "image/webp", "image/gif"],
-  onProcessComplete
+  onProcessComplete,
 }: BatchUploaderProps) {
   const [files, setFiles] = useState<ImageFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -70,59 +76,62 @@ export function BatchUploader({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("image", file);
-      
+
       return apiRequest(API_ENDPOINTS.ai.media.images.batch, "POST", formData);
-    }
+    },
   });
 
   // Handle file selection
-  const handleFileSelect = useCallback((selectedFiles: FileList) => {
-    const newFiles: ImageFile[] = [];
-    let rejectedCount = 0;
+  const handleFileSelect = useCallback(
+    (selectedFiles: FileList) => {
+      const newFiles: ImageFile[] = [];
+      let rejectedCount = 0;
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      
-      // Check file count
-      if (files.length + newFiles.length >= maxFiles) {
-        rejectedCount++;
-        continue;
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+
+        // Check file count
+        if (files.length + newFiles.length >= maxFiles) {
+          rejectedCount++;
+          continue;
+        }
+
+        // Check file size
+        if (file.size > maxFileSize * 1024 * 1024) {
+          rejectedCount++;
+          continue;
+        }
+
+        // Check file type
+        if (!acceptedFormats.includes(file.type)) {
+          rejectedCount++;
+          continue;
+        }
+
+        // Add file
+        newFiles.push({
+          id: `${Date.now()}_${i}`,
+          file,
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          status: "pending",
+          selected: false,
+        });
       }
 
-      // Check file size
-      if (file.size > maxFileSize * 1024 * 1024) {
-        rejectedCount++;
-        continue;
+      if (rejectedCount > 0) {
+        toast({
+          title: "Some files rejected",
+          description: `${rejectedCount} file(s) were rejected due to size or format restrictions`,
+          variant: "destructive",
+        });
       }
 
-      // Check file type
-      if (!acceptedFormats.includes(file.type)) {
-        rejectedCount++;
-        continue;
-      }
-
-      // Add file
-      newFiles.push({
-        id: `${Date.now()}_${i}`,
-        file,
-        name: file.name,
-        size: file.size,
-        url: URL.createObjectURL(file),
-        status: "pending",
-        selected: false
-      });
-    }
-
-    if (rejectedCount > 0) {
-      toast({
-        title: "Some files rejected",
-        description: `${rejectedCount} file(s) were rejected due to size or format restrictions`,
-        variant: "destructive"
-      });
-    }
-
-    setFiles(prev => [...prev, ...newFiles]);
-  }, [files.length, maxFiles, maxFileSize, acceptedFormats, toast]);
+      setFiles((prev) => [...prev, ...newFiles]);
+    },
+    [files.length, maxFiles, maxFileSize, acceptedFormats, toast],
+  );
 
   // Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {
@@ -143,36 +152,36 @@ export function BatchUploader({
 
   // Remove file
   const removeFile = (id: string) => {
-    setFiles(prev => {
-      const file = prev.find(f => f.id === id);
+    setFiles((prev) => {
+      const file = prev.find((f) => f.id === id);
       if (file?.url) URL.revokeObjectURL(file.url);
-      return prev.filter(f => f.id !== id);
+      return prev.filter((f) => f.id !== id);
     });
   };
 
   // Toggle file selection
   const toggleFileSelection = (id: string) => {
-    setFiles(prev => 
-      prev.map(f => 
-        f.id === id ? { ...f, selected: !f.selected } : f
-      )
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, selected: !f.selected } : f)),
     );
   };
 
   // Select all files
   const selectAll = (selected: boolean) => {
-    setFiles(prev => prev.map(f => ({ ...f, selected })));
+    setFiles((prev) => prev.map((f) => ({ ...f, selected })));
   };
 
   // Process selected files
   const processSelectedFiles = async () => {
-    const selectedFiles = files.filter(f => f.selected && f.status === "pending");
-    
+    const selectedFiles = files.filter(
+      (f) => f.selected && f.status === "pending",
+    );
+
     if (selectedFiles.length === 0) {
       toast({
         title: "No files selected",
         description: "Please select at least one file to process",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -183,66 +192,65 @@ export function BatchUploader({
 
     for (let i = 0; i < selectedFiles.length; i++) {
       if (isPaused) break;
-      
+
       const file = selectedFiles[i];
       setCurrentIndex(i);
-      
+
       // Update file status to processing
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === file.id ? { ...f, status: "processing" } : f
-        )
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === file.id ? { ...f, status: "processing" } : f,
+        ),
       );
 
       try {
         const result = await processImageMutation.mutateAsync(file.file);
-        
+
         // Update file with processed URL
-        setFiles(prev => 
-          prev.map(f => 
-            f.id === file.id 
-              ? { ...f, status: "completed", processedUrl: result.processedUrl } 
-              : f
-          )
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === file.id
+              ? { ...f, status: "completed", processedUrl: result.processedUrl }
+              : f,
+          ),
         );
       } catch (error: any) {
         // Update file with error
-        setFiles(prev => 
-          prev.map(f => 
-            f.id === file.id 
-              ? { ...f, status: "error", error: error.message } 
-              : f
-          )
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === file.id
+              ? { ...f, status: "error", error: error.message }
+              : f,
+          ),
         );
       }
     }
 
     setIsProcessing(false);
-    
+
     // Call completion callback
     if (onProcessComplete) {
-      onProcessComplete(files.filter(f => f.status === "completed"));
+      onProcessComplete(files.filter((f) => f.status === "completed"));
     }
 
     toast({
       title: "Batch processing complete",
-      description: `Processed ${selectedFiles.length} image(s)`
+      description: `Processed ${selectedFiles.length} image(s)`,
     });
   };
 
   // Calculate statistics
   const stats = {
     total: files.length,
-    pending: files.filter(f => f.status === "pending").length,
-    processing: files.filter(f => f.status === "processing").length,
-    completed: files.filter(f => f.status === "completed").length,
-    error: files.filter(f => f.status === "error").length,
-    selected: files.filter(f => f.selected).length
+    pending: files.filter((f) => f.status === "pending").length,
+    processing: files.filter((f) => f.status === "processing").length,
+    completed: files.filter((f) => f.status === "completed").length,
+    error: files.filter((f) => f.status === "error").length,
+    selected: files.filter((f) => f.selected).length,
   };
 
-  const progress = stats.total > 0 
-    ? ((stats.completed + stats.error) / stats.total) * 100 
-    : 0;
+  const progress =
+    stats.total > 0 ? ((stats.completed + stats.error) / stats.total) * 100 : 0;
 
   return (
     <Card>
@@ -268,13 +276,15 @@ export function BatchUploader({
               type="file"
               multiple
               accept={acceptedFormats.join(",")}
-              onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
+              onChange={(e) =>
+                e.target.files && handleFileSelect(e.target.files)
+              }
               className="hidden"
               data-testid="file-input-batch"
             />
-            
+
             <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            
+
             <Button
               onClick={() => fileInputRef.current?.click()}
               className="mb-2"
@@ -283,12 +293,15 @@ export function BatchUploader({
               <FolderOpen className="h-4 w-4 mr-2" />
               Select Images
             </Button>
-            
+
             <p className="text-sm text-muted-foreground">
               or drag and drop up to {maxFiles} images here
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Max {maxFileSize}MB per file • {acceptedFormats.map(f => f.split("/")[1].toUpperCase()).join(", ")}
+              Max {maxFileSize}MB per file •{" "}
+              {acceptedFormats
+                .map((f) => f.split("/")[1].toUpperCase())
+                .join(", ")}
             </p>
           </div>
         )}
@@ -310,7 +323,7 @@ export function BatchUploader({
                   <Badge variant="destructive">{stats.error} failed</Badge>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={stats.selected === files.length}
@@ -334,7 +347,7 @@ export function BatchUploader({
             {/* File Grid */}
             <ScrollArea className="h-96 rounded-lg border p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {files.map(file => (
+                {files.map((file) => (
                   <div
                     key={file.id}
                     className="relative group rounded-lg border p-2 hover-elevate"
@@ -347,7 +360,7 @@ export function BatchUploader({
                       className="absolute top-2 left-2 z-10"
                       data-testid={`select-${file.id}`}
                     />
-                    
+
                     {/* Remove Button */}
                     <Button
                       size="icon"
@@ -358,7 +371,7 @@ export function BatchUploader({
                     >
                       <X className="h-3 w-3" />
                     </Button>
-                    
+
                     {/* Image Preview */}
                     <div className="aspect-square rounded overflow-hidden bg-muted mb-2">
                       <img
@@ -366,33 +379,33 @@ export function BatchUploader({
                         alt={file.name}
                         className="w-full h-full object-cover"
                       />
-                      
+
                       {/* Status Overlay */}
                       {file.status === "processing" && (
                         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                           <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
                       )}
-                      
+
                       {file.status === "completed" && (
                         <div className="absolute top-2 right-2">
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
                         </div>
                       )}
-                      
+
                       {file.status === "error" && (
                         <div className="absolute top-2 right-2">
                           <AlertCircle className="h-5 w-5 text-red-500" />
                         </div>
                       )}
                     </div>
-                    
+
                     {/* File Info */}
                     <p className="text-xs font-medium truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {(file.size / 1024).toFixed(1)} KB
                     </p>
-                    
+
                     {/* Download Button (if processed) */}
                     {file.processedUrl && (
                       <Button
@@ -422,7 +435,7 @@ export function BatchUploader({
               >
                 Clear All
               </Button>
-              
+
               <div className="flex gap-2">
                 {isProcessing && (
                   <Button
@@ -443,7 +456,7 @@ export function BatchUploader({
                     )}
                   </Button>
                 )}
-                
+
                 <Button
                   onClick={processSelectedFiles}
                   disabled={isProcessing || stats.selected === 0}

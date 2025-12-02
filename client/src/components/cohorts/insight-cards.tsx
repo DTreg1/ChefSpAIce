@@ -1,10 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sparkles, TrendingUp, TrendingDown, AlertTriangle, Info, CheckCircle, XCircle, RefreshCw, Archive, Brain } from "lucide-react";
+import {
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Archive,
+  Brain,
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
@@ -18,11 +35,13 @@ interface InsightCardsProps {
 export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const insightsQuery = useQuery({
     queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)],
     queryFn: async () => {
-      const response = await fetch(API_ENDPOINTS.admin.cohorts.insights(cohortId));
+      const response = await fetch(
+        API_ENDPOINTS.admin.cohorts.insights(cohortId),
+      );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch insights");
@@ -31,12 +50,14 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
       return data.insights as CohortInsight[];
     },
   });
-  
+
   const generateInsightsMutation = useMutation({
-    mutationFn: () => 
+    mutationFn: () =>
       apiRequest(API_ENDPOINTS.admin.cohorts.insights(cohortId), "POST"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)],
+      });
       toast({
         title: "Insights generated",
         description: "New AI insights have been generated for this cohort.",
@@ -50,15 +71,27 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
       });
     },
   });
-  
+
   const updateInsightStatusMutation = useMutation({
-    mutationFn: ({ insightId, status }: { insightId: string; status: string }) =>
-      apiRequest(`${API_ENDPOINTS.admin.cohorts.list}/insights/${insightId}/status`, "PATCH", { status }),
+    mutationFn: ({
+      insightId,
+      status,
+    }: {
+      insightId: string;
+      status: string;
+    }) =>
+      apiRequest(
+        `${API_ENDPOINTS.admin.cohorts.list}/insights/${insightId}/status`,
+        "PATCH",
+        { status },
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)],
+      });
     },
   });
-  
+
   const getImportanceColor = (importance: string) => {
     switch (importance) {
       case "critical":
@@ -71,7 +104,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
         return "outline";
     }
   };
-  
+
   const getImportanceIcon = (importance: string) => {
     switch (importance) {
       case "critical":
@@ -84,7 +117,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
         return <Info className="h-4 w-4" />;
     }
   };
-  
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "retention":
@@ -101,7 +134,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
         return <Info className="h-4 w-4" />;
     }
   };
-  
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -114,7 +147,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
         return null;
     }
   };
-  
+
   if (insightsQuery.isLoading) {
     return (
       <div className="space-y-4">
@@ -139,9 +172,10 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
       </div>
     );
   }
-  
+
   if (insightsQuery.error) {
-    const errorMessage = (insightsQuery.error as Error).message || "Failed to load insights";
+    const errorMessage =
+      (insightsQuery.error as Error).message || "Failed to load insights";
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -152,18 +186,20 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
         </div>
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {errorMessage}
-          </AlertDescription>
+          <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       </div>
     );
   }
-  
+
   const insights = insightsQuery.data || [];
-  const activeInsights = insights.filter(i => i.validUntil && new Date(i.validUntil) > new Date());
-  const dismissedInsights = insights.filter(i => !i.validUntil || new Date(i.validUntil) <= new Date());
-  
+  const activeInsights = insights.filter(
+    (i) => i.validUntil && new Date(i.validUntil) > new Date(),
+  );
+  const dismissedInsights = insights.filter(
+    (i) => !i.validUntil || new Date(i.validUntil) <= new Date(),
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -177,16 +213,21 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
           size="sm"
           data-testid="button-generate-insights"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${generateInsightsMutation.isPending ? "animate-spin" : ""}`} />
-          {generateInsightsMutation.isPending ? "Generating..." : "Generate Insights"}
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${generateInsightsMutation.isPending ? "animate-spin" : ""}`}
+          />
+          {generateInsightsMutation.isPending
+            ? "Generating..."
+            : "Generate Insights"}
         </Button>
       </div>
-      
+
       {insights.length === 0 ? (
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            No insights generated yet. Click "Generate Insights" to analyze this cohort with AI.
+            No insights generated yet. Click "Generate Insights" to analyze this
+            cohort with AI.
           </AlertDescription>
         </Alert>
       ) : (
@@ -194,27 +235,37 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
           {/* Active Insights */}
           {activeInsights.length > 0 && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-muted-foreground">Active Insights</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">
+                Active Insights
+              </h4>
               <div className="grid gap-4">
                 {activeInsights.map((insight) => (
-                  <Card key={insight.id} data-testid={`card-insight-${insight.id}`}>
+                  <Card
+                    key={insight.id}
+                    data-testid={`card-insight-${insight.id}`}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="space-y-1 flex-1">
                           <div className="flex items-center gap-2">
                             {insight.impact && (
-                              <Badge variant={getImportanceColor(insight.impact)}>
+                              <Badge
+                                variant={getImportanceColor(insight.impact)}
+                              >
                                 {getImportanceIcon(insight.impact)}
                                 <span className="ml-1">{insight.impact}</span>
                               </Badge>
                             )}
                             <Badge variant="outline">
                               {getCategoryIcon(insight.insightType)}
-                              <span className="ml-1">{insight.insightType}</span>
+                              <span className="ml-1">
+                                {insight.insightType}
+                              </span>
                             </Badge>
                             {insight.confidence && (
                               <Badge variant="secondary">
-                                {Math.round(insight.confidence * 100)}% confidence
+                                {Math.round(insight.confidence * 100)}%
+                                confidence
                               </Badge>
                             )}
                           </div>
@@ -223,29 +274,41 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm">{insight.insight}</p>
-                      
-                      {insight.recommendations && insight.recommendations.length > 0 && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-xs font-medium mb-1">Recommendations:</p>
-                          <ul className="text-sm space-y-1">
-                            {insight.recommendations.map((rec: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-muted-foreground">•</span>
-                                <span>{rec}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
+
+                      {insight.recommendations &&
+                        insight.recommendations.length > 0 && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs font-medium mb-1">
+                              Recommendations:
+                            </p>
+                            <ul className="text-sm space-y-1">
+                              {insight.recommendations.map(
+                                (rec: string, index: number) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-start gap-2"
+                                  >
+                                    <span className="text-muted-foreground">
+                                      •
+                                    </span>
+                                    <span>{rec}</span>
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => updateInsightStatusMutation.mutate({
-                            insightId: insight.id,
-                            status: "implemented"
-                          })}
+                          onClick={() =>
+                            updateInsightStatusMutation.mutate({
+                              insightId: insight.id,
+                              status: "implemented",
+                            })
+                          }
                           data-testid={`button-implement-${insight.id}`}
                         >
                           <CheckCircle className="h-3 w-3 mr-1" />
@@ -254,10 +317,12 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => updateInsightStatusMutation.mutate({
-                            insightId: insight.id,
-                            status: "dismissed"
-                          })}
+                          onClick={() =>
+                            updateInsightStatusMutation.mutate({
+                              insightId: insight.id,
+                              status: "dismissed",
+                            })
+                          }
                           data-testid={`button-dismiss-${insight.id}`}
                         >
                           <Archive className="h-3 w-3 mr-1" />
@@ -270,7 +335,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
               </div>
             </div>
           )}
-          
+
           {/* Dismissed Insights */}
           {dismissedInsights.length > 0 && (
             <details className="group">
@@ -282,22 +347,26 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
                   <Card key={insight.id} className="opacity-60">
                     <CardHeader>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {insight.insightType}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">Dismissed</span>
+                        <Badge variant="outline">{insight.insightType}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Dismissed
+                        </span>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground">{insight.insight}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {insight.insight}
+                      </p>
                       <Button
                         size="sm"
                         variant="ghost"
                         className="mt-2"
-                        onClick={() => updateInsightStatusMutation.mutate({
-                          insightId: insight.id,
-                          status: "active"
-                        })}
+                        onClick={() =>
+                          updateInsightStatusMutation.mutate({
+                            insightId: insight.id,
+                            status: "active",
+                          })
+                        }
                       >
                         Restore
                       </Button>
@@ -309,7 +378,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
           )}
         </div>
       )}
-      
+
       {/* Generated by indicator */}
       {insights.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">

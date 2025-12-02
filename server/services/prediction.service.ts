@@ -1,18 +1,18 @@
 /**
  * Prediction Service
- * 
+ *
  * Core service for predictive analytics using TensorFlow.js and OpenAI.
  * Handles churn prediction, user behavior analysis, and intervention generation.
  */
 
-import OpenAI from 'openai';
+import OpenAI from "openai";
 import { storage } from "../storage/index";
-import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
-import { predictChurnLightweight } from './lightweight-prediction.service';
+import type { UserPrediction, InsertUserPrediction } from "@shared/schema";
+import { predictChurnLightweight } from "./lightweight-prediction.service";
 
 // Initialize OpenAI client (uses Replit AI Integrations)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-replit-integration',
+  apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-replit-integration",
 });
 
 export interface UserMetrics {
@@ -43,7 +43,6 @@ class PredictionService {
     // Lightweight prediction models ready
   }
 
-
   /**
    * Generate predictions for a user
    */
@@ -53,31 +52,40 @@ class PredictionService {
     try {
       // Get user metrics (in real scenario, would fetch from analytics)
       const metrics = await this.getUserMetrics(userId);
-      
+
       // Generate churn prediction
       const churnPrediction = await this.predictChurn(metrics);
       if (churnPrediction) {
-        const saved = await storage.platform.analytics.createUserPrediction(churnPrediction);
+        const saved =
+          await storage.platform.analytics.createUserPrediction(
+            churnPrediction,
+          );
         predictions.push(saved);
       }
 
       // Generate behavior predictions
       const behaviorPrediction = await this.predictNextBehavior(metrics);
       if (behaviorPrediction) {
-        const saved = await storage.platform.analytics.createUserPrediction(behaviorPrediction);
+        const saved =
+          await storage.platform.analytics.createUserPrediction(
+            behaviorPrediction,
+          );
         predictions.push(saved);
       }
 
       // Generate engagement prediction
       const engagementPrediction = await this.predictEngagement(metrics);
       if (engagementPrediction) {
-        const saved = await storage.platform.analytics.createUserPrediction(engagementPrediction);
+        const saved =
+          await storage.platform.analytics.createUserPrediction(
+            engagementPrediction,
+          );
         predictions.push(saved);
       }
 
       return predictions;
     } catch (error) {
-      console.error('Error generating user predictions:', error);
+      console.error("Error generating user predictions:", error);
       return predictions;
     }
   }
@@ -85,10 +93,12 @@ class PredictionService {
   /**
    * Predict churn risk for a user
    */
-  private async predictChurn(metrics: UserMetrics): Promise<InsertUserPrediction | null> {
+  private async predictChurn(
+    metrics: UserMetrics,
+  ): Promise<InsertUserPrediction | null> {
     // Use lightweight prediction instead of TensorFlow
     const probability = predictChurnLightweight(metrics);
-    
+
     // Analyze factors
     const factors = this.analyzeChurnFactors(metrics);
 
@@ -98,23 +108,25 @@ class PredictionService {
 
     return {
       userId: metrics.userId,
-      predictionType: 'churn_risk',
+      predictionType: "churn_risk",
       confidence: probability,
       prediction: { probability, factors } as any,
       validUntil,
       metadata: {
         confidence: probability,
         factors: factors as unknown as Record<string, number>,
-        modelVersion: 'v1.0',
-        features: metrics as unknown as Record<string, unknown>
-      }
+        modelVersion: "v1.0",
+        features: metrics as unknown as Record<string, unknown>,
+      },
     } as InsertUserPrediction;
   }
 
   /**
    * Generate simulated churn prediction (fallback)
    */
-  private generateSimulatedChurnPrediction(metrics: UserMetrics): InsertUserPrediction {
+  private generateSimulatedChurnPrediction(
+    metrics: UserMetrics,
+  ): InsertUserPrediction {
     // Simple heuristic-based churn prediction
     let churnScore = 0;
     const factors: PredictionFactors = {
@@ -133,14 +145,16 @@ class PredictionService {
     }
 
     // Check session frequency
-    const daysSinceActive = (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceActive =
+      (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceActive > 7) {
       churnScore += 0.25;
       factors.sessionFrequency = 0.25;
     }
 
     // Check engagement metrics
-    if (metrics.averageSessionDuration < 120) { // Less than 2 minutes average
+    if (metrics.averageSessionDuration < 120) {
+      // Less than 2 minutes average
       churnScore += 0.15;
       factors.lowEngagement = 0.15;
     }
@@ -159,7 +173,10 @@ class PredictionService {
     }
 
     // Normalize to 0-1 range
-    const probability = Math.min(Math.max(churnScore + Math.random() * 0.1, 0), 1);
+    const probability = Math.min(
+      Math.max(churnScore + Math.random() * 0.1, 0),
+      1,
+    );
 
     // Set validity period (30 days)
     const validUntil = new Date();
@@ -167,30 +184,32 @@ class PredictionService {
 
     return {
       userId: metrics.userId,
-      predictionType: 'churn_risk',
+      predictionType: "churn_risk",
       confidence: probability,
       prediction: { probability, factors } as any,
       validUntil,
       metadata: {
         confidence: probability,
         factors: factors as unknown as Record<string, number>,
-        modelVersion: 'v1.0',
-        features: {}
-      }
+        modelVersion: "v1.0",
+        features: {},
+      },
     } as InsertUserPrediction;
   }
 
   /**
    * Predict next user behavior
    */
-  private async predictNextBehavior(metrics: UserMetrics): Promise<InsertUserPrediction | null> {
+  private async predictNextBehavior(
+    metrics: UserMetrics,
+  ): Promise<InsertUserPrediction | null> {
     // Simplified behavior prediction
     const behaviors = [
-      { action: 'explore_features', probability: 0.3 },
-      { action: 'create_content', probability: 0.25 },
-      { action: 'engage_community', probability: 0.2 },
-      { action: 'upgrade_plan', probability: 0.15 },
-      { action: 'invite_users', probability: 0.1 },
+      { action: "explore_features", probability: 0.3 },
+      { action: "create_content", probability: 0.25 },
+      { action: "engage_community", probability: 0.2 },
+      { action: "upgrade_plan", probability: 0.15 },
+      { action: "invite_users", probability: 0.1 },
     ];
 
     // Adjust probabilities based on user history
@@ -202,8 +221,8 @@ class PredictionService {
     }
 
     // Find most likely behavior
-    const mostLikely = behaviors.reduce((prev, current) => 
-      prev.probability > current.probability ? prev : current
+    const mostLikely = behaviors.reduce((prev, current) =>
+      prev.probability > current.probability ? prev : current,
     );
 
     // Set validity period (7 days for behavior predictions)
@@ -212,28 +231,34 @@ class PredictionService {
 
     return {
       userId: metrics.userId,
-      predictionType: 'next_action',
+      predictionType: "next_action",
       confidence: mostLikely.probability,
-      prediction: { action: mostLikely.action, probability: mostLikely.probability } as any,
+      prediction: {
+        action: mostLikely.action,
+        probability: mostLikely.probability,
+      } as any,
       validUntil,
       metadata: {
         confidence: mostLikely.probability,
         factors: { activityPattern: 1 }, // Numeric factor representation
-        modelVersion: 'v1.0',
-        features: { predictedAction: mostLikely.action }
-      }
+        modelVersion: "v1.0",
+        features: { predictedAction: mostLikely.action },
+      },
     } as InsertUserPrediction;
   }
 
   /**
    * Predict engagement level
    */
-  private async predictEngagement(metrics: UserMetrics): Promise<InsertUserPrediction | null> {
+  private async predictEngagement(
+    metrics: UserMetrics,
+  ): Promise<InsertUserPrediction | null> {
     // Calculate engagement score
     let engagementScore = 0;
-    
+
     // Recent activity weight
-    const daysSinceActive = (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceActive =
+      (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceActive < 1) engagementScore += 0.3;
     else if (daysSinceActive < 3) engagementScore += 0.2;
     else if (daysSinceActive < 7) engagementScore += 0.1;
@@ -244,8 +269,10 @@ class PredictionService {
     else if (metrics.sessionCount > 5) engagementScore += 0.1;
 
     // Session duration
-    if (metrics.averageSessionDuration > 600) engagementScore += 0.25; // > 10 minutes
-    else if (metrics.averageSessionDuration > 300) engagementScore += 0.15; // > 5 minutes
+    if (metrics.averageSessionDuration > 600)
+      engagementScore += 0.25; // > 10 minutes
+    else if (metrics.averageSessionDuration > 300)
+      engagementScore += 0.15; // > 5 minutes
     else if (metrics.averageSessionDuration > 120) engagementScore += 0.1; // > 2 minutes
 
     // Content creation
@@ -257,14 +284,14 @@ class PredictionService {
 
     if (isDropping) {
       const dropProbability = 1 - probability; // Invert for drop probability
-      
+
       // Set validity period (14 days)
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 14);
-      
+
       return {
         userId: metrics.userId,
-        predictionType: 'engagement_drop',
+        predictionType: "engagement_drop",
         confidence: dropProbability,
         prediction: { engagementScore: probability, dropProbability } as any,
         validUntil,
@@ -274,9 +301,11 @@ class PredictionService {
             engagementScore: probability,
             activityTrend: metrics.activityTrend,
           },
-          modelVersion: 'v1.0',
-          features: { pattern: metrics.activityTrend < -0.3 ? 'declining' : 'stable' }
-        }
+          modelVersion: "v1.0",
+          features: {
+            pattern: metrics.activityTrend < -0.3 ? "declining" : "stable",
+          },
+        },
       } as InsertUserPrediction;
     }
 
@@ -288,20 +317,21 @@ class PredictionService {
    */
   async generateIntervention(
     prediction: UserPrediction,
-    options?: { regenerate?: boolean }
+    options?: { regenerate?: boolean },
   ): Promise<any> {
     try {
       const prompt = this.buildInterventionPrompt(prediction);
-      
+
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: "gpt-4o-mini",
         messages: [
           {
-            role: 'system',
-            content: 'You are a retention specialist helping to reduce user churn. Generate specific, actionable intervention strategies.',
+            role: "system",
+            content:
+              "You are a retention specialist helping to reduce user churn. Generate specific, actionable intervention strategies.",
           },
           {
-            role: 'user',
+            role: "user",
             content: prompt,
           },
         ],
@@ -309,14 +339,14 @@ class PredictionService {
         max_tokens: 500,
       });
 
-      const content = response.choices[0].message.content || '';
-      
+      const content = response.choices[0].message.content || "";
+
       // Parse intervention suggestions
       const intervention = this.parseInterventionResponse(content, prediction);
-      
+
       return intervention;
     } catch (error) {
-      console.error('Error generating intervention with OpenAI:', error);
+      console.error("Error generating intervention with OpenAI:", error);
       return this.generateFallbackIntervention(prediction);
     }
   }
@@ -325,72 +355,83 @@ class PredictionService {
    * Build intervention prompt for OpenAI
    */
   private buildInterventionPrompt(prediction: UserPrediction): string {
-    const factors = (prediction.metadata?.factors || {}) as unknown as PredictionFactors;
-    
+    const factors = (prediction.metadata?.factors ||
+      {}) as unknown as PredictionFactors;
+
     let prompt = `User ${prediction.userId} has a ${(prediction.confidence * 100).toFixed(1)}% churn risk.\n\n`;
-    prompt += 'Risk factors:\n';
-    
+    prompt += "Risk factors:\n";
+
     if (factors.activityDecline > 0.2) {
-      prompt += '- Significant activity decline detected\n';
+      prompt += "- Significant activity decline detected\n";
     }
     if (factors.lowEngagement > 0.15) {
-      prompt += '- Low engagement metrics (short sessions)\n';
+      prompt += "- Low engagement metrics (short sessions)\n";
     }
     if (factors.featureAdoption < 0.3) {
-      prompt += '- Limited feature adoption\n';
+      prompt += "- Limited feature adoption\n";
     }
     if (factors.sessionFrequency > 0.2) {
-      prompt += '- Infrequent sessions\n';
+      prompt += "- Infrequent sessions\n";
     }
     if (factors.contentCreation > 0.15) {
-      prompt += '- Low content creation\n';
+      prompt += "- Low content creation\n";
     }
-    
-    prompt += '\nGenerate 3 specific intervention strategies:\n';
-    prompt += '1. An immediate action (within 24 hours)\n';
-    prompt += '2. A medium-term strategy (within 1 week)\n';
-    prompt += '3. A long-term retention approach\n';
-    prompt += '\nInclude specific email subject lines and key messages for each.';
-    
+
+    prompt += "\nGenerate 3 specific intervention strategies:\n";
+    prompt += "1. An immediate action (within 24 hours)\n";
+    prompt += "2. A medium-term strategy (within 1 week)\n";
+    prompt += "3. A long-term retention approach\n";
+    prompt +=
+      "\nInclude specific email subject lines and key messages for each.";
+
     return prompt;
   }
 
   /**
    * Parse intervention response from OpenAI
    */
-  private parseInterventionResponse(content: string, prediction: UserPrediction): any {
+  private parseInterventionResponse(
+    content: string,
+    prediction: UserPrediction,
+  ): any {
     // Extract key recommendations
-    const lines = content.split('\n').filter(line => line.trim());
-    
+    const lines = content.split("\n").filter((line) => line.trim());
+
     const intervention = {
       predictionId: prediction.id,
       userId: prediction.userId,
-      riskLevel: prediction.confidence > 0.8 ? 'critical' : prediction.confidence > 0.6 ? 'high' : 'medium',
-      recommendedAction: lines[0] || 'Send re-engagement email',
+      riskLevel:
+        prediction.confidence > 0.8
+          ? "critical"
+          : prediction.confidence > 0.6
+            ? "high"
+            : "medium",
+      recommendedAction: lines[0] || "Send re-engagement email",
       strategies: {
         immediate: {
-          action: 'Send personalized re-engagement email',
-          emailSubject: 'We miss you! Here\'s what\'s new',
-          keyMessage: 'Show them new features and content they\'ve missed',
-          timing: '24 hours',
+          action: "Send personalized re-engagement email",
+          emailSubject: "We miss you! Here's what's new",
+          keyMessage: "Show them new features and content they've missed",
+          timing: "24 hours",
         },
         shortTerm: {
-          action: 'Offer temporary premium features',
-          emailSubject: 'Exclusive: Try premium features free for 7 days',
-          keyMessage: 'Give them a taste of advanced features to increase engagement',
-          timing: '3-7 days',
+          action: "Offer temporary premium features",
+          emailSubject: "Exclusive: Try premium features free for 7 days",
+          keyMessage:
+            "Give them a taste of advanced features to increase engagement",
+          timing: "3-7 days",
         },
         longTerm: {
-          action: 'Implement progressive engagement program',
-          emailSubject: 'Your personalized success path',
-          keyMessage: 'Guide them through feature discovery with rewards',
-          timing: '2-4 weeks',
+          action: "Implement progressive engagement program",
+          emailSubject: "Your personalized success path",
+          keyMessage: "Guide them through feature discovery with rewards",
+          timing: "2-4 weeks",
         },
       },
       generatedAt: new Date().toISOString(),
       confidence: 0.85,
     };
-    
+
     return intervention;
   }
 
@@ -398,35 +439,40 @@ class PredictionService {
    * Generate fallback intervention (without AI)
    */
   private generateFallbackIntervention(prediction: UserPrediction): any {
-    const riskLevel = prediction.confidence > 0.8 ? 'critical' : prediction.confidence > 0.6 ? 'high' : 'medium';
-    
+    const riskLevel =
+      prediction.confidence > 0.8
+        ? "critical"
+        : prediction.confidence > 0.6
+          ? "high"
+          : "medium";
+
     const strategies = {
       critical: {
         immediate: {
-          action: 'Send urgent retention offer',
-          emailSubject: '⚡ Special offer just for you - 50% off this month',
-          keyMessage: 'Exclusive discount to keep them engaged',
-          timing: '12 hours',
+          action: "Send urgent retention offer",
+          emailSubject: "⚡ Special offer just for you - 50% off this month",
+          keyMessage: "Exclusive discount to keep them engaged",
+          timing: "12 hours",
         },
       },
       high: {
         immediate: {
-          action: 'Send personalized check-in',
-          emailSubject: 'Quick question - how can we help?',
-          keyMessage: 'Personal touch to understand their needs',
-          timing: '24 hours',
+          action: "Send personalized check-in",
+          emailSubject: "Quick question - how can we help?",
+          keyMessage: "Personal touch to understand their needs",
+          timing: "24 hours",
         },
       },
       medium: {
         immediate: {
-          action: 'Send feature highlight email',
-          emailSubject: 'You\'re missing out on these powerful features',
-          keyMessage: 'Educate about underutilized features',
-          timing: '48 hours',
+          action: "Send feature highlight email",
+          emailSubject: "You're missing out on these powerful features",
+          keyMessage: "Educate about underutilized features",
+          timing: "48 hours",
         },
       },
     };
-    
+
     return {
       predictionId: prediction.id,
       userId: prediction.userId,
@@ -435,16 +481,16 @@ class PredictionService {
       strategies: {
         immediate: strategies[riskLevel].immediate,
         shortTerm: {
-          action: 'Follow-up with value proposition',
-          emailSubject: 'See how others like you succeed',
-          keyMessage: 'Share success stories and use cases',
-          timing: '1 week',
+          action: "Follow-up with value proposition",
+          emailSubject: "See how others like you succeed",
+          keyMessage: "Share success stories and use cases",
+          timing: "1 week",
         },
         longTerm: {
-          action: 'Enroll in retention program',
-          emailSubject: 'Join our VIP community',
-          keyMessage: 'Create sense of belonging and exclusivity',
-          timing: '2 weeks',
+          action: "Enroll in retention program",
+          emailSubject: "Join our VIP community",
+          keyMessage: "Create sense of belonging and exclusivity",
+          timing: "2 weeks",
         },
       },
       generatedAt: new Date().toISOString(),
@@ -461,39 +507,55 @@ class PredictionService {
   }): Promise<any[]> {
     const segments = [
       {
-        id: 'high-churn-risk',
-        name: 'High Churn Risk',
-        description: 'Users with >70% churn probability',
+        id: "high-churn-risk",
+        name: "High Churn Risk",
+        description: "Users with >70% churn probability",
         userCount: 0,
         averageProbability: 0,
-        recommendedActions: ['Immediate intervention', 'Personal outreach', 'Special offers'],
+        recommendedActions: [
+          "Immediate intervention",
+          "Personal outreach",
+          "Special offers",
+        ],
       },
       {
-        id: 'declining-engagement',
-        name: 'Declining Engagement',
-        description: 'Users with decreasing activity trends',
+        id: "declining-engagement",
+        name: "Declining Engagement",
+        description: "Users with decreasing activity trends",
         userCount: 0,
         averageProbability: 0,
-        recommendedActions: ['Re-engagement campaign', 'Feature education', 'Feedback survey'],
+        recommendedActions: [
+          "Re-engagement campaign",
+          "Feature education",
+          "Feedback survey",
+        ],
       },
       {
-        id: 'low-feature-adoption',
-        name: 'Low Feature Adoption',
-        description: 'Users using <30% of available features',
+        id: "low-feature-adoption",
+        name: "Low Feature Adoption",
+        description: "Users using <30% of available features",
         userCount: 0,
         averageProbability: 0,
-        recommendedActions: ['Feature tutorials', 'Onboarding refresh', 'Use case examples'],
+        recommendedActions: [
+          "Feature tutorials",
+          "Onboarding refresh",
+          "Use case examples",
+        ],
       },
       {
-        id: 'dormant-users',
-        name: 'Dormant Users',
-        description: 'Inactive for 7+ days',
+        id: "dormant-users",
+        name: "Dormant Users",
+        description: "Inactive for 7+ days",
         userCount: 0,
         averageProbability: 0,
-        recommendedActions: ['Win-back campaign', 'Product updates', 'Reactivation incentive'],
+        recommendedActions: [
+          "Win-back campaign",
+          "Product updates",
+          "Reactivation incentive",
+        ],
       },
     ];
-    
+
     // In production, would calculate actual counts from database
     // For now, return sample data
     segments[0].userCount = Math.floor(Math.random() * 100) + 20;
@@ -504,15 +566,17 @@ class PredictionService {
     segments[2].averageProbability = 0.35 + Math.random() * 0.15;
     segments[3].userCount = Math.floor(Math.random() * 80) + 10;
     segments[3].averageProbability = 0.65 + Math.random() * 0.15;
-    
+
     if (options?.segmentType) {
-      return segments.filter(s => s.id.includes(options.segmentType!));
+      return segments.filter((s) => s.id.includes(options.segmentType!));
     }
-    
+
     if (options?.minProbability) {
-      return segments.filter(s => s.averageProbability >= options.minProbability!);
+      return segments.filter(
+        (s) => s.averageProbability >= options.minProbability!,
+      );
     }
-    
+
     return segments;
   }
 
@@ -523,11 +587,15 @@ class PredictionService {
     // In production, would fetch from analytics database
     // For now, return simulated metrics
     const now = new Date();
-    const signupDate = new Date(now.getTime() - Math.random() * 90 * 24 * 60 * 60 * 1000); // Random 0-90 days ago
-    
+    const signupDate = new Date(
+      now.getTime() - Math.random() * 90 * 24 * 60 * 60 * 1000,
+    ); // Random 0-90 days ago
+
     return {
       userId,
-      lastActiveDate: new Date(now.getTime() - Math.random() * 14 * 24 * 60 * 60 * 1000), // Random 0-14 days ago
+      lastActiveDate: new Date(
+        now.getTime() - Math.random() * 14 * 24 * 60 * 60 * 1000,
+      ), // Random 0-14 days ago
       sessionCount: Math.floor(Math.random() * 50) + 5,
       averageSessionDuration: Math.random() * 600 + 60, // 1-11 minutes
       featureUsageCount: {
@@ -538,7 +606,9 @@ class PredictionService {
       },
       contentCreatedCount: Math.floor(Math.random() * 30),
       interactionCount: Math.floor(Math.random() * 50),
-      daysSinceSignup: Math.floor((now.getTime() - signupDate.getTime()) / (1000 * 60 * 60 * 24)),
+      daysSinceSignup: Math.floor(
+        (now.getTime() - signupDate.getTime()) / (1000 * 60 * 60 * 24),
+      ),
       activityTrend: Math.random() * 2 - 1, // -1 to 1
     };
   }
@@ -547,9 +617,10 @@ class PredictionService {
    * Prepare features for churn model
    */
   private prepareChurnFeatures(metrics: UserMetrics): number[] {
-    const daysSinceActive = (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceActive =
+      (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
     const featuresUsed = Object.keys(metrics.featureUsageCount).length;
-    
+
     return [
       daysSinceActive / 30, // Normalize to 0-1 range
       metrics.sessionCount / 100,
@@ -564,11 +635,13 @@ class PredictionService {
    * Analyze churn factors
    */
   private analyzeChurnFactors(metrics: UserMetrics): PredictionFactors {
-    const daysSinceActive = (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceActive =
+      (Date.now() - metrics.lastActiveDate.getTime()) / (1000 * 60 * 60 * 24);
     const featuresUsed = Object.keys(metrics.featureUsageCount).length;
-    
+
     return {
-      activityDecline: metrics.activityTrend < 0 ? Math.abs(metrics.activityTrend) : 0,
+      activityDecline:
+        metrics.activityTrend < 0 ? Math.abs(metrics.activityTrend) : 0,
       lowEngagement: metrics.averageSessionDuration < 120 ? 0.3 : 0,
       featureAdoption: featuresUsed < 3 ? 0.4 : 0,
       sessionFrequency: daysSinceActive > 7 ? 0.5 : 0,

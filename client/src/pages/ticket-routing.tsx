@@ -1,25 +1,53 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { 
-  Send, 
-  ArrowUpRight, 
-  UserCheck, 
-  AlertCircle, 
-  Settings, 
+import {
+  Send,
+  ArrowUpRight,
+  UserCheck,
+  AlertCircle,
+  Settings,
   TrendingUp,
   Users,
   CheckCircle,
@@ -28,7 +56,7 @@ import {
   Plus,
   ChevronRight,
   BrainCircuit,
-  Activity
+  Activity,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -126,29 +154,37 @@ export default function TicketRouting() {
   const [activeTab, setActiveTab] = useState("tickets");
 
   // Queries
-  const { data: tickets, isLoading: loadingTickets } = useQuery<{ tickets: Ticket[] }>({
+  const { data: tickets, isLoading: loadingTickets } = useQuery<{
+    tickets: Ticket[];
+  }>({
     queryKey: ["/api/routing/tickets"],
     enabled: activeTab === "tickets",
   });
 
-  const { data: rules, isLoading: loadingRules } = useQuery<{ rules: RoutingRule[] }>({
+  const { data: rules, isLoading: loadingRules } = useQuery<{
+    rules: RoutingRule[];
+  }>({
     queryKey: ["/api/routing/rules"],
     enabled: activeTab === "rules",
   });
 
-  const { data: agents, isLoading: loadingAgents } = useQuery<{ agents: Agent[] }>({
+  const { data: agents, isLoading: loadingAgents } = useQuery<{
+    agents: Agent[];
+  }>({
     queryKey: ["/api/routing/agents"],
     enabled: activeTab === "agents",
   });
 
-  const { data: metrics, isLoading: loadingMetrics } = useQuery<{ metrics: RoutingMetrics }>({
+  const { data: metrics, isLoading: loadingMetrics } = useQuery<{
+    metrics: RoutingMetrics;
+  }>({
     queryKey: ["/api/routing/performance"],
     enabled: activeTab === "dashboard",
   });
 
   // Mutations
   const createTicketMutation = useMutation({
-    mutationFn: (data: CreateTicketForm) => 
+    mutationFn: (data: CreateTicketForm) =>
       apiRequest("/api/routing/tickets", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
@@ -161,7 +197,7 @@ export default function TicketRouting() {
   });
 
   const assignTicketMutation = useMutation({
-    mutationFn: (ticketId: string) => 
+    mutationFn: (ticketId: string) =>
       apiRequest(`/api/routing/assign/${ticketId}`, "POST"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
@@ -174,7 +210,7 @@ export default function TicketRouting() {
   });
 
   const escalateTicketMutation = useMutation({
-    mutationFn: ({ ticketId, reason }: { ticketId: string; reason: string }) => 
+    mutationFn: ({ ticketId, reason }: { ticketId: string; reason: string }) =>
       apiRequest(`/api/routing/escalate/${ticketId}`, "POST", { reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
@@ -190,15 +226,32 @@ export default function TicketRouting() {
       const processed = {
         name: data.name,
         condition: {
-          keywords: data.keywords ? data.keywords.split(',').map(k => k.trim()).filter(k => k) : undefined,
-          categories: data.categories ? data.categories.split(',').map(c => c.trim()).filter(c => c) : undefined,
-          priorities: data.priorities ? data.priorities.split(',').map(p => p.trim()).filter(p => p) : undefined,
+          keywords: data.keywords
+            ? data.keywords
+                .split(",")
+                .map((k) => k.trim())
+                .filter((k) => k)
+            : undefined,
+          categories: data.categories
+            ? data.categories
+                .split(",")
+                .map((c) => c.trim())
+                .filter((c) => c)
+            : undefined,
+          priorities: data.priorities
+            ? data.priorities
+                .split(",")
+                .map((p) => p.trim())
+                .filter((p) => p)
+            : undefined,
         },
         assigned_to: data.assigned_to,
         priority: data.priority ? parseInt(data.priority) : 100,
-        confidence_threshold: data.confidence_threshold ? parseFloat(data.confidence_threshold) : 0.7,
+        confidence_threshold: data.confidence_threshold
+          ? parseFloat(data.confidence_threshold)
+          : 0.7,
       };
-      
+
       return apiRequest("/api/routing/rules", "POST", processed);
     },
     onSuccess: () => {
@@ -212,7 +265,7 @@ export default function TicketRouting() {
   });
 
   const toggleRuleMutation = useMutation({
-    mutationFn: ({ ruleId, isActive }: { ruleId: string; isActive: boolean }) => 
+    mutationFn: ({ ruleId, isActive }: { ruleId: string; isActive: boolean }) =>
       apiRequest(`/api/routing/rules/${ruleId}`, "PUT", { isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/rules"] });
@@ -250,22 +303,33 @@ export default function TicketRouting() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critical": return "bg-red-500";
-      case "high": return "bg-orange-500";
-      case "medium": return "bg-yellow-500";
-      case "low": return "bg-green-500";
-      default: return "bg-gray-500";
+      case "critical":
+        return "bg-red-500";
+      case "high":
+        return "bg-orange-500";
+      case "medium":
+        return "bg-yellow-500";
+      case "low":
+        return "bg-green-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "new": return "bg-blue-500";
-      case "assigned": return "bg-purple-500";
-      case "in_progress": return "bg-yellow-500";
-      case "resolved": return "bg-green-500";
-      case "escalated": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "new":
+        return "bg-blue-500";
+      case "assigned":
+        return "bg-purple-500";
+      case "in_progress":
+        return "bg-yellow-500";
+      case "resolved":
+        return "bg-green-500";
+      case "escalated":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -287,7 +351,10 @@ export default function TicketRouting() {
             <Settings className="h-4 w-4 mr-2" />
             Manage Rules
           </Button>
-          <Button onClick={() => setShowCreateTicket(true)} data-testid="button-create-ticket">
+          <Button
+            onClick={() => setShowCreateTicket(true)}
+            data-testid="button-create-ticket"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Ticket
           </Button>
@@ -332,11 +399,16 @@ export default function TicketRouting() {
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Tickets
+                    </CardTitle>
                     <Send className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold" data-testid="metric-total-tickets">
+                    <div
+                      className="text-2xl font-bold"
+                      data-testid="metric-total-tickets"
+                    >
                       {metrics.metrics.totalTickets}
                     </div>
                     <p className="text-xs text-muted-foreground">All time</p>
@@ -345,37 +417,58 @@ export default function TicketRouting() {
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg Confidence</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Avg Confidence
+                    </CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold" data-testid="metric-avg-confidence">
+                    <div
+                      className="text-2xl font-bold"
+                      data-testid="metric-avg-confidence"
+                    >
                       {(metrics.metrics.avgConfidence * 100).toFixed(1)}%
                     </div>
-                    <Progress value={metrics.metrics.avgConfidence * 100} className="mt-2" />
+                    <Progress
+                      value={metrics.metrics.avgConfidence * 100}
+                      className="mt-2"
+                    />
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Routing Accuracy</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Routing Accuracy
+                    </CardTitle>
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold" data-testid="metric-routing-accuracy">
+                    <div
+                      className="text-2xl font-bold"
+                      data-testid="metric-routing-accuracy"
+                    >
                       {(metrics.metrics.routingAccuracy * 100).toFixed(1)}%
                     </div>
-                    <Progress value={metrics.metrics.routingAccuracy * 100} className="mt-2" />
+                    <Progress
+                      value={metrics.metrics.routingAccuracy * 100}
+                      className="mt-2"
+                    />
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Response Time</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Response Time
+                    </CardTitle>
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold" data-testid="metric-response-time">
+                    <div
+                      className="text-2xl font-bold"
+                      data-testid="metric-response-time"
+                    >
                       {metrics.metrics.avgResponseTime.toFixed(0)}m
                     </div>
                     <p className="text-xs text-muted-foreground">Average</p>
@@ -392,12 +485,19 @@ export default function TicketRouting() {
                   <CardContent>
                     <div className="space-y-4">
                       {metrics.metrics.topAgents.map((agent, idx) => (
-                        <div key={idx} className="flex items-center justify-between">
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center gap-2">
                             <UserCheck className="h-4 w-4 text-muted-foreground" />
-                            <span data-testid={`top-agent-${idx}`}>{agent.agent}</span>
+                            <span data-testid={`top-agent-${idx}`}>
+                              {agent.agent}
+                            </span>
                           </div>
-                          <Badge variant="secondary">{agent.count} tickets</Badge>
+                          <Badge variant="secondary">
+                            {agent.count} tickets
+                          </Badge>
                         </div>
                       ))}
                     </div>
@@ -412,10 +512,15 @@ export default function TicketRouting() {
                   <CardContent>
                     <div className="space-y-4">
                       {metrics.metrics.methodBreakdown.map((method, idx) => (
-                        <div key={idx} className="flex items-center justify-between">
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center gap-2">
                             <BrainCircuit className="h-4 w-4 text-muted-foreground" />
-                            <span data-testid={`method-${idx}`}>{method.method}</span>
+                            <span data-testid={`method-${idx}`}>
+                              {method.method}
+                            </span>
                           </div>
                           <Badge variant="outline">{method.count} uses</Badge>
                         </div>
@@ -429,7 +534,9 @@ export default function TicketRouting() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Activity className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No metrics available yet</p>
+                <p className="text-muted-foreground">
+                  No metrics available yet
+                </p>
               </CardContent>
             </Card>
           )}
@@ -454,11 +561,18 @@ export default function TicketRouting() {
           ) : (tickets?.tickets?.length || 0) > 0 ? (
             <div className="grid gap-4">
               {tickets?.tickets?.map((ticket: Ticket) => (
-                <Card key={ticket.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedTicket(ticket)}>
+                <Card
+                  key={ticket.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => setSelectedTicket(ticket)}
+                >
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <CardTitle className="text-lg" data-testid={`ticket-title-${ticket.id}`}>
+                        <CardTitle
+                          className="text-lg"
+                          data-testid={`ticket-title-${ticket.id}`}
+                        >
                           {ticket.title}
                         </CardTitle>
                         <div className="flex gap-2">
@@ -488,7 +602,8 @@ export default function TicketRouting() {
                             Route
                           </Button>
                         )}
-                        {(ticket.status === "assigned" || ticket.status === "in_progress") && (
+                        {(ticket.status === "assigned" ||
+                          ticket.status === "in_progress") && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -507,7 +622,10 @@ export default function TicketRouting() {
                         )}
                       </div>
                     </div>
-                    <CardDescription className="mt-2" data-testid={`ticket-description-${ticket.id}`}>
+                    <CardDescription
+                      className="mt-2"
+                      data-testid={`ticket-description-${ticket.id}`}
+                    >
                       {ticket.description.substring(0, 150)}
                       {ticket.description.length > 150 && "..."}
                     </CardDescription>
@@ -564,7 +682,10 @@ export default function TicketRouting() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg" data-testid={`agent-name-${agent.agent_id}`}>
+                        <CardTitle
+                          className="text-lg"
+                          data-testid={`agent-name-${agent.agent_id}`}
+                        >
                           {agent.name}
                         </CardTitle>
                         {agent.email && (
@@ -572,8 +693,13 @@ export default function TicketRouting() {
                         )}
                       </div>
                       <Badge
-                        variant={agent.availability === "available" ? "default" : 
-                                agent.availability === "busy" ? "secondary" : "outline"}
+                        variant={
+                          agent.availability === "available"
+                            ? "default"
+                            : agent.availability === "busy"
+                              ? "secondary"
+                              : "outline"
+                        }
                       >
                         {agent.availability}
                       </Badge>
@@ -584,17 +710,27 @@ export default function TicketRouting() {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span>Workload</span>
-                          <span>{agent.current_load}/{agent.max_capacity}</span>
+                          <span>
+                            {agent.current_load}/{agent.max_capacity}
+                          </span>
                         </div>
-                        <Progress value={(agent.current_load / agent.max_capacity) * 100} />
+                        <Progress
+                          value={
+                            (agent.current_load / agent.max_capacity) * 100
+                          }
+                        />
                       </div>
-                      
+
                       {agent.skills && agent.skills.length > 0 && (
                         <div>
                           <p className="text-sm font-medium mb-2">Skills:</p>
                           <div className="flex flex-wrap gap-1">
                             {agent.skills.map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {skill.skill} (L{skill.level})
                               </Badge>
                             ))}
@@ -639,11 +775,16 @@ export default function TicketRouting() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg" data-testid={`rule-name-${rule.id}`}>
+                        <CardTitle
+                          className="text-lg"
+                          data-testid={`rule-name-${rule.id}`}
+                        >
                           {rule.name}
                         </CardTitle>
                         {rule.metadata?.description && (
-                          <CardDescription>{rule.metadata.description}</CardDescription>
+                          <CardDescription>
+                            {rule.metadata.description}
+                          </CardDescription>
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -653,10 +794,12 @@ export default function TicketRouting() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => toggleRuleMutation.mutate({
-                            ruleId: rule.id,
-                            isActive: !rule.isActive,
-                          })}
+                          onClick={() =>
+                            toggleRuleMutation.mutate({
+                              ruleId: rule.id,
+                              isActive: !rule.isActive,
+                            })
+                          }
                           data-testid={`button-toggle-rule-${rule.id}`}
                         >
                           {rule.isActive ? "Disable" : "Enable"}
@@ -675,35 +818,43 @@ export default function TicketRouting() {
                         <span>{rule.priority}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">Confidence Threshold:</span>
-                        <span>{(rule.confidence_threshold * 100).toFixed(0)}%</span>
+                        <span className="font-medium">
+                          Confidence Threshold:
+                        </span>
+                        <span>
+                          {(rule.confidence_threshold * 100).toFixed(0)}%
+                        </span>
                       </div>
-                      
-                      {rule.condition.keywords && rule.condition.keywords.length > 0 && (
-                        <div>
-                          <span className="font-medium">Keywords:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {rule.condition.keywords.map((keyword, idx) => (
-                              <Badge key={idx} variant="secondary">
-                                {keyword}
-                              </Badge>
-                            ))}
+
+                      {rule.condition.keywords &&
+                        rule.condition.keywords.length > 0 && (
+                          <div>
+                            <span className="font-medium">Keywords:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {rule.condition.keywords.map((keyword, idx) => (
+                                <Badge key={idx} variant="secondary">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {rule.condition.categories && rule.condition.categories.length > 0 && (
-                        <div>
-                          <span className="font-medium">Categories:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {rule.condition.categories.map((category, idx) => (
-                              <Badge key={idx} variant="secondary">
-                                {category}
-                              </Badge>
-                            ))}
+                        )}
+
+                      {rule.condition.categories &&
+                        rule.condition.categories.length > 0 && (
+                          <div>
+                            <span className="font-medium">Categories:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {rule.condition.categories.map(
+                                (category, idx) => (
+                                  <Badge key={idx} variant="secondary">
+                                    {category}
+                                  </Badge>
+                                ),
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </CardContent>
                 </Card>
@@ -713,7 +864,9 @@ export default function TicketRouting() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <BrainCircuit className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No routing rules configured</p>
+                <p className="text-muted-foreground">
+                  No routing rules configured
+                </p>
                 <Button
                   className="mt-4"
                   onClick={() => setShowCreateRule(true)}
@@ -737,7 +890,12 @@ export default function TicketRouting() {
             </DialogDescription>
           </DialogHeader>
           <Form {...ticketForm}>
-            <form onSubmit={ticketForm.handleSubmit((data) => createTicketMutation.mutate(data))} className="space-y-4">
+            <form
+              onSubmit={ticketForm.handleSubmit((data) =>
+                createTicketMutation.mutate(data),
+              )}
+              className="space-y-4"
+            >
               <FormField
                 control={ticketForm.control}
                 name="title"
@@ -745,13 +903,17 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Brief description of the issue" {...field} data-testid="input-ticket-title" />
+                      <Input
+                        placeholder="Brief description of the issue"
+                        {...field}
+                        data-testid="input-ticket-title"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={ticketForm.control}
                 name="description"
@@ -759,7 +921,7 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Detailed description of the issue..."
                         className="min-h-[100px]"
                         {...field}
@@ -770,7 +932,7 @@ export default function TicketRouting() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={ticketForm.control}
@@ -778,7 +940,10 @@ export default function TicketRouting() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger data-testid="select-ticket-category">
                             <SelectValue placeholder="Select category" />
@@ -788,7 +953,9 @@ export default function TicketRouting() {
                           <SelectItem value="technical">Technical</SelectItem>
                           <SelectItem value="billing">Billing</SelectItem>
                           <SelectItem value="account">Account</SelectItem>
-                          <SelectItem value="feature">Feature Request</SelectItem>
+                          <SelectItem value="feature">
+                            Feature Request
+                          </SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -796,14 +963,17 @@ export default function TicketRouting() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={ticketForm.control}
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Priority</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger data-testid="select-ticket-priority">
                             <SelectValue placeholder="Select priority" />
@@ -821,7 +991,7 @@ export default function TicketRouting() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={ticketForm.control}
                 name="submittedBy"
@@ -829,19 +999,34 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Submitter Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="user@example.com" {...field} data-testid="input-ticket-submitter" />
+                      <Input
+                        type="email"
+                        placeholder="user@example.com"
+                        {...field}
+                        data-testid="input-ticket-submitter"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowCreateTicket(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateTicket(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createTicketMutation.isPending} data-testid="button-submit-ticket">
-                  {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
+                <Button
+                  type="submit"
+                  disabled={createTicketMutation.isPending}
+                  data-testid="button-submit-ticket"
+                >
+                  {createTicketMutation.isPending
+                    ? "Creating..."
+                    : "Create Ticket"}
                 </Button>
               </DialogFooter>
             </form>
@@ -859,7 +1044,12 @@ export default function TicketRouting() {
             </DialogDescription>
           </DialogHeader>
           <Form {...ruleForm}>
-            <form onSubmit={ruleForm.handleSubmit((data) => createRuleMutation.mutate(data))} className="space-y-4">
+            <form
+              onSubmit={ruleForm.handleSubmit((data) =>
+                createRuleMutation.mutate(data),
+              )}
+              className="space-y-4"
+            >
               <FormField
                 control={ruleForm.control}
                 name="name"
@@ -867,13 +1057,17 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Rule Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Route billing to finance team" {...field} data-testid="input-rule-name" />
+                      <Input
+                        placeholder="e.g., Route billing to finance team"
+                        {...field}
+                        data-testid="input-rule-name"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={ruleForm.control}
                 name="keywords"
@@ -881,7 +1075,11 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Keywords (comma-separated)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., payment, invoice, refund" {...field} data-testid="input-rule-keywords" />
+                      <Input
+                        placeholder="e.g., payment, invoice, refund"
+                        {...field}
+                        data-testid="input-rule-keywords"
+                      />
                     </FormControl>
                     <FormDescription>
                       Tickets containing these keywords will match this rule
@@ -890,7 +1088,7 @@ export default function TicketRouting() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={ruleForm.control}
                 name="categories"
@@ -898,7 +1096,11 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Categories (comma-separated)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., billing, technical" {...field} data-testid="input-rule-categories" />
+                      <Input
+                        placeholder="e.g., billing, technical"
+                        {...field}
+                        data-testid="input-rule-categories"
+                      />
                     </FormControl>
                     <FormDescription>
                       Tickets with these categories will match this rule
@@ -907,7 +1109,7 @@ export default function TicketRouting() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={ruleForm.control}
                 name="priorities"
@@ -915,7 +1117,11 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Priorities (comma-separated)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., critical, high" {...field} data-testid="input-rule-priorities" />
+                      <Input
+                        placeholder="e.g., critical, high"
+                        {...field}
+                        data-testid="input-rule-priorities"
+                      />
                     </FormControl>
                     <FormDescription>
                       Tickets with these priorities will match this rule
@@ -924,7 +1130,7 @@ export default function TicketRouting() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={ruleForm.control}
                 name="assigned_to"
@@ -932,7 +1138,11 @@ export default function TicketRouting() {
                   <FormItem>
                     <FormLabel>Assign To</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., finance-team or john@example.com" {...field} data-testid="input-rule-assignto" />
+                      <Input
+                        placeholder="e.g., finance-team or john@example.com"
+                        {...field}
+                        data-testid="input-rule-assignto"
+                      />
                     </FormControl>
                     <FormDescription>
                       Team or agent to assign matching tickets to
@@ -941,7 +1151,7 @@ export default function TicketRouting() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={ruleForm.control}
@@ -950,7 +1160,12 @@ export default function TicketRouting() {
                     <FormItem>
                       <FormLabel>Rule Priority</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" {...field} data-testid="input-rule-priority" />
+                        <Input
+                          type="number"
+                          placeholder="100"
+                          {...field}
+                          data-testid="input-rule-priority"
+                        />
                       </FormControl>
                       <FormDescription>
                         Higher priority rules are evaluated first
@@ -959,7 +1174,7 @@ export default function TicketRouting() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={ruleForm.control}
                   name="confidence_threshold"
@@ -967,7 +1182,15 @@ export default function TicketRouting() {
                     <FormItem>
                       <FormLabel>Confidence Threshold</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" min="0" max="1" placeholder="0.7" {...field} data-testid="input-rule-confidence" />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="1"
+                          placeholder="0.7"
+                          {...field}
+                          data-testid="input-rule-confidence"
+                        />
                       </FormControl>
                       <FormDescription>
                         Minimum confidence required (0-1)
@@ -977,12 +1200,20 @@ export default function TicketRouting() {
                   )}
                 />
               </div>
-              
+
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowCreateRule(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateRule(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createRuleMutation.isPending} data-testid="button-submit-rule">
+                <Button
+                  type="submit"
+                  disabled={createRuleMutation.isPending}
+                  data-testid="button-submit-rule"
+                >
                   {createRuleMutation.isPending ? "Creating..." : "Create Rule"}
                 </Button>
               </DialogFooter>

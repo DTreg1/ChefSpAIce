@@ -1,14 +1,14 @@
 /**
  * @file server/storage/facades/AdminStorage.ts
  * @description AdminStorage facade consolidating administrative storage operations
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (AdminStorage) for dependency injection and testing
  * - Export singleton INSTANCE (adminStorageFacade) for convenience in production code
- * 
+ *
  * PATTERN: Facades instantiate their own instances of domain storage classes.
  * This enables dependency injection and isolated testing of each domain.
- * 
+ *
  * ERROR HANDLING PATTERN:
  * - Facades do NOT catch and swallow storage errors
  * - Facades add context to errors via proxy wrapper before propagating
@@ -27,7 +27,7 @@ const FACADE_NAME = "admin" as const;
 
 /**
  * AdminStorage facade that consolidates all admin-related storage modules
- * 
+ *
  * All domain storage instances are wrapped with error boundary proxies that:
  * 1. Log errors at facade level for observability
  * 2. Enrich StorageErrors with facade context
@@ -44,27 +44,27 @@ export class AdminStorage {
     this.billing = createDomainStorageProxy(
       new BillingStorage(),
       FACADE_NAME,
-      "billing"
+      "billing",
     );
     this.security = createDomainStorageProxy(
       new SecurityStorage(),
       FACADE_NAME,
-      "security"
+      "security",
     );
     this.pricing = createDomainStorageProxy(
       new PricingStorage(),
       FACADE_NAME,
-      "pricing"
+      "pricing",
     );
     this.experiments = createDomainStorageProxy(
       new ExperimentsStorage(),
       FACADE_NAME,
-      "experiments"
+      "experiments",
     );
     this.support = createDomainStorageProxy(
       new SupportStorage(),
       FACADE_NAME,
-      "support"
+      "support",
     );
   }
 }

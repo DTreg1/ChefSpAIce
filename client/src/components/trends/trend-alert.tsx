@@ -1,10 +1,23 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, BellOff, CheckCircle, AlertCircle, Clock, Settings } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Settings,
+} from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -51,7 +64,13 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
 
   // Mutation to toggle alert active status
   const toggleAlert = useMutation({
-    mutationFn: async ({ alertId, isActive }: { alertId: string; isActive: boolean }) => {
+    mutationFn: async ({
+      alertId,
+      isActive,
+    }: {
+      alertId: string;
+      isActive: boolean;
+    }) => {
       return apiRequest(`/api/trends/${alertId}`, "PATCH", { isActive });
     },
     onSuccess: () => {
@@ -82,7 +101,7 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
     if (isAcknowledged) {
       return <CheckCircle className="w-4 h-4 text-green-500" />;
     }
-    
+
     switch (type) {
       case "emergence":
         return <Bell className="w-4 h-4 text-blue-500" />;
@@ -96,8 +115,8 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
     }
   };
 
-  const unacknowledgedAlerts = alerts.filter(a => !a.acknowledgedAt);
-  const acknowledgedAlerts = alerts.filter(a => a.acknowledgedAt);
+  const unacknowledgedAlerts = alerts.filter((a) => !a.acknowledgedAt);
+  const acknowledgedAlerts = alerts.filter((a) => a.acknowledgedAt);
 
   return (
     <Card>
@@ -141,13 +160,25 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
                                 {alert.conditions && (
                                   <div className="text-xs">
                                     {alert.conditions.minGrowthRate && (
-                                      <div>Growth threshold: {alert.conditions.minGrowthRate}%</div>
+                                      <div>
+                                        Growth threshold:{" "}
+                                        {alert.conditions.minGrowthRate}%
+                                      </div>
                                     )}
                                     {alert.conditions.minConfidence && (
-                                      <div>Confidence: {(alert.conditions.minConfidence * 100).toFixed(0)}%</div>
+                                      <div>
+                                        Confidence:{" "}
+                                        {(
+                                          alert.conditions.minConfidence * 100
+                                        ).toFixed(0)}
+                                        %
+                                      </div>
                                     )}
                                     {alert.conditions.keywords?.length > 0 && (
-                                      <div>Keywords: {alert.conditions.keywords.join(", ")}</div>
+                                      <div>
+                                        Keywords:{" "}
+                                        {alert.conditions.keywords.join(", ")}
+                                      </div>
                                     )}
                                   </div>
                                 )}
@@ -169,8 +200,11 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
                             </Button>
                             <Switch
                               checked={alert.isActive}
-                              onCheckedChange={(checked) => 
-                                toggleAlert.mutate({ alertId: alert.id, isActive: checked })
+                              onCheckedChange={(checked) =>
+                                toggleAlert.mutate({
+                                  alertId: alert.id,
+                                  isActive: checked,
+                                })
                               }
                               data-testid={`switch-alert-${alert.id}`}
                             />
@@ -190,8 +224,8 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
                   </h4>
                   <div className="space-y-2">
                     {acknowledgedAlerts.map((alert) => (
-                      <div 
-                        key={alert.id} 
+                      <div
+                        key={alert.id}
                         className="flex items-center justify-between p-3 border rounded-lg opacity-60"
                       >
                         <div className="flex items-center gap-3">
@@ -201,18 +235,26 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
                               {getAlertTypeLabel(alert.alertType)}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Acknowledged {new Date(alert.acknowledgedAt!).toLocaleDateString()}
+                              Acknowledged{" "}
+                              {new Date(
+                                alert.acknowledgedAt!,
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={alert.isActive ? "default" : "secondary"}>
+                          <Badge
+                            variant={alert.isActive ? "default" : "secondary"}
+                          >
                             {alert.isActive ? "Active" : "Paused"}
                           </Badge>
                           <Switch
                             checked={alert.isActive}
-                            onCheckedChange={(checked) => 
-                              toggleAlert.mutate({ alertId: alert.id, isActive: checked })
+                            onCheckedChange={(checked) =>
+                              toggleAlert.mutate({
+                                alertId: alert.id,
+                                isActive: checked,
+                              })
                             }
                             data-testid={`switch-acknowledged-${alert.id}`}
                           />
@@ -228,7 +270,9 @@ export function TrendAlert({ alerts }: TrendAlertProps) {
           <div className="text-center py-8 text-muted-foreground">
             <BellOff className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No active alerts</p>
-            <p className="text-sm mt-2">Subscribe to trends to receive notifications</p>
+            <p className="text-sm mt-2">
+              Subscribe to trends to receive notifications
+            </p>
             <Button variant="outline" size="sm" className="mt-4">
               <Settings className="w-4 h-4 mr-2" />
               Configure Alerts

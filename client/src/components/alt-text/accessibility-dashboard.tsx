@@ -1,23 +1,29 @@
 /**
  * Accessibility Dashboard Component
- * 
+ *
  * Displays comprehensive accessibility reports and metrics for images.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  XCircle, 
+import {
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
   TrendingUp,
   Image as ImageIcon,
   Award,
   BarChart3,
-  Eye
+  Eye,
 } from "lucide-react";
 import {
   PieChart,
@@ -30,7 +36,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid
+  CartesianGrid,
 } from "recharts";
 
 interface AccessibilityDashboardProps {
@@ -38,7 +44,10 @@ interface AccessibilityDashboardProps {
   dateRange?: { start: Date; end: Date };
 }
 
-export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashboardProps) {
+export function AccessibilityDashboard({
+  userId,
+  dateRange,
+}: AccessibilityDashboardProps) {
   // Fetch accessibility report
   const reportQuery = useQuery({
     queryKey: ["/api/images/report", dateRange],
@@ -49,8 +58,8 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
         params.append("endDate", dateRange.end.toISOString());
       }
       const url = `/api/images/report${params.toString() ? `?${params}` : ""}`;
-      return fetch(url).then(res => res.json());
-    }
+      return fetch(url).then((res) => res.json());
+    },
   });
 
   const report = reportQuery.data?.data;
@@ -81,15 +90,24 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
 
   // Prepare chart data
   const coverageData = [
-    { name: "With Alt Text", value: report.imagesWithAltText, color: "#10b981" },
-    { name: "Without Alt Text", value: report.totalImages - report.imagesWithAltText - report.decorativeImages, color: "#ef4444" },
-    { name: "Decorative", value: report.decorativeImages, color: "#6b7280" }
+    {
+      name: "With Alt Text",
+      value: report.imagesWithAltText,
+      color: "#10b981",
+    },
+    {
+      name: "Without Alt Text",
+      value:
+        report.totalImages - report.imagesWithAltText - report.decorativeImages,
+      color: "#ef4444",
+    },
+    { name: "Decorative", value: report.decorativeImages, color: "#6b7280" },
   ];
 
   const wcagData = [
     { level: "A", count: report.wcagCompliance.A, color: "#fbbf24" },
     { level: "AA", count: report.wcagCompliance.AA, color: "#60a5fa" },
-    { level: "AAA", count: report.wcagCompliance.AAA, color: "#10b981" }
+    { level: "AAA", count: report.wcagCompliance.AAA, color: "#10b981" },
   ];
 
   const getScoreColor = (score: number) => {
@@ -98,7 +116,9 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
     return "text-red-600";
   };
 
-  const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
+  const getScoreBadgeVariant = (
+    score: number,
+  ): "default" | "secondary" | "destructive" => {
     if (score >= 80) return "default";
     if (score >= 60) return "secondary";
     return "destructive";
@@ -117,12 +137,15 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{report.totalImages}</div>
-            <Progress 
-              value={(report.imagesWithAltText / report.totalImages) * 100} 
+            <Progress
+              value={(report.imagesWithAltText / report.totalImages) * 100}
               className="mt-2 h-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              {Math.round((report.imagesWithAltText / report.totalImages) * 100)}% have alt text
+              {Math.round(
+                (report.imagesWithAltText / report.totalImages) * 100,
+              )}
+              % have alt text
             </p>
           </CardContent>
         </Card>
@@ -135,15 +158,20 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getScoreColor(report.averageQualityScore)}`}>
+            <div
+              className={`text-2xl font-bold ${getScoreColor(report.averageQualityScore)}`}
+            >
               {Math.round(report.averageQualityScore)}%
             </div>
-            <Badge 
+            <Badge
               variant={getScoreBadgeVariant(report.averageQualityScore)}
               className="mt-2"
             >
-              {report.averageQualityScore >= 80 ? "Excellent" :
-               report.averageQualityScore >= 60 ? "Good" : "Needs Work"}
+              {report.averageQualityScore >= 80
+                ? "Excellent"
+                : report.averageQualityScore >= 60
+                  ? "Good"
+                  : "Needs Work"}
             </Badge>
           </CardContent>
         </Card>
@@ -156,7 +184,9 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getScoreColor(report.averageAccessibilityScore)}`}>
+            <div
+              className={`text-2xl font-bold ${getScoreColor(report.averageAccessibilityScore)}`}
+            >
               {Math.round(report.averageAccessibilityScore)}%
             </div>
             <div className="flex gap-1 mt-2">
@@ -197,9 +227,15 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
       {/* Detailed Charts */}
       <Tabs defaultValue="coverage" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="coverage" data-testid="tab-coverage">Coverage</TabsTrigger>
-          <TabsTrigger value="compliance" data-testid="tab-compliance">WCAG Compliance</TabsTrigger>
-          <TabsTrigger value="improvements" data-testid="tab-improvements">Improvements</TabsTrigger>
+          <TabsTrigger value="coverage" data-testid="tab-coverage">
+            Coverage
+          </TabsTrigger>
+          <TabsTrigger value="compliance" data-testid="tab-compliance">
+            WCAG Compliance
+          </TabsTrigger>
+          <TabsTrigger value="improvements" data-testid="tab-improvements">
+            Improvements
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="coverage" className="space-y-4">
@@ -218,7 +254,9 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -266,21 +304,22 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
             <CardHeader>
               <CardTitle>Images Needing Improvement</CardTitle>
               <CardDescription>
-                {report.needsImprovement.length} images have quality scores below 70%
+                {report.needsImprovement.length} images have quality scores
+                below 70%
               </CardDescription>
             </CardHeader>
             <CardContent>
               {report.needsImprovement.length > 0 ? (
                 <div className="space-y-3">
                   {report.needsImprovement.slice(0, 5).map((image: any) => (
-                    <div 
+                    <div
                       key={image.id}
                       className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {image.imageUrl && (
-                          <img 
-                            src={image.imageUrl} 
+                          <img
+                            src={image.imageUrl}
                             alt={image.altText || "No alt text"}
                             className="w-12 h-12 rounded object-cover"
                           />
@@ -290,16 +329,18 @@ export function AccessibilityDashboard({ userId, dateRange }: AccessibilityDashb
                             {image.title || `Image ${image.id.slice(0, 8)}...`}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {image.altText ? 
-                              (image.altText.length > 50 ? 
-                                `${image.altText.slice(0, 50)}...` : 
-                                image.altText) : 
-                              "No alt text"
-                            }
+                            {image.altText
+                              ? image.altText.length > 50
+                                ? `${image.altText.slice(0, 50)}...`
+                                : image.altText
+                              : "No alt text"}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="destructive" className="flex items-center gap-1">
+                      <Badge
+                        variant="destructive"
+                        className="flex items-center gap-1"
+                      >
                         <AlertCircle className="w-3 h-3" />
                         Needs Review
                       </Badge>

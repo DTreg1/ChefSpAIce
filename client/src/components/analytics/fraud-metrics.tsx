@@ -11,21 +11,21 @@ import {
   Users,
   Ban,
   Eye,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -35,7 +35,7 @@ interface FraudMetric {
   label: string;
   value: number | string;
   change?: number;
-  changeType?: 'increase' | 'decrease' | 'stable';
+  changeType?: "increase" | "decrease" | "stable";
   icon: React.ComponentType<{ className?: string }>;
   color?: string;
   subtext?: string;
@@ -47,26 +47,30 @@ interface FraudMetricsProps {
   className?: string;
 }
 
-export function FraudMetrics({ 
-  compact = false, 
+export function FraudMetrics({
+  compact = false,
   refreshInterval = 30000,
-  className 
+  className,
 }: FraudMetricsProps) {
-  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('day');
+  const [timeRange, setTimeRange] = useState<"day" | "week" | "month">("day");
   const [isLive, setIsLive] = useState(false);
 
   // Fetch fraud report data
-  const { data: reportData = {
-    averageScore: 0,
-    totalScores: 0,
-    highRiskCount: 0,
-    suspiciousActivitiesCount: 0,
-    autoBlockedCount: 0,
-    reviewsCount: 0,
-    riskDistribution: [],
-    topActivityTypes: [],
-    alerts: []
-  }, isLoading, refetch } = useQuery<{
+  const {
+    data: reportData = {
+      averageScore: 0,
+      totalScores: 0,
+      highRiskCount: 0,
+      suspiciousActivitiesCount: 0,
+      autoBlockedCount: 0,
+      reviewsCount: 0,
+      riskDistribution: [],
+      topActivityTypes: [],
+      alerts: [],
+    },
+    isLoading,
+    refetch,
+  } = useQuery<{
     averageScore: number;
     totalScores: number;
     highRiskCount: number;
@@ -78,13 +82,13 @@ export function FraudMetrics({
     alerts: any[];
   }>({
     queryKey: ["/api/fraud/report", timeRange],
-    refetchInterval: isLive ? refreshInterval : false
+    refetchInterval: isLive ? refreshInterval : false,
   });
 
   // Fetch current alerts
   const { data: alertData = { alerts: [] } } = useQuery<{ alerts: any[] }>({
     queryKey: ["/api/fraud/alerts"],
-    refetchInterval: isLive ? refreshInterval : false
+    refetchInterval: isLive ? refreshInterval : false,
   });
 
   // Auto-refresh toggle effect
@@ -120,41 +124,54 @@ export function FraudMetrics({
         label: "Average Risk Score",
         value: `${(avgScore * 100).toFixed(1)}%`,
         change: scoreChange,
-        changeType: scoreChange > 0 ? 'increase' : scoreChange < 0 ? 'decrease' : 'stable',
+        changeType:
+          scoreChange > 0
+            ? "increase"
+            : scoreChange < 0
+              ? "decrease"
+              : "stable",
         icon: Shield,
-        color: avgScore > 0.75 ? 'text-red-500' : avgScore > 0.5 ? 'text-orange-500' : avgScore > 0.25 ? 'text-yellow-500' : 'text-green-500',
-        subtext: `${totalScores} assessments`
+        color:
+          avgScore > 0.75
+            ? "text-red-500"
+            : avgScore > 0.5
+              ? "text-orange-500"
+              : avgScore > 0.25
+                ? "text-yellow-500"
+                : "text-green-500",
+        subtext: `${totalScores} assessments`,
       },
       {
         label: "High Risk Users",
         value: highRiskCount,
         change: riskChange,
-        changeType: riskChange > 0 ? 'increase' : riskChange < 0 ? 'decrease' : 'stable',
+        changeType:
+          riskChange > 0 ? "increase" : riskChange < 0 ? "decrease" : "stable",
         icon: ShieldAlert,
-        color: 'text-orange-500',
-        subtext: "Score > 75%"
+        color: "text-orange-500",
+        subtext: "Score > 75%",
       },
       {
         label: "Active Alerts",
         value: activeAlerts,
         icon: AlertTriangle,
-        color: activeAlerts > 0 ? 'text-yellow-500' : 'text-gray-500',
-        subtext: "Pending review"
+        color: activeAlerts > 0 ? "text-yellow-500" : "text-gray-500",
+        subtext: "Pending review",
       },
       {
         label: "Suspicious Activities",
         value: suspiciousCount,
         icon: Activity,
-        color: 'text-red-500',
-        subtext: `${autoBlockedCount} auto-blocked`
+        color: "text-red-500",
+        subtext: `${autoBlockedCount} auto-blocked`,
       },
       {
         label: "Reviews Completed",
         value: reviewsCount,
         icon: ShieldCheck,
-        color: 'text-green-500',
-        subtext: `This ${timeRange}`
-      }
+        color: "text-green-500",
+        subtext: `This ${timeRange}`,
+      },
     ];
   };
 
@@ -181,14 +198,22 @@ export function FraudMetrics({
 
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-4 p-2 border rounded-lg", className)} data-testid="fraud-metrics-compact">
+      <div
+        className={cn(
+          "flex items-center gap-4 p-2 border rounded-lg",
+          className,
+        )}
+        data-testid="fraud-metrics-compact"
+      >
         {metrics.slice(0, 3).map((metric, index) => {
           const Icon = metric.icon;
           return (
             <div key={index} className="flex items-center gap-2">
               <Icon className={cn("h-4 w-4", metric.color)} />
               <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">{metric.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {metric.label}
+                </span>
                 <span className="text-sm font-semibold">{metric.value}</span>
               </div>
             </div>
@@ -226,13 +251,13 @@ export function FraudMetrics({
             onClick={() => setIsLive(!isLive)}
             className={cn(
               "px-3 py-1 rounded-md text-sm font-medium transition-colors",
-              isLive 
-                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
-                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+              isLive
+                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
             )}
             data-testid="button-toggle-live"
           >
-            {isLive ? 'Stop Live' : 'Go Live'}
+            {isLive ? "Stop Live" : "Go Live"}
           </button>
         </div>
       </div>
@@ -255,11 +280,13 @@ export function FraudMetrics({
                 <div className="space-y-1">
                   <div className="text-2xl font-bold">{metric.value}</div>
                   {metric.subtext && (
-                    <p className="text-xs text-muted-foreground">{metric.subtext}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {metric.subtext}
+                    </p>
                   )}
                   {metric.change !== undefined && (
                     <div className="flex items-center gap-1">
-                      {metric.changeType === 'increase' && (
+                      {metric.changeType === "increase" && (
                         <>
                           <TrendingUp className="h-3 w-3 text-red-500" />
                           <span className="text-xs text-red-600 dark:text-red-400">
@@ -267,7 +294,7 @@ export function FraudMetrics({
                           </span>
                         </>
                       )}
-                      {metric.changeType === 'decrease' && (
+                      {metric.changeType === "decrease" && (
                         <>
                           <TrendingDown className="h-3 w-3 text-green-500" />
                           <span className="text-xs text-green-600 dark:text-green-400">
@@ -275,7 +302,7 @@ export function FraudMetrics({
                           </span>
                         </>
                       )}
-                      {metric.changeType === 'stable' && (
+                      {metric.changeType === "stable" && (
                         <span className="text-xs text-gray-500">No change</span>
                       )}
                     </div>
@@ -292,32 +319,39 @@ export function FraudMetrics({
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Risk Distribution</CardTitle>
-            <CardDescription>User distribution across risk levels</CardDescription>
+            <CardDescription>
+              User distribution across risk levels
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {reportData.riskDistribution.map((dist: any) => {
-                const percentage = (dist.count / (reportData.totalScores || 1)) * 100;
+                const percentage =
+                  (dist.count / (reportData.totalScores || 1)) * 100;
                 const getColor = () => {
                   switch (dist.level) {
-                    case 'critical': return 'bg-red-500';
-                    case 'high': return 'bg-orange-500';
-                    case 'medium': return 'bg-yellow-500';
-                    case 'low': return 'bg-green-500';
-                    default: return 'bg-gray-500';
+                    case "critical":
+                      return "bg-red-500";
+                    case "high":
+                      return "bg-orange-500";
+                    case "medium":
+                      return "bg-yellow-500";
+                    case "low":
+                      return "bg-green-500";
+                    default:
+                      return "bg-gray-500";
                   }
                 };
-                
+
                 return (
                   <div key={dist.level} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="capitalize">{dist.level}</span>
-                      <span className="font-mono">{dist.count} ({percentage.toFixed(1)}%)</span>
+                      <span className="font-mono">
+                        {dist.count} ({percentage.toFixed(1)}%)
+                      </span>
                     </div>
-                    <Progress
-                      value={percentage}
-                      className="h-2"
-                    />
+                    <Progress value={percentage} className="h-2" />
                   </div>
                 );
               })}
@@ -327,35 +361,45 @@ export function FraudMetrics({
       )}
 
       {/* Activity Types */}
-      {reportData?.topActivityTypes && reportData.topActivityTypes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Top Activity Types</CardTitle>
-            <CardDescription>Most common suspicious activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {reportData.topActivityTypes.slice(0, 5).map((activity: any, index: number) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "h-2 w-2 rounded-full",
-                      index === 0 && "bg-red-500",
-                      index === 1 && "bg-orange-500",
-                      index === 2 && "bg-yellow-500",
-                      index > 2 && "bg-gray-500"
-                    )} />
-                    <span className="text-sm">{activity.type}</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {activity.count}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {reportData?.topActivityTypes &&
+        reportData.topActivityTypes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Top Activity Types</CardTitle>
+              <CardDescription>
+                Most common suspicious activities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {reportData.topActivityTypes
+                  .slice(0, 5)
+                  .map((activity: any, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "h-2 w-2 rounded-full",
+                            index === 0 && "bg-red-500",
+                            index === 1 && "bg-orange-500",
+                            index === 2 && "bg-yellow-500",
+                            index > 2 && "bg-gray-500",
+                          )}
+                        />
+                        <span className="text-sm">{activity.type}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {activity.count}
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       {/* System Status */}
       <Card>
@@ -366,19 +410,28 @@ export function FraudMetrics({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Auto-Blocking</span>
-              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              <Badge
+                variant="default"
+                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              >
                 Active
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">AI Analysis</span>
-              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              <Badge
+                variant="default"
+                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              >
                 Online
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Pattern Detection</span>
-              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              <Badge
+                variant="default"
+                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              >
                 Running
               </Badge>
             </div>

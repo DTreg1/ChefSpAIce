@@ -1,15 +1,16 @@
 # Storage Layer Refactoring Guide
 
 > **Historical Reference Document**
-> 
+>
 > This document provides step-by-step prompts for storage layer improvements. The storage layer has undergone significant refactoring, including Sprint 3 changes with ML service activation and storage integration.
-> 
+>
 > **Status Summary:**
+>
 > - Phase 1 (Audit): Complete - see STORAGE_AUDIT_REPORT.md for current interface/implementation alignment
 > - Phase 2 (StorageRoot): Addressed - legacy methods cleaned up
 > - Phase 3 (Export Patterns): Addressed - consistent singleton exports
 > - Phase 4+ (Remaining): Review for current applicability
-> 
+>
 > Use as a reference for understanding architectural patterns.
 
 This document provides step-by-step prompts to fix the identified issues in the storage layer.
@@ -63,7 +64,7 @@ Output findings grouped by domain, with specific line numbers and method signatu
 ### Step 2.1: Remove Dead Methods from StorageRoot
 
 ```
-In server/storage/StorageRoot.ts, remove all methods identified as "dead" in the audit (methods that call non-existent functions on facades/domains). 
+In server/storage/StorageRoot.ts, remove all methods identified as "dead" in the audit (methods that call non-existent functions on facades/domains).
 
 Before removing each method:
 1. Search the codebase for any callers using grep
@@ -194,7 +195,7 @@ Regenerate the main IStorage interface in server/storage/interfaces/IStorage.ts 
 5. Add references to new interfaces that were added
 
 The structure should be:
-export interface IStorage extends 
+export interface IStorage extends
   IUserStorage,
   IRecipesStorage,
   IInventoryStorage,
@@ -345,7 +346,7 @@ export class ExampleStorage {
 
   async getById(id: number): Promise<Example> {
     const result = await db.query.examples.findFirst({
-      where: eq(examples.id, id)
+      where: eq(examples.id, id),
     });
     if (!result) {
       throw new StorageNotFoundError(`Example with id ${id} not found`);

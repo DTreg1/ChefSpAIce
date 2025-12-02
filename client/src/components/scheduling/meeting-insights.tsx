@@ -1,29 +1,35 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  BarChart, 
-  TrendingUp, 
-  Clock, 
+import {
+  BarChart,
+  TrendingUp,
+  Clock,
   Calendar,
   Users,
   Target,
   Activity,
-  PieChart
+  PieChart,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfWeek, startOfMonth, subDays } from "date-fns";
 
 interface MeetingInsightsProps {
   userId?: string;
-  timeRange?: 'week' | 'month' | 'quarter';
+  timeRange?: "week" | "month" | "quarter";
 }
 
 export function MeetingInsights({
   userId,
-  timeRange = 'month'
+  timeRange = "month",
 }: MeetingInsightsProps) {
   // Fetch analytics data
   const { data: analytics, isLoading } = useQuery({
@@ -31,34 +37,35 @@ export function MeetingInsights({
     queryFn: async () => {
       const params = new URLSearchParams({
         timeRange,
-        ...(userId && { userId })
+        ...(userId && { userId }),
       });
       const response = await fetch(`/api/schedule/analytics?${params}`);
       if (!response.ok) throw new Error("Failed to fetch analytics");
       return response.json();
-    }
+    },
   });
 
   // Fetch recent events for trends
   const { data: events = [] } = useQuery({
     queryKey: ["/api/schedule/events", timeRange, userId],
     queryFn: async () => {
-      const startDate = timeRange === 'week' 
-        ? startOfWeek(new Date())
-        : timeRange === 'month'
-        ? startOfMonth(new Date())
-        : subDays(new Date(), 90);
-      
+      const startDate =
+        timeRange === "week"
+          ? startOfWeek(new Date())
+          : timeRange === "month"
+            ? startOfMonth(new Date())
+            : subDays(new Date(), 90);
+
       const params = new URLSearchParams({
         startTime: startDate.toISOString(),
         endTime: new Date().toISOString(),
-        ...(userId && { userId })
+        ...(userId && { userId }),
       });
-      
+
       const response = await fetch(`/api/schedule/events?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
-    }
+    },
   });
 
   if (isLoading) {
@@ -90,7 +97,7 @@ export function MeetingInsights({
             <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="recommendations">AI Insights</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="overview" className="space-y-4">
             {/* Key Metrics */}
             <div className="grid grid-cols-4 gap-4">
@@ -109,7 +116,7 @@ export function MeetingInsights({
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -125,7 +132,7 @@ export function MeetingInsights({
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -141,7 +148,7 @@ export function MeetingInsights({
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -158,11 +165,13 @@ export function MeetingInsights({
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Meeting Distribution */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Meeting Distribution</CardTitle>
+                <CardTitle className="text-base">
+                  Meeting Distribution
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -205,7 +214,7 @@ export function MeetingInsights({
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="patterns" className="space-y-4">
             {analytics?.patterns && analytics.patterns.length > 0 ? (
               <ScrollArea className="h-[400px]">
@@ -218,24 +227,36 @@ export function MeetingInsights({
                             <div className="flex items-center gap-2">
                               <Target className="h-4 w-4" />
                               <span className="font-medium">
-                                {pattern.patternType.charAt(0).toUpperCase() + pattern.patternType.slice(1)} Pattern
+                                {pattern.patternType.charAt(0).toUpperCase() +
+                                  pattern.patternType.slice(1)}{" "}
+                                Pattern
                               </span>
                               <Badge variant="outline">
-                                {Math.round(pattern.confidence * 100)}% confidence
+                                {Math.round(pattern.confidence * 100)}%
+                                confidence
                               </Badge>
                             </div>
                             {pattern.commonMeetingTimes.length > 0 && (
                               <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Common meeting times:</p>
-                                {pattern.commonMeetingTimes.slice(0, 3).map((time: any, i: number) => (
-                                  <div key={i} className="text-sm">
-                                    • Day {time.dayOfWeek} at {time.timeOfDay} ({time.frequency} times)
-                                  </div>
-                                ))}
+                                <p className="text-sm text-muted-foreground">
+                                  Common meeting times:
+                                </p>
+                                {pattern.commonMeetingTimes
+                                  .slice(0, 3)
+                                  .map((time: any, i: number) => (
+                                    <div key={i} className="text-sm">
+                                      • Day {time.dayOfWeek} at {time.timeOfDay}{" "}
+                                      ({time.frequency} times)
+                                    </div>
+                                  ))}
                               </div>
                             )}
                           </div>
-                          <Badge variant={pattern.confidence > 0.7 ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              pattern.confidence > 0.7 ? "default" : "secondary"
+                            }
+                          >
                             {pattern.confidence > 0.7 ? "Strong" : "Emerging"}
                           </Badge>
                         </div>
@@ -248,12 +269,13 @@ export function MeetingInsights({
               <div className="text-center py-8">
                 <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  No patterns detected yet. Schedule more meetings to see patterns.
+                  No patterns detected yet. Schedule more meetings to see
+                  patterns.
                 </p>
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="trends" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Card>
@@ -268,19 +290,28 @@ export function MeetingInsights({
                     <div className="flex items-center justify-between">
                       <span className="text-sm">This Week</span>
                       <Badge variant="default">
-                        {events.filter((e: any) => 
-                          new Date(e.startTime) >= startOfWeek(new Date())
-                        ).length} meetings
+                        {
+                          events.filter(
+                            (e: any) =>
+                              new Date(e.startTime) >= startOfWeek(new Date()),
+                          ).length
+                        }{" "}
+                        meetings
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Last Week</span>
                       <Badge variant="secondary">
-                        {events.filter((e: any) => {
-                          const date = new Date(e.startTime);
-                          return date >= subDays(startOfWeek(new Date()), 7) &&
-                                 date < startOfWeek(new Date());
-                        }).length} meetings
+                        {
+                          events.filter((e: any) => {
+                            const date = new Date(e.startTime);
+                            return (
+                              date >= subDays(startOfWeek(new Date()), 7) &&
+                              date < startOfWeek(new Date())
+                            );
+                          }).length
+                        }{" "}
+                        meetings
                       </Badge>
                     </div>
                     <div className="pt-2">
@@ -292,7 +323,7 @@ export function MeetingInsights({
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -323,7 +354,7 @@ export function MeetingInsights({
                 </CardContent>
               </Card>
             </div>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Weekly Comparison</CardTitle>
@@ -333,8 +364,11 @@ export function MeetingInsights({
                   {[...Array(7)].map((_, i) => {
                     const height = Math.random() * 100;
                     return (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <div 
+                      <div
+                        key={i}
+                        className="flex-1 flex flex-col items-center gap-2"
+                      >
+                        <div
                           className="w-full bg-primary rounded-t"
                           style={{ height: `${height}%` }}
                         />
@@ -348,7 +382,7 @@ export function MeetingInsights({
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="recommendations" className="space-y-4">
             {analytics?.insights && analytics.insights.length > 0 ? (
               <div className="space-y-4">
@@ -364,15 +398,20 @@ export function MeetingInsights({
                     </CardContent>
                   </Card>
                 ))}
-                
+
                 <Card className="bg-primary/5">
                   <CardContent className="pt-6">
                     <h4 className="font-medium mb-2">Recommendations</h4>
                     <div className="space-y-2 text-sm">
                       <p>• Consider blocking focus time in the mornings</p>
                       <p>• Group similar meetings on the same days</p>
-                      <p>• Add 15-minute buffers between back-to-back meetings</p>
-                      <p>• Limit meetings to {analytics?.statistics?.meetingsPerWeek || 10} per week</p>
+                      <p>
+                        • Add 15-minute buffers between back-to-back meetings
+                      </p>
+                      <p>
+                        • Limit meetings to{" "}
+                        {analytics?.statistics?.meetingsPerWeek || 10} per week
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

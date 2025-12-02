@@ -1,21 +1,24 @@
 /**
  * Auto-Complete API Router
- * 
+ *
  * Provides intelligent form field auto-completion using ML and user history.
  * Combines TensorFlow.js for pattern recognition with OpenAI for context understanding.
- * 
+ *
  * Features:
  * - Personal history-based suggestions
  * - Context-aware completions (e.g., city → state)
  * - Learning from user inputs
  * - Feedback tracking for model improvement
- * 
+ *
  * @module server/routers/autocomplete.router
  */
 
 import express, { Router } from "express";
 import { storage } from "../../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { insertCompletionFeedbackSchema } from "@shared/schema";
 import z from "zod";
 import OpenAI from "openai";
@@ -38,7 +41,9 @@ async function getPatternModel(): Promise<tf.LayersModel> {
   if (!patternModel) {
     try {
       // Try to load existing model
-      patternModel = await tf.loadLayersModel("file://./models/form-patterns/model.json");
+      patternModel = await tf.loadLayersModel(
+        "file://./models/form-patterns/model.json",
+      );
     } catch {
       // Create new model if none exists
       patternModel = tf.sequential({
@@ -50,7 +55,7 @@ async function getPatternModel(): Promise<tf.LayersModel> {
           tf.layers.dense({ units: 10, activation: "softmax" }),
         ],
       });
-      
+
       patternModel.compile({
         optimizer: "adam",
         loss: "categoricalCrossentropy",
@@ -69,27 +74,35 @@ router.get("/suggestions", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, query = "" } = req.query;
     const userId = getAuthenticatedUserId(req);
-    
+
     if (!fieldName || typeof fieldName !== "string") {
       return res.status(400).json({ error: "Field name is required" });
     }
-    
+
     // Get suggestions from storage (combines user history and global patterns)
     // Use a simplified approach - return empty suggestions if no data
     const suggestions: string[] = [];
-    
+
     // Apply ML ranking if we have enough suggestions
     if (suggestions.length > 1 && query) {
       try {
         const model = await getPatternModel();
-        
+
         // Convert query and suggestions to feature vectors
         const features = suggestions.map((suggestion: string) => {
           // Simple feature extraction: length similarity, char overlap, etc.
-          const lengthDiff = Math.abs(suggestion.length - (query as string).length);
-          const charOverlap = Array.from(query as string).filter(c => suggestion.includes(c)).length;
-          const startsWith = suggestion.toLowerCase().startsWith((query as string).toLowerCase()) ? 1 : 0;
-          
+          const lengthDiff = Math.abs(
+            suggestion.length - (query as string).length,
+          );
+          const charOverlap = Array.from(query as string).filter((c) =>
+            suggestion.includes(c),
+          ).length;
+          const startsWith = suggestion
+            .toLowerCase()
+            .startsWith((query as string).toLowerCase())
+            ? 1
+            : 0;
+
           // Pad to 10 features
           return [
             lengthDiff / 100,
@@ -97,26 +110,40 @@ router.get("/suggestions", isAuthenticated, async (req: any, res) => {
             startsWith,
             suggestion.length / 100,
             (query as string).length / 100,
-            0, 0, 0, 0, 0 // Padding
+            0,
+            0,
+            0,
+            0,
+            0, // Padding
           ];
         });
-        
+
         // Predict relevance scores
         const predictions = model.predict(tf.tensor2d(features)) as tf.Tensor;
-        const scores = await predictions.array() as number[][];
-        
+        const scores = (await predictions.array()) as number[][];
+
         // Sort suggestions by predicted relevance
         const rankedSuggestions = suggestions
-          .map((s: string, i: number) => ({ suggestion: s, score: scores[i][0] }))
-          .sort((a: { suggestion: string; score: number }, b: { suggestion: string; score: number }) => b.score - a.score)
-          .map((item: { suggestion: string; score: number }) => item.suggestion);
-        
+          .map((s: string, i: number) => ({
+            suggestion: s,
+            score: scores[i][0],
+          }))
+          .sort(
+            (
+              a: { suggestion: string; score: number },
+              b: { suggestion: string; score: number },
+            ) => b.score - a.score,
+          )
+          .map(
+            (item: { suggestion: string; score: number }) => item.suggestion,
+          );
+
         return res.json({ suggestions: rankedSuggestions });
       } catch (error) {
         console.error("ML ranking failed, using default order:", error);
       }
     }
-    
+
     res.json({ suggestions });
   } catch (error) {
     console.error("Error getting suggestions:", error);
@@ -132,28 +159,29 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, context } = req.body;
     const userId = getAuthenticatedUserId(req);
-    
+
     if (!fieldName) {
       return res.status(400).json({ error: "Field name is required" });
     }
-    
+
     // Get basic contextual suggestions from storage
     // Simplified - return empty array as contextual suggestions are not yet implemented
     const basicSuggestions: string[] = [];
-    
+
     // Enhance with OpenAI if API key is available
     if (process.env.OPENAI_API_KEY && Object.keys(context || {}).length > 0) {
       try {
         const prompt = `Given a form with these filled fields: ${JSON.stringify(context)}, 
           suggest the most likely values for the field "${fieldName}". 
           Return only a JSON array of 5 string suggestions, no explanation.`;
-        
+
         const completion = await openai.chat.completions.create({
           model: "gpt-3.5-turbo",
           messages: [
             {
               role: "system",
-              content: "You are a helpful assistant that predicts form field values based on context.",
+              content:
+                "You are a helpful assistant that predicts form field values based on context.",
             },
             {
               role: "user",
@@ -163,18 +191,18 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
           temperature: 0.3,
           max_tokens: 200,
         });
-        
+
         const content = completion.choices[0].message.content;
         if (content) {
           try {
             const aiSuggestions = JSON.parse(content) as string[];
-            
+
             // Merge AI suggestions with basic suggestions (AI first, then basic)
             const mergedSuggestions = [
-              ...aiSuggestions.filter(s => !basicSuggestions.includes(s)),
-              ...basicSuggestions
+              ...aiSuggestions.filter((s) => !basicSuggestions.includes(s)),
+              ...basicSuggestions,
             ].slice(0, 10);
-            
+
             return res.json({ suggestions: mergedSuggestions });
           } catch (parseError) {
             console.error("Failed to parse AI suggestions:", parseError);
@@ -184,7 +212,7 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
         console.error("OpenAI enhancement failed:", error);
       }
     }
-    
+
     res.json({ suggestions: basicSuggestions });
   } catch (error) {
     console.error("Error getting contextual suggestions:", error);
@@ -200,15 +228,17 @@ router.post("/learn", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, value, context } = req.body;
     const userId = getAuthenticatedUserId(req);
-    
+
     if (!userId || !fieldName || !value) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    
+
     // Record the input for future suggestions
     // Simplified - logging for now as form input recording is not yet implemented in storage
-    console.log(`[Autocomplete] Recording form input for user ${userId}: ${fieldName}=${value}`);
-    
+    console.log(
+      `[Autocomplete] Recording form input for user ${userId}: ${fieldName}=${value}`,
+    );
+
     res.json({ success: true });
   } catch (error) {
     console.error("Error recording form input:", error);
@@ -223,26 +253,31 @@ router.post("/learn", isAuthenticated, async (req: any, res) => {
 router.post("/feedback", isAuthenticated, async (req: any, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    
+
     // Validate request body
     const feedbackData = insertCompletionFeedbackSchema.parse({
       ...req.body,
       userId,
     });
-    
+
     // Record the feedback
     // Simplified - logging for now as completion feedback is not yet implemented in storage
-    console.log(`[Autocomplete] Recording completion feedback for user ${userId}`);
-    
+    console.log(
+      `[Autocomplete] Recording completion feedback for user ${userId}`,
+    );
+
     // Train model asynchronously if we have enough feedback
-    if (Math.random() < 0.1) { // 10% chance to trigger training
+    if (Math.random() < 0.1) {
+      // 10% chance to trigger training
       trainModelWithFeedback().catch(console.error);
     }
-    
-    res.json({ success: true, feedbackId: 'feedback-recorded' });
+
+    res.json({ success: true, feedbackId: "feedback-recorded" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid feedback data", details: error.errors });
     }
     console.error("Error recording feedback:", error);
     res.status(500).json({ error: "Failed to record feedback" });
@@ -257,14 +292,14 @@ router.get("/history", isAuthenticated, async (req: any, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     const { fieldName } = req.query;
-    
+
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    
+
     // Simplified - return empty array as form history is not yet implemented in storage
     const history: any[] = [];
-    
+
     res.json({ history });
   } catch (error) {
     console.error("Error getting form history:", error);
@@ -279,14 +314,14 @@ router.get("/history", isAuthenticated, async (req: any, res) => {
 router.delete("/history", isAuthenticated, async (req: any, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    
+
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    
+
     // Simplified - logging for now as form history is not yet implemented in storage
     console.log(`[Autocomplete] Clearing form history for user ${userId}`);
-    
+
     res.json({ success: true, message: "Form history cleared" });
   } catch (error) {
     console.error("Error clearing form history:", error);
@@ -300,19 +335,19 @@ router.delete("/history", isAuthenticated, async (req: any, res) => {
 async function trainModelWithFeedback(): Promise<void> {
   try {
     console.log("Starting model training with feedback...");
-    
+
     // This would typically:
     // 1. Load recent feedback data
     // 2. Convert to training features
     // 3. Train the model
     // 4. Save the updated model
-    
+
     // Placeholder for actual training logic
     const model = await getPatternModel();
-    
+
     // Save model after training
     await model.save("file://./models/form-patterns");
-    
+
     console.log("Model training completed");
   } catch (error) {
     console.error("Model training failed:", error);

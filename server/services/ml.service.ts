@@ -1,6 +1,6 @@
 /**
  * ML Service Layer
- * 
+ *
  * Provides AI/ML capabilities for the application including:
  * - Semantic search using OpenAI embeddings
  * - Auto-categorization with GPT
@@ -8,18 +8,18 @@
  * - Duplicate detection with cosine similarity
  * - Related content discovery
  * - Natural language to SQL query
- * 
+ *
  * Storage is handled through storage.platform.content for embeddings
  * and storage.platform.analytics for search logs.
- * 
+ *
  * @since Sprint 3 - Activated with ContentStorage integration
  */
 
 import { openai } from "../integrations/openai";
 import { storage } from "../storage/index";
-import type { 
-  Recipe, 
-  UserInventory, 
+import type {
+  Recipe,
+  UserInventory,
   ContentEmbedding,
   Tag,
   Category,
@@ -33,48 +33,53 @@ function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     throw new Error("Vectors must have same length");
   }
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < a.length; i++) {
     dotProduct += a[i] * b[i];
     normA += a[i] * a[i];
     normB += b[i] * b[i];
   }
-  
+
   normA = Math.sqrt(normA);
   normB = Math.sqrt(normB);
-  
+
   if (normA === 0 || normB === 0) {
     return 0;
   }
-  
+
   return dotProduct / (normA * normB);
 }
 
 /**
  * Supported content types for storage embeddings
  */
-type EmbeddingContentType = 'recipe' | 'article' | 'product' | 'document' | 'media';
+type EmbeddingContentType =
+  | "recipe"
+  | "article"
+  | "product"
+  | "document"
+  | "media";
 
 /**
  * Map application content types to storage-supported embedding content types
  */
 function mapToEmbeddingContentType(contentType: string): EmbeddingContentType {
   const mapping: Record<string, EmbeddingContentType> = {
-    'recipe': 'recipe',
-    'inventory': 'product',
-    'meal_plan': 'document',
-    'chat': 'document',
-    'article': 'article',
-    'product': 'product',
-    'document': 'document',
-    'media': 'media',
+    recipe: "recipe",
+    inventory: "product",
+    meal_plan: "document",
+    chat: "document",
+    article: "article",
+    product: "product",
+    document: "document",
+    media: "media",
   };
-  
-  return mapping[contentType] || 'document';
+
+  return mapping[contentType] || "document";
 }
 
 /**
@@ -82,34 +87,35 @@ function mapToEmbeddingContentType(contentType: string): EmbeddingContentType {
  */
 function prepareTextForEmbedding(content: any, contentType: string): string {
   switch (contentType) {
-    case 'recipe':
+    case "recipe":
       return [
         content.name,
         content.description,
         content.instructions,
-        content.ingredients?.join(' '),
-        content.tags?.join(' '),
+        content.ingredients?.join(" "),
+        content.tags?.join(" "),
         content.mealType,
-        content.cuisine
-      ].filter(Boolean).join(' ');
-      
-    case 'inventory':
+        content.cuisine,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+    case "inventory":
       return [
         content.name,
         content.notes,
         content.foodCategory,
         content.barcode,
-      ].filter(Boolean).join(' ');
-      
-    case 'chat':
-      return content.content || '';
-      
-    case 'meal_plan':
-      return [
-        content.recipeName,
-        content.notes,
-      ].filter(Boolean).join(' ');
-      
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+    case "chat":
+      return content.content || "";
+
+    case "meal_plan":
+      return [content.recipeName, content.notes].filter(Boolean).join(" ");
+
     default:
       return JSON.stringify(content);
   }
@@ -125,7 +131,7 @@ export class MLService {
         model: "text-embedding-ada-002",
         input: text,
       });
-      
+
       // Convert typed array to regular array for database compatibility
       const embedding = response.data[0].embedding;
       return Array.from(embedding);
@@ -144,11 +150,11 @@ export class MLService {
     contentType: string,
     contentId: string,
     userId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<ContentEmbedding> {
     const text = prepareTextForEmbedding(content, contentType);
     const embedding = await this.generateEmbedding(text);
-    
+
     const embeddingData = {
       contentId,
       contentType: mapToEmbeddingContentType(contentType),
@@ -162,7 +168,7 @@ export class MLService {
         originalContentType: contentType,
       },
     };
-    
+
     return await storage.platform.content.upsertContentEmbedding(embeddingData);
   }
 
@@ -174,21 +180,23 @@ export class MLService {
     query: string,
     contentType: string,
     userId: string,
-    limit: number = 10
-  ): Promise<Array<{
-    content: ContentEmbedding;
-    similarity: number;
-  }>> {
+    limit: number = 10,
+  ): Promise<
+    Array<{
+      content: ContentEmbedding;
+      similarity: number;
+    }>
+  > {
     const queryEmbedding = await this.generateEmbedding(query);
     const mappedContentType = mapToEmbeddingContentType(contentType);
-    
+
     const results = await storage.platform.content.searchByEmbedding(
       queryEmbedding,
       mappedContentType,
-      limit
+      limit,
     );
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       content: result,
       similarity: result.similarity,
     }));
@@ -200,17 +208,17 @@ export class MLService {
   async categorizeContent(
     content: any,
     contentType: string,
-    availableCategories: Category[]
+    availableCategories: Category[],
   ): Promise<{
     categoryId: string;
     confidence: number;
   }> {
     const text = prepareTextForEmbedding(content, contentType);
-    
+
     const categoryList = availableCategories
-      .map(c => `- ${c.name}: ${c.description || ''}`)
-      .join('\n');
-    
+      .map((c) => `- ${c.name}: ${c.description || ""}`)
+      .join("\n");
+
     const prompt = `Categorize the following content into one of the provided categories:
 
 Content Type: ${contentType}
@@ -228,27 +236,30 @@ Return only the category name and confidence score (0-1) in JSON format:
         messages: [
           {
             role: "system",
-            content: "You are a categorization assistant. Respond only with JSON."
+            content:
+              "You are a categorization assistant. Respond only with JSON.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.3,
         max_tokens: 100,
       });
-      
-      const result = JSON.parse(response.choices[0]?.message?.content || '{}');
-      const category = availableCategories.find(c => c.name === result.category);
-      
+
+      const result = JSON.parse(response.choices[0]?.message?.content || "{}");
+      const category = availableCategories.find(
+        (c) => c.name === result.category,
+      );
+
       if (category) {
         return {
           categoryId: String(category.id),
           confidence: result.confidence || 0.7,
         };
       }
-      
+
       throw new Error("Category not found");
     } catch (error) {
       console.error("Error categorizing content:", error);
@@ -259,64 +270,85 @@ Return only the category name and confidence score (0-1) in JSON format:
   /**
    * Extract keywords using TensorFlow.js and NLP libraries
    */
-  private async extractKeywords(text: string, limit: number = 10): Promise<string[]> {
+  private async extractKeywords(
+    text: string,
+    limit: number = 10,
+  ): Promise<string[]> {
     // Dynamically import keyword-extractor (CommonJS module)
     const keywordExtractor = await import("keyword-extractor");
-    
+
     // Extract keywords using keyword-extractor
     const extractorFn = (keywordExtractor as any).default || keywordExtractor;
-    const extractedKeywords: string[] = extractorFn.extract ? 
-      extractorFn.extract(text, {
-        language: "english",
-        remove_digits: true,
-        return_changed_case: true,
-        remove_duplicates: true
-      }) : [];
-    
+    const extractedKeywords: string[] = extractorFn.extract
+      ? extractorFn.extract(text, {
+          language: "english",
+          remove_digits: true,
+          return_changed_case: true,
+          remove_duplicates: true,
+        })
+      : [];
+
     // Use TF-IDF for more sophisticated keyword scoring
     const tfidf = new natural.TfIdf();
     tfidf.addDocument(text);
-    
+
     const tfidfKeywords: { term: string; score: number }[] = [];
     tfidf.listTerms(0).forEach((item: any) => {
       if (item.tfidf > 0.1 && item.term.length > 2) {
         tfidfKeywords.push({ term: item.term, score: item.tfidf });
       }
     });
-    
+
     // Combine and deduplicate keywords
     const combinedKeywords = new Set([
       ...extractedKeywords.slice(0, limit),
-      ...tfidfKeywords.sort((a, b) => b.score - a.score).slice(0, limit).map(k => k.term)
+      ...tfidfKeywords
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((k) => k.term),
     ]);
-    
+
     return Array.from(combinedKeywords).slice(0, limit);
   }
-  
+
   /**
    * Identify entities and themes in content
    */
-  private identifyEntitiesAndThemes(content: any, contentType: string): string[] {
+  private identifyEntitiesAndThemes(
+    content: any,
+    contentType: string,
+  ): string[] {
     const themes: string[] = [];
-    
+
     // Content-type specific theme extraction
     switch (contentType) {
-      case 'recipe':
+      case "recipe":
         if (content.mealType) themes.push(content.mealType);
         if (content.cuisine) themes.push(content.cuisine);
         if (content.difficulty) themes.push(content.difficulty);
-        if (content.prepTime && content.prepTime < 30) themes.push('quick-meals');
-        if (content.ingredients?.some((i: string) => i.toLowerCase().includes('vegan'))) themes.push('vegan');
-        if (content.ingredients?.some((i: string) => i.toLowerCase().includes('gluten'))) themes.push('gluten-free');
+        if (content.prepTime && content.prepTime < 30)
+          themes.push("quick-meals");
+        if (
+          content.ingredients?.some((i: string) =>
+            i.toLowerCase().includes("vegan"),
+          )
+        )
+          themes.push("vegan");
+        if (
+          content.ingredients?.some((i: string) =>
+            i.toLowerCase().includes("gluten"),
+          )
+        )
+          themes.push("gluten-free");
         break;
-        
-      case 'article':
+
+      case "article":
         // Extract themes from article metadata
         if (content.category) themes.push(content.category);
         if (content.subject) themes.push(content.subject);
         break;
     }
-    
+
     return themes;
   }
 
@@ -326,39 +358,41 @@ Return only the category name and confidence score (0-1) in JSON format:
   async generateTags(
     content: any,
     contentType: string,
-    maxTags: number = 8
-  ): Promise<Array<{
-    name: string;
-    relevanceScore: number;
-    source: 'keyword-extraction' | 'entity-recognition' | 'ai-generated';
-  }>> {
+    maxTags: number = 8,
+  ): Promise<
+    Array<{
+      name: string;
+      relevanceScore: number;
+      source: "keyword-extraction" | "entity-recognition" | "ai-generated";
+    }>
+  > {
     const text = prepareTextForEmbedding(content, contentType);
     const results: Array<{
       name: string;
       relevanceScore: number;
-      source: 'keyword-extraction' | 'entity-recognition' | 'ai-generated';
+      source: "keyword-extraction" | "entity-recognition" | "ai-generated";
     }> = [];
-    
+
     // Step 1: Extract keywords using TensorFlow.js/Natural
     const keywords = await this.extractKeywords(text, Math.floor(maxTags / 2));
-    keywords.forEach(keyword => {
+    keywords.forEach((keyword) => {
       results.push({
-        name: keyword.toLowerCase().replace(/\s+/g, '-'),
+        name: keyword.toLowerCase().replace(/\s+/g, "-"),
         relevanceScore: 0.8,
-        source: 'keyword-extraction'
+        source: "keyword-extraction",
       });
     });
-    
+
     // Step 2: Identify entities and themes
     const themes = this.identifyEntitiesAndThemes(content, contentType);
-    themes.forEach(theme => {
+    themes.forEach((theme) => {
       results.push({
-        name: theme.toLowerCase().replace(/\s+/g, '-'),
+        name: theme.toLowerCase().replace(/\s+/g, "-"),
         relevanceScore: 0.9,
-        source: 'entity-recognition'
+        source: "entity-recognition",
       });
     });
-    
+
     // Step 3: Use GPT-3.5-turbo for additional context-aware tags
     const prompt = `Analyze the following ${contentType} and generate relevant tags that capture its key topics, entities, and themes:
 
@@ -380,25 +414,26 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
         messages: [
           {
             role: "system",
-            content: "You are an expert content analyzer specializing in identifying key topics, entities, and themes. Generate specific, relevant tags that would help users discover and categorize this content. Focus on actionable and searchable terms."
+            content:
+              "You are an expert content analyzer specializing in identifying key topics, entities, and themes. Generate specific, relevant tags that would help users discover and categorize this content. Focus on actionable and searchable terms.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.4,
         max_tokens: 200,
       });
-      
-      const aiTags = JSON.parse(response.choices[0]?.message?.content || '[]');
+
+      const aiTags = JSON.parse(response.choices[0]?.message?.content || "[]");
       if (Array.isArray(aiTags)) {
         aiTags.forEach((tag: any) => {
-          if (tag.name && typeof tag.name === 'string') {
+          if (tag.name && typeof tag.name === "string") {
             results.push({
-              name: tag.name.toLowerCase().replace(/\s+/g, '-'),
+              name: tag.name.toLowerCase().replace(/\s+/g, "-"),
               relevanceScore: tag.relevance || 0.7,
-              source: 'ai-generated'
+              source: "ai-generated",
             });
           }
         });
@@ -407,16 +442,16 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
       console.error("Error generating AI tags:", error);
       // Continue without AI tags if there's an error
     }
-    
+
     // Deduplicate and sort by relevance
-    const uniqueTags = new Map<string, typeof results[0]>();
-    results.forEach(tag => {
+    const uniqueTags = new Map<string, (typeof results)[0]>();
+    results.forEach((tag) => {
       const existing = uniqueTags.get(tag.name);
       if (!existing || existing.relevanceScore < tag.relevanceScore) {
         uniqueTags.set(tag.name, tag);
       }
     });
-    
+
     return Array.from(uniqueTags.values())
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, maxTags);
@@ -429,7 +464,7 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     content: any,
     contentType: string,
     userId: string,
-    threshold: number = 0.85
+    threshold: number = 0.85,
   ): Promise<{
     isDuplicate: boolean;
     duplicates: Array<{
@@ -440,11 +475,13 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     // Generate embedding for new content
     const text = prepareTextForEmbedding(content, contentType);
     const embedding = await this.generateEmbedding(text);
-    
+
     // Placeholder: Full implementation requires content embeddings storage
     // For now, return no duplicates detected
-    console.log(`Checking duplicates for ${contentType} (userId: ${userId}, threshold: ${threshold})`);
-    
+    console.log(
+      `Checking duplicates for ${contentType} (userId: ${userId}, threshold: ${threshold})`,
+    );
+
     return {
       isDuplicate: false,
       duplicates: [],
@@ -460,16 +497,20 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     contentId: string,
     contentType: string,
     userId: string,
-    limit: number = 5
-  ): Promise<Array<{
-    id: string;
-    type: string;
-    title: string;
-    score: number;
-  }>> {
+    limit: number = 5,
+  ): Promise<
+    Array<{
+      id: string;
+      type: string;
+      title: string;
+      score: number;
+    }>
+  > {
     // Placeholder: Full implementation requires content embeddings storage
     // For now, return empty results
-    console.log(`Finding related content for ${contentType} ${contentId} (userId: ${userId}, limit: ${limit})`);
+    console.log(
+      `Finding related content for ${contentType} ${contentId} (userId: ${userId}, limit: ${limit})`,
+    );
     return [];
   }
 
@@ -479,24 +520,26 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
   async naturalLanguageToSQL(
     query: string,
     userId: string,
-    allowedTables: string[] = ['userRecipes', 'userInventory', 'mealPlans']
+    allowedTables: string[] = ["userRecipes", "userInventory", "mealPlans"],
   ): Promise<{
     sql: string;
     explanation: string;
   }> {
-    const tableSchemas = allowedTables.map(table => {
-      switch (table) {
-        case 'userRecipes':
-          return `userRecipes: id, name, description, ingredients, instructions, prepTime, cookTime, servings, mealType, cuisine`;
-        case 'userInventory':
-          return `userInventory: id, name, quantity, unit, expirationDate, foodCategory`;
-        case 'mealPlans':
-          return `mealPlans: id, recipeId, recipeName, mealType, date, servings, notes`;
-        default:
-          return '';
-      }
-    }).join('\n');
-    
+    const tableSchemas = allowedTables
+      .map((table) => {
+        switch (table) {
+          case "userRecipes":
+            return `userRecipes: id, name, description, ingredients, instructions, prepTime, cookTime, servings, mealType, cuisine`;
+          case "userInventory":
+            return `userInventory: id, name, quantity, unit, expirationDate, foodCategory`;
+          case "mealPlans":
+            return `mealPlans: id, recipeId, recipeName, mealType, date, servings, notes`;
+          default:
+            return "";
+        }
+      })
+      .join("\n");
+
     const prompt = `Convert this natural language query to SQL:
 
 Query: "${query}"
@@ -519,40 +562,43 @@ Return a safe SELECT query and a brief explanation in JSON format:
         messages: [
           {
             role: "system",
-            content: "You are a SQL query generator. Generate only safe SELECT queries. Never include DROP, DELETE, UPDATE, INSERT, or other modifying operations. Always include userId filtering."
+            content:
+              "You are a SQL query generator. Generate only safe SELECT queries. Never include DROP, DELETE, UPDATE, INSERT, or other modifying operations. Always include userId filtering.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         temperature: 0.2,
         max_tokens: 200,
       });
-      
-      const result = JSON.parse(response.choices[0]?.message?.content || '{}');
-      
+
+      const result = JSON.parse(response.choices[0]?.message?.content || "{}");
+
       // Validate SQL is safe (SELECT only)
-      const sql = result.sql || '';
-      if (!sql.toLowerCase().startsWith('select') || 
-          sql.toLowerCase().includes('drop') ||
-          sql.toLowerCase().includes('delete') ||
-          sql.toLowerCase().includes('update') ||
-          sql.toLowerCase().includes('insert')) {
+      const sql = result.sql || "";
+      if (
+        !sql.toLowerCase().startsWith("select") ||
+        sql.toLowerCase().includes("drop") ||
+        sql.toLowerCase().includes("delete") ||
+        sql.toLowerCase().includes("update") ||
+        sql.toLowerCase().includes("insert")
+      ) {
         throw new Error("Invalid SQL query generated");
       }
-      
+
       // Log the query
       await storage.platform.ai.createQueryLog(userId, {
-        queryType: 'select',
-        tableName: 'natural_language_query',
+        queryType: "select",
+        tableName: "natural_language_query",
         executionTime: 0,
         queryHash: sql.substring(0, 100),
       });
-      
+
       return {
         sql,
-        explanation: result.explanation || '',
+        explanation: result.explanation || "",
       };
     } catch (error) {
       console.error("Error converting natural language to SQL:", error);
@@ -568,20 +614,22 @@ Return a safe SELECT query and a brief explanation in JSON format:
     try {
       // Placeholder: Full implementation would fetch user's recipes and inventory
       // and create embeddings for each item
-      console.log(`Updating embeddings for user ${userId} (placeholder implementation)`);
-      
+      console.log(
+        `Updating embeddings for user ${userId} (placeholder implementation)`,
+      );
+
       // Get recipes from user storage
       const recipes = await storage.user.recipes.getRecipes(userId);
       for (const recipe of recipes) {
-        await this.createContentEmbedding(recipe, 'recipe', recipe.id, userId);
+        await this.createContentEmbedding(recipe, "recipe", recipe.id, userId);
       }
-      
+
       // Get inventory from user storage
       const inventory = await storage.user.inventory.getFoodItems(userId);
       for (const item of inventory) {
-        await this.createContentEmbedding(item, 'inventory', item.id, userId);
+        await this.createContentEmbedding(item, "inventory", item.id, userId);
       }
-      
+
       console.log(`Updated embeddings for user ${userId}`);
     } catch (error) {
       console.error("Error updating user embeddings:", error);

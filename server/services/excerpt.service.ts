@@ -1,27 +1,43 @@
 /**
  * Excerpt Generation Service
- * 
+ *
  * Creates compelling preview snippets for content using OpenAI GPT-3.5-turbo,
  * optimized for social media sharing and preview cards with A/B testing support.
- * 
+ *
  * Features:
  * - Multiple excerpt variants for A/B testing
  * - Platform-specific optimization (Twitter, LinkedIn, Facebook)
  * - Character limit enforcement
  * - Engagement optimization with CTR tracking
  * - Social metadata generation
- * 
+ *
  * @module server/services/excerpt
  */
 
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 interface ExcerptGenerationOptions {
   content: string;
-  targetPlatform?: 'twitter' | 'linkedin' | 'facebook' | 'instagram' | 'generic';
-  excerptType?: 'social' | 'email' | 'card' | 'meta' | 'summary';
-  tone?: 'professional' | 'casual' | 'formal' | 'friendly' | 'exciting' | 'informative';
-  style?: 'descriptive' | 'action-oriented' | 'question-based' | 'teaser' | 'summary';
+  targetPlatform?:
+    | "twitter"
+    | "linkedin"
+    | "facebook"
+    | "instagram"
+    | "generic";
+  excerptType?: "social" | "email" | "card" | "meta" | "summary";
+  tone?:
+    | "professional"
+    | "casual"
+    | "formal"
+    | "friendly"
+    | "exciting"
+    | "informative";
+  style?:
+    | "descriptive"
+    | "action-oriented"
+    | "question-based"
+    | "teaser"
+    | "summary";
   targetAudience?: string;
   callToAction?: boolean;
   hashtags?: boolean;
@@ -40,7 +56,7 @@ interface GeneratedExcerpt {
     title?: string;
     description?: string;
     imageUrl?: string;
-    twitterCard?: 'summary' | 'summary_large_image';
+    twitterCard?: "summary" | "summary_large_image";
     ogType?: string;
   };
   generationParams: {
@@ -68,7 +84,8 @@ const PLATFORM_LIMITS = {
 
 // Default prompts for different excerpt types
 const EXCERPT_PROMPTS = {
-  social: "Create an engaging social media post that captures attention and encourages clicks",
+  social:
+    "Create an engaging social media post that captures attention and encourages clicks",
   email: "Write a compelling email preview text that increases open rates",
   card: "Generate a preview snippet for a content card that maximizes click-through",
   meta: "Create an SEO-optimized meta description that improves search visibility",
@@ -81,9 +98,9 @@ export class ExcerptService {
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('OpenAI API key not configured');
+      throw new Error("OpenAI API key not configured");
     }
-    
+
     this.openai = new OpenAI({
       apiKey,
     });
@@ -92,29 +109,31 @@ export class ExcerptService {
   /**
    * Generate multiple excerpt variants for A/B testing
    */
-  async generateExcerpts(options: ExcerptGenerationOptions): Promise<GeneratedExcerpt[]> {
+  async generateExcerpts(
+    options: ExcerptGenerationOptions,
+  ): Promise<GeneratedExcerpt[]> {
     const {
       content,
-      targetPlatform = 'generic',
-      excerptType = 'social',
-      tone = 'informative',
-      style = 'summary',
-      targetAudience = 'general audience',
+      targetPlatform = "generic",
+      excerptType = "social",
+      tone = "informative",
+      style = "summary",
+      targetAudience = "general audience",
       callToAction = true,
       hashtags = false,
       emojis = false,
-      maxCharacters = PLATFORM_LIMITS[targetPlatform] || PLATFORM_LIMITS.generic,
+      maxCharacters = PLATFORM_LIMITS[targetPlatform] ||
+        PLATFORM_LIMITS.generic,
       temperature = 0.7,
       variantCount = 5, // Changed default to 5
     } = options;
 
     // Truncate content if too long (keep first 3000 chars for context)
-    const truncatedContent = content.length > 3000 
-      ? content.substring(0, 3000) + '...' 
-      : content;
+    const truncatedContent =
+      content.length > 3000 ? content.substring(0, 3000) + "..." : content;
 
     const excerpts: GeneratedExcerpt[] = [];
-    const variants = ['A', 'B', 'C', 'D', 'E'].slice(0, variantCount);
+    const variants = ["A", "B", "C", "D", "E"].slice(0, variantCount);
 
     for (const variant of variants) {
       const excerpt = await this.generateSingleExcerpt({
@@ -141,12 +160,12 @@ export class ExcerptService {
    * Generate a single excerpt variant
    */
   private async generateSingleExcerpt(
-    options: ExcerptGenerationOptions & { variant: string }
+    options: ExcerptGenerationOptions & { variant: string },
   ): Promise<GeneratedExcerpt> {
     const {
       content,
-      targetPlatform = 'generic',
-      excerptType = 'social',
+      targetPlatform = "generic",
+      excerptType = "social",
       tone,
       style,
       targetAudience,
@@ -183,19 +202,23 @@ export class ExcerptService {
         response_format: { type: "json_object" },
       });
 
-      const response = JSON.parse(completion.choices[0].message.content || '{}');
-      
+      const response = JSON.parse(
+        completion.choices[0].message.content || "{}",
+      );
+
       // Ensure excerpt meets character limit
-      let excerptText = response.excerpt || '';
+      let excerptText = response.excerpt || "";
       const charLimit = maxCharacters || 300;
       if (excerptText.length > charLimit) {
-        excerptText = excerptText.substring(0, charLimit - 3) + '...';
+        excerptText = excerptText.substring(0, charLimit - 3) + "...";
       }
 
       return {
         text: excerptText,
         characterCount: excerptText.length,
-        wordCount: excerptText.split(/\s+/).filter((word: string) => word.length > 0).length,
+        wordCount: excerptText
+          .split(/\s+/)
+          .filter((word: string) => word.length > 0).length,
         variant,
         metadata: response.metadata,
         generationParams: {
@@ -210,7 +233,7 @@ export class ExcerptService {
         },
       };
     } catch (error) {
-      console.error('Error generating excerpt:', error);
+      console.error("Error generating excerpt:", error);
       // Fallback to simple extraction
       return this.createFallbackExcerpt(content, maxCharacters!, variant, {
         tone,
@@ -228,7 +251,10 @@ export class ExcerptService {
   /**
    * Build system prompt based on excerpt type and platform
    */
-  private buildSystemPrompt(excerptType: string, targetPlatform: string): string {
+  private buildSystemPrompt(
+    excerptType: string,
+    targetPlatform: string,
+  ): string {
     return `You are an expert content strategist specializing in creating high-converting preview snippets and social media posts. 
     
 Your task is to generate a ${excerptType} excerpt optimized for ${targetPlatform}.
@@ -283,7 +309,7 @@ Key requirements:
     let prompt = `Generate variant ${variant} of an excerpt for the following content:\n\n${content}\n\n`;
     prompt += `Requirements:\n`;
     prompt += `- Maximum ${maxCharacters} characters\n`;
-    
+
     if (tone) prompt += `- Tone: ${tone}\n`;
     if (style) prompt += `- Style: ${style}\n`;
     if (targetAudience) prompt += `- Target audience: ${targetAudience}\n`;
@@ -293,14 +319,14 @@ Key requirements:
 
     // Variant-specific instructions
     const variantInstructions = {
-      'A': 'Focus on the main benefit or key insight',
-      'B': 'Lead with an intriguing question or statistic',
-      'C': 'Emphasize emotional appeal or storytelling',
-      'D': 'Use action-oriented language and urgency',
-      'E': 'Highlight unique or surprising elements',
+      A: "Focus on the main benefit or key insight",
+      B: "Lead with an intriguing question or statistic",
+      C: "Emphasize emotional appeal or storytelling",
+      D: "Use action-oriented language and urgency",
+      E: "Highlight unique or surprising elements",
     };
 
-    prompt += `\nVariant ${variant} focus: ${variantInstructions[variant as keyof typeof variantInstructions] || variantInstructions['A']}\n`;
+    prompt += `\nVariant ${variant} focus: ${variantInstructions[variant as keyof typeof variantInstructions] || variantInstructions["A"]}\n`;
 
     return prompt;
   }
@@ -312,21 +338,21 @@ Key requirements:
     content: string,
     maxCharacters: number,
     variant: string,
-    generationParams: any
+    generationParams: any,
   ): GeneratedExcerpt {
     // Find the first substantial paragraph
-    const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 50);
+    const paragraphs = content
+      .split(/\n\n+/)
+      .filter((p) => p.trim().length > 50);
     let excerpt = paragraphs[0] || content;
 
     // Clean and truncate
-    excerpt = excerpt
-      .replace(/\s+/g, ' ')
-      .trim();
+    excerpt = excerpt.replace(/\s+/g, " ").trim();
 
     if (excerpt.length > maxCharacters) {
       // Try to cut at a sentence boundary
       const sentences = excerpt.match(/[^.!?]+[.!?]+/g) || [excerpt];
-      excerpt = '';
+      excerpt = "";
       for (const sentence of sentences) {
         if ((excerpt + sentence).length <= maxCharacters - 3) {
           excerpt += sentence;
@@ -337,13 +363,14 @@ Key requirements:
       if (!excerpt) {
         excerpt = content.substring(0, maxCharacters - 3);
       }
-      excerpt = excerpt.trim() + '...';
+      excerpt = excerpt.trim() + "...";
     }
 
     return {
       text: excerpt,
       characterCount: excerpt.length,
-      wordCount: excerpt.split(/\s+/).filter((word: string) => word.length > 0).length,
+      wordCount: excerpt.split(/\s+/).filter((word: string) => word.length > 0)
+        .length,
       variant,
       generationParams,
     };
@@ -359,16 +386,18 @@ Key requirements:
       shareRate: number;
       engagementRate: number;
     },
-    targetCTR: number = 0.2 // 20% improvement target
+    targetCTR: number = 0.2, // 20% improvement target
   ): Promise<GeneratedExcerpt> {
     const needsImprovement = performanceData.ctr < targetCTR;
-    
+
     if (!needsImprovement) {
       return {
         text: originalExcerpt,
         characterCount: originalExcerpt.length,
-        wordCount: originalExcerpt.split(/\s+/).filter((word: string) => word.length > 0).length,
-        variant: 'OPTIMIZED',
+        wordCount: originalExcerpt
+          .split(/\s+/)
+          .filter((word: string) => word.length > 0).length,
+        variant: "OPTIMIZED",
         generationParams: {
           model: "unchanged",
         },
@@ -410,26 +439,32 @@ Key requirements:
         response_format: { type: "json_object" },
       });
 
-      const response = JSON.parse(completion.choices[0].message.content || '{}');
+      const response = JSON.parse(
+        completion.choices[0].message.content || "{}",
+      );
       const optimizedText = response.excerpt || originalExcerpt;
 
       return {
         text: optimizedText,
         characterCount: optimizedText.length,
-        wordCount: optimizedText.split(/\s+/).filter((word: string) => word.length > 0).length,
-        variant: 'OPTIMIZED',
+        wordCount: optimizedText
+          .split(/\s+/)
+          .filter((word: string) => word.length > 0).length,
+        variant: "OPTIMIZED",
         generationParams: {
           model: "gpt-3.5-turbo",
           temperature: 0.8,
         },
       };
     } catch (error) {
-      console.error('Error optimizing excerpt:', error);
+      console.error("Error optimizing excerpt:", error);
       return {
         text: originalExcerpt,
         characterCount: originalExcerpt.length,
-        wordCount: originalExcerpt.split(/\s+/).filter((word: string) => word.length > 0).length,
-        variant: 'OPTIMIZED',
+        wordCount: originalExcerpt
+          .split(/\s+/)
+          .filter((word: string) => word.length > 0).length,
+        variant: "OPTIMIZED",
         generationParams: {
           model: "error",
         },
@@ -443,7 +478,7 @@ Key requirements:
   async generateSocialMetadata(
     excerpt: string,
     content: string,
-    platform: string
+    platform: string,
   ): Promise<any> {
     const prompt = `Based on this excerpt and content, generate optimal social media metadata for ${platform}:
     
@@ -457,9 +492,10 @@ Key requirements:
       const completion = await this.openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
-          { 
-            role: "system", 
-            content: "You are an expert in social media optimization and metadata generation. Generate metadata that maximizes visibility and engagement." 
+          {
+            role: "system",
+            content:
+              "You are an expert in social media optimization and metadata generation. Generate metadata that maximizes visibility and engagement.",
           },
           { role: "user", content: prompt },
         ],
@@ -467,14 +503,14 @@ Key requirements:
         response_format: { type: "json_object" },
       });
 
-      return JSON.parse(completion.choices[0].message.content || '{}');
+      return JSON.parse(completion.choices[0].message.content || "{}");
     } catch (error) {
-      console.error('Error generating social metadata:', error);
+      console.error("Error generating social metadata:", error);
       return {
         title: excerpt.substring(0, 60),
         description: excerpt,
-        twitterCard: 'summary',
-        ogType: 'article',
+        twitterCard: "summary",
+        ogType: "article",
       };
     }
   }

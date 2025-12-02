@@ -1,14 +1,15 @@
 # Server Utils Fixes - Step by Step Prompts
 
 > **Historical Reference Document**
-> 
+>
 > This document contains suggested fixes for utility files. Many of these issues may have been addressed in subsequent development.
-> 
+>
 > **Status Summary:**
+>
 > - Issue 1 (BatchQueryBuilder): Review for current implementation status
-> - Issue 2 (USDA Cache): Review for current implementation status  
+> - Issue 2 (USDA Cache): Review for current implementation status
 > - Issue 3 (Type Safety): Review for current implementation status
-> 
+>
 > Use as a reference for understanding past technical patterns and improvements.
 
 ## Issue 1: BatchQueryBuilder Transaction Handling (Critical)
@@ -19,7 +20,7 @@
 
 ### Prompt to Fix:
 
-```
+````
 Fix the BatchQueryBuilder in server/utils/batchQueries.ts:
 
 1. In the execute() method, update the db.transaction() call to properly receive and use the transaction handle:
@@ -50,7 +51,8 @@ Fix the BatchQueryBuilder in server/utils/batchQueries.ts:
        return results;
      });
    }
-   ```
+````
+
 ```
 
 ---
@@ -64,34 +66,39 @@ Fix the BatchQueryBuilder in server/utils/batchQueries.ts:
 ### Prompt to Fix:
 
 ```
+
 Fix the array mutation issue in server/utils/usdaCache.ts:
 
 1. In the generateCacheKey function (or wherever cache keys are generated from search options):
 
 2. Before sorting any arrays from searchOptions, create a copy first:
+
    - Instead of: `dataType?.sort()`
    - Use: `[...(searchOptions.dataType ?? [])].sort()`
 
 3. Apply the same pattern to brandOwner and any other array properties:
+
    - Instead of: `brandOwner?.sort()`
    - Use: `[...(searchOptions.brandOwner ?? [])].sort()`
 
 4. Example fix:
+
    ```typescript
    // Before (mutates original):
    const sortedDataType = searchOptions.dataType?.sort();
    const sortedBrandOwner = searchOptions.brandOwner?.sort();
 
    // After (creates copies):
-   const sortedDataType = searchOptions.dataType 
-     ? [...searchOptions.dataType].sort() 
+   const sortedDataType = searchOptions.dataType
+     ? [...searchOptions.dataType].sort()
      : [];
-   const sortedBrandOwner = searchOptions.brandOwner 
-     ? [...searchOptions.brandOwner].sort() 
+   const sortedBrandOwner = searchOptions.brandOwner
+     ? [...searchOptions.brandOwner].sort()
      : [];
    ```
 
 5. Ensure all array properties used in cache key generation are cloned before any mutation operations.
+
 ```
 
 ---
@@ -105,9 +112,11 @@ Fix the array mutation issue in server/utils/usdaCache.ts:
 ### Prompt to Fix:
 
 ```
+
 Add type safety and runtime validation to BatchQueryBuilder in server/utils/batchQueries.ts:
 
 1. Update the add() method to validate inputs at enqueue time:
+
    ```typescript
    add<T>(query: ((tx: Transaction) => Promise<T>) | Promise<T>, ...params: unknown[]) {
      // Validate that query is either a function or a Promise
@@ -117,19 +126,20 @@ Add type safety and runtime validation to BatchQueryBuilder in server/utils/batc
          `If passing a Drizzle query builder, wrap it in an async function: (tx) => tx.select()...`
        );
      }
-     
+
      this.queries.push({ query, params });
      return this;
    }
    ```
 
 2. Add TypeScript generics to improve compile-time type checking:
+
    ```typescript
    interface QueuedQuery<T = unknown> {
      query: ((tx: Transaction) => Promise<T>) | Promise<T>;
      params: unknown[];
    }
-   
+
    class BatchQueryBuilder {
      private queries: QueuedQuery[] = [];
      // ...
@@ -137,6 +147,7 @@ Add type safety and runtime validation to BatchQueryBuilder in server/utils/batc
    ```
 
 3. Consider adding a helper method for common use cases:
+
    ```typescript
    addQuery<T>(queryFn: (tx: Transaction) => Promise<T>): this {
      if (typeof queryFn !== 'function') {
@@ -148,6 +159,7 @@ Add type safety and runtime validation to BatchQueryBuilder in server/utils/batc
    ```
 
 4. Add JSDoc comments explaining the expected input types and common pitfalls.
+
 ```
 
 ---
@@ -157,8 +169,12 @@ Add type safety and runtime validation to BatchQueryBuilder in server/utils/batc
 After applying each fix, verify with:
 
 ```
+
 1. Run the application and check for TypeScript compilation errors
 2. Test any endpoints that use BatchQueryBuilder to ensure transactions work correctly
 3. Test USDA search functionality to verify cache key generation works without side effects
 4. Check that invalid inputs to BatchQueryBuilder now throw helpful error messages
+
+```
+
 ```

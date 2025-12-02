@@ -11,13 +11,34 @@ import { ExpirationAlert } from "@/components/expiration-alert";
 import { ProgressiveSection } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check, ScanLine, Sparkles } from "lucide-react";
+import {
+  Plus,
+  X,
+  Trash2,
+  Package,
+  Calendar,
+  CheckSquare,
+  Square,
+  Check,
+  ScanLine,
+  Sparkles,
+} from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { format, addDays } from "date-fns";
-import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
+import type {
+  UserInventory as FoodItem,
+  StorageLocation,
+  Recipe,
+} from "@shared/schema";
 import { BarcodeScanQueue } from "@/components/barcode";
 import { BatchCategorizationDialog } from "@/components/auto-categorization";
 
@@ -31,17 +52,17 @@ interface VirtualizedFoodGridProps {
   onItemSelect: (id: string) => void;
 }
 
-const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({ 
-  items, 
-  storageLocations, 
+const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({
+  items,
+  storageLocations,
   scrollContainerRef,
   isSelectionMode,
   selectedItems,
-  onItemSelect 
+  onItemSelect,
 }: VirtualizedFoodGridProps) {
   // Calculate grid columns based on screen size (responsive)
   const getColumns = () => {
-    if (typeof window === 'undefined') return 3;
+    if (typeof window === "undefined") return 3;
     const width = window.innerWidth;
     if (width < 768) return 1; // mobile
     if (width < 1024) return 2; // tablet
@@ -53,8 +74,8 @@ const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({
   // Update columns on resize
   useEffect(() => {
     const handleResize = () => setColumns(getColumns());
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Group items into rows for virtual scrolling
@@ -78,13 +99,13 @@ const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({
     <div
       ref={scrollContainerRef}
       className="h-[600px] overflow-auto"
-      style={{ contain: 'strict' }}
+      style={{ contain: "strict" }}
     >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
+          width: "100%",
+          position: "relative",
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -93,10 +114,10 @@ const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({
             <div
               key={virtualRow.key}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
-                width: '100%',
+                width: "100%",
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
@@ -104,7 +125,7 @@ const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {row.map((item) => {
                   const itemLocation = storageLocations.find(
-                    (loc) => loc.id === item.storageLocationId
+                    (loc) => loc.id === item.storageLocationId,
                   );
                   return (
                     <div key={item.id} className="relative">
@@ -151,37 +172,57 @@ export default function Storage() {
   const location = params?.location || "all";
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useStorageLocations();
+  const {
+    data: storageLocations,
+    error: locationsError,
+    isLoading: locationsLoading,
+  } = useStorageLocations();
 
   const currentLocation = storageLocations?.find(
-    (loc) => loc.name.toLowerCase() === location.toLowerCase()
+    (loc) => loc.name.toLowerCase() === location.toLowerCase(),
   );
 
   // Build query params for server-side filtering
   const queryParams = new URLSearchParams({
-    type: "items"
+    type: "items",
   });
-  
+
   if (location !== "all" && currentLocation?.id) {
     queryParams.append("location", currentLocation.id);
   }
-  
+
   if (selectedCategory) {
     queryParams.append("category", selectedCategory);
   }
 
-  const { data: inventoryResponse, error: itemsError, isLoading: itemsLoading } = useQuery<{
+  const {
+    data: inventoryResponse,
+    error: itemsError,
+    isLoading: itemsLoading,
+  } = useQuery<{
     data: FoodItem[];
-    pagination: { page: number; limit: number; total: number; totalPages: number };
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
     type: string;
   }>({
-    queryKey: [API_ENDPOINTS.inventory.list, location, selectedCategory, currentLocation?.id],
+    queryKey: [
+      API_ENDPOINTS.inventory.list,
+      location,
+      selectedCategory,
+      currentLocation?.id,
+    ],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.inventory.list}?${queryParams.toString()}`);
+      const response = await fetch(
+        `${API_ENDPOINTS.inventory.list}?${queryParams.toString()}`,
+      );
       if (!response.ok) throw new Error("Failed to fetch items");
       return response.json();
     },
-    enabled: location === "all" || !!currentLocation?.id
+    enabled: location === "all" || !!currentLocation?.id,
   });
 
   const items = inventoryResponse?.data;
@@ -195,7 +236,8 @@ export default function Storage() {
     if (locationsError) {
       toast({
         title: "Error loading storage locations",
-        description: "Failed to load your storage locations. Please try refreshing the page.",
+        description:
+          "Failed to load your storage locations. Please try refreshing the page.",
         variant: "destructive",
       });
     }
@@ -205,7 +247,8 @@ export default function Storage() {
     if (itemsError) {
       toast({
         title: "Error loading items",
-        description: "Failed to load your inventory items. Please try refreshing the page.",
+        description:
+          "Failed to load your inventory items. Please try refreshing the page.",
         variant: "destructive",
       });
     }
@@ -217,19 +260,21 @@ export default function Storage() {
   };
 
   // Handle barcode scan queue submission
-  const handleBarcodeQueueSubmit = async (scannedItems: Array<{ barcode: string; title?: string; brand?: string }>) => {
+  const handleBarcodeQueueSubmit = async (
+    scannedItems: Array<{ barcode: string; title?: string; brand?: string }>,
+  ) => {
     toast({
       title: "Processing scanned items",
       description: `Adding ${scannedItems.length} items to inventory...`,
     });
-    
+
     // For now, just open the add dialog - in the future, this could batch-add items
     setAddDialogOpen(true);
     queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
   };
 
   const handleItemSelect = (id: string) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -245,7 +290,7 @@ export default function Storage() {
     if (selectedItems.size === items.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(items.map(item => item.id)));
+      setSelectedItems(new Set(items.map((item) => item.id)));
     }
   };
 
@@ -257,15 +302,21 @@ export default function Storage() {
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const promises = ids.map(id => 
-        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "DELETE")
+      const promises = ids.map((id) =>
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "DELETE"),
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.list],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.storageLocations],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.data],
+      });
       toast({
         title: "Items deleted",
         description: `Successfully deleted ${selectedItems.size} items`,
@@ -283,15 +334,27 @@ export default function Storage() {
 
   // Bulk move mutation
   const bulkMoveMutation = useMutation({
-    mutationFn: async ({ ids, locationId }: { ids: string[], locationId: string }) => {
-      const promises = ids.map(id => 
-        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", { storageLocationId: locationId })
+    mutationFn: async ({
+      ids,
+      locationId,
+    }: {
+      ids: string[];
+      locationId: string;
+    }) => {
+      const promises = ids.map((id) =>
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", {
+          storageLocationId: locationId,
+        }),
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.list],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.storageLocations],
+      });
       toast({
         title: "Items moved",
         description: `Successfully moved ${selectedItems.size} items`,
@@ -310,16 +373,24 @@ export default function Storage() {
 
   // Bulk update expiration mutation
   const bulkUpdateExpirationMutation = useMutation({
-    mutationFn: async ({ ids, date }: { ids: string[], date: string }) => {
-      const promises = ids.map(id => 
-        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", { expirationDate: date })
+    mutationFn: async ({ ids, date }: { ids: string[]; date: string }) => {
+      const promises = ids.map((id) =>
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", {
+          expirationDate: date,
+        }),
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.list],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.storageLocations],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.data],
+      });
       toast({
         title: "Expiration dates updated",
         description: `Successfully updated ${selectedItems.size} items`,
@@ -337,25 +408,30 @@ export default function Storage() {
 
   const handleBulkDelete = () => {
     if (selectedItems.size === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} item(s)?`)) {
+    if (
+      confirm(`Are you sure you want to delete ${selectedItems.size} item(s)?`)
+    ) {
       bulkDeleteMutation.mutate(Array.from(selectedItems));
     }
   };
 
   const handleBulkMove = () => {
     if (!bulkStorageLocation || selectedItems.size === 0) return;
-    bulkMoveMutation.mutate({ 
-      ids: Array.from(selectedItems), 
-      locationId: bulkStorageLocation 
+    bulkMoveMutation.mutate({
+      ids: Array.from(selectedItems),
+      locationId: bulkStorageLocation,
     });
   };
 
   const handleBulkUpdateExpiration = () => {
     if (selectedItems.size === 0) return;
-    const newDate = format(addDays(new Date(), bulkExpirationDays), 'yyyy-MM-dd');
-    bulkUpdateExpirationMutation.mutate({ 
-      ids: Array.from(selectedItems), 
-      date: newDate 
+    const newDate = format(
+      addDays(new Date(), bulkExpirationDays),
+      "yyyy-MM-dd",
+    );
+    bulkUpdateExpirationMutation.mutate({
+      ids: Array.from(selectedItems),
+      date: newDate,
     });
   };
 
@@ -378,14 +454,20 @@ export default function Storage() {
                     onClick={handleSelectAll}
                     data-testid="button-select-all"
                   >
-                    {selectedItems.size === items?.length ? <Square className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
-                    {selectedItems.size === items?.length ? "Deselect All" : "Select All"}
+                    {selectedItems.size === items?.length ? (
+                      <Square className="w-4 h-4" />
+                    ) : (
+                      <CheckSquare className="w-4 h-4" />
+                    )}
+                    {selectedItems.size === items?.length
+                      ? "Deselect All"
+                      : "Select All"}
                   </Button>
                   <span className="text-sm text-muted-foreground">
                     {selectedItems.size} selected
                   </span>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 flex-1">
                   <Button
                     variant="destructive"
@@ -397,10 +479,16 @@ export default function Storage() {
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </Button>
-                  
+
                   <div className="flex gap-2 items-center">
-                    <Select value={bulkStorageLocation} onValueChange={setBulkStorageLocation}>
-                      <SelectTrigger className="w-[140px] h-8" data-testid="select-bulk-storage">
+                    <Select
+                      value={bulkStorageLocation}
+                      onValueChange={setBulkStorageLocation}
+                    >
+                      <SelectTrigger
+                        className="w-[140px] h-8"
+                        data-testid="select-bulk-storage"
+                      >
                         <SelectValue placeholder="Move to..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -415,19 +503,23 @@ export default function Storage() {
                       variant="outline"
                       size="sm"
                       onClick={handleBulkMove}
-                      disabled={!bulkStorageLocation || bulkMoveMutation.isPending}
+                      disabled={
+                        !bulkStorageLocation || bulkMoveMutation.isPending
+                      }
                       data-testid="button-bulk-move"
                     >
                       <Package className="w-4 h-4 mr-2" />
                       Move
                     </Button>
                   </div>
-                  
+
                   <div className="flex gap-2 items-center">
                     <input
                       type="number"
                       value={bulkExpirationDays}
-                      onChange={(e) => setBulkExpirationDays(parseInt(e.target.value) || 7)}
+                      onChange={(e) =>
+                        setBulkExpirationDays(parseInt(e.target.value) || 7)
+                      }
                       className="w-16 h-8 px-2 border rounded text-sm"
                       min="1"
                       data-testid="input-bulk-expiry-days"
@@ -445,7 +537,7 @@ export default function Storage() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -463,14 +555,20 @@ export default function Storage() {
               <ProgressiveSection
                 id="storage-filters"
                 title="Advanced Filters"
-                summary={selectedCategory ? `Filtered by: ${selectedCategory}` : "USDA categories and more"}
+                summary={
+                  selectedCategory
+                    ? `Filtered by: ${selectedCategory}`
+                    : "USDA categories and more"
+                }
                 defaultExpanded={false}
                 size="sm"
                 className="mb-0"
                 testId="progressive-storage-filters"
               >
                 <div className="pt-2">
-                  <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Filter by Category</h3>
+                  <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
+                    Filter by Category
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     <Badge
                       key="all"
@@ -484,10 +582,12 @@ export default function Storage() {
                     {categories.map((category) => (
                       <Badge
                         key={category}
-                        variant={selectedCategory === category ? "default" : "outline"}
+                        variant={
+                          selectedCategory === category ? "default" : "outline"
+                        }
                         className="cursor-pointer hover-elevate active-elevate-2"
                         onClick={() => setSelectedCategory(category)}
-                        data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                        data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                       >
                         {category}
                       </Badge>
@@ -504,7 +604,8 @@ export default function Storage() {
                 {location === "all" ? "All Items" : location}
               </h1>
               <p className="text-sm md:text-base text-muted-foreground">
-                {items?.length || 0} item{items?.length !== 1 ? "s" : ""} in this location
+                {items?.length || 0} item{items?.length !== 1 ? "s" : ""} in
+                this location
               </p>
             </div>
             <div className="flex gap-2">
@@ -533,15 +634,18 @@ export default function Storage() {
                 </Button>
               )}
               <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
-              <BatchCategorizationDialog 
+              <BatchCategorizationDialog
                 trigger={
-                  <Button variant="outline" data-testid="button-batch-categorize">
+                  <Button
+                    variant="outline"
+                    data-testid="button-batch-categorize"
+                  >
                     <Sparkles className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Auto-Categorize</span>
                   </Button>
                 }
               />
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setBarcodeScanQueueOpen(true)}
                 data-testid="button-rapid-scan"
@@ -549,8 +653,8 @@ export default function Storage() {
                 <ScanLine className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Rapid Scan</span>
               </Button>
-              <Button 
-                onClick={() => setAddDialogOpen(true)} 
+              <Button
+                onClick={() => setAddDialogOpen(true)}
                 className="touch-target"
                 data-testid="button-add-item-page"
               >
@@ -574,9 +678,15 @@ export default function Storage() {
             {storageLocations?.map((loc) => (
               <Badge
                 key={loc.id}
-                variant={location.toLowerCase() === loc.name.toLowerCase() ? "default" : "outline"}
+                variant={
+                  location.toLowerCase() === loc.name.toLowerCase()
+                    ? "default"
+                    : "outline"
+                }
                 className="cursor-pointer hover-elevate active-elevate-2"
-                onClick={() => setLocation(`/storage/${loc.name.toLowerCase()}`)}
+                onClick={() =>
+                  setLocation(`/storage/${loc.name.toLowerCase()}`)
+                }
                 data-testid={`badge-location-${loc.name.toLowerCase()}`}
               >
                 {loc.name}
@@ -592,9 +702,9 @@ export default function Storage() {
               onAction={() => setAddDialogOpen(true)}
             />
           ) : (
-            <VirtualizedFoodGrid 
-              items={items} 
-              storageLocations={storageLocations || []} 
+            <VirtualizedFoodGrid
+              items={items}
+              storageLocations={storageLocations || []}
               scrollContainerRef={scrollContainerRef}
               isSelectionMode={isSelectionMode}
               selectedItems={selectedItems}
@@ -605,8 +715,8 @@ export default function Storage() {
       </div>
 
       <AddFoodDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
-      <BarcodeScanQueue 
-        open={barcodeScanQueueOpen} 
+      <BarcodeScanQueue
+        open={barcodeScanQueueOpen}
         onOpenChange={setBarcodeScanQueueOpen}
         onSubmitQueue={handleBarcodeQueueSubmit}
       />

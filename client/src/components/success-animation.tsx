@@ -22,52 +22,59 @@ export function SuccessAnimation({
   useEffect(() => {
     if (showConfetti) {
       // Dynamically import confetti only when needed
-      import("canvas-confetti").then(({ default: confetti }) => {
-        // Guard against double-triggering - check if already running
-        if (intervalRef.current) {
-          return;
-        }
-
-        // Trigger confetti
-        const duration = 3000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-        const randomInRange = (min: number, max: number) => {
-          return Math.random() * (max - min) + min;
-        };
-
-        const interval = setInterval(function () {
-          const timeLeft = animationEnd - Date.now();
-
-          if (timeLeft <= 0) {
-            clearInterval(interval);
-            intervalRef.current = null;
-            onComplete?.();
+      import("canvas-confetti")
+        .then(({ default: confetti }) => {
+          // Guard against double-triggering - check if already running
+          if (intervalRef.current) {
             return;
           }
 
-          const particleCount = 50 * (timeLeft / duration);
-          
-          // Shoot confetti from left
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-            colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
-          });
-          
-          // Shoot confetti from right
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-            colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
-          });
-        }, 250);
+          // Trigger confetti
+          const duration = 3000;
+          const animationEnd = Date.now() + duration;
+          const defaults = {
+            startVelocity: 30,
+            spread: 360,
+            ticks: 60,
+            zIndex: 0,
+          };
 
-        intervalRef.current = interval;
-      }).catch(console.error);
+          const randomInRange = (min: number, max: number) => {
+            return Math.random() * (max - min) + min;
+          };
+
+          const interval = setInterval(function () {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+              clearInterval(interval);
+              intervalRef.current = null;
+              onComplete?.();
+              return;
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+
+            // Shoot confetti from left
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+              colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
+            });
+
+            // Shoot confetti from right
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+              colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
+            });
+          }, 250);
+
+          intervalRef.current = interval;
+        })
+        .catch(console.error);
     } else {
       // Guard against double-triggering
       if (timerRef.current) {
@@ -106,7 +113,7 @@ export function SuccessAnimation({
       }}
       className={cn(
         "flex flex-col items-center justify-center gap-4 p-8",
-        className
+        className,
       )}
     >
       <motion.div
@@ -134,14 +141,16 @@ export function SuccessAnimation({
           className="absolute inset-0 rounded-full bg-primary/20"
         />
       </motion.div>
-      
+
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
         className="text-center"
       >
-        <h2 className="text-2xl font-bold text-gradient-primary mb-2">{message}</h2>
+        <h2 className="text-2xl font-bold text-gradient-primary mb-2">
+          {message}
+        </h2>
         <div className="flex items-center justify-center gap-1 text-muted-foreground">
           <Sparkles className="w-4 h-4" />
           <span>Great job!</span>

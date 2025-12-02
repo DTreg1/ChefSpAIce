@@ -32,7 +32,7 @@ export interface IExperimentsStorage {
   }): Promise<AbTest[]>;
   updateAbTest(
     testId: string,
-    update: Partial<Omit<AbTest, "id" | "createdAt" | "updatedAt">>
+    update: Partial<Omit<AbTest, "id" | "createdAt" | "updatedAt">>,
   ): Promise<AbTest>;
   deleteAbTest(testId: string): Promise<void>;
 
@@ -47,18 +47,25 @@ export interface IExperimentsStorage {
     testId: string,
     userId: string,
     variant: string,
-    conversionValue?: number
+    conversionValue?: number,
   ): Promise<AbTestResult>;
 
   // ==================== A/B Test Variant Metrics ====================
-  upsertAbTestVariantMetric(metric: InsertAbTestVariantMetric): Promise<AbTestVariantMetric>;
+  upsertAbTestVariantMetric(
+    metric: InsertAbTestVariantMetric,
+  ): Promise<AbTestVariantMetric>;
   getAbTestVariantMetrics(testId: string): Promise<AbTestVariantMetric[]>;
-  getLatestAbTestVariantMetric(testId: string): Promise<AbTestVariantMetric | undefined>;
+  getLatestAbTestVariantMetric(
+    testId: string,
+  ): Promise<AbTestVariantMetric | undefined>;
 
   // ==================== A/B Test Insights (General/Narrative) ====================
   createAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight>;
   getAbTestInsights(testId: string): Promise<AbTestInsight[]>;
-  getAbTestInsightsByType(testId: string, insightType: string): Promise<AbTestInsight[]>;
+  getAbTestInsightsByType(
+    testId: string,
+    insightType: string,
+  ): Promise<AbTestInsight[]>;
   calculateStatisticalSignificance(testId: string): Promise<{
     pValue: number;
     confidence: number;
@@ -83,7 +90,10 @@ export interface IExperimentsStorage {
     isActive?: boolean;
     createdBy?: string;
   }): Promise<Cohort[]>;
-  updateCohort(cohortId: string, updates: Partial<InsertCohort>): Promise<Cohort>;
+  updateCohort(
+    cohortId: string,
+    updates: Partial<InsertCohort>,
+  ): Promise<Cohort>;
   deleteCohort(cohortId: string): Promise<void>;
   refreshCohortMembership(cohortId: string): Promise<void>;
 
@@ -95,18 +105,18 @@ export interface IExperimentsStorage {
       metricName?: string;
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<CohortMetric[]>;
   calculateCohortRetention(
     cohortId: string,
-    periods: number[]
+    periods: number[],
   ): Promise<{
     cohortId: string;
     retention: Array<{ period: number; rate: number; count: number }>;
   }>;
   compareCohorts(
     cohortIds: string[],
-    metrics: string[]
+    metrics: string[],
   ): Promise<{
     comparison: Array<{
       cohortId: string;
@@ -121,11 +131,11 @@ export interface IExperimentsStorage {
     filters?: {
       insightType?: string;
       impact?: string;
-    }
+    },
   ): Promise<CohortInsight[]>;
   generateCohortInsights(cohortId: string): Promise<CohortInsight[]>;
   updateCohortInsightStatus(
     insightId: string,
-    status: string
+    status: string,
   ): Promise<CohortInsight>;
 }

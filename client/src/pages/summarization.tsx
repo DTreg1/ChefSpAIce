@@ -3,7 +3,13 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileText, Sparkles, Copy } from "lucide-react";
@@ -49,7 +55,9 @@ As we look to the future, sustainable agriculture represents not just an alterna
 
 export default function SummarizationPage() {
   const [inputText, setInputText] = useState("");
-  const [summaryType, setSummaryType] = useState<'tldr' | 'bullet' | 'paragraph'>('tldr');
+  const [summaryType, setSummaryType] = useState<
+    "tldr" | "bullet" | "paragraph"
+  >("tldr");
   const [summaryLength, setSummaryLength] = useState(2);
   const [currentSummary, setCurrentSummary] = useState<Summary | null>(null);
   const [showSummaryView, setShowSummaryView] = useState(false);
@@ -59,10 +67,10 @@ export default function SummarizationPage() {
   const generateSummaryMutation = useMutation({
     mutationFn: async (data: {
       content: string;
-      type: 'tldr' | 'bullet' | 'paragraph';
+      type: "tldr" | "bullet" | "paragraph";
       length: number;
     }) => {
-      return apiRequest<Summary>('/api/summarize', 'POST', {
+      return apiRequest<Summary>("/api/summarize", "POST", {
         content: data.content,
         type: data.type,
         length: data.length,
@@ -81,14 +89,14 @@ export default function SummarizationPage() {
         variant: "destructive",
         description: "Failed to generate summary. Please try again.",
       });
-      console.error('Summary error:', error);
+      console.error("Summary error:", error);
     },
   });
 
   // Edit summary mutation
   const editSummaryMutation = useMutation({
     mutationFn: async ({ id, text }: { id: string; text: string }) => {
-      return apiRequest<Summary>(`/api/summarize/${id}`, 'PUT', {
+      return apiRequest<Summary>(`/api/summarize/${id}`, "PUT", {
         editedText: text,
         isEdited: true,
       });
@@ -149,14 +157,17 @@ export default function SummarizationPage() {
     });
   };
 
-  const wordCount = inputText.split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = inputText
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Automatic Summarization</h1>
         <p className="text-muted-foreground">
-          Create concise TL;DR versions of long content while preserving key information
+          Create concise TL;DR versions of long content while preserving key
+          information
         </p>
       </div>
 
@@ -198,7 +209,9 @@ export default function SummarizationPage() {
                 <Button
                   className="flex-1"
                   onClick={handleGenerateSummary}
-                  disabled={generateSummaryMutation.isPending || inputText.length < 50}
+                  disabled={
+                    generateSummaryMutation.isPending || inputText.length < 50
+                  }
                   data-testid="button-generate-summary"
                 >
                   {generateSummaryMutation.isPending ? (
@@ -261,30 +274,42 @@ export default function SummarizationPage() {
                   {/* Summary Card */}
                   <SummaryCard
                     summary={currentSummary.summary}
-                    type={currentSummary.summaryType as 'tldr' | 'bullet' | 'paragraph'}
+                    type={
+                      currentSummary.summaryType as
+                        | "tldr"
+                        | "bullet"
+                        | "paragraph"
+                    }
                     wordCount={currentSummary.wordCountSummary || 0}
-                    originalWordCount={currentSummary.wordCountOriginal || undefined}
+                    originalWordCount={
+                      currentSummary.wordCountOriginal || undefined
+                    }
                     originalContent={currentSummary.originalContent}
                     keyPoints={currentSummary.keyPoints || undefined}
-                    onEdit={(newText) => handleEditSummary(currentSummary.id, newText)}
+                    onEdit={(newText) =>
+                      handleEditSummary(currentSummary.id, newText)
+                    }
                   />
 
                   {/* Key Points if available */}
-                  {currentSummary.keyPoints && currentSummary.keyPoints.length > 0 && (
-                    <KeyPointsHighlighter
-                      keyPoints={currentSummary.keyPoints}
-                      title="Main Takeaways"
-                    />
-                  )}
+                  {currentSummary.keyPoints &&
+                    currentSummary.keyPoints.length > 0 && (
+                      <KeyPointsHighlighter
+                        keyPoints={currentSummary.keyPoints}
+                        title="Main Takeaways"
+                      />
+                    )}
 
                   {/* Show bullet format if it's a bullet summary */}
-                  {currentSummary.summaryType === 'bullet' && (
+                  {currentSummary.summaryType === "bullet" && (
                     <Card>
                       <CardHeader>
                         <CardTitle>Formatted View</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <BulletSummary bullets={currentSummary.summary.split('\n')} />
+                        <BulletSummary
+                          bullets={currentSummary.summary.split("\n")}
+                        />
                       </CardContent>
                     </Card>
                   )}

@@ -3,7 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, RefreshCw, BookOpen, TrendingUp, Brain, Code } from "lucide-react";
+import {
+  Sparkles,
+  RefreshCw,
+  BookOpen,
+  TrendingUp,
+  Brain,
+  Code,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,14 +45,14 @@ const sampleContent: ContentItem[] = [
       category: "Technology",
       author: "AI Expert",
       readTime: 10,
-      tags: ["AI", "ML", "Deep Learning", "Neural Networks"]
+      tags: ["AI", "ML", "Deep Learning", "Neural Networks"],
     },
     relatedScores: {
       "article-2": 0.92,
       "article-3": 0.85,
       "article-4": 0.78,
-      "article-5": 0.71
-    }
+      "article-5": 0.71,
+    },
   },
   {
     id: "article-2",
@@ -56,14 +63,14 @@ const sampleContent: ContentItem[] = [
       category: "Technology",
       author: "Deep Learning Specialist",
       readTime: 15,
-      tags: ["Neural Networks", "Deep Learning", "AI"]
+      tags: ["Neural Networks", "Deep Learning", "AI"],
     },
     relatedScores: {
       "article-1": 0.92,
       "article-3": 0.81,
       "article-4": 0.75,
-      "article-5": 0.68
-    }
+      "article-5": 0.68,
+    },
   },
   {
     id: "article-3",
@@ -74,14 +81,14 @@ const sampleContent: ContentItem[] = [
       category: "Technology",
       author: "Data Scientist",
       readTime: 12,
-      tags: ["Data Science", "Analytics", "Big Data", "Statistics"]
+      tags: ["Data Science", "Analytics", "Big Data", "Statistics"],
     },
     relatedScores: {
       "article-1": 0.85,
       "article-2": 0.81,
       "article-4": 0.73,
-      "article-5": 0.65
-    }
+      "article-5": 0.65,
+    },
   },
   {
     id: "article-4",
@@ -92,14 +99,14 @@ const sampleContent: ContentItem[] = [
       category: "Technology",
       author: "ML Researcher",
       readTime: 18,
-      tags: ["Deep Learning", "Computer Vision", "NLP", "Applications"]
+      tags: ["Deep Learning", "Computer Vision", "NLP", "Applications"],
     },
     relatedScores: {
       "article-1": 0.78,
       "article-2": 0.75,
       "article-3": 0.73,
-      "article-5": 0.69
-    }
+      "article-5": 0.69,
+    },
   },
   {
     id: "article-5",
@@ -110,20 +117,22 @@ const sampleContent: ContentItem[] = [
       category: "Programming",
       author: "Python Developer",
       readTime: 8,
-      tags: ["Python", "Programming", "Data Analysis", "Libraries"]
+      tags: ["Python", "Programming", "Data Analysis", "Libraries"],
     },
     relatedScores: {
       "article-1": 0.71,
       "article-2": 0.68,
       "article-3": 0.65,
-      "article-4": 0.69
-    }
-  }
+      "article-4": 0.69,
+    },
+  },
 ];
 
 export default function RecommendationsPublicDemo() {
   const { toast } = useToast();
-  const [selectedContent, setSelectedContent] = useState<ContentItem>(sampleContent[0]);
+  const [selectedContent, setSelectedContent] = useState<ContentItem>(
+    sampleContent[0],
+  );
   const [customContent, setCustomContent] = useState("");
   const [customTitle, setCustomTitle] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -132,26 +141,27 @@ export default function RecommendationsPublicDemo() {
   // Simulate embedding generation
   const simulateEmbeddings = async () => {
     setIsProcessing(true);
-    
+
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     setIsProcessing(false);
     setShowDemo(true);
-    
+
     toast({
       title: "Demo Mode Activated",
-      description: "Showing simulated recommendations with sample relevance scores",
+      description:
+        "Showing simulated recommendations with sample relevance scores",
     });
   };
 
   // Get related content for selected item
   const getRelatedContent = () => {
     if (!selectedContent.relatedScores) return [];
-    
+
     return Object.entries(selectedContent.relatedScores)
       .map(([id, score]) => {
-        const content = sampleContent.find(c => c.id === id);
+        const content = sampleContent.find((c) => c.id === id);
         return content ? { ...content, score } : null;
       })
       .filter(Boolean)
@@ -163,7 +173,7 @@ export default function RecommendationsPublicDemo() {
       toast({
         title: "Missing Information",
         description: "Please enter both title and content",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -176,16 +186,16 @@ export default function RecommendationsPublicDemo() {
       metadata: {
         category: "Custom",
         author: "User",
-        readTime: Math.ceil(customContent.split(' ').length / 200),
-        tags: ["Custom", "User Generated"]
+        readTime: Math.ceil(customContent.split(" ").length / 200),
+        tags: ["Custom", "User Generated"],
       },
       relatedScores: {
         "article-1": 0.82,
         "article-2": 0.75,
         "article-3": 0.68,
         "article-4": 0.65,
-        "article-5": 0.61
-      }
+        "article-5": 0.61,
+      },
     };
 
     setSelectedContent(customItem);
@@ -201,10 +211,11 @@ export default function RecommendationsPublicDemo() {
           <h1 className="text-4xl font-bold">Content Recommendations Demo</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Explore how AI-powered content recommendations work using semantic similarity.
-          This demo shows simulated results to demonstrate the concept.
+          Explore how AI-powered content recommendations work using semantic
+          similarity. This demo shows simulated results to demonstrate the
+          concept.
         </p>
-        
+
         <Button
           onClick={simulateEmbeddings}
           disabled={isProcessing}
@@ -235,7 +246,9 @@ export default function RecommendationsPublicDemo() {
               <div className="flex items-center justify-between">
                 <div>
                   <Badge className="mb-2">{selectedContent.type}</Badge>
-                  <CardTitle className="text-2xl">{selectedContent.title}</CardTitle>
+                  <CardTitle className="text-2xl">
+                    {selectedContent.title}
+                  </CardTitle>
                 </div>
                 <BookOpen className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -244,11 +257,15 @@ export default function RecommendationsPublicDemo() {
               <p className="text-muted-foreground leading-relaxed">
                 {selectedContent.text}
               </p>
-              
+
               {selectedContent.metadata && (
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
                   {selectedContent.metadata.tags?.map((tag: string) => (
-                    <Badge key={tag} variant="secondary" data-testid={`tag-${tag}`}>
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      data-testid={`tag-${tag}`}
+                    >
                       {tag}
                     </Badge>
                   ))}
@@ -264,10 +281,12 @@ export default function RecommendationsPublicDemo() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-3">
-                {sampleContent.map(content => (
+                {sampleContent.map((content) => (
                   <Button
                     key={content.id}
-                    variant={selectedContent.id === content.id ? "default" : "outline"}
+                    variant={
+                      selectedContent.id === content.id ? "default" : "outline"
+                    }
                     className="justify-start h-auto py-3 px-4"
                     onClick={() => setSelectedContent(content)}
                     data-testid={`select-${content.id}`}
@@ -275,7 +294,8 @@ export default function RecommendationsPublicDemo() {
                     <div className="text-left">
                       <div className="font-medium">{content.title}</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {content.metadata.category} • {content.metadata.readTime} min read
+                        {content.metadata.category} •{" "}
+                        {content.metadata.readTime} min read
                       </div>
                     </div>
                   </Button>
@@ -344,11 +364,19 @@ export default function RecommendationsPublicDemo() {
                     data-testid={`related-${item.id}`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium line-clamp-2">{item.title}</h4>
+                      <h4 className="text-sm font-medium line-clamp-2">
+                        {item.title}
+                      </h4>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Progress value={item.score * 100} className="h-2 flex-1" />
-                      <span className="text-xs font-medium text-primary" data-testid={`score-${item.id}`}>
+                      <Progress
+                        value={item.score * 100}
+                        className="h-2 flex-1"
+                      />
+                      <span
+                        className="text-xs font-medium text-primary"
+                        data-testid={`score-${item.id}`}
+                      >
                         {Math.round(item.score * 100)}%
                       </span>
                     </div>
@@ -413,15 +441,21 @@ export default function RecommendationsPublicDemo() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Model</span>
-                  <span className="font-medium" data-testid="model-name">text-embedding-ada-002</span>
+                  <span className="font-medium" data-testid="model-name">
+                    text-embedding-ada-002
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Dimensions</span>
-                  <span className="font-medium" data-testid="dimensions">1536</span>
+                  <span className="font-medium" data-testid="dimensions">
+                    1536
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Similarity</span>
-                  <span className="font-medium" data-testid="similarity-method">Cosine</span>
+                  <span className="font-medium" data-testid="similarity-method">
+                    Cosine
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cache TTL</span>

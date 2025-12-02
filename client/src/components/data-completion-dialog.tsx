@@ -29,7 +29,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -39,16 +45,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { DataQualityIndicator } from "@/components/forms";
-import { 
-  Search, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Search,
+  AlertTriangle,
+  CheckCircle,
   XCircle,
   Package,
   Calendar,
   MapPin,
   Barcode,
-  Info
+  Info,
 } from "lucide-react";
 
 const dataCompletionSchema = z.object({
@@ -80,11 +86,13 @@ export function DataCompletionDialog({
   onOpenChange,
   initialData,
   userId,
-  onComplete
+  onComplete,
 }: DataCompletionDialogProps) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSource, setSelectedSource] = useState<"manual" | "search">("manual");
+  const [selectedSource, setSelectedSource] = useState<"manual" | "search">(
+    "manual",
+  );
   const [dataQuality, setDataQuality] = useState<any>(null);
 
   const form = useForm<DataCompletionForm>({
@@ -103,15 +111,15 @@ export function DataCompletionDialog({
 
   // Fetch storage locations
   const { data: storageLocations } = useQuery<UserStorage[]>({
-    queryKey: ['/api/storage-locations', userId],
+    queryKey: ["/api/storage-locations", userId],
   });
 
   // Assess data quality
   const assessQualityMutation = useMutation({
     mutationFn: async (item: Partial<DataCompletionForm>) => {
-      return apiRequest('/api/data-completion/assess-quality', 'POST', {
+      return apiRequest("/api/data-completion/assess-quality", "POST", {
         item,
-        userId
+        userId,
       });
     },
     onSuccess: (data) => {
@@ -130,9 +138,9 @@ export function DataCompletionDialog({
   // Enrich product data
   const enrichProductMutation = useMutation({
     mutationFn: async (product: Partial<DataCompletionForm>) => {
-      return apiRequest('/api/data-completion/enrich-product', 'POST', {
+      return apiRequest("/api/data-completion/enrich-product", "POST", {
         product,
-        userId
+        userId,
       });
     },
     onSuccess: (data) => {
@@ -146,7 +154,9 @@ export function DataCompletionDialog({
         setDataQuality(data.dataQuality);
         toast({
           title: "Product enriched",
-          description: `Data enhanced from ${Object.keys(data.sources).filter(k => data.sources[k]).join(', ')}`,
+          description: `Data enhanced from ${Object.keys(data.sources)
+            .filter((k) => data.sources[k])
+            .join(", ")}`,
         });
       }
     },
@@ -166,7 +176,9 @@ export function DataCompletionDialog({
         query,
         userId,
       });
-      const response = await fetch(`/api/data-completion/search-products?${params}`);
+      const response = await fetch(
+        `/api/data-completion/search-products?${params}`,
+      );
       return response.json();
     },
   });
@@ -174,9 +186,9 @@ export function DataCompletionDialog({
   // Complete and save
   const completeSaveMutation = useMutation({
     mutationFn: async (item: DataCompletionForm) => {
-      return apiRequest('/api/data-completion/complete-and-save', 'POST', {
+      return apiRequest("/api/data-completion/complete-and-save", "POST", {
         item,
-        userId
+        userId,
       });
     },
     onSuccess: (data) => {
@@ -184,14 +196,16 @@ export function DataCompletionDialog({
         title: "Product saved",
         description: "Product has been added to your inventory",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/food-items'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       onComplete?.(data.item);
       onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
         title: "Save failed",
-        description: error.message || "Could not save product. Please check required fields.",
+        description:
+          error.message ||
+          "Could not save product. Please check required fields.",
         variant: "destructive",
       });
     },
@@ -220,7 +234,12 @@ export function DataCompletionDialog({
 
   const handleSelectSearchResult = (product: any) => {
     Object.entries(product).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && key !== 'source' && key !== 'dataQuality') {
+      if (
+        value !== undefined &&
+        value !== null &&
+        key !== "source" &&
+        key !== "dataQuality"
+      ) {
         form.setValue(key as keyof DataCompletionForm, value as any);
       }
     });
@@ -243,7 +262,8 @@ export function DataCompletionDialog({
         <DialogHeader>
           <DialogTitle>Complete Product Information</DialogTitle>
           <DialogDescription>
-            Review and complete missing product information before adding to inventory
+            Review and complete missing product information before adding to
+            inventory
           </DialogDescription>
         </DialogHeader>
 
@@ -256,10 +276,17 @@ export function DataCompletionDialog({
           />
         )}
 
-        <Tabs value={selectedSource} onValueChange={(v) => setSelectedSource(v as "search" | "manual")}>
+        <Tabs
+          value={selectedSource}
+          onValueChange={(v) => setSelectedSource(v as "search" | "manual")}
+        >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="manual" data-testid="tab-manual-entry">Manual Entry</TabsTrigger>
-            <TabsTrigger value="search" data-testid="tab-search-products">Search Products</TabsTrigger>
+            <TabsTrigger value="manual" data-testid="tab-manual-entry">
+              Manual Entry
+            </TabsTrigger>
+            <TabsTrigger value="search" data-testid="tab-search-products">
+              Search Products
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="search" className="space-y-4">
@@ -268,10 +295,10 @@ export function DataCompletionDialog({
                 placeholder="Search by name or scan barcode..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 data-testid="input-product-search"
               />
-              <Button 
+              <Button
                 onClick={handleSearch}
                 disabled={searchProductsMutation.isPending}
                 data-testid="button-search"
@@ -290,57 +317,64 @@ export function DataCompletionDialog({
 
             {searchProductsMutation.data?.results && (
               <div className="space-y-2">
-                {searchProductsMutation.data.results.map((product: any, index: number) => (
-                  <Card 
-                    key={index} 
-                    className="cursor-pointer hover-elevate"
-                    onClick={() => handleSelectSearchResult(product)}
-                    data-testid={`card-search-result-${index}`}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-sm">{product.name}</CardTitle>
-                          {product.brand && (
-                            <CardDescription className="text-xs">
-                              {product.brand}
-                            </CardDescription>
-                          )}
+                {searchProductsMutation.data.results.map(
+                  (product: any, index: number) => (
+                    <Card
+                      key={index}
+                      className="cursor-pointer hover-elevate"
+                      onClick={() => handleSelectSearchResult(product)}
+                      data-testid={`card-search-result-${index}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-sm">
+                              {product.name}
+                            </CardTitle>
+                            {product.brand && (
+                              <CardDescription className="text-xs">
+                                {product.brand}
+                              </CardDescription>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge variant="outline" className="text-xs">
+                              {product.source}
+                            </Badge>
+                            {product.dataQuality && (
+                              <DataQualityIndicator
+                                score={product.dataQuality.score}
+                                level={product.dataQuality.level}
+                                missingFields={[]}
+                                compact
+                              />
+                            )}
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge variant="outline" className="text-xs">
-                            {product.source}
-                          </Badge>
-                          {product.dataQuality && (
-                            <DataQualityIndicator
-                              score={product.dataQuality.score}
-                              level={product.dataQuality.level}
-                              missingFields={[]}
-                              compact
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    {product.nutrition && (
-                      <CardContent className="pt-0">
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                          <span>{product.nutrition.calories} cal</span>
-                          <span>{product.nutrition.protein}g protein</span>
-                          <span>{product.nutrition.carbs}g carbs</span>
-                          <span>{product.nutrition.fat}g fat</span>
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
+                      </CardHeader>
+                      {product.nutrition && (
+                        <CardContent className="pt-0">
+                          <div className="flex gap-4 text-xs text-muted-foreground">
+                            <span>{product.nutrition.calories} cal</span>
+                            <span>{product.nutrition.protein}g protein</span>
+                            <span>{product.nutrition.carbs}g carbs</span>
+                            <span>{product.nutrition.fat}g fat</span>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ),
+                )}
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -349,8 +383,8 @@ export function DataCompletionDialog({
                       <FormItem className="col-span-2">
                         <FormLabel>Product Name</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             placeholder="Enter product name"
                             data-testid="input-product-name"
                           />
@@ -367,8 +401,8 @@ export function DataCompletionDialog({
                       <FormItem>
                         <FormLabel>Quantity</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             placeholder="1"
                             data-testid="input-quantity"
                           />
@@ -384,7 +418,10 @@ export function DataCompletionDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-unit">
                               <SelectValue placeholder="Select unit" />
@@ -420,7 +457,10 @@ export function DataCompletionDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Storage Location</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-storage">
                               <SelectValue placeholder="Select location" />
@@ -446,8 +486,8 @@ export function DataCompletionDialog({
                       <FormItem>
                         <FormLabel>Expiration Date</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             type="date"
                             data-testid="input-expiration"
                           />
@@ -464,8 +504,8 @@ export function DataCompletionDialog({
                       <FormItem>
                         <FormLabel>Barcode (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             placeholder="UPC/EAN code"
                             data-testid="input-barcode"
                           />
@@ -484,7 +524,10 @@ export function DataCompletionDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-category">
                               <SelectValue placeholder="Select category" />
@@ -498,7 +541,9 @@ export function DataCompletionDialog({
                             <SelectItem value="Grains">Grains</SelectItem>
                             <SelectItem value="Beverages">Beverages</SelectItem>
                             <SelectItem value="Snacks">Snacks</SelectItem>
-                            <SelectItem value="Condiments">Condiments</SelectItem>
+                            <SelectItem value="Condiments">
+                              Condiments
+                            </SelectItem>
                             <SelectItem value="Frozen">Frozen</SelectItem>
                             <SelectItem value="Canned">Canned Goods</SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
@@ -514,7 +559,8 @@ export function DataCompletionDialog({
                   <Info className="h-4 w-4" />
                   <AlertTitle>Data Enhancement Available</AlertTitle>
                   <AlertDescription>
-                    Click "Auto-Fill" to search multiple databases for nutrition and product details
+                    Click "Auto-Fill" to search multiple databases for nutrition
+                    and product details
                   </AlertDescription>
                 </Alert>
 
@@ -530,7 +576,9 @@ export function DataCompletionDialog({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={completeSaveMutation.isPending || !form.formState.isValid}
+                    disabled={
+                      completeSaveMutation.isPending || !form.formState.isValid
+                    }
                     data-testid="button-save-product"
                   >
                     Save to Inventory

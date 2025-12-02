@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/pricing.storage.ts
  * @description Dynamic pricing and price optimization storage operations
- * 
+ *
  * Domain: Pricing & Revenue Optimization
  * Scope: Pricing rules, price history, performance tracking, market intelligence
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (PricingStorage) for dependency injection and testing
  * - Export singleton INSTANCE (pricingStorage) for convenience in production code
@@ -13,7 +13,11 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, type SQL } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { IPricingStorage } from "../interfaces/IPricingStorage";
 import {
   pricingRules,
@@ -29,7 +33,7 @@ import {
 
 /**
  * Pricing Storage
- * 
+ *
  * Manages dynamic pricing strategies with multi-factor optimization,
  * price history tracking, performance analytics, and market intelligence.
  */
@@ -46,7 +50,7 @@ export class PricingStorage implements IPricingStorage {
 
   async updatePricingRule(
     id: string,
-    rule: Partial<InsertPricingRules>
+    rule: Partial<InsertPricingRules>,
   ): Promise<PricingRules> {
     const [result] = await db
       .update(pricingRules)
@@ -60,7 +64,7 @@ export class PricingStorage implements IPricingStorage {
   }
 
   async getPricingRuleByProduct(
-    productId: string
+    productId: string,
   ): Promise<PricingRules | undefined> {
     const [result] = await db
       .select()
@@ -68,8 +72,8 @@ export class PricingStorage implements IPricingStorage {
       .where(
         and(
           eq(pricingRules.productId, productId),
-          eq(pricingRules.isActive, true)
-        )
+          eq(pricingRules.isActive, true),
+        ),
       )
       .limit(1);
     return result;
@@ -123,7 +127,7 @@ export class PricingStorage implements IPricingStorage {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<PriceHistory[]> {
     const conditions: SQL<unknown>[] = [eq(priceHistory.productId, productId)];
 
@@ -159,7 +163,7 @@ export class PricingStorage implements IPricingStorage {
 
   async getPriceChangeTrend(
     productId: string,
-    days: number
+    days: number,
   ): Promise<{
     averageChange: number;
     trend: "increasing" | "stable" | "decreasing";
@@ -169,7 +173,7 @@ export class PricingStorage implements IPricingStorage {
     const history = await this.getPriceHistory(productId, { startDate });
 
     const changeCount = history.length;
-    
+
     if (changeCount === 0) {
       return { averageChange: 0, trend: "stable", changeCount: 0 };
     }
@@ -182,13 +186,15 @@ export class PricingStorage implements IPricingStorage {
         return (h.price - prev) / prev;
       });
 
-    const averageChange = changes.length > 0
-      ? changes.reduce((sum, change) => sum + change, 0) / changes.length
-      : 0;
+    const averageChange =
+      changes.length > 0
+        ? changes.reduce((sum, change) => sum + change, 0) / changes.length
+        : 0;
 
     // Determine trend
     let trend: "increasing" | "stable" | "decreasing" = "stable";
-    if (averageChange > 0.02) trend = "increasing"; // More than 2% increase
+    if (averageChange > 0.02)
+      trend = "increasing"; // More than 2% increase
     else if (averageChange < -0.02) trend = "decreasing"; // More than 2% decrease
 
     return { averageChange, trend, changeCount };
@@ -197,7 +203,7 @@ export class PricingStorage implements IPricingStorage {
   // ==================== Pricing Performance ====================
 
   async recordPricingPerformance(
-    performance: InsertPricingPerformance
+    performance: InsertPricingPerformance,
   ): Promise<PricingPerformance> {
     const [result] = await db
       .insert(pricingPerformance)
@@ -211,7 +217,7 @@ export class PricingStorage implements IPricingStorage {
     params?: {
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<PricingPerformance[]> {
     const conditions: SQL<unknown>[] = [
       eq(pricingPerformance.productId, productId),
@@ -234,7 +240,7 @@ export class PricingStorage implements IPricingStorage {
   async getPerformanceByPricePoint(
     productId: string,
     pricePoint: number,
-    tolerance: number = 0.05
+    tolerance: number = 0.05,
   ): Promise<PricingPerformance[]> {
     const minPrice = pricePoint * (1 - tolerance);
     const maxPrice = pricePoint * (1 + tolerance);
@@ -246,8 +252,8 @@ export class PricingStorage implements IPricingStorage {
         and(
           eq(pricingPerformance.productId, productId),
           gte(pricingPerformance.pricePoint, minPrice),
-          lte(pricingPerformance.pricePoint, maxPrice)
-        )
+          lte(pricingPerformance.pricePoint, maxPrice),
+        ),
       )
       .orderBy(desc(pricingPerformance.periodStart));
   }
@@ -342,7 +348,7 @@ export class PricingStorage implements IPricingStorage {
 
   async getProductRevenueBreakdown(
     productId: string,
-    period: "week" | "month" | "year"
+    period: "week" | "month" | "year",
   ): Promise<{
     totalRevenue: number;
     totalUnitsSold: number;
@@ -360,14 +366,15 @@ export class PricingStorage implements IPricingStorage {
     const totalRevenue = performance.reduce((sum, p) => sum + p.revenue, 0);
     const totalUnitsSold = performance.reduce((sum, p) => sum + p.unitsSold, 0);
     const averagePrice = totalUnitsSold > 0 ? totalRevenue / totalUnitsSold : 0;
-    
+
     // Calculate average profit margin
     const margins = performance
       .filter((p) => p.profit !== null && p.profit !== undefined)
       .map((p) => (p.profit! / p.revenue) * 100);
-    const profitMargin = margins.length > 0
-      ? margins.reduce((sum, m) => sum + m, 0) / margins.length
-      : 0;
+    const profitMargin =
+      margins.length > 0
+        ? margins.reduce((sum, m) => sum + m, 0) / margins.length
+        : 0;
 
     return {
       totalRevenue,
@@ -462,7 +469,7 @@ export class PricingStorage implements IPricingStorage {
         ? recentPerformance.reduce((sum, p) => {
             const days = Math.ceil(
               (p.periodEnd.getTime() - p.periodStart.getTime()) /
-                (24 * 60 * 60 * 1000)
+                (24 * 60 * 60 * 1000),
             );
             return sum + p.unitsSold / Math.max(1, days);
           }, 0) / recentPerformance.length
@@ -515,7 +522,7 @@ export class PricingStorage implements IPricingStorage {
       targetRevenue?: number;
       targetConversion?: number;
       includeCompetition?: boolean;
-    }
+    },
   ): Promise<{
     recommendedPrice: number;
     confidence: number;
@@ -550,29 +557,35 @@ export class PricingStorage implements IPricingStorage {
       const adjustment = 1 + 0.1 * demandWeight; // Up to 10% increase
       recommendedPrice *= adjustment;
       reasoning.push(
-        `High demand (${demand.demandScore.toFixed(0)}/100) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`
+        `High demand (${demand.demandScore.toFixed(0)}/100) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`,
       );
-    } else if (demand.demandScore < (rule.factors.demandThresholds?.low || 30)) {
+    } else if (
+      demand.demandScore < (rule.factors.demandThresholds?.low || 30)
+    ) {
       const adjustment = 1 - 0.05 * demandWeight; // Up to 5% decrease
       recommendedPrice *= adjustment;
       reasoning.push(
-        `Low demand (${demand.demandScore.toFixed(0)}/100) - decreased price by ${((1 - adjustment) * 100).toFixed(1)}%`
+        `Low demand (${demand.demandScore.toFixed(0)}/100) - decreased price by ${((1 - adjustment) * 100).toFixed(1)}%`,
       );
     }
 
     // Apply inventory-based adjustments
     const inventoryWeight = rule.factors.inventoryWeight || 0.3;
-    if (inventory.inventoryScore > (rule.factors.inventoryThresholds?.high || 80)) {
+    if (
+      inventory.inventoryScore > (rule.factors.inventoryThresholds?.high || 80)
+    ) {
       const adjustment = 1 - 0.15 * inventoryWeight; // Up to 15% discount
       recommendedPrice *= adjustment;
       reasoning.push(
-        `High inventory (${inventory.stockLevel} units) - applied ${((1 - adjustment) * 100).toFixed(1)}% discount`
+        `High inventory (${inventory.stockLevel} units) - applied ${((1 - adjustment) * 100).toFixed(1)}% discount`,
       );
-    } else if (inventory.inventoryScore < (rule.factors.inventoryThresholds?.low || 20)) {
+    } else if (
+      inventory.inventoryScore < (rule.factors.inventoryThresholds?.low || 20)
+    ) {
       const adjustment = 1 + 0.05 * inventoryWeight; // Up to 5% increase
       recommendedPrice *= adjustment;
       reasoning.push(
-        `Low inventory (${inventory.stockLevel} units) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`
+        `Low inventory (${inventory.stockLevel} units) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`,
       );
     }
 
@@ -586,14 +599,14 @@ export class PricingStorage implements IPricingStorage {
         const adjustment = 1 - 0.05 * competitionWeight;
         recommendedPrice *= adjustment;
         reasoning.push(
-          `Above market average ($${avgCompetitorPrice.toFixed(2)}) - reduced by ${((1 - adjustment) * 100).toFixed(1)}%`
+          `Above market average ($${avgCompetitorPrice.toFixed(2)}) - reduced by ${((1 - adjustment) * 100).toFixed(1)}%`,
         );
         confidence *= 0.95; // Slightly lower confidence when adjusting for competition
       } else if (recommendedPrice < avgCompetitorPrice * 0.9) {
         const adjustment = 1 + 0.03 * competitionWeight;
         recommendedPrice *= adjustment;
         reasoning.push(
-          `Below market average ($${avgCompetitorPrice.toFixed(2)}) - increased by ${((adjustment - 1) * 100).toFixed(1)}%`
+          `Below market average ($${avgCompetitorPrice.toFixed(2)}) - increased by ${((adjustment - 1) * 100).toFixed(1)}%`,
         );
       }
     }
@@ -610,7 +623,7 @@ export class PricingStorage implements IPricingStorage {
     // Ensure price stays within bounds
     recommendedPrice = Math.max(
       rule.minPrice,
-      Math.min(rule.maxPrice, recommendedPrice)
+      Math.min(rule.maxPrice, recommendedPrice),
     );
 
     if (recommendedPrice === rule.minPrice) {
@@ -645,7 +658,7 @@ export class PricingStorage implements IPricingStorage {
     productId: string,
     optimizationParams?: {
       includeCompetition?: boolean;
-    }
+    },
   ): Promise<{
     previousPrice: number;
     newPrice: number;
@@ -653,8 +666,11 @@ export class PricingStorage implements IPricingStorage {
     pricingRule: PricingRules;
   }> {
     // Get optimal price calculation
-    const optimal = await this.calculateOptimalPrice(productId, optimizationParams);
-    
+    const optimal = await this.calculateOptimalPrice(
+      productId,
+      optimizationParams,
+    );
+
     // Get current pricing rule
     const rule = await this.getPricingRuleByProduct(productId);
     if (!rule) {
@@ -672,7 +688,7 @@ export class PricingStorage implements IPricingStorage {
     // Record price change in history
     const demand = await this.getCurrentDemand(productId);
     const inventory = await this.getCurrentInventory(productId);
-    
+
     const priceHistoryRecord = await this.recordPriceChange({
       productId,
       price: newPrice,

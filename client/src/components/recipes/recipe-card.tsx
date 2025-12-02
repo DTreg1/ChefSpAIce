@@ -2,9 +2,27 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw, Plus, ShoppingBasket, Utensils } from "lucide-react";
+import {
+  Clock,
+  Users,
+  ChefHat,
+  CheckCircle2,
+  XCircle,
+  Star,
+  AlertCircle,
+  ShoppingCart,
+  RefreshCw,
+  Plus,
+  ShoppingBasket,
+  Utensils,
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
@@ -67,7 +85,8 @@ export const RecipeCard = React.memo(function RecipeCard({
   const [adjustedIngredients, setAdjustedIngredients] = useState(ingredients);
   const [currentServings, setCurrentServings] = useState(servings || 4);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [localIngredientMatches, setLocalIngredientMatches] = useState(ingredientMatches);
+  const [localIngredientMatches, setLocalIngredientMatches] =
+    useState(ingredientMatches);
   const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false);
 
   const updateMutation = useMutation({
@@ -93,25 +112,32 @@ export const RecipeCard = React.memo(function RecipeCard({
     updateMutation.mutate({ isFavorite: newFavorite });
   }, [localFavorite, updateMutation]);
 
-  const setRating = useCallback((newRating: number) => {
-    setLocalRating(newRating);
-    updateMutation.mutate({ rating: newRating });
-  }, [updateMutation]);
+  const setRating = useCallback(
+    (newRating: number) => {
+      setLocalRating(newRating);
+      updateMutation.mutate({ rating: newRating });
+    },
+    [updateMutation],
+  );
 
   const refreshAvailability = useCallback(async () => {
     if (!id) return;
-    
+
     setIsRefreshing(true);
     try {
       // Invalidate and refetch both food items and recipes
-      await queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
-      await queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
-      
+      await queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.foodItems],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.recipes.list],
+      });
+
       const updatedRecipes = await queryClient.fetchQuery({
         queryKey: [API_ENDPOINTS.recipes.list],
         staleTime: 0,
       });
-      
+
       // Find this recipe and update its ingredient matches
       const thisRecipe = (updatedRecipes as any)?.find((r: any) => r.id === id);
       if (thisRecipe?.ingredientMatches) {
@@ -132,17 +158,22 @@ export const RecipeCard = React.memo(function RecipeCard({
     }
   }, [id, toast]);
 
-  const handleServingsChange = useCallback((newServings: number, adjustedIngs: string[]) => {
-    setCurrentServings(newServings);
-    setAdjustedIngredients(adjustedIngs);
-  }, []);
+  const handleServingsChange = useCallback(
+    (newServings: number, adjustedIngs: string[]) => {
+      setCurrentServings(newServings);
+      setAdjustedIngredients(adjustedIngs);
+    },
+    [],
+  );
 
   const addMissingToShoppingList = useCallback(async () => {
     if (!id) return;
-    
+
     // Get the missing ingredients
-    const missingItems = localIngredientMatches 
-      ? localIngredientMatches.filter(m => !m.hasEnough).map(m => m.ingredientName)
+    const missingItems = localIngredientMatches
+      ? localIngredientMatches
+          .filter((m) => !m.hasEnough)
+          .map((m) => m.ingredientName)
       : missingIngredients;
 
     if (missingItems.length === 0) {
@@ -155,19 +186,25 @@ export const RecipeCard = React.memo(function RecipeCard({
 
     setIsAddingToShoppingList(true);
     try {
-      const response = await apiRequest(API_ENDPOINTS.shoppingList.addMissing, "POST", {
-        recipeId: id,
-        ingredients: missingItems,
-      });
-      
+      const response = await apiRequest(
+        API_ENDPOINTS.shoppingList.addMissing,
+        "POST",
+        {
+          recipeId: id,
+          ingredients: missingItems,
+        },
+      );
+
       const items = await response.json();
-      
+
       toast({
         title: "Added to shopping list",
-        description: `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`,
+        description: `Added ${items.length} item${items.length === 1 ? "" : "s"} to your shopping list`,
       });
-      
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.shoppingList.items] });
+
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.shoppingList.items],
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -180,29 +217,40 @@ export const RecipeCard = React.memo(function RecipeCard({
   }, [id, localIngredientMatches, missingIngredients, toast]);
 
   return (
-    <Card className="glass-morph hover-elevate active-elevate-2 card-hover border-2 border-primary/20 shadow-glass hover:shadow-glass-hover transition-morph" data-testid="card-recipe">
+    <Card
+      className="glass-morph hover-elevate active-elevate-2 card-hover border-2 border-primary/20 shadow-glass hover:shadow-glass-hover transition-morph"
+      data-testid="card-recipe"
+    >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-2xl font-serif font-semibold text-foreground" data-testid="text-recipe-title">
+          <CardTitle
+            className="text-2xl font-serif font-semibold text-foreground"
+            data-testid="text-recipe-title"
+          >
             {title}
           </CardTitle>
-          {(localIngredientMatches || ingredientMatches) && (() => {
-            const currentMatches = localIngredientMatches || ingredientMatches;
-            const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
-            return (
-              <>
-                <Badge 
-                  variant={missingCount === 0 ? "default" : "destructive"}
-                  className="gap-1"
-                  data-testid="badge-missing-ingredients"
-                >
-                  <ShoppingCart className="w-3 h-3" />
-                  {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
-                </Badge>
-              </>
-            );
-          })()}
-
+          {(localIngredientMatches || ingredientMatches) &&
+            (() => {
+              const currentMatches =
+                localIngredientMatches || ingredientMatches;
+              const missingCount = currentMatches
+                ? currentMatches.filter((m) => !m.hasEnough).length
+                : missingIngredients.length;
+              return (
+                <>
+                  <Badge
+                    variant={missingCount === 0 ? "default" : "destructive"}
+                    className="gap-1"
+                    data-testid="badge-missing-ingredients"
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    {missingCount === 0
+                      ? "All ingredients available"
+                      : `${missingCount} missing`}
+                  </Badge>
+                </>
+              );
+            })()}
         </div>
 
         {showControls && id && (
@@ -214,9 +262,11 @@ export const RecipeCard = React.memo(function RecipeCard({
               data-testid="button-toggle-favorite"
               className={localFavorite ? "border-amber-500 text-amber-600" : ""}
             >
-              <Star className={`w-4 h-4 ${localFavorite ? "fill-amber-500" : ""}`} />
+              <Star
+                className={`w-4 h-4 ${localFavorite ? "fill-amber-500" : ""}`}
+              />
             </Button>
-            
+
             <StarRating
               contextId={id}
               contextType="recipe"
@@ -228,8 +278,8 @@ export const RecipeCard = React.memo(function RecipeCard({
               }}
             />
 
-            <MealPlanningDialog 
-              recipeId={id} 
+            <MealPlanningDialog
+              recipeId={id}
               recipeTitle={title}
               defaultServings={servings}
             />
@@ -242,7 +292,9 @@ export const RecipeCard = React.memo(function RecipeCard({
               data-testid="button-refresh-availability"
               className="gap-2"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               {isRefreshing ? "Checking..." : "Check Availability"}
             </Button>
           </div>
@@ -250,44 +302,57 @@ export const RecipeCard = React.memo(function RecipeCard({
 
         <div className="flex items-center gap-4 mt-3 flex-wrap">
           {prepTime && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground" data-testid="text-prep-time">
+            <div
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              data-testid="text-prep-time"
+            >
               <Clock className="w-4 h-4" />
               <span>Prep: {prepTime}</span>
             </div>
           )}
           {cookTime && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground" data-testid="text-cook-time">
+            <div
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              data-testid="text-cook-time"
+            >
               <Clock className="w-4 h-4" />
               <span>Cook: {cookTime}</span>
             </div>
           )}
           {servings && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground" data-testid="text-servings">
+            <div
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              data-testid="text-servings"
+            >
               <Users className="w-4 h-4" />
               <span>{servings} servings</span>
             </div>
           )}
-          {(localIngredientMatches || ingredientMatches) && (() => {
-            const currentMatches = localIngredientMatches || ingredientMatches;
-            const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
-            return (
-              <>
-                {missingCount > 0 && showControls && id && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={addMissingToShoppingList}
-                    disabled={isAddingToShoppingList}
-                    data-testid="button-add-to-shopping-list"
-                    className="gap-2"
-                  >
-                    <ShoppingBasket className="w-4 h-4" />
-                    {isAddingToShoppingList ? "Adding..." : "Add to List"}
-                  </Button>
-                )}
-              </>
-            );
-          })()}
+          {(localIngredientMatches || ingredientMatches) &&
+            (() => {
+              const currentMatches =
+                localIngredientMatches || ingredientMatches;
+              const missingCount = currentMatches
+                ? currentMatches.filter((m) => !m.hasEnough).length
+                : missingIngredients.length;
+              return (
+                <>
+                  {missingCount > 0 && showControls && id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addMissingToShoppingList}
+                      disabled={isAddingToShoppingList}
+                      data-testid="button-add-to-shopping-list"
+                      className="gap-2"
+                    >
+                      <ShoppingBasket className="w-4 h-4" />
+                      {isAddingToShoppingList ? "Adding..." : "Add to List"}
+                    </Button>
+                  )}
+                </>
+              );
+            })()}
         </div>
       </CardHeader>
 
@@ -300,122 +365,165 @@ export const RecipeCard = React.memo(function RecipeCard({
           />
         )}
 
-        <Accordion type="multiple" defaultValue={["ingredients", "instructions"]} className="w-full">
-          <AccordionItem value="ingredients" data-testid="accordion-ingredients">
+        <Accordion
+          type="multiple"
+          defaultValue={["ingredients", "instructions"]}
+          className="w-full"
+        >
+          <AccordionItem
+            value="ingredients"
+            data-testid="accordion-ingredients"
+          >
             <AccordionTrigger className="text-base font-semibold hover:no-underline">
               <div className="flex items-center justify-between w-full mr-2">
                 <span>Ingredients</span>
-                {(localIngredientMatches || ingredientMatches) && (() => {
-                  const currentMatches = localIngredientMatches || ingredientMatches;
-                  const availableCount = currentMatches ? currentMatches.filter(m => m.hasEnough).length : 0;
-                  const totalCount = currentMatches ? currentMatches.length : adjustedIngredients.length;
-                  return (
-                    <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
-                      {availableCount}/{totalCount} available
-                    </Badge>
-                  );
-                })()}
+                {(localIngredientMatches || ingredientMatches) &&
+                  (() => {
+                    const currentMatches =
+                      localIngredientMatches || ingredientMatches;
+                    const availableCount = currentMatches
+                      ? currentMatches.filter((m) => m.hasEnough).length
+                      : 0;
+                    const totalCount = currentMatches
+                      ? currentMatches.length
+                      : adjustedIngredients.length;
+                    return (
+                      <Badge
+                        variant="outline"
+                        className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                      >
+                        {availableCount}/{totalCount} available
+                      </Badge>
+                    );
+                  })()}
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <ul className="space-y-2 pt-2">
-            {adjustedIngredients.map((ingredient, idx) => {
-              // Use enhanced matching data if available
-              const currentMatches = localIngredientMatches || ingredientMatches;
-              if (currentMatches && currentMatches[idx]) {
-                const match = currentMatches[idx];
-                const getStatusIcon = () => {
-                  if (match.hasEnough) {
-                    return <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />;
-                  } else if (match.percentageAvailable > 50) {
-                    return <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />;
-                  } else if (match.percentageAvailable > 0) {
-                    return <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />;
-                  } else {
-                    return <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />;
-                  }
-                };
+                {adjustedIngredients.map((ingredient, idx) => {
+                  // Use enhanced matching data if available
+                  const currentMatches =
+                    localIngredientMatches || ingredientMatches;
+                  if (currentMatches && currentMatches[idx]) {
+                    const match = currentMatches[idx];
+                    const getStatusIcon = () => {
+                      if (match.hasEnough) {
+                        return (
+                          <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        );
+                      } else if (match.percentageAvailable > 50) {
+                        return (
+                          <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        );
+                      } else if (match.percentageAvailable > 0) {
+                        return (
+                          <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                        );
+                      } else {
+                        return (
+                          <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        );
+                      }
+                    };
 
-                const getQuantityText = () => {
-                  if (match.hasEnough) {
-                    return null;
-                  }
-                  if (match.shortage) {
-                    const formattedQuantity = Number.isInteger(match.shortage.quantity) 
-                      ? match.shortage.quantity.toString() 
-                      : match.shortage.quantity.toFixed(1);
-                    // When unit is "piece", show the ingredient name instead for better UX
-                    const displayUnit = match.shortage.unit === 'piece' ? match.ingredientName : match.shortage.unit;
+                    const getQuantityText = () => {
+                      if (match.hasEnough) {
+                        return null;
+                      }
+                      if (match.shortage) {
+                        const formattedQuantity = Number.isInteger(
+                          match.shortage.quantity,
+                        )
+                          ? match.shortage.quantity.toString()
+                          : match.shortage.quantity.toFixed(1);
+                        // When unit is "piece", show the ingredient name instead for better UX
+                        const displayUnit =
+                          match.shortage.unit === "piece"
+                            ? match.ingredientName
+                            : match.shortage.unit;
+                        return (
+                          <span className="text-xs text-red-600 ml-2">
+                            (need {formattedQuantity} {displayUnit})
+                          </span>
+                        );
+                      }
+                      if (match.percentageAvailable === -1) {
+                        return (
+                          <span className="text-xs text-orange-600 ml-2">
+                            (have {match.availableQuantity}{" "}
+                            {match.availableUnit})
+                          </span>
+                        );
+                      }
+                      return null;
+                    };
+
                     return (
-                      <span className="text-xs text-red-600 ml-2">
-                        (need {formattedQuantity} {displayUnit})
-                      </span>
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-base"
+                        data-testid={`text-ingredient-${idx}`}
+                      >
+                        {getStatusIcon()}
+                        <div className="flex-1">
+                          <span
+                            className={
+                              !match.hasEnough ? "text-muted-foreground" : ""
+                            }
+                          >
+                            {ingredient}
+                          </span>
+                          {getQuantityText()}
+                          {match.percentageAvailable > 0 &&
+                            match.percentageAvailable < 100 &&
+                            match.percentageAvailable !== -1 && (
+                              <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                                <div
+                                  className="bg-amber-600 h-1.5 rounded-full transition-all"
+                                  style={{
+                                    width: `${match.percentageAvailable}%`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                        </div>
+                      </li>
                     );
                   }
-                  if (match.percentageAvailable === -1) {
-                    return (
-                      <span className="text-xs text-orange-600 ml-2">
-                        (have {match.availableQuantity} {match.availableUnit})
-                      </span>
-                    );
-                  }
-                  return null;
-                };
 
-                return (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 text-base"
-                    data-testid={`text-ingredient-${idx}`}
-                  >
-                    {getStatusIcon()}
-                    <div className="flex-1">
-                      <span className={!match.hasEnough ? "text-muted-foreground" : ""}>
+                  // Fall back to original logic if no matches data
+                  const isAvailable = usedIngredients.some((used) =>
+                    ingredient.toLowerCase().includes(used.toLowerCase()),
+                  );
+                  const isMissing = missingIngredients.some((missing) =>
+                    ingredient.toLowerCase().includes(missing.toLowerCase()),
+                  );
+
+                  return (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-base"
+                      data-testid={`text-ingredient-${idx}`}
+                    >
+                      {isAvailable && (
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      )}
+                      {isMissing && (
+                        <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                      )}
+                      {!isAvailable && !isMissing && (
+                        <span className="w-4 h-4 flex-shrink-0" />
+                      )}
+                      <span
+                        className={
+                          isMissing ? "text-muted-foreground line-through" : ""
+                        }
+                      >
                         {ingredient}
                       </span>
-                      {getQuantityText()}
-                      {match.percentageAvailable > 0 && match.percentageAvailable < 100 && match.percentageAvailable !== -1 && (
-                        <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                          <div 
-                            className="bg-amber-600 h-1.5 rounded-full transition-all"
-                            style={{ width: `${match.percentageAvailable}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              }
-              
-              // Fall back to original logic if no matches data
-              const isAvailable = usedIngredients.some(used => 
-                ingredient.toLowerCase().includes(used.toLowerCase())
-              );
-              const isMissing = missingIngredients.some(missing => 
-                ingredient.toLowerCase().includes(missing.toLowerCase())
-              );
-
-              return (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2 text-base"
-                  data-testid={`text-ingredient-${idx}`}
-                >
-                  {isAvailable && (
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  )}
-                  {isMissing && (
-                    <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                  )}
-                  {!isAvailable && !isMissing && (
-                    <span className="w-4 h-4 flex-shrink-0" />
-                  )}
-                  <span className={isMissing ? "text-muted-foreground line-through" : ""}>
-                    {ingredient}
-                  </span>
-                </li>
-              );
-            })}
+                    </li>
+                  );
+                })}
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -425,8 +533,12 @@ export const RecipeCard = React.memo(function RecipeCard({
               <AccordionTrigger className="text-base font-semibold hover:no-underline">
                 <div className="flex items-center justify-between w-full mr-2">
                   <span>Equipment Needed</span>
-                  <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
-                    {neededEquipment.length} item{neededEquipment.length !== 1 ? 's' : ''}
+                  <Badge
+                    variant="outline"
+                    className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                  >
+                    {neededEquipment.length} item
+                    {neededEquipment.length !== 1 ? "s" : ""}
                   </Badge>
                 </div>
               </AccordionTrigger>
@@ -447,11 +559,17 @@ export const RecipeCard = React.memo(function RecipeCard({
             </AccordionItem>
           )}
 
-          <AccordionItem value="instructions" data-testid="accordion-instructions">
+          <AccordionItem
+            value="instructions"
+            data-testid="accordion-instructions"
+          >
             <AccordionTrigger className="text-base font-semibold hover:no-underline">
               <div className="flex items-center justify-between w-full mr-2">
                 <span>Instructions</span>
-                <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                <Badge
+                  variant="outline"
+                  className="ml-2 no-default-hover-elevate no-default-active-elevate"
+                >
                   {instructions.length} steps
                 </Badge>
               </div>
@@ -464,7 +582,9 @@ export const RecipeCard = React.memo(function RecipeCard({
                     className="flex gap-3 text-base leading-relaxed"
                     data-testid={`text-instruction-${idx}`}
                   >
-                    <span className="font-semibold text-primary flex-shrink-0">{idx + 1}.</span>
+                    <span className="font-semibold text-primary flex-shrink-0">
+                      {idx + 1}.
+                    </span>
                     <EnrichedContent text={instruction} usePopover={true} />
                   </li>
                 ))}

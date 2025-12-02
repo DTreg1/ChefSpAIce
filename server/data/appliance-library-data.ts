@@ -2,7 +2,7 @@
 
 export type ApplianceLibraryItem = {
   name: string;
-  category: 'appliance' | 'cookware' | 'bakeware' | 'utensil';
+  category: "appliance" | "cookware" | "bakeware" | "utensil";
   subcategory?: string;
   description?: string;
   capabilities?: string[];
@@ -21,7 +21,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Standard kitchen oven for baking and roasting",
     capabilities: ["bake", "roast", "broil"],
     isCommon: true,
-    searchTerms: ["stove oven", "range oven"]
+    searchTerms: ["stove oven", "range oven"],
   },
   {
     name: "Stovetop",
@@ -30,7 +30,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Cooktop with burners for stovetop cooking",
     capabilities: ["boil", "simmer", "sauté", "fry"],
     isCommon: true,
-    searchTerms: ["cooktop", "range", "burners", "hob"]
+    searchTerms: ["cooktop", "range", "burners", "hob"],
   },
   {
     name: "Microwave",
@@ -39,7 +39,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Microwave oven for reheating and quick cooking",
     capabilities: ["reheat", "defrost", "steam"],
     isCommon: true,
-    searchTerms: ["microwave oven"]
+    searchTerms: ["microwave oven"],
   },
   {
     name: "Toaster",
@@ -48,7 +48,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric toaster for bread",
     capabilities: ["toast", "warm"],
     isCommon: true,
-    searchTerms: ["bread toaster", "pop-up toaster"]
+    searchTerms: ["bread toaster", "pop-up toaster"],
   },
   {
     name: "Toaster Oven",
@@ -57,7 +57,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Small countertop oven",
     capabilities: ["toast", "bake", "broil", "reheat"],
     isCommon: false,
-    searchTerms: ["convection oven", "countertop oven"]
+    searchTerms: ["convection oven", "countertop oven"],
   },
   {
     name: "Air Fryer",
@@ -66,7 +66,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Convection cooking appliance",
     capabilities: ["air fry", "bake", "roast", "reheat"],
     isCommon: false,
-    searchTerms: ["airfryer"]
+    searchTerms: ["airfryer"],
   },
   {
     name: "Instant Pot",
@@ -75,7 +75,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Multi-function pressure cooker",
     capabilities: ["pressure cook", "slow cook", "sauté", "steam", "rice"],
     isCommon: false,
-    searchTerms: ["pressure cooker", "multi-cooker"]
+    searchTerms: ["pressure cooker", "multi-cooker"],
   },
   {
     name: "Slow Cooker",
@@ -84,7 +84,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric slow cooking pot",
     capabilities: ["slow cook", "keep warm"],
     isCommon: false,
-    searchTerms: ["crock pot", "crockpot"]
+    searchTerms: ["crock pot", "crockpot"],
   },
   {
     name: "Rice Cooker",
@@ -93,7 +93,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Automatic rice cooking appliance",
     capabilities: ["cook rice", "steam", "keep warm"],
     isCommon: false,
-    searchTerms: ["rice maker"]
+    searchTerms: ["rice maker"],
   },
   {
     name: "Stand Mixer",
@@ -102,7 +102,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Heavy-duty electric mixer with bowl",
     capabilities: ["mix", "knead", "whip", "beat"],
     isCommon: false,
-    searchTerms: ["kitchen aid", "kitchenaid", "mixer"]
+    searchTerms: ["kitchen aid", "kitchenaid", "mixer"],
   },
   {
     name: "Hand Mixer",
@@ -111,7 +111,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Portable electric mixer",
     capabilities: ["mix", "whip", "beat"],
     isCommon: true,
-    searchTerms: ["electric mixer", "beater"]
+    searchTerms: ["electric mixer", "beater"],
   },
   {
     name: "Blender",
@@ -120,7 +120,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric blending appliance",
     capabilities: ["blend", "puree", "crush ice"],
     isCommon: true,
-    searchTerms: ["mixer", "vitamix", "ninja"]
+    searchTerms: ["mixer", "vitamix", "ninja"],
   },
   {
     name: "Immersion Blender",
@@ -129,7 +129,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Handheld stick blender",
     capabilities: ["blend", "puree"],
     isCommon: false,
-    searchTerms: ["stick blender", "hand blender"]
+    searchTerms: ["stick blender", "hand blender"],
   },
   {
     name: "Food Processor",
@@ -138,7 +138,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Multi-purpose food preparation appliance",
     capabilities: ["chop", "slice", "shred", "puree", "knead"],
     isCommon: false,
-    searchTerms: ["cuisinart", "processor"]
+    searchTerms: ["cuisinart", "processor"],
   },
   {
     name: "Coffee Maker",
@@ -147,7 +147,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Drip coffee brewing machine",
     capabilities: ["brew coffee"],
     isCommon: true,
-    searchTerms: ["coffee machine", "drip coffee"]
+    searchTerms: ["coffee machine", "drip coffee"],
   },
   {
     name: "Electric Kettle",
@@ -156,7 +156,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric water boiler",
     capabilities: ["boil water"],
     isCommon: false,
-    searchTerms: ["water kettle", "tea kettle"]
+    searchTerms: ["water kettle", "tea kettle"],
   },
   {
     name: "Waffle Maker",
@@ -165,7 +165,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric waffle iron",
     capabilities: ["make waffles"],
     isCommon: false,
-    searchTerms: ["waffle iron"]
+    searchTerms: ["waffle iron"],
   },
   {
     name: "Grill",
@@ -174,7 +174,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Outdoor cooking grill",
     capabilities: ["grill", "barbecue"],
     isCommon: false,
-    searchTerms: ["barbecue", "bbq", "gas grill", "charcoal grill"]
+    searchTerms: ["barbecue", "bbq", "gas grill", "charcoal grill"],
   },
   {
     name: "Indoor Grill",
@@ -183,7 +183,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Electric indoor grilling appliance",
     capabilities: ["grill", "sear"],
     isCommon: false,
-    searchTerms: ["george foreman", "panini press", "electric grill"]
+    searchTerms: ["george foreman", "panini press", "electric grill"],
   },
 
   // === COOKWARE ===
@@ -195,7 +195,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "8-12 inch",
     material: "various",
     isCommon: true,
-    searchTerms: ["skillet", "fry pan", "saute pan"]
+    searchTerms: ["skillet", "fry pan", "saute pan"],
   },
   {
     name: "Saucepan",
@@ -205,7 +205,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "1-4 qt",
     material: "various",
     isCommon: true,
-    searchTerms: ["sauce pot", "small pot"]
+    searchTerms: ["sauce pot", "small pot"],
   },
   {
     name: "Stock Pot",
@@ -215,7 +215,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "6-12 qt",
     material: "various",
     isCommon: true,
-    searchTerms: ["soup pot", "large pot"]
+    searchTerms: ["soup pot", "large pot"],
   },
   {
     name: "Dutch Oven",
@@ -225,7 +225,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "4-7 qt",
     material: "cast iron or enameled",
     isCommon: false,
-    searchTerms: ["braiser", "casserole"]
+    searchTerms: ["braiser", "casserole"],
   },
   {
     name: "Cast Iron Skillet",
@@ -235,7 +235,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "10-12 inch",
     material: "cast iron",
     isCommon: false,
-    searchTerms: ["cast iron pan"]
+    searchTerms: ["cast iron pan"],
   },
   {
     name: "Wok",
@@ -245,7 +245,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "12-14 inch",
     material: "carbon steel or cast iron",
     isCommon: false,
-    searchTerms: ["stir fry pan"]
+    searchTerms: ["stir fry pan"],
   },
   {
     name: "Grill Pan",
@@ -255,7 +255,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "10-12 inch",
     material: "cast iron or non-stick",
     isCommon: false,
-    searchTerms: ["griddle pan"]
+    searchTerms: ["griddle pan"],
   },
   {
     name: "Steamer Basket",
@@ -263,7 +263,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "steamers",
     description: "Insert or basket for steaming",
     isCommon: false,
-    searchTerms: ["steam basket", "bamboo steamer"]
+    searchTerms: ["steam basket", "bamboo steamer"],
   },
   {
     name: "Double Boiler",
@@ -271,7 +271,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "specialty",
     description: "Two-part pot for gentle heating",
     isCommon: false,
-    searchTerms: ["bain marie"]
+    searchTerms: ["bain marie"],
   },
 
   // === BAKEWARE ===
@@ -283,7 +283,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "half or full sheet",
     material: "aluminum or steel",
     isCommon: true,
-    searchTerms: ["cookie sheet", "sheet pan"]
+    searchTerms: ["cookie sheet", "sheet pan"],
   },
   {
     name: "Cake Pan",
@@ -293,7 +293,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "8-9 inch",
     material: "aluminum or non-stick",
     isCommon: true,
-    searchTerms: ["round pan", "square pan"]
+    searchTerms: ["round pan", "square pan"],
   },
   {
     name: "Loaf Pan",
@@ -303,7 +303,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "9x5 inch",
     material: "aluminum or glass",
     isCommon: true,
-    searchTerms: ["bread pan"]
+    searchTerms: ["bread pan"],
   },
   {
     name: "Muffin Tin",
@@ -313,7 +313,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "12 cups",
     material: "aluminum or non-stick",
     isCommon: true,
-    searchTerms: ["cupcake pan", "muffin pan"]
+    searchTerms: ["cupcake pan", "muffin pan"],
   },
   {
     name: "Pie Pan",
@@ -323,7 +323,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "9 inch",
     material: "glass or ceramic",
     isCommon: false,
-    searchTerms: ["pie plate", "pie dish"]
+    searchTerms: ["pie plate", "pie dish"],
   },
   {
     name: "Casserole Dish",
@@ -333,7 +333,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "9x13 inch",
     material: "glass or ceramic",
     isCommon: true,
-    searchTerms: ["baking dish", "lasagna pan"]
+    searchTerms: ["baking dish", "lasagna pan"],
   },
   {
     name: "Springform Pan",
@@ -343,7 +343,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "9 inch",
     material: "aluminum",
     isCommon: false,
-    searchTerms: ["cheesecake pan"]
+    searchTerms: ["cheesecake pan"],
   },
   {
     name: "Bundt Pan",
@@ -353,7 +353,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "10-12 cup",
     material: "aluminum or non-stick",
     isCommon: false,
-    searchTerms: ["ring pan", "tube pan"]
+    searchTerms: ["ring pan", "tube pan"],
   },
   {
     name: "Cooling Rack",
@@ -361,7 +361,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "accessories",
     description: "Wire rack for cooling baked goods",
     isCommon: false,
-    searchTerms: ["wire rack"]
+    searchTerms: ["wire rack"],
   },
   {
     name: "Pizza Stone",
@@ -370,7 +370,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Stone or ceramic for pizza baking",
     material: "stone or ceramic",
     isCommon: false,
-    searchTerms: ["baking stone", "pizza steel"]
+    searchTerms: ["baking stone", "pizza steel"],
   },
   {
     name: "Ramekins",
@@ -380,7 +380,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "4-6 oz",
     material: "ceramic",
     isCommon: false,
-    searchTerms: ["souffle cups"]
+    searchTerms: ["souffle cups"],
   },
 
   // === ESSENTIAL UTENSILS ===
@@ -391,7 +391,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Large multipurpose kitchen knife",
     sizeOrCapacity: "8-10 inch",
     isCommon: true,
-    searchTerms: ["kitchen knife", "cook's knife"]
+    searchTerms: ["kitchen knife", "cook's knife"],
   },
   {
     name: "Paring Knife",
@@ -400,7 +400,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Small knife for detail work",
     sizeOrCapacity: "3-4 inch",
     isCommon: true,
-    searchTerms: ["small knife"]
+    searchTerms: ["small knife"],
   },
   {
     name: "Cutting Board",
@@ -409,7 +409,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Surface for cutting and chopping",
     material: "wood or plastic",
     isCommon: true,
-    searchTerms: ["chopping board"]
+    searchTerms: ["chopping board"],
   },
   {
     name: "Mixing Bowls",
@@ -418,7 +418,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Set of bowls for mixing ingredients",
     material: "stainless steel or glass",
     isCommon: true,
-    searchTerms: ["prep bowls"]
+    searchTerms: ["prep bowls"],
   },
   {
     name: "Measuring Cups",
@@ -426,7 +426,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "measuring",
     description: "Cups for measuring dry ingredients",
     isCommon: true,
-    searchTerms: ["dry measuring cups"]
+    searchTerms: ["dry measuring cups"],
   },
   {
     name: "Measuring Spoons",
@@ -434,7 +434,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "measuring",
     description: "Spoons for measuring small amounts",
     isCommon: true,
-    searchTerms: ["measuring set"]
+    searchTerms: ["measuring set"],
   },
   {
     name: "Liquid Measuring Cup",
@@ -444,7 +444,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     sizeOrCapacity: "1-4 cups",
     material: "glass or plastic",
     isCommon: true,
-    searchTerms: ["pyrex cup"]
+    searchTerms: ["pyrex cup"],
   },
   {
     name: "Wooden Spoon",
@@ -453,7 +453,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Spoon for stirring and mixing",
     material: "wood",
     isCommon: true,
-    searchTerms: ["mixing spoon"]
+    searchTerms: ["mixing spoon"],
   },
   {
     name: "Spatula",
@@ -462,7 +462,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Tool for flipping and turning",
     material: "silicone or metal",
     isCommon: true,
-    searchTerms: ["turner", "flipper"]
+    searchTerms: ["turner", "flipper"],
   },
   {
     name: "Rubber Spatula",
@@ -471,7 +471,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Flexible scraper for mixing",
     material: "silicone",
     isCommon: true,
-    searchTerms: ["scraper", "silicone spatula"]
+    searchTerms: ["scraper", "silicone spatula"],
   },
   {
     name: "Whisk",
@@ -479,7 +479,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "whisks",
     description: "Wire tool for whipping and mixing",
     isCommon: true,
-    searchTerms: ["wire whisk", "balloon whisk"]
+    searchTerms: ["wire whisk", "balloon whisk"],
   },
   {
     name: "Tongs",
@@ -488,7 +488,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Tool for gripping and turning food",
     material: "stainless steel or silicone",
     isCommon: true,
-    searchTerms: ["kitchen tongs"]
+    searchTerms: ["kitchen tongs"],
   },
   {
     name: "Ladle",
@@ -496,7 +496,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "spoons",
     description: "Large spoon for serving liquids",
     isCommon: true,
-    searchTerms: ["soup ladle"]
+    searchTerms: ["soup ladle"],
   },
   {
     name: "Can Opener",
@@ -504,7 +504,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "openers",
     description: "Tool for opening cans",
     isCommon: true,
-    searchTerms: ["tin opener"]
+    searchTerms: ["tin opener"],
   },
   {
     name: "Vegetable Peeler",
@@ -512,7 +512,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "peelers",
     description: "Tool for peeling vegetables",
     isCommon: true,
-    searchTerms: ["potato peeler", "peeler"]
+    searchTerms: ["potato peeler", "peeler"],
   },
   {
     name: "Grater",
@@ -520,7 +520,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "graters",
     description: "Tool for grating cheese and vegetables",
     isCommon: true,
-    searchTerms: ["box grater", "cheese grater"]
+    searchTerms: ["box grater", "cheese grater"],
   },
   {
     name: "Colander",
@@ -528,7 +528,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "strainers",
     description: "Bowl with holes for draining",
     isCommon: true,
-    searchTerms: ["strainer", "pasta strainer"]
+    searchTerms: ["strainer", "pasta strainer"],
   },
   {
     name: "Fine Mesh Strainer",
@@ -536,7 +536,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "strainers",
     description: "Fine strainer for sifting",
     isCommon: false,
-    searchTerms: ["sieve", "sifter"]
+    searchTerms: ["sieve", "sifter"],
   },
   {
     name: "Rolling Pin",
@@ -545,7 +545,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Tool for rolling dough",
     material: "wood or marble",
     isCommon: false,
-    searchTerms: ["dough roller"]
+    searchTerms: ["dough roller"],
   },
   {
     name: "Pastry Brush",
@@ -553,7 +553,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "brushes",
     description: "Brush for applying glazes",
     isCommon: false,
-    searchTerms: ["basting brush"]
+    searchTerms: ["basting brush"],
   },
   {
     name: "Kitchen Shears",
@@ -561,7 +561,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "scissors",
     description: "Scissors for kitchen use",
     isCommon: false,
-    searchTerms: ["kitchen scissors"]
+    searchTerms: ["kitchen scissors"],
   },
   {
     name: "Meat Thermometer",
@@ -569,7 +569,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "thermometers",
     description: "Thermometer for checking meat temperature",
     isCommon: false,
-    searchTerms: ["instant-read thermometer", "probe thermometer"]
+    searchTerms: ["instant-read thermometer", "probe thermometer"],
   },
   {
     name: "Kitchen Scale",
@@ -577,7 +577,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "measuring",
     description: "Scale for weighing ingredients",
     isCommon: false,
-    searchTerms: ["food scale", "digital scale"]
+    searchTerms: ["food scale", "digital scale"],
   },
   {
     name: "Mandoline",
@@ -585,7 +585,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "slicers",
     description: "Tool for uniform slicing",
     isCommon: false,
-    searchTerms: ["mandolin slicer"]
+    searchTerms: ["mandolin slicer"],
   },
   {
     name: "Mortar and Pestle",
@@ -594,7 +594,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     description: "Tool for grinding spices",
     material: "stone or marble",
     isCommon: false,
-    searchTerms: ["spice grinder"]
+    searchTerms: ["spice grinder"],
   },
   {
     name: "Potato Masher",
@@ -602,7 +602,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "mashers",
     description: "Tool for mashing potatoes",
     isCommon: false,
-    searchTerms: ["masher"]
+    searchTerms: ["masher"],
   },
   {
     name: "Garlic Press",
@@ -610,7 +610,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "presses",
     description: "Tool for crushing garlic",
     isCommon: false,
-    searchTerms: ["garlic crusher"]
+    searchTerms: ["garlic crusher"],
   },
   {
     name: "Zester",
@@ -618,7 +618,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "graters",
     description: "Tool for zesting citrus",
     isCommon: false,
-    searchTerms: ["microplane", "citrus zester"]
+    searchTerms: ["microplane", "citrus zester"],
   },
   {
     name: "Pizza Cutter",
@@ -626,7 +626,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "cutters",
     description: "Wheel for cutting pizza",
     isCommon: false,
-    searchTerms: ["pizza wheel"]
+    searchTerms: ["pizza wheel"],
   },
   {
     name: "Ice Cream Scoop",
@@ -634,7 +634,7 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "scoops",
     description: "Scoop for serving ice cream",
     isCommon: false,
-    searchTerms: ["cookie scoop"]
+    searchTerms: ["cookie scoop"],
   },
   {
     name: "Baster",
@@ -642,6 +642,6 @@ export const applianceLibraryData: ApplianceLibraryItem[] = [
     subcategory: "basters",
     description: "Tool for basting meats",
     isCommon: false,
-    searchTerms: ["turkey baster"]
-  }
+    searchTerms: ["turkey baster"],
+  },
 ];

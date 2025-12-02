@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit, Save, X, Search, Replace, Clock } from "lucide-react";
@@ -56,7 +62,9 @@ export function TranscriptEditor({
   const [editedTranscript, setEditedTranscript] = useState(transcript);
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [segmentToEdit, setSegmentToEdit] = useState<TranscriptSegment | null>(null);
+  const [segmentToEdit, setSegmentToEdit] = useState<TranscriptSegment | null>(
+    null,
+  );
   const [editedSegmentText, setEditedSegmentText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
@@ -70,7 +78,7 @@ export function TranscriptEditor({
 
   // Find active segment based on current playback time
   const activeSegment = segments.find(
-    (segment) => currentTime >= segment.start && currentTime <= segment.end
+    (segment) => currentTime >= segment.start && currentTime <= segment.end,
   );
 
   // Auto-scroll to active segment
@@ -93,13 +101,13 @@ export function TranscriptEditor({
     const results: number[] = [];
     const lowerSearchTerm = searchTerm.toLowerCase();
     const lowerTranscript = editedTranscript.toLowerCase();
-    
+
     let index = lowerTranscript.indexOf(lowerSearchTerm);
     while (index !== -1) {
       results.push(index);
       index = lowerTranscript.indexOf(lowerSearchTerm, index + 1);
     }
-    
+
     setSearchResults(results);
     setCurrentSearchIndex(0);
   };
@@ -107,16 +115,20 @@ export function TranscriptEditor({
   // Navigate search results
   const navigateSearch = (direction: "next" | "prev") => {
     if (searchResults.length === 0) return;
-    
-    const newIndex = direction === "next"
-      ? (currentSearchIndex + 1) % searchResults.length
-      : (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
-    
+
+    const newIndex =
+      direction === "next"
+        ? (currentSearchIndex + 1) % searchResults.length
+        : (currentSearchIndex - 1 + searchResults.length) %
+          searchResults.length;
+
     setCurrentSearchIndex(newIndex);
-    
+
     // Scroll to result
     const position = searchResults[newIndex];
-    const textarea = document.getElementById("transcript-textarea") as HTMLTextAreaElement;
+    const textarea = document.getElementById(
+      "transcript-textarea",
+    ) as HTMLTextAreaElement;
     if (textarea) {
       textarea.focus();
       textarea.setSelectionRange(position, position + searchTerm.length);
@@ -134,10 +146,10 @@ export function TranscriptEditor({
   const saveSegmentEdit = () => {
     if (segmentToEdit && onSegmentEdit) {
       onSegmentEdit(segmentToEdit.id, editedSegmentText);
-      
+
       // Update the full transcript
       const updatedSegments = segments.map((s) =>
-        s.id === segmentToEdit.id ? { ...s, text: editedSegmentText } : s
+        s.id === segmentToEdit.id ? { ...s, text: editedSegmentText } : s,
       );
       const newTranscript = updatedSegments.map((s) => s.text).join(" ");
       setEditedTranscript(newTranscript);
@@ -194,7 +206,7 @@ export function TranscriptEditor({
                 </Badge>
               )}
             </div>
-            
+
             {/* Edit Controls */}
             {!readOnly && (
               <>
@@ -239,7 +251,7 @@ export function TranscriptEditor({
             )}
           </div>
         </div>
-        
+
         {/* Edit History */}
         {edits.length > 0 && (
           <div className="mt-2">
@@ -249,7 +261,7 @@ export function TranscriptEditor({
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent className="flex-1 overflow-hidden">
         {isEditing ? (
           // Edit Mode - Full Text
@@ -273,8 +285,9 @@ export function TranscriptEditor({
                   id={`segment-${segment.id}`}
                   className={cn(
                     "p-3 rounded-lg border transition-all cursor-pointer hover-elevate",
-                    activeSegment?.id === segment.id && "bg-primary/10 border-primary",
-                    selectedSegment === segment.id && "ring-2 ring-primary"
+                    activeSegment?.id === segment.id &&
+                      "bg-primary/10 border-primary",
+                    selectedSegment === segment.id && "ring-2 ring-primary",
                   )}
                   onClick={() => {
                     setSelectedSegment(segment.id);
@@ -285,8 +298,8 @@ export function TranscriptEditor({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className="text-xs"
                           data-testid={`timestamp-${segment.id}`}
                         >
@@ -299,8 +312,14 @@ export function TranscriptEditor({
                           </Badge>
                         )}
                         {segment.confidence && (
-                          <Badge 
-                            variant={getConfidenceColor(segment.confidence) as "default" | "outline" | "destructive" | "secondary"}
+                          <Badge
+                            variant={
+                              getConfidenceColor(segment.confidence) as
+                                | "default"
+                                | "outline"
+                                | "destructive"
+                                | "secondary"
+                            }
                             className="text-xs"
                           >
                             {Math.round(segment.confidence * 100)}%
@@ -337,7 +356,7 @@ export function TranscriptEditor({
           </ScrollArea>
         )}
       </CardContent>
-      
+
       {/* Edit Segment Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
@@ -349,7 +368,8 @@ export function TranscriptEditor({
               <div className="space-y-2">
                 <Label>Timestamp</Label>
                 <Badge variant="outline">
-                  {formatTimestamp(segmentToEdit.start)} - {formatTimestamp(segmentToEdit.end)}
+                  {formatTimestamp(segmentToEdit.start)} -{" "}
+                  {formatTimestamp(segmentToEdit.end)}
                 </Badge>
               </div>
             )}

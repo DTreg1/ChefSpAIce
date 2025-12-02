@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Download, FileText, FileCode, FileJson, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,10 +83,13 @@ export function ExportOptions({
         await onExport(selectedFormat);
       } else if (transcriptionId) {
         // Export from API
-        const response = await fetch(`/api/transcriptions/${transcriptionId}/export?format=${selectedFormat}`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          `/api/transcriptions/${transcriptionId}/export?format=${selectedFormat}`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
 
         if (!response.ok) {
           throw new Error("Failed to export transcription");
@@ -89,9 +98,9 @@ export function ExportOptions({
         // Handle file download
         const contentType = response.headers.get("content-type");
         const contentDisposition = response.headers.get("content-disposition");
-        const filename = contentDisposition
-          ?.split("filename=")[1]
-          ?.replace(/"/g, "") || `transcription.${selectedFormat}`;
+        const filename =
+          contentDisposition?.split("filename=")[1]?.replace(/"/g, "") ||
+          `transcription.${selectedFormat}`;
 
         if (selectedFormat === "json") {
           const data = await response.json();
@@ -123,22 +132,22 @@ export function ExportOptions({
 
   const exportLocalData = () => {
     const filename = `transcription.${selectedFormat}`;
-    
+
     switch (selectedFormat) {
       case "txt":
         downloadText(transcript || "", filename);
         break;
-      
+
       case "srt":
         const srtContent = generateSRT(transcript || "", segments);
         downloadText(srtContent, filename);
         break;
-      
+
       case "vtt":
         const vttContent = generateVTT(transcript || "", segments);
         downloadText(vttContent, filename);
         break;
-      
+
       case "json":
         const jsonData = {
           transcript: transcript || "",
@@ -171,7 +180,7 @@ export function ExportOptions({
       const wordsPerSegment = 10;
       let srt = "";
       let segmentIndex = 1;
-      
+
       for (let i = 0; i < words.length; i += wordsPerSegment) {
         const segment = words.slice(i, i + wordsPerSegment).join(" ");
         const start = formatSRTTime(i * 3);
@@ -179,7 +188,7 @@ export function ExportOptions({
         srt += `${segmentIndex}\n${start} --> ${end}\n${segment}\n\n`;
         segmentIndex++;
       }
-      
+
       return srt;
     }
   };
@@ -187,7 +196,7 @@ export function ExportOptions({
   // Generate VTT format
   const generateVTT = (text: string, segs?: any[]): string => {
     let vtt = "WEBVTT\n\n";
-    
+
     if (segs && segs.length > 0) {
       vtt += segs
         .map((segment) => {
@@ -200,7 +209,7 @@ export function ExportOptions({
       // Generate dummy segments
       const words = text.split(" ");
       const wordsPerSegment = 10;
-      
+
       for (let i = 0; i < words.length; i += wordsPerSegment) {
         const segment = words.slice(i, i + wordsPerSegment).join(" ");
         const start = formatVTTTime(i * 3);
@@ -208,7 +217,7 @@ export function ExportOptions({
         vtt += `${start} --> ${end}\n${segment}\n\n`;
       }
     }
-    
+
     return vtt;
   };
 
@@ -218,7 +227,7 @@ export function ExportOptions({
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
     const millis = Math.floor((seconds % 1) * 1000);
-    
+
     return `${pad(hours)}:${pad(minutes)}:${pad(secs)},${pad(millis, 3)}`;
   };
 
@@ -227,7 +236,7 @@ export function ExportOptions({
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
     const millis = Math.floor((seconds % 1) * 1000);
-    
+
     return `${pad(hours)}:${pad(minutes)}:${pad(secs)}.${pad(millis, 3)}`;
   };
 
@@ -265,7 +274,10 @@ export function ExportOptions({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <RadioGroup value={selectedFormat} onValueChange={(v) => setSelectedFormat(v as ExportFormat)}>
+          <RadioGroup
+            value={selectedFormat}
+            onValueChange={(v) => setSelectedFormat(v as ExportFormat)}
+          >
             {exportFormats.map((format) => {
               const Icon = format.icon;
               return (
@@ -320,16 +332,28 @@ export function ExportOptions({
           <h4 className="text-sm font-medium">Format Information</h4>
           <div className="text-xs text-muted-foreground space-y-1">
             {selectedFormat === "txt" && (
-              <p>Plain text file containing only the transcript text without any formatting or timestamps.</p>
+              <p>
+                Plain text file containing only the transcript text without any
+                formatting or timestamps.
+              </p>
             )}
             {selectedFormat === "srt" && (
-              <p>SubRip subtitle format with numbered segments, timestamps, and text. Compatible with most video players.</p>
+              <p>
+                SubRip subtitle format with numbered segments, timestamps, and
+                text. Compatible with most video players.
+              </p>
             )}
             {selectedFormat === "vtt" && (
-              <p>WebVTT format for HTML5 video captions. Includes timestamps and supports styling and positioning.</p>
+              <p>
+                WebVTT format for HTML5 video captions. Includes timestamps and
+                supports styling and positioning.
+              </p>
             )}
             {selectedFormat === "json" && (
-              <p>Structured JSON format with full transcript, segments, timestamps, and metadata. Ideal for programmatic processing.</p>
+              <p>
+                Structured JSON format with full transcript, segments,
+                timestamps, and metadata. Ideal for programmatic processing.
+              </p>
             )}
           </div>
         </div>

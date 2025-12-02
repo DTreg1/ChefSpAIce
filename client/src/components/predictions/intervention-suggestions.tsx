@@ -1,22 +1,28 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  Lightbulb, 
-  Mail, 
-  Clock, 
+import {
+  Lightbulb,
+  Mail,
+  Clock,
   Calendar,
   Send,
   RefreshCw,
   CheckCircle,
   Target,
   Sparkles,
-  Zap
+  Zap,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserPrediction } from "@shared/schema";
@@ -50,14 +56,25 @@ interface InterventionResponse {
   };
 }
 
-export function InterventionSuggestions({ userId, prediction, onInterventionSent }: InterventionSuggestionsProps) {
+export function InterventionSuggestions({
+  userId,
+  prediction,
+  onInterventionSent,
+}: InterventionSuggestionsProps) {
   const { toast } = useToast();
-  const [selectedStrategy, setSelectedStrategy] = useState<'immediate' | 'shortTerm' | 'longTerm'>('immediate');
-  const [interventionData, setInterventionData] = useState<InterventionResponse | null>(null);
+  const [selectedStrategy, setSelectedStrategy] = useState<
+    "immediate" | "shortTerm" | "longTerm"
+  >("immediate");
+  const [interventionData, setInterventionData] =
+    useState<InterventionResponse | null>(null);
 
   const generateMutation = useMutation({
     mutationFn: async ({ userId, predictionId, regenerate }: any) => {
-      const response = await apiRequest('/api/predict/intervention', 'POST', { userId, predictionId, regenerate });
+      const response = await apiRequest("/api/predict/intervention", "POST", {
+        userId,
+        predictionId,
+        regenerate,
+      });
       return response.json();
     },
     onSuccess: (data: InterventionResponse) => {
@@ -66,7 +83,9 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
         title: "Intervention Generated",
         description: "AI has created personalized retention strategies",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/predict/user', userId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/predict/user", userId],
+      });
     },
     onError: (error) => {
       toast({
@@ -95,10 +114,10 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
 
   const handleGenerateIntervention = (regenerate = false) => {
     if (prediction && userId) {
-      generateMutation.mutate({ 
-        userId, 
+      generateMutation.mutate({
+        userId,
         predictionId: prediction.id,
-        regenerate 
+        regenerate,
       });
     }
   };
@@ -145,7 +164,7 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
             <p className="text-sm text-muted-foreground mb-4">
               Generate personalized intervention strategies using AI
             </p>
-            <Button 
+            <Button
               onClick={() => handleGenerateIntervention()}
               disabled={generateMutation.isPending}
               data-testid="button-generate-intervention"
@@ -173,7 +192,12 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
               </AlertDescription>
             </Alert>
 
-            <Tabs value={selectedStrategy} onValueChange={(v) => setSelectedStrategy(v as "immediate" | "shortTerm" | "longTerm")}>
+            <Tabs
+              value={selectedStrategy}
+              onValueChange={(v) =>
+                setSelectedStrategy(v as "immediate" | "shortTerm" | "longTerm")
+              }
+            >
               <TabsList className="grid grid-cols-3 w-full">
                 <TabsTrigger value="immediate">
                   <Clock className="h-4 w-4 mr-2" />
@@ -190,25 +214,37 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
               </TabsList>
 
               <TabsContent value="immediate" className="space-y-3">
-                <StrategyCard 
+                <StrategyCard
                   strategy={intervention.strategies.immediate}
-                  onSend={() => sendInterventionMutation.mutate(intervention.strategies.immediate)}
+                  onSend={() =>
+                    sendInterventionMutation.mutate(
+                      intervention.strategies.immediate,
+                    )
+                  }
                   isSending={sendInterventionMutation.isPending}
                 />
               </TabsContent>
 
               <TabsContent value="shortTerm" className="space-y-3">
-                <StrategyCard 
+                <StrategyCard
                   strategy={intervention.strategies.shortTerm}
-                  onSend={() => sendInterventionMutation.mutate(intervention.strategies.shortTerm)}
+                  onSend={() =>
+                    sendInterventionMutation.mutate(
+                      intervention.strategies.shortTerm,
+                    )
+                  }
                   isSending={sendInterventionMutation.isPending}
                 />
               </TabsContent>
 
               <TabsContent value="longTerm" className="space-y-3">
-                <StrategyCard 
+                <StrategyCard
                   strategy={intervention.strategies.longTerm}
-                  onSend={() => sendInterventionMutation.mutate(intervention.strategies.longTerm)}
+                  onSend={() =>
+                    sendInterventionMutation.mutate(
+                      intervention.strategies.longTerm,
+                    )
+                  }
                   isSending={sendInterventionMutation.isPending}
                 />
               </TabsContent>
@@ -217,10 +253,12 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
             <div className="flex items-center justify-between pt-2 border-t">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <CheckCircle className="h-3 w-3" />
-                <span>Confidence: {Math.round(intervention.confidence * 100)}%</span>
+                <span>
+                  Confidence: {Math.round(intervention.confidence * 100)}%
+                </span>
               </div>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={() => handleGenerateIntervention(true)}
                 disabled={generateMutation.isPending}
@@ -237,11 +275,11 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
   );
 }
 
-function StrategyCard({ 
-  strategy, 
-  onSend, 
-  isSending 
-}: { 
+function StrategyCard({
+  strategy,
+  onSend,
+  isSending,
+}: {
   strategy: InterventionStrategy;
   onSend: () => void;
   isSending: boolean;
@@ -255,22 +293,24 @@ function StrategyCard({
             {strategy.timing}
           </Badge>
         </div>
-        
+
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs">
             <Mail className="h-3 w-3" />
             <span className="font-medium">Subject:</span>
-            <span className="text-muted-foreground">{strategy.emailSubject}</span>
+            <span className="text-muted-foreground">
+              {strategy.emailSubject}
+            </span>
           </div>
-          
+
           <div className="text-xs text-muted-foreground pl-5">
             {strategy.keyMessage}
           </div>
         </div>
       </div>
 
-      <Button 
-        size="sm" 
+      <Button
+        size="sm"
         className="w-full"
         onClick={onSend}
         disabled={isSending}

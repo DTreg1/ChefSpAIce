@@ -13,24 +13,24 @@ info:
     url: https://nal.altarama.com/reft100.aspx?key=FoodData
   license:
     name: Creative Commons 0 1.0 Universal
-    url: 'https://creativecommons.org'
+    url: "https://creativecommons.org"
 servers:
   - url: https://api.nal.usda.gov/fdc
 security:
   - ApiKeyAuth: []
 tags:
-- name: FDC
-  description: endpoints to retrieve nutrient data
-        
+  - name: FDC
+    description: endpoints to retrieve nutrient data
+
 paths:
-  '/v1/food/{fdcId}':
+  "/v1/food/{fdcId}":
     get:
-      tags: 
+      tags:
         - FDC
       security:
         - ApiKeyAuth: []
       summary: Fetches details for one food item by FDC ID
-      description:  Retrieves a single food item by an FDC ID. Optional format and nutrients can be specified.
+      description: Retrieves a single food item by an FDC ID. Optional format and nutrients can be specified.
       operationId: getFood
       parameters:
         - in: path
@@ -38,7 +38,7 @@ paths:
           description: FDC id of the food to retrieve
           required: true
           schema:
-           type: string
+            type: string
         - in: query
           name: format
           description: Optional. 'abridged' for an abridged set of elements, 'full' for all elements (default).
@@ -57,28 +57,28 @@ paths:
               type: integer
             example: [203, 204, 205]
       responses:
-        '200':
+        "200":
           description: One food result.
           content:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/AbridgedFoodItem'
-                  - $ref: '#/components/schemas/BrandedFoodItem'
-                  - $ref: '#/components/schemas/FoundationFoodItem'
-                  - $ref: '#/components/schemas/SRLegacyFoodItem'
-                  - $ref: '#/components/schemas/SurveyFoodItem'
-        '400':
+                  - $ref: "#/components/schemas/AbridgedFoodItem"
+                  - $ref: "#/components/schemas/BrandedFoodItem"
+                  - $ref: "#/components/schemas/FoundationFoodItem"
+                  - $ref: "#/components/schemas/SRLegacyFoodItem"
+                  - $ref: "#/components/schemas/SurveyFoodItem"
+        "400":
           description: bad input parameter
-        '404':
+        "404":
           description: no results found
-          
-  '/v1/foods':
+
+  "/v1/foods":
     get:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Fetches details for multiple food items using input FDC IDs
-      description:  Retrieves a list of food items by a list of up to 20 FDC IDs. Optional format and nutrients can be specified. Invalid FDC ID's or ones that are not found are omitted and an empty set is returned if there are no matches.
+      description: Retrieves a list of food items by a list of up to 20 FDC IDs. Optional format and nutrients can be specified. Invalid FDC ID's or ones that are not found are omitted and an empty set is returned if there are no matches.
       operationId: getFoods
       parameters:
         - in: query
@@ -91,7 +91,7 @@ paths:
             maxItems: 20
             items:
               type: string
-            example: [534358,373052,616350]
+            example: [534358, 373052, 616350]
         - in: query
           name: format
           description: Optional. 'abridged' for an abridged set of elements, 'full' for all elements (default).
@@ -110,58 +110,57 @@ paths:
               type: integer
             example: [203, 204, 205]
       responses:
-        '200':
+        "200":
           description: List of Food details matching specified FDC ID's. Invalid FDC ID's or ones that are not found are omitted.
           content:
             application/json:
-             schema:
-              type: array
-              items:
-                anyOf:
-                  - $ref: '#/components/schemas/AbridgedFoodItem'
-                  - $ref: '#/components/schemas/BrandedFoodItem'
-                  - $ref: '#/components/schemas/FoundationFoodItem'
-                  - $ref: '#/components/schemas/SRLegacyFoodItem'
-                  - $ref: '#/components/schemas/SurveyFoodItem'
-        '400':
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: "#/components/schemas/AbridgedFoodItem"
+                    - $ref: "#/components/schemas/BrandedFoodItem"
+                    - $ref: "#/components/schemas/FoundationFoodItem"
+                    - $ref: "#/components/schemas/SRLegacyFoodItem"
+                    - $ref: "#/components/schemas/SurveyFoodItem"
+        "400":
           description: bad input parameter
-          
+
     post:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Fetches details for multiple food items using input FDC IDs
-      description:  Retrieves a list of food items by a list of up to 20 FDC IDs. Optional format and nutrients can be specified. Invalid FDC ID's or ones that are not found are omitted and an empty set is returned if there are no matches.
+      description: Retrieves a list of food items by a list of up to 20 FDC IDs. Optional format and nutrients can be specified. Invalid FDC ID's or ones that are not found are omitted and an empty set is returned if there are no matches.
       operationId: postFoods
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FoodsCriteria'
+              $ref: "#/components/schemas/FoodsCriteria"
       responses:
-        '200':
+        "200":
           description: List of Food details matching specified FDC ID's. Invalid FDC ID's or ones that are not found are omitted.
           content:
             application/json:
-             schema:
-              type: array
-              items:
-                anyOf:
-                  - $ref: '#/components/schemas/AbridgedFoodItem'
-                  - $ref: '#/components/schemas/BrandedFoodItem'
-                  - $ref: '#/components/schemas/FoundationFoodItem'
-                  - $ref: '#/components/schemas/SRLegacyFoodItem'
-                  - $ref: '#/components/schemas/SurveyFoodItem'
-        '400':
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: "#/components/schemas/AbridgedFoodItem"
+                    - $ref: "#/components/schemas/BrandedFoodItem"
+                    - $ref: "#/components/schemas/FoundationFoodItem"
+                    - $ref: "#/components/schemas/SRLegacyFoodItem"
+                    - $ref: "#/components/schemas/SurveyFoodItem"
+        "400":
           description: bad input parameter
-          
-          
-  '/v1/foods/list':
+
+  "/v1/foods/list":
     get:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Returns a paged list of foods, in the 'abridged' format
-      description:  Retrieves a paged list of foods. Use the pageNumber parameter to page through the entire result set.
+      description: Retrieves a paged list of foods. Use the pageNumber parameter to page through the entire result set.
       operationId: getFoodsList
       parameters:
         - in: query
@@ -180,7 +179,7 @@ paths:
             maxItems: 4
           explode: false
           style: form
-          example: ["Foundation","SR Legacy"]
+          example: ["Foundation", "SR Legacy"]
         - in: query
           name: pageSize
           description: Optional. Maximum number of results to return for the current page. Default is 50.
@@ -197,7 +196,7 @@ paths:
             example: 2
         - in: query
           name: sortBy
-          description: Optional. Specify one of the possible values to sort by that field. Note, dataType.keyword will be dataType and lowercaseDescription.keyword will be description in future releases. 
+          description: Optional. Specify one of the possible values to sort by that field. Note, dataType.keyword will be dataType and lowercaseDescription.keyword will be description in future releases.
           schema:
             type: string
             enum:
@@ -214,47 +213,47 @@ paths:
               - asc
               - desc
       responses:
-        '200':
+        "200":
           description: List of foods for the requested page
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AbridgedFoodItem'
-        '400':
+                  $ref: "#/components/schemas/AbridgedFoodItem"
+        "400":
           description: bad input parameter
-          
+
     post:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Returns a paged list of foods, in the 'abridged' format
-      description:  Retrieves a paged list of foods. Use the pageNumber parameter to page through the entire result set.
+      description: Retrieves a paged list of foods. Use the pageNumber parameter to page through the entire result set.
       operationId: postFoodsList
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FoodListCriteria'
+              $ref: "#/components/schemas/FoodListCriteria"
       responses:
-        '200':
+        "200":
           description: List of foods for the requested page
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AbridgedFoodItem'
-        '400':
+                  $ref: "#/components/schemas/AbridgedFoodItem"
+        "400":
           description: bad input parameter
-                
-  '/v1/foods/search':
+
+  "/v1/foods/search":
     get:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Returns a list of foods that matched search (query) keywords
-      description: Search for foods using keywords. Results can be filtered by dataType and there are options for result page sizes or sorting. 
+      description: Search for foods using keywords. Results can be filtered by dataType and there are options for result page sizes or sorting.
       operationId: getFoodsSearch
       parameters:
         - in: query
@@ -280,7 +279,7 @@ paths:
             maxItems: 4
           explode: false
           style: form
-          example: ["Foundation","SR Legacy"]
+          example: ["Foundation", "SR Legacy"]
         - in: query
           name: pageSize
           description: Optional. Maximum number of results to return for the current page. Default is 50.
@@ -322,74 +321,72 @@ paths:
             type: string
           example: "Kar Nut Products Company"
       responses:
-          '200':
-            description: List of foods that matched search terms
-            content:
-              application/json:
-                schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/SearchResult'
-          '400':
-            description: bad input parameter
-
-    post:
-      tags: 
-      - FDC
-      summary: Returns a list of foods that matched search (query) keywords
-      description: Search for foods using keywords. Results can be filtered by dataType and there are options for result page sizes or sorting.
-      operationId: postFoodsSearch
-      requestBody:
-        required: true
-        description: The query string may also include standard [search operators](https://fdc.nal.usda.gov/help.html#bkmk-2) 
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FoodSearchCriteria'
-      responses:
-        '200':
-          description:  List of foods that matched search terms
+        "200":
+          description: List of foods that matched search terms
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SearchResult'
-        '400':
-            description: bad input parameter
+                  $ref: "#/components/schemas/SearchResult"
+        "400":
+          description: bad input parameter
 
-  '/v1/json-spec':
-    get:
-      tags: 
-      - FDC
-      summary: Returns this documentation in JSON format
-      description: The OpenAPI 3.0 specification for the FDC API rendered as JSON (JavaScript Object Notation) 
-      operationId: getJsonSpec  
+    post:
+      tags:
+        - FDC
+      summary: Returns a list of foods that matched search (query) keywords
+      description: Search for foods using keywords. Results can be filtered by dataType and there are options for result page sizes or sorting.
+      operationId: postFoodsSearch
+      requestBody:
+        required: true
+        description: The query string may also include standard [search operators](https://fdc.nal.usda.gov/help.html#bkmk-2)
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodSearchCriteria"
       responses:
-        'default': 
+        "200":
+          description: List of foods that matched search terms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+        "400":
+          description: bad input parameter
+
+  "/v1/json-spec":
+    get:
+      tags:
+        - FDC
+      summary: Returns this documentation in JSON format
+      description: The OpenAPI 3.0 specification for the FDC API rendered as JSON (JavaScript Object Notation)
+      operationId: getJsonSpec
+      responses:
+        "default":
           description: JSON rendering of OpenAPI 3.0 specification
-          
-  '/v1/yaml-spec':
+
+  "/v1/yaml-spec":
     get:
-      tags: 
-      - FDC
+      tags:
+        - FDC
       summary: Returns this documentation in JSON format
-      description: The OpenAPI 3.0 specification for the FDC API rendered as YAML (YAML Ain't Markup Language) 
-      operationId: getYamlSpec  
+      description: The OpenAPI 3.0 specification for the FDC API rendered as YAML (YAML Ain't Markup Language)
+      operationId: getYamlSpec
       responses:
-        'default': 
+        "default":
           description: YAML rendering of OpenAPI 3.0 specification
 
 components:
-
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: query
       name: api_key
-      
+
   schemas:
-  
     AbridgedFoodItem:
       type: object
       required:
@@ -409,7 +406,7 @@ components:
         foodNutrients:
           type: array
           items:
-            $ref: '#/components/schemas/AbridgedFoodNutrient'
+            $ref: "#/components/schemas/AbridgedFoodNutrient"
         publicationDate:
           type: string
           example: "4/1/2019"
@@ -429,7 +426,7 @@ components:
           type: string
           description: only applies to Survey Foods
           example: "27415110"
-          
+
     BrandedFoodItem:
       type: object
       required:
@@ -457,7 +454,7 @@ components:
           example: "NUT 'N BERRY MIX"
         foodClass:
           type: string
-          example: 'Branded'
+          example: "Branded"
         gtinUpc:
           type: string
           example: "077034085228"
@@ -486,11 +483,11 @@ components:
         foodNutrients:
           type: array
           items:
-            $ref: '#/components/schemas/FoodNutrient'
+            $ref: "#/components/schemas/FoodNutrient"
         foodUpdateLog:
           type: array
-          items:  
-            $ref: '#/components/schemas/FoodUpdateLog'
+          items:
+            $ref: "#/components/schemas/FoodUpdateLog"
         labelNutrients:
           type: object
           properties:
@@ -585,7 +582,7 @@ components:
                   type: number
                   format: float
                   example: 140
-              
+
     FoundationFoodItem:
       required:
         - fdcId
@@ -616,32 +613,32 @@ components:
         publicationDate:
           type: string
           example: "12/16/2019"
-        scientificName: 
+        scientificName:
           type: string
           example: "Fragaria X ananassa"
         foodCategory:
-          $ref: '#/components/schemas/FoodCategory'
+          $ref: "#/components/schemas/FoodCategory"
         foodComponents:
           type: array
           items:
-            $ref: '#/components/schemas/FoodComponent'
+            $ref: "#/components/schemas/FoodComponent"
         foodNutrients:
           type: array
           items:
-            $ref: '#/components/schemas/FoodNutrient'
+            $ref: "#/components/schemas/FoodNutrient"
         foodPortions:
           type: array
           items:
-            $ref: '#/components/schemas/FoodPortion'
+            $ref: "#/components/schemas/FoodPortion"
         inputFoods:
           type: array
           items:
-            $ref: '#/components/schemas/InputFoodFoundation'
+            $ref: "#/components/schemas/InputFoodFoundation"
         nutrientConversionFactors:
           type: array
           items:
-            $ref: '#/components/schemas/NutrientConversionFactors'
-            
+            $ref: "#/components/schemas/NutrientConversionFactors"
+
     SRLegacyFoodItem:
       required:
         - fdcId
@@ -669,20 +666,20 @@ components:
         publicationDate:
           type: string
           example: "4/1/2019"
-        scientificName: 
+        scientificName:
           type: string
           example: "Brassica oleracea var. italica"
         foodCategory:
-          $ref: '#/components/schemas/FoodCategory'
+          $ref: "#/components/schemas/FoodCategory"
         foodNutrients:
           type: array
           items:
-            $ref: '#/components/schemas/FoodNutrient'
+            $ref: "#/components/schemas/FoodNutrient"
         nutrientConversionFactors:
           type: array
           items:
-            $ref: '#/components/schemas/NutrientConversionFactors'
-            
+            $ref: "#/components/schemas/NutrientConversionFactors"
+
     SurveyFoodItem:
       required:
         - fdcId
@@ -716,18 +713,18 @@ components:
         foodAttributes:
           type: array
           items:
-            $ref: '#/components/schemas/FoodAttribute'  
+            $ref: "#/components/schemas/FoodAttribute"
         foodPortions:
           type: array
           items:
-            $ref: '#/components/schemas/FoodPortion'
+            $ref: "#/components/schemas/FoodPortion"
         inputFoods:
           type: array
           items:
-            $ref: '#/components/schemas/InputFoodSurvey'
+            $ref: "#/components/schemas/InputFoodSurvey"
         wweiaFoodCategory:
-          $ref: '#/components/schemas/WweiaFoodCategory'
-    
+          $ref: "#/components/schemas/WweiaFoodCategory"
+
     SampleFoodItem:
       required:
         - fdcId
@@ -752,8 +749,8 @@ components:
         foodAttributes:
           type: array
           items:
-            $ref: '#/components/schemas/FoodCategory'  
-          
+            $ref: "#/components/schemas/FoodCategory"
+
     AbridgedFoodNutrient:
       required:
         - id
@@ -780,7 +777,7 @@ components:
         derivationDescription:
           type: string
           example: "Calculated from a daily value percentage per serving size measure"
-          
+
     FoodNutrient:
       required:
         - id
@@ -815,12 +812,12 @@ components:
           type: string
           example: "FoodNutrient"
         nutrient:
-          $ref: '#/components/schemas/Nutrient'
+          $ref: "#/components/schemas/Nutrient"
         foodNutrientDerivation:
-          $ref: '#/components/schemas/FoodNutrientDerivation'
+          $ref: "#/components/schemas/FoodNutrientDerivation"
         nutrientAnalysisDetails:
-          $ref: '#/components/schemas/NutrientAnalysisDetails'
-          
+          $ref: "#/components/schemas/NutrientAnalysisDetails"
+
     Nutrient:
       description: a food nutrient
       properties:
@@ -841,7 +838,7 @@ components:
         unitName:
           type: string
           example: "g"
-          
+
     FoodNutrientDerivation:
       properties:
         id:
@@ -855,21 +852,21 @@ components:
           type: string
           example: "Calculated from a daily value percentage per serving size measure"
         foodNutrientSource:
-          $ref: '#/components/schemas/FoodNutrientSource'
-          
+          $ref: "#/components/schemas/FoodNutrientSource"
+
     FoodNutrientSource:
       properties:
         id:
           type: integer
           format: int32
           example: 9
-        code: 
+        code:
           type: string
           example: "12"
         description:
           type: string
           example: "Manufacturer's analytical; partial documentation"
-          
+
     NutrientAnalysisDetails:
       properties:
         subSampleId:
@@ -897,24 +894,24 @@ components:
         nutrientAcquisitionDetails:
           type: array
           items:
-            $ref: '#/components/schemas/NutrientAcquisitionDetails'
-            
+            $ref: "#/components/schemas/NutrientAcquisitionDetails"
+
     NutrientAcquisitionDetails:
-          type: object
-          properties:
-            sampleUnitId: 
-              type: integer
-              example: 321632
-            purchaseDate:
-              type: string
-              example: "12/2/2005"
-            storeCity:
-              type: string
-              example: TRUSSVILLE
-            storeState:
-              type: string
-              example: AL
-              
+      type: object
+      properties:
+        sampleUnitId:
+          type: integer
+          example: 321632
+        purchaseDate:
+          type: string
+          example: "12/2/2005"
+        storeCity:
+          type: string
+          example: TRUSSVILLE
+        storeState:
+          type: string
+          example: AL
+
     NutrientConversionFactors:
       properties:
         type:
@@ -946,7 +943,7 @@ components:
           example: "NUT 'N BERRY MIX"
         foodClass:
           type: string
-          example: 'Branded'
+          example: "Branded"
         gtinUpc:
           type: string
           example: "077034085228"
@@ -978,8 +975,8 @@ components:
         foodAttributes:
           type: array
           items:
-            $ref: '#/components/schemas/FoodAttribute'
-        
+            $ref: "#/components/schemas/FoodAttribute"
+
     FoodAttribute:
       properties:
         id:
@@ -1003,7 +1000,7 @@ components:
             description:
               type: string
               example: "Adjustments made to foods, including moisture and fat changes."
-              
+
     FoodCategory:
       properties:
         id:
@@ -1016,7 +1013,7 @@ components:
         description:
           type: string
           example: "Vegetables and Vegetable Products"
-    
+
     FoodComponent:
       properties:
         id:
@@ -1041,7 +1038,7 @@ components:
         percentWeight:
           type: number
           example: 0.5
-          
+
     FoodPortion:
       properties:
         id:
@@ -1073,8 +1070,8 @@ components:
           type: integer
           example: 1
         measureUnit:
-          $ref: '#/components/schemas/MeasureUnit'
-    
+          $ref: "#/components/schemas/MeasureUnit"
+
     InputFoodFoundation:
       description: applies to Foundation foods. Not all inputFoods will have all fields.
       properties:
@@ -1085,8 +1082,8 @@ components:
           type: string
           example: Beef, Tenderloin Roast, select, roasted, comp5, lean (34BLTR)
         inputFood:
-          $ref: '#/components/schemas/SampleFoodItem'
-    
+          $ref: "#/components/schemas/SampleFoodItem"
+
     InputFoodSurvey:
       description: applies to Survey (FNDDS). Not all inputFoods will have all fields.
       properties:
@@ -1126,10 +1123,10 @@ components:
           type: string
           example: "TB"
         inputFood:
-          $ref: '#/components/schemas/SurveyFoodItem'
+          $ref: "#/components/schemas/SurveyFoodItem"
         retentionFactor:
-          $ref: '#/components/schemas/RetentionFactor'
-          
+          $ref: "#/components/schemas/RetentionFactor"
+
     MeasureUnit:
       properties:
         id:
@@ -1142,7 +1139,7 @@ components:
         name:
           type: string
           example: "undetermined"
-          
+
     RetentionFactor:
       properties:
         id:
@@ -1154,7 +1151,7 @@ components:
         description:
           type: string
           example: "VEG, ROOTS, ETC, SAUTEED"
-          
+
     WweiaFoodCategory:
       properties:
         wweiaFoodCategoryCode:
@@ -1163,7 +1160,7 @@ components:
         wweiaFoodCategoryDescription:
           type: string
           example: "Meat mixed dishes"
-              
+
     FoodsCriteria:
       type: object
       description: JSON for request body of 'foods' POST request. Retrieves a list of food items by a list of up to 20 FDC IDs. Optional format and nutrients can be specified. Invalid FDC ID's or ones that are not found are omitted and an empty set is returned if there are no matches.
@@ -1175,7 +1172,7 @@ components:
           maxItems: 20
           items:
             type: integer
-          example: [534358,373052,616350]
+          example: [534358, 373052, 616350]
         format:
           description: Optional. 'abridged' for an abridged set of elements, 'full' for all elements (default).
           type: string
@@ -1188,14 +1185,14 @@ components:
           minItems: 1
           maxItems: 25
           items:
-              type: integer
+            type: integer
           example: [203, 204, 205]
-    
+
     FoodListCriteria:
       type: object
       description: JSON for request body of 'list' POST request
       properties:
-        dataType: 
+        dataType:
           description: Optional. Filter on a specific data type; specify one or more values in an array.
           type: array
           items:
@@ -1207,7 +1204,7 @@ components:
               - SR Legacy
           minItems: 1
           maxItems: 4
-          example: ["Foundation","SR Legacy"]
+          example: ["Foundation", "SR Legacy"]
         pageSize:
           description: Optional. Maximum number of results to return for the current page. Default is 50.
           type: integer
@@ -1232,7 +1229,7 @@ components:
           enum:
             - asc
             - desc
-          
+
     FoodSearchCriteria:
       type: object
       description: JSON for request body of 'search' POST request
@@ -1241,7 +1238,7 @@ components:
           description: Search terms to use in the search. The string may also include standard [search operators](https://fdc.nal.usda.gov/help.html#bkmk-2)
           type: string
           example: "Cheddar cheese"
-        dataType: 
+        dataType:
           description: Optional. Filter on a specific data type; specify one or more values in an array.
           type: array
           items:
@@ -1253,7 +1250,7 @@ components:
               - SR Legacy
           minItems: 1
           maxItems: 4
-          example: ["Foundation","SR Legacy"]
+          example: ["Foundation", "SR Legacy"]
         pageSize:
           description: Optional. Maximum number of results to return for the current page. Default is 50.
           type: integer
@@ -1282,14 +1279,14 @@ components:
           description: Optional. Filter results based on the brand owner of the food. Only applies to Branded Foods.
           type: string
           example: "Kar Nut Products Company"
-              
+
     SearchResult:
       properties:
         foodSearchCriteria:
           description: A copy of the criteria that were used in the search.
           type: object
           items:
-            $ref: '#/components/schemas/FoodSearchCriteria'
+            $ref: "#/components/schemas/FoodSearchCriteria"
         totalHits:
           description: The total number of foods found matching the search criteria.
           type: integer
@@ -1304,8 +1301,8 @@ components:
           description: The list of foods found matching the search criteria. See Food Fields below.
           type: array
           items:
-            $ref: '#/components/schemas/SearchResultFood'
-            
+            $ref: "#/components/schemas/SearchResultFood"
+
     SearchResultFood:
       type: object
       required:
@@ -1330,7 +1327,7 @@ components:
         foodNutrients:
           type: array
           items:
-            $ref: '#/components/schemas/AbridgedFoodNutrient'
+            $ref: "#/components/schemas/AbridgedFoodNutrient"
         publicationDate:
           description: Date the item was published to FDC.
           type: string
@@ -1359,7 +1356,7 @@ components:
         allHighlightFields:
           description: allHighlightFields
           type: string
-        score: 
+        score:
           description: Relative score indicating how well the food matches the search criteria.
           type: number
           format: float

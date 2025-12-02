@@ -1,7 +1,7 @@
 /**
  * @file server/storage/domains/ai-ml.storage.ts
  * @description AI & ML features storage operations
- * 
+ *
  * Covers:
  * - Voice commands & transcriptions
  * - Draft generation & templates
@@ -11,7 +11,7 @@
  * - Translations & language preferences
  * - Data extraction templates & results
  * - Natural language query logs
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (AiMlStorage) for dependency injection and testing
  * - Export singleton INSTANCE (aiMlStorage) for convenience in production code
@@ -99,7 +99,10 @@ import type { IAiMlStorage } from "../interfaces/IAiMlStorage";
 // Local type aliases for Insert types (not exported from schema)
 type InsertExcerpt = Omit<Excerpt, "id" | "createdAt">;
 type InsertExcerptPerformance = Omit<ExcerptPerformance, "id" | "createdAt">;
-type InsertLanguagePreference = Omit<LanguagePreference, "id" | "createdAt" | "updatedAt">;
+type InsertLanguagePreference = Omit<
+  LanguagePreference,
+  "id" | "createdAt" | "updatedAt"
+>;
 
 export class AiMlStorage implements IAiMlStorage {
   // ==================== Voice Commands ====================
@@ -115,7 +118,7 @@ export class AiMlStorage implements IAiMlStorage {
   async getVoiceCommands(
     userId: string,
     intent?: string,
-    limit = 20
+    limit = 20,
   ): Promise<VoiceCommand[]> {
     const conditions = [eq(voiceCommands.userId, userId)];
     if (intent) {
@@ -170,7 +173,8 @@ export class AiMlStorage implements IAiMlStorage {
 
     return {
       totalCommands: commands.length,
-      avgConfidence: validConfidenceCount > 0 ? totalConfidence / validConfidenceCount : 0,
+      avgConfidence:
+        validConfidenceCount > 0 ? totalConfidence / validConfidenceCount : 0,
       topIntents,
     };
   }
@@ -202,7 +206,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async createDraftTemplate(
-    template: InsertDraftTemplate
+    template: InsertDraftTemplate,
   ): Promise<DraftTemplate> {
     const [result] = await db
       .insert(draftTemplates)
@@ -213,7 +217,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateDraftTemplate(
     id: string,
-    updates: Partial<Omit<InsertDraftTemplate, "id">>
+    updates: Partial<Omit<InsertDraftTemplate, "id">>,
   ): Promise<DraftTemplate> {
     const [result] = await db
       .update(draftTemplates)
@@ -245,7 +249,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async createGeneratedDraft(
     userId: string,
-    draft: Omit<InsertGeneratedDraft, "userId">
+    draft: Omit<InsertGeneratedDraft, "userId">,
   ): Promise<GeneratedDraft> {
     const [result] = await db
       .insert(generatedDrafts)
@@ -256,7 +260,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getGeneratedDrafts(
     userId: string,
-    templateId?: string
+    templateId?: string,
   ): Promise<GeneratedDraft[]> {
     const conditions = [eq(generatedDrafts.userId, userId)];
     if (templateId) {
@@ -272,7 +276,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getGeneratedDraft(
     userId: string,
-    draftId: string
+    draftId: string,
   ): Promise<GeneratedDraft | null> {
     const [result] = await db
       .select()
@@ -280,8 +284,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        )
+          eq(generatedDrafts.id, draftId),
+        ),
       )
       .limit(1);
     return result || null;
@@ -290,7 +294,7 @@ export class AiMlStorage implements IAiMlStorage {
   async updateGeneratedDraft(
     userId: string,
     draftId: string,
-    updates: Partial<Omit<InsertGeneratedDraft, "userId" | "id">>
+    updates: Partial<Omit<InsertGeneratedDraft, "userId" | "id">>,
   ): Promise<GeneratedDraft> {
     const [result] = await db
       .update(generatedDrafts)
@@ -298,8 +302,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        )
+          eq(generatedDrafts.id, draftId),
+        ),
       )
       .returning();
 
@@ -316,8 +320,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        )
+          eq(generatedDrafts.id, draftId),
+        ),
       );
   }
 
@@ -358,7 +362,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async createWritingSession(
     userId: string,
-    session: Omit<InsertWritingSession, "userId">
+    session: Omit<InsertWritingSession, "userId">,
   ): Promise<WritingSession> {
     const [result] = await db
       .insert(writingSessions)
@@ -369,7 +373,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getWritingSession(
     userId: string,
-    sessionId: string
+    sessionId: string,
   ): Promise<WritingSession | null> {
     const [result] = await db
       .select()
@@ -377,8 +381,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(writingSessions.userId, userId),
-          eq(writingSessions.id, sessionId)
-        )
+          eq(writingSessions.id, sessionId),
+        ),
       )
       .limit(1);
     return result || null;
@@ -386,7 +390,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getWritingSessions(
     userId: string,
-    limit = 20
+    limit = 20,
   ): Promise<WritingSession[]> {
     return await db
       .select()
@@ -399,7 +403,7 @@ export class AiMlStorage implements IAiMlStorage {
   async updateWritingSession(
     userId: string,
     sessionId: string,
-    updates: Partial<Omit<InsertWritingSession, "userId" | "id">>
+    updates: Partial<Omit<InsertWritingSession, "userId" | "id">>,
   ): Promise<WritingSession> {
     const [result] = await db
       .update(writingSessions)
@@ -407,8 +411,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(writingSessions.userId, userId),
-          eq(writingSessions.id, sessionId)
-        )
+          eq(writingSessions.id, sessionId),
+        ),
       )
       .returning();
 
@@ -421,7 +425,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async addWritingSuggestions(
     sessionId: string,
-    suggestions: Omit<InsertWritingSuggestion, "sessionId">[]
+    suggestions: Omit<InsertWritingSuggestion, "sessionId">[],
   ): Promise<WritingSuggestion[]> {
     const values = suggestions.map((s) => ({ ...s, sessionId }));
     return await db.insert(writingSuggestions).values(values).returning();
@@ -437,7 +441,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateWritingSuggestion(
     suggestionId: string,
-    updates: Partial<Omit<InsertWritingSuggestion, "id" | "sessionId">>
+    updates: Partial<Omit<InsertWritingSuggestion, "id" | "sessionId">>,
   ): Promise<WritingSuggestion> {
     const [result] = await db
       .update(writingSuggestions)
@@ -483,7 +487,8 @@ export class AiMlStorage implements IAiMlStorage {
       avgDuration: sessions.length > 0 ? totalDuration / sessions.length : 0,
       totalSuggestionsAccepted: totalAccepted,
       totalSuggestionsRejected: totalRejected,
-      acceptanceRate: totalSuggestions > 0 ? totalAccepted / totalSuggestions : 0,
+      acceptanceRate:
+        totalSuggestions > 0 ? totalAccepted / totalSuggestions : 0,
     };
   }
 
@@ -506,16 +511,14 @@ export class AiMlStorage implements IAiMlStorage {
     const [result] = await db
       .select()
       .from(summaries)
-      .where(
-        and(eq(summaries.userId, userId), eq(summaries.id, summaryId))
-      )
+      .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)))
       .limit(1);
     return result || null;
   }
 
   async createSummary(
     userId: string,
-    summary: Omit<InsertSummary, "userId">
+    summary: Omit<InsertSummary, "userId">,
   ): Promise<Summary> {
     const [result] = await db
       .insert(summaries)
@@ -527,7 +530,7 @@ export class AiMlStorage implements IAiMlStorage {
   async updateSummary(
     userId: string,
     summaryId: string,
-    updates: Partial<Omit<InsertSummary, "userId" | "id">>
+    updates: Partial<Omit<InsertSummary, "userId" | "id">>,
   ): Promise<Summary> {
     const [result] = await db
       .update(summaries)
@@ -550,7 +553,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getSummariesByType(
     userId: string,
-    summaryType: string
+    summaryType: string,
   ): Promise<Summary[]> {
     return await db
       .select()
@@ -558,8 +561,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(summaries.userId, userId),
-          eq(summaries.summaryType, summaryType)
-        )
+          eq(summaries.summaryType, summaryType),
+        ),
       )
       .orderBy(desc(summaries.createdAt));
   }
@@ -568,7 +571,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getExcerpt(
     summaryId: string,
-    category?: string
+    category?: string,
   ): Promise<Excerpt | null> {
     const conditions = [eq(excerpts.summaryId, summaryId)];
     if (category) {
@@ -592,16 +595,13 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async createExcerpt(excerpt: Omit<InsertExcerpt, "id">): Promise<Excerpt> {
-    const [result] = await db
-      .insert(excerpts)
-      .values(excerpt)
-      .returning();
+    const [result] = await db.insert(excerpts).values(excerpt).returning();
     return result;
   }
 
   async updateExcerpt(
     excerptId: string,
-    updates: Partial<Omit<InsertExcerpt, "id">>
+    updates: Partial<Omit<InsertExcerpt, "id">>,
   ): Promise<Excerpt> {
     const [result] = await db
       .update(excerpts)
@@ -621,7 +621,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async recordExcerptPerformance(
-    performance: Omit<InsertExcerptPerformance, "id">
+    performance: Omit<InsertExcerptPerformance, "id">,
   ): Promise<ExcerptPerformance> {
     const [result] = await db
       .insert(excerptPerformance)
@@ -631,7 +631,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async getExcerptPerformance(
-    excerptId: string
+    excerptId: string,
   ): Promise<ExcerptPerformance[]> {
     return await db
       .select()
@@ -644,7 +644,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async translateContent(
     userId: string,
-    translation: Omit<InsertTranslation, "userId">
+    translation: Omit<InsertTranslation, "userId">,
   ): Promise<Translation> {
     const [result] = await db
       .insert(translations)
@@ -656,7 +656,7 @@ export class AiMlStorage implements IAiMlStorage {
   async getTranslations(
     userId: string,
     sourceLanguage?: string,
-    targetLanguage?: string
+    targetLanguage?: string,
   ): Promise<Translation[]> {
     const conditions = [eq(translations.userId, userId)];
     if (sourceLanguage) {
@@ -675,7 +675,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getTranslation(
     userId: string,
-    translationId: string
+    translationId: string,
   ): Promise<Translation | null> {
     const [result] = await db
       .select()
@@ -683,8 +683,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(translations.userId, userId),
-          eq(translations.id, translationId)
-        )
+          eq(translations.id, translationId),
+        ),
       )
       .limit(1);
     return result || null;
@@ -693,7 +693,7 @@ export class AiMlStorage implements IAiMlStorage {
   async updateTranslation(
     userId: string,
     translationId: string,
-    updates: Partial<Omit<InsertTranslation, "userId" | "id">>
+    updates: Partial<Omit<InsertTranslation, "userId" | "id">>,
   ): Promise<Translation> {
     const [result] = await db
       .update(translations)
@@ -701,8 +701,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(translations.userId, userId),
-          eq(translations.id, translationId)
-        )
+          eq(translations.id, translationId),
+        ),
       )
       .returning();
 
@@ -713,14 +713,17 @@ export class AiMlStorage implements IAiMlStorage {
     return result;
   }
 
-  async deleteTranslation(userId: string, translationId: string): Promise<void> {
+  async deleteTranslation(
+    userId: string,
+    translationId: string,
+  ): Promise<void> {
     await db
       .delete(translations)
       .where(
         and(
           eq(translations.userId, userId),
-          eq(translations.id, translationId)
-        )
+          eq(translations.id, translationId),
+        ),
       );
   }
 
@@ -776,7 +779,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async getLanguagePreferences(
-    userId: string
+    userId: string,
   ): Promise<LanguagePreference | null> {
     const [result] = await db
       .select()
@@ -788,7 +791,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async upsertLanguagePreferences(
     userId: string,
-    preferences: Omit<InsertLanguagePreference, "userId">
+    preferences: Omit<InsertLanguagePreference, "userId">,
   ): Promise<LanguagePreference> {
     const [result] = await db
       .insert(languagePreferences)
@@ -804,7 +807,7 @@ export class AiMlStorage implements IAiMlStorage {
   // ==================== Extraction Templates ====================
 
   async createExtractionTemplate(
-    template: InsertExtractionTemplate
+    template: InsertExtractionTemplate,
   ): Promise<ExtractionTemplate> {
     const [result] = await db
       .insert(extractionTemplates)
@@ -823,7 +826,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async getExtractionTemplates(
-    isActive?: boolean
+    isActive?: boolean,
   ): Promise<ExtractionTemplate[]> {
     if (isActive !== undefined) {
       return await db
@@ -841,7 +844,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateExtractionTemplate(
     id: string,
-    updates: Partial<Omit<InsertExtractionTemplate, "id">>
+    updates: Partial<Omit<InsertExtractionTemplate, "id">>,
   ): Promise<ExtractionTemplate> {
     const [result] = await db
       .update(extractionTemplates)
@@ -871,9 +874,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   // ==================== Extracted Data ====================
 
-  async createExtractedData(
-    data: InsertExtractedData
-  ): Promise<ExtractedData> {
+  async createExtractedData(data: InsertExtractedData): Promise<ExtractedData> {
     const [result] = await db
       .insert(extractedData)
       .values(data as any)
@@ -892,7 +893,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getExtractedDataBySource(
     sourceId: string,
-    sourceType?: string
+    sourceType?: string,
   ): Promise<ExtractedData[]> {
     const conditions = [eq(extractedData.sourceId, sourceId)];
     if (sourceType) {
@@ -907,7 +908,7 @@ export class AiMlStorage implements IAiMlStorage {
   }
 
   async getExtractedDataByTemplate(
-    templateId: string
+    templateId: string,
   ): Promise<ExtractedData[]> {
     return await db
       .select()
@@ -918,7 +919,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateExtractedData(
     id: string,
-    updates: Partial<Omit<InsertExtractedData, "id">>
+    updates: Partial<Omit<InsertExtractedData, "id">>,
   ): Promise<ExtractedData> {
     const [result] = await db
       .update(extractedData)
@@ -935,7 +936,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async validateExtractedData(
     id: string,
-    validatedBy: string
+    validatedBy: string,
   ): Promise<ExtractedData> {
     const [result] = await db
       .update(extractedData)
@@ -962,7 +963,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async createTranscription(
     userId: string,
-    transcription: Omit<InsertTranscription, "userId">
+    transcription: Omit<InsertTranscription, "userId">,
   ): Promise<Transcription> {
     const [result] = await db
       .insert(transcriptions)
@@ -973,7 +974,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getTranscription(
     userId: string,
-    transcriptionId: string
+    transcriptionId: string,
   ): Promise<Transcription | null> {
     const [result] = await db
       .select()
@@ -981,8 +982,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(transcriptions.userId, userId),
-          eq(transcriptions.id, transcriptionId)
-        )
+          eq(transcriptions.id, transcriptionId),
+        ),
       )
       .limit(1);
     return result || null;
@@ -991,7 +992,7 @@ export class AiMlStorage implements IAiMlStorage {
   async getTranscriptions(
     userId: string,
     status?: "processing" | "completed" | "failed",
-    limit = 20
+    limit = 20,
   ): Promise<Transcription[]> {
     const conditions = [eq(transcriptions.userId, userId)];
     if (status) {
@@ -1009,7 +1010,7 @@ export class AiMlStorage implements IAiMlStorage {
   async updateTranscription(
     userId: string,
     transcriptionId: string,
-    updates: Partial<Omit<InsertTranscription, "userId" | "id">>
+    updates: Partial<Omit<InsertTranscription, "userId" | "id">>,
   ): Promise<Transcription> {
     const [result] = await db
       .update(transcriptions)
@@ -1017,8 +1018,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(transcriptions.userId, userId),
-          eq(transcriptions.id, transcriptionId)
-        )
+          eq(transcriptions.id, transcriptionId),
+        ),
       )
       .returning();
 
@@ -1031,33 +1032,28 @@ export class AiMlStorage implements IAiMlStorage {
 
   async deleteTranscription(
     userId: string,
-    transcriptionId: string
+    transcriptionId: string,
   ): Promise<void> {
     await db
       .delete(transcriptions)
       .where(
         and(
           eq(transcriptions.userId, userId),
-          eq(transcriptions.id, transcriptionId)
-        )
+          eq(transcriptions.id, transcriptionId),
+        ),
       );
   }
 
   // ==================== Transcript Edits ====================
 
   async createTranscriptEdit(
-    edit: InsertTranscriptEdit
+    edit: InsertTranscriptEdit,
   ): Promise<TranscriptEdit> {
-    const [result] = await db
-      .insert(transcriptEdits)
-      .values(edit)
-      .returning();
+    const [result] = await db.insert(transcriptEdits).values(edit).returning();
     return result;
   }
 
-  async getTranscriptEdits(
-    transcriptionId: string
-  ): Promise<TranscriptEdit[]> {
+  async getTranscriptEdits(transcriptionId: string): Promise<TranscriptEdit[]> {
     return await db
       .select()
       .from(transcriptEdits)
@@ -1067,7 +1063,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateTranscriptEdit(
     editId: string,
-    updates: Partial<Omit<InsertTranscriptEdit, "id">>
+    updates: Partial<Omit<InsertTranscriptEdit, "id">>,
   ): Promise<TranscriptEdit> {
     const [result] = await db
       .update(transcriptEdits)
@@ -1090,7 +1086,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async createQueryLog(
     userId: string,
-    log: Omit<InsertQueryLog, "userId">
+    log: Omit<InsertQueryLog, "userId">,
   ): Promise<QueryLog> {
     const [result] = await db
       .insert(queryLogs)
@@ -1121,7 +1117,7 @@ export class AiMlStorage implements IAiMlStorage {
   async saveQuery(
     userId: string,
     queryId: string,
-    savedName: string
+    savedName: string,
   ): Promise<QueryLog> {
     // Note: queryLogs table doesn't have isSaved/savedName fields
     // This is a no-op that returns the existing query
@@ -1140,7 +1136,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateQueryLog(
     queryId: string,
-    updates: Partial<QueryLog>
+    updates: Partial<QueryLog>,
   ): Promise<QueryLog> {
     const [result] = await db
       .update(queryLogs)
@@ -1174,7 +1170,7 @@ export class AiMlStorage implements IAiMlStorage {
     // Get the latest version for this document to increment
     const latestDraft = await this.getLatestDraft(
       draft.userId,
-      draft.documentId
+      draft.documentId,
     );
 
     // Skip saving if content hasn't changed
@@ -1189,10 +1185,13 @@ export class AiMlStorage implements IAiMlStorage {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // Re-fetch latest version on retry to get updated version number
-        const currentLatest = attempt > 0 
-          ? await this.getLatestDraft(draft.userId, draft.documentId)
-          : latestDraft;
-        const nextVersion = currentLatest ? (currentLatest.version || 0) + 1 : 1;
+        const currentLatest =
+          attempt > 0
+            ? await this.getLatestDraft(draft.userId, draft.documentId)
+            : latestDraft;
+        const nextVersion = currentLatest
+          ? (currentLatest.version || 0) + 1
+          : 1;
 
         // Save the draft with incremented version
         const [savedDraft] = await db
@@ -1214,7 +1213,7 @@ export class AiMlStorage implements IAiMlStorage {
         // Clean up old versions (keep only last 10)
         const allVersions = await this.getDraftVersions(
           draft.userId,
-          draft.documentId
+          draft.documentId,
         );
         if (allVersions.length > 10) {
           const versionsToDelete = allVersions.slice(10).map((v) => v.id);
@@ -1223,18 +1222,23 @@ export class AiMlStorage implements IAiMlStorage {
             .where(
               and(
                 eq(autoSaveDrafts.userId, draft.userId),
-                sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`
-              )
+                sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`,
+              ),
             );
         }
 
         return savedDraft;
       } catch (error: any) {
         // Check if it's a unique constraint violation (PostgreSQL error code 23505)
-        if (error?.code === '23505' && error?.constraint?.includes('unique_version')) {
+        if (
+          error?.code === "23505" &&
+          error?.constraint?.includes("unique_version")
+        ) {
           lastError = error;
           // Wait a small random delay before retrying to reduce collision chance
-          await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+          await new Promise((resolve) =>
+            setTimeout(resolve, 50 + Math.random() * 100),
+          );
           continue;
         }
         // Re-throw non-conflict errors
@@ -1248,7 +1252,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async getLatestDraft(
     userId: string,
-    documentId: string
+    documentId: string,
   ): Promise<AutoSaveDraft | null> {
     const [draft] = await db
       .select()
@@ -1256,8 +1260,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(autoSaveDrafts.userId, userId),
-          eq(autoSaveDrafts.documentId, documentId)
-        )
+          eq(autoSaveDrafts.documentId, documentId),
+        ),
       )
       .orderBy(desc(autoSaveDrafts.version))
       .limit(1);
@@ -1267,7 +1271,7 @@ export class AiMlStorage implements IAiMlStorage {
   async getDraftVersions(
     userId: string,
     documentId: string,
-    limit = 10
+    limit = 10,
   ): Promise<AutoSaveDraft[]> {
     return await db
       .select()
@@ -1275,8 +1279,8 @@ export class AiMlStorage implements IAiMlStorage {
       .where(
         and(
           eq(autoSaveDrafts.userId, userId),
-          eq(autoSaveDrafts.documentId, documentId)
-        )
+          eq(autoSaveDrafts.documentId, documentId),
+        ),
       )
       .orderBy(desc(autoSaveDrafts.version))
       .limit(limit);
@@ -1286,24 +1290,21 @@ export class AiMlStorage implements IAiMlStorage {
     await db
       .delete(autoSaveDrafts)
       .where(
-        and(
-          eq(autoSaveDrafts.id, draftId),
-          eq(autoSaveDrafts.userId, userId)
-        )
+        and(eq(autoSaveDrafts.id, draftId), eq(autoSaveDrafts.userId, userId)),
       );
   }
 
   async deleteDocumentDrafts(
     userId: string,
-    documentId: string
+    documentId: string,
   ): Promise<void> {
     await db
       .delete(autoSaveDrafts)
       .where(
         and(
           eq(autoSaveDrafts.userId, userId),
-          eq(autoSaveDrafts.documentId, documentId)
-        )
+          eq(autoSaveDrafts.documentId, documentId),
+        ),
       );
   }
 
@@ -1358,7 +1359,7 @@ export class AiMlStorage implements IAiMlStorage {
 
   async updateSavePatterns(
     userId: string,
-    patterns: Partial<Omit<SavePattern, "id" | "userId">>
+    patterns: Partial<Omit<SavePattern, "id" | "userId">>,
   ): Promise<SavePattern> {
     const [result] = await db
       .update(savePatterns)
@@ -1375,7 +1376,10 @@ export class AiMlStorage implements IAiMlStorage {
 
   // ==================== OCR Results ====================
 
-  async createOcrResult(userId: string, data: Omit<InsertOcrResult, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<OcrResult> {
+  async createOcrResult(
+    userId: string,
+    data: Omit<InsertOcrResult, "id" | "userId" | "createdAt" | "updatedAt">,
+  ): Promise<OcrResult> {
     const [result] = await db
       .insert(ocrResults)
       .values({
@@ -1385,7 +1389,7 @@ export class AiMlStorage implements IAiMlStorage {
         confidence: data.confidence,
         language: data.language ?? null,
         structuredData: data.structuredData ?? null,
-        engine: data.engine ?? 'tesseract',
+        engine: data.engine ?? "tesseract",
         processingTime: data.processingTime ?? null,
         reviewed: false,
         corrected: false,
@@ -1394,7 +1398,11 @@ export class AiMlStorage implements IAiMlStorage {
     return result;
   }
 
-  async getUserOcrResults(userId: string, limit = 50, offset = 0): Promise<OcrResult[]> {
+  async getUserOcrResults(
+    userId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<OcrResult[]> {
     return await db
       .select()
       .from(ocrResults)
@@ -1406,7 +1414,13 @@ export class AiMlStorage implements IAiMlStorage {
 
   // ==================== Face Detections ====================
 
-  async createFaceDetection(userId: string, data: Omit<InsertFaceDetection, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<FaceDetection> {
+  async createFaceDetection(
+    userId: string,
+    data: Omit<
+      InsertFaceDetection,
+      "id" | "userId" | "createdAt" | "updatedAt"
+    >,
+  ): Promise<FaceDetection> {
     const [result] = await db
       .insert(faceDetections)
       .values({
@@ -1434,7 +1448,13 @@ export class AiMlStorage implements IAiMlStorage {
     return result ?? null;
   }
 
-  async upsertPrivacySettings(userId: string, settings: Omit<InsertPrivacySettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<PrivacySettings> {
+  async upsertPrivacySettings(
+    userId: string,
+    settings: Omit<
+      InsertPrivacySettings,
+      "id" | "userId" | "createdAt" | "updatedAt"
+    >,
+  ): Promise<PrivacySettings> {
     const existing = await this.getPrivacySettings(userId);
 
     if (existing) {
@@ -1442,14 +1462,21 @@ export class AiMlStorage implements IAiMlStorage {
         .update(privacySettings)
         .set({
           autoBlurFaces: settings.autoBlurFaces ?? existing.autoBlurFaces,
-          faceRecognitionEnabled: settings.faceRecognitionEnabled ?? existing.faceRecognitionEnabled,
+          faceRecognitionEnabled:
+            settings.faceRecognitionEnabled ?? existing.faceRecognitionEnabled,
           blurIntensity: settings.blurIntensity ?? existing.blurIntensity,
-          excludedFaces: (settings.excludedFaces ?? existing.excludedFaces) as string[] | null,
+          excludedFaces: (settings.excludedFaces ?? existing.excludedFaces) as
+            | string[]
+            | null,
           privacyMode: settings.privacyMode ?? existing.privacyMode,
-          consentToProcessing: settings.consentToProcessing ?? existing.consentToProcessing,
-          dataRetentionDays: settings.dataRetentionDays ?? existing.dataRetentionDays,
-          notifyOnFaceDetection: settings.notifyOnFaceDetection ?? existing.notifyOnFaceDetection,
-          allowGroupPhotoTagging: settings.allowGroupPhotoTagging ?? existing.allowGroupPhotoTagging,
+          consentToProcessing:
+            settings.consentToProcessing ?? existing.consentToProcessing,
+          dataRetentionDays:
+            settings.dataRetentionDays ?? existing.dataRetentionDays,
+          notifyOnFaceDetection:
+            settings.notifyOnFaceDetection ?? existing.notifyOnFaceDetection,
+          allowGroupPhotoTagging:
+            settings.allowGroupPhotoTagging ?? existing.allowGroupPhotoTagging,
           updatedAt: new Date(),
         })
         .where(eq(privacySettings.userId, userId))
@@ -1465,7 +1492,7 @@ export class AiMlStorage implements IAiMlStorage {
         faceRecognitionEnabled: settings.faceRecognitionEnabled ?? true,
         blurIntensity: settings.blurIntensity ?? 5,
         excludedFaces: settings.excludedFaces ?? null,
-        privacyMode: settings.privacyMode ?? 'balanced',
+        privacyMode: settings.privacyMode ?? "balanced",
         consentToProcessing: settings.consentToProcessing ?? false,
         dataRetentionDays: settings.dataRetentionDays ?? 30,
         notifyOnFaceDetection: settings.notifyOnFaceDetection ?? false,
@@ -1477,7 +1504,10 @@ export class AiMlStorage implements IAiMlStorage {
 
   // ==================== Image Metadata ====================
 
-  async getImageMetadataByUrl(userId: string, url: string): Promise<ImageMetadata | null> {
+  async getImageMetadataByUrl(
+    userId: string,
+    url: string,
+  ): Promise<ImageMetadata | null> {
     const [result] = await db
       .select()
       .from(imageMetadata)
@@ -1486,7 +1516,13 @@ export class AiMlStorage implements IAiMlStorage {
     return result ?? null;
   }
 
-  async createImageMetadata(userId: string, data: Omit<InsertImageMetadata, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<ImageMetadata> {
+  async createImageMetadata(
+    userId: string,
+    data: Omit<
+      InsertImageMetadata,
+      "id" | "userId" | "createdAt" | "updatedAt"
+    >,
+  ): Promise<ImageMetadata> {
     const [result] = await db
       .insert(imageMetadata)
       .values({
@@ -1509,7 +1545,11 @@ export class AiMlStorage implements IAiMlStorage {
     return result;
   }
 
-  async updateImageMetadata(userId: string, imageId: string, data: Partial<ImageMetadata>): Promise<ImageMetadata> {
+  async updateImageMetadata(
+    userId: string,
+    imageId: string,
+    data: Partial<ImageMetadata>,
+  ): Promise<ImageMetadata> {
     const existing = await this.getImageMetadata(userId, imageId);
     if (!existing) {
       throw new Error(`Image metadata not found: ${imageId}`);
@@ -1533,24 +1573,37 @@ export class AiMlStorage implements IAiMlStorage {
         metadata: data.metadata ?? existing.metadata,
         updatedAt: new Date(),
       })
-      .where(and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)))
+      .where(
+        and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)),
+      )
       .returning();
 
     return result;
   }
 
-  async getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | null> {
+  async getImageMetadata(
+    userId: string,
+    imageId: string,
+  ): Promise<ImageMetadata | null> {
     const [result] = await db
       .select()
       .from(imageMetadata)
-      .where(and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)))
+      .where(
+        and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)),
+      )
       .limit(1);
     return result ?? null;
   }
 
   // ==================== Alt Text Quality ====================
 
-  async upsertAltTextQuality(imageId: string, quality: Omit<InsertAltTextQuality, 'id' | 'imageId' | 'createdAt' | 'updatedAt'>): Promise<AltTextQuality> {
+  async upsertAltTextQuality(
+    imageId: string,
+    quality: Omit<
+      InsertAltTextQuality,
+      "id" | "imageId" | "createdAt" | "updatedAt"
+    >,
+  ): Promise<AltTextQuality> {
     const [existing] = await db
       .select()
       .from(altTextQuality)
@@ -1562,12 +1615,15 @@ export class AiMlStorage implements IAiMlStorage {
         .update(altTextQuality)
         .set({
           qualityScore: quality.qualityScore ?? existing.qualityScore,
-          accessibilityScore: quality.accessibilityScore ?? existing.accessibilityScore,
+          accessibilityScore:
+            quality.accessibilityScore ?? existing.accessibilityScore,
           lengthScore: quality.lengthScore ?? existing.lengthScore,
-          descriptiveScore: quality.descriptiveScore ?? existing.descriptiveScore,
+          descriptiveScore:
+            quality.descriptiveScore ?? existing.descriptiveScore,
           contextScore: quality.contextScore ?? existing.contextScore,
           keywordScore: quality.keywordScore ?? existing.keywordScore,
-          screenReaderScore: quality.screenReaderScore ?? existing.screenReaderScore,
+          screenReaderScore:
+            quality.screenReaderScore ?? existing.screenReaderScore,
           wcagCompliance: quality.wcagCompliance ?? existing.wcagCompliance,
           issues: quality.issues ?? existing.issues,
           suggestions: quality.suggestions ?? existing.suggestions,
@@ -1607,9 +1663,18 @@ export class AiMlStorage implements IAiMlStorage {
     userId: string,
     page: number,
     limit: number,
-    status?: "processing" | "completed" | "failed"
-  ): Promise<{ data: Transcription[]; total: number; page: number; limit: number }> {
-    const transcriptionsList = await this.getTranscriptions(userId, status, limit);
+    status?: "processing" | "completed" | "failed",
+  ): Promise<{
+    data: Transcription[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const transcriptionsList = await this.getTranscriptions(
+      userId,
+      status,
+      limit,
+    );
     return {
       data: transcriptionsList,
       total: transcriptionsList.length,

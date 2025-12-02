@@ -4,14 +4,14 @@
  * Uses ts-morph for proper AST manipulation instead of regex
  */
 
-import { Project, SyntaxKind, Node, AsExpression } from 'ts-morph';
-import * as path from 'path';
-import * as fs from 'fs';
-import { fileURLToPath } from 'url';
+import { Project, SyntaxKind, Node, AsExpression } from "ts-morph";
+import * as path from "path";
+import * as fs from "fs";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.join(__dirname, '..');
+const PROJECT_ROOT = path.join(__dirname, "..");
 const HELPERS_IMPORT = `import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";`;
 
 interface FileStats {
@@ -28,7 +28,7 @@ class AnyAssertionEliminator {
 
   constructor() {
     this.project = new Project({
-      tsConfigFilePath: path.join(PROJECT_ROOT, 'tsconfig.json'),
+      tsConfigFilePath: path.join(PROJECT_ROOT, "tsconfig.json"),
     });
   }
 
@@ -36,23 +36,27 @@ class AnyAssertionEliminator {
    * Main entry point to eliminate all 'as any' assertions
    */
   async eliminateAll() {
-    console.log('🔍 Scanning for TypeScript files with "as any" assertions...\n');
+    console.log(
+      '🔍 Scanning for TypeScript files with "as any" assertions...\n',
+    );
 
     // Get all TypeScript files in server/, shared/, and client/ directories
     const sourceFiles = this.project.getSourceFiles([
-      'server/**/*.ts',
-      'shared/**/*.ts',
-      'client/**/*.ts',
+      "server/**/*.ts",
+      "shared/**/*.ts",
+      "client/**/*.ts",
     ]);
 
     for (const sourceFile of sourceFiles) {
       const filePath = sourceFile.getFilePath();
-      
+
       // Skip node_modules, generated files, and test files
-      if (filePath.includes('node_modules') || 
-          filePath.includes('.d.ts') || 
-          filePath.includes('.test.') ||
-          filePath.includes('.spec.')) {
+      if (
+        filePath.includes("node_modules") ||
+        filePath.includes(".d.ts") ||
+        filePath.includes(".test.") ||
+        filePath.includes(".spec.")
+      ) {
         continue;
       }
 
@@ -69,12 +73,13 @@ class AnyAssertionEliminator {
   private async processFile(sourceFile: any) {
     const filePath = sourceFile.getFilePath();
     const relativeFilePath = path.relative(PROJECT_ROOT, filePath);
-    
+
     // Find all 'as any' expressions
-    const asExpressions = sourceFile.getDescendantsOfKind(SyntaxKind.AsExpression)
+    const asExpressions = sourceFile
+      .getDescendantsOfKind(SyntaxKind.AsExpression)
       .filter((expr: AsExpression) => {
         const typeNode = expr.getTypeNode();
-        return typeNode && typeNode.getText() === 'any';
+        return typeNode && typeNode.getText() === "any";
       });
 
     if (asExpressions.length === 0) {
@@ -86,10 +91,12 @@ class AnyAssertionEliminator {
       originalCount: asExpressions.length,
       fixedCount: 0,
       remainingCount: 0,
-      issues: []
+      issues: [],
     };
 
-    console.log(`Processing: ${relativeFilePath} (${asExpressions.length} instances)`);
+    console.log(
+      `Processing: ${relativeFilePath} (${asExpressions.length} instances)`,
+    );
 
     // Process each 'as any' expression
     for (const asExpr of asExpressions) {
@@ -106,7 +113,9 @@ class AnyAssertionEliminator {
     if (stats.fixedCount > 0) {
       this.ensureHelperImports(sourceFile, relativeFilePath);
       await sourceFile.save();
-      console.log(`  ✅ Fixed ${stats.fixedCount} of ${stats.originalCount} instances`);
+      console.log(
+        `  ✅ Fixed ${stats.fixedCount} of ${stats.originalCount} instances`,
+      );
     }
 
     if (stats.remainingCount > 0) {
@@ -125,63 +134,79 @@ class AnyAssertionEliminator {
     const parent = asExpr.getParent();
 
     // Pattern 1: (req.user as any)?.id => getAuthenticatedUserId(req)
-    if (expressionText === 'req.user' && parent) {
+    if (expressionText === "req.user" && parent) {
       const parentText = parent.getText();
-      if (parentText.includes('?.id') || parentText.includes('.id')) {
+      if (parentText.includes("?.id") || parentText.includes(".id")) {
         // Replace entire expression with helper function
         const grandParent = parent.getParent();
-        if (grandParent && grandParent.getKindName() === 'PropertyAccessExpression') {
-          grandParent.replaceWithText('getAuthenticatedUserId(req)');
+        if (
+          grandParent &&
+          grandParent.getKindName() === "PropertyAccessExpression"
+        ) {
+          grandParent.replaceWithText("getAuthenticatedUserId(req)");
           return true;
         }
       }
     }
 
     // Pattern 2: req.body as any => req.body
-    if (expressionText === 'req.body') {
-      asExpr.replaceWithText('req.body');
+    if (expressionText === "req.body") {
+      asExpr.replaceWithText("req.body");
       return true;
     }
 
     // Pattern 3: req.query as any => req.query
-    if (expressionText === 'req.query') {
-      asExpr.replaceWithText('req.query');
+    if (expressionText === "req.query") {
+      asExpr.replaceWithText("req.query");
       return true;
     }
 
     // Pattern 4: req.params as any => req.params
-    if (expressionText === 'req.params') {
-      asExpr.replaceWithText('req.params');
+    if (expressionText === "req.params") {
+      asExpr.replaceWithText("req.params");
       return true;
     }
 
     // Pattern 5: (req as any).user => req.user
-    if (expressionText === 'req' && parent) {
+    if (expressionText === "req" && parent) {
       const parentText = parent.getText();
-      if (parentText.includes('.user') || parentText.includes('.session')) {
-        asExpr.replaceWithText('req');
+      if (parentText.includes(".user") || parentText.includes(".session")) {
+        asExpr.replaceWithText("req");
         return true;
       }
     }
 
     // Pattern 6: error as any => error
-    if (expressionText === 'error' || expressionText.includes('err')) {
+    if (expressionText === "error" || expressionText.includes("err")) {
       asExpr.replaceWithText(expressionText);
       return true;
     }
 
     // Pattern 7: Generic value as any in assignments
     const assignmentPatterns = [
-      'validated', 'result', 'data', 'response', 'user', 'item', 
-      'updates', 'rule', 'history', 'pattern', 'preferences',
-      'suggestions', 'category', 'assignment', 'cache', 'event'
+      "validated",
+      "result",
+      "data",
+      "response",
+      "user",
+      "item",
+      "updates",
+      "rule",
+      "history",
+      "pattern",
+      "preferences",
+      "suggestions",
+      "category",
+      "assignment",
+      "cache",
+      "event",
     ];
-    
+
     for (const pattern of assignmentPatterns) {
       if (expressionText.includes(pattern)) {
         // Check if this is a database operation (common pattern)
-        const parentText = parent?.getText() || '';
-        if (parentText.includes('.values(') || parentText.includes('.set(')) {
+        const parentText = parent?.getText() || "";
+        if (parentText.includes(".values(") || parentText.includes(".set(")) {
           // Keep the assertion for database operations - these often need it
           return false;
         } else {
@@ -200,7 +225,7 @@ class AnyAssertionEliminator {
   private getContextualInfo(asExpr: AsExpression): string {
     const line = asExpr.getStartLineNumber();
     const expression = asExpr.getExpression().getText();
-    const parent = asExpr.getParent()?.getText() || '';
+    const parent = asExpr.getParent()?.getText() || "";
     return `Line ${line}: ${expression} as any (context: ${parent.substring(0, 50)}...)`;
   }
 
@@ -208,14 +233,18 @@ class AnyAssertionEliminator {
    * Ensure helper imports are present in the file
    */
   private ensureHelperImports(sourceFile: any, filePath: string) {
-    const hasHelperImport = sourceFile.getImportDeclarations()
-      .some((imp: any) => imp.getModuleSpecifierValue().includes('request-helpers'));
+    const hasHelperImport = sourceFile
+      .getImportDeclarations()
+      .some((imp: any) =>
+        imp.getModuleSpecifierValue().includes("request-helpers"),
+      );
 
-    if (!hasHelperImport && filePath.includes('server/routers/')) {
+    if (!hasHelperImport && filePath.includes("server/routers/")) {
       // Add import at the top after express import
-      const expressImport = sourceFile.getImportDeclarations()
-        .find((imp: any) => imp.getModuleSpecifierValue() === 'express');
-      
+      const expressImport = sourceFile
+        .getImportDeclarations()
+        .find((imp: any) => imp.getModuleSpecifierValue() === "express");
+
       if (expressImport) {
         expressImport.insertAfter(HELPERS_IMPORT);
       }
@@ -226,9 +255,9 @@ class AnyAssertionEliminator {
    * Print final report
    */
   private printReport() {
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 ELIMINATION REPORT');
-    console.log('='.repeat(60) + '\n');
+    console.log("\n" + "=".repeat(60));
+    console.log("📊 ELIMINATION REPORT");
+    console.log("=".repeat(60) + "\n");
 
     let totalOriginal = 0;
     let totalFixed = 0;
@@ -243,10 +272,10 @@ class AnyAssertionEliminator {
     console.log(`Total 'as any' assertions found: ${totalOriginal}`);
     console.log(`Successfully eliminated: ${totalFixed}`);
     console.log(`Remaining (need manual review): ${totalRemaining}`);
-    
+
     if (totalRemaining > 0) {
-      console.log('\n⚠️  Files requiring manual review:');
-      for (const stat of this.stats.filter(s => s.remainingCount > 0)) {
+      console.log("\n⚠️  Files requiring manual review:");
+      for (const stat of this.stats.filter((s) => s.remainingCount > 0)) {
         console.log(`  - ${stat.file} (${stat.remainingCount} instances)`);
       }
     }
@@ -256,10 +285,10 @@ class AnyAssertionEliminator {
    * Save manifest of remaining issues for manual follow-up
    */
   private saveManifest() {
-    const remaining = this.stats.filter(s => s.remainingCount > 0);
-    
+    const remaining = this.stats.filter((s) => s.remainingCount > 0);
+
     if (remaining.length > 0) {
-      const manifestPath = path.join(PROJECT_ROOT, 'as-any-manifest.json');
+      const manifestPath = path.join(PROJECT_ROOT, "as-any-manifest.json");
       fs.writeFileSync(manifestPath, JSON.stringify(remaining, null, 2));
       console.log(`\n📝 Manifest saved to: as-any-manifest.json`);
     }
@@ -270,8 +299,8 @@ class AnyAssertionEliminator {
 async function main() {
   const eliminator = new AnyAssertionEliminator();
   await eliminator.eliminateAll();
-  
-  console.log('\n✨ Elimination complete!');
+
+  console.log("\n✨ Elimination complete!");
   console.log('Run "npm run type-check" to verify no type errors remain.\n');
 }
 

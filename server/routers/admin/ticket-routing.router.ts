@@ -1,6 +1,6 @@
 /**
  * Ticket Routing API Routes
- * 
+ *
  * Provides endpoints for intelligent ticket routing using AI classification
  * and rule-based assignment with workload balancing.
  */
@@ -47,24 +47,34 @@ const createRoutingRuleSchema = z.object({
   priority: z.number().optional().default(100),
   isActive: z.boolean().optional().default(true),
   confidence_threshold: z.number().min(0).max(1).optional().default(0.7),
-  metadata: z.object({
-    description: z.string().optional(),
-    escalation_path: z.array(z.string()).optional(),
-    sla_minutes: z.number().optional(),
-    auto_escalate: z.boolean().optional(),
-  }).optional(),
+  metadata: z
+    .object({
+      description: z.string().optional(),
+      escalation_path: z.array(z.string()).optional(),
+      sla_minutes: z.number().optional(),
+      auto_escalate: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const createAgentSchema = z.object({
   agent_id: z.string().min(1, "Agent ID is required"),
   name: z.string().min(1, "Name is required"),
   email: z.string().email().optional(),
-  skills: z.array(z.object({
-    skill: z.string(),
-    level: z.number().min(1).max(5),
-    categories: z.array(z.string()),
-  })).optional().default([]),
-  availability: z.enum(["available", "busy", "offline"]).optional().default("available"),
+  skills: z
+    .array(
+      z.object({
+        skill: z.string(),
+        level: z.number().min(1).max(5),
+        categories: z.array(z.string()),
+      }),
+    )
+    .optional()
+    .default([]),
+  availability: z
+    .enum(["available", "busy", "offline"])
+    .optional()
+    .default("available"),
   max_capacity: z.number().min(1).optional().default(10),
   specializations: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional().default(["English"]),
@@ -98,9 +108,18 @@ router.post(
       const ticketData = {
         title: validation.data.title,
         description: validation.data.description,
-        category: (validation.data.category || 'general') as 'technical' | 'billing' | 'account' | 'general' | 'feature-request',
-        priority: (validation.data.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
-        status: 'open' as const,
+        category: (validation.data.category || "general") as
+          | "technical"
+          | "billing"
+          | "account"
+          | "general"
+          | "feature-request",
+        priority: (validation.data.priority || "medium") as
+          | "low"
+          | "medium"
+          | "high"
+          | "urgent",
+        status: "open" as const,
         userId: validation.data.submittedBy,
         ticketNumber: `TKT-${Date.now()}`,
         metadata: validation.data.metadata as any,
@@ -117,7 +136,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -149,7 +168,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -162,7 +181,7 @@ router.get(
   asyncHandler(async (req: Request, res) => {
     try {
       const ticket = await storage.admin.support.getTicket(req.params.id);
-      
+
       if (!ticket) {
         return res.status(404).json({
           error: "Ticket not found",
@@ -170,7 +189,9 @@ router.get(
       }
 
       // Get routing history
-      const routingHistory = await storage.admin.support.getTicketRouting(req.params.id);
+      const routingHistory = await storage.admin.support.getTicketRouting(
+        req.params.id,
+      );
 
       res.json({
         success: true,
@@ -184,7 +205,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -204,7 +225,10 @@ router.put(
     }
 
     try {
-      const updatedTicket = await storage.admin.support.updateTicket(req.params.id, validation.data);
+      const updatedTicket = await storage.admin.support.updateTicket(
+        req.params.id,
+        validation.data,
+      );
       res.json({
         success: true,
         ticket: updatedTicket,
@@ -216,7 +240,7 @@ router.put(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -229,7 +253,7 @@ router.post(
   asyncHandler(async (req: Request, res) => {
     try {
       const result = await aiRoutingService.routeTicket(req.params.ticketId);
-      
+
       if (!result.success) {
         return res.status(500).json({
           error: "Routing failed",
@@ -251,7 +275,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -263,8 +287,10 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     try {
-      const suggestions = await aiRoutingService.suggestRoutings(req.params.ticketId);
-      
+      const suggestions = await aiRoutingService.suggestRoutings(
+        req.params.ticketId,
+      );
+
       res.json({
         success: true,
         suggestions,
@@ -276,7 +302,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -299,9 +325,9 @@ router.post(
       const success = await aiRoutingService.escalateTicket(
         req.params.ticketId,
         validation.data.reason,
-        validation.data.targetLevel
+        validation.data.targetLevel,
       );
-      
+
       if (!success) {
         return res.status(500).json({
           error: "Escalation failed",
@@ -319,7 +345,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -331,11 +357,15 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     try {
-      const isActive = req.query.active === "true" ? true : 
-                       req.query.active === "false" ? false : undefined;
-      
+      const isActive =
+        req.query.active === "true"
+          ? true
+          : req.query.active === "false"
+            ? false
+            : undefined;
+
       const rules = await storage.admin.support.getRoutingRules(isActive);
-      
+
       res.json({
         success: true,
         rules,
@@ -348,7 +378,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -389,7 +419,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -402,7 +432,10 @@ router.put(
   adminOnly,
   asyncHandler(async (req: Request, res) => {
     try {
-      const updatedRule = await storage.admin.support.updateRoutingRule(req.params.id, req.body);
+      const updatedRule = await storage.admin.support.updateRoutingRule(
+        req.params.id,
+        req.body,
+      );
       res.json({
         success: true,
         rule: updatedRule,
@@ -414,7 +447,7 @@ router.put(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -439,7 +472,7 @@ router.delete(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -452,7 +485,7 @@ router.get(
   asyncHandler(async (req: Request, res) => {
     try {
       const agents = await storage.admin.support.getAgents();
-      
+
       res.json({
         success: true,
         agents,
@@ -465,7 +498,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -478,7 +511,7 @@ router.get(
   asyncHandler(async (req: Request, res) => {
     try {
       const agents = await storage.admin.support.getAvailableAgents();
-      
+
       res.json({
         success: true,
         agents,
@@ -491,7 +524,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -515,7 +548,7 @@ router.post(
       // Transform to match InsertAgentExpertise schema
       const agentData = {
         agentId: validation.data.agent_id,
-        expertiseArea: validation.data.skills?.[0]?.skill || 'general',
+        expertiseArea: validation.data.skills?.[0]?.skill || "general",
         skillLevel: validation.data.skills?.[0]?.level || 1,
         languages: validation.data.languages,
         maxConcurrentTickets: validation.data.max_capacity || 10,
@@ -534,7 +567,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -546,14 +579,24 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     try {
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-      
-      const metrics = await storage.admin.support.getRoutingMetrics(startDate, endDate);
-      
+      const startDate = req.query.startDate
+        ? new Date(req.query.startDate as string)
+        : undefined;
+      const endDate = req.query.endDate
+        ? new Date(req.query.endDate as string)
+        : undefined;
+
+      const metrics = await storage.admin.support.getRoutingMetrics(
+        startDate,
+        endDate,
+      );
+
       // Get accuracy metrics using the AI routing service
-      const accuracyMetrics = await aiRoutingService.calculateRoutingAccuracy(startDate, endDate);
-      
+      const accuracyMetrics = await aiRoutingService.calculateRoutingAccuracy(
+        startDate,
+        endDate,
+      );
+
       // Combine metrics
       const combinedMetrics = {
         ...metrics,
@@ -563,10 +606,10 @@ router.get(
           billing: accuracyMetrics.billing_accuracy,
           byMethod: accuracyMetrics.by_method,
           totalWithOutcomes: accuracyMetrics.total_routings,
-          correctRoutings: accuracyMetrics.correct_routings
-        }
+          correctRoutings: accuracyMetrics.correct_routings,
+        },
       };
-      
+
       res.json({
         success: true,
         metrics: combinedMetrics,
@@ -578,7 +621,7 @@ router.get(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -590,15 +633,15 @@ router.post(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const { wasCorrect, actualTeam, notes } = req.body;
-    
+
     try {
       await aiRoutingService.recordRoutingOutcome(
         req.params.ticketId,
         wasCorrect,
         actualTeam,
-        notes
+        notes,
       );
-      
+
       res.json({
         success: true,
         message: "Routing outcome recorded successfully",
@@ -610,7 +653,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 export default router;

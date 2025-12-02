@@ -24,7 +24,7 @@ export function SearchHighlight({
   // For semantic search, we don't have exact word matches
   // Instead, we show a snippet of the most relevant part
   // In a real implementation, the backend would provide the relevant snippet
-  
+
   // Truncate text if too long
   let displayText = text;
   if (text.length > maxLength) {
@@ -37,8 +37,8 @@ export function SearchHighlight({
     for (let i = 0; i < text.length - maxLength; i++) {
       const snippet = text.substring(i, i + maxLength).toLowerCase();
       let score = 0;
-      
-      queryWords.forEach(word => {
+
+      queryWords.forEach((word) => {
         if (snippet.includes(word)) {
           score += 1;
           // Bonus points if the word appears at the start
@@ -71,17 +71,17 @@ export function SearchHighlight({
 
   // Highlight matching words (case-insensitive)
   const queryWords = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const regex = new RegExp(`\\b(${queryWords.join('|')})\\b`, 'gi');
-  
+  const regex = new RegExp(`\\b(${queryWords.join("|")})\\b`, "gi");
+
   const parts = displayText.split(regex);
-  
+
   return (
     <span className={className}>
       {parts.map((part, index) => {
         const isMatch = queryWords.some(
-          word => part.toLowerCase() === word.toLowerCase()
+          (word) => part.toLowerCase() === word.toLowerCase(),
         );
-        
+
         return isMatch ? (
           <span
             key={index}
@@ -120,17 +120,22 @@ export function SearchHighlightWithContext({
   const contexts: Array<{ start: number; end: number; score: number }> = [];
 
   // Find all matching contexts
-  queryWords.forEach(word => {
+  queryWords.forEach((word) => {
     let index = text.toLowerCase().indexOf(word);
     while (index !== -1) {
       const start = Math.max(0, index - contextLength / 2);
-      const end = Math.min(text.length, index + word.length + contextLength / 2);
-      
+      const end = Math.min(
+        text.length,
+        index + word.length + contextLength / 2,
+      );
+
       // Check if this overlaps with existing contexts
       const overlapping = contexts.find(
-        c => (start >= c.start && start <= c.end) || (end >= c.start && end <= c.end)
+        (c) =>
+          (start >= c.start && start <= c.end) ||
+          (end >= c.start && end <= c.end),
       );
-      
+
       if (overlapping) {
         // Merge contexts
         overlapping.start = Math.min(overlapping.start, start);
@@ -139,7 +144,7 @@ export function SearchHighlightWithContext({
       } else {
         contexts.push({ start, end, score: 1 });
       }
-      
+
       index = text.toLowerCase().indexOf(word, index + 1);
     }
   });
@@ -158,7 +163,7 @@ export function SearchHighlightWithContext({
         let snippet = text.substring(context.start, context.end);
         if (context.start > 0) snippet = "..." + snippet;
         if (context.end < text.length) snippet = snippet + "...";
-        
+
         return (
           <div key={i} className="text-sm">
             <SearchHighlight

@@ -1,5 +1,14 @@
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollText, Scale, Ban, AlertTriangle, CheckCircle, Info, Gavel, Users } from "lucide-react";
+import {
+  ScrollText,
+  Scale,
+  Ban,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Gavel,
+  Users,
+} from "lucide-react";
 import { PageTransition } from "@/components/layout";
 import { AnimatedCard } from "@/components/cards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,38 +18,38 @@ export default function Terms() {
     {
       icon: CheckCircle,
       title: "1. Acceptance of Terms",
-      content: `By accessing and using ChefSpAIce ("the Service"), you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any changes.`
+      content: `By accessing and using ChefSpAIce ("the Service"), you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any changes.`,
     },
     {
       icon: Users,
       title: "2. User Accounts",
-      content: `You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must provide accurate and complete information when creating an account. You must be at least 13 years old to use this Service. You may not use another person's account without permission.`
+      content: `You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must provide accurate and complete information when creating an account. You must be at least 13 years old to use this Service. You may not use another person's account without permission.`,
     },
     {
       icon: Scale,
       title: "3. Acceptable Use",
-      content: `You agree to use ChefSpAIce only for lawful purposes and in accordance with these Terms. You may not use the Service to: violate any laws or regulations; infringe on intellectual property rights; transmit harmful code or malware; attempt to gain unauthorized access; harass or harm other users; or engage in any activity that disrupts the Service.`
+      content: `You agree to use ChefSpAIce only for lawful purposes and in accordance with these Terms. You may not use the Service to: violate any laws or regulations; infringe on intellectual property rights; transmit harmful code or malware; attempt to gain unauthorized access; harass or harm other users; or engage in any activity that disrupts the Service.`,
     },
     {
       icon: Info,
       title: "4. Content and Intellectual Property",
-      content: `The Service and its original content, features, and functionality are owned by ChefSpAIce and are protected by international copyright, trademark, and other intellectual property laws. User-generated content remains the property of the user, but you grant us a license to use, store, and display such content as necessary to provide the Service.`
+      content: `The Service and its original content, features, and functionality are owned by ChefSpAIce and are protected by international copyright, trademark, and other intellectual property laws. User-generated content remains the property of the user, but you grant us a license to use, store, and display such content as necessary to provide the Service.`,
     },
     {
       icon: AlertTriangle,
       title: "5. Disclaimers and Limitations",
-      content: `ChefSpAIce is provided "as is" without warranties of any kind. We do not guarantee the accuracy of nutritional information, recipe suggestions, or food safety recommendations. Users should verify all information and use their own judgment regarding food safety and dietary requirements. We are not responsible for any allergic reactions or health issues resulting from use of the Service.`
+      content: `ChefSpAIce is provided "as is" without warranties of any kind. We do not guarantee the accuracy of nutritional information, recipe suggestions, or food safety recommendations. Users should verify all information and use their own judgment regarding food safety and dietary requirements. We are not responsible for any allergic reactions or health issues resulting from use of the Service.`,
     },
     {
       icon: Ban,
       title: "6. Limitation of Liability",
-      content: `To the maximum extent permitted by law, ChefSpAIce shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses resulting from your use of the Service, even if we have been advised of the possibility of such damages.`
+      content: `To the maximum extent permitted by law, ChefSpAIce shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses resulting from your use of the Service, even if we have been advised of the possibility of such damages.`,
     },
     {
       icon: Gavel,
       title: "7. Governing Law",
-      content: `These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to its conflict of law provisions. Any disputes arising from these Terms or the Service shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.`
-    }
+      content: `These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to its conflict of law provisions. Any disputes arising from these Terms or the Service shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.`,
+    },
   ];
 
   const additionalTerms = [
@@ -51,8 +60,8 @@ export default function Terms() {
         "Premium subscriptions auto-renew unless cancelled",
         "Refunds are available within 7 days of purchase",
         "Prices may change with 30 days notice",
-        "Payment processing handled securely by Stripe"
-      ]
+        "Payment processing handled securely by Stripe",
+      ],
     },
     {
       title: "Data Usage and Privacy",
@@ -61,8 +70,8 @@ export default function Terms() {
         "We do not sell personal information to third parties",
         "You can export or delete your data at any time",
         "Analytics data may be used in aggregate form",
-        "See our Privacy Policy for detailed information"
-      ]
+        "See our Privacy Policy for detailed information",
+      ],
     },
     {
       title: "Service Availability",
@@ -71,8 +80,8 @@ export default function Terms() {
         "Scheduled maintenance will be announced in advance",
         "We may suspend service for security reasons",
         "Features may be added or removed over time",
-        "API access subject to rate limiting"
-      ]
+        "API access subject to rate limiting",
+      ],
     },
     {
       title: "User Responsibilities",
@@ -81,9 +90,9 @@ export default function Terms() {
         "Secure your account credentials",
         "Report any unauthorized access immediately",
         "Comply with all applicable laws",
-        "Respect other users and their privacy"
-      ]
-    }
+        "Respect other users and their privacy",
+      ],
+    },
   ];
 
   return (
@@ -103,8 +112,8 @@ export default function Terms() {
       <Alert className="border-primary/50">
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Please read these Terms of Service carefully before using ChefSpAIce. Your use of the Service 
-          indicates your acceptance of these terms.
+          Please read these Terms of Service carefully before using ChefSpAIce.
+          Your use of the Service indicates your acceptance of these terms.
         </AlertDescription>
       </Alert>
 
@@ -114,13 +123,15 @@ export default function Terms() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            These Terms of Service (&quot;Terms&quot;) govern your use of ChefSpAIce, including our website, mobile 
-            applications, and all related services (collectively, the &quot;Service&quot;). This is a legal agreement 
-            between you and ChefSpAIce.
+            These Terms of Service (&quot;Terms&quot;) govern your use of
+            ChefSpAIce, including our website, mobile applications, and all
+            related services (collectively, the &quot;Service&quot;). This is a
+            legal agreement between you and ChefSpAIce.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            By using our Service, you acknowledge that you have read, understood, and agree to be bound by 
-            these Terms and our Privacy Policy. If you are using the Service on behalf of an organization, 
+            By using our Service, you acknowledge that you have read,
+            understood, and agree to be bound by these Terms and our Privacy
+            Policy. If you are using the Service on behalf of an organization,
             you agree to these Terms on behalf of that organization.
           </p>
         </CardContent>
@@ -176,19 +187,22 @@ export default function Terms() {
           <Alert className="border-warning">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Important:</strong> ChefSpAIce is not a substitute for professional medical or nutritional advice.
+              <strong>Important:</strong> ChefSpAIce is not a substitute for
+              professional medical or nutritional advice.
             </AlertDescription>
           </Alert>
           <p className="text-muted-foreground">
-            The nutritional information and dietary suggestions provided by ChefSpAIce are for informational 
-            purposes only. Always consult with a qualified healthcare provider or registered dietitian 
-            before making significant changes to your diet, especially if you have health conditions or 
-            food allergies.
+            The nutritional information and dietary suggestions provided by
+            ChefSpAIce are for informational purposes only. Always consult with
+            a qualified healthcare provider or registered dietitian before
+            making significant changes to your diet, especially if you have
+            health conditions or food allergies.
           </p>
           <p className="text-muted-foreground">
-            We make no representations or warranties about the accuracy of nutritional data, recipe safety, 
-            or suitability for specific dietary needs. Users are responsible for verifying all information 
-            and ensuring food safety practices.
+            We make no representations or warranties about the accuracy of
+            nutritional data, recipe safety, or suitability for specific dietary
+            needs. Users are responsible for verifying all information and
+            ensuring food safety practices.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -199,13 +213,15 @@ export default function Terms() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            We reserve the right to terminate or suspend your account and access to the Service immediately, 
-            without prior notice or liability, for any reason, including breach of these Terms. Upon 
-            termination, your right to use the Service will immediately cease.
+            We reserve the right to terminate or suspend your account and access
+            to the Service immediately, without prior notice or liability, for
+            any reason, including breach of these Terms. Upon termination, your
+            right to use the Service will immediately cease.
           </p>
           <p className="text-muted-foreground">
-            You may terminate your account at any time through the account settings. Upon termination, 
-            your data will be deleted according to our data retention policy outlined in the Privacy Policy.
+            You may terminate your account at any time through the account
+            settings. Upon termination, your data will be deleted according to
+            our data retention policy outlined in the Privacy Policy.
           </p>
         </CardContent>
       </AnimatedCard>
@@ -229,7 +245,8 @@ export default function Terms() {
       <div className="text-center text-sm text-muted-foreground pb-8">
         <p>© 2025 ChefSpAIce. All rights reserved.</p>
         <p className="mt-2">
-          By using ChefSpAIce, you agree to these Terms of Service and our Privacy Policy.
+          By using ChefSpAIce, you agree to these Terms of Service and our
+          Privacy Policy.
         </p>
       </div>
     </PageTransition>

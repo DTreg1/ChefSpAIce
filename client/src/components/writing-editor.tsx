@@ -1,6 +1,6 @@
 /**
  * WritingEditor Component
- * 
+ *
  * Main text editor with inline suggestions and real-time improvements.
  * Features highlighting for errors, suggestions, and improvements.
  */
@@ -47,8 +47,11 @@ export function WritingEditor({
   className,
 }: WritingEditorProps) {
   const [text, setText] = useState(initialText);
-  const [highlightedSuggestion, setHighlightedSuggestion] = useState<string | null>(null);
-  const [activeSuggestion, setActiveSuggestion] = useState<WritingSuggestion | null>(null);
+  const [highlightedSuggestion, setHighlightedSuggestion] = useState<
+    string | null
+  >(null);
+  const [activeSuggestion, setActiveSuggestion] =
+    useState<WritingSuggestion | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -72,7 +75,10 @@ export function WritingEditor({
       setActiveSuggestion(null);
     } else {
       // Fallback: Replace all occurrences
-      const newText = text.replace(suggestion.originalSnippet, suggestion.suggestedSnippet);
+      const newText = text.replace(
+        suggestion.originalSnippet,
+        suggestion.suggestedSnippet,
+      );
       setText(newText);
       onTextChange(newText);
       onAcceptSuggestion(suggestion.id);
@@ -111,8 +117,10 @@ export function WritingEditor({
   };
 
   // Group suggestions by position for inline display
-  const positionedSuggestions = suggestions.filter(s => s.position !== undefined);
-  
+  const positionedSuggestions = suggestions.filter(
+    (s) => s.position !== undefined,
+  );
+
   return (
     <div className={cn("space-y-4", className)}>
       <div className="relative">
@@ -124,7 +132,7 @@ export function WritingEditor({
           className="min-h-[400px] text-base leading-relaxed p-4 font-sans"
           data-testid="input-writing-text"
         />
-        
+
         {/* Analyze button */}
         <div className="absolute bottom-4 right-4">
           <Button
@@ -150,40 +158,63 @@ export function WritingEditor({
 
       {/* Active suggestion popup */}
       {activeSuggestion && (
-        <Card className={cn("p-4 space-y-3 transition-morph", getSeverityColor(activeSuggestion.severity))}>
+        <Card
+          className={cn(
+            "p-4 space-y-3 transition-morph",
+            getSeverityColor(activeSuggestion.severity),
+          )}
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-lg">{getTypeIcon(activeSuggestion.suggestionType)}</span>
+                <span className="text-lg">
+                  {getTypeIcon(activeSuggestion.suggestionType)}
+                </span>
                 <Badge variant="secondary" className="capitalize">
                   {activeSuggestion.suggestionType}
                 </Badge>
-                <Badge 
-                  variant={activeSuggestion.severity === "error" ? "destructive" : "outline"}
+                <Badge
+                  variant={
+                    activeSuggestion.severity === "error"
+                      ? "destructive"
+                      : "outline"
+                  }
                   className="capitalize"
                 >
                   {activeSuggestion.severity}
                 </Badge>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="flex items-start gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">Original:</span>
-                  <span className="text-sm line-through opacity-70">{activeSuggestion.originalSnippet}</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Original:
+                  </span>
+                  <span className="text-sm line-through opacity-70">
+                    {activeSuggestion.originalSnippet}
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">Suggested:</span>
-                  <span className="text-sm font-semibold text-foreground">{activeSuggestion.suggestedSnippet}</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Suggested:
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {activeSuggestion.suggestedSnippet}
+                  </span>
                 </div>
                 {activeSuggestion.reason && (
                   <div className="flex items-start gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Reason:</span>
-                    <span className="text-sm text-muted-foreground">{activeSuggestion.reason}</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Reason:
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {activeSuggestion.reason}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -223,9 +254,11 @@ export function WritingEditor({
               className={cn("text-xs", getSeverityColor(suggestion.severity))}
               data-testid={`button-suggestion-${suggestion.id}`}
             >
-              <span className="mr-1">{getTypeIcon(suggestion.suggestionType)}</span>
-              {suggestion.originalSnippet.length > 20 
-                ? suggestion.originalSnippet.substring(0, 20) + "..." 
+              <span className="mr-1">
+                {getTypeIcon(suggestion.suggestionType)}
+              </span>
+              {suggestion.originalSnippet.length > 20
+                ? suggestion.originalSnippet.substring(0, 20) + "..."
                 : suggestion.originalSnippet}
             </Button>
           ))}

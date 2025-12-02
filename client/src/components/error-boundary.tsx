@@ -1,7 +1,13 @@
-import React, { Component, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import React, { Component, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertTriangle } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -15,7 +21,7 @@ interface State {
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
-    error: null
+    error: null,
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -23,7 +29,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    console.error("Uncaught error:", error, errorInfo);
   }
 
   private handleReset = () => {
@@ -41,11 +47,12 @@ class ErrorBoundary extends Component<Props, State> {
                 <CardTitle>Something went wrong</CardTitle>
               </div>
               <CardDescription>
-                An unexpected error occurred. You can try refreshing the page or continue using the app.
+                An unexpected error occurred. You can try refreshing the page or
+                continue using the app.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {process.env.NODE_ENV === 'development' && !!this.state.error && (
+              {process.env.NODE_ENV === "development" && !!this.state.error && (
                 <div className="mb-4 p-4 bg-muted rounded-md">
                   <p className="text-sm font-mono text-muted-foreground">
                     {this.state.error.toString()}

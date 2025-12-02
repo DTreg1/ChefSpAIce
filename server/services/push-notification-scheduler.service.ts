@@ -14,16 +14,16 @@ export class NotificationScheduler {
    */
   static async start() {
     // console.log("Starting notification schedulers...");
-    
+
     // Schedule expiring food notifications (daily at 9 AM)
     this.scheduleExpiringFoodNotifications();
-    
+
     // Schedule daily recipe suggestions (daily at 10 AM)
     this.scheduleDailyRecipeSuggestions();
-    
+
     // Schedule meal reminders based on user preferences
     await this.scheduleMealReminders();
-    
+
     // console.log("Notification schedulers started successfully");
   }
 
@@ -35,16 +35,16 @@ export class NotificationScheduler {
       this.expiringFoodTask.stop();
       this.expiringFoodTask = null;
     }
-    
+
     if (this.dailyRecipeTask) {
       this.dailyRecipeTask.stop();
       this.dailyRecipeTask = null;
     }
-    
+
     // Stop all meal reminder tasks
-    this.mealReminderTasks.forEach(task => task.stop());
+    this.mealReminderTasks.forEach((task) => task.stop());
     this.mealReminderTasks.clear();
-    
+
     // console.log("Notification schedulers stopped");
   }
 
@@ -54,15 +54,16 @@ export class NotificationScheduler {
   private static scheduleExpiringFoodNotifications() {
     // Run every day at 9 AM
     const cronExpression = "0 9 * * *";
-    
+
     if (this.expiringFoodTask) {
       this.expiringFoodTask.stop();
     }
-    
+
     this.expiringFoodTask = cron.schedule(cronExpression, async () => {
       // console.log("Running expiring food notifications...");
       try {
-        const result = await PushNotificationService.sendExpiringFoodNotifications();
+        const result =
+          await PushNotificationService.sendExpiringFoodNotifications();
         // console.log(`Sent ${result.totalSent} expiring food notifications to ${result.usersNotified} users`);
       } catch (error) {
         console.error("Error in expiring food notification scheduler:", error);
@@ -76,11 +77,11 @@ export class NotificationScheduler {
   private static scheduleDailyRecipeSuggestions() {
     // Run every day at 10 AM
     const cronExpression = "0 10 * * *";
-    
+
     if (this.dailyRecipeTask) {
       this.dailyRecipeTask.stop();
     }
-    
+
     this.dailyRecipeTask = cron.schedule(cronExpression, async () => {
       // console.log("Running daily recipe suggestions...");
       try {
@@ -104,8 +105,8 @@ export class NotificationScheduler {
         .where(
           and(
             eq(users.notificationsEnabled, true),
-            eq(users.notifyMealReminders, true)
-          )
+            eq(users.notifyMealReminders, true),
+          ),
         );
 
       for (const user of usersWithReminders) {
@@ -124,28 +125,28 @@ export class NotificationScheduler {
           const mealTimes = {
             breakfast: "08:00",
             lunch: "12:00",
-            dinner: "18:00"
+            dinner: "18:00",
           };
 
           for (const [mealType, defaultTime] of Object.entries(mealTimes)) {
             // Use user's preferred notification time or default
             const notificationTime = user.notificationTime || defaultTime;
             const [hour, minute] = notificationTime.split(":").map(Number);
-            
+
             // Create a unique key for this reminder
             const reminderKey = `${user.id}-${mealPlan.id}-${mealType}`;
-            
+
             // If there's already a task for this reminder, stop it
             const existingTask = this.mealReminderTasks.get(reminderKey);
             if (existingTask) {
               existingTask.stop();
             }
-            
+
             // Create cron expression for the reminder (30 minutes before meal time)
             const reminderHour = hour === 0 ? 23 : hour - 1;
             const reminderMinute = minute >= 30 ? minute - 30 : minute + 30;
             const cronExpression = `${reminderMinute} ${reminderHour} * * *`;
-            
+
             // Schedule the reminder
             const task = cron.schedule(cronExpression, async () => {
               // console.log(`Sending meal reminder for ${mealType} to user ${user.id}`);
@@ -153,18 +154,18 @@ export class NotificationScheduler {
                 await PushNotificationService.sendMealReminder(
                   user.id,
                   `${mealType} meal`,
-                  defaultTime
+                  defaultTime,
                 );
               } catch (error) {
                 console.error(`Error sending meal reminder:`, error);
               }
             });
-            
+
             this.mealReminderTasks.set(reminderKey, task);
           }
         }
       }
-      
+
       // console.log(`Scheduled ${this.mealReminderTasks.size} meal reminders`);
     } catch (error) {
       console.error("Error scheduling meal reminders:", error);
@@ -177,7 +178,8 @@ export class NotificationScheduler {
   static async triggerExpiringFoodNotifications() {
     // console.log("Manually triggering expiring food notifications...");
     try {
-      const result = await PushNotificationService.sendExpiringFoodNotifications();
+      const result =
+        await PushNotificationService.sendExpiringFoodNotifications();
       return result;
     } catch (error) {
       console.error("Error triggering expiring food notifications:", error);

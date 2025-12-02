@@ -1,9 +1,9 @@
 /**
  * Unified Food Search Component
- * 
+ *
  * Multi-source food search interface for finding items with comprehensive nutrition data.
  * Primarily searches USDA FoodData Central database with support for additional sources.
- * 
+ *
  * Features:
  * - USDA FoodData Central: Official USDA nutrition database with 600k+ food items
  * - Debounced Search: 300ms delay after typing stops to reduce API calls
@@ -11,26 +11,26 @@
  * - Rich Food Data: Brand owners, categories, UPC codes, nutrition facts
  * - Loading States: Skeleton loaders during search
  * - Error Handling: User-friendly error messages for failed searches
- * 
+ *
  * Search Sources:
  * - USDA FoodData Central: Branded foods, SR Legacy, FNDDS, Foundation Foods
  *   - Includes: Description, brand owner, category, UPC/GTIN, nutrition
  *   - Data types: Branded, Survey (FNDDS), SR Legacy, Foundation
  * - Barcode Lookup API: (placeholder in response structure, not actively used)
  * - Open Food Facts: (placeholder in response structure, not actively used)
- * 
+ *
  * API Integration:
  * - GET /api/food/unified-search?query={searchQuery}
  *   - Returns: { usda, barcodeLookup, openFoodFacts }
  *   - USDA includes: foods[], totalHits, currentPage, totalPages
  * - Response includes pagination metadata for future expansion
- * 
+ *
  * State Management:
  * - searchQuery: Raw user input (immediate updates)
  * - debouncedSearch: Delayed query (300ms after typing stops)
  * - Query enabled when: debouncedSearch.length >= 2
  * - Auto-refetch: Disabled (manual searches only)
- * 
+ *
  * USDA Food Object:
  * - fdcId: Unique USDA food database identifier
  * - description: Food name/description
@@ -42,14 +42,14 @@
  * - servingSize: Default serving amount
  * - servingSizeUnit: Serving unit (g, ml, etc.)
  * - nutrition: { calories, protein, carbs, fat }
- * 
+ *
  * Result Display:
  * - Shows USDA foods in clickable cards
  * - Badge displays: data type, brand owner, category, UPC
  * - Results counter badge shows total hits
  * - Ghost variant buttons for low visual weight
  * - Hover elevation effect for interactivity
- * 
+ *
  * User Flow:
  * 1. User types search query (minimum 2 characters)
  * 2. Component waits 300ms after typing stops (debounce)
@@ -58,27 +58,27 @@
  * 5. Displays USDA results with rich metadata
  * 6. User clicks food item to select
  * 7. Calls onSelectUSDA callback with full food object
- * 
+ *
  * Performance Optimizations:
  * - Debounced search (300ms): Reduces API calls during typing
  * - Conditional queries: Only fetches when query length ≥ 2
  * - ScrollArea: Virtual scrolling for large result sets
  * - Skeleton loaders: Perceived performance during loads
- * 
+ *
  * Error States:
  * - No query: Shows "Type at least 2 characters" message
  * - Search failed: Shows "Failed to search. Please try again."
  * - No results: Shows "No results found. Try a different search term."
  * - Loading: Shows 3 skeleton cards
- * 
+ *
  * Accessibility:
  * - data-testid on search input and result buttons
  * - Semantic HTML with proper ARIA roles
  * - Keyboard navigation support via Button components
- * 
+ *
  * @example
  * // Basic usage for food item addition
- * <UnifiedFoodSearch 
+ * <UnifiedFoodSearch
  *   onSelectUSDA={(food) => {
  *     // Pre-fill form with USDA data
  *     setName(food.description);
@@ -86,12 +86,12 @@
  *     setCategory(food.foodCategory);
  *   }}
  * />
- * 
+ *
  * @example
  * // Used in add-food dialog
  * <Dialog>
  *   <DialogContent>
- *     <UnifiedFoodSearch 
+ *     <UnifiedFoodSearch
  *       onSelectUSDA={(food) => {
  *         populateFormFromUSDA(food);
  *         setDialogOpen(false);
@@ -193,7 +193,9 @@ export function UnifiedFoodSearch({ onSelectUSDA }: UnifiedFoodSearchProps) {
             {error && (
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-sm text-destructive">Failed to search. Please try again.</p>
+                  <p className="text-sm text-destructive">
+                    Failed to search. Please try again.
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -201,7 +203,9 @@ export function UnifiedFoodSearch({ onSelectUSDA }: UnifiedFoodSearchProps) {
             {!isLoading && !error && !hasResults && (
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-sm text-muted-foreground">No results found. Try a different search term.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No results found. Try a different search term.
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -227,7 +231,9 @@ export function UnifiedFoodSearch({ onSelectUSDA }: UnifiedFoodSearchProps) {
                       data-testid={`button-usda-${food.fdcId}`}
                     >
                       <div className="flex flex-col items-start gap-1 w-full">
-                        <div className="font-medium text-sm">{food.description}</div>
+                        <div className="font-medium text-sm">
+                          {food.description}
+                        </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">
                             {food.dataType}
@@ -239,7 +245,9 @@ export function UnifiedFoodSearch({ onSelectUSDA }: UnifiedFoodSearchProps) {
                             <span className="text-xs">{food.foodCategory}</span>
                           )}
                           {food.gtinUpc && (
-                            <span className="text-xs font-mono">UPC: {food.gtinUpc}</span>
+                            <span className="text-xs font-mono">
+                              UPC: {food.gtinUpc}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -253,7 +261,9 @@ export function UnifiedFoodSearch({ onSelectUSDA }: UnifiedFoodSearchProps) {
       )}
 
       {debouncedSearch.length < 2 && searchQuery.length > 0 && (
-        <p className="text-sm text-muted-foreground">Type at least 2 characters to search...</p>
+        <p className="text-sm text-muted-foreground">
+          Type at least 2 characters to search...
+        </p>
       )}
     </div>
   );

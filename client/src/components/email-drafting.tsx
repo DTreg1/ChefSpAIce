@@ -1,6 +1,6 @@
 /**
  * Smart Email/Message Drafting Component (Task 9)
- * 
+ *
  * Generates contextual email/message drafts with multiple variations.
  */
 
@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -40,7 +46,7 @@ import {
   RefreshCw,
   Loader2,
   Edit3,
-  MessageSquare
+  MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -69,24 +75,30 @@ export function EmailDrafting() {
   const [recipient, setRecipient] = useState("");
   const [subject, setSubject] = useState("");
   const [purpose, setPurpose] = useState("");
-  const [tone, setTone] = useState<"formal" | "casual" | "friendly" | "professional">("professional");
+  const [tone, setTone] = useState<
+    "formal" | "casual" | "friendly" | "professional"
+  >("professional");
   const [keyPoints, setKeyPoints] = useState("");
   const [previousMessage, setPreviousMessage] = useState("");
   const [numberOfVariations, setNumberOfVariations] = useState(3);
-  const [selectedDraft, setSelectedDraft] = useState<GeneratedDraft | null>(null);
+  const [selectedDraft, setSelectedDraft] = useState<GeneratedDraft | null>(
+    null,
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
   // Fetch templates
   const { data: templates = [] } = useQuery<DraftTemplate[]>({
-    queryKey: ["/api/drafts/templates", { contextType }]
+    queryKey: ["/api/drafts/templates", { contextType }],
   });
 
   // Fetch draft history
-  const { data: draftHistory = [], isLoading: historyLoading } = useQuery<GeneratedDraft[]>({
+  const { data: draftHistory = [], isLoading: historyLoading } = useQuery<
+    GeneratedDraft[]
+  >({
     queryKey: ["/api/drafts/history"],
-    enabled: showHistory
+    enabled: showHistory,
   });
 
   // Generate drafts
@@ -97,14 +109,16 @@ export function EmailDrafting() {
         subject: subject || undefined,
         purpose,
         tone,
-        keyPoints: keyPoints ? keyPoints.split("\n").filter(p => p.trim()) : undefined,
-        previousMessage: previousMessage || undefined
+        keyPoints: keyPoints
+          ? keyPoints.split("\n").filter((p) => p.trim())
+          : undefined,
+        previousMessage: previousMessage || undefined,
       };
 
       const response = await apiRequest("/api/drafts/generate", "POST", {
         contextType,
         context,
-        numberOfVariations
+        numberOfVariations,
       });
       return response;
     },
@@ -112,16 +126,16 @@ export function EmailDrafting() {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
       toast({
         title: "Drafts Generated",
-        description: `${data.length} draft variations created successfully.`
+        description: `${data.length} draft variations created successfully.`,
       });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to generate drafts.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Select draft
@@ -133,23 +147,25 @@ export function EmailDrafting() {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
       toast({
         title: "Draft Selected",
-        description: "Draft marked as used."
+        description: "Draft marked as used.",
       });
-    }
+    },
   });
 
   // Improve draft
   const improveDraftMutation = useMutation({
     mutationFn: async (draft: string) => {
-      const response = await apiRequest("/api/drafts/improve", "POST", { draft });
+      const response = await apiRequest("/api/drafts/improve", "POST", {
+        draft,
+      });
       return response;
     },
     onSuccess: (data: any) => {
       toast({
         title: "Draft Improved",
-        description: "Your draft has been polished."
+        description: "Your draft has been polished.",
       });
-    }
+    },
   });
 
   // Generate quick replies
@@ -157,16 +173,16 @@ export function EmailDrafting() {
     mutationFn: async () => {
       const response = await apiRequest("/api/drafts/quick-reply", "POST", {
         message: previousMessage,
-        sentiment: "positive"
+        sentiment: "positive",
       });
       return response;
     },
     onSuccess: () => {
       toast({
         title: "Quick Replies Generated",
-        description: "Select a reply option."
+        description: "Select a reply option.",
       });
-    }
+    },
   });
 
   const handleCopyDraft = async (draft: GeneratedDraft) => {
@@ -177,7 +193,7 @@ export function EmailDrafting() {
       selectDraftMutation.mutate({ id: draft.id, edited: false });
       toast({
         title: "Copied",
-        description: "Draft copied to clipboard."
+        description: "Draft copied to clipboard.",
       });
     } catch (error) {
       toast({
@@ -196,9 +212,7 @@ export function EmailDrafting() {
           <Card>
             <CardHeader>
               <CardTitle>Draft Configuration</CardTitle>
-              <CardDescription>
-                Set up your message context
-              </CardDescription>
+              <CardDescription>Set up your message context</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Context Type */}
@@ -257,7 +271,14 @@ export function EmailDrafting() {
               {/* Tone */}
               <div className="space-y-2">
                 <Label>Tone</Label>
-                <Select value={tone} onValueChange={(v) => setTone(v as "formal" | "casual" | "professional" | "friendly")}>
+                <Select
+                  value={tone}
+                  onValueChange={(v) =>
+                    setTone(
+                      v as "formal" | "casual" | "professional" | "friendly",
+                    )
+                  }
+                >
                   <SelectTrigger data-testid="select-tone">
                     <SelectValue />
                   </SelectTrigger>
@@ -308,8 +329,8 @@ export function EmailDrafting() {
               {/* Number of Variations */}
               <div className="space-y-2">
                 <Label>Number of Variations</Label>
-                <Select 
-                  value={numberOfVariations.toString()} 
+                <Select
+                  value={numberOfVariations.toString()}
                   onValueChange={(v) => setNumberOfVariations(parseInt(v))}
                 >
                   <SelectTrigger data-testid="select-variations">
@@ -401,21 +422,32 @@ export function EmailDrafting() {
                     </SheetHeader>
                     <div className="mt-4 space-y-4">
                       {historyLoading ? (
-                        <p className="text-sm text-muted-foreground">Loading...</p>
+                        <p className="text-sm text-muted-foreground">
+                          Loading...
+                        </p>
                       ) : draftHistory.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No draft history</p>
+                        <p className="text-sm text-muted-foreground">
+                          No draft history
+                        </p>
                       ) : (
                         draftHistory.map((draft: GeneratedDraft) => (
                           <Card key={draft.id}>
                             <CardContent className="p-4 space-y-2">
                               <div className="flex justify-between items-start">
-                                <Badge variant="outline">{draft.contextType}</Badge>
+                                <Badge variant="outline">
+                                  {draft.contextType}
+                                </Badge>
                                 <Badge variant="secondary">{draft.tone}</Badge>
                               </div>
-                              <p className="text-sm line-clamp-3">{draft.draftContent}</p>
+                              <p className="text-sm line-clamp-3">
+                                {draft.draftContent}
+                              </p>
                               <div className="flex justify-between items-center">
                                 <p className="text-xs text-muted-foreground">
-                                  {format(new Date(draft.createdAt), "MMM d, h:mm a")}
+                                  {format(
+                                    new Date(draft.createdAt),
+                                    "MMM d, h:mm a",
+                                  )}
                                 </p>
                                 <Button
                                   size="sm"
@@ -437,113 +469,153 @@ export function EmailDrafting() {
             <CardContent>
               {generateDraftsMutation.data ? (
                 <Tabs defaultValue="0">
-                  <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${generateDraftsMutation.data.length}, 1fr)` }}>
-                    {generateDraftsMutation.data.map((_: any, index: number) => (
-                      <TabsTrigger key={index} value={index.toString()}>
-                        Draft {index + 1}
-                      </TabsTrigger>
-                    ))}
+                  <TabsList
+                    className="grid w-full"
+                    style={{
+                      gridTemplateColumns: `repeat(${generateDraftsMutation.data.length}, 1fr)`,
+                    }}
+                  >
+                    {generateDraftsMutation.data.map(
+                      (_: any, index: number) => (
+                        <TabsTrigger key={index} value={index.toString()}>
+                          Draft {index + 1}
+                        </TabsTrigger>
+                      ),
+                    )}
                   </TabsList>
-                  {generateDraftsMutation.data.map((draft: GeneratedDraft, index: number) => (
-                    <TabsContent key={index} value={index.toString()} className="space-y-4">
-                      <Card>
-                        <CardContent className="p-4 space-y-3">
-                          {/* Draft Metadata */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex gap-2">
-                              <Badge>{draft.tone}</Badge>
-                              {draft.variations?.approach && (
-                                <Badge variant="outline">{draft.variations.approach}</Badge>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => improveDraftMutation.mutate(draft.draftContent)}
-                                disabled={improveDraftMutation.isPending}
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Improve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCopyDraft(draft)}
-                                data-testid={`button-copy-${index}`}
-                              >
-                                {copiedId === draft.id ? (
-                                  <Check className="h-3 w-3 mr-1" />
-                                ) : (
-                                  <Copy className="h-3 w-3 mr-1" />
-                                )}
-                                Copy
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Subject Line (for emails) */}
-                          {draft.variations?.subject && (
-                            <div className="p-2 bg-muted rounded">
-                              <p className="text-xs text-muted-foreground mb-1">Subject:</p>
-                              <p className="font-medium">{draft.variations.subject}</p>
-                            </div>
-                          )}
-
-                          {/* Draft Content */}
-                          <div className="space-y-2">
-                            <Textarea
-                              value={draft.draftContent}
-                              onChange={(e) => {
-                                const updatedDraft = { ...draft, draftContent: e.target.value };
-                                setSelectedDraft(updatedDraft);
-                              }}
-                              rows={10}
-                              className="resize-none"
-                              data-testid={`textarea-draft-${index}`}
-                            />
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                selectDraftMutation.mutate({ 
-                                  id: draft.id, 
-                                  edited: selectedDraft?.id === draft.id && selectedDraft.draftContent !== draft.draftContent 
-                                });
-                              }}
-                            >
-                              <Edit3 className="h-4 w-4 mr-2" />
-                              Mark as Used
-                            </Button>
-                            <Button>
-                              <Send className="h-4 w-4 mr-2" />
-                              Send
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Improvement Suggestions */}
-                      {improveDraftMutation.data && (
+                  {generateDraftsMutation.data.map(
+                    (draft: GeneratedDraft, index: number) => (
+                      <TabsContent
+                        key={index}
+                        value={index.toString()}
+                        className="space-y-4"
+                      >
                         <Card>
-                          <CardHeader>
-                            <CardTitle className="text-sm">Improvements Applied</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm">{improveDraftMutation.data.improved}</p>
-                            <div className="mt-2 space-y-1">
-                              {improveDraftMutation.data.changes?.map((change: string, i: number) => (
-                                <p key={i} className="text-xs text-muted-foreground">• {change}</p>
-                              ))}
+                          <CardContent className="p-4 space-y-3">
+                            {/* Draft Metadata */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex gap-2">
+                                <Badge>{draft.tone}</Badge>
+                                {draft.variations?.approach && (
+                                  <Badge variant="outline">
+                                    {draft.variations.approach}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    improveDraftMutation.mutate(
+                                      draft.draftContent,
+                                    )
+                                  }
+                                  disabled={improveDraftMutation.isPending}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Improve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCopyDraft(draft)}
+                                  data-testid={`button-copy-${index}`}
+                                >
+                                  {copiedId === draft.id ? (
+                                    <Check className="h-3 w-3 mr-1" />
+                                  ) : (
+                                    <Copy className="h-3 w-3 mr-1" />
+                                  )}
+                                  Copy
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Subject Line (for emails) */}
+                            {draft.variations?.subject && (
+                              <div className="p-2 bg-muted rounded">
+                                <p className="text-xs text-muted-foreground mb-1">
+                                  Subject:
+                                </p>
+                                <p className="font-medium">
+                                  {draft.variations.subject}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Draft Content */}
+                            <div className="space-y-2">
+                              <Textarea
+                                value={draft.draftContent}
+                                onChange={(e) => {
+                                  const updatedDraft = {
+                                    ...draft,
+                                    draftContent: e.target.value,
+                                  };
+                                  setSelectedDraft(updatedDraft);
+                                }}
+                                rows={10}
+                                className="resize-none"
+                                data-testid={`textarea-draft-${index}`}
+                              />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  selectDraftMutation.mutate({
+                                    id: draft.id,
+                                    edited:
+                                      selectedDraft?.id === draft.id &&
+                                      selectedDraft.draftContent !==
+                                        draft.draftContent,
+                                  });
+                                }}
+                              >
+                                <Edit3 className="h-4 w-4 mr-2" />
+                                Mark as Used
+                              </Button>
+                              <Button>
+                                <Send className="h-4 w-4 mr-2" />
+                                Send
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
-                      )}
-                    </TabsContent>
-                  ))}
+
+                        {/* Improvement Suggestions */}
+                        {improveDraftMutation.data && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-sm">
+                                Improvements Applied
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-sm">
+                                {improveDraftMutation.data.improved}
+                              </p>
+                              <div className="mt-2 space-y-1">
+                                {improveDraftMutation.data.changes?.map(
+                                  (change: string, i: number) => (
+                                    <p
+                                      key={i}
+                                      className="text-xs text-muted-foreground"
+                                    >
+                                      • {change}
+                                    </p>
+                                  ),
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </TabsContent>
+                    ),
+                  )}
                 </Tabs>
               ) : (
                 <div className="text-center p-8">
@@ -559,18 +631,22 @@ export function EmailDrafting() {
               {quickReplyMutation.data && (
                 <Card className="mt-4">
                   <CardHeader>
-                    <CardTitle className="text-sm">Quick Reply Options</CardTitle>
+                    <CardTitle className="text-sm">
+                      Quick Reply Options
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {quickReplyMutation.data.map((reply: string, index: number) => (
-                      <div
-                        key={index}
-                        className="p-3 border rounded-lg cursor-pointer hover-elevate"
-                        onClick={() => setPurpose(reply)}
-                      >
-                        <p className="text-sm">{reply}</p>
-                      </div>
-                    ))}
+                    {quickReplyMutation.data.map(
+                      (reply: string, index: number) => (
+                        <div
+                          key={index}
+                          className="p-3 border rounded-lg cursor-pointer hover-elevate"
+                          onClick={() => setPurpose(reply)}
+                        >
+                          <p className="text-sm">{reply}</p>
+                        </div>
+                      ),
+                    )}
                   </CardContent>
                 </Card>
               )}

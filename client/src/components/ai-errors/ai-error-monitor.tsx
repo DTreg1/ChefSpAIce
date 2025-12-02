@@ -1,30 +1,36 @@
 /**
  * AI Error Monitor Dashboard
- * 
+ *
  * Dashboard component for monitoring AI service errors and metrics
  */
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Activity, 
-  AlertCircle, 
-  CheckCircle, 
-  Clock, 
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Clock,
   RefreshCw,
   TrendingDown,
   TrendingUp,
   Zap,
-  WifiOff
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow, parseISO } from 'date-fns';
-import { errorCodeToIcon, getErrorTitle } from '@/hooks/use-ai-error-handler';
+  WifiOff,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { formatDistanceToNow, parseISO } from "date-fns";
+import { errorCodeToIcon, getErrorTitle } from "@/hooks/use-ai-error-handler";
 
 interface ErrorMetrics {
   totalRequests: number;
@@ -49,7 +55,7 @@ interface ErrorLog {
 }
 
 interface CircuitStatus {
-  state: 'closed' | 'open' | 'half-open';
+  state: "closed" | "open" | "half-open";
   failures: number;
   successCount: number;
   lastFailureTime?: Date;
@@ -58,35 +64,43 @@ interface CircuitStatus {
 
 export function AIErrorMonitor() {
   // Fetch metrics with proper type
-  const { data: metrics, isLoading, refetch } = useQuery<ErrorMetrics>({
-    queryKey: ['/api/admin/ai-metrics'],
+  const {
+    data: metrics,
+    isLoading,
+    refetch,
+  } = useQuery<ErrorMetrics>({
+    queryKey: ["/api/admin/ai-metrics"],
     refetchInterval: 5000, // Auto-refresh every 5 seconds
     select: (data) => {
       // Parse ISO string timestamps to Date objects
       return {
         ...data,
-        recentErrors: data.recentErrors?.map(error => ({
-          ...error,
-          timestamp: typeof error.timestamp === 'string' ? parseISO(error.timestamp) : error.timestamp
-        })) || [],
+        recentErrors:
+          data.recentErrors?.map((error) => ({
+            ...error,
+            timestamp:
+              typeof error.timestamp === "string"
+                ? parseISO(error.timestamp)
+                : error.timestamp,
+          })) || [],
         circuitBreakerStatus: {
           ...data.circuitBreakerStatus,
           lastFailureTime: data.circuitBreakerStatus?.lastFailureTime
-            ? (typeof data.circuitBreakerStatus.lastFailureTime === 'string' 
-              ? parseISO(data.circuitBreakerStatus.lastFailureTime) 
-              : data.circuitBreakerStatus.lastFailureTime)
+            ? typeof data.circuitBreakerStatus.lastFailureTime === "string"
+              ? parseISO(data.circuitBreakerStatus.lastFailureTime)
+              : data.circuitBreakerStatus.lastFailureTime
             : undefined,
           nextAttemptTime: data.circuitBreakerStatus?.nextAttemptTime
-            ? (typeof data.circuitBreakerStatus.nextAttemptTime === 'string' 
-              ? parseISO(data.circuitBreakerStatus.nextAttemptTime) 
-              : data.circuitBreakerStatus.nextAttemptTime)
-            : undefined
-        }
+            ? typeof data.circuitBreakerStatus.nextAttemptTime === "string"
+              ? parseISO(data.circuitBreakerStatus.nextAttemptTime)
+              : data.circuitBreakerStatus.nextAttemptTime
+            : undefined,
+        },
       };
-    }
+    },
   });
 
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
+  const [selectedTimeRange, setSelectedTimeRange] = useState("1h");
 
   const successRate = metrics?.successRate || 0;
   const isHealthy = successRate >= 95;
@@ -110,7 +124,9 @@ export function AIErrorMonitor() {
           disabled={isLoading}
           data-testid="button-refresh-metrics"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -131,17 +147,16 @@ export function AIErrorMonitor() {
               {isWarning && <AlertCircle className="h-5 w-5 text-yellow-500" />}
               {isCritical && <AlertCircle className="h-5 w-5 text-red-500" />}
             </div>
-            <Progress 
-              value={successRate} 
-              className="mt-2"
-            />
+            <Progress value={successRate} className="mt-2" />
           </CardContent>
         </Card>
 
         {/* Total Requests */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Requests
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -159,7 +174,9 @@ export function AIErrorMonitor() {
         {/* Average Response Time */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Response Time
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -169,7 +186,9 @@ export function AIErrorMonitor() {
               <Clock className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {(metrics?.averageResponseTime || 0) > 3000 ? 'Slower than usual' : 'Normal'}
+              {(metrics?.averageResponseTime || 0) > 3000
+                ? "Slower than usual"
+                : "Normal"}
             </p>
           </CardContent>
         </Card>
@@ -177,26 +196,37 @@ export function AIErrorMonitor() {
         {/* Circuit Breaker Status */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Circuit Breaker</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Circuit Breaker
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <Badge 
+              <Badge
                 variant={
-                  metrics?.circuitBreakerStatus?.state === 'closed' ? 'default' :
-                  metrics?.circuitBreakerStatus?.state === 'half-open' ? 'secondary' :
-                  'destructive'
+                  metrics?.circuitBreakerStatus?.state === "closed"
+                    ? "default"
+                    : metrics?.circuitBreakerStatus?.state === "half-open"
+                      ? "secondary"
+                      : "destructive"
                 }
               >
-                {metrics?.circuitBreakerStatus?.state || 'closed'}
+                {metrics?.circuitBreakerStatus?.state || "closed"}
               </Badge>
-              <Zap className={`h-5 w-5 ${
-                metrics?.circuitBreakerStatus?.state === 'open' ? 'text-red-500' : 'text-green-500'
-              }`} />
+              <Zap
+                className={`h-5 w-5 ${
+                  metrics?.circuitBreakerStatus?.state === "open"
+                    ? "text-red-500"
+                    : "text-green-500"
+                }`}
+              />
             </div>
             {metrics?.circuitBreakerStatus?.nextAttemptTime && (
               <p className="text-xs text-muted-foreground mt-2">
-                Next attempt in {formatDistanceToNow(metrics.circuitBreakerStatus.nextAttemptTime)}
+                Next attempt in{" "}
+                {formatDistanceToNow(
+                  metrics.circuitBreakerStatus.nextAttemptTime,
+                )}
               </p>
             )}
           </CardContent>
@@ -231,7 +261,7 @@ export function AIErrorMonitor() {
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-xl">
-                          {errorCodeToIcon[error.code] || '❓'}
+                          {errorCodeToIcon[error.code] || "❓"}
                         </span>
                         <div>
                           <div className="font-medium">
@@ -245,7 +275,9 @@ export function AIErrorMonitor() {
                               {error.endpoint}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(error.timestamp, { addSuffix: true })}
+                              {formatDistanceToNow(error.timestamp, {
+                                addSuffix: true,
+                              })}
                             </span>
                             {error.retryCount > 0 && (
                               <Badge variant="secondary" className="text-xs">
@@ -272,7 +304,7 @@ export function AIErrorMonitor() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {!metrics?.recentErrors?.length && (
                     <div className="text-center py-8 text-muted-foreground">
                       No errors recorded in the selected time range
@@ -289,36 +321,40 @@ export function AIErrorMonitor() {
           <Card>
             <CardHeader>
               <CardTitle>Error Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of errors by type
-              </CardDescription>
+              <CardDescription>Breakdown of errors by type</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Object.entries(metrics?.errorsByCode || {}).map(([code, count]) => {
-                  const percentage = ((count as number) / (metrics?.failedRequests || 1)) * 100;
-                  return (
-                    <div key={code} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>{errorCodeToIcon[code] || '❓'}</span>
-                          <span className="font-medium">{getErrorTitle(code)}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {code}
-                          </Badge>
+                {Object.entries(metrics?.errorsByCode || {}).map(
+                  ([code, count]) => {
+                    const percentage =
+                      ((count as number) / (metrics?.failedRequests || 1)) *
+                      100;
+                    return (
+                      <div key={code} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span>{errorCodeToIcon[code] || "❓"}</span>
+                            <span className="font-medium">
+                              {getErrorTitle(code)}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {code}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{count}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({percentage.toFixed(1)}%)
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{count}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ({percentage.toFixed(1)}%)
-                          </span>
-                        </div>
+                        <Progress value={percentage} className="h-2" />
                       </div>
-                      <Progress value={percentage} className="h-2" />
-                    </div>
-                  );
-                })}
-                
+                    );
+                  },
+                )}
+
                 {!Object.keys(metrics?.errorsByCode || {}).length && (
                   <div className="text-center py-8 text-muted-foreground">
                     No error distribution data available
@@ -334,9 +370,7 @@ export function AIErrorMonitor() {
           <Card>
             <CardHeader>
               <CardTitle>Service Trends</CardTitle>
-              <CardDescription>
-                Performance trends over time
-              </CardDescription>
+              <CardDescription>Performance trends over time</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -352,12 +386,16 @@ export function AIErrorMonitor() {
                     {successRate >= 95 ? (
                       <>
                         <TrendingUp className="h-5 w-5 text-green-500" />
-                        <span className="text-sm font-medium text-green-500">Improving</span>
+                        <span className="text-sm font-medium text-green-500">
+                          Improving
+                        </span>
                       </>
                     ) : (
                       <>
                         <TrendingDown className="h-5 w-5 text-red-500" />
-                        <span className="text-sm font-medium text-red-500">Declining</span>
+                        <span className="text-sm font-medium text-red-500">
+                          Declining
+                        </span>
                       </>
                     )}
                   </div>
@@ -374,7 +412,8 @@ export function AIErrorMonitor() {
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-muted-foreground" />
                     <span className="text-sm font-medium">
-                      {((metrics?.averageResponseTime || 0) / 1000).toFixed(2)}s avg
+                      {((metrics?.averageResponseTime || 0) / 1000).toFixed(2)}s
+                      avg
                     </span>
                   </div>
                 </div>

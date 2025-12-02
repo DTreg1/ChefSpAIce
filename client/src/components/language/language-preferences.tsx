@@ -1,23 +1,29 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Settings, 
-  Globe, 
-  Languages, 
+import {
+  Settings,
+  Globe,
+  Languages,
   Save,
   RefreshCw,
   Eye,
   EyeOff,
   Zap,
   BarChart2,
-  Award
+  Award,
 } from "lucide-react";
 import { LanguageSelector } from "./language-selector";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +40,7 @@ interface LanguagePreference {
   autoTranslate: boolean;
   nativeLanguage: string;
   showOriginalText: boolean;
-  translationQuality: 'fast' | 'balanced' | 'high';
+  translationQuality: "fast" | "balanced" | "high";
   excludedContentTypes: string[];
 }
 
@@ -42,22 +48,22 @@ export function LanguagePreferences() {
   const { toast } = useToast();
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<LanguagePreference>({
-    preferredLanguages: ['en'],
+    preferredLanguages: ["en"],
     autoTranslate: true,
-    nativeLanguage: 'en',
+    nativeLanguage: "en",
     showOriginalText: false,
-    translationQuality: 'balanced',
-    excludedContentTypes: []
+    translationQuality: "balanced",
+    excludedContentTypes: [],
   });
 
   // Fetch current preferences
   const { data: currentPrefs, isLoading } = useQuery<LanguagePreference>({
-    queryKey: ['/api/languages/preferences']
+    queryKey: ["/api/languages/preferences"],
   });
 
   // Fetch supported languages
   const { data: languages = [] } = useQuery<Language[]>({
-    queryKey: ['/api/languages/supported'],
+    queryKey: ["/api/languages/supported"],
     staleTime: 60 * 60 * 1000,
   });
 
@@ -71,10 +77,12 @@ export function LanguagePreferences() {
   // Save preferences mutation
   const savePreferences = useMutation({
     mutationFn: async (prefs: LanguagePreference) => {
-      return apiRequest('/api/languages/preferences', 'POST', prefs);
+      return apiRequest("/api/languages/preferences", "POST", prefs);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/languages/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/languages/preferences"],
+      });
       toast({
         title: "Preferences saved",
         description: "Your language preferences have been updated",
@@ -84,9 +92,9 @@ export function LanguagePreferences() {
       toast({
         title: "Error",
         description: "Failed to save preferences. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleAddLanguage = (languageCode: string) => {
@@ -98,7 +106,7 @@ export function LanguagePreferences() {
   };
 
   const handleRemoveLanguage = (languageCode: string) => {
-    const updated = selectedLanguages.filter(l => l !== languageCode);
+    const updated = selectedLanguages.filter((l) => l !== languageCode);
     setSelectedLanguages(updated);
     setPreferences({ ...preferences, preferredLanguages: updated });
   };
@@ -108,7 +116,7 @@ export function LanguagePreferences() {
   };
 
   const getLanguageName = (code: string) => {
-    const lang = languages.find(l => l.code === code);
+    const lang = languages.find((l) => l.code === code);
     return lang?.name || code.toUpperCase();
   };
 
@@ -143,7 +151,9 @@ export function LanguagePreferences() {
             <Label htmlFor="native-language">Your Native Language</Label>
             <LanguageSelector
               value={preferences.nativeLanguage}
-              onChange={(value) => setPreferences({ ...preferences, nativeLanguage: value })}
+              onChange={(value) =>
+                setPreferences({ ...preferences, nativeLanguage: value })
+              }
               placeholder="Select your native language"
             />
             <p className="text-xs text-muted-foreground">
@@ -158,8 +168,8 @@ export function LanguagePreferences() {
             <Label>Preferred Translation Languages</Label>
             <div className="flex flex-wrap gap-2 mb-3">
               {selectedLanguages.map((code) => (
-                <Badge 
-                  key={code} 
+                <Badge
+                  key={code}
                   variant="secondary"
                   className="px-3 py-1"
                   data-testid={`badge-language-${code}`}
@@ -198,7 +208,7 @@ export function LanguagePreferences() {
             <Switch
               id="auto-translate"
               checked={preferences.autoTranslate}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setPreferences({ ...preferences, autoTranslate: checked })
               }
               data-testid="switch-auto-translate"
@@ -210,8 +220,15 @@ export function LanguagePreferences() {
           {/* Show Original Text */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="show-original" className="flex items-center gap-2">
-                {preferences.showOriginalText ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              <Label
+                htmlFor="show-original"
+                className="flex items-center gap-2"
+              >
+                {preferences.showOriginalText ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
                 Show Original Text
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -221,7 +238,7 @@ export function LanguagePreferences() {
             <Switch
               id="show-original"
               checked={preferences.showOriginalText}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setPreferences({ ...preferences, showOriginalText: checked })
               }
               data-testid="switch-show-original"
@@ -235,13 +252,20 @@ export function LanguagePreferences() {
             <Label>Translation Quality</Label>
             <RadioGroup
               value={preferences.translationQuality}
-              onValueChange={(value: 'fast' | 'balanced' | 'high') => 
+              onValueChange={(value: "fast" | "balanced" | "high") =>
                 setPreferences({ ...preferences, translationQuality: value })
               }
             >
               <div className="flex items-center space-x-3">
-                <RadioGroupItem value="fast" id="fast" data-testid="radio-quality-fast" />
-                <Label htmlFor="fast" className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem
+                  value="fast"
+                  id="fast"
+                  data-testid="radio-quality-fast"
+                />
+                <Label
+                  htmlFor="fast"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <Zap className="h-4 w-4 text-yellow-500" />
                   <div>
                     <div className="font-medium">Fast</div>
@@ -251,10 +275,17 @@ export function LanguagePreferences() {
                   </div>
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-3">
-                <RadioGroupItem value="balanced" id="balanced" data-testid="radio-quality-balanced" />
-                <Label htmlFor="balanced" className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem
+                  value="balanced"
+                  id="balanced"
+                  data-testid="radio-quality-balanced"
+                />
+                <Label
+                  htmlFor="balanced"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <BarChart2 className="h-4 w-4 text-blue-500" />
                   <div>
                     <div className="font-medium">Balanced</div>
@@ -264,10 +295,17 @@ export function LanguagePreferences() {
                   </div>
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-3">
-                <RadioGroupItem value="high" id="high" data-testid="radio-quality-high" />
-                <Label htmlFor="high" className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem
+                  value="high"
+                  id="high"
+                  data-testid="radio-quality-high"
+                />
+                <Label
+                  htmlFor="high"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <Award className="h-4 w-4 text-purple-500" />
                   <div>
                     <div className="font-medium">High Quality</div>

@@ -15,6 +15,7 @@ ChefSpAIce is an AI-powered kitchen management application designed to help user
 ### Frontend
 
 Built with React 18, TypeScript, Vite, and TailwindCSS with shadcn/ui components. Key technologies:
+
 - **State Management**: TanStack Query for server state, React Context API for global UI state
 - **Routing**: Wouter for client-side routing
 - **Forms**: React Hook Form with Zod validation
@@ -26,12 +27,14 @@ Built with React 18, TypeScript, Vite, and TailwindCSS with shadcn/ui components
 Express.js RESTful API with modular router architecture:
 
 **Router Categories:**
+
 - `user/` - User features (inventory, recipes, chat, profile, meal planning)
 - `admin/` - Administrative functions (A/B testing, cohorts, moderation, maintenance)
 - `platform/` - Platform-wide services (analytics, notifications, scheduling, fraud detection)
 - `platform/ai/` - AI/ML endpoints (analysis, content generation, media processing)
 
 **Key Features:**
+
 - Server-Sent Events (SSE) for streaming AI responses and real-time chat
 - Session-based authentication with PostgreSQL store
 - Multi-provider OAuth (Google, GitHub, Twitter/X, Apple, Replit) + email/password
@@ -41,6 +44,7 @@ Express.js RESTful API with modular router architecture:
 PostgreSQL accessed via Drizzle ORM with a domain-driven architecture:
 
 **Schema Organization:** 18 domain modules containing 104 tables total
+
 - Core: auth (3), food (10), notifications (5), chat (4), billing (1)
 - Analytics: analytics (11), system (5), experiments (6)
 - AI/ML: ai-ml (14), images (7), sentiment (5), transcription (2), extraction (2)
@@ -48,6 +52,7 @@ PostgreSQL accessed via Drizzle ORM with a domain-driven architecture:
 - Security: security (8), support (5)
 
 **Storage Layer Architecture:**
+
 - `storage/interfaces/` - TypeScript interface contracts (17 interfaces)
 - `storage/domains/` - Domain implementations (17 storage modules)
 - `storage/facades/` - Three-tier facade system:
@@ -58,6 +63,7 @@ PostgreSQL accessed via Drizzle ORM with a domain-driven architecture:
 ### Key Services (34 services)
 
 Located in `server/services/`:
+
 - **AI Services**: OpenAI query, embeddings, sentiment analysis, summarization, moderation
 - **ML Services**: Prediction, trend analysis, duplicate detection, ML notification scheduler
 - **Notification Services**: FCM, APNS, web push, push scheduling
@@ -67,24 +73,29 @@ Located in `server/services/`:
 ## External Dependencies
 
 ### AI & Machine Learning
+
 - **OpenAI API**: GPT-4/GPT-4o for recipe generation, chat, content moderation, vision analysis
 - **Streaming**: Server-Sent Events for real-time AI responses
 - **ML Features**: Semantic search (embeddings), auto-categorization, duplicate detection, NLP tagging
 
 ### Food & Nutrition Data
+
 - **USDA FoodData Central API**: Authoritative nutrition data with local caching
 - **Barcode Lookup API**: Product information from UPC/EAN codes
 - **Open Food Facts**: Fallback for barcode data
 
 ### Cloud Storage
+
 - **Google Cloud Storage**: Image uploads and asset storage
 
 ### Push Notifications
+
 - **Web Push**: Browser-based notifications via VAPID (requires VAPID key configuration)
 - **Firebase Cloud Messaging (FCM)**: Android push notifications (requires FCM credentials)
 - **Apple Push Notification Service (APNS)**: iOS push notifications (requires APNs credentials)
 
 ### Authentication Providers
+
 - Google OAuth 2.0
 - GitHub OAuth
 - Twitter/X OAuth 2.0 with PKCE
@@ -93,10 +104,12 @@ Located in `server/services/`:
 - Email/Password (bcrypt hashing)
 
 ### Mobile Platform
+
 - **Capacitor**: Cross-platform framework for iOS and Android
 - Native plugins: Camera, Push Notifications, Share, Device
 
 ### Infrastructure
+
 - **PostgreSQL Database**: Primary data store (Neon serverless)
 - **Express Session**: PostgreSQL-backed session storage
 
@@ -138,36 +151,42 @@ Located in `server/services/`:
 ## Key Features
 
 ### Inventory Management
+
 - Food item tracking with expiration dates
 - Storage location organization (fridge, freezer, pantry, counter)
 - Barcode scanning for quick item addition
 - USDA nutrition data integration
 
 ### Recipe System
+
 - AI-powered recipe generation based on inventory
 - Recipe saving and favoriting
 - Ingredient matching with inventory
 - Nutrition analysis per recipe
 
 ### Meal Planning
+
 - Weekly meal plan generation
 - Shopping list automation
 - Nutrition goal tracking
 - Calendar integration
 
 ### AI Chat Assistant
+
 - Natural language food queries
 - Recipe suggestions based on available ingredients
 - Cooking technique explanations
 - Real-time streaming responses
 
 ### Analytics & Insights
+
 - Food waste tracking
 - Nutrition trends
 - Usage patterns
 - Predictive expiration alerts
 
 ### Admin Features
+
 - A/B testing framework
 - User cohort management
 - Content moderation
@@ -177,6 +196,7 @@ Located in `server/services/`:
 ## Development
 
 ### Running the Project
+
 ```bash
 npm run dev          # Start development server (port 5000)
 npm run build        # Build for production
@@ -185,6 +205,7 @@ npm run db:generate  # Generate migration files
 ```
 
 ### Code Quality
+
 ```bash
 npm run check        # TypeScript type checking
 npm run lint         # ESLint checking
@@ -192,6 +213,7 @@ npm run lint:fix     # Auto-fix linting issues
 ```
 
 ### Mobile Development
+
 ```bash
 npx cap sync ios     # Sync iOS project
 npx cap open ios     # Open in Xcode
@@ -211,6 +233,7 @@ npx cap open ios     # Open in Xcode
 ## Recent Updates
 
 ### User Identification System (December 2025)
+
 - **Primary Key**: Users table uses UUID-based `id` column as the primary key
 - **Foreign Keys**: All 16+ schema files reference `users.id` for foreign key relationships
 - **Auth Flow**: SessionUser objects use `user.id` for user identification
@@ -218,6 +241,7 @@ npx cap open ios     # Open in Xcode
 - **Note**: `users.email` is only used for email-based lookups (getUserByEmail)
 
 ### Current Sprint
+
 - 17 storage domain modules (16 fully operational, 1 with stub methods)
 - 33 backend services active
 - 60+ frontend pages implemented
@@ -229,16 +253,18 @@ npx cap open ios     # Open in Xcode
 - Role-based access control (RBAC) with admin-protected routes under `/api/v1/admin/*`
 
 ### Storage Layer Status
+
 - **17/17 domains** fully aligned with interfaces
 - **375 fully implemented methods**
 - **0 critical alignment issues**
 - All facades (UserStorage, AdminStorage, PlatformStorage) operational
 
 ### AI-ML Storage Features (Fully Implemented)
+
 - OCR Results: Create and retrieve optical character recognition results
 - Face Detection: Store face detection data from TensorFlow.js BlazeFace
 - Privacy Settings: User privacy preferences for face recognition and data retention
 - Image Metadata: Store and retrieve image metadata with analysis results
 - Alt-Text Quality: Track and update accessibility quality scores for images
 
-*Last Updated: December 2025*
+_Last Updated: December 2025_

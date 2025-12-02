@@ -43,7 +43,7 @@ export function SkeletonLoader({
           key={i}
           className={cn(
             "skeleton h-4 rounded",
-            i === lines - 1 && lines > 1 ? "w-3/4" : "w-full"
+            i === lines - 1 && lines > 1 ? "w-3/4" : "w-full",
           )}
         />
       ))}

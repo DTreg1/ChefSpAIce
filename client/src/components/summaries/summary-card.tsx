@@ -1,15 +1,20 @@
 import { useState, useEffect, memo } from "react";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  FileText, 
-  Edit, 
-  Save, 
+import {
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Edit,
+  Save,
   X,
-  Zap
+  Zap,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface SummaryCardProps {
   summary: string;
   originalContent?: string;
-  type: 'tldr' | 'bullet' | 'paragraph';
+  type: "tldr" | "bullet" | "paragraph";
   wordCount: number;
   originalWordCount?: number;
   keyPoints?: string[];
@@ -39,7 +44,7 @@ export const SummaryCard = memo(function SummaryCard({
   compressionRatio,
   onEdit,
   onDelete,
-  className = ""
+  className = "",
 }: SummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -65,12 +70,12 @@ export const SummaryCard = memo(function SummaryCard({
 
   const formatType = (type: string) => {
     switch (type) {
-      case 'tldr':
-        return 'TL;DR';
-      case 'bullet':
-        return 'Bullet Points';
-      case 'paragraph':
-        return 'Paragraph';
+      case "tldr":
+        return "TL;DR";
+      case "bullet":
+        return "Bullet Points";
+      case "paragraph":
+        return "Paragraph";
       default:
         return type;
     }
@@ -88,14 +93,14 @@ export const SummaryCard = memo(function SummaryCard({
       );
     }
 
-    if (type === 'bullet') {
-      const bullets = summary.split('\n').filter(line => line.trim());
+    if (type === "bullet") {
+      const bullets = summary.split("\n").filter((line) => line.trim());
       return (
         <ul className="space-y-2">
           {bullets.map((bullet, index) => (
             <li key={index} className="flex items-start gap-2">
               <span className="text-muted-foreground mt-1">•</span>
-              <span className="flex-1">{bullet.replace(/^[•\-*]\s*/, '')}</span>
+              <span className="flex-1">{bullet.replace(/^[•\-*]\s*/, "")}</span>
             </li>
           ))}
         </ul>
@@ -165,17 +170,17 @@ export const SummaryCard = memo(function SummaryCard({
 
         {isEditing && (
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={handleSave}
               data-testid="button-save-edit"
             >
               <Save className="h-4 w-4 mr-1" />
               Save
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleCancel}
               data-testid="button-cancel-edit"
             >
@@ -213,8 +218,8 @@ export const SummaryCard = memo(function SummaryCard({
             </h4>
             <ul className="space-y-1">
               {keyPoints.map((point, index) => (
-                <li 
-                  key={index} 
+                <li
+                  key={index}
                   className="text-sm text-muted-foreground flex items-start gap-2"
                   data-testid={`text-keypoint-${index}`}
                 >
@@ -230,9 +235,7 @@ export const SummaryCard = memo(function SummaryCard({
       <CardFooter className="pt-3 border-t">
         <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
-            <span data-testid="text-word-count">
-              {wordCount} words
-            </span>
+            <span data-testid="text-word-count">{wordCount} words</span>
             {originalWordCount && (
               <>
                 <span>•</span>
@@ -243,7 +246,11 @@ export const SummaryCard = memo(function SummaryCard({
             )}
           </div>
           {compressionRatio !== undefined && (
-            <Badge variant="outline" className="ml-auto" data-testid="badge-compression">
+            <Badge
+              variant="outline"
+              className="ml-auto"
+              data-testid="badge-compression"
+            >
               {compressionRatio}% reduction
             </Badge>
           )}

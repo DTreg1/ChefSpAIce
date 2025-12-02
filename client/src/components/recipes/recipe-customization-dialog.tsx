@@ -19,7 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChefHat, Clock, Users, Sparkles, GraduationCap, Utensils, ShoppingBasket, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import {
+  ChefHat,
+  Clock,
+  Users,
+  Sparkles,
+  GraduationCap,
+  Utensils,
+  ShoppingBasket,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+} from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -38,7 +49,7 @@ interface RecipePreferences {
 }
 
 // Store preferences in localStorage for persistence
-const PREF_KEY = 'recipe-customization-preferences';
+const PREF_KEY = "recipe-customization-preferences";
 
 function getStoredPreferences(): Partial<RecipePreferences> {
   try {
@@ -57,21 +68,21 @@ function storePreferences(prefs: RecipePreferences) {
 function getSmartDefaults(): RecipePreferences {
   const hour = new Date().getHours();
   const stored = getStoredPreferences();
-  
-  let mealType: RecipePreferences['mealType'] = 'dinner';
-  let timeConstraint: RecipePreferences['timeConstraint'] = 'moderate';
-  
+
+  let mealType: RecipePreferences["mealType"] = "dinner";
+  let timeConstraint: RecipePreferences["timeConstraint"] = "moderate";
+
   if (hour >= 5 && hour < 11) {
-    mealType = 'breakfast';
-    timeConstraint = 'quick';
+    mealType = "breakfast";
+    timeConstraint = "quick";
   } else if (hour >= 11 && hour < 14) {
-    mealType = 'lunch';
-    timeConstraint = 'quick';
+    mealType = "lunch";
+    timeConstraint = "quick";
   } else if (hour >= 14 && hour < 17) {
-    mealType = 'snack';
-    timeConstraint = 'quick';
+    mealType = "snack";
+    timeConstraint = "quick";
   }
-  
+
   return {
     timeConstraint: stored.timeConstraint || timeConstraint,
     servings: stored.servings || 4,
@@ -90,49 +101,53 @@ interface RecipeCustomizationDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function RecipeCustomizationDialog({ 
-  onRecipeGenerated, 
-  open: externalOpen, 
-  onOpenChange: externalOnOpenChange
+export function RecipeCustomizationDialog({
+  onRecipeGenerated,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: RecipeCustomizationDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
+
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
   const { toast } = useToast();
-  
-  const [preferences, setPreferences] = useState<RecipePreferences>(getSmartDefaults());
+
+  const [preferences, setPreferences] =
+    useState<RecipePreferences>(getSmartDefaults());
 
   // Quick preset buttons
   const quickPresets = [
-    { 
-      label: "15-min Quick", 
+    {
+      label: "15-min Quick",
       icon: Zap,
-      apply: () => setPreferences(prev => ({ 
-        ...prev, 
-        timeConstraint: "quick", 
-        difficulty: "beginner" 
-      }))
+      apply: () =>
+        setPreferences((prev) => ({
+          ...prev,
+          timeConstraint: "quick",
+          difficulty: "beginner",
+        })),
     },
-    { 
-      label: "Family Dinner", 
+    {
+      label: "Family Dinner",
       icon: Users,
-      apply: () => setPreferences(prev => ({ 
-        ...prev, 
-        servings: 6, 
-        mealType: "dinner",
-        difficulty: "intermediate" 
-      }))
+      apply: () =>
+        setPreferences((prev) => ({
+          ...prev,
+          servings: 6,
+          mealType: "dinner",
+          difficulty: "intermediate",
+        })),
     },
-    { 
-      label: "Creative", 
+    {
+      label: "Creative",
       icon: Sparkles,
-      apply: () => setPreferences(prev => ({ 
-        ...prev, 
-        creativity: 8,
-        difficulty: "advanced" 
-      }))
+      apply: () =>
+        setPreferences((prev) => ({
+          ...prev,
+          creativity: 8,
+          difficulty: "advanced",
+        })),
     },
   ];
 
@@ -140,7 +155,7 @@ export function RecipeCustomizationDialog({
     mutationFn: async (prefs: RecipePreferences) => {
       // Store preferences for next time
       storePreferences(prefs);
-      
+
       const response = await apiRequest("/api/recipes/generate", "POST", prefs);
       return response;
     },
@@ -148,28 +163,31 @@ export function RecipeCustomizationDialog({
       // First invalidate to get fresh inventory data
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      
+
       // Fetch the recipe with fresh inventory matching
       const recipesWithMatching = await queryClient.fetchQuery({
         queryKey: ["/api/recipes"],
         staleTime: 0,
       });
-      
+
       // Find the newly generated recipe with updated matching
-      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
-      
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find(
+        (r: Recipe) => r.id === recipe.id,
+      );
+
       toast({
         title: "Recipe Generated!",
         description: `${recipe.title} - Customized to your preferences`,
       });
-      
+
       onRecipeGenerated?.(updatedRecipe || recipe);
       setOpen(false);
     },
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate recipe",
+        description:
+          error instanceof Error ? error.message : "Failed to generate recipe",
         variant: "destructive",
       });
     },
@@ -181,10 +199,14 @@ export function RecipeCustomizationDialog({
 
   const getTimeLabel = (value: string) => {
     switch (value) {
-      case "quick": return "< 30 min";
-      case "moderate": return "30-60 min";
-      case "elaborate": return "> 60 min";
-      default: return value;
+      case "quick":
+        return "< 30 min";
+      case "moderate":
+        return "30-60 min";
+      case "elaborate":
+        return "> 60 min";
+      default:
+        return value;
     }
   };
 
@@ -196,7 +218,10 @@ export function RecipeCustomizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md bg-muted" data-testid="dialog-recipe-customization">
+      <DialogContent
+        className="sm:max-w-md bg-muted"
+        data-testid="dialog-recipe-customization"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ChefHat className="w-5 h-5 text-primary" />
@@ -216,7 +241,7 @@ export function RecipeCustomizationDialog({
               size="sm"
               onClick={preset.apply}
               className="flex-1"
-              data-testid={`button-preset-${preset.label.toLowerCase().replace(/\s+/g, '-')}`}
+              data-testid={`button-preset-${preset.label.toLowerCase().replace(/\s+/g, "-")}`}
             >
               <preset.icon className="w-3 h-3 mr-1" />
               <span className="text-xs">{preset.label}</span>
@@ -237,9 +262,15 @@ export function RecipeCustomizationDialog({
                 {(["quick", "moderate", "elaborate"] as const).map((time) => (
                   <Button
                     key={time}
-                    variant={preferences.timeConstraint === time ? "default" : "outline"}
+                    variant={
+                      preferences.timeConstraint === time
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
-                    onClick={() => setPreferences({ ...preferences, timeConstraint: time })}
+                    onClick={() =>
+                      setPreferences({ ...preferences, timeConstraint: time })
+                    }
                     className="flex-1"
                     data-testid={`button-time-${time}`}
                   >
@@ -251,17 +282,26 @@ export function RecipeCustomizationDialog({
 
             {/* Meal Type */}
             <div className="space-y-2">
-              <Label htmlFor="meal-type" className="flex items-center gap-2 text-sm">
+              <Label
+                htmlFor="meal-type"
+                className="flex items-center gap-2 text-sm"
+              >
                 <Utensils className="w-3 h-3" />
                 Meal Type
               </Label>
               <div className="flex flex-wrap gap-1">
-                {(["breakfast", "lunch", "dinner", "snack", "dessert"] as const).map((meal) => (
+                {(
+                  ["breakfast", "lunch", "dinner", "snack", "dessert"] as const
+                ).map((meal) => (
                   <Badge
                     key={meal}
-                    variant={preferences.mealType === meal ? "default" : "outline"}
+                    variant={
+                      preferences.mealType === meal ? "default" : "outline"
+                    }
                     className="cursor-pointer hover-elevate active-elevate-2"
-                    onClick={() => setPreferences({ ...preferences, mealType: meal })}
+                    onClick={() =>
+                      setPreferences({ ...preferences, mealType: meal })
+                    }
                     data-testid={`badge-meal-${meal}`}
                   >
                     {meal.charAt(0).toUpperCase() + meal.slice(1)}
@@ -272,7 +312,10 @@ export function RecipeCustomizationDialog({
 
             {/* Servings */}
             <div className="space-y-2">
-              <Label htmlFor="servings" className="flex items-center gap-2 text-sm">
+              <Label
+                htmlFor="servings"
+                className="flex items-center gap-2 text-sm"
+              >
                 <Users className="w-3 h-3" />
                 Servings: {preferences.servings}
               </Label>
@@ -282,7 +325,9 @@ export function RecipeCustomizationDialog({
                 max={12}
                 step={1}
                 value={[preferences.servings]}
-                onValueChange={(value) => setPreferences({ ...preferences, servings: value[0] })}
+                onValueChange={(value) =>
+                  setPreferences({ ...preferences, servings: value[0] })
+                }
                 className="w-full"
                 data-testid="slider-servings"
               />
@@ -290,7 +335,10 @@ export function RecipeCustomizationDialog({
 
             {/* Only Use On Hand */}
             <div className="flex items-center justify-between">
-              <Label htmlFor="on-hand" className="flex items-center gap-2 text-sm">
+              <Label
+                htmlFor="on-hand"
+                className="flex items-center gap-2 text-sm"
+              >
                 <ShoppingBasket className="w-3 h-3" />
                 Only use ingredients I have
               </Label>
@@ -314,28 +362,40 @@ export function RecipeCustomizationDialog({
             data-testid="button-toggle-advanced"
           >
             <span>Advanced Options</span>
-            {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showAdvanced ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
           </Button>
 
           {/* Advanced Options - Collapsible */}
           {showAdvanced && (
-            <div className={cn(
-              "space-y-4 pt-2 border-t",
-              "animate-in slide-in-from-top-2 duration-200"
-            )}>
+            <div
+              className={cn(
+                "space-y-4 pt-2 border-t",
+                "animate-in slide-in-from-top-2 duration-200",
+              )}
+            >
               {/* Difficulty */}
               <div className="space-y-2">
-                <Label htmlFor="difficulty" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="difficulty"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <GraduationCap className="w-3 h-3" />
                   Difficulty Level
                 </Label>
                 <Select
                   value={preferences.difficulty}
-                  onValueChange={(value: "beginner" | "intermediate" | "advanced" | "expert") =>
-                    setPreferences({ ...preferences, difficulty: value })
-                  }
+                  onValueChange={(
+                    value: "beginner" | "intermediate" | "advanced" | "expert",
+                  ) => setPreferences({ ...preferences, difficulty: value })}
                 >
-                  <SelectTrigger id="difficulty" data-testid="select-difficulty">
+                  <SelectTrigger
+                    id="difficulty"
+                    data-testid="select-difficulty"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -349,9 +409,13 @@ export function RecipeCustomizationDialog({
 
               {/* Creativity Slider */}
               <div className="space-y-2">
-                <Label htmlFor="creativity" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="creativity"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <Sparkles className="w-3 h-3" />
-                  Creativity: {getCreativityLabel(preferences.creativity)} ({preferences.creativity})
+                  Creativity: {getCreativityLabel(preferences.creativity)} (
+                  {preferences.creativity})
                 </Label>
                 <Slider
                   id="creativity"
@@ -359,7 +423,9 @@ export function RecipeCustomizationDialog({
                   max={10}
                   step={1}
                   value={[preferences.creativity]}
-                  onValueChange={(value) => setPreferences({ ...preferences, creativity: value[0] })}
+                  onValueChange={(value) =>
+                    setPreferences({ ...preferences, creativity: value[0] })
+                  }
                   className="w-full"
                   data-testid="slider-creativity"
                 />
@@ -378,7 +444,10 @@ export function RecipeCustomizationDialog({
                 <Select
                   value={preferences.cuisineType || "any"}
                   onValueChange={(value) =>
-                    setPreferences({ ...preferences, cuisineType: value === "any" ? undefined : value })
+                    setPreferences({
+                      ...preferences,
+                      cuisineType: value === "any" ? undefined : value,
+                    })
                   }
                 >
                   <SelectTrigger id="cuisine" data-testid="select-cuisine">

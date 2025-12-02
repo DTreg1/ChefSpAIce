@@ -10,36 +10,43 @@ interface VoiceButtonProps {
   className?: string;
 }
 
-export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonProps) {
+export function VoiceButton({
+  onTranscript,
+  onCommand,
+  className,
+}: VoiceButtonProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const { toast } = useToast();
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Check for Web Speech API support
-  const supportsWebSpeech = typeof window !== 'undefined' && 
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  const supportsWebSpeech =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
   useEffect(() => {
     // Initialize Web Speech API if available
     if (supportsWebSpeech) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.lang = "en-US";
 
       recognitionRef.current.onresult = (event: any) => {
         const transcript = Array.from(event.results)
           .map((result: any) => result[0])
           .map((result: any) => result.transcript)
-          .join('');
-        
+          .join("");
+
         if (event.results[0].isFinal) {
           onTranscript(transcript);
           processCommand(transcript);
@@ -47,14 +54,14 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed') {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "not-allowed") {
           setHasPermission(false);
         }
         toast({
           title: "Speech Recognition Error",
           description: "Failed to recognize speech. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
         setIsRecording(false);
       };
@@ -72,12 +79,12 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
       setHasPermission(true);
       return true;
     } catch (error) {
-      console.error('Microphone permission denied:', error);
+      console.error("Microphone permission denied:", error);
       setHasPermission(false);
       toast({
         title: "Microphone Access Required",
         description: "Please allow microphone access to use voice commands.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     }
@@ -98,17 +105,19 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
       try {
         recognitionRef.current.start();
       } catch (error) {
-        console.error('Failed to start speech recognition:', error);
+        console.error("Failed to start speech recognition:", error);
       }
     }
 
     // Also record audio for Whisper API fallback
     if (!streamRef.current) {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
     }
 
     const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: 'audio/webm'
+      mimeType: "audio/webm",
     });
 
     mediaRecorder.ondataavailable = (event) => {
@@ -136,12 +145,15 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
       try {
         recognitionRef.current.stop();
       } catch (error) {
-        console.error('Error stopping speech recognition:', error);
+        console.error("Error stopping speech recognition:", error);
       }
     }
 
     // Stop MediaRecorder
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
     }
   };
@@ -150,15 +162,15 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
     if (audioChunksRef.current.length === 0) return;
 
     setIsProcessing(true);
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append("audio", audioBlob, "recording.webm");
 
     try {
-      const response = await fetch('/api/voice/transcribe', {
-        method: 'POST',
+      const response = await fetch("/api/voice/transcribe", {
+        method: "POST",
         body: formData,
-        credentials: 'include'
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -167,7 +179,8 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
         // API key not available, already using Web Speech as fallback
         toast({
           title: "Using Browser Speech Recognition",
-          description: "Whisper API not available, using browser's speech recognition.",
+          description:
+            "Whisper API not available, using browser's speech recognition.",
         });
       } else if (data.transcript) {
         onTranscript(data.transcript);
@@ -176,11 +189,11 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Transcription error:', error);
+      console.error("Transcription error:", error);
       toast({
         title: "Transcription Failed",
         description: "Failed to transcribe audio. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -190,11 +203,11 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
   const processCommand = async (transcript: string) => {
     setIsProcessing(true);
     try {
-      const response = await fetch('/api/voice/interpret', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/voice/interpret", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript }),
-        credentials: 'include'
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -217,11 +230,11 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
         }
       }
     } catch (error) {
-      console.error('Command processing error:', error);
+      console.error("Command processing error:", error);
       toast({
         title: "Command Processing Failed",
         description: "Failed to process voice command.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -241,11 +254,7 @@ export function VoiceButton({ onTranscript, onCommand, className }: VoiceButtonP
       onClick={handleClick}
       variant={isRecording ? "destructive" : "outline"}
       size="icon"
-      className={cn(
-        "relative",
-        isRecording && "animate-pulse",
-        className
-      )}
+      className={cn("relative", isRecording && "animate-pulse", className)}
       disabled={isProcessing}
       data-testid="button-voice"
     >

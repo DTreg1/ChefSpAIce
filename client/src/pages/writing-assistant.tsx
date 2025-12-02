@@ -1,7 +1,7 @@
 /**
  * Writing Assistant Page
- * 
- * Comprehensive writing improvement tool with grammar checking, 
+ *
+ * Comprehensive writing improvement tool with grammar checking,
  * style suggestions, tone adjustment, and content recommendations.
  */
 
@@ -12,7 +12,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WritingEditor, type WritingSuggestion } from "@/components/writing-editor";
+import {
+  WritingEditor,
+  type WritingSuggestion,
+} from "@/components/writing-editor";
 import { GrammarHighlighter } from "@/components/grammar-highlighter";
 import { ToneSelector, type WritingTone } from "@/components/tone-selector";
 import { SuggestionSidebar } from "@/components/suggestion-sidebar";
@@ -68,15 +71,21 @@ export default function WritingAssistant() {
     onSuccess: (data) => {
       setSuggestions(data.suggestions || []);
       setSessionId(data.sessionId);
-      setMetrics(prev => ({
+      setMetrics((prev) => ({
         ...prev,
         wordCount: data.metrics.wordCount,
         readabilityScore: data.metrics.readabilityScore,
         tone: data.metrics.tone as WritingTone,
-        targetTone: data.metrics.targetTone as WritingTone || prev.targetTone,
-        grammarErrors: data.suggestions.filter((s: WritingSuggestion) => s.suggestionType === "grammar").length,
-        spellingErrors: data.suggestions.filter((s: WritingSuggestion) => s.suggestionType === "spelling").length,
-        styleIssues: data.suggestions.filter((s: WritingSuggestion) => s.suggestionType === "style").length,
+        targetTone: (data.metrics.targetTone as WritingTone) || prev.targetTone,
+        grammarErrors: data.suggestions.filter(
+          (s: WritingSuggestion) => s.suggestionType === "grammar",
+        ).length,
+        spellingErrors: data.suggestions.filter(
+          (s: WritingSuggestion) => s.suggestionType === "spelling",
+        ).length,
+        styleIssues: data.suggestions.filter(
+          (s: WritingSuggestion) => s.suggestionType === "style",
+        ).length,
       }));
       toast({
         title: "Analysis Complete",
@@ -120,13 +129,16 @@ export default function WritingAssistant() {
   const handleTextChange = useCallback((newText: string) => {
     setText(newText);
     // Update basic metrics in real-time
-    const words = newText.split(/\s+/).filter(w => w.length > 0);
-    const sentences = newText.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    setMetrics(prev => ({
+    const words = newText.split(/\s+/).filter((w) => w.length > 0);
+    const sentences = newText
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 0);
+    setMetrics((prev) => ({
       ...prev,
       wordCount: words.length,
       sentenceCount: sentences.length,
-      avgWordsPerSentence: sentences.length > 0 ? words.length / sentences.length : 0,
+      avgWordsPerSentence:
+        sentences.length > 0 ? words.length / sentences.length : 0,
     }));
   }, []);
 
@@ -137,38 +149,45 @@ export default function WritingAssistant() {
   };
 
   const handleAcceptSuggestion = useCallback((suggestionId: string) => {
-    setSuggestions(prev => prev.map(s => 
-      s.id === suggestionId ? { ...s, accepted: true } : s
-    ));
+    setSuggestions((prev) =>
+      prev.map((s) => (s.id === suggestionId ? { ...s, accepted: true } : s)),
+    );
   }, []);
 
   const handleRejectSuggestion = useCallback((suggestionId: string) => {
-    setSuggestions(prev => prev.map(s => 
-      s.id === suggestionId ? { ...s, accepted: false } : s
-    ));
+    setSuggestions((prev) =>
+      prev.map((s) => (s.id === suggestionId ? { ...s, accepted: false } : s)),
+    );
   }, []);
 
   const handleAcceptAll = () => {
     let updatedText = text;
     const acceptedSuggestions: string[] = [];
-    
+
     suggestions
-      .filter(s => s.position !== undefined)
+      .filter((s) => s.position !== undefined)
       .sort((a, b) => (b.position || 0) - (a.position || 0))
-      .forEach(suggestion => {
-        if (suggestion.position !== undefined && suggestion.length !== undefined) {
+      .forEach((suggestion) => {
+        if (
+          suggestion.position !== undefined &&
+          suggestion.length !== undefined
+        ) {
           const before = updatedText.substring(0, suggestion.position);
-          const after = updatedText.substring(suggestion.position + suggestion.length);
+          const after = updatedText.substring(
+            suggestion.position + suggestion.length,
+          );
           updatedText = before + suggestion.suggestedSnippet + after;
           acceptedSuggestions.push(suggestion.id);
         }
       });
-    
+
     setImprovedText(updatedText);
-    setSuggestions(prev => prev.map(s => 
-      acceptedSuggestions.includes(s.id) ? { ...s, accepted: true } : s
-    ));
-    
+    setSuggestions((prev) =>
+      prev.map((s) =>
+        acceptedSuggestions.includes(s.id) ? { ...s, accepted: true } : s,
+      ),
+    );
+
     toast({
       title: "All Suggestions Applied",
       description: `Applied ${acceptedSuggestions.length} suggestions.`,
@@ -176,7 +195,7 @@ export default function WritingAssistant() {
   };
 
   const handleRejectAll = () => {
-    setSuggestions(prev => prev.map(s => ({ ...s, accepted: false })));
+    setSuggestions((prev) => prev.map((s) => ({ ...s, accepted: false })));
     toast({
       title: "All Suggestions Rejected",
       description: "You can still apply individual suggestions if needed.",
@@ -184,7 +203,7 @@ export default function WritingAssistant() {
   };
 
   const handleToneChange = (newTone: WritingTone) => {
-    setMetrics(prev => ({ ...prev, targetTone: newTone }));
+    setMetrics((prev) => ({ ...prev, targetTone: newTone }));
     if (text.trim()) {
       toneMutation.mutate(newTone);
     }
@@ -271,7 +290,11 @@ export default function WritingAssistant() {
       {/* Statistics Overview */}
       <WritingStats
         wordCount={metrics.wordCount}
-        improvedWordCount={improvedText ? improvedText.split(/\s+/).filter(w => w.length > 0).length : undefined}
+        improvedWordCount={
+          improvedText
+            ? improvedText.split(/\s+/).filter((w) => w.length > 0).length
+            : undefined
+        }
         readabilityScore={metrics.readabilityScore}
         tone={metrics.tone}
         targetTone={metrics.targetTone}
@@ -287,14 +310,20 @@ export default function WritingAssistant() {
         <div className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="editor" data-testid="tab-editor">Editor</TabsTrigger>
-              <TabsTrigger value="preview" data-testid="tab-preview">Preview</TabsTrigger>
+              <TabsTrigger value="editor" data-testid="tab-editor">
+                Editor
+              </TabsTrigger>
+              <TabsTrigger value="preview" data-testid="tab-preview">
+                Preview
+              </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="editor" className="space-y-4">
               <WritingEditor
                 initialText={text}
-                suggestions={suggestions.filter(s => s.accepted === undefined)}
+                suggestions={suggestions.filter(
+                  (s) => s.accepted === undefined,
+                )}
                 onTextChange={handleTextChange}
                 onAcceptSuggestion={handleAcceptSuggestion}
                 onRejectSuggestion={handleRejectSuggestion}
@@ -302,7 +331,7 @@ export default function WritingAssistant() {
                 isAnalyzing={analyzeMutation.isPending}
               />
             </TabsContent>
-            
+
             <TabsContent value="preview" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -311,16 +340,20 @@ export default function WritingAssistant() {
                 <CardContent>
                   <GrammarHighlighter
                     text={improvedText || text}
-                    suggestions={suggestions.filter(s => s.accepted === undefined)}
+                    suggestions={suggestions.filter(
+                      (s) => s.accepted === undefined,
+                    )}
                     onSuggestionClick={(suggestion) => {
                       // Focus the suggestion in the sidebar
-                      const element = document.getElementById(`sidebar-${suggestion.id}`);
+                      const element = document.getElementById(
+                        `sidebar-${suggestion.id}`,
+                      );
                       element?.scrollIntoView({ behavior: "smooth" });
                     }}
                   />
                 </CardContent>
               </Card>
-              
+
               {improvedText && (
                 <Card>
                   <CardHeader>
@@ -347,7 +380,7 @@ export default function WritingAssistant() {
             targetTone={metrics.targetTone}
             onToneChange={handleToneChange}
           />
-          
+
           <SuggestionSidebar
             suggestions={suggestions}
             onAccept={handleAcceptSuggestion}

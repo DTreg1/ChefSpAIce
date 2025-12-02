@@ -10,13 +10,13 @@ Ticket responses and moderation logs are not implemented because the tables don'
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `addTicketResponse(ticketId, response)` | Add response to ticket |
-| `getTicketResponses(ticketId)` | Get all responses for ticket |
-| `getModerationLogs(filters)` | Get moderation history |
-| `getModerationLogById(logId)` | Get single log entry |
-| `getUserModerationHistory(userId)` | Get user's moderation history |
+| Method                                  | Description                   |
+| --------------------------------------- | ----------------------------- |
+| `addTicketResponse(ticketId, response)` | Add response to ticket        |
+| `getTicketResponses(ticketId)`          | Get all responses for ticket  |
+| `getModerationLogs(filters)`            | Get moderation history        |
+| `getModerationLogById(logId)`           | Get single log entry          |
+| `getUserModerationHistory(userId)`      | Get user's moderation history |
 
 ---
 

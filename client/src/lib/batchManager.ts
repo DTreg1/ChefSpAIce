@@ -3,11 +3,11 @@
  * Combines multiple requests into a single batch request when possible
  */
 
-import { queryClient } from './queryClient';
+import { queryClient } from "./queryClient";
 
 interface BatchRequest {
   endpoint: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   params?: Record<string, any>;
   body?: any;
 }
@@ -30,14 +30,14 @@ class BatchManager {
   async addToBatch<T>(request: BatchRequest): Promise<T> {
     return new Promise((resolve, reject) => {
       const batchKey = this.getBatchKey(request);
-      
+
       if (!this.queue.has(batchKey)) {
         this.queue.set(batchKey, []);
       }
-      
+
       const queue = this.queue.get(batchKey)!;
       queue.push({ request, resolve, reject });
-      
+
       // If batch is full, send immediately
       if (queue.length >= this.maxBatchSize) {
         this.sendBatch(batchKey);
@@ -52,7 +52,7 @@ class BatchManager {
    * Generate a batch key based on endpoint and method
    */
   private getBatchKey(request: BatchRequest): string {
-    return `${request.method || 'GET'}:${request.endpoint.split('?')[0]}`;
+    return `${request.method || "GET"}:${request.endpoint.split("?")[0]}`;
   }
 
   /**
@@ -64,12 +64,12 @@ class BatchManager {
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
-    
+
     // Set new timer
     const timer = setTimeout(() => {
       this.sendBatch(batchKey);
     }, this.batchDelay);
-    
+
     this.timers.set(batchKey, timer);
   }
 
@@ -79,7 +79,7 @@ class BatchManager {
   private async sendBatch(batchKey: string): Promise<void> {
     const queue = this.queue.get(batchKey);
     if (!queue || queue.length === 0) return;
-    
+
     // Clear queue and timer
     this.queue.delete(batchKey);
     const timer = this.timers.get(batchKey);
@@ -87,7 +87,7 @@ class BatchManager {
       clearTimeout(timer);
       this.timers.delete(batchKey);
     }
-    
+
     // Determine if we should batch or send individually
     if (queue.length === 1) {
       // Single request, send normally
@@ -108,26 +108,29 @@ class BatchManager {
    * Send a single request
    */
   private async sendSingleRequest(request: BatchRequest): Promise<any> {
-    const url = request.endpoint + 
-      (request.params ? '?' + new URLSearchParams(request.params).toString() : '');
-    
+    const url =
+      request.endpoint +
+      (request.params
+        ? "?" + new URLSearchParams(request.params).toString()
+        : "");
+
     const options: RequestInit = {
-      method: request.method || 'GET',
+      method: request.method || "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
     };
-    
+
     if (request.body) {
       options.body = JSON.stringify(request.body);
     }
-    
+
     const response = await fetch(url, options);
     if (!response.ok) {
       throw new Error(`Request failed: ${response.statusText}`);
     }
-    
+
     return response.json();
   }
 
@@ -136,29 +139,29 @@ class BatchManager {
    */
   private async sendBatchRequest(queue: BatchQueueItem[]): Promise<void> {
     // Check if backend supports batch endpoint
-    const batchEndpoint = '/api/batch';
-    
+    const batchEndpoint = "/api/batch";
+
     try {
       // Prepare batch payload
-      const batchPayload = queue.map(item => ({
+      const batchPayload = queue.map((item) => ({
         endpoint: item.request.endpoint,
-        method: item.request.method || 'GET',
+        method: item.request.method || "GET",
         params: item.request.params,
         body: item.request.body,
       }));
-      
+
       const response = await fetch(batchEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({ requests: batchPayload }),
       });
-      
+
       if (response.ok) {
         const results = await response.json();
-        
+
         // Resolve each promise with its result
         queue.forEach((item, index) => {
           if (results.responses && results.responses[index]) {
@@ -168,7 +171,7 @@ class BatchManager {
               item.resolve(results.responses[index].data);
             }
           } else {
-            item.reject(new Error('No response for request'));
+            item.reject(new Error("No response for request"));
           }
         });
       } else {
@@ -184,7 +187,9 @@ class BatchManager {
   /**
    * Fall back to sending requests individually
    */
-  private async fallbackToIndividualRequests(queue: BatchQueueItem[]): Promise<void> {
+  private async fallbackToIndividualRequests(
+    queue: BatchQueueItem[],
+  ): Promise<void> {
     await Promise.all(
       queue.map(async ({ request, resolve, reject }) => {
         try {
@@ -193,7 +198,7 @@ class BatchManager {
         } catch (error) {
           reject(error);
         }
-      })
+      }),
     );
   }
 }
@@ -210,21 +215,21 @@ export function useBatchedQuery<T>(
   options?: {
     enabled?: boolean;
     staleTime?: number;
-    method?: 'GET' | 'POST';
+    method?: "GET" | "POST";
     body?: any;
     params?: Record<string, any>;
-  }
+  },
 ) {
   return {
     queryKey,
     queryFn: async () => {
       if (options?.enabled === false) {
-        throw new Error('Query is disabled');
+        throw new Error("Query is disabled");
       }
-      
+
       return batchManager.addToBatch<T>({
         endpoint,
-        method: options?.method || 'GET',
+        method: options?.method || "GET",
         params: options?.params,
         body: options?.body,
       });

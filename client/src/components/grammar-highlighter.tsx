@@ -1,6 +1,6 @@
 /**
  * GrammarHighlighter Component
- * 
+ *
  * Displays text with visual underlines for grammar, spelling, and style issues.
  * Different colors and styles for different severity levels.
  */
@@ -23,7 +23,7 @@ export function GrammarHighlighter({
 }: GrammarHighlighterProps) {
   // Sort suggestions by position to process them in order
   const sortedSuggestions = [...suggestions]
-    .filter(s => s.position !== undefined && s.length !== undefined)
+    .filter((s) => s.position !== undefined && s.length !== undefined)
     .sort((a, b) => (a.position || 0) - (b.position || 0));
 
   // Build the highlighted text with spans for each suggestion
@@ -42,7 +42,7 @@ export function GrammarHighlighter({
       // Add text before this suggestion
       if (start > lastEnd) {
         elements.push(
-          <span key={`text-${index}`}>{text.substring(lastEnd, start)}</span>
+          <span key={`text-${index}`}>{text.substring(lastEnd, start)}</span>,
         );
       }
 
@@ -52,18 +52,20 @@ export function GrammarHighlighter({
           key={`suggestion-${index}`}
           className={cn(
             "cursor-pointer relative inline-block transition-colors",
-            getUnderlineClass(suggestion.severity, suggestion.suggestionType)
+            getUnderlineClass(suggestion.severity, suggestion.suggestionType),
           )}
           onClick={() => onSuggestionClick?.(suggestion)}
           data-testid={`highlight-${suggestion.id}`}
           title={suggestion.reason}
         >
           {text.substring(start, end)}
-          <span className={cn(
-            "absolute bottom-0 left-0 right-0 h-0.5",
-            getUnderlineStyle(suggestion.severity, suggestion.suggestionType)
-          )} />
-        </span>
+          <span
+            className={cn(
+              "absolute bottom-0 left-0 right-0 h-0.5",
+              getUnderlineStyle(suggestion.severity, suggestion.suggestionType),
+            )}
+          />
+        </span>,
       );
 
       lastEnd = end;
@@ -71,9 +73,7 @@ export function GrammarHighlighter({
 
     // Add remaining text
     if (lastEnd < text.length) {
-      elements.push(
-        <span key={`text-final`}>{text.substring(lastEnd)}</span>
-      );
+      elements.push(<span key={`text-final`}>{text.substring(lastEnd)}</span>);
     }
 
     return <>{elements}</>;
@@ -106,7 +106,12 @@ export function GrammarHighlighter({
   };
 
   return (
-    <div className={cn("font-mono text-sm leading-relaxed whitespace-pre-wrap", className)}>
+    <div
+      className={cn(
+        "font-mono text-sm leading-relaxed whitespace-pre-wrap",
+        className,
+      )}
+    >
       {buildHighlightedText()}
     </div>
   );

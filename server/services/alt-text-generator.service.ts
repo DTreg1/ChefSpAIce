@@ -1,9 +1,9 @@
 /**
  * Alt Text Generator Service
- * 
+ *
  * Generates alt text for images using OpenAI GPT-4 Vision API.
  * Provides intelligent descriptions for accessibility and SEO.
- * 
+ *
  * Referenced from: blueprint:javascript_openai_ai_integrations
  */
 
@@ -16,7 +16,7 @@ import type { ImageMetadata, AltTextQuality } from "@shared/schema";
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 // Helper function to check if error is rate limit or quota violation
@@ -35,7 +35,7 @@ function isRateLimitError(error: any): boolean {
  */
 export async function generateAltText(
   imageUrl: string,
-  context?: string
+  context?: string,
 ): Promise<{
   altText: string;
   confidence: number;
@@ -63,7 +63,7 @@ Respond with a JSON object containing:
   "suggestions": ["optional", "improvement", "suggestions"]
 }`;
 
-    const userPrompt = context 
+    const userPrompt = context
       ? `Generate alt text for this image. Context: ${context}`
       : "Generate alt text for this image.";
 
@@ -78,22 +78,24 @@ Respond with a JSON object containing:
                 role: "user",
                 content: [
                   { type: "text", text: userPrompt },
-                  { type: "image_url", image_url: { url: imageUrl } }
-                ]
-              }
+                  { type: "image_url", image_url: { url: imageUrl } },
+                ],
+              },
             ],
             response_format: { type: "json_object" },
             max_completion_tokens: 500,
-            temperature: 0.7
+            temperature: 0.7,
           });
 
-          const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
-          
+          const result = JSON.parse(
+            completion.choices[0]?.message?.content || "{}",
+          );
+
           return {
             altText: result.altText || "",
             confidence: result.confidence || 0.8,
             objectsDetected: result.objectsDetected || [],
-            suggestions: result.suggestions || []
+            suggestions: result.suggestions || [],
           };
         } catch (error: any) {
           if (isRateLimitError(error)) {
@@ -107,7 +109,7 @@ Respond with a JSON object containing:
         minTimeout: 2000,
         maxTimeout: 10000,
         factor: 2,
-      }
+      },
     );
 
     return response;
@@ -124,38 +126,43 @@ export async function batchGenerateAltText(
   images: Array<{
     imageUrl: string;
     context?: string;
+  }>,
+): Promise<
+  Array<{
+    imageUrl: string;
+    altText: string;
+    confidence: number;
+    objectsDetected: string[];
+    suggestions?: string[];
+    error?: string;
   }>
-): Promise<Array<{
-  imageUrl: string;
-  altText: string;
-  confidence: number;
-  objectsDetected: string[];
-  suggestions?: string[];
-  error?: string;
-}>> {
+> {
   const limit = pLimit(2); // Process up to 2 images concurrently
-  
+
   const processingPromises = images.map((image) =>
     limit(async () => {
       try {
         const result = await generateAltText(image.imageUrl, image.context);
         return {
           imageUrl: image.imageUrl,
-          ...result
+          ...result,
         };
       } catch (error) {
-        console.error(`Failed to generate alt text for ${image.imageUrl}:`, error);
+        console.error(
+          `Failed to generate alt text for ${image.imageUrl}:`,
+          error,
+        );
         return {
           imageUrl: image.imageUrl,
           altText: "",
           confidence: 0,
           objectsDetected: [],
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
         };
       }
-    })
+    }),
   );
-  
+
   return await Promise.all(processingPromises);
 }
 
@@ -165,7 +172,7 @@ export async function batchGenerateAltText(
 export async function analyzeAltTextQuality(
   altText: string,
   imageUrl?: string,
-  context?: string
+  context?: string,
 ): Promise<Partial<AltTextQuality>> {
   try {
     const systemPrompt = `You are an expert in accessibility and WCAG compliance.
@@ -187,7 +194,7 @@ Respond with JSON containing scores and analysis.`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
+      { role: "user", content: userPrompt },
     ];
 
     // Add image if URL provided for better analysis
@@ -196,8 +203,8 @@ Respond with JSON containing scores and analysis.`;
         role: "user",
         content: [
           { type: "text", text: userPrompt },
-          { type: "image_url", image_url: { url: imageUrl } }
-        ]
+          { type: "image_url", image_url: { url: imageUrl } },
+        ],
       };
     }
 
@@ -206,18 +213,22 @@ Respond with JSON containing scores and analysis.`;
       messages,
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
-      temperature: 0.3
+      temperature: 0.3,
     });
 
     const result = JSON.parse(response.choices[0]?.message?.content || "{}");
-    
+
     // Calculate overall scores
     const qualityScore = Math.round(
-      (result.lengthScore + result.descriptiveScore + result.contextScore + result.keywordScore) / 4
+      (result.lengthScore +
+        result.descriptiveScore +
+        result.contextScore +
+        result.keywordScore) /
+        4,
     );
-    
+
     const accessibilityScore = Math.round(
-      (result.screenReaderScore + result.descriptiveScore) / 2
+      (result.screenReaderScore + result.descriptiveScore) / 2,
     );
 
     return {
@@ -236,9 +247,13 @@ Respond with JSON containing scores and analysis.`;
     console.error("Failed to analyze alt text quality:", error);
     // Return basic analysis on error
     const wordCount = altText.split(/\s+/).length;
-    const lengthScore = wordCount >= 10 && wordCount <= 20 ? 100 : 
-                       wordCount >= 5 && wordCount <= 30 ? 70 : 40;
-    
+    const lengthScore =
+      wordCount >= 10 && wordCount <= 20
+        ? 100
+        : wordCount >= 5 && wordCount <= 30
+          ? 70
+          : 40;
+
     return {
       qualityScore: lengthScore,
       accessibilityScore: lengthScore,
@@ -260,7 +275,7 @@ Respond with JSON containing scores and analysis.`;
 export async function generateAltTextSuggestions(
   currentAltText: string,
   imageUrl: string,
-  context?: string
+  context?: string,
 ): Promise<string[]> {
   try {
     const systemPrompt = `You are an accessibility expert helping improve alt text.
@@ -281,19 +296,19 @@ Return a JSON array of suggestions.`;
         {
           role: "user",
           content: [
-            { 
-              type: "text", 
+            {
+              type: "text",
               text: `Current alt text: "${currentAltText}"${
                 context ? `\nContext: ${context}` : ""
-              }\n\nProvide improved alternatives.`
+              }\n\nProvide improved alternatives.`,
             },
-            { type: "image_url", image_url: { url: imageUrl } }
-          ]
-        }
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        },
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
-      temperature: 0.8
+      temperature: 0.8,
     });
 
     const result = JSON.parse(response.choices[0]?.message?.content || "{}");
@@ -309,7 +324,7 @@ Return a JSON array of suggestions.`;
  */
 export async function checkIfDecorative(
   imageUrl: string,
-  context?: string
+  context?: string,
 ): Promise<boolean> {
   try {
     const response = await openai.chat.completions.create({
@@ -324,19 +339,24 @@ Decorative images include:
 - Purely aesthetic elements with no informational value
 - Icons that are redundant with adjacent text
 
-Return JSON: { "isDecorative": boolean, "reason": string }`
+Return JSON: { "isDecorative": boolean, "reason": string }`,
         },
         {
           role: "user",
           content: [
-            { type: "text", text: context ? `Context: ${context}` : "Is this image decorative?" },
-            { type: "image_url", image_url: { url: imageUrl } }
-          ]
-        }
+            {
+              type: "text",
+              text: context
+                ? `Context: ${context}`
+                : "Is this image decorative?",
+            },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        },
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 200,
-      temperature: 0.3
+      temperature: 0.3,
     });
 
     const result = JSON.parse(response.choices[0]?.message?.content || "{}");

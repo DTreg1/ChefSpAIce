@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Hash, TrendingUp, Users, Sparkles } from "lucide-react";
@@ -22,20 +28,32 @@ interface TrendingTopicsProps {
 export function TrendingTopics({ trends, onTrendClick }: TrendingTopicsProps) {
   // Extract and aggregate keywords/topics from trends
   const extractTopics = () => {
-    const topicMap = new Map<string, { count: number; trends: Trend[]; totalGrowth: number }>();
-    
-    trends.forEach(trend => {
+    const topicMap = new Map<
+      string,
+      { count: number; trends: Trend[]; totalGrowth: number }
+    >();
+
+    trends.forEach((trend) => {
       // Use keywords from data points
       const keywords = trend.dataPoints?.keywords || [];
-      
+
       // Also extract topics from trend name
-      const nameWords = trend.trendName.toLowerCase()
+      const nameWords = trend.trendName
+        .toLowerCase()
         .split(/[\s,.-]+/)
-        .filter(word => word.length > 3 && !['trend', 'growth', 'decline', 'pattern'].includes(word));
-      
-      [...keywords, ...nameWords].forEach(topic => {
+        .filter(
+          (word) =>
+            word.length > 3 &&
+            !["trend", "growth", "decline", "pattern"].includes(word),
+        );
+
+      [...keywords, ...nameWords].forEach((topic) => {
         if (topic) {
-          const existing = topicMap.get(topic) || { count: 0, trends: [], totalGrowth: 0 };
+          const existing = topicMap.get(topic) || {
+            count: 0,
+            trends: [],
+            totalGrowth: 0,
+          };
           existing.count++;
           existing.trends.push(trend);
           existing.totalGrowth += trend.growthRate;
@@ -43,7 +61,7 @@ export function TrendingTopics({ trends, onTrendClick }: TrendingTopicsProps) {
         }
       });
     });
-    
+
     // Sort by count and return top topics
     return Array.from(topicMap.entries())
       .map(([topic, data]) => ({
@@ -58,7 +76,7 @@ export function TrendingTopics({ trends, onTrendClick }: TrendingTopicsProps) {
 
   const topTopics = extractTopics();
   const topByGrowth = [...trends]
-    .filter(t => t.growthRate > 0)
+    .filter((t) => t.growthRate > 0)
     .sort((a, b) => b.growthRate - a.growthRate)
     .slice(0, 5);
 
@@ -70,7 +88,7 @@ export function TrendingTopics({ trends, onTrendClick }: TrendingTopicsProps) {
     return "text-sm";
   };
 
-  const maxCount = Math.max(...topTopics.map(t => t.count), 1);
+  const maxCount = Math.max(...topTopics.map((t) => t.count), 1);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -95,9 +113,10 @@ export function TrendingTopics({ trends, onTrendClick }: TrendingTopicsProps) {
                   size="sm"
                   className={`hover-elevate ${getTopicSize(count, maxCount)}`}
                   onClick={() => {
-                    const relatedTrend = trends.find(t => 
-                      t.trendName.toLowerCase().includes(topic) ||
-                      t.dataPoints?.keywords?.includes(topic)
+                    const relatedTrend = trends.find(
+                      (t) =>
+                        t.trendName.toLowerCase().includes(topic) ||
+                        t.dataPoints?.keywords?.includes(topic),
                     );
                     if (relatedTrend && onTrendClick) {
                       onTrendClick(relatedTrend);

@@ -1,7 +1,11 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../../storage/index";
-import { insertUserInventorySchema, insertShoppingListItemSchema, type UserInventory as FoodItem } from "@shared/schema";
+import {
+  insertUserInventorySchema,
+  insertShoppingListItemSchema,
+  type UserInventory as FoodItem,
+} from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../../middleware/oauth.middleware";
 import { batchedApiLogger } from "../../utils/batchedApiLogger";
@@ -18,16 +22,16 @@ const router = Router();
 
 /**
  * GET /inventory
- * 
+ *
  * Retrieves user's food inventory with optional filtering and pagination.
- * 
+ *
  * Query Parameters:
  * - location: Filter by storage location (e.g., "Fridge", "Pantry"). Use "all" to skip filtering.
  * - category: Filter by food category (e.g., "Dairy", "Produce")
  * - view: Special view filters. "expiring" returns items expiring within 7 days
  * - page: Page number for pagination (default: 1)
  * - limit: Items per page (default: 50)
- * 
+ *
  * Returns: Paginated list of food items with metadata
  * - data: Array of food items
  * - pagination: { page, limit, total, totalPages }
@@ -38,41 +42,43 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { location, category, view, page = 1, limit = 50 } = req.query;
-    
+
     // Fetch items from storage
     const items = await storage.user.inventory.getFoodItems(
-      userId, 
-      view as "all" | "expiring" | "expired" | undefined
+      userId,
+      view as "all" | "expiring" | "expired" | undefined,
     );
-    
+
     // Apply additional view-based filtering in application layer
     // "expiring" view: Items expiring within the next 7 days
     let filteredItems = items;
     if (view === "expiring") {
       const today = new Date();
-      const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const sevenDaysFromNow = new Date(
+        today.getTime() + 7 * 24 * 60 * 60 * 1000,
+      );
       filteredItems = items.filter((item: FoodItem) => {
         if (!item.expirationDate) return false;
         const expDate = new Date(item.expirationDate);
         return expDate >= today && expDate <= sevenDaysFromNow;
       });
     }
-    
+
     // Apply client-side pagination to filtered results
     // This allows for consistent pagination even when view filters are applied
     const startIndex = (Number(page) - 1) * Number(limit);
     const endIndex = startIndex + Number(limit);
     const paginatedItems = filteredItems.slice(startIndex, endIndex);
-    
+
     res.json({
       data: paginatedItems,
       pagination: {
         page: Number(page),
         limit: Number(limit),
         total: filteredItems.length,
-        totalPages: Math.ceil(filteredItems.length / Number(limit))
+        totalPages: Math.ceil(filteredItems.length / Number(limit)),
       },
-      type: "items"
+      type: "items",
     });
   } catch (error) {
     console.error("Error fetching inventory:", error);
@@ -82,49 +88,53 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
 
 /**
  * GET /storage-locations
- * 
+ *
  * Retrieves all storage locations configured by the user.
  * Storage locations are managed in the users.storageLocations JSONB column.
  * Default locations include: Refrigerator, Freezer, Pantry, Counter
- * 
+ *
  * Auto-creates default storage locations if user has none (for new users).
- * 
+ *
  * Returns: Array of storage locations with { id, name, icon }
  */
-router.get("/storage-locations", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    let locations = await storage.user.inventory.getStorageLocations(userId);
-    
-    // Auto-create default storage locations for new users (only if none exist)
-    if (locations.length === 0) {
-      const defaultLocations = [
-        { name: "Fridge", icon: "refrigerator" },
-        { name: "Freezer", icon: "snowflake" },
-        { name: "Pantry", icon: "utensils-crossed" },
-      ];
-      
-      // Create each location, silently skip if already exists
-      for (const loc of defaultLocations) {
-        try {
-          await storage.user.inventory.createStorageLocation(userId, loc);
-        } catch {
-          // Silently ignore - location likely already exists
+router.get(
+  "/storage-locations",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      let locations = await storage.user.inventory.getStorageLocations(userId);
+
+      // Auto-create default storage locations for new users (only if none exist)
+      if (locations.length === 0) {
+        const defaultLocations = [
+          { name: "Fridge", icon: "refrigerator" },
+          { name: "Freezer", icon: "snowflake" },
+          { name: "Pantry", icon: "utensils-crossed" },
+        ];
+
+        // Create each location, silently skip if already exists
+        for (const loc of defaultLocations) {
+          try {
+            await storage.user.inventory.createStorageLocation(userId, loc);
+          } catch {
+            // Silently ignore - location likely already exists
+          }
         }
+
+        // Fetch the locations (either newly created or existing)
+        locations = await storage.user.inventory.getStorageLocations(userId);
       }
-      
-      // Fetch the locations (either newly created or existing)
-      locations = await storage.user.inventory.getStorageLocations(userId);
+
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching storage locations:", error);
+      res.status(500).json({ error: "Failed to fetch storage locations" });
     }
-    
-    res.json(locations);
-  } catch (error) {
-    console.error("Error fetching storage locations:", error);
-    res.status(500).json({ error: "Failed to fetch storage locations" });
-  }
-});
+  },
+);
 
 const storageLocationSchema = z.object({
   name: z.string().min(1),
@@ -138,14 +148,17 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const newLocation = await storage.user.inventory.createStorageLocation(userId, req.body);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const newLocation = await storage.user.inventory.createStorageLocation(
+        userId,
+        req.body,
+      );
       res.json(newLocation);
     } catch (error) {
       console.error("Error creating storage location:", error);
       res.status(500).json({ error: "Failed to create storage location" });
     }
-  }
+  },
 );
 
 // Food items CRUD - Get single food item by ID
@@ -154,13 +167,13 @@ router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
-    
+
     const item = await storage.user.inventory.getFoodItem(userId, itemId);
-    
+
     if (!item) {
       return res.status(404).json({ error: "Food item not found" });
     }
-    
+
     res.json(item);
   } catch (error) {
     console.error("Error fetching food item:", error);
@@ -170,9 +183,9 @@ router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
 
 /**
  * POST /food-items
- * 
+ *
  * Creates a new food item in the user's inventory.
- * 
+ *
  * Request Body (validated against insertUserInventorySchema):
  * - name: String (required) - Name of the food item
  * - quantity: String (required) - Amount/quantity
@@ -184,138 +197,140 @@ router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
  * - barcodeId: String (optional) - Barcode number if scanned
  * - weightInGrams: Number (optional) - Item weight for nutrition calculations
  * - imageUrl: String (optional) - Product image URL
- * 
+ *
  * Security: Verifies storage location belongs to authenticated user
- * 
+ *
  * Returns: Created food item with generated ID and all provided fields
  */
-router.post(
-  "/",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
+router.post("/", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertUserInventorySchema.safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ 
-          error: "Validation error", 
-          details: validation.error.errors 
-        });
-      }
+    const validation = insertUserInventorySchema.safeParse(req.body);
 
-      // Security check: Ensure storage location belongs to this user
-      // Prevents users from adding items to other users' locations
-      const locations = await storage.user.inventory.getStorageLocations(userId);
-      const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
-      
-      if (!locationExists) {
-        return res.status(403).json({ error: "Invalid storage location" });
-      }
-
-      // Parse nutrition data if provided as JSON string
-      // Handles both object and string formats for flexibility
-      let nutritionData = req.body.nutritionData;
-      if (nutritionData && typeof nutritionData === "string") {
-        try {
-          nutritionData = JSON.parse(nutritionData);
-        } catch {
-          nutritionData = null;
-        }
-      }
-
-      // Smart expiration date calculation based on food category
-      // Uses category-specific shelf life defaults when expiration not provided
-      let expirationDate = req.body.expirationDate;
-      if (!expirationDate && req.body.foodCategory) {
-        const categoryDefaults: Record<string, number> = {
-          dairy: 7,        // 1 week
-          meat: 3,         // 3 days (refrigerated)
-          produce: 5,      // 5 days
-          grains: 30,      // 1 month
-          canned: 365,     // 1 year
-          frozen: 90,      // 3 months
-          condiments: 180, // 6 months
-          beverages: 30,   // 1 month
-          snacks: 60,      // 2 months
-          other: 30,       // Default 1 month
-        };
-
-        const daysToAdd = categoryDefaults[req.body.foodCategory?.toLowerCase()] || 30;
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + daysToAdd);
-        expirationDate = expDate.toISOString().split("T")[0];
-      }
-
-      const item = await storage.user.inventory.createFoodItem(userId, {
-        ...validation.data,
-        expirationDate: expirationDate || new Date().toISOString().split("T")[0],
-        usdaData: nutritionData,
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Validation error",
+        details: validation.error.errors,
       });
-
-      res.json(item);
-    } catch (error) {
-      console.error("Error creating food item:", error);
-      res.status(500).json({ error: "Failed to create food item" });
     }
+
+    // Security check: Ensure storage location belongs to this user
+    // Prevents users from adding items to other users' locations
+    const locations = await storage.user.inventory.getStorageLocations(userId);
+    const locationExists = locations.some(
+      (loc: any) => loc.id === req.body.storageLocationId,
+    );
+
+    if (!locationExists) {
+      return res.status(403).json({ error: "Invalid storage location" });
+    }
+
+    // Parse nutrition data if provided as JSON string
+    // Handles both object and string formats for flexibility
+    let nutritionData = req.body.nutritionData;
+    if (nutritionData && typeof nutritionData === "string") {
+      try {
+        nutritionData = JSON.parse(nutritionData);
+      } catch {
+        nutritionData = null;
+      }
+    }
+
+    // Smart expiration date calculation based on food category
+    // Uses category-specific shelf life defaults when expiration not provided
+    let expirationDate = req.body.expirationDate;
+    if (!expirationDate && req.body.foodCategory) {
+      const categoryDefaults: Record<string, number> = {
+        dairy: 7, // 1 week
+        meat: 3, // 3 days (refrigerated)
+        produce: 5, // 5 days
+        grains: 30, // 1 month
+        canned: 365, // 1 year
+        frozen: 90, // 3 months
+        condiments: 180, // 6 months
+        beverages: 30, // 1 month
+        snacks: 60, // 2 months
+        other: 30, // Default 1 month
+      };
+
+      const daysToAdd =
+        categoryDefaults[req.body.foodCategory?.toLowerCase()] || 30;
+      const expDate = new Date();
+      expDate.setDate(expDate.getDate() + daysToAdd);
+      expirationDate = expDate.toISOString().split("T")[0];
+    }
+
+    const item = await storage.user.inventory.createFoodItem(userId, {
+      ...validation.data,
+      expirationDate: expirationDate || new Date().toISOString().split("T")[0],
+      usdaData: nutritionData,
+    });
+
+    res.json(item);
+  } catch (error) {
+    console.error("Error creating food item:", error);
+    res.status(500).json({ error: "Failed to create food item" });
   }
-);
+});
 
 /**
  * PUT /food-items/:id
- * 
+ *
  * Updates an existing food item in the user's inventory.
  * Supports partial updates - only provided fields are modified.
- * 
+ *
  * Path Parameters:
  * - id: String - Food item ID
- * 
+ *
  * Request Body: Partial food item fields to update
  * - Any field from the food item schema can be updated
- * 
+ *
  * Security:
  * - Verifies item belongs to authenticated user
  * - If changing storage location, verifies new location belongs to user
- * 
+ *
  * Returns: Updated food item
  */
-router.put(
-  "/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
+router.put("/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const itemId = req.params.id;
+    const itemId = req.params.id;
 
-      // Security check: Verify item belongs to authenticated user
-      const items = await storage.user.inventory.getFoodItems(userId);
-      const existing = items.find((item: FoodItem) => item.id === itemId);
+    // Security check: Verify item belongs to authenticated user
+    const items = await storage.user.inventory.getFoodItems(userId);
+    const existing = items.find((item: FoodItem) => item.id === itemId);
 
-      if (!existing) {
-        return res.status(404).json({ error: "Food item not found" });
-      }
-
-      // Additional security check when changing storage location
-      // Prevents moving items to locations user doesn't own
-      if (req.body.storageLocationId) {
-        const locations = await storage.user.inventory.getStorageLocations(userId);
-        const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
-        
-        if (!locationExists) {
-          return res.status(403).json({ error: "Invalid storage location" });
-        }
-      }
-
-      const updated = await storage.user.inventory.updateFoodItem(userId, itemId, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating food item:", error);
-      res.status(500).json({ error: "Failed to update food item" });
+    if (!existing) {
+      return res.status(404).json({ error: "Food item not found" });
     }
+
+    // Additional security check when changing storage location
+    // Prevents moving items to locations user doesn't own
+    if (req.body.storageLocationId) {
+      const locations =
+        await storage.user.inventory.getStorageLocations(userId);
+      const locationExists = locations.some(
+        (loc: any) => loc.id === req.body.storageLocationId,
+      );
+
+      if (!locationExists) {
+        return res.status(403).json({ error: "Invalid storage location" });
+      }
+    }
+
+    const updated = await storage.user.inventory.updateFoodItem(
+      userId,
+      itemId,
+      req.body,
+    );
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating food item:", error);
+    res.status(500).json({ error: "Failed to update food item" });
   }
-);
+});
 
 router.delete("/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -374,8 +389,8 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
 
     // Set cache headers for response
     res.set({
-      'Cache-Control': 'public, max-age=86400', // 24 hours
-      'ETag': `W/"${Buffer.from(JSON.stringify(result)).toString('base64').slice(0, 27)}"`,
+      "Cache-Control": "public, max-age=86400", // 24 hours
+      ETag: `W/"${Buffer.from(JSON.stringify(result)).toString("base64").slice(0, 27)}"`,
     });
 
     res.json(result);
@@ -391,19 +406,19 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
 router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
   try {
     const fdcId = req.params.fdcId;
-    
+
     // Use the proper USDA integration function
     // getFoodByFdcId now accepts both string and number, and uses fallback when needed
     const result = await getFoodByFdcId(fdcId);
-    
+
     if (!result) {
       return res.status(404).json({ error: "Food item not found" });
     }
 
     // Set cache headers for response
     res.set({
-      'Cache-Control': 'public, max-age=2592000', // 30 days for specific food items
-      'ETag': `W/"${fdcId}-${Date.now()}"`,
+      "Cache-Control": "public, max-age=2592000", // 30 days for specific food items
+      ETag: `W/"${fdcId}-${Date.now()}"`,
     });
 
     res.json(result);
@@ -422,85 +437,97 @@ router.post("/cache/fdc/clear", async (_req: Request, res: Response) => {
 });
 
 // Barcode lookup endpoints - uses barcode-lookup.service.ts
-router.get("/barcodes", isAuthenticated, rateLimiters.barcode.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const barcode = req.query.barcode as string;
-    
-    if (!barcode) {
-      return res.status(400).json({ error: "Barcode parameter is required" });
+router.get(
+  "/barcodes",
+  isAuthenticated,
+  rateLimiters.barcode.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const barcode = req.query.barcode as string;
+
+      if (!barcode) {
+        return res.status(400).json({ error: "Barcode parameter is required" });
+      }
+
+      // Log API usage
+      await batchedApiLogger.logApiUsage(userId, {
+        apiName: "barcode",
+        endpoint: "lookup",
+        method: "GET",
+        statusCode: 200,
+      });
+
+      // Use the barcode lookup service (handles caching internally)
+      const product = await barcodeLookupService.lookupByBarcode(barcode);
+
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      res.json(product);
+    } catch (error) {
+      console.error(
+        "Barcode lookup error:",
+        error instanceof Error ? error.message : String(error),
+      );
+      res.status(500).json({ error: "Failed to lookup barcode" });
     }
-
-    // Log API usage
-    await batchedApiLogger.logApiUsage(userId, {
-      apiName: "barcode",
-      endpoint: "lookup",
-      method: "GET",
-      statusCode: 200,
-    });
-
-    // Use the barcode lookup service (handles caching internally)
-    const product = await barcodeLookupService.lookupByBarcode(barcode);
-    
-    if (!product) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    res.json(product);
-  } catch (error) {
-    console.error("Barcode lookup error:", error instanceof Error ? error.message : String(error));
-    res.status(500).json({ error: "Failed to lookup barcode" });
-  }
-});
+  },
+);
 
 /**
  * POST /food/enrich
- * 
+ *
  * Uses AI to enrich food item data with smart categorization and recommendations.
  * Provides intelligent defaults when USDA or barcode data is incomplete.
- * 
+ *
  * Request Body:
  * - name: String (required) - Name of the food item
  * - barcode: String (optional) - Product barcode for context
  * - fdcData: Object (optional) - USDA FoodData Central nutrition data
- * 
+ *
  * AI Analysis Provides:
  * - foodCategory: Intelligent categorization (dairy, meat, produce, etc.)
  * - defaultShelfLife: Estimated shelf life in days based on food type
  * - storageRecommendation: Best storage location (fridge, freezer, pantry)
  * - nutritionSummary: Key nutritional highlights
  * - commonUses: Common culinary applications
- * 
+ *
  * Error Handling: Returns safe defaults if AI fails
  * Rate Limiting: Protected by OpenAI rate limiter
- * 
+ *
  * Returns: Enriched food data with AI-generated insights
  */
-router.post("/enrichment", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const { name, barcode, fdcData  } = req.body || {};
-    
-    if (!name) {
-      return res.status(400).json({ error: "Food name is required" });
-    }
+router.post(
+  "/enrichment",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const { name, barcode, fdcData } = req.body || {};
 
-    if (!openai) {
-      return res.status(500).json({ error: "OpenAI API not configured" });
-    }
+      if (!name) {
+        return res.status(400).json({ error: "Food name is required" });
+      }
 
-    // Build context from available data sources
-    // Combines barcode and USDA data to provide richer AI context
-    let context = `Food item: ${name}`;
-    if (barcode) context += `\nBarcode: ${barcode}`;
-    if (fdcData) {
-      const nutrients = fdcData.foodNutrients?.slice(0, 10)
-        .map((n: any) => `${n.nutrientName}: ${n.value}${n.unitName}`)
-        .join(", ");
-      if (nutrients) context += `\nNutrients: ${nutrients}`;
-    }
+      if (!openai) {
+        return res.status(500).json({ error: "OpenAI API not configured" });
+      }
 
-    const prompt = `Given this food item information:
+      // Build context from available data sources
+      // Combines barcode and USDA data to provide richer AI context
+      let context = `Food item: ${name}`;
+      if (barcode) context += `\nBarcode: ${barcode}`;
+      if (fdcData) {
+        const nutrients = fdcData.foodNutrients
+          ?.slice(0, 10)
+          .map((n: any) => `${n.nutrientName}: ${n.value}${n.unitName}`)
+          .join(", ");
+        if (nutrients) context += `\nNutrients: ${nutrients}`;
+      }
+
+      const prompt = `Given this food item information:
 ${context}
 
 Provide a JSON response with:
@@ -512,34 +539,37 @@ Provide a JSON response with:
 
 Response must be valid JSON only, no additional text.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,   // Low temperature for consistent categorization
-      max_tokens: 300,
-    });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3, // Low temperature for consistent categorization
+        max_tokens: 300,
+      });
 
-    const enrichedData = JSON.parse(completion.choices[0].message?.content || "{}");
-    
-    res.json({
-      ...enrichedData,
-      name,
-      barcode,
-      fdcData,
-    });
-  } catch (error) {
-    console.error("Food enrichment error:", error);
-    // Graceful fallback with safe defaults
-    // Ensures user experience isn't disrupted by AI failures
-    res.json({
-      foodCategory: "other",
-      defaultShelfLife: 30,
-      storageRecommendation: "pantry",
-      nutritionSummary: "Nutritional information not available",
-      commonUses: ["General cooking"],
-    });
-  }
-});
+      const enrichedData = JSON.parse(
+        completion.choices[0].message?.content || "{}",
+      );
+
+      res.json({
+        ...enrichedData,
+        name,
+        barcode,
+        fdcData,
+      });
+    } catch (error) {
+      console.error("Food enrichment error:", error);
+      // Graceful fallback with safe defaults
+      // Ensures user experience isn't disrupted by AI failures
+      res.json({
+        foodCategory: "other",
+        defaultShelfLife: 30,
+        storageRecommendation: "pantry",
+        nutritionSummary: "Nutritional information not available",
+        commonUses: ["General cooking"],
+      });
+    }
+  },
+);
 
 // Onboarding common items
 router.get("/common-items", async (_req: Request, res: Response) => {
@@ -565,8 +595,8 @@ router.put("/images", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const { itemId, imageUrl  } = req.body || {};
-    
+    const { itemId, imageUrl } = req.body || {};
+
     if (!itemId || !imageUrl) {
       return res.status(400).json({ error: "Item ID and image URL required" });
     }
@@ -590,9 +620,9 @@ router.put("/images", isAuthenticated, async (req: Request, res: Response) => {
 // ==================== BATCH OPERATIONS ====================
 /**
  * POST /inventory/batch
- * 
+ *
  * Performs batch operations on inventory items.
- * 
+ *
  * Request Body:
  * - operation: String - "create" or "delete"
  * - type: String - Type of items to operate on
@@ -603,16 +633,18 @@ router.post("/batch", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { operation, type, items, filter } = req.body || {};
-    
+
     switch (operation) {
       case "create": {
         if (type === "shopping-list") {
           // Batch add to shopping list
           const { recipeId, ingredients } = req.body || {};
           if (!ingredients || !Array.isArray(ingredients)) {
-            return res.status(400).json({ error: "Ingredients array is required" });
+            return res
+              .status(400)
+              .json({ error: "Ingredients array is required" });
           }
-          
+
           const createdItems = await Promise.all(
             ingredients.map((ingredient: string) =>
               storage.user.inventory.createShoppingItem({
@@ -621,36 +653,43 @@ router.post("/batch", isAuthenticated, async (req: Request, res: Response) => {
                 quantity: "1",
                 recipeId,
                 isPurchased: false,
-              })
-            )
+              }),
+            ),
           );
           res.json({ data: createdItems, type: "shopping-list" });
         } else {
-          res.status(400).json({ error: "Batch create only supported for shopping-list" });
+          res
+            .status(400)
+            .json({ error: "Batch create only supported for shopping-list" });
         }
         break;
       }
-      
+
       case "delete": {
         if (type === "shopping-list" && filter === "checked") {
           // Clear checked items
           const items = await storage.user.inventory.getShoppingItems(userId);
           const checkedItems = items.filter((item: any) => item.isPurchased);
-          
+
           for (const item of checkedItems) {
             await storage.user.inventory.deleteShoppingItem(userId, item.id);
           }
-          
-          res.json({ 
+
+          res.json({
             message: `Cleared ${checkedItems.length} checked items`,
-            count: checkedItems.length 
+            count: checkedItems.length,
           });
         } else {
-          res.status(400).json({ error: "Batch delete only supported for checked shopping-list items" });
+          res
+            .status(400)
+            .json({
+              error:
+                "Batch delete only supported for checked shopping-list items",
+            });
         }
         break;
       }
-      
+
       default:
         res.status(400).json({ error: "Invalid batch operation" });
     }

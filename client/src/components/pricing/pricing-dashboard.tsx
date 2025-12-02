@@ -1,12 +1,18 @@
 /**
  * Pricing Dashboard Component
- * 
+ *
  * Main overview component for dynamic pricing system.
  * Displays key metrics, recommendations, and quick actions.
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,7 +20,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { TrendingUp, TrendingDown, Minus, AlertCircle, DollarSign, Package, Users, Activity } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  AlertCircle,
+  DollarSign,
+  Package,
+  Users,
+  Activity,
+} from "lucide-react";
 import { format } from "date-fns";
 
 interface PricingMetrics {
@@ -39,7 +54,7 @@ interface ProductReport {
   totalUnits: number;
   averageConversionRate: string;
   currentDemand: number;
-  demandTrend: 'increasing' | 'stable' | 'decreasing';
+  demandTrend: "increasing" | "stable" | "decreasing";
   inventoryScore: number;
   priceChanges: number;
   lastPriceChange: string | null;
@@ -57,35 +72,49 @@ export function PricingDashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch pricing report
-  const { data: report, isLoading, error } = useQuery<PricingReport>({
-    queryKey: [API_ENDPOINTS.admin.pricing.rules, 'report'],
+  const {
+    data: report,
+    isLoading,
+    error,
+  } = useQuery<PricingReport>({
+    queryKey: [API_ENDPOINTS.admin.pricing.rules, "report"],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/report?includeAI=true`);
-      if (!response.ok) throw new Error('Failed to fetch pricing report');
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.pricing.rules}/report?includeAI=true`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch pricing report");
       return response.json();
     },
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Optimize single product
   const handleOptimizePrice = async (productId: string) => {
     try {
       setRefreshing(true);
-      const response = await fetch(`${API_ENDPOINTS.admin.pricing.optimize}/${productId}?includeCompetition=true&useAI=true`);
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.pricing.optimize}/${productId}?includeCompetition=true&useAI=true`,
+      );
       const optimization = await response.json();
-      
+
       if (optimization.recommendedPrice) {
         // Apply the recommended price
-        await apiRequest(`${API_ENDPOINTS.admin.pricing.optimize}/apply/${productId}`, 'POST', {
-          price: optimization.recommendedPrice,
-          reason: 'ai_optimization'
-        });
-        
+        await apiRequest(
+          `${API_ENDPOINTS.admin.pricing.optimize}/apply/${productId}`,
+          "POST",
+          {
+            price: optimization.recommendedPrice,
+            reason: "ai_optimization",
+          },
+        );
+
         // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.pricing.rules, 'report'] });
+        queryClient.invalidateQueries({
+          queryKey: [API_ENDPOINTS.admin.pricing.rules, "report"],
+        });
       }
     } catch (error) {
-      console.error('Error optimizing price:', error);
+      console.error("Error optimizing price:", error);
     } finally {
       setRefreshing(false);
     }
@@ -94,9 +123,9 @@ export function PricingDashboard() {
   // Get trend icon
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'increasing':
+      case "increasing":
         return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case 'decreasing':
+      case "decreasing":
         return <TrendingDown className="h-4 w-4 text-red-500" />;
       default:
         return <Minus className="h-4 w-4 text-gray-500" />;
@@ -105,16 +134,16 @@ export function PricingDashboard() {
 
   // Get demand color
   const getDemandColor = (score: number) => {
-    if (score >= 70) return 'text-green-600 dark:text-green-400';
-    if (score >= 40) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (score >= 70) return "text-green-600 dark:text-green-400";
+    if (score >= 40) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
   };
 
   // Get inventory color
   const getInventoryColor = (score: number) => {
-    if (score >= 80) return 'text-red-600 dark:text-red-400'; // Too high
-    if (score >= 20) return 'text-green-600 dark:text-green-400'; // Good
-    return 'text-yellow-600 dark:text-yellow-400'; // Too low
+    if (score >= 80) return "text-red-600 dark:text-red-400"; // Too high
+    if (score >= 20) return "text-green-600 dark:text-green-400"; // Good
+    return "text-yellow-600 dark:text-yellow-400"; // Too low
   };
 
   if (isLoading) {
@@ -170,19 +199,27 @@ export function PricingDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${report.summary.totalRevenue}</div>
+            <div className="text-2xl font-bold">
+              ${report.summary.totalRevenue}
+            </div>
             <p className="text-xs text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Conversion Rate
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.summary.averageConversionRate}</div>
-            <p className="text-xs text-muted-foreground">Average across products</p>
+            <div className="text-2xl font-bold">
+              {report.summary.averageConversionRate}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Average across products
+            </p>
           </CardContent>
         </Card>
 
@@ -192,18 +229,24 @@ export function PricingDashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.summary.averagePriceChange}</div>
+            <div className="text-2xl font-bold">
+              {report.summary.averagePriceChange}
+            </div>
             <p className="text-xs text-muted-foreground">Average adjustment</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Products
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.summary.activeProducts}</div>
+            <div className="text-2xl font-bold">
+              {report.summary.activeProducts}
+            </div>
             <p className="text-xs text-muted-foreground">With pricing rules</p>
           </CardContent>
         </Card>
@@ -220,7 +263,7 @@ export function PricingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              {report.aiSummary.split('\n').map((paragraph, idx) => (
+              {report.aiSummary.split("\n").map((paragraph, idx) => (
                 <p key={idx} className="mb-2 text-sm">
                   {paragraph}
                 </p>
@@ -238,7 +281,9 @@ export function PricingDashboard() {
           <AlertDescription>
             <ul className="mt-2 list-disc list-inside space-y-1">
               {report.recommendations.map((rec, idx) => (
-                <li key={idx} className="text-sm">{rec}</li>
+                <li key={idx} className="text-sm">
+                  {rec}
+                </li>
               ))}
             </ul>
           </AlertDescription>
@@ -259,9 +304,13 @@ export function PricingDashboard() {
               <div
                 key={product.productId}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => setSelectedProduct(
-                  selectedProduct === product.productId ? null : product.productId
-                )}
+                onClick={() =>
+                  setSelectedProduct(
+                    selectedProduct === product.productId
+                      ? null
+                      : product.productId,
+                  )
+                }
                 data-testid={`product-row-${product.productId}`}
               >
                 <div className="flex-1 space-y-1">
@@ -280,12 +329,13 @@ export function PricingDashboard() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <div className="font-medium">${product.totalRevenue}</div>
                     <div className="text-sm text-muted-foreground">
-                      {product.totalUnits} units • {product.averageConversionRate} conv.
+                      {product.totalUnits} units •{" "}
+                      {product.averageConversionRate} conv.
                     </div>
                   </div>
                   <Button
@@ -319,10 +369,15 @@ export function PricingDashboard() {
           <CardContent>
             <div className="space-y-2">
               {report.summary.topPerformers.map((performer, idx) => (
-                <div key={performer.productId} className="flex items-center justify-between">
+                <div
+                  key={performer.productId}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{idx + 1}</Badge>
-                    <span className="text-sm font-medium">Product {performer.productId}</span>
+                    <span className="text-sm font-medium">
+                      Product {performer.productId}
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-muted-foreground">

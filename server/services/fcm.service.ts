@@ -1,14 +1,14 @@
-import * as admin from 'firebase-admin';
-import * as fs from 'fs';
-import { NotificationPayload } from './push-notification.service';
-import Logger from './logger.service';
+import * as admin from "firebase-admin";
+import * as fs from "fs";
+import { NotificationPayload } from "./push-notification.service";
+import Logger from "./logger.service";
 
 /**
  * Firebase Cloud Messaging (FCM) Service for Android Push Notifications
- * 
+ *
  * This service handles all Android push notification operations using Firebase Admin SDK.
  * It manages token validation, notification sending, and error handling for Android devices.
- * 
+ *
  * Features:
  * - Initialize Firebase Admin SDK with service account credentials
  * - Send rich notifications with title, body, icon, and custom data
@@ -20,7 +20,7 @@ import Logger from './logger.service';
 export class FcmService {
   private static isInitialized = false;
   private static app: admin.app.App | null = null;
-  private static logger = new Logger('FcmService');
+  private static logger = new Logger("FcmService");
 
   /**
    * Initialize Firebase Admin SDK
@@ -38,15 +38,15 @@ export class FcmService {
 
       if (!fcmServerKey && !fcmServiceAccountPath && !fcmServiceAccount) {
         console.warn(
-          '⚠️  FCM credentials not configured. Android push notifications will NOT work.\n' +
-          '   To enable Android push notifications:\n' +
-          '   1. Create a Firebase project at console.firebase.google.com\n' +
-          '   2. Add your Android app to the project\n' +
-          '   3. Download the service account JSON key\n' +
-          '   4. Set one of these environment variables:\n' +
-          '      - FCM_SERVICE_ACCOUNT=<JSON string of service account>\n' +
-          '      - FCM_SERVICE_ACCOUNT_PATH=<path to service account JSON>\n' +
-          '      - FCM_SERVER_KEY=<legacy server key>\n'
+          "⚠️  FCM credentials not configured. Android push notifications will NOT work.\n" +
+            "   To enable Android push notifications:\n" +
+            "   1. Create a Firebase project at console.firebase.google.com\n" +
+            "   2. Add your Android app to the project\n" +
+            "   3. Download the service account JSON key\n" +
+            "   4. Set one of these environment variables:\n" +
+            "      - FCM_SERVICE_ACCOUNT=<JSON string of service account>\n" +
+            "      - FCM_SERVICE_ACCOUNT_PATH=<path to service account JSON>\n" +
+            "      - FCM_SERVER_KEY=<legacy server key>\n",
         );
         return;
       }
@@ -55,72 +55,92 @@ export class FcmService {
       if (fcmServiceAccount) {
         try {
           // Parse the service account JSON, handling potential errors
-          const serviceAccount = typeof fcmServiceAccount === 'string' 
-            ? JSON.parse(fcmServiceAccount) 
-            : fcmServiceAccount;
-          
+          const serviceAccount =
+            typeof fcmServiceAccount === "string"
+              ? JSON.parse(fcmServiceAccount)
+              : fcmServiceAccount;
+
           // Check if this is a dummy credential - silently skip
-          if (serviceAccount.project_id === 'dummy-project' || 
-              serviceAccount.private_key_id === 'dummy-key-id') {
+          if (
+            serviceAccount.project_id === "dummy-project" ||
+            serviceAccount.private_key_id === "dummy-key-id"
+          ) {
             this.isInitialized = true;
             return;
           }
-          
+
           this.app = admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
           });
           this.isInitialized = true;
-          console.log('✅ FCM initialized with service account from environment');
+          console.log(
+            "✅ FCM initialized with service account from environment",
+          );
         } catch (parseError) {
-          console.error('❌ Failed to parse FCM service account JSON:', parseError);
-          console.warn('   FCM service account must be a valid JSON string');
+          console.error(
+            "❌ Failed to parse FCM service account JSON:",
+            parseError,
+          );
+          console.warn("   FCM service account must be a valid JSON string");
           return;
         }
       } else if (fcmServiceAccountPath) {
         try {
           // Verify file exists before trying to use it
           if (!fs.existsSync(fcmServiceAccountPath)) {
-            console.error(`❌ FCM service account file not found: ${fcmServiceAccountPath}`);
+            console.error(
+              `❌ FCM service account file not found: ${fcmServiceAccountPath}`,
+            );
             return;
           }
-          
+
           this.app = admin.initializeApp({
             credential: admin.credential.cert(fcmServiceAccountPath),
           });
           this.isInitialized = true;
-          console.log('✅ FCM initialized with service account from file');
+          console.log("✅ FCM initialized with service account from file");
         } catch (fileError) {
-          console.error('❌ Failed to read FCM service account file:', fileError);
+          console.error(
+            "❌ Failed to read FCM service account file:",
+            fileError,
+          );
           return;
         }
       } else if (fcmServerKey) {
         // Legacy initialization with server key (deprecated but still supported)
         // Server key alone isn't sufficient - need service account
-        console.warn('⚠️  FCM_SERVER_KEY alone is not sufficient. Please use service account instead.');
+        console.warn(
+          "⚠️  FCM_SERVER_KEY alone is not sufficient. Please use service account instead.",
+        );
         return;
       }
     } catch (error) {
-      console.error('❌ Failed to initialize FCM:', error);
+      console.error("❌ Failed to initialize FCM:", error);
     }
   }
 
   /**
    * Send push notification to Android device
-   * 
+   *
    * @param token - FCM registration token from the Android device
    * @param payload - Notification content with title, body, and optional data
    * @returns Promise<string> - Message ID if successful
    * @throws Error with specific FCM error codes
    */
-  static async sendNotification(token: string, payload: NotificationPayload): Promise<string> {
+  static async sendNotification(
+    token: string,
+    payload: NotificationPayload,
+  ): Promise<string> {
     if (!this.isInitialized || !this.app) {
-      throw new Error('FCM is not initialized. Cannot send Android notifications.');
+      throw new Error(
+        "FCM is not initialized. Cannot send Android notifications.",
+      );
     }
 
     try {
       // Validate token format (FCM tokens are typically 152+ characters)
       if (!token || token.length < 100) {
-        throw new Error('Invalid FCM token format');
+        throw new Error("Invalid FCM token format");
       }
 
       // Prepare FCM message payload
@@ -131,22 +151,25 @@ export class FcmService {
           body: payload.body,
         },
         // Convert payload data to string values (FCM requires string values)
-        data: payload.data ? this.convertDataToStrings(payload.data) : undefined,
+        data: payload.data
+          ? this.convertDataToStrings(payload.data)
+          : undefined,
         android: {
-          priority: 'high', // Ensure immediate delivery
+          priority: "high", // Ensure immediate delivery
           notification: {
-            sound: 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK', // For Flutter/Capacitor apps
-            icon: 'ic_notification', // Should match icon in android/app/src/main/res/drawable
-            color: '#007AFF', // Notification color
+            sound: "default",
+            clickAction: "FLUTTER_NOTIFICATION_CLICK", // For Flutter/Capacitor apps
+            icon: "ic_notification", // Should match icon in android/app/src/main/res/drawable
+            color: "#007AFF", // Notification color
           },
         },
         // Also include APNS config for iOS devices using FCM
         apns: {
           payload: {
             aps: {
-              sound: 'default',
-              badge: typeof payload.badge === 'number' ? payload.badge : undefined,
+              sound: "default",
+              badge:
+                typeof payload.badge === "number" ? payload.badge : undefined,
               contentAvailable: true,
             },
           },
@@ -171,24 +194,26 @@ export class FcmService {
       // console.log('✅ FCM notification sent successfully:', response);
       return response;
     } catch (error: any) {
-      console.error('❌ FCM notification failed:', error);
-      
+      console.error("❌ FCM notification failed:", error);
+
       // Handle specific FCM error codes
-      if (error?.code === 'messaging/invalid-registration-token' ||
-          error?.code === 'messaging/registration-token-not-registered') {
-        throw new Error('INVALID_TOKEN');
-      } else if (error?.code === 'messaging/message-rate-exceeded') {
-        throw new Error('RATE_LIMIT_EXCEEDED');
-      } else if (error?.code === 'messaging/device-message-rate-exceeded') {
-        throw new Error('DEVICE_RATE_LIMIT_EXCEEDED');
-      } else if (error?.code === 'messaging/topics-message-rate-exceeded') {
-        throw new Error('TOPIC_RATE_LIMIT_EXCEEDED');
-      } else if (error?.code === 'messaging/too-many-topics') {
-        throw new Error('TOO_MANY_TOPICS');
-      } else if (error?.code === 'messaging/invalid-argument') {
-        throw new Error('INVALID_PAYLOAD');
+      if (
+        error?.code === "messaging/invalid-registration-token" ||
+        error?.code === "messaging/registration-token-not-registered"
+      ) {
+        throw new Error("INVALID_TOKEN");
+      } else if (error?.code === "messaging/message-rate-exceeded") {
+        throw new Error("RATE_LIMIT_EXCEEDED");
+      } else if (error?.code === "messaging/device-message-rate-exceeded") {
+        throw new Error("DEVICE_RATE_LIMIT_EXCEEDED");
+      } else if (error?.code === "messaging/topics-message-rate-exceeded") {
+        throw new Error("TOPIC_RATE_LIMIT_EXCEEDED");
+      } else if (error?.code === "messaging/too-many-topics") {
+        throw new Error("TOO_MANY_TOPICS");
+      } else if (error?.code === "messaging/invalid-argument") {
+        throw new Error("INVALID_PAYLOAD");
       }
-      
+
       throw error;
     }
   }
@@ -196,7 +221,7 @@ export class FcmService {
   /**
    * Validate FCM token
    * Performs a dry run to check if the token is valid without sending a notification
-   * 
+   *
    * @param token - FCM registration token to validate
    * @returns Promise<boolean> - true if valid, false otherwise
    */
@@ -210,8 +235,8 @@ export class FcmService {
       const message: admin.messaging.Message = {
         token,
         notification: {
-          title: 'Test',
-          body: 'Test',
+          title: "Test",
+          body: "Test",
         },
       };
 
@@ -219,7 +244,7 @@ export class FcmService {
       await admin.messaging(this.app).send(message, true);
       return true;
     } catch (error: any) {
-      console.error('FCM token validation failed:', error?.code);
+      console.error("FCM token validation failed:", error?.code);
       return false;
     }
   }
@@ -227,17 +252,21 @@ export class FcmService {
   /**
    * Send notification to multiple tokens (batch send)
    * More efficient than sending individual notifications
-   * 
+   *
    * @param tokens - Array of FCM tokens
    * @param payload - Notification content
    * @returns Object with success and failure counts
    */
   static async sendMulticast(
-    tokens: string[], 
-    payload: NotificationPayload
-  ): Promise<{ successCount: number; failureCount: number; failedTokens: string[] }> {
+    tokens: string[],
+    payload: NotificationPayload,
+  ): Promise<{
+    successCount: number;
+    failureCount: number;
+    failedTokens: string[];
+  }> {
     if (!this.isInitialized || !this.app) {
-      throw new Error('FCM is not initialized');
+      throw new Error("FCM is not initialized");
     }
 
     try {
@@ -247,26 +276,35 @@ export class FcmService {
           title: payload.title,
           body: payload.body,
         },
-        data: payload.data ? this.convertDataToStrings(payload.data) : undefined,
+        data: payload.data
+          ? this.convertDataToStrings(payload.data)
+          : undefined,
         android: {
-          priority: 'high',
+          priority: "high",
           notification: {
-            sound: 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            sound: "default",
+            clickAction: "FLUTTER_NOTIFICATION_CLICK",
           },
         },
       };
 
-      const response = await admin.messaging(this.app).sendEachForMulticast(message);
-      
+      const response = await admin
+        .messaging(this.app)
+        .sendEachForMulticast(message);
+
       // Collect failed tokens for cleanup
       const failedTokens: string[] = [];
-      response.responses.forEach((resp: admin.messaging.SendResponse, idx: number) => {
-        if (!resp.success && resp.error) {
-          console.error(`Failed to send to token ${tokens[idx]}:`, resp.error.code);
-          failedTokens.push(tokens[idx]);
-        }
-      });
+      response.responses.forEach(
+        (resp: admin.messaging.SendResponse, idx: number) => {
+          if (!resp.success && resp.error) {
+            console.error(
+              `Failed to send to token ${tokens[idx]}:`,
+              resp.error.code,
+            );
+            failedTokens.push(tokens[idx]);
+          }
+        },
+      );
 
       return {
         successCount: response.successCount,
@@ -274,7 +312,7 @@ export class FcmService {
         failedTokens,
       };
     } catch (error) {
-      console.error('FCM multicast failed:', error);
+      console.error("FCM multicast failed:", error);
       throw error;
     }
   }
@@ -285,10 +323,13 @@ export class FcmService {
    */
   private static convertDataToStrings(data: any): Record<string, string> {
     const result: Record<string, string> = {};
-    if (data && typeof data === 'object') {
+    if (data && typeof data === "object") {
       for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
-          result[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
+          result[key] =
+            typeof data[key] === "string"
+              ? data[key]
+              : JSON.stringify(data[key]);
         }
       }
     }
@@ -301,9 +342,10 @@ export class FcmService {
   static getStatus(): { initialized: boolean; hasCredentials: boolean } {
     return {
       initialized: this.isInitialized,
-      hasCredentials: !!process.env.FCM_SERVER_KEY || 
-                     !!process.env.FCM_SERVICE_ACCOUNT_PATH || 
-                     !!process.env.FCM_SERVICE_ACCOUNT,
+      hasCredentials:
+        !!process.env.FCM_SERVER_KEY ||
+        !!process.env.FCM_SERVICE_ACCOUNT_PATH ||
+        !!process.env.FCM_SERVICE_ACCOUNT,
     };
   }
 }

@@ -1,12 +1,18 @@
 // Donation success page (from blueprint:javascript_stripe)
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CheckCircle, Heart, Home, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import confetti from 'canvas-confetti';
+import confetti from "canvas-confetti";
 
 export default function DonateSuccessPage() {
   const [, setLocation] = useLocation();
@@ -16,12 +22,12 @@ export default function DonateSuccessPage() {
   useEffect(() => {
     // Get payment intent from URL params
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentIntent = urlParams.get('payment_intent');
-    const paymentStatus = urlParams.get('payment_intent_client_secret');
-    
+    const paymentIntent = urlParams.get("payment_intent");
+    const paymentStatus = urlParams.get("payment_intent_client_secret");
+
     if (!paymentIntent && !paymentStatus) {
       // If no payment parameters, redirect to donation page
-      setLocation('/donate');
+      setLocation("/donate");
       return;
     }
 
@@ -30,15 +36,15 @@ export default function DonateSuccessPage() {
       if (paymentIntent) {
         try {
           const response = await apiRequest("/api/donations/confirm", "POST", {
-            paymentIntentId: paymentIntent
+            paymentIntentId: paymentIntent,
           });
           const data = response;
-          
-          if (data.status !== 'succeeded') {
-            console.warn('Payment not yet confirmed:', data.status);
+
+          if (data.status !== "succeeded") {
+            console.warn("Payment not yet confirmed:", data.status);
           }
         } catch (error) {
-          console.error('Error confirming donation:', error);
+          console.error("Error confirming donation:", error);
         }
       }
     };
@@ -54,7 +60,7 @@ export default function DonateSuccessPage() {
       return Math.random() * (max - min) + min;
     }
 
-    const interval: any = setInterval(function() {
+    const interval: any = setInterval(function () {
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
@@ -62,34 +68,35 @@ export default function DonateSuccessPage() {
       }
 
       const particleCount = 50 * (timeLeft / duration);
-      
+
       confetti({
         ...defaults,
         particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
       });
       confetti({
         ...defaults,
         particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
       });
     }, 250);
 
     // Set share URL
-    setShareUrl(window.location.origin + '/donate');
+    setShareUrl(window.location.origin + "/donate");
 
     return () => clearInterval(interval);
   }, [setLocation]);
 
   const handleShare = async () => {
-    const shareText = "I just supported an amazing cause! Join me in making a difference.";
-    
+    const shareText =
+      "I just supported an amazing cause! Join me in making a difference.";
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Support Our Mission',
+          title: "Support Our Mission",
           text: shareText,
-          url: shareUrl
+          url: shareUrl,
         });
       } catch (err) {
         // User cancelled or error occurred
@@ -124,8 +131,8 @@ export default function DonateSuccessPage() {
           <div className="bg-muted rounded-lg p-6">
             <Heart className="h-12 w-12 text-primary mx-auto mb-3" />
             <p className="text-muted-foreground">
-              Your generosity helps us continue our mission to reduce food waste 
-              and make meal planning accessible to everyone. Every contribution 
+              Your generosity helps us continue our mission to reduce food waste
+              and make meal planning accessible to everyone. Every contribution
               makes a real difference!
             </p>
           </div>
@@ -161,9 +168,9 @@ export default function DonateSuccessPage() {
                 Return Home
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              size="lg" 
+            <Button
+              variant="outline"
+              size="lg"
               onClick={handleShare}
               data-testid="button-share"
             >
@@ -176,7 +183,10 @@ export default function DonateSuccessPage() {
             <p className="text-sm text-muted-foreground">
               Want to make an even bigger impact?{" "}
               <Link href="/donate">
-                <span className="text-primary hover:underline cursor-pointer" data-testid="link-donate-again">
+                <span
+                  className="text-primary hover:underline cursor-pointer"
+                  data-testid="link-donate-again"
+                >
                   Make another donation
                 </span>
               </Link>{" "}

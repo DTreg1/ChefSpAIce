@@ -1,14 +1,14 @@
 /**
  * @file server/storage/domains/system.storage.ts
  * @description System monitoring, activity logging, and maintenance operations
- * 
+ *
  * Covers:
  * - API usage tracking and analytics
  * - Activity logging and audit trails
  * - System metrics collection
  * - Maintenance predictions and history
  * - Log retention and cleanup operations
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (SystemStorage) for dependency injection and testing
  * - Export singleton INSTANCE (systemStorage) for convenience in production code
@@ -51,7 +51,7 @@ export class SystemStorage implements ISystemStorage {
 
   async logApiUsage(
     userId: string,
-    log: Omit<InsertApiUsageLog, "userId">
+    log: Omit<InsertApiUsageLog, "userId">,
   ): Promise<ApiUsageLog> {
     const logToInsert = {
       ...log,
@@ -68,13 +68,10 @@ export class SystemStorage implements ISystemStorage {
   async getApiUsageLogs(
     userId: string,
     apiName?: string,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<ApiUsageLog[]> {
     const conditions = apiName
-      ? and(
-          eq(apiUsageLogs.userId, userId),
-          eq(apiUsageLogs.apiName, apiName)
-        )
+      ? and(eq(apiUsageLogs.userId, userId), eq(apiUsageLogs.apiName, apiName))
       : eq(apiUsageLogs.userId, userId);
 
     return await db
@@ -88,7 +85,7 @@ export class SystemStorage implements ISystemStorage {
   async getApiUsageStats(
     userId: string,
     apiName: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<{
     totalCalls: number;
     successfulCalls: number;
@@ -107,16 +104,19 @@ export class SystemStorage implements ISystemStorage {
         and(
           eq(apiUsageLogs.userId, userId),
           eq(apiUsageLogs.apiName, apiName),
-          gte(apiUsageLogs.timestamp, cutoffDate)
-        )
+          gte(apiUsageLogs.timestamp, cutoffDate),
+        ),
       );
 
     const totalCalls = logs.length;
     const successfulCalls = logs.filter(
-      (log) => log.statusCode && log.statusCode >= 200 && log.statusCode < 300
+      (log) => log.statusCode && log.statusCode >= 200 && log.statusCode < 300,
     ).length;
     const failedCalls = totalCalls - successfulCalls;
-    const totalTokens = logs.reduce((sum, log) => sum + (log.tokensUsed || 0), 0);
+    const totalTokens = logs.reduce(
+      (sum, log) => sum + (log.tokensUsed || 0),
+      0,
+    );
     const totalCost = logs.reduce((sum, log) => sum + (log.cost || 0), 0);
     const responseTimes = logs.filter((log) => log.responseTime !== null);
     const avgResponseTime =
@@ -138,7 +138,7 @@ export class SystemStorage implements ISystemStorage {
   async getApiUsageTrends(
     userId: string,
     apiName: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<
     Array<{
       date: string;
@@ -162,8 +162,8 @@ export class SystemStorage implements ISystemStorage {
         and(
           eq(apiUsageLogs.userId, userId),
           eq(apiUsageLogs.apiName, apiName),
-          gte(apiUsageLogs.timestamp, cutoffDate)
-        )
+          gte(apiUsageLogs.timestamp, cutoffDate),
+        ),
       )
       .groupBy(sql`DATE(${apiUsageLogs.timestamp})`)
       .orderBy(sql`DATE(${apiUsageLogs.timestamp})`);
@@ -173,7 +173,7 @@ export class SystemStorage implements ISystemStorage {
 
   async getAllApiUsageStats(
     userId: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<
     Array<{
       apiName: string;
@@ -193,8 +193,8 @@ export class SystemStorage implements ISystemStorage {
       .where(
         and(
           eq(apiUsageLogs.userId, userId),
-          gte(apiUsageLogs.timestamp, cutoffDate)
-        )
+          gte(apiUsageLogs.timestamp, cutoffDate),
+        ),
       );
 
     const statsByApi: Record<
@@ -243,8 +243,8 @@ export class SystemStorage implements ISystemStorage {
       .where(
         and(
           eq(apiUsageLogs.userId, userId),
-          lte(apiUsageLogs.timestamp, olderThan)
-        )
+          lte(apiUsageLogs.timestamp, olderThan),
+        ),
       );
     return result.rowCount || 0;
   }
@@ -268,7 +268,7 @@ export class SystemStorage implements ISystemStorage {
       success?: boolean;
       limit?: number;
       offset?: number;
-    }
+    },
   ): Promise<ActivityLog[]> {
     const conditions: any[] = [];
 
@@ -285,7 +285,7 @@ export class SystemStorage implements ISystemStorage {
     if (filters?.activityType) {
       if (Array.isArray(filters.activityType)) {
         conditions.push(
-          sql`${activityLogs.activityType} = ANY(${filters.activityType})`
+          sql`${activityLogs.activityType} = ANY(${filters.activityType})`,
         );
       } else {
         conditions.push(eq(activityLogs.activityType, filters.activityType));
@@ -353,7 +353,7 @@ export class SystemStorage implements ISystemStorage {
       startDate?: Date;
       endDate?: Date;
       success?: boolean;
-    }
+    },
   ): Promise<PaginatedResponse<ActivityLog>> {
     const offset = (page - 1) * limit;
 
@@ -383,7 +383,7 @@ export class SystemStorage implements ISystemStorage {
     if (filters?.activityType) {
       if (Array.isArray(filters.activityType)) {
         conditions.push(
-          sql`${activityLogs.activityType} = ANY(${filters.activityType})`
+          sql`${activityLogs.activityType} = ANY(${filters.activityType})`,
         );
       } else {
         conditions.push(eq(activityLogs.activityType, filters.activityType));
@@ -434,7 +434,7 @@ export class SystemStorage implements ISystemStorage {
 
   async getUserActivityTimeline(
     userId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<ActivityLog[]> {
     return this.getActivityLogs(userId, { limit });
   }
@@ -452,7 +452,7 @@ export class SystemStorage implements ISystemStorage {
   async getActivityStats(
     userId?: string | null,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byActivityType: Array<{ activityType: string; count: number }>;
@@ -535,7 +535,7 @@ export class SystemStorage implements ISystemStorage {
 
   async getRecentErrors(
     userId?: string | null,
-    limit: number = 20
+    limit: number = 20,
   ): Promise<ActivityLog[]> {
     return this.getActivityLogs(userId, {
       success: false,
@@ -545,7 +545,7 @@ export class SystemStorage implements ISystemStorage {
 
   async cleanupOldActivityLogs(
     retentionDays: number = 90,
-    excludeActivityTypes?: string[]
+    excludeActivityTypes?: string[],
   ): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
@@ -556,8 +556,8 @@ export class SystemStorage implements ISystemStorage {
     if (excludeActivityTypes && excludeActivityTypes.length > 0) {
       conditions.push(
         sql`${activityLogs.activityType} NOT IN (${sql.raw(
-          excludeActivityTypes.map((a) => `'${a}'`).join(",")
-        )})`
+          excludeActivityTypes.map((a) => `'${a}'`).join(","),
+        )})`,
       );
     }
 
@@ -588,7 +588,7 @@ export class SystemStorage implements ISystemStorage {
   // ==================== System Metrics ====================
 
   async recordSystemMetric(
-    metric: Omit<InsertSystemMetric, "timestamp">
+    metric: Omit<InsertSystemMetric, "timestamp">,
   ): Promise<SystemMetric> {
     const metricToInsert = {
       ...metric,
@@ -606,7 +606,7 @@ export class SystemStorage implements ISystemStorage {
     metricName?: string,
     startDate?: Date,
     endDate?: Date,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<SystemMetric[]> {
     const conditions: any[] = [];
 
@@ -629,14 +629,10 @@ export class SystemStorage implements ISystemStorage {
       query = query.where(and(...conditions));
     }
 
-    return await query
-      .orderBy(desc(systemMetrics.timestamp))
-      .limit(limit);
+    return await query.orderBy(desc(systemMetrics.timestamp)).limit(limit);
   }
 
-  async getLatestSystemMetrics(
-    metricType?: string
-  ): Promise<SystemMetric[]> {
+  async getLatestSystemMetrics(metricType?: string): Promise<SystemMetric[]> {
     const conditions = metricType
       ? [eq(systemMetrics.metricType, metricType)]
       : [];
@@ -660,8 +656,8 @@ export class SystemStorage implements ISystemStorage {
         .where(
           and(
             eq(systemMetrics.metricName, metricName),
-            eq(systemMetrics.timestamp, latestTimestamp)
-          )
+            eq(systemMetrics.timestamp, latestTimestamp),
+          ),
         )
         .limit(1);
       if (metric) results.push(metric);
@@ -674,7 +670,7 @@ export class SystemStorage implements ISystemStorage {
     metricName: string,
     startDate: Date,
     endDate: Date,
-    interval: "hour" | "day" | "week" = "day"
+    interval: "hour" | "day" | "week" = "day",
   ): Promise<
     Array<{
       period: string;
@@ -688,8 +684,8 @@ export class SystemStorage implements ISystemStorage {
       interval === "hour"
         ? "YYYY-MM-DD HH24:00:00"
         : interval === "week"
-        ? "YYYY-IW"
-        : "YYYY-MM-DD";
+          ? "YYYY-IW"
+          : "YYYY-MM-DD";
 
     const aggregates = await db
       .select({
@@ -704,8 +700,8 @@ export class SystemStorage implements ISystemStorage {
         and(
           eq(systemMetrics.metricName, metricName),
           gte(systemMetrics.timestamp, startDate),
-          lte(systemMetrics.timestamp, endDate)
-        )
+          lte(systemMetrics.timestamp, endDate),
+        ),
       )
       .groupBy(sql`TO_CHAR(${systemMetrics.timestamp}, ${dateFormat})`)
       .orderBy(sql`TO_CHAR(${systemMetrics.timestamp}, ${dateFormat})`);
@@ -723,7 +719,7 @@ export class SystemStorage implements ISystemStorage {
   // ==================== Maintenance Predictions ====================
 
   async createMaintenancePrediction(
-    prediction: Omit<InsertMaintenancePrediction, "createdAt">
+    prediction: Omit<InsertMaintenancePrediction, "createdAt">,
   ): Promise<MaintenancePrediction> {
     const [newPrediction] = await db
       .insert(maintenancePredictions)
@@ -738,7 +734,7 @@ export class SystemStorage implements ISystemStorage {
   async getMaintenancePredictions(
     component?: string,
     risk?: string,
-    isAddressed?: boolean
+    isAddressed?: boolean,
   ): Promise<MaintenancePrediction[]> {
     const conditions: any[] = [];
 
@@ -760,7 +756,7 @@ export class SystemStorage implements ISystemStorage {
 
     return await query.orderBy(
       desc(maintenancePredictions.risk),
-      desc(maintenancePredictions.createdAt)
+      desc(maintenancePredictions.createdAt),
     );
   }
 
@@ -771,17 +767,17 @@ export class SystemStorage implements ISystemStorage {
       .where(
         and(
           sql`${maintenancePredictions.risk} IN ('high', 'critical')`,
-          eq(maintenancePredictions.isAddressed, false)
-        )
+          eq(maintenancePredictions.isAddressed, false),
+        ),
       )
       .orderBy(
         desc(maintenancePredictions.risk),
-        desc(maintenancePredictions.confidence)
+        desc(maintenancePredictions.confidence),
       );
   }
 
   async markPredictionAddressed(
-    predictionId: string
+    predictionId: string,
   ): Promise<MaintenancePrediction> {
     const [updated] = await db
       .update(maintenancePredictions)
@@ -805,7 +801,7 @@ export class SystemStorage implements ISystemStorage {
   // ==================== Maintenance History ====================
 
   async recordMaintenanceHistory(
-    history: Omit<InsertMaintenanceHistory, "id">
+    history: Omit<InsertMaintenanceHistory, "id">,
   ): Promise<MaintenanceHistory> {
     const [newHistory] = await db
       .insert(maintenanceHistory)
@@ -817,7 +813,7 @@ export class SystemStorage implements ISystemStorage {
   async getMaintenanceHistory(
     component?: string,
     maintenanceType?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<MaintenanceHistory[]> {
     const conditions: any[] = [];
 
@@ -834,12 +830,12 @@ export class SystemStorage implements ISystemStorage {
       query = query.where(and(...conditions));
     }
 
-    return await query
-      .orderBy(desc(maintenanceHistory.startedAt))
-      .limit(limit);
+    return await query.orderBy(desc(maintenanceHistory.startedAt)).limit(limit);
   }
 
-  async getRecentMaintenance(limit: number = 10): Promise<MaintenanceHistory[]> {
+  async getRecentMaintenance(
+    limit: number = 10,
+  ): Promise<MaintenanceHistory[]> {
     return await db
       .select()
       .from(maintenanceHistory)
@@ -850,7 +846,7 @@ export class SystemStorage implements ISystemStorage {
   async getMaintenanceStats(
     component?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byType: Array<{ maintenanceType: string; count: number }>;
@@ -918,9 +914,7 @@ export class SystemStorage implements ISystemStorage {
 
   async updateMaintenanceHistory(
     historyId: string,
-    updates: Partial<
-      Omit<InsertMaintenanceHistory, "id" | "startedAt">
-    >
+    updates: Partial<Omit<InsertMaintenanceHistory, "id" | "startedAt">>,
   ): Promise<MaintenanceHistory> {
     const [updated] = await db
       .update(maintenanceHistory)
@@ -973,7 +967,12 @@ export class SystemStorage implements ISystemStorage {
 
     const apiStatusMap: Record<
       string,
-      { calls: number; errors: number; totalResponseTime: number; count: number }
+      {
+        calls: number;
+        errors: number;
+        totalResponseTime: number;
+        count: number;
+      }
     > = {};
 
     for (const log of apiLogs) {
@@ -1018,7 +1017,7 @@ export class SystemStorage implements ISystemStorage {
   // ==================== Missing Methods (Stubs) ====================
 
   async createMaintenanceHistory(
-    data: Omit<InsertMaintenanceHistory, "id">
+    data: Omit<InsertMaintenanceHistory, "id">,
   ): Promise<MaintenanceHistory> {
     const [result] = await db
       .insert(maintenanceHistory)
@@ -1032,13 +1031,22 @@ export class SystemStorage implements ISystemStorage {
     recentMetrics: SystemMetric[];
     history: MaintenanceHistory[];
   }> {
-    const recentMetrics = await this.getSystemMetrics(component, undefined, undefined, 20 as any);
+    const recentMetrics = await this.getSystemMetrics(
+      component,
+      undefined,
+      undefined,
+      20 as any,
+    );
     const history = await this.getMaintenanceHistory(component, undefined, 10);
-    
-    const avgAnomalyScore = recentMetrics.length > 0
-      ? recentMetrics.reduce((sum, m) => sum + ((m.metadata as any)?.anomalyScore || 0), 0) / recentMetrics.length
-      : 0;
-    
+
+    const avgAnomalyScore =
+      recentMetrics.length > 0
+        ? recentMetrics.reduce(
+            (sum, m) => sum + ((m.metadata as any)?.anomalyScore || 0),
+            0,
+          ) / recentMetrics.length
+        : 0;
+
     return {
       avgAnomalyScore,
       recentMetrics,

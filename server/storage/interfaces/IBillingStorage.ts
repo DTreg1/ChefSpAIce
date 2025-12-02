@@ -3,27 +3,24 @@
  * @description Interface for billing, donations, and payment management
  */
 
-import type {
-  Donation,
-  InsertDonation,
-} from "@shared/schema/billing";
+import type { Donation, InsertDonation } from "@shared/schema/billing";
 
 export interface IBillingStorage {
   // ==================== Donation Management ====================
   createDonation(
-    donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">
+    donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">,
   ): Promise<Donation>;
   updateDonation(
     stripePaymentIntentId: string,
-    updates: Partial<Donation>
+    updates: Partial<Donation>,
   ): Promise<Donation>;
   getDonation(id: string): Promise<Donation | undefined>;
   getDonationByPaymentIntent(
-    stripePaymentIntentId: string
+    stripePaymentIntentId: string,
   ): Promise<Donation | undefined>;
   getDonations(
     limit?: number,
-    offset?: number
+    offset?: number,
   ): Promise<{ donations: Donation[]; total: number }>;
   getUserDonations(userId: string, limit?: number): Promise<Donation[]>;
   deleteDonation(id: string): Promise<void>;
@@ -33,7 +30,10 @@ export interface IBillingStorage {
     totalAmount: number;
     donationCount: number;
   }>;
-  getDonationStats(startDate?: Date, endDate?: Date): Promise<{
+  getDonationStats(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     totalAmount: number;
     totalCount: number;
     averageAmount: number;
@@ -64,22 +64,22 @@ export interface IBillingStorage {
   cancelRecurringDonation(donationId: string): Promise<Donation>;
   updateRecurringDonation(
     donationId: string,
-    updates: { amount?: number; recurringInterval?: string }
+    updates: { amount?: number; recurringInterval?: string },
   ): Promise<Donation>;
 
   // ==================== Payment Processing ====================
   completeDonation(
     stripePaymentIntentId: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): Promise<Donation>;
   failDonation(
     stripePaymentIntentId: string,
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<Donation>;
   refundDonation(
     donationId: string,
     refundAmount?: number,
-    reason?: string
+    reason?: string,
   ): Promise<Donation>;
 
   // ==================== Donor Management ====================

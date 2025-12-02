@@ -1,11 +1,17 @@
 /**
  * AI Features Page
- * 
+ *
  * Main page for accessing all ML-powered features
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,7 +25,7 @@ import {
   Sparkles,
   Info,
   Bot,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 
 // Import ML feature components
@@ -34,7 +40,8 @@ function ChatRedirect() {
         <Bot className="w-16 h-16 mx-auto text-primary" />
         <h3 className="text-xl font-semibold">AI Assistant</h3>
         <p className="text-muted-foreground max-w-md">
-          Get recipe suggestions, manage your inventory, and chat with your personal kitchen assistant.
+          Get recipe suggestions, manage your inventory, and chat with your
+          personal kitchen assistant.
         </p>
         <Link href="/">
           <Button data-testid="button-go-to-assistant">
@@ -57,7 +64,7 @@ export default function AIFeatures() {
       description: "Have intelligent conversations with memory",
       icon: MessageCircle,
       component: ChatRedirect,
-      badge: "GPT-4"
+      badge: "GPT-4",
     },
     {
       id: "voice",
@@ -65,7 +72,7 @@ export default function AIFeatures() {
       description: "Control the app with voice commands",
       icon: Mic,
       component: VoiceCommands,
-      badge: "Web Speech API"
+      badge: "Web Speech API",
     },
     {
       id: "drafts",
@@ -73,7 +80,7 @@ export default function AIFeatures() {
       description: "Generate contextual message drafts",
       icon: Mail,
       component: EmailDrafting,
-      badge: "GPT-3.5"
+      badge: "GPT-3.5",
     },
     {
       id: "writing",
@@ -81,11 +88,11 @@ export default function AIFeatures() {
       description: "Improve your writing with AI suggestions",
       icon: Edit3,
       component: WritingAssistant,
-      badge: "Advanced"
-    }
+      badge: "Advanced",
+    },
   ];
 
-  const ActiveComponent = features.find(f => f.id === activeTab)?.component;
+  const ActiveComponent = features.find((f) => f.id === activeTab)?.component;
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +112,8 @@ export default function AIFeatures() {
             <Alert className="max-w-md">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                All AI features use Replit AI Integrations. Usage is billed to your credits.
+                All AI features use Replit AI Integrations. Usage is billed to
+                your credits.
               </AlertDescription>
             </Alert>
           </div>
@@ -133,7 +141,9 @@ export default function AIFeatures() {
                       {feature.badge}
                     </Badge>
                   </div>
-                  <CardTitle className="text-lg mt-2">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg mt-2">
+                    {feature.title}
+                  </CardTitle>
                   <CardDescription className="text-sm">
                     {feature.description}
                   </CardDescription>
@@ -153,11 +163,15 @@ export default function AIFeatures() {
                 </TabsTrigger>
               ))}
             </TabsList>
-            
+
             {features.map((feature) => {
               const Component = feature.component;
               return (
-                <TabsContent key={feature.id} value={feature.id} className="mt-0">
+                <TabsContent
+                  key={feature.id}
+                  value={feature.id}
+                  className="mt-0"
+                >
                   <Component />
                 </TabsContent>
               );

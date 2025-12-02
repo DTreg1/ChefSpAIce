@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -7,8 +13,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, CreditCard, Calendar, Globe, MapPin, User, FileText, Info } from "lucide-react";
-import { SmartValidation, ValidationSuccess, FormatHelper } from "@/components/forms";
+import {
+  Phone,
+  Mail,
+  CreditCard,
+  Calendar,
+  Globe,
+  MapPin,
+  User,
+  FileText,
+  Info,
+} from "lucide-react";
+import {
+  SmartValidation,
+  ValidationSuccess,
+  FormatHelper,
+} from "@/components/forms";
 import { useSmartValidation } from "@/hooks/use-smart-validation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,9 +56,13 @@ export default function ValidationDemo() {
   });
 
   // Handle input change
-  const handleInputChange = async (fieldName: string, fieldType: string, value: string) => {
-    setFormData(prev => ({ ...prev, [fieldName]: value }));
-    
+  const handleInputChange = async (
+    fieldName: string,
+    fieldType: string,
+    value: string,
+  ) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+
     // Validate the field as user types (with debouncing)
     await validateField(fieldName, fieldType, value, {
       debounce: 500,
@@ -47,10 +71,15 @@ export default function ValidationDemo() {
   };
 
   // Handle suggestion application
-  const handleApplySuggestion = async (fieldName: string, fieldType: string, value: string, action?: string) => {
+  const handleApplySuggestion = async (
+    fieldName: string,
+    fieldType: string,
+    value: string,
+    action?: string,
+  ) => {
     const newValue = await applySuggestion(fieldName, fieldType, value, action);
-    setFormData(prev => ({ ...prev, [fieldName]: newValue }));
-    
+    setFormData((prev) => ({ ...prev, [fieldName]: newValue }));
+
     toast({
       title: "Suggestion Applied",
       description: `Applied suggested value: ${newValue}`,
@@ -93,7 +122,8 @@ export default function ValidationDemo() {
       label: "Phone Number",
       placeholder: "555-1234",
       icon: Phone,
-      description: "Try entering just 7 digits - the system will suggest area codes!",
+      description:
+        "Try entering just 7 digits - the system will suggest area codes!",
       examples: ["(555) 123-4567", "555-123-4567", "+1 555 123 4567"],
     },
     {
@@ -147,9 +177,12 @@ export default function ValidationDemo() {
     <div className="container mx-auto p-6 max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Intelligent Form Validation Demo</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Intelligent Form Validation Demo
+        </h1>
         <p className="text-muted-foreground">
-          Experience smart validation with AI-powered suggestions, auto-corrections, and helpful format hints.
+          Experience smart validation with AI-powered suggestions,
+          auto-corrections, and helpful format hints.
         </p>
       </div>
 
@@ -174,17 +207,21 @@ export default function ValidationDemo() {
           <CardHeader>
             <CardTitle>Smart Form Fields</CardTitle>
             <CardDescription>
-              Enter data to see real-time validation with intelligent suggestions
+              Enter data to see real-time validation with intelligent
+              suggestions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {fields.map((field) => {
               const fieldState = getFieldState(field.name);
               const Icon = field.icon;
-              
+
               return (
                 <div key={field.name} className="space-y-2">
-                  <Label htmlFor={field.name} className="flex items-center gap-2">
+                  <Label
+                    htmlFor={field.name}
+                    className="flex items-center gap-2"
+                  >
                     <Icon className="h-4 w-4" />
                     {field.label}
                   </Label>
@@ -193,19 +230,29 @@ export default function ValidationDemo() {
                     type="text"
                     placeholder={field.placeholder}
                     value={formData[field.name as keyof typeof formData]}
-                    onChange={(e) => handleInputChange(field.name, field.type, e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(field.name, field.type, e.target.value)
+                    }
                     className={
-                      fieldState.hasBeenValidated && fieldState.result && !fieldState.result.isValid
+                      fieldState.hasBeenValidated &&
+                      fieldState.result &&
+                      !fieldState.result.isValid
                         ? "border-destructive focus:ring-destructive"
-                        : fieldState.hasBeenValidated && fieldState.result?.isValid
-                        ? "border-green-500 focus:ring-green-500"
-                        : ""
+                        : fieldState.hasBeenValidated &&
+                            fieldState.result?.isValid
+                          ? "border-green-500 focus:ring-green-500"
+                          : ""
                     }
                     data-testid={`input-${field.name}`}
                   />
-                  <p className="text-xs text-muted-foreground">{field.description}</p>
-                  <FormatHelper fieldType={field.type} examples={field.examples} />
-                  
+                  <p className="text-xs text-muted-foreground">
+                    {field.description}
+                  </p>
+                  <FormatHelper
+                    fieldType={field.type}
+                    examples={field.examples}
+                  />
+
                   {/* Validation Feedback */}
                   {fieldState.hasBeenValidated && fieldState.result && (
                     <>
@@ -221,7 +268,12 @@ export default function ValidationDemo() {
                           quickFixes={fieldState.result.quickFixes}
                           formatHints={fieldState.result.formatHints}
                           onApplySuggestion={(value, action) =>
-                            handleApplySuggestion(field.name, field.type, value, action)
+                            handleApplySuggestion(
+                              field.name,
+                              field.type,
+                              value,
+                              action,
+                            )
                           }
                         />
                       )}
@@ -232,17 +284,17 @@ export default function ValidationDemo() {
             })}
 
             <Separator />
-            
+
             <div className="flex gap-2">
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={!isFormValid()}
                 className="flex-1"
                 data-testid="button-submit-form"
               >
                 Validate All Fields
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   clearAllValidations();
                   setFormData({
@@ -280,7 +332,7 @@ export default function ValidationDemo() {
                   <TabsTrigger value="features">Features</TabsTrigger>
                   <TabsTrigger value="technology">Technology</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="features" className="space-y-4 mt-4">
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
@@ -288,35 +340,40 @@ export default function ValidationDemo() {
                       <div>
                         <p className="font-medium text-sm">Smart Suggestions</p>
                         <p className="text-xs text-muted-foreground">
-                          AI analyzes your input and suggests corrections based on context
+                          AI analyzes your input and suggests corrections based
+                          on context
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <Badge className="mt-0.5">UX</Badge>
                       <div>
                         <p className="font-medium text-sm">Quick Fixes</p>
                         <p className="text-xs text-muted-foreground">
-                          One-click fixes for common mistakes like missing area codes
+                          One-click fixes for common mistakes like missing area
+                          codes
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <Badge className="mt-0.5">ML</Badge>
                       <div>
                         <p className="font-medium text-sm">Learning System</p>
                         <p className="text-xs text-muted-foreground">
-                          Learns from user corrections to improve future suggestions
+                          Learns from user corrections to improve future
+                          suggestions
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <Badge className="mt-0.5">RT</Badge>
                       <div>
-                        <p className="font-medium text-sm">Real-time Validation</p>
+                        <p className="font-medium text-sm">
+                          Real-time Validation
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           Instant feedback as you type with smart debouncing
                         </p>
@@ -324,7 +381,7 @@ export default function ValidationDemo() {
                     </div>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="technology" className="space-y-4 mt-4">
                   <div className="space-y-3">
                     <div>
@@ -336,9 +393,11 @@ export default function ValidationDemo() {
                         <Badge variant="outline">PostgreSQL</Badge>
                       </div>
                     </div>
-                    
+
                     <div>
-                      <p className="font-medium text-sm mb-1">Validation Methods</p>
+                      <p className="font-medium text-sm mb-1">
+                        Validation Methods
+                      </p>
                       <div className="flex flex-wrap gap-1">
                         <Badge variant="outline">Regex Patterns</Badge>
                         <Badge variant="outline">AI Analysis</Badge>
@@ -346,7 +405,7 @@ export default function ValidationDemo() {
                         <Badge variant="outline">Context Awareness</Badge>
                       </div>
                     </div>
-                    
+
                     <div>
                       <p className="font-medium text-sm mb-1">Data Storage</p>
                       <ul className="text-xs text-muted-foreground space-y-1">
@@ -368,28 +427,32 @@ export default function ValidationDemo() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">✓</Badge>
+                <Badge variant="default" className="mt-0.5">
+                  ✓
+                </Badge>
                 <p className="text-sm">
                   Phone "555-1234" → Suggests adding area code
                 </p>
               </div>
               <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">✓</Badge>
+                <Badge variant="default" className="mt-0.5">
+                  ✓
+                </Badge>
                 <p className="text-sm">
                   Detects international formats (+1, +44, etc.)
                 </p>
               </div>
               <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">✓</Badge>
-                <p className="text-sm">
-                  One-click formatting fixes available
-                </p>
+                <Badge variant="default" className="mt-0.5">
+                  ✓
+                </Badge>
+                <p className="text-sm">One-click formatting fixes available</p>
               </div>
               <div className="flex items-start gap-2">
-                <Badge variant="default" className="mt-0.5">✓</Badge>
-                <p className="text-sm">
-                  AI-powered contextual suggestions
-                </p>
+                <Badge variant="default" className="mt-0.5">
+                  ✓
+                </Badge>
+                <p className="text-sm">AI-powered contextual suggestions</p>
               </div>
             </CardContent>
           </Card>

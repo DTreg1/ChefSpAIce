@@ -10,16 +10,16 @@ Meeting schedule methods are stubs. Need to verify if table exists or needs crea
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `getMeetingSchedules(userId)` | Get user's meetings |
-| `getMeetingSchedule(scheduleId)` | Get single meeting |
-| `createMeetingSchedule(schedule)` | Create meeting |
-| `updateMeetingSchedule(scheduleId, data)` | Update meeting |
-| `deleteMeetingSchedule(scheduleId)` | Delete meeting |
-| `getMeetingsByDateRange(userId, start, end)` | Get meetings in range |
-| `checkConflicts(userId, start, end)` | Find conflicting meetings |
-| `getAvailableSlots(userId, date, duration)` | Find available time slots |
+| Method                                       | Description               |
+| -------------------------------------------- | ------------------------- |
+| `getMeetingSchedules(userId)`                | Get user's meetings       |
+| `getMeetingSchedule(scheduleId)`             | Get single meeting        |
+| `createMeetingSchedule(schedule)`            | Create meeting            |
+| `updateMeetingSchedule(scheduleId, data)`    | Update meeting            |
+| `deleteMeetingSchedule(scheduleId)`          | Delete meeting            |
+| `getMeetingsByDateRange(userId, start, end)` | Get meetings in range     |
+| `checkConflicts(userId, start, end)`         | Find conflicting meetings |
+| `getAvailableSlots(userId, date, duration)`  | Find available time slots |
 
 ---
 
@@ -28,7 +28,7 @@ Meeting schedule methods are stubs. Need to verify if table exists or needs crea
 Copy and paste this prompt:
 
 ```
-Check shared/schema/scheduling.ts for a meeting schedules table. 
+Check shared/schema/scheduling.ts for a meeting schedules table.
 
 If it doesn't exist or is incomplete, ensure it has:
 

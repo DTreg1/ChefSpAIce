@@ -1,16 +1,22 @@
-import * as React from 'react';
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export interface LoaderProps {
   /**
    * Size of the cook pot loader
    */
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
 
   /**
    * Color of the loader
    */
-  color?: 'primary' | 'success' | 'warning' | 'destructive' | 'muted' | 'inherit';
+  color?:
+    | "primary"
+    | "success"
+    | "warning"
+    | "destructive"
+    | "muted"
+    | "inherit";
 
   /**
    * Optional text to display with the loader
@@ -32,112 +38,119 @@ export interface LoaderProps {
 
 /**
  * Cook Pot Loader Component
- * 
- * A specialized cooking-themed loader animation featuring a cook pot with 
+ *
+ * A specialized cooking-themed loader animation featuring a cook pot with
  * animated steam and bubbles, designed for recipe-related loading states.
  */
 export function CookLoader({
-  size = 'md',
-  color = 'primary',
+  size = "md",
+  color = "primary",
   text,
   // Removed textPosition as it's not used (text is always below the animation)
   textClassName,
-  className}: LoaderProps) {
+  className,
+}: LoaderProps) {
   // Size mappings - all sizes doubled
-  const sizeMap: Record<string, {
-    container: string,
-    potWidth: string,
-    potHeight: string,
-    text: string,
-    steam: string
-  }> = {
+  const sizeMap: Record<
+    string,
+    {
+      container: string;
+      potWidth: string;
+      potHeight: string;
+      text: string;
+      steam: string;
+    }
+  > = {
     xs: {
       container: "w-12 h-12",
       potWidth: "w-12",
       potHeight: "h-8",
       text: "text-xs",
-      steam: "w-8 h-12"
+      steam: "w-8 h-12",
     },
     sm: {
       container: "w-16 h-16",
       potWidth: "w-16",
       potHeight: "h-10",
-      text: "text-sm", 
-      steam: "w-10 h-16"
+      text: "text-sm",
+      steam: "w-10 h-16",
     },
     md: {
       container: "w-24 h-24",
       potWidth: "w-24",
       potHeight: "h-16",
       text: "text-base",
-      steam: "w-16 h-20"
+      steam: "w-16 h-20",
     },
     lg: {
       container: "w-32 h-32",
       potWidth: "w-32",
       potHeight: "h-20",
       text: "text-lg",
-      steam: "w-20 h-24"
+      steam: "w-20 h-24",
     },
     xl: {
       container: "w-40 h-40",
-      potWidth: "w-40", 
+      potWidth: "w-40",
       potHeight: "h-28",
       text: "text-xl",
-      steam: "w-24 h-28"
-    }
+      steam: "w-24 h-28",
+    },
   };
 
   // Color mappings - Updated to make pot more visible and water (fill) less prominent
-  const colorMap: Record<string, {
-    pot: string,
-    lid: string,
-    steam: string,
-    bubbles: string
-  }> = {
+  const colorMap: Record<
+    string,
+    {
+      pot: string;
+      lid: string;
+      steam: string;
+      bubbles: string;
+    }
+  > = {
     primary: {
       pot: "fill-primary/20 stroke-primary",
       lid: "fill-primary-foreground",
       steam: "fill-primary/40",
-      bubbles: "fill-primary-foreground/70"
+      bubbles: "fill-primary-foreground/70",
     },
     success: {
       pot: "fill-success/20 stroke-success",
       lid: "fill-success-foreground",
       steam: "fill-success/40",
-      bubbles: "fill-success-foreground/70"
+      bubbles: "fill-success-foreground/70",
     },
     warning: {
       pot: "fill-warning/20 stroke-warning",
       lid: "fill-warning-foreground",
       steam: "fill-warning/40",
-      bubbles: "fill-warning-foreground/70"
+      bubbles: "fill-warning-foreground/70",
     },
     destructive: {
       pot: "fill-destructive/20 stroke-destructive",
       lid: "fill-destructive-foreground",
       steam: "fill-destructive/40",
-      bubbles: "fill-destructive-foreground/70"
+      bubbles: "fill-destructive-foreground/70",
     },
     muted: {
       pot: "fill-muted/20 stroke-muted",
       lid: "fill-muted-foreground",
       steam: "fill-muted/40",
-      bubbles: "fill-muted-foreground/70"
+      bubbles: "fill-muted-foreground/70",
     },
     inherit: {
       pot: "fill-current/20 stroke-current",
       lid: "fill-current",
       steam: "fill-current/40",
-      bubbles: "fill-current/70"
-    }
+      bubbles: "fill-current/70",
+    },
   };
 
   // Container classes
   const containerClasses = cn(
     "relative inline-flex flex-col items-center justify-center overflow-visible",
     sizeMap[size].container,
-    className
+    className,
   );
 
   // Default text to "Prepping the Kitchen" if not provided
@@ -153,7 +166,7 @@ export function CookLoader({
           className={cn(
             "overflow-visible",
             sizeMap[size].potWidth,
-            sizeMap[size].potHeight
+            sizeMap[size].potHeight,
           )}
         >
           {/* Pot Body - Updated with more visible outline */}
@@ -167,7 +180,7 @@ export function CookLoader({
             strokeWidth="4"
             strokeOpacity="1"
           />
-          
+
           {/* Water line to show the liquid inside the pot */}
           <path
             d="M15 70 L85 70"
@@ -176,7 +189,7 @@ export function CookLoader({
             strokeOpacity="0.3"
             fill="none"
           />
-          
+
           {/* Pot rim to emphasize pot shape */}
           <path
             d="M10 55 L90 55"
@@ -185,7 +198,7 @@ export function CookLoader({
             strokeOpacity="0.7"
             fill="none"
           />
-          
+
           {/* Pot Handles */}
           <path
             d="M5 70 Q0 70 0 60 Q0 50 5 50"
@@ -199,7 +212,7 @@ export function CookLoader({
             strokeWidth="4"
             fill="none"
           />
-          
+
           {/* Pot Lid */}
           <rect
             x="20"
@@ -209,13 +222,8 @@ export function CookLoader({
             rx="5"
             className={colorMap[color].lid}
           />
-          <circle
-            cx="50"
-            cy="40"
-            r="7"
-            className={colorMap[color].lid}
-          />
-          
+          <circle cx="50" cy="40" r="7" className={colorMap[color].lid} />
+
           {/* Steam Animation - Three Curls */}
           <g className="steam-group">
             <path
@@ -249,7 +257,7 @@ export function CookLoader({
               />
             </path>
             <path
-              d="M70 35 Q75 25 70 20 Q65 15 70 10" 
+              d="M70 35 Q75 25 70 20 Q65 15 70 10"
               className={cn(colorMap[color].steam, "animate-steam-3")}
               strokeWidth="0"
               fill="none"
@@ -263,7 +271,7 @@ export function CookLoader({
                 repeatCount="indefinite"
               />
             </path>
-            
+
             {/* Steam Clouds */}
             <circle
               cx="30"
@@ -323,7 +331,7 @@ export function CookLoader({
               />
             </circle>
           </g>
-          
+
           {/* Bubbles Animation */}
           <g className="bubbles-group">
             <circle
@@ -347,7 +355,7 @@ export function CookLoader({
             >
               <animate
                 attributeName="cy"
-                values="85;65;85" 
+                values="85;65;85"
                 dur="2s"
                 repeatCount="indefinite"
               />
@@ -368,9 +376,15 @@ export function CookLoader({
           </g>
         </svg>
       </div>
-      
+
       {/* Text always appears below the animation on one line */}
-      <span className={cn("mt-2 text-center whitespace-nowrap", sizeMap[size].text, textClassName)}>
+      <span
+        className={cn(
+          "mt-2 text-center whitespace-nowrap",
+          sizeMap[size].text,
+          textClassName,
+        )}
+      >
         {displayText}
       </span>
     </div>

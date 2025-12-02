@@ -1,11 +1,11 @@
 /**
  * Type declarations for text-readability module
- * 
+ *
  * This module provides various readability scoring methods for text analysis.
  * CommonJS module with default export.
  */
 
-declare module 'text-readability' {
+declare module "text-readability" {
   interface TextReadability {
     /**
      * Calculate the Flesch Reading Ease score

@@ -1,6 +1,6 @@
 /**
  * Sentiment Indicator Component
- * 
+ *
  * Displays sentiment analysis results with visual indicators,
  * confidence scores, and emotion badges.
  */
@@ -8,21 +8,26 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  SmileIcon, 
-  FrownIcon, 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  SmileIcon,
+  FrownIcon,
   MehIcon,
   AlertCircleIcon,
   HeartIcon,
   ThumbsUpIcon,
   ThumbsDownIcon,
   TrendingUpIcon,
-  TrendingDownIcon
+  TrendingDownIcon,
 } from "lucide-react";
 
 export interface SentimentData {
-  sentiment: 'positive' | 'negative' | 'neutral' | 'mixed';
+  sentiment: "positive" | "negative" | "neutral" | "mixed";
   confidence: number;
   sentimentScores?: {
     positive: number;
@@ -39,7 +44,7 @@ export interface SentimentData {
 
 interface SentimentIndicatorProps {
   data: SentimentData;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showDetails?: boolean;
   showEmotions?: boolean;
   showAspects?: boolean;
@@ -49,54 +54,58 @@ interface SentimentIndicatorProps {
 const sentimentConfig = {
   positive: {
     icon: SmileIcon,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-100 dark:bg-green-900/20',
-    borderColor: 'border-green-200 dark:border-green-800',
-    label: 'Positive',
-    badge: 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-100 dark:bg-green-900/20",
+    borderColor: "border-green-200 dark:border-green-800",
+    label: "Positive",
+    badge:
+      "bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800",
   },
   negative: {
     icon: FrownIcon,
-    color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-100 dark:bg-red-900/20',
-    borderColor: 'border-red-200 dark:border-red-800',
-    label: 'Negative',
-    badge: 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-100 dark:bg-red-900/20",
+    borderColor: "border-red-200 dark:border-red-800",
+    label: "Negative",
+    badge:
+      "bg-red-500/10 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
   },
   neutral: {
     icon: MehIcon,
-    color: 'text-gray-600 dark:text-gray-400',
-    bgColor: 'bg-gray-100 dark:bg-gray-900/20',
-    borderColor: 'border-gray-200 dark:border-gray-800',
-    label: 'Neutral',
-    badge: 'bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800',
+    color: "text-gray-600 dark:text-gray-400",
+    bgColor: "bg-gray-100 dark:bg-gray-900/20",
+    borderColor: "border-gray-200 dark:border-gray-800",
+    label: "Neutral",
+    badge:
+      "bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800",
   },
   mixed: {
     icon: AlertCircleIcon,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
-    borderColor: 'border-yellow-200 dark:border-yellow-800',
-    label: 'Mixed',
-    badge: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
+    color: "text-yellow-600 dark:text-yellow-400",
+    bgColor: "bg-yellow-100 dark:bg-yellow-900/20",
+    borderColor: "border-yellow-200 dark:border-yellow-800",
+    label: "Mixed",
+    badge:
+      "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800",
   },
 };
 
 const emotionIcons: { [key: string]: any } = {
-  happy: '😊',
-  sad: '😢',
-  angry: '😠',
-  fearful: '😨',
-  surprised: '😮',
-  disgusted: '🤢',
-  excited: '🤩',
-  frustrated: '😤',
-  satisfied: '😌',
-  disappointed: '😞',
+  happy: "😊",
+  sad: "😢",
+  angry: "😠",
+  fearful: "😨",
+  surprised: "😮",
+  disgusted: "🤢",
+  excited: "🤩",
+  frustrated: "😤",
+  satisfied: "😌",
+  disappointed: "😞",
 };
 
 export function SentimentIndicator({
   data,
-  size = 'md',
+  size = "md",
   showDetails = false,
   showEmotions = false,
   showAspects = false,
@@ -104,17 +113,17 @@ export function SentimentIndicator({
 }: SentimentIndicatorProps) {
   const config = sentimentConfig[data.sentiment];
   const Icon = config.icon;
-  
+
   const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6',
+    sm: "w-4 h-4",
+    md: "w-5 h-5",
+    lg: "w-6 h-6",
   };
-  
+
   const containerSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
   };
 
   // Get top emotions
@@ -137,7 +146,7 @@ export function SentimentIndicator({
                   "flex items-center gap-1.5 px-2 py-1 rounded-lg border",
                   config.bgColor,
                   config.borderColor,
-                  containerSizeClasses[size]
+                  containerSizeClasses[size],
                 )}
                 data-testid="sentiment-indicator"
               >
@@ -157,9 +166,17 @@ export function SentimentIndicator({
                 <p>Confidence: {Math.round(data.confidence * 100)}%</p>
                 {data.sentimentScores && (
                   <div className="mt-1">
-                    <p>Positive: {Math.round(data.sentimentScores.positive * 100)}%</p>
-                    <p>Negative: {Math.round(data.sentimentScores.negative * 100)}%</p>
-                    <p>Neutral: {Math.round(data.sentimentScores.neutral * 100)}%</p>
+                    <p>
+                      Positive:{" "}
+                      {Math.round(data.sentimentScores.positive * 100)}%
+                    </p>
+                    <p>
+                      Negative:{" "}
+                      {Math.round(data.sentimentScores.negative * 100)}%
+                    </p>
+                    <p>
+                      Neutral: {Math.round(data.sentimentScores.neutral * 100)}%
+                    </p>
                   </div>
                 )}
               </div>
@@ -173,8 +190,8 @@ export function SentimentIndicator({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <ThumbsUpIcon className="w-3 h-3 text-green-600 dark:text-green-400" />
-            <Progress 
-              value={data.sentimentScores.positive * 100} 
+            <Progress
+              value={data.sentimentScores.positive * 100}
               className="h-2 flex-1"
               data-testid="positive-score-bar"
             />
@@ -184,8 +201,8 @@ export function SentimentIndicator({
           </div>
           <div className="flex items-center gap-2">
             <ThumbsDownIcon className="w-3 h-3 text-red-600 dark:text-red-400" />
-            <Progress 
-              value={data.sentimentScores.negative * 100} 
+            <Progress
+              value={data.sentimentScores.negative * 100}
               className="h-2 flex-1"
               data-testid="negative-score-bar"
             />
@@ -195,8 +212,8 @@ export function SentimentIndicator({
           </div>
           <div className="flex items-center gap-2">
             <MehIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-            <Progress 
-              value={data.sentimentScores.neutral * 100} 
+            <Progress
+              value={data.sentimentScores.neutral * 100}
               className="h-2 flex-1"
               data-testid="neutral-score-bar"
             />
@@ -217,7 +234,7 @@ export function SentimentIndicator({
               className="text-xs py-0.5"
               data-testid={`emotion-tag-${emotion}`}
             >
-              <span className="mr-1">{emotionIcons[emotion] || '💭'}</span>
+              <span className="mr-1">{emotionIcons[emotion] || "💭"}</span>
               {emotion}
               <span className="ml-1 opacity-70">
                 {Math.round((intensity as number) * 100)}%
@@ -228,28 +245,41 @@ export function SentimentIndicator({
       )}
 
       {/* Aspect-based Sentiments */}
-      {showAspects && data.aspectSentiments && Object.keys(data.aspectSentiments).length > 0 && (
-        <div className="space-y-1 pt-2 border-t">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Aspects:</p>
-          <div className="flex flex-wrap gap-1">
-            {Object.entries(data.aspectSentiments).map(([aspect, sentiment]) => {
-              const aspectConfig = sentimentConfig[sentiment as keyof typeof sentimentConfig] || sentimentConfig.neutral;
-              return (
-                <Badge
-                  key={aspect}
-                  variant="outline"
-                  className={cn("text-xs py-0.5", aspectConfig.badge)}
-                  data-testid={`aspect-${aspect}`}
-                >
-                  {aspect}
-                  {sentiment === 'positive' && <TrendingUpIcon className="w-3 h-3 ml-1" />}
-                  {sentiment === 'negative' && <TrendingDownIcon className="w-3 h-3 ml-1" />}
-                </Badge>
-              );
-            })}
+      {showAspects &&
+        data.aspectSentiments &&
+        Object.keys(data.aspectSentiments).length > 0 && (
+          <div className="space-y-1 pt-2 border-t">
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Aspects:
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(data.aspectSentiments).map(
+                ([aspect, sentiment]) => {
+                  const aspectConfig =
+                    sentimentConfig[
+                      sentiment as keyof typeof sentimentConfig
+                    ] || sentimentConfig.neutral;
+                  return (
+                    <Badge
+                      key={aspect}
+                      variant="outline"
+                      className={cn("text-xs py-0.5", aspectConfig.badge)}
+                      data-testid={`aspect-${aspect}`}
+                    >
+                      {aspect}
+                      {sentiment === "positive" && (
+                        <TrendingUpIcon className="w-3 h-3 ml-1" />
+                      )}
+                      {sentiment === "negative" && (
+                        <TrendingDownIcon className="w-3 h-3 ml-1" />
+                      )}
+                    </Badge>
+                  );
+                },
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

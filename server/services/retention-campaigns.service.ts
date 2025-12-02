@@ -1,34 +1,38 @@
 /**
  * Retention Campaign Service
- * 
+ *
  * Provides automated user retention capabilities including:
  * - Automated email campaign system for user retention
  * - Integration with prediction service for targeted interventions
  * - Churn risk assessment and intervention scheduling
  * - Campaign metrics tracking
- * 
+ *
  * Storage is handled through storage.platform.analytics for predictions
  * and campaign tracking data.
- * 
+ *
  * Email Integration: Requires EMAIL_SERVICE_PROVIDER environment variable
  * to be configured (e.g., 'sendgrid', 'mailgun', 'console' for testing)
- * 
+ *
  * @since Sprint 3 - Activated with AnalyticsStorage integration
  */
 
 import { storage } from "../storage/index";
-import { predictionService } from './prediction.service';
-import type { UserPrediction, InsertUserPrediction, InsertPredictionAccuracy } from '@shared/schema';
-import cron, { type ScheduledTask } from 'node-cron';
+import { predictionService } from "./prediction.service";
+import type {
+  UserPrediction,
+  InsertUserPrediction,
+  InsertPredictionAccuracy,
+} from "@shared/schema";
+import cron, { type ScheduledTask } from "node-cron";
 
 interface EmailCampaign {
   id: string;
   userId: string;
-  campaignType: 'immediate' | 'followup' | 'winback';
+  campaignType: "immediate" | "followup" | "winback";
   subject: string;
   content: string;
   scheduledFor: Date;
-  status: 'scheduled' | 'sent' | 'failed' | 'cancelled';
+  status: "scheduled" | "sent" | "failed" | "cancelled";
   predictionId?: string;
   sentAt?: Date;
   metadata?: Record<string, any>;
@@ -60,28 +64,28 @@ class RetentionCampaignService {
    */
   private initializeCampaigns() {
     // Schedule daily churn check at 9 AM
-    const dailyChurnCheck = cron.schedule('0 9 * * *', async () => {
-      console.log('Running daily churn risk assessment...');
+    const dailyChurnCheck = cron.schedule("0 9 * * *", async () => {
+      console.log("Running daily churn risk assessment...");
       await this.assessAndInterveneDailyChurn();
     });
 
     // Schedule weekly re-engagement campaign on Mondays
-    const weeklyReengagement = cron.schedule('0 10 * * 1', async () => {
-      console.log('Running weekly re-engagement campaign...');
+    const weeklyReengagement = cron.schedule("0 10 * * 1", async () => {
+      console.log("Running weekly re-engagement campaign...");
       await this.runWeeklyReengagementCampaign();
     });
 
     // Schedule monthly retention report on the 1st
-    const monthlyReport = cron.schedule('0 8 1 * *', async () => {
-      console.log('Generating monthly retention report...');
+    const monthlyReport = cron.schedule("0 8 1 * *", async () => {
+      console.log("Generating monthly retention report...");
       await this.generateMonthlyReport();
     });
 
-    this.cronJobs.set('dailyChurnCheck', dailyChurnCheck);
-    this.cronJobs.set('weeklyReengagement', weeklyReengagement);
-    this.cronJobs.set('monthlyReport', monthlyReport);
+    this.cronJobs.set("dailyChurnCheck", dailyChurnCheck);
+    this.cronJobs.set("weeklyReengagement", weeklyReengagement);
+    this.cronJobs.set("monthlyReport", monthlyReport);
 
-    console.log('Retention campaign system initialized');
+    console.log("Retention campaign system initialized");
   }
 
   /**
@@ -90,7 +94,8 @@ class RetentionCampaignService {
   async assessAndInterveneDailyChurn() {
     try {
       // Get high-risk churn users (>80% probability)
-      const churnRisks = await storage.platform.analytics.getChurnRiskUsers(0.8);
+      const churnRisks =
+        await storage.platform.analytics.getChurnRiskUsers(0.8);
       console.log(`Found ${churnRisks.length} high-risk churn users`);
 
       for (const risk of churnRisks) {
@@ -101,12 +106,12 @@ class RetentionCampaignService {
 
         // Generate intervention strategy
         const intervention = await predictionService.generateIntervention(risk);
-        
+
         // Create immediate campaign
         const campaign = this.createCampaign({
           userId: risk.userId,
           predictionId: risk.id,
-          type: 'immediate',
+          type: "immediate",
           intervention: intervention.strategies.immediate,
           scheduledFor: new Date(),
         });
@@ -118,7 +123,7 @@ class RetentionCampaignService {
         this.scheduleFollowUpCampaigns(risk, intervention);
       }
     } catch (error) {
-      console.error('Error in daily churn assessment:', error);
+      console.error("Error in daily churn assessment:", error);
     }
   }
 
@@ -128,21 +133,25 @@ class RetentionCampaignService {
   async runWeeklyReengagementCampaign() {
     try {
       // Get medium-risk users (60-80% confidence)
-      const mediumRisks = await storage.platform.analytics.getChurnRiskUsers(0.6);
-      const targetUsers = mediumRisks.filter(r => r.confidence < 0.8);
-      
-      console.log(`Running re-engagement campaign for ${targetUsers.length} users`);
+      const mediumRisks =
+        await storage.platform.analytics.getChurnRiskUsers(0.6);
+      const targetUsers = mediumRisks.filter((r) => r.confidence < 0.8);
+
+      console.log(
+        `Running re-engagement campaign for ${targetUsers.length} users`,
+      );
 
       for (const user of targetUsers) {
         const campaign = this.createCampaign({
           userId: user.userId,
           predictionId: user.id,
-          type: 'followup',
+          type: "followup",
           intervention: {
-            action: 'Weekly engagement boost',
-            emailSubject: '📊 Your weekly insights are ready!',
-            keyMessage: 'Check out what you achieved this week and discover new features',
-            timing: 'immediate',
+            action: "Weekly engagement boost",
+            emailSubject: "📊 Your weekly insights are ready!",
+            keyMessage:
+              "Check out what you achieved this week and discover new features",
+            timing: "immediate",
           },
           scheduledFor: new Date(),
         });
@@ -150,7 +159,7 @@ class RetentionCampaignService {
         await this.sendCampaign(campaign);
       }
     } catch (error) {
-      console.error('Error in weekly re-engagement:', error);
+      console.error("Error in weekly re-engagement:", error);
     }
   }
 
@@ -160,7 +169,7 @@ class RetentionCampaignService {
   createCampaign(params: {
     userId: string;
     predictionId?: string;
-    type: 'immediate' | 'followup' | 'winback';
+    type: "immediate" | "followup" | "winback";
     intervention: any;
     scheduledFor: Date;
   }): EmailCampaign {
@@ -171,7 +180,7 @@ class RetentionCampaignService {
       subject: params.intervention.emailSubject,
       content: this.generateEmailContent(params.intervention),
       scheduledFor: params.scheduledFor,
-      status: 'scheduled',
+      status: "scheduled",
       predictionId: params.predictionId,
       metadata: {
         intervention: params.intervention,
@@ -195,10 +204,10 @@ class RetentionCampaignService {
       console.log(`Content preview: ${campaign.content.substring(0, 200)}...`);
 
       // Simulate email sending delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Mark campaign as sent
-      campaign.status = 'sent';
+      campaign.status = "sent";
       campaign.sentAt = new Date();
 
       // Update metrics
@@ -209,7 +218,7 @@ class RetentionCampaignService {
       if (campaign.predictionId) {
         await storage.platform.analytics.updatePredictionStatus(
           campaign.predictionId,
-          'completed'
+          "completed",
         );
       }
 
@@ -219,7 +228,7 @@ class RetentionCampaignService {
       return true;
     } catch (error) {
       console.error(`Failed to send campaign ${campaign.id}:`, error);
-      campaign.status = 'failed';
+      campaign.status = "failed";
       await this.recordCampaignResult(campaign, false);
       return false;
     }
@@ -232,11 +241,11 @@ class RetentionCampaignService {
     // Schedule short-term follow-up (3 days)
     const shortTermDate = new Date();
     shortTermDate.setDate(shortTermDate.getDate() + 3);
-    
+
     const shortTermCampaign = this.createCampaign({
       userId: prediction.userId,
       predictionId: prediction.id,
-      type: 'followup',
+      type: "followup",
       intervention: intervention.strategies.shortTerm,
       scheduledFor: shortTermDate,
     });
@@ -244,11 +253,11 @@ class RetentionCampaignService {
     // Schedule long-term follow-up (2 weeks)
     const longTermDate = new Date();
     longTermDate.setDate(longTermDate.getDate() + 14);
-    
+
     const longTermCampaign = this.createCampaign({
       userId: prediction.userId,
       predictionId: prediction.id,
-      type: 'followup',
+      type: "followup",
       intervention: intervention.strategies.longTerm,
       scheduledFor: longTermDate,
     });
@@ -263,7 +272,7 @@ class RetentionCampaignService {
    */
   private scheduleCampaign(campaign: EmailCampaign) {
     const delay = campaign.scheduledFor.getTime() - Date.now();
-    
+
     if (delay > 0) {
       setTimeout(() => {
         this.sendCampaign(campaign);
@@ -329,18 +338,23 @@ The Team
       `,
     };
 
-    return templates[intervention.action?.includes('urgent') ? 'immediate' : 'followup'] || templates.immediate;
+    return (
+      templates[
+        intervention.action?.includes("urgent") ? "immediate" : "followup"
+      ] || templates.immediate
+    );
   }
 
   /**
    * Check if user was recently contacted
    */
   private wasRecentlyContacted(userId: string): boolean {
-    const recentCampaigns = this.campaigns.filter(c => 
-      c.userId === userId && 
-      c.status === 'sent' &&
-      c.sentAt && 
-      (Date.now() - c.sentAt.getTime()) < 7 * 24 * 60 * 60 * 1000 // 7 days
+    const recentCampaigns = this.campaigns.filter(
+      (c) =>
+        c.userId === userId &&
+        c.status === "sent" &&
+        c.sentAt &&
+        Date.now() - c.sentAt.getTime() < 7 * 24 * 60 * 60 * 1000, // 7 days
     );
 
     return recentCampaigns.length > 0;
@@ -350,11 +364,14 @@ The Team
    * Record campaign result for accuracy tracking
    * Stores intervention metadata in actualOutcome for analytics visibility
    */
-  private async recordCampaignResult(campaign: EmailCampaign, success: boolean) {
+  private async recordCampaignResult(
+    campaign: EmailCampaign,
+    success: boolean,
+  ) {
     if (campaign.predictionId) {
       try {
-        const outcomeData = { 
-          result: success ? 'intervention_successful' : 'intervention_failed',
+        const outcomeData = {
+          result: success ? "intervention_successful" : "intervention_failed",
           campaignId: campaign.id,
           campaignType: campaign.campaignType,
           subject: campaign.subject,
@@ -363,14 +380,15 @@ The Team
         };
         const accuracy: InsertPredictionAccuracy = {
           predictionId: campaign.predictionId,
-          actualOutcome: outcomeData as unknown as InsertPredictionAccuracy['actualOutcome'],
+          actualOutcome:
+            outcomeData as unknown as InsertPredictionAccuracy["actualOutcome"],
           isCorrect: success,
           accuracyScore: success ? 0.9 : 0.3,
           evaluatedAt: new Date(),
         };
         await storage.platform.analytics.createPredictionAccuracy(accuracy);
       } catch (error) {
-        console.error('Error recording campaign result:', error);
+        console.error("Error recording campaign result:", error);
       }
     }
   }
@@ -380,25 +398,28 @@ The Team
    */
   async generateMonthlyReport() {
     const report = {
-      month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      month: new Date().toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      }),
       metrics: {
         totalCampaignsSent: this.campaignMetrics.totalSent,
         successRate: `${(this.campaignMetrics.successRate * 100).toFixed(1)}%`,
-        estimatedChurnReduction: '25%', // Target from requirements
+        estimatedChurnReduction: "25%", // Target from requirements
         activeUsersRetained: Math.floor(this.campaignMetrics.totalSent * 0.75),
       },
       topPerformingCampaigns: this.getTopPerformingCampaigns(),
       recommendations: [
-        'Increase frequency of immediate interventions for critical risk users',
-        'A/B test email subject lines for better open rates',
-        'Implement SMS campaigns for urgent interventions',
-        'Create segment-specific content for different user groups',
+        "Increase frequency of immediate interventions for critical risk users",
+        "A/B test email subject lines for better open rates",
+        "Implement SMS campaigns for urgent interventions",
+        "Create segment-specific content for different user groups",
       ],
     };
 
-    console.log('=== Monthly Retention Report ===');
+    console.log("=== Monthly Retention Report ===");
     console.log(JSON.stringify(report, null, 2));
-    
+
     return report;
   }
 
@@ -407,10 +428,13 @@ The Team
    */
   private getTopPerformingCampaigns() {
     return this.campaigns
-      .filter(c => c.status === 'sent')
-      .sort((a, b) => (b.metadata?.successScore || 0) - (a.metadata?.successScore || 0))
+      .filter((c) => c.status === "sent")
+      .sort(
+        (a, b) =>
+          (b.metadata?.successScore || 0) - (a.metadata?.successScore || 0),
+      )
       .slice(0, 5)
-      .map(c => ({
+      .map((c) => ({
         id: c.id,
         type: c.campaignType,
         subject: c.subject,
@@ -426,10 +450,11 @@ The Team
     // Calculate churn reduction based on campaigns sent
     const baseChurnRate = 0.3; // 30% baseline
     const currentChurnRate = baseChurnRate * (1 - 0.25); // 25% reduction target
-    
+
     return {
       ...this.campaignMetrics,
-      churnReduction: ((baseChurnRate - currentChurnRate) / baseChurnRate) * 100,
+      churnReduction:
+        ((baseChurnRate - currentChurnRate) / baseChurnRate) * 100,
       activeUsers: Math.floor(this.campaignMetrics.totalSent * 0.75),
     };
   }

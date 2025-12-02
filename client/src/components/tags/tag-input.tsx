@@ -1,6 +1,6 @@
 /**
  * TagInput Component
- * 
+ *
  * A sophisticated tag input component with auto-complete functionality.
  * Features:
  * - Auto-complete suggestions from existing tags
@@ -16,8 +16,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface TagSearchResult {
   id: string;
@@ -72,23 +82,23 @@ export function TagInput({
   const addTag = useCallback(
     (tag: { id?: string; name: string }) => {
       if (value.length >= maxTags) return;
-      
+
       const tagName = tag.name.toLowerCase().trim();
       if (!tagName) return;
-      
+
       // Check for duplicates
       if (value.some((t) => t.name === tagName)) return;
-      
+
       const newTag = {
         id: tag.id || `new-${Date.now()}`,
         name: tagName,
       };
-      
+
       onChange([...value, newTag]);
       setInputValue("");
       setIsOpen(false);
     },
-    [value, onChange, maxTags]
+    [value, onChange, maxTags],
   );
 
   // Handle tag removal
@@ -96,7 +106,7 @@ export function TagInput({
     (tagToRemove: { id: string; name: string }) => {
       onChange(value.filter((tag) => tag.id !== tagToRemove.id));
     },
-    [value, onChange]
+    [value, onChange],
   );
 
   // Handle keyboard navigation
@@ -107,37 +117,41 @@ export function TagInput({
       case "Enter":
       case ",":
         e.preventDefault();
-        if (suggestions.tags && suggestions.tags.length > 0 && selectedIndex >= 0) {
+        if (
+          suggestions.tags &&
+          suggestions.tags.length > 0 &&
+          selectedIndex >= 0
+        ) {
           addTag(suggestions.tags[selectedIndex]);
         } else if (inputValue.trim()) {
           addTag({ name: inputValue });
         }
         break;
-        
+
       case "Backspace":
         if (!inputValue && value.length > 0) {
           removeTag(value[value.length - 1]);
         }
         break;
-        
+
       case "ArrowDown":
         e.preventDefault();
         if (suggestions.tags) {
           setSelectedIndex((prev) =>
-            prev < suggestions.tags.length - 1 ? prev + 1 : 0
+            prev < suggestions.tags.length - 1 ? prev + 1 : 0,
           );
         }
         break;
-        
+
       case "ArrowUp":
         e.preventDefault();
         if (suggestions.tags) {
           setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : suggestions.tags.length - 1
+            prev > 0 ? prev - 1 : suggestions.tags.length - 1,
           );
         }
         break;
-        
+
       case "Escape":
         setIsOpen(false);
         break;
@@ -169,7 +183,7 @@ export function TagInput({
           </Badge>
         ))}
       </div>
-      
+
       {!disabled && value.length < maxTags && (
         <Popover open={isOpen && inputValue.length > 0}>
           <PopoverTrigger asChild>
@@ -200,9 +214,9 @@ export function TagInput({
               )}
             </div>
           </PopoverTrigger>
-          
+
           {suggestions.tags && suggestions.tags.length > 0 && (
-            <PopoverContent 
+            <PopoverContent
               className="p-0 w-[300px]"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
@@ -217,7 +231,7 @@ export function TagInput({
                         onSelect={() => addTag(tag)}
                         className={cn(
                           "cursor-pointer",
-                          index === selectedIndex && "bg-accent"
+                          index === selectedIndex && "bg-accent",
                         )}
                         data-testid={`tag-suggestion-${tag.name}`}
                       >
@@ -237,7 +251,7 @@ export function TagInput({
           )}
         </Popover>
       )}
-      
+
       {value.length >= maxTags && (
         <p className="text-sm text-muted-foreground">
           Maximum of {maxTags} tags reached

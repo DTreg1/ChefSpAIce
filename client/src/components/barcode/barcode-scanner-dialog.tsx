@@ -1,9 +1,9 @@
 /**
  * Barcode Scanner Dialog Component
- * 
+ *
  * Camera-based barcode scanning for quick food item addition with USDA enrichment.
  * Uses html5-qrcode library for real-time barcode detection and USDA API for product lookup.
- * 
+ *
  * Features:
  * - Live Camera Scanning: Real-time UPC/EAN barcode detection via device camera
  * - USDA Integration: Automatic product lookup and nutrition data enrichment
@@ -11,12 +11,12 @@
  * - Continuous Scanning: "Save & Add Another" for rapid multi-item entry
  * - Error Recovery: Graceful handling of camera errors and barcode lookup failures
  * - Three-State UI: Scanning → Confirming → Error (with transitions)
- * 
+ *
  * Scanner States:
  * - scanning: Active camera view with real-time barcode detection
  * - confirming: Product found, showing details and edit form
  * - error: Scan failed or product not found, with retry option
- * 
+ *
  * Workflow:
  * 1. Dialog opens → Start camera scanning (100ms delay for DOM readiness)
  * 2. User positions barcode in camera view
@@ -25,13 +25,13 @@
  * 5. Product found → State: confirming (shows product details + form)
  * 6. User confirms/edits → POST /api/food-items (add to inventory)
  * 7. Success → "Save & Exit" (closes) or "Save & Add Another" (restart scan)
- * 
+ *
  * USDA Barcode Lookup:
  * - GET /api/fdc/search?query={barcode}&pageSize=1
  * - Searches by: UPC, GTIN, or other barcode formats
  * - Returns: USDAFoodItem with description, brandOwner, nutrition, category
  * - Branded foods preferred: Most likely to have barcodes in USDA database
- * 
+ *
  * Smart Default Logic:
  * - Storage Location: Prefers "Fridge/Refrigerator" > first available location
  * - Expiration Date: Calculated based on food type keywords
@@ -43,14 +43,14 @@
  *   - Default: +21 days
  * - Quantity: Defaults to "1"
  * - Unit: Defaults to "item"
- * 
+ *
  * Camera Integration:
  * - Uses html5-qrcode library (via useBarcodeScanner hook)
  * - Target element: <div id="barcode-scanner-video" />
  * - Starts: On dialog open (100ms delay)
  * - Stops: On scan success, dialog close, or error
  * - Permissions: Requests camera access on first use
- * 
+ *
  * Form Fields (Confirming State):
  * - Product Name: Auto-filled from USDA (description)
  * - Brand Owner: Displayed if available
@@ -58,14 +58,14 @@
  * - Unit: Dropdown selector (item, g, kg, oz, lb, ml, l)
  * - Storage Location: Dropdown with all user storage locations
  * - Expiration Date: Date picker with smart default
- * 
+ *
  * Actions:
  * - Cancel: Return to scanning state (clears scanned data)
  * - Save & Add Another: Add item + restart scanning (continuous mode)
  * - Save & Exit: Add item + close dialog
  * - Try Again: Restart scanning after error
  * - Close: Exit dialog (from error state)
- * 
+ *
  * API Integration:
  * - GET /api/fdc/search: USDA barcode lookup
  *   - Query param: barcode string
@@ -73,65 +73,65 @@
  * - POST /api/food-items: Add scanned item to inventory
  *   - Payload: { name, quantity, unit, storageLocationId, expirationDate, category, barcode, nutrition }
  *   - Invalidates: /api/food-items, /api/storage-locations
- * 
+ *
  * State Management:
  * - scannerState: "scanning" | "confirming" | "error"
  * - scannedBarcode: Detected barcode string
  * - scannedFood: USDAFoodItem from lookup
  * - quantity, unit, selectedLocation, expirationDate: Form fields
  * - isSearching: Loading state during USDA lookup
- * 
+ *
  * Error Handling:
  * - Camera permission denied: Shows error state with friendly message
  * - Barcode not found in USDA: Error state with manual search suggestion
  * - Network errors: Error state with retry option
  * - Invalid form data: Disabled save buttons until valid
- * 
+ *
  * Continuous Scanning Mode:
  * - "Save & Add Another" button: addFoodMutation.mutate(true)
  * - On success: Resets form, clears scanned data, returns to scanning state
  * - Enables rapid multi-item entry without closing dialog
  * - Persists storage location preference between scans
- * 
+ *
  * Dialog Lifecycle:
  * - On open: Start camera (if scanning state)
  * - On close: Stop camera, reset all state
  * - State reset: scannerState="scanning", clear all form fields
  * - Auto-cleanup: useEffect cleanup on unmount
- * 
+ *
  * Visual Feedback:
  * - Scanning: Live camera feed with loading overlay during lookup
  * - Confirming: Success alert with product name + brand
  * - Error: Destructive alert with error message
  * - Loading: Loader2 spinner with "Looking up barcode..." text
- * 
+ *
  * Accessibility:
  * - data-testid on all inputs and buttons
  * - Semantic HTML with proper labels
  * - Keyboard navigation support
  * - Screen reader friendly alerts
- * 
+ *
  * @example
  * // Basic usage
  * const [scannerOpen, setScannerOpen] = useState(false);
- * 
+ *
  * <Button onClick={() => setScannerOpen(true)}>Scan Barcode</Button>
- * <BarcodeScannerDialog 
- *   open={scannerOpen} 
- *   onOpenChange={setScannerOpen} 
+ * <BarcodeScannerDialog
+ *   open={scannerOpen}
+ *   onOpenChange={setScannerOpen}
  * />
- * 
+ *
  * @example
  * // Quick action integration
  * <QuickActions>
- *   <QuickAction 
- *     label="Scan Barcode" 
- *     onClick={() => setScannerOpen(true)} 
+ *   <QuickAction
+ *     label="Scan Barcode"
+ *     onClick={() => setScannerOpen(true)}
  *   />
  * </QuickActions>
- * <BarcodeScannerDialog 
- *   open={scannerOpen} 
- *   onOpenChange={setScannerOpen} 
+ * <BarcodeScannerDialog
+ *   open={scannerOpen}
+ *   onOpenChange={setScannerOpen}
  * />
  */
 
@@ -157,7 +157,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScanLine, CheckCircle, XCircle, Plus, Save, Loader2 } from "lucide-react";
+import {
+  ScanLine,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Save,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useBarcodeScanner } from "@/hooks/useBarcodescanner";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -171,7 +178,10 @@ interface BarcodeScannerDialogProps {
 
 type ScannerState = "scanning" | "confirming" | "error";
 
-export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialogProps) {
+export function BarcodeScannerDialog({
+  open,
+  onOpenChange,
+}: BarcodeScannerDialogProps) {
   const [scannerState, setScannerState] = useState<ScannerState>("scanning");
   const [scannedBarcode, setScannedBarcode] = useState<string>("");
   const [scannedFood, setScannedFood] = useState<USDAFoodItem | null>(null);
@@ -188,14 +198,16 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
   // Get default storage location (prefer Fridge, otherwise first available)
   const getDefaultLocation = () => {
     if (!storageLocations || storageLocations.length === 0) return "";
-    
+
     // Try to find "Fridge" as most common default
-    const fridge = storageLocations.find(loc => 
-      loc.name.toLowerCase().includes('fridge') || loc.name.toLowerCase().includes('refrigerator')
+    const fridge = storageLocations.find(
+      (loc) =>
+        loc.name.toLowerCase().includes("fridge") ||
+        loc.name.toLowerCase().includes("refrigerator"),
     );
-    
+
     if (fridge) return fridge.id;
-    
+
     // Otherwise return first location
     return storageLocations[0]?.id || "";
   };
@@ -209,29 +221,34 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
     try {
       // Stop the scanner
       await stopScanning();
-      
+
       // Search USDA API by UPC/barcode
-      const response = await fetch(`/api/fdc/search?query=${encodeURIComponent(barcode)}&pageSize=1`);
-      
+      const response = await fetch(
+        `/api/fdc/search?query=${encodeURIComponent(barcode)}&pageSize=1`,
+      );
+
       if (!response.ok) {
         throw new Error("Failed to search for barcode");
       }
 
       const data = await response.json();
-      
+
       if (data.foods && data.foods.length > 0) {
         const food = data.foods[0];
         setScannedFood(food);
         setScannerState("confirming");
-        
+
         // Set default location to one with most items
         const defaultLoc = getDefaultLocation();
         setSelectedLocation(defaultLoc);
-        
+
         // Set default expiration based on food type
-        const daysToAdd = getSuggestedExpirationDays(food.dataType, food.description);
+        const daysToAdd = getSuggestedExpirationDays(
+          food.dataType,
+          food.description,
+        );
         setExpirationDate(format(addDays(new Date(), daysToAdd), "yyyy-MM-dd"));
-        
+
         toast({
           title: "Barcode found",
           description: `Found: ${food.description}`,
@@ -240,7 +257,8 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
         setScannerState("error");
         toast({
           title: "Not found",
-          description: "No food item found for this barcode. Try searching manually.",
+          description:
+            "No food item found for this barcode. Try searching manually.",
           variant: "destructive",
         });
       }
@@ -299,13 +317,13 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
       };
 
       await apiRequest("/api/food-items", "POST", foodData);
-      
+
       return continueScanning;
     },
     onSuccess: (continueScanning) => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
-      
+
       toast({
         title: "Success",
         description: `${scannedFood?.description} added to inventory`,
@@ -348,15 +366,29 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
   }, [open, stopScanning]);
 
   // Helper to get suggested expiration days
-  function getSuggestedExpirationDays(dataType?: string, description?: string): number {
-    const desc = description?.toLowerCase() || '';
-    
-    if (desc.includes('frozen')) return 90;
-    if (desc.includes('fresh') || desc.includes('produce')) return 7;
-    if (desc.includes('milk') || desc.includes('yogurt') || desc.includes('cheese')) return 14;
-    if (desc.includes('meat') || desc.includes('chicken') || desc.includes('beef') || desc.includes('pork')) return 3;
-    if (desc.includes('canned') || desc.includes('packaged')) return 365;
-    
+  function getSuggestedExpirationDays(
+    dataType?: string,
+    description?: string,
+  ): number {
+    const desc = description?.toLowerCase() || "";
+
+    if (desc.includes("frozen")) return 90;
+    if (desc.includes("fresh") || desc.includes("produce")) return 7;
+    if (
+      desc.includes("milk") ||
+      desc.includes("yogurt") ||
+      desc.includes("cheese")
+    )
+      return 14;
+    if (
+      desc.includes("meat") ||
+      desc.includes("chicken") ||
+      desc.includes("beef") ||
+      desc.includes("pork")
+    )
+      return 3;
+    if (desc.includes("canned") || desc.includes("packaged")) return 365;
+
     return 21;
   }
 
@@ -371,7 +403,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
                 Position the barcode within the camera view to scan
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="relative">
               <div
                 id="barcode-scanner-video"
@@ -452,7 +484,10 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
 
               <div className="space-y-2">
                 <Label htmlFor="location">Storage Location</Label>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <Select
+                  value={selectedLocation}
+                  onValueChange={setSelectedLocation}
+                >
                   <SelectTrigger id="location" data-testid="select-location">
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
@@ -524,7 +559,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
               <AlertDescription className="ml-6">
-                The barcode could not be found or there was a camera error. 
+                The barcode could not be found or there was a camera error.
                 Please try again or add the item manually.
               </AlertDescription>
             </Alert>

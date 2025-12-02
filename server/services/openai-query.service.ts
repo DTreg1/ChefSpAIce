@@ -8,7 +8,7 @@ import { eq, desc, and } from "drizzle-orm";
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -17,49 +17,55 @@ const MODEL = "gpt-5";
 // Get database schema information for context
 function getDatabaseSchema(): string {
   const schemaObj = schema as Record<string, any>;
-  const tableNames = Object.keys(schemaObj).filter(key => 
-    !key.includes('insert') && 
-    !key.includes('Insert') && 
-    !key.includes('Schema') &&
-    typeof schemaObj[key] === 'object' &&
-    schemaObj[key]._ &&
-    schemaObj[key]._.name
+  const tableNames = Object.keys(schemaObj).filter(
+    (key) =>
+      !key.includes("insert") &&
+      !key.includes("Insert") &&
+      !key.includes("Schema") &&
+      typeof schemaObj[key] === "object" &&
+      schemaObj[key]._ &&
+      schemaObj[key]._.name,
   );
 
-  const schemaInfo = tableNames.map(tableName => {
-    const table = schemaObj[tableName];
-    const columns = Object.keys(table).filter(key => key !== '_' && typeof table[key] === 'object');
-    
-    return `Table: ${table._.name}
-Columns: ${columns.join(', ')}`;
-  }).join('\n\n');
+  const schemaInfo = tableNames
+    .map((tableName) => {
+      const table = schemaObj[tableName];
+      const columns = Object.keys(table).filter(
+        (key) => key !== "_" && typeof table[key] === "object",
+      );
+
+      return `Table: ${table._.name}
+Columns: ${columns.join(", ")}`;
+    })
+    .join("\n\n");
 
   return schemaInfo;
 }
 
 // Parse SQL to extract table names
 function extractTableNames(sql: string): string[] {
-  const tableRegex = /(?:FROM|JOIN|INTO|UPDATE|DELETE FROM)\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi;
+  const tableRegex =
+    /(?:FROM|JOIN|INTO|UPDATE|DELETE FROM)\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi;
   const matches = Array.from(sql.matchAll(tableRegex));
   const tables = new Set<string>();
-  
+
   for (const match of matches) {
     if (match[1]) {
       tables.add(match[1].toLowerCase());
     }
   }
-  
+
   return Array.from(tables);
 }
 
 // Detect query type from SQL
 function detectQueryType(sql: string): string {
   const trimmedSql = sql.trim().toUpperCase();
-  if (trimmedSql.startsWith('SELECT')) return 'SELECT';
-  if (trimmedSql.startsWith('INSERT')) return 'INSERT';
-  if (trimmedSql.startsWith('UPDATE')) return 'UPDATE';
-  if (trimmedSql.startsWith('DELETE')) return 'DELETE';
-  return 'SELECT';
+  if (trimmedSql.startsWith("SELECT")) return "SELECT";
+  if (trimmedSql.startsWith("INSERT")) return "INSERT";
+  if (trimmedSql.startsWith("UPDATE")) return "UPDATE";
+  if (trimmedSql.startsWith("DELETE")) return "DELETE";
+  return "SELECT";
 }
 
 /**
@@ -67,62 +73,91 @@ function detectQueryType(sql: string): string {
  * Enforces strict validation rules to prevent SQL injection and unauthorized access
  */
 function validateSQLQuery(sql: string): { isValid: boolean; error?: string } {
-  if (!sql || typeof sql !== 'string') {
-    return { isValid: false, error: 'Invalid SQL query provided' };
+  if (!sql || typeof sql !== "string") {
+    return { isValid: false, error: "Invalid SQL query provided" };
   }
 
   const normalizedSQL = sql.trim();
   const upperSQL = normalizedSQL.toUpperCase();
-  
+
   // STRICT: Only allow SELECT statements for safety
-  if (!upperSQL.startsWith('SELECT')) {
-    return { isValid: false, error: 'Only SELECT queries are allowed' };
+  if (!upperSQL.startsWith("SELECT")) {
+    return { isValid: false, error: "Only SELECT queries are allowed" };
   }
-  
+
   // Check for dangerous keywords even in SELECT statements
   const dangerousKeywords = [
-    'INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 
-    'TRUNCATE', 'EXEC', 'EXECUTE', 'GRANT', 'REVOKE', 'CALL',
-    'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT', 'LOCK', 'UNLOCK'
+    "INSERT",
+    "UPDATE",
+    "DELETE",
+    "DROP",
+    "CREATE",
+    "ALTER",
+    "TRUNCATE",
+    "EXEC",
+    "EXECUTE",
+    "GRANT",
+    "REVOKE",
+    "CALL",
+    "BEGIN",
+    "COMMIT",
+    "ROLLBACK",
+    "SAVEPOINT",
+    "LOCK",
+    "UNLOCK",
   ];
-  
+
   for (const keyword of dangerousKeywords) {
     // Skip if it's part of a column name or string literal
-    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    const regex = new RegExp(`\\b${keyword}\\b`, "i");
     if (regex.test(upperSQL)) {
-      return { isValid: false, error: `Query contains forbidden keyword: ${keyword}` };
+      return {
+        isValid: false,
+        error: `Query contains forbidden keyword: ${keyword}`,
+      };
     }
   }
-  
+
   // Check for SQL injection patterns
   const injectionPatterns = [
-    /;\s*SELECT/i,  // Multiple statements
-    /;\s*$/,        // Semicolon at end (potential for multiple statements)
-    /--/,           // SQL comments
-    /\/\*/,         // Multi-line comments
-    /\bUNION\b.*\bSELECT\b/i,  // UNION attacks
-    /\bINTO\b\s+OUTFILE\b/i,   // File operations
-    /\bLOAD_FILE\b/i,           // File loading
+    /;\s*SELECT/i, // Multiple statements
+    /;\s*$/, // Semicolon at end (potential for multiple statements)
+    /--/, // SQL comments
+    /\/\*/, // Multi-line comments
+    /\bUNION\b.*\bSELECT\b/i, // UNION attacks
+    /\bINTO\b\s+OUTFILE\b/i, // File operations
+    /\bLOAD_FILE\b/i, // File loading
   ];
-  
+
   for (const pattern of injectionPatterns) {
     if (pattern.test(sql)) {
-      return { isValid: false, error: 'Query contains potential SQL injection pattern' };
+      return {
+        isValid: false,
+        error: "Query contains potential SQL injection pattern",
+      };
     }
   }
-  
+
   // Validate that query doesn't try to access system tables
   const systemTables = [
-    'pg_', 'information_schema', 'pg_catalog',
-    'pg_user', 'pg_shadow', 'pg_group', 'pg_database'
+    "pg_",
+    "information_schema",
+    "pg_catalog",
+    "pg_user",
+    "pg_shadow",
+    "pg_group",
+    "pg_database",
   ];
-  
+
   for (const sysTable of systemTables) {
     if (normalizedSQL.toLowerCase().includes(sysTable)) {
-      return { isValid: false, error: 'Access to system tables is not allowed' };
+      return {
+        isValid: false,
+        error: "Access to system tables is not allowed",
+      };
     }
   }
-  
+
   return { isValid: true };
 }
 
@@ -139,10 +174,10 @@ export interface NaturalQueryResult {
  */
 export async function convertNaturalLanguageToSQL(
   naturalQuery: string,
-  userId: string
+  userId: string,
 ): Promise<NaturalQueryResult> {
   const schemaContext = getDatabaseSchema();
-  
+
   const systemPrompt = `You are a SQL query generator for a PostgreSQL database. Convert natural language questions to SQL queries.
 
 Database Schema:
@@ -177,7 +212,7 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
       model: MODEL,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 2000,
@@ -189,7 +224,7 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
     }
 
     const result = JSON.parse(content) as NaturalQueryResult;
-    
+
     // Validate and enhance the result
     if (!result.sql) {
       throw new Error("No SQL query generated");
@@ -212,14 +247,16 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
     }
 
     // Set default confidence if not provided
-    if (typeof result.confidence !== 'number') {
+    if (typeof result.confidence !== "number") {
       result.confidence = 0.8;
     }
 
     return result;
   } catch (error) {
     console.error("Error converting natural language to SQL:", error);
-    throw new Error(`Failed to convert query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to convert query: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -229,7 +266,7 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
 export async function executeValidatedQuery(
   sql: string,
   userId: string,
-  naturalQuery?: string
+  naturalQuery?: string,
 ): Promise<{ results: any[]; executionTime: number; rowCount: number }> {
   // CRITICAL: Validate SQL query for security using our strict validation function
   const validation = validateSQLQuery(sql);
@@ -238,7 +275,7 @@ export async function executeValidatedQuery(
   }
 
   const startTime = Date.now();
-  
+
   try {
     // Execute the query
     const results = await db.execute(sql);
@@ -251,37 +288,37 @@ export async function executeValidatedQuery(
       const queryLog = {
         userId,
         queryType: detectQueryType(sql),
-        tableName: tableNames[0] || 'unknown',
+        tableName: tableNames[0] || "unknown",
         executionTime,
         rowsAffected: rowCount,
         queryHash: sql.substring(0, 100), // Use first 100 chars as hash
-        endpoint: naturalQuery // Store natural query in endpoint field
+        endpoint: naturalQuery, // Store natural query in endpoint field
       };
-      
+
       await db.insert(queryLogs).values(queryLog);
     }
 
     return {
       results: results.rows,
       executionTime,
-      rowCount
+      rowCount,
     };
   } catch (error) {
     const executionTime = Date.now() - startTime;
-    
+
     // Log failed query
     if (naturalQuery) {
       const tableNames = extractTableNames(sql);
       const queryLog = {
         userId,
         queryType: detectQueryType(sql),
-        tableName: tableNames[0] || 'unknown',
+        tableName: tableNames[0] || "unknown",
         executionTime,
         rowsAffected: 0,
         queryHash: sql.substring(0, 100), // Use first 100 chars as hash
-        endpoint: naturalQuery // Store natural query in endpoint field
+        endpoint: naturalQuery, // Store natural query in endpoint field
       };
-      
+
       await db.insert(queryLogs).values(queryLog);
     }
 
@@ -299,17 +336,23 @@ export async function getSavedQueries(userId: string) {
     .from(queryLogs)
     .where(eq(queryLogs.userId, userId))
     .orderBy(desc(queryLogs.timestamp));
-    
+
   return savedQueries;
 }
 
 /**
  * Save a query for future use
  */
-export async function saveQuery(queryId: string, savedName: string, userId: string) {
+export async function saveQuery(
+  queryId: string,
+  savedName: string,
+  userId: string,
+) {
   // Note: queryLogs doesn't have isSaved or savedName fields
   // This functionality would need to be implemented with a separate saved_queries table
-  console.log('Warning: saveQuery not fully implemented - queryLogs lacks isSaved/savedName fields');
+  console.log(
+    "Warning: saveQuery not fully implemented - queryLogs lacks isSaved/savedName fields",
+  );
   // For now, just verify the query exists
   const query = await db
     .select()
@@ -317,7 +360,6 @@ export async function saveQuery(queryId: string, savedName: string, userId: stri
     .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)))
     .limit(1);
   if (query.length === 0) {
-    throw new Error('Query not found');
+    throw new Error("Query not found");
   }
 }
-

@@ -1,7 +1,13 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +28,7 @@ export default function Glossary() {
   // Get unique categories
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    cookingTerms.forEach(term => {
+    cookingTerms.forEach((term) => {
       if (term.category) cats.add(term.category);
     });
     return Array.from(cats).sort();
@@ -34,17 +40,23 @@ export default function Glossary() {
 
     // Filter by category
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(term => term.category === selectedCategory);
+      filtered = filtered.filter((term) => term.category === selectedCategory);
     }
 
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(term => 
-        term.term.toLowerCase().includes(query) ||
-        (term.shortDefinition && term.shortDefinition.toLowerCase().includes(query)) ||
-        (term.longDefinition && term.longDefinition.toLowerCase().includes(query)) ||
-        (term.relatedTerms && term.relatedTerms.some((st: string) => st.toLowerCase().includes(query)))
+      filtered = filtered.filter(
+        (term) =>
+          term.term.toLowerCase().includes(query) ||
+          (term.shortDefinition &&
+            term.shortDefinition.toLowerCase().includes(query)) ||
+          (term.longDefinition &&
+            term.longDefinition.toLowerCase().includes(query)) ||
+          (term.relatedTerms &&
+            term.relatedTerms.some((st: string) =>
+              st.toLowerCase().includes(query),
+            )),
       );
     }
 
@@ -55,7 +67,7 @@ export default function Glossary() {
   // Group terms by first letter
   const groupedTerms = useMemo(() => {
     const groups: { [key: string]: CookingTerm[] } = {};
-    filteredTerms.forEach(term => {
+    filteredTerms.forEach((term) => {
       const firstLetter = term.term[0].toUpperCase();
       if (!groups[firstLetter]) {
         groups[firstLetter] = [];
@@ -98,7 +110,8 @@ export default function Glossary() {
           <h1 className="text-3xl font-bold">Cooking Terms Glossary</h1>
         </div>
         <p className="text-muted-foreground">
-          Explore and learn about common cooking techniques, ingredients, and culinary terms
+          Explore and learn about common cooking techniques, ingredients, and
+          culinary terms
         </p>
       </div>
 
@@ -124,11 +137,13 @@ export default function Glossary() {
               <TabsTrigger value="all" data-testid="tab-all">
                 All Terms ({cookingTerms.length})
               </TabsTrigger>
-              {categories.map(category => {
-                const count = cookingTerms.filter(t => t.category === category).length;
+              {categories.map((category) => {
+                const count = cookingTerms.filter(
+                  (t) => t.category === category,
+                ).length;
                 return (
-                  <TabsTrigger 
-                    key={category} 
+                  <TabsTrigger
+                    key={category}
                     value={category}
                     data-testid={`tab-${category.toLowerCase()}`}
                   >
@@ -144,7 +159,8 @@ export default function Glossary() {
 
           {searchQuery && (
             <div className="text-sm text-muted-foreground">
-              Found {filteredTerms.length} term{filteredTerms.length !== 1 ? 's' : ''} matching "{searchQuery}"
+              Found {filteredTerms.length} term
+              {filteredTerms.length !== 1 ? "s" : ""} matching "{searchQuery}"
             </div>
           )}
         </CardContent>
@@ -162,7 +178,7 @@ export default function Glossary() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <BookOpen className="w-12 h-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-center">
-              {searchQuery 
+              {searchQuery
                 ? `No terms found matching "${searchQuery}"`
                 : "No cooking terms available"}
             </p>
@@ -178,9 +194,9 @@ export default function Glossary() {
                   <Separator className="flex-1" />
                 </div>
                 <div className="grid gap-3">
-                  {terms.map(term => (
-                    <Card 
-                      key={term.id} 
+                  {terms.map((term) => (
+                    <Card
+                      key={term.id}
                       className="hover-elevate active-elevate-2"
                       data-testid={`term-card-${term.id}`}
                     >
@@ -189,8 +205,8 @@ export default function Glossary() {
                           <CardTitle className="text-lg flex items-center gap-2">
                             {term.term}
                             {term.category && (
-                              <Badge 
-                                variant="secondary" 
+                              <Badge
+                                variant="secondary"
                                 className={`${getCategoryColor(term.category)} ml-2`}
                               >
                                 <span className="flex items-center gap-1">
@@ -203,16 +219,20 @@ export default function Glossary() {
                         </div>
                         {term.relatedTerms && term.relatedTerms.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            <span className="text-xs text-muted-foreground">Related terms:</span>
-                            {term.relatedTerms.map((alt: string, idx: number) => (
-                              <Badge 
-                                key={idx} 
-                                variant="outline" 
-                                className="text-xs"
-                              >
-                                {alt}
-                              </Badge>
-                            ))}
+                            <span className="text-xs text-muted-foreground">
+                              Related terms:
+                            </span>
+                            {term.relatedTerms.map(
+                              (alt: string, idx: number) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {alt}
+                                </Badge>
+                              ),
+                            )}
                           </div>
                         )}
                       </CardHeader>
@@ -237,7 +257,7 @@ export default function Glossary() {
           </div>
         </ScrollArea>
       )}
-      
+
       {/* Stats Footer */}
       {!isLoading && (
         <Card className="mt-6">
@@ -254,7 +274,9 @@ export default function Glossary() {
               </div>
               <Separator orientation="vertical" className="h-8" />
               <div className="text-center">
-                <p className="font-semibold text-lg">{Object.keys(groupedTerms).length}</p>
+                <p className="font-semibold text-lg">
+                  {Object.keys(groupedTerms).length}
+                </p>
                 <p className="text-muted-foreground">Letters</p>
               </div>
             </div>

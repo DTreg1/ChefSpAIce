@@ -1,22 +1,28 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  ChefHat, 
+import {
+  Calendar,
+  Clock,
+  Users,
+  ChefHat,
   Utensils,
   AlertCircle,
   Check,
   X,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
 } from "lucide-react";
 import { Recipe } from "@shared/schema";
 import { format } from "date-fns";
@@ -24,7 +30,7 @@ import { format } from "date-fns";
 interface DuplicateComparisonProps {
   content1: Recipe | any;
   content2: Recipe | any;
-  contentType: 'recipe' | 'chat' | 'inventory';
+  contentType: "recipe" | "chat" | "inventory";
   similarity: number;
   onMerge?: (keepId: string, mergeFromId: string) => void;
   onKeepBoth?: () => void;
@@ -38,9 +44,11 @@ export function DuplicateComparison({
   similarity,
   onMerge,
   onKeepBoth,
-  onMarkUnique
+  onMarkUnique,
 }: DuplicateComparisonProps) {
-  const [selectedKeep, setSelectedKeep] = useState<'left' | 'right' | null>(null);
+  const [selectedKeep, setSelectedKeep] = useState<"left" | "right" | null>(
+    null,
+  );
 
   const renderRecipeComparison = (recipe1: Recipe, recipe2: Recipe) => {
     const differences = {
@@ -49,26 +57,30 @@ export function DuplicateComparison({
       servings: recipe1.servings !== recipe2.servings,
       prepTime: recipe1.prepTime !== recipe2.prepTime,
       cookTime: recipe1.cookTime !== recipe2.cookTime,
-      ingredients: JSON.stringify(recipe1.ingredients) !== JSON.stringify(recipe2.ingredients),
-      instructions: JSON.stringify(recipe1.instructions) !== JSON.stringify(recipe2.instructions),
+      ingredients:
+        JSON.stringify(recipe1.ingredients) !==
+        JSON.stringify(recipe2.ingredients),
+      instructions:
+        JSON.stringify(recipe1.instructions) !==
+        JSON.stringify(recipe2.instructions),
     };
 
-    const hasDifferences = Object.values(differences).some(d => d);
+    const hasDifferences = Object.values(differences).some((d) => d);
 
     return (
       <div className="grid grid-cols-2 gap-6">
         <ContentCard
           content={recipe1}
-          isSelected={selectedKeep === 'left'}
-          onSelect={() => setSelectedKeep('left')}
+          isSelected={selectedKeep === "left"}
+          onSelect={() => setSelectedKeep("left")}
           side="left"
           differences={differences}
           data-testid="card-comparison-left"
         />
         <ContentCard
           content={recipe2}
-          isSelected={selectedKeep === 'right'}
-          onSelect={() => setSelectedKeep('right')}
+          isSelected={selectedKeep === "right"}
+          onSelect={() => setSelectedKeep("right")}
           side="right"
           differences={differences}
           data-testid="card-comparison-right"
@@ -82,14 +94,14 @@ export function DuplicateComparison({
       <div className="grid grid-cols-2 gap-6">
         <ChatCard
           content={chat1}
-          isSelected={selectedKeep === 'left'}
-          onSelect={() => setSelectedKeep('left')}
+          isSelected={selectedKeep === "left"}
+          onSelect={() => setSelectedKeep("left")}
           side="left"
         />
         <ChatCard
           content={chat2}
-          isSelected={selectedKeep === 'right'}
-          onSelect={() => setSelectedKeep('right')}
+          isSelected={selectedKeep === "right"}
+          onSelect={() => setSelectedKeep("right")}
           side="right"
         />
       </div>
@@ -105,8 +117,14 @@ export function DuplicateComparison({
             Review and compare the duplicate content side-by-side
           </p>
         </div>
-        <Badge 
-          variant={similarity >= 0.95 ? "destructive" : similarity >= 0.85 ? "secondary" : "outline"}
+        <Badge
+          variant={
+            similarity >= 0.95
+              ? "destructive"
+              : similarity >= 0.85
+                ? "secondary"
+                : "outline"
+          }
           className="text-lg px-3 py-1"
           data-testid="badge-similarity-score"
         >
@@ -122,12 +140,17 @@ export function DuplicateComparison({
         </TabsList>
 
         <TabsContent value="visual" className="mt-6">
-          {contentType === 'recipe' && renderRecipeComparison(content1, content2)}
-          {contentType === 'chat' && renderChatComparison(content1, content2)}
+          {contentType === "recipe" &&
+            renderRecipeComparison(content1, content2)}
+          {contentType === "chat" && renderChatComparison(content1, content2)}
         </TabsContent>
 
         <TabsContent value="differences" className="mt-6">
-          <DifferencesView content1={content1} content2={content2} contentType={contentType} />
+          <DifferencesView
+            content1={content1}
+            content2={content2}
+            contentType={contentType}
+          />
         </TabsContent>
 
         <TabsContent value="raw" className="mt-6">
@@ -141,7 +164,9 @@ export function DuplicateComparison({
         <div className="text-sm text-muted-foreground">
           {selectedKeep && (
             <span>
-              You've selected to keep the <strong>{selectedKeep === 'left' ? 'first' : 'second'}</strong> item
+              You've selected to keep the{" "}
+              <strong>{selectedKeep === "left" ? "first" : "second"}</strong>{" "}
+              item
             </span>
           )}
         </div>
@@ -168,7 +193,7 @@ export function DuplicateComparison({
           {onMerge && selectedKeep && (
             <Button
               onClick={() => {
-                if (selectedKeep === 'left') {
+                if (selectedKeep === "left") {
                   onMerge(content1.id, content2.id);
                 } else {
                   onMerge(content2.id, content1.id);
@@ -176,7 +201,7 @@ export function DuplicateComparison({
               }}
               data-testid="button-merge-selected"
             >
-              {selectedKeep === 'left' ? (
+              {selectedKeep === "left" ? (
                 <>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Merge into First
@@ -195,27 +220,29 @@ export function DuplicateComparison({
   );
 }
 
-function ContentCard({ 
-  content, 
-  isSelected, 
-  onSelect, 
+function ContentCard({
+  content,
+  isSelected,
+  onSelect,
   side,
   differences,
-  ...props 
+  ...props
 }: any) {
   const recipe = content as Recipe;
-  
+
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-all ${
-        isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
+        isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
       }`}
       onClick={onSelect}
       {...props}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
-          <CardTitle className={`text-lg ${differences?.title ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+          <CardTitle
+            className={`text-lg ${differences?.title ? "text-amber-600 dark:text-amber-400" : ""}`}
+          >
             {recipe.title}
           </CardTitle>
           {isSelected && (
@@ -226,7 +253,13 @@ function ContentCard({
           )}
         </div>
         {recipe.description && (
-          <CardDescription className={differences?.description ? 'text-amber-600 dark:text-amber-400' : ''}>
+          <CardDescription
+            className={
+              differences?.description
+                ? "text-amber-600 dark:text-amber-400"
+                : ""
+            }
+          >
             {recipe.description}
           </CardDescription>
         )}
@@ -236,14 +269,26 @@ function ContentCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span className={differences?.servings ? 'text-amber-600 dark:text-amber-400' : ''}>
+              <span
+                className={
+                  differences?.servings
+                    ? "text-amber-600 dark:text-amber-400"
+                    : ""
+                }
+              >
                 {recipe.servings} servings
               </span>
             </div>
             {recipe.prepTime && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className={differences?.prepTime ? 'text-amber-600 dark:text-amber-400' : ''}>
+                <span
+                  className={
+                    differences?.prepTime
+                      ? "text-amber-600 dark:text-amber-400"
+                      : ""
+                  }
+                >
                   Prep: {recipe.prepTime}
                 </span>
               </div>
@@ -251,7 +296,13 @@ function ContentCard({
             {recipe.cookTime && (
               <div className="flex items-center gap-2">
                 <ChefHat className="h-4 w-4 text-muted-foreground" />
-                <span className={differences?.cookTime ? 'text-amber-600 dark:text-amber-400' : ''}>
+                <span
+                  className={
+                    differences?.cookTime
+                      ? "text-amber-600 dark:text-amber-400"
+                      : ""
+                  }
+                >
                   Cook: {recipe.cookTime}
                 </span>
               </div>
@@ -268,7 +319,7 @@ function ContentCard({
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs">
-                  {format(new Date(recipe.createdAt), 'MMM d, yyyy')}
+                  {format(new Date(recipe.createdAt), "MMM d, yyyy")}
                 </span>
               </div>
             )}
@@ -276,22 +327,32 @@ function ContentCard({
         </div>
 
         {recipe.ingredients && (
-          <div className={`space-y-1 ${differences?.ingredients ? 'border-l-2 border-amber-500 pl-3' : ''}`}>
-            <Label className="text-sm font-medium">Ingredients ({recipe.ingredients.length})</Label>
+          <div
+            className={`space-y-1 ${differences?.ingredients ? "border-l-2 border-amber-500 pl-3" : ""}`}
+          >
+            <Label className="text-sm font-medium">
+              Ingredients ({recipe.ingredients.length})
+            </Label>
             <ScrollArea className="h-24">
               <ul className="text-sm text-muted-foreground space-y-1">
-                {recipe.ingredients.slice(0, 5).map((ing: string, idx: number) => (
-                  <li key={idx} className="truncate">• {ing}</li>
-                ))}
+                {recipe.ingredients
+                  .slice(0, 5)
+                  .map((ing: string, idx: number) => (
+                    <li key={idx} className="truncate">
+                      • {ing}
+                    </li>
+                  ))}
                 {recipe.ingredients.length > 5 && (
-                  <li className="text-xs">...and {recipe.ingredients.length - 5} more</li>
+                  <li className="text-xs">
+                    ...and {recipe.ingredients.length - 5} more
+                  </li>
                 )}
               </ul>
             </ScrollArea>
           </div>
         )}
 
-        {differences && Object.values(differences).some(d => d) && (
+        {differences && Object.values(differences).some((d) => d) && (
           <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
             <AlertCircle className="h-3 w-3" />
             Has differences from the other version
@@ -304,11 +365,11 @@ function ContentCard({
 
 function ChatCard({ content, isSelected, onSelect, side }: any) {
   const chat = content;
-  
+
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-all ${
-        isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
+        isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
       }`}
       onClick={onSelect}
       data-testid={`card-chat-${side}`}
@@ -328,7 +389,7 @@ function ChatCard({ content, isSelected, onSelect, side }: any) {
         <p className="text-sm">{chat.content}</p>
         {chat.createdAt && (
           <p className="text-xs text-muted-foreground mt-2">
-            {format(new Date(chat.createdAt), 'MMM d, yyyy h:mm a')}
+            {format(new Date(chat.createdAt), "MMM d, yyyy h:mm a")}
           </p>
         )}
       </CardContent>
@@ -340,22 +401,22 @@ function DifferencesView({ content1, content2, contentType }: any) {
   const getDifferences = () => {
     const diffs: any[] = [];
     const keys = new Set([...Object.keys(content1), ...Object.keys(content2)]);
-    
-    keys.forEach(key => {
-      if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return;
-      
+
+    keys.forEach((key) => {
+      if (key === "id" || key === "createdAt" || key === "updatedAt") return;
+
       const val1 = JSON.stringify(content1[key]);
       const val2 = JSON.stringify(content2[key]);
-      
+
       if (val1 !== val2) {
         diffs.push({
           field: key,
           value1: content1[key],
-          value2: content2[key]
+          value2: content2[key],
         });
       }
     });
-    
+
     return diffs;
   };
 
@@ -376,7 +437,7 @@ function DifferencesView({ content1, content2, contentType }: any) {
           <Card key={idx} data-testid={`card-difference-${diff.field}`}>
             <CardHeader>
               <CardTitle className="text-sm font-medium capitalize">
-                {diff.field.replace(/([A-Z])/g, ' $1').trim()}
+                {diff.field.replace(/([A-Z])/g, " $1").trim()}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -384,17 +445,21 @@ function DifferencesView({ content1, content2, contentType }: any) {
                 <div className="space-y-1">
                   <Label className="text-xs">First Item</Label>
                   <div className="p-2 bg-secondary rounded text-sm">
-                    {typeof diff.value1 === 'object' 
+                    {typeof diff.value1 === "object"
                       ? JSON.stringify(diff.value1, null, 2)
-                      : diff.value1 || <span className="text-muted-foreground">Not set</span>}
+                      : diff.value1 || (
+                          <span className="text-muted-foreground">Not set</span>
+                        )}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Second Item</Label>
                   <div className="p-2 bg-secondary rounded text-sm">
-                    {typeof diff.value2 === 'object' 
+                    {typeof diff.value2 === "object"
                       ? JSON.stringify(diff.value2, null, 2)
-                      : diff.value2 || <span className="text-muted-foreground">Not set</span>}
+                      : diff.value2 || (
+                          <span className="text-muted-foreground">Not set</span>
+                        )}
                   </div>
                 </div>
               </div>
@@ -415,9 +480,7 @@ function RawDataView({ content1, content2 }: any) {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-96">
-            <pre className="text-xs">
-              {JSON.stringify(content1, null, 2)}
-            </pre>
+            <pre className="text-xs">{JSON.stringify(content1, null, 2)}</pre>
           </ScrollArea>
         </CardContent>
       </Card>
@@ -427,9 +490,7 @@ function RawDataView({ content1, content2 }: any) {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-96">
-            <pre className="text-xs">
-              {JSON.stringify(content2, null, 2)}
-            </pre>
+            <pre className="text-xs">{JSON.stringify(content2, null, 2)}</pre>
           </ScrollArea>
         </CardContent>
       </Card>

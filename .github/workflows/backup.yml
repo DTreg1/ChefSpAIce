@@ -4,13 +4,13 @@ name: Database Backup
 on:
   schedule:
     # Run daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
       backup_type:
-        description: 'Type of backup'
+        description: "Type of backup"
         required: true
-        default: 'full'
+        default: "full"
         type: choice
         options:
           - full
@@ -25,16 +25,16 @@ jobs:
   backup:
     name: Database Backup
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client-15
-          
+
       - name: Create backup filename
         id: backup-name
         run: |
@@ -43,11 +43,11 @@ jobs:
           FILENAME="chefspice_${BACKUP_TYPE}_${TIMESTAMP}.sql"
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
           echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
-          
+
       - name: Perform database backup
         run: |
           BACKUP_TYPE=${{ github.event.inputs.backup_type || 'full' }}
-          
+
           if [ "$BACKUP_TYPE" = "schema-only" ]; then
             pg_dump ${{ secrets.DATABASE_URL }} \
               --schema-only \
@@ -62,17 +62,17 @@ jobs:
               --no-privileges \
               --file=${{ steps.backup-name.outputs.filename }}
           fi
-          
+
           # Compress the backup
           gzip ${{ steps.backup-name.outputs.filename }}
-          
+
       - name: Upload to GitHub Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: db-backup-${{ steps.backup-name.outputs.timestamp }}
           path: ${{ steps.backup-name.outputs.filename }}.gz
           retention-days: ${{ env.RETENTION_DAYS }}
-          
+
       - name: Configure AWS CLI
         if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
         run: |
@@ -80,20 +80,20 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set region ${{ secrets.AWS_REGION || 'us-east-1' }}
-          
+
       - name: Upload to S3
         if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
         run: |
           aws s3 cp ${{ steps.backup-name.outputs.filename }}.gz \
             s3://${{ env.BACKUP_BUCKET }}/database/${{ steps.backup-name.outputs.filename }}.gz \
             --storage-class STANDARD_IA
-            
+
       - name: Install Google Cloud SDK
         if: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY != '' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
-          version: 'latest'
-          
+          version: "latest"
+
       - name: Upload to Google Cloud Storage
         if: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY != '' }}
         env:
@@ -104,7 +104,7 @@ jobs:
           gsutil cp ${{ steps.backup-name.outputs.filename }}.gz \
             gs://${{ env.BACKUP_BUCKET }}/database/${{ steps.backup-name.outputs.filename }}.gz
           rm /tmp/gcp-key.json
-          
+
       - name: Clean up old backups from S3
         if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
         run: |
@@ -121,25 +121,25 @@ jobs:
                 fi
               fi
             done
-            
+
       - name: Verify backup integrity
         run: |
           # Test the compressed backup can be read
           gunzip -t ${{ steps.backup-name.outputs.filename }}.gz
-          
+
           # Extract and check basic structure
           gunzip -c ${{ steps.backup-name.outputs.filename }}.gz | head -n 100
-          
+
       - name: Create backup report
         id: report
         run: |
           SIZE=$(du -h ${{ steps.backup-name.outputs.filename }}.gz | cut -f1)
           echo "size=${SIZE}" >> $GITHUB_OUTPUT
-          
+
           # Count tables in backup
           TABLE_COUNT=$(gunzip -c ${{ steps.backup-name.outputs.filename }}.gz | grep -c "CREATE TABLE" || true)
           echo "table_count=${TABLE_COUNT}" >> $GITHUB_OUTPUT
-          
+
       - name: Send backup notification
         if: always()
         uses: actions/github-script@v7
@@ -147,10 +147,10 @@ jobs:
           script: |
             const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
             const backupType = '${{ github.event.inputs.backup_type || 'full' }}';
-            
+
             const message = `
             ## Database Backup Report ${status}
-            
+
             - **Date**: ${{ steps.backup-name.outputs.timestamp }}
             - **Type**: ${backupType}
             - **File**: ${{ steps.backup-name.outputs.filename }}.gz
@@ -159,20 +159,20 @@ jobs:
             - **Status**: ${{ job.status }}
             - **Retention**: ${{ env.RETENTION_DAYS }} days
             `;
-            
+
             // Store as workflow summary
             await core.summary
               .addHeading('Database Backup Report')
               .addRaw(message)
               .write();
-              
+
   # Test backup restoration (weekly)
   test-restore:
     name: Test Backup Restoration
     runs-on: ubuntu-latest
     needs: backup
     if: github.event.schedule == '0 2 * * 0' # Only on Sundays
-    
+
     services:
       postgres:
         image: postgres:15
@@ -186,21 +186,21 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Download backup artifact
         uses: actions/download-artifact@v3
         with:
           name: db-backup-${{ needs.backup.outputs.timestamp }}
-          
+
       - name: Test restoration
         run: |
           # Extract backup
           gunzip *.sql.gz
-          
+
           # Restore to test database
           PGPASSWORD=testpassword psql -h localhost -U postgres -d restore_test < *.sql
-          
+
           # Verify restoration
           PGPASSWORD=testpassword psql -h localhost -U postgres -d restore_test -c "\dt" | grep -q "users"
           echo "Restoration test successful"

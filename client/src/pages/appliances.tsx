@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -35,10 +41,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  Microwave, 
-  Plus, 
-  Scan, 
+import {
+  Microwave,
+  Plus,
+  Scan,
   Trash2,
   Edit,
   Search,
@@ -46,7 +52,7 @@ import {
   Grid,
   List,
   Loader2,
-  Layers
+  Layers,
 } from "lucide-react";
 import type { UserAppliance, ApplianceLibrary } from "@shared/schema";
 
@@ -67,36 +73,45 @@ export default function Appliances() {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "grouped">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
-  const [editingAppliance, setEditingAppliance] = useState<ApplianceWithLibrary | null>(null);
+  const [editingAppliance, setEditingAppliance] =
+    useState<ApplianceWithLibrary | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(null);
+  const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(
+    null,
+  );
 
   // Fetch appliances with category filter
-  const { data: rawAppliances = [], isLoading } = useQuery<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>({
-    queryKey: selectedCategory === "all" 
-      ? ["/api/appliances"]
-      : ["/api/appliances", { category: selectedCategory }],
+  const { data: rawAppliances = [], isLoading } = useQuery<
+    (UserAppliance & { libraryAppliance?: ApplianceLibrary })[]
+  >({
+    queryKey:
+      selectedCategory === "all"
+        ? ["/api/appliances"]
+        : ["/api/appliances", { category: selectedCategory }],
     queryFn: async () => {
-      const url = selectedCategory === "all"
-        ? "/api/appliances"
-        : `/api/appliances?category=${encodeURIComponent(selectedCategory)}`;
-      const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch appliances');
+      const url =
+        selectedCategory === "all"
+          ? "/api/appliances"
+          : `/api/appliances?category=${encodeURIComponent(selectedCategory)}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch appliances");
       return response.json();
     },
   });
 
   // Transform raw appliances to include computed fields
-  const appliances: ApplianceWithLibrary[] = rawAppliances.map(a => ({
+  const appliances: ApplianceWithLibrary[] = rawAppliances.map((a) => ({
     ...a,
-    name: a.libraryAppliance?.name || a.customName || 'Unknown Appliance',
+    name: a.libraryAppliance?.name || a.customName || "Unknown Appliance",
     nickname: a.customName,
     imageUrl: a.libraryAppliance?.imageUrl,
   }));
 
   // Fetch categories from user's appliances
-  const { data: categories = [] } = useQuery<{ id: string; name: string; count: number }[]>({
-    queryKey: ['/api/appliances/categories'],
+  const { data: categories = [] } = useQuery<
+    { id: string; name: string; count: number }[]
+  >({
+    queryKey: ["/api/appliances/categories"],
   });
 
   // Add appliance mutation
@@ -123,7 +138,7 @@ export default function Appliances() {
 
   // Update appliance mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => 
+    mutationFn: async ({ id, data }: { id: string; data: any }) =>
       apiRequest(`/api/appliances/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
@@ -164,10 +179,13 @@ export default function Appliances() {
     },
   });
 
-  // Add from barcode mutation  
+  // Add from barcode mutation
   const fromBarcodeMutation = useMutation({
-    mutationFn: async (data: { barcode: string; nickname?: string; notes?: string }) => 
-      apiRequest('/api/appliances/from-barcode', "POST", data),
+    mutationFn: async (data: {
+      barcode: string;
+      nickname?: string;
+      notes?: string;
+    }) => apiRequest("/api/appliances/from-barcode", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
       setIsScanDialogOpen(false);
@@ -180,20 +198,25 @@ export default function Appliances() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: (error instanceof Error ? error.message : String(error)) || "Failed to add appliance from barcode",
+        description:
+          (error instanceof Error ? error.message : String(error)) ||
+          "Failed to add appliance from barcode",
         variant: "destructive",
       });
     },
   });
 
   // Filter appliances (category filtering is done server-side via query param)
-  const filteredAppliances = appliances.filter((appliance: ApplianceWithLibrary) => {
-    const matchesSearch = appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.brand?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredAppliances = appliances.filter(
+    (appliance: ApplianceWithLibrary) => {
+      const matchesSearch =
+        appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        appliance.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        appliance.brand?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    },
+  );
 
   return (
     <div className="container mx-auto p-6">
@@ -205,11 +228,18 @@ export default function Appliances() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsScanDialogOpen(true)} variant="outline" data-testid="button-scan-barcode">
+          <Button
+            onClick={() => setIsScanDialogOpen(true)}
+            variant="outline"
+            data-testid="button-scan-barcode"
+          >
             <Scan className="w-4 h-4 mr-2" />
             Scan Barcode
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)} data-testid="button-add-appliance">
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            data-testid="button-add-appliance"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Manually
           </Button>
@@ -232,8 +262,14 @@ export default function Appliances() {
                 />
               </div>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger
+                className="w-[200px]"
+                data-testid="select-category-filter"
+              >
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
@@ -287,11 +323,14 @@ export default function Appliances() {
             <Microwave className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No appliances found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || selectedCategory !== "all" 
-                ? "Try adjusting your filters" 
+              {searchQuery || selectedCategory !== "all"
+                ? "Try adjusting your filters"
                 : "Add your first appliance to get started"}
             </p>
-            <Button onClick={() => setIsScanDialogOpen(true)} data-testid="button-scan-first">
+            <Button
+              onClick={() => setIsScanDialogOpen(true)}
+              data-testid="button-scan-first"
+            >
               <Scan className="w-4 h-4 mr-2" />
               Scan Barcode
             </Button>
@@ -301,14 +340,17 @@ export default function Appliances() {
         // Group appliances by category
         <div className="space-y-6">
           {(() => {
-            const grouped = filteredAppliances.reduce((acc, appliance) => {
-              const category = appliance.category || 'Uncategorized';
-              if (!acc[category]) {
-                acc[category] = [];
-              }
-              acc[category].push(appliance);
-              return acc;
-            }, {} as Record<string, ApplianceWithLibrary[]>);
+            const grouped = filteredAppliances.reduce(
+              (acc, appliance) => {
+                const category = appliance.category || "Uncategorized";
+                if (!acc[category]) {
+                  acc[category] = [];
+                }
+                acc[category].push(appliance);
+                return acc;
+              },
+              {} as Record<string, ApplianceWithLibrary[]>,
+            );
 
             return Object.entries(grouped)
               .sort(([a], [b]) => a.localeCompare(b))
@@ -316,20 +358,29 @@ export default function Appliances() {
                 <div key={category}>
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-lg font-semibold">{category}</h3>
-                    <Badge variant="secondary">{categoryAppliances.length}</Badge>
+                    <Badge variant="secondary">
+                      {categoryAppliances.length}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categoryAppliances.map((appliance) => (
-                      <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
+                      <Card
+                        key={appliance.id}
+                        className="hover-elevate"
+                        data-testid={`card-appliance-${appliance.id}`}
+                      >
                         <CardHeader>
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <CardTitle className="text-lg">
                                 {appliance.nickname || appliance.name}
                               </CardTitle>
-                              {appliance.nickname && appliance.nickname !== appliance.name && (
-                                <CardDescription>{appliance.name}</CardDescription>
-                              )}
+                              {appliance.nickname &&
+                                appliance.nickname !== appliance.name && (
+                                  <CardDescription>
+                                    {appliance.name}
+                                  </CardDescription>
+                                )}
                             </div>
                             <div className="flex gap-1">
                               <Button
@@ -343,7 +394,9 @@ export default function Appliances() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setDeleteApplianceId(appliance.id)}
+                                onClick={() =>
+                                  setDeleteApplianceId(appliance.id)
+                                }
                                 data-testid={`button-delete-${appliance.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -353,8 +406,8 @@ export default function Appliances() {
                         </CardHeader>
                         <CardContent>
                           {appliance.imageUrl && (
-                            <img 
-                              src={appliance.imageUrl} 
+                            <img
+                              src={appliance.imageUrl}
                               alt={appliance.name}
                               className="w-full h-32 object-contain mb-3 rounded"
                             />
@@ -382,16 +435,21 @@ export default function Appliances() {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAppliances.map((appliance: ApplianceWithLibrary) => (
-            <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
+            <Card
+              key={appliance.id}
+              className="hover-elevate"
+              data-testid={`card-appliance-${appliance.id}`}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <CardTitle className="text-lg">
                       {appliance.nickname || appliance.name}
                     </CardTitle>
-                    {appliance.nickname && appliance.nickname !== appliance.name && (
-                      <CardDescription>{appliance.name}</CardDescription>
-                    )}
+                    {appliance.nickname &&
+                      appliance.nickname !== appliance.name && (
+                        <CardDescription>{appliance.name}</CardDescription>
+                      )}
                     {appliance.category && (
                       <Badge variant="outline" className="mt-2">
                         {appliance.category}
@@ -420,8 +478,8 @@ export default function Appliances() {
               </CardHeader>
               <CardContent>
                 {appliance.imageUrl && (
-                  <img 
-                    src={appliance.imageUrl} 
+                  <img
+                    src={appliance.imageUrl}
                     alt={appliance.name}
                     className="w-full h-32 object-contain mb-3 rounded"
                   />
@@ -446,51 +504,56 @@ export default function Appliances() {
         <Card>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
-              {filteredAppliances.map((appliance: ApplianceWithLibrary, index: number) => (
-                <div key={appliance.id}>
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      {appliance.imageUrl && (
-                        <img 
-                          src={appliance.imageUrl} 
-                          alt={appliance.name}
-                          className="w-16 h-16 object-contain rounded"
-                        />
-                      )}
-                      <div>
-                        <div className="font-semibold">
-                          {appliance.nickname || appliance.name}
+              {filteredAppliances.map(
+                (appliance: ApplianceWithLibrary, index: number) => (
+                  <div key={appliance.id}>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        {appliance.imageUrl && (
+                          <img
+                            src={appliance.imageUrl}
+                            alt={appliance.name}
+                            className="w-16 h-16 object-contain rounded"
+                          />
+                        )}
+                        <div>
+                          <div className="font-semibold">
+                            {appliance.nickname || appliance.name}
+                          </div>
+                          {appliance.nickname &&
+                            appliance.nickname !== appliance.name && (
+                              <div className="text-sm text-muted-foreground">
+                                {appliance.name}
+                              </div>
+                            )}
+                          {appliance.category && (
+                            <Badge variant="outline" className="mt-1">
+                              {appliance.category}
+                            </Badge>
+                          )}
                         </div>
-                        {appliance.nickname && appliance.nickname !== appliance.name && (
-                          <div className="text-sm text-muted-foreground">{appliance.name}</div>
-                        )}
-                        {appliance.category && (
-                          <Badge variant="outline" className="mt-1">
-                            {appliance.category}
-                          </Badge>
-                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingAppliance(appliance)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteApplianceId(appliance.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingAppliance(appliance)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteApplianceId(appliance.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {index < filteredAppliances.length - 1 && <Separator />}
                   </div>
-                  {index < filteredAppliances.length - 1 && <Separator />}
-                </div>
-              ))}
+                ),
+              )}
             </ScrollArea>
           </CardContent>
         </Card>
@@ -505,25 +568,36 @@ export default function Appliances() {
               Add a new appliance to your kitchen inventory
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            addMutation.mutate({
-              name: formData.get('name'),
-              type: formData.get('type') || 'cooking',
-              nickname: formData.get('nickname'),
-              // UserAppliance schema doesn't have notes or categoryId fields
-              // Only send valid fields
-            });
-          }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              addMutation.mutate({
+                name: formData.get("name"),
+                type: formData.get("type") || "cooking",
+                nickname: formData.get("nickname"),
+                // UserAppliance schema doesn't have notes or categoryId fields
+                // Only send valid fields
+              });
+            }}
+          >
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" required placeholder="e.g., Ninja Foodi" />
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="e.g., Ninja Foodi"
+                />
               </div>
               <div>
                 <Label htmlFor="nickname">Nickname (optional)</Label>
-                <Input id="nickname" name="nickname" placeholder="e.g., My Air Fryer" />
+                <Input
+                  id="nickname"
+                  name="nickname"
+                  placeholder="e.g., My Air Fryer"
+                />
               </div>
               <div>
                 <Label htmlFor="type">Type</Label>
@@ -541,11 +615,17 @@ export default function Appliances() {
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={addMutation.isPending}>
-                {addMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {addMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Add Appliance
               </Button>
             </DialogFooter>
@@ -562,22 +642,24 @@ export default function Appliances() {
               Scan a barcode or enter the number manually to add an appliance
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            fromBarcodeMutation.mutate({
-              barcode: formData.get('barcode') as string,
-              nickname: formData.get('nickname') as string,
-              notes: formData.get('notes') as string,
-            });
-          }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              fromBarcodeMutation.mutate({
+                barcode: formData.get("barcode") as string,
+                nickname: formData.get("nickname") as string,
+                notes: formData.get("notes") as string,
+              });
+            }}
+          >
             <div className="space-y-4">
               <div>
                 <Label htmlFor="barcode">Barcode Number</Label>
-                <Input 
-                  id="barcode" 
-                  name="barcode" 
-                  required 
+                <Input
+                  id="barcode"
+                  name="barcode"
+                  required
                   placeholder="e.g., 787790842514"
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
@@ -586,31 +668,37 @@ export default function Appliances() {
               </div>
               <div>
                 <Label htmlFor="scan-nickname">Nickname (optional)</Label>
-                <Input 
-                  id="scan-nickname" 
-                  name="nickname" 
-                  placeholder="Give it a custom name" 
+                <Input
+                  id="scan-nickname"
+                  name="nickname"
+                  placeholder="Give it a custom name"
                 />
               </div>
               <div>
                 <Label htmlFor="scan-notes">Notes (optional)</Label>
-                <Textarea 
-                  id="scan-notes" 
-                  name="notes" 
-                  placeholder="Any special notes..." 
+                <Textarea
+                  id="scan-notes"
+                  name="notes"
+                  placeholder="Any special notes..."
                 />
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsScanDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsScanDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={fromBarcodeMutation.isPending || !barcodeInput} 
+              <Button
+                type="submit"
+                disabled={fromBarcodeMutation.isPending || !barcodeInput}
                 data-testid="button-submit-scan"
               >
-                {fromBarcodeMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {fromBarcodeMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Add from Barcode
               </Button>
             </DialogFooter>
@@ -620,46 +708,59 @@ export default function Appliances() {
 
       {/* Edit Appliance Dialog */}
       {editingAppliance && (
-        <Dialog open={!!editingAppliance} onOpenChange={() => setEditingAppliance(null)}>
+        <Dialog
+          open={!!editingAppliance}
+          onOpenChange={() => setEditingAppliance(null)}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit Appliance</DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              updateMutation.mutate({
-                id: editingAppliance.id,
-                data: {
-                  nickname: formData.get('edit-nickname'),
-                  notes: formData.get('edit-notes'),
-                },
-              });
-            }}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                updateMutation.mutate({
+                  id: editingAppliance.id,
+                  data: {
+                    nickname: formData.get("edit-nickname"),
+                    notes: formData.get("edit-notes"),
+                  },
+                });
+              }}
+            >
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="edit-nickname">Nickname</Label>
-                  <Input 
-                    id="edit-nickname" 
-                    name="edit-nickname" 
-                    defaultValue={editingAppliance.customName || editingAppliance.name}
+                  <Input
+                    id="edit-nickname"
+                    name="edit-nickname"
+                    defaultValue={
+                      editingAppliance.customName || editingAppliance.name
+                    }
                   />
                 </div>
                 <div>
                   <Label htmlFor="edit-notes">Notes</Label>
-                  <Textarea 
-                    id="edit-notes" 
-                    name="edit-notes" 
+                  <Textarea
+                    id="edit-notes"
+                    name="edit-notes"
                     defaultValue={editingAppliance.notes || ""}
                   />
                 </div>
               </div>
               <DialogFooter className="mt-4">
-                <Button type="button" variant="outline" onClick={() => setEditingAppliance(null)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingAppliance(null)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {updateMutation.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -669,18 +770,24 @@ export default function Appliances() {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteApplianceId} onOpenChange={() => setDeleteApplianceId(null)}>
+      <AlertDialog
+        open={!!deleteApplianceId}
+        onOpenChange={() => setDeleteApplianceId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Appliance?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the appliance from your kitchen registry. This action cannot be undone.
+              This will remove the appliance from your kitchen registry. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteApplianceId && deleteMutation.mutate(deleteApplianceId)}
+              onClick={() =>
+                deleteApplianceId && deleteMutation.mutate(deleteApplianceId)
+              }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Remove

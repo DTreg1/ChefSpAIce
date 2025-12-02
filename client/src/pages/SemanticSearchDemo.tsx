@@ -1,13 +1,19 @@
 import { useState, useCallback, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  SearchBar, 
-  SearchResults, 
+import {
+  SearchBar,
+  SearchResults,
   SearchHighlightWithContext,
-  type SearchResult 
+  type SearchResult,
 } from "@/components/semantic-search";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,32 +26,37 @@ const DEMO_CONTENT = [
     id: "demo-1",
     type: "recipe" as const,
     title: "User Authentication Guide",
-    content: "Learn how to implement secure login and sign in functionality. This guide covers authentication best practices, password hashing, session management, and how users can access their accounts safely."
+    content:
+      "Learn how to implement secure login and sign in functionality. This guide covers authentication best practices, password hashing, session management, and how users can access their accounts safely.",
   },
   {
-    id: "demo-2", 
+    id: "demo-2",
     type: "chat" as const,
     title: "Password Reset Tutorial",
-    content: "Step-by-step instructions for resetting forgotten passwords. Users can regain access to their accounts through email verification and secure password reset links."
+    content:
+      "Step-by-step instructions for resetting forgotten passwords. Users can regain access to their accounts through email verification and secure password reset links.",
   },
   {
     id: "demo-3",
     type: "inventory" as const,
     title: "Account Creation Process",
-    content: "Register new users with our streamlined sign up flow. Create accounts with email verification, profile setup, and initial preferences configuration."
+    content:
+      "Register new users with our streamlined sign up flow. Create accounts with email verification, profile setup, and initial preferences configuration.",
   },
   {
     id: "demo-4",
     type: "meal_plan" as const,
     title: "Security Best Practices",
-    content: "Protect user credentials with two-factor authentication, secure sessions, and encrypted data storage. Prevent unauthorized access and maintain account security."
+    content:
+      "Protect user credentials with two-factor authentication, secure sessions, and encrypted data storage. Prevent unauthorized access and maintain account security.",
   },
   {
     id: "demo-5",
     type: "custom" as const,
     title: "OAuth Integration",
-    content: "Enable users to authenticate using their Google, GitHub, or social media accounts. Simplify the login process with single sign-on capabilities."
-  }
+    content:
+      "Enable users to authenticate using their Google, GitHub, or social media accounts. Simplify the login process with single sign-on capabilities.",
+  },
 ];
 
 export default function SemanticSearchDemo() {
@@ -57,7 +68,7 @@ export default function SemanticSearchDemo() {
 
   // Generate embeddings for demo content
   const generateEmbeddingsMutation = useMutation({
-    mutationFn: async (content: typeof DEMO_CONTENT[0]) => {
+    mutationFn: async (content: (typeof DEMO_CONTENT)[0]) => {
       const response = await apiRequest("/api/ml/embeddings/generate", "POST", {
         contentId: content.id,
         contentType: content.type,
@@ -70,7 +81,7 @@ export default function SemanticSearchDemo() {
         metadata: {
           title: content.title,
           isDemo: true,
-        }
+        },
       });
       return response;
     },
@@ -100,17 +111,20 @@ export default function SemanticSearchDemo() {
     onSuccess: (data) => {
       if (data.results && Array.isArray(data.results)) {
         // Transform results to match SearchResult interface
-        const transformedResults: SearchResult[] = data.results.map((r: any) => ({
-          id: r.content?.id || r.contentId,
-          type: r.contentType || 'custom',
-          title: r.content?.name || r.content?.title || 'Untitled',
-          description: r.metadata?.description,
-          content: r.content?.content || r.content?.text || r.contentText || '',
-          score: r.similarity || r.score || 0,
-          metadata: r.metadata,
-        }));
+        const transformedResults: SearchResult[] = data.results.map(
+          (r: any) => ({
+            id: r.content?.id || r.contentId,
+            type: r.contentType || "custom",
+            title: r.content?.name || r.content?.title || "Untitled",
+            description: r.metadata?.description,
+            content:
+              r.content?.content || r.content?.text || r.contentText || "",
+            score: r.similarity || r.score || 0,
+            metadata: r.metadata,
+          }),
+        );
         setSearchResults(transformedResults);
-        
+
         // Store search log ID if provided
         if (data.searchLogId) {
           setSearchLogId(data.searchLogId);
@@ -137,7 +151,11 @@ export default function SemanticSearchDemo() {
       clickPosition: number;
       timeToClick: number;
     }) => {
-      const response = await apiRequest("/api/ml/search/feedback", "POST", data);
+      const response = await apiRequest(
+        "/api/ml/search/feedback",
+        "POST",
+        data,
+      );
       return response;
     },
     onSuccess: () => {
@@ -157,27 +175,37 @@ export default function SemanticSearchDemo() {
     }
   }, []);
 
-  const handleResultClick = useCallback((result: SearchResult & { 
-    searchLogId?: string;
-    clickPosition?: number;
-    timeToClick?: number;
-  }, position: number) => {
-    // Track click feedback
-    if (searchLogId && result.clickPosition && result.timeToClick !== undefined) {
-      feedbackMutation.mutate({
-        searchLogId,
-        clickedResultId: result.id,
-        clickedResultType: result.type,
-        clickPosition: result.clickPosition,
-        timeToClick: result.timeToClick,
-      });
-    }
+  const handleResultClick = useCallback(
+    (
+      result: SearchResult & {
+        searchLogId?: string;
+        clickPosition?: number;
+        timeToClick?: number;
+      },
+      position: number,
+    ) => {
+      // Track click feedback
+      if (
+        searchLogId &&
+        result.clickPosition &&
+        result.timeToClick !== undefined
+      ) {
+        feedbackMutation.mutate({
+          searchLogId,
+          clickedResultId: result.id,
+          clickedResultType: result.type,
+          clickPosition: result.clickPosition,
+          timeToClick: result.timeToClick,
+        });
+      }
 
-    toast({
-      title: "Result Clicked",
-      description: `You clicked: ${result.title} (Position ${position}, Score: ${(result.score * 100).toFixed(0)}%)`,
-    });
-  }, [searchLogId]);
+      toast({
+        title: "Result Clicked",
+        description: `You clicked: ${result.title} (Position ${position}, Score: ${(result.score * 100).toFixed(0)}%)`,
+      });
+    },
+    [searchLogId],
+  );
 
   const generateDemoEmbeddings = async () => {
     toast({
@@ -205,15 +233,18 @@ export default function SemanticSearchDemo() {
             Semantic Search Demo
           </CardTitle>
           <CardDescription>
-            Experience intelligent search that understands meaning, not just keywords.
-            Try searching for "how to login" and see how it finds results about authentication, sign in, and account access.
+            Experience intelligent search that understands meaning, not just
+            keywords. Try searching for "how to login" and see how it finds
+            results about authentication, sign in, and account access.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!hasGeneratedEmbeddings ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                First, let's generate embeddings for our demo content. This converts text into numerical vectors that capture semantic meaning.
+                First, let's generate embeddings for our demo content. This
+                converts text into numerical vectors that capture semantic
+                meaning.
               </p>
               <Button
                 onClick={generateDemoEmbeddings}
@@ -256,9 +287,7 @@ export default function SemanticSearchDemo() {
             <TabsTrigger value="results">
               Search Results ({searchResults.length})
             </TabsTrigger>
-            <TabsTrigger value="highlighted">
-              Highlighted Context
-            </TabsTrigger>
+            <TabsTrigger value="highlighted">Highlighted Context</TabsTrigger>
           </TabsList>
 
           <TabsContent value="results" className="space-y-4">
@@ -275,14 +304,20 @@ export default function SemanticSearchDemo() {
             {searchResults.length > 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Context Highlighting</CardTitle>
+                  <CardTitle className="text-lg">
+                    Context Highlighting
+                  </CardTitle>
                   <CardDescription>
-                    Relevant sections are highlighted even when exact words don't match
+                    Relevant sections are highlighted even when exact words
+                    don't match
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {searchResults.slice(0, 3).map((result, i) => (
-                    <div key={result.id} className="space-y-2 pb-4 border-b last:border-0">
+                    <div
+                      key={result.id}
+                      className="space-y-2 pb-4 border-b last:border-0"
+                    >
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{result.title}</h4>
                         <Badge variant="secondary">
@@ -314,15 +349,18 @@ export default function SemanticSearchDemo() {
         </Tabs>
       )}
 
-      {searchQuery && !searchMutation.isPending && searchResults.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">
-              No results found for "{searchQuery}". Try different terms or generate embeddings first.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {searchQuery &&
+        !searchMutation.isPending &&
+        searchResults.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">
+                No results found for "{searchQuery}". Try different terms or
+                generate embeddings first.
+              </p>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }

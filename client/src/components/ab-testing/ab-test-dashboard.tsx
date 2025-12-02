@@ -1,18 +1,38 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, TrendingUp, TrendingDown, Minus, Plus, BarChart3, Users, DollarSign } from "lucide-react";
+import {
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Plus,
+  BarChart3,
+  Users,
+  DollarSign,
+} from "lucide-react";
 import CreateTestDialog from "./create-test-dialog";
 import VariantComparison from "./variant-comparison";
 import SignificanceCalculator from "./significance-calculator";
 import TestHistory from "./test-history";
 import RecommendationCard from "./recommendation-card";
-import { type AbTest, type AbTestResult, type AbTestVariantMetric, type AbTestInsight } from "@shared/schema";
+import {
+  type AbTest,
+  type AbTestResult,
+  type AbTestVariantMetric,
+  type AbTestInsight,
+} from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
   results?: AbTestResult[];
@@ -40,21 +60,27 @@ export default function ABTestDashboard() {
   });
 
   // Filter tests by status
-  const activeTests = tests?.filter(t => t.status === "active") || [];
-  const completedTests = tests?.filter(t => t.status === "completed") || [];
-  const draftTests = tests?.filter(t => t.status === "draft") || [];
+  const activeTests = tests?.filter((t) => t.status === "active") || [];
+  const completedTests = tests?.filter((t) => t.status === "completed") || [];
+  const draftTests = tests?.filter((t) => t.status === "draft") || [];
 
   // Calculate overall metrics
   const totalTests = tests?.length || 0;
   const getLatestMetric = (t: TestWithDetails) => t.variantMetrics?.[0];
-  const testsWithConfidence = tests?.filter(t => getLatestMetric(t)?.confidence) || [];
-  const averageConfidence = testsWithConfidence.length > 0
-    ? testsWithConfidence.reduce((acc, t) => acc + (getLatestMetric(t)?.confidence || 0), 0) / testsWithConfidence.length
-    : 0;
+  const testsWithConfidence =
+    tests?.filter((t) => getLatestMetric(t)?.confidence) || [];
+  const averageConfidence =
+    testsWithConfidence.length > 0
+      ? testsWithConfidence.reduce(
+          (acc, t) => acc + (getLatestMetric(t)?.confidence || 0),
+          0,
+        ) / testsWithConfidence.length
+      : 0;
 
-  const totalConversions = tests
-    ?.flatMap(t => t.results || [])
-    .reduce((acc, r) => acc + (r.converted ? 1 : 0), 0) || 0;
+  const totalConversions =
+    tests
+      ?.flatMap((t) => t.results || [])
+      .reduce((acc, r) => acc + (r.converted ? 1 : 0), 0) || 0;
 
   if (isLoading) {
     return (
@@ -69,10 +95,17 @@ export default function ABTestDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">A/B Testing Dashboard</h1>
-          <p className="text-muted-foreground">Optimize your features with data-driven decisions</p>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">
+            A/B Testing Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Optimize your features with data-driven decisions
+          </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-test">
+        <Button
+          onClick={() => setShowCreateDialog(true)}
+          data-testid="button-create-test"
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Test
         </Button>
@@ -86,7 +119,9 @@ export default function ABTestDashboard() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-tests">{totalTests}</div>
+            <div className="text-2xl font-bold" data-testid="text-total-tests">
+              {totalTests}
+            </div>
             <p className="text-xs text-muted-foreground">
               {activeTests.length} active, {completedTests.length} completed
             </p>
@@ -95,11 +130,16 @@ export default function ABTestDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Confidence</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Confidence
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-avg-confidence">
+            <div
+              className="text-2xl font-bold"
+              data-testid="text-avg-confidence"
+            >
               {(averageConfidence * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -110,16 +150,19 @@ export default function ABTestDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Conversions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Conversions
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-conversions">
+            <div
+              className="text-2xl font-bold"
+              data-testid="text-total-conversions"
+            >
               {totalConversions.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Across all tests
-            </p>
+            <p className="text-xs text-muted-foreground">Across all tests</p>
           </CardContent>
         </Card>
 
@@ -130,9 +173,15 @@ export default function ABTestDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-success-rate">
-              {tests && tests.length > 0 
-                ? ((tests.filter(t => getLatestMetric(t)?.isSignificant).length / tests.length) * 100).toFixed(0)
-                : 0}%
+              {tests && tests.length > 0
+                ? (
+                    (tests.filter((t) => getLatestMetric(t)?.isSignificant)
+                      .length /
+                      tests.length) *
+                    100
+                  ).toFixed(0)
+                : 0}
+              %
             </div>
             <p className="text-xs text-muted-foreground">
               Tests with clear winners
@@ -146,9 +195,9 @@ export default function ABTestDashboard() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recommendations</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {recommendations.slice(0, 3).map(test => (
-              <RecommendationCard 
-                key={test.id} 
+            {recommendations.slice(0, 3).map((test) => (
+              <RecommendationCard
+                key={test.id}
                 test={test}
                 onImplement={() => {
                   queryClient.invalidateQueries({ queryKey: ["/api/ab"] });
@@ -184,9 +233,9 @@ export default function ABTestDashboard() {
               </AlertDescription>
             </Alert>
           ) : (
-            activeTests.map(test => (
-              <TestCard 
-                key={test.id} 
+            activeTests.map((test) => (
+              <TestCard
+                key={test.id}
                 test={test}
                 onSelect={() => setSelectedTest(test.id)}
                 selected={selectedTest === test.id}
@@ -198,14 +247,12 @@ export default function ABTestDashboard() {
         <TabsContent value="completed" className="space-y-4">
           {completedTests.length === 0 ? (
             <Alert>
-              <AlertDescription>
-                No completed tests yet.
-              </AlertDescription>
+              <AlertDescription>No completed tests yet.</AlertDescription>
             </Alert>
           ) : (
-            completedTests.map(test => (
-              <TestCard 
-                key={test.id} 
+            completedTests.map((test) => (
+              <TestCard
+                key={test.id}
                 test={test}
                 onSelect={() => setSelectedTest(test.id)}
                 selected={selectedTest === test.id}
@@ -217,14 +264,12 @@ export default function ABTestDashboard() {
         <TabsContent value="draft" className="space-y-4">
           {draftTests.length === 0 ? (
             <Alert>
-              <AlertDescription>
-                No draft tests.
-              </AlertDescription>
+              <AlertDescription>No draft tests.</AlertDescription>
             </Alert>
           ) : (
-            draftTests.map(test => (
-              <TestCard 
-                key={test.id} 
+            draftTests.map((test) => (
+              <TestCard
+                key={test.id}
                 test={test}
                 onSelect={() => setSelectedTest(test.id)}
                 selected={selectedTest === test.id}
@@ -241,18 +286,20 @@ export default function ABTestDashboard() {
       {/* Selected Test Details */}
       {selectedTest && tests && (
         <div className="space-y-6">
-          {tests.filter(t => t.id === selectedTest).map(test => (
-            <div key={test.id} className="space-y-6">
-              <VariantComparison test={test as any} />
-              <SignificanceCalculator test={test} />
-            </div>
-          ))}
+          {tests
+            .filter((t) => t.id === selectedTest)
+            .map((test) => (
+              <div key={test.id} className="space-y-6">
+                <VariantComparison test={test as any} />
+                <SignificanceCalculator test={test} />
+              </div>
+            ))}
         </div>
       )}
 
       {/* Create Test Dialog */}
       {showCreateDialog && (
-        <CreateTestDialog 
+        <CreateTestDialog
           open={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
           onSuccess={() => {
@@ -273,7 +320,7 @@ interface TestCardProps {
 
 function TestCard({ test, onSelect, selected }: TestCardProps) {
   const latestMetric = test.variantMetrics?.[0];
-  
+
   const getLiftIcon = (lift?: number | null) => {
     if (!lift) return <Minus className="h-4 w-4" />;
     if (lift > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
@@ -282,34 +329,32 @@ function TestCard({ test, onSelect, selected }: TestCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'default';
-      case 'completed':
-        return 'secondary';
-      case 'draft':
-        return 'outline';
-      case 'paused':
-        return 'destructive';
+      case "active":
+        return "default";
+      case "completed":
+        return "secondary";
+      case "draft":
+        return "outline";
+      case "paused":
+        return "destructive";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
   return (
-    <Card 
-      className={`cursor-pointer transition-all ${selected ? 'ring-2 ring-primary' : ''}`}
+    <Card
+      className={`cursor-pointer transition-all ${selected ? "ring-2 ring-primary" : ""}`}
       onClick={onSelect}
       data-testid={`card-test-${test.id}`}
     >
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-lg">{test.testName}</CardTitle>
-          <Badge variant={getStatusColor(test.status)}>
-            {test.status}
-          </Badge>
+          <Badge variant={getStatusColor(test.status)}>{test.status}</Badge>
         </div>
         <CardDescription>
-          Control vs {test.configuration?.variants?.[0]?.name || 'Variant B'}
+          Control vs {test.configuration?.variants?.[0]?.name || "Variant B"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -317,21 +362,23 @@ function TestCard({ test, onSelect, selected }: TestCardProps) {
           <div>
             <p className="text-muted-foreground">Confidence</p>
             <p className="font-medium">
-              {latestMetric?.confidence ? `${(latestMetric.confidence * 100).toFixed(1)}%` : 'N/A'}
+              {latestMetric?.confidence
+                ? `${(latestMetric.confidence * 100).toFixed(1)}%`
+                : "N/A"}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">P-Value</p>
             <div className="flex items-center gap-1">
               <span className="font-medium">
-                {latestMetric?.pValue ? latestMetric.pValue.toFixed(3) : 'N/A'}
+                {latestMetric?.pValue ? latestMetric.pValue.toFixed(3) : "N/A"}
               </span>
             </div>
           </div>
           <div>
             <p className="text-muted-foreground">Result</p>
             <p className="font-medium">
-              {latestMetric?.isSignificant ? 'Significant' : 'Inconclusive'}
+              {latestMetric?.isSignificant ? "Significant" : "Inconclusive"}
             </p>
           </div>
         </div>

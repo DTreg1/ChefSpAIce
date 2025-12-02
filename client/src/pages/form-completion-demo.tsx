@@ -1,6 +1,6 @@
 /**
  * Form Completion Demo Page
- * 
+ *
  * Demonstrates the smart form auto-completion feature with ML-powered
  * suggestions and context-aware predictions.
  */
@@ -18,7 +18,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
@@ -74,7 +80,9 @@ type ShippingData = z.infer<typeof shippingSchema>;
 export default function FormCompletionDemo() {
   const [formMemoryEnabled, setFormMemoryEnabled] = useState(true);
   const [submittedData, setSubmittedData] = useState<any>(null);
-  const [activeForm, setActiveForm] = useState<"profile" | "shipping">("profile");
+  const [activeForm, setActiveForm] = useState<"profile" | "shipping">(
+    "profile",
+  );
 
   // User Profile Form
   const profileForm = useForm<UserProfileData>({
@@ -140,7 +148,8 @@ export default function FormCompletionDemo() {
     shippingForm.setValue("country", "United States");
     toast({
       title: "Auto-filled",
-      description: "Fields have been filled with your default shipping address.",
+      description:
+        "Fields have been filled with your default shipping address.",
     });
   };
 
@@ -151,7 +160,9 @@ export default function FormCompletionDemo() {
   return (
     <div className="container mx-auto max-w-4xl p-6">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-3xl font-bold">Smart Form Auto-Completion Demo</h1>
+        <h1 className="mb-2 text-3xl font-bold">
+          Smart Form Auto-Completion Demo
+        </h1>
         <p className="text-muted-foreground">
           Experience ML-powered form suggestions that learn from your patterns
         </p>
@@ -212,7 +223,8 @@ export default function FormCompletionDemo() {
               <div>
                 <CardTitle>User Profile Form</CardTitle>
                 <CardDescription>
-                  Try typing your email, city, or country to see smart suggestions
+                  Try typing your email, city, or country to see smart
+                  suggestions
                 </CardDescription>
               </div>
               <AutoFillAllButton onClick={handleAutoFillProfile} />
@@ -220,7 +232,10 @@ export default function FormCompletionDemo() {
           </CardHeader>
           <CardContent>
             <Form {...profileForm}>
-              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+              <form
+                onSubmit={profileForm.handleSubmit(onProfileSubmit)}
+                className="space-y-4"
+              >
                 <div className="grid gap-4 md:grid-cols-2">
                   <SmartFormField
                     control={profileForm.control}
@@ -232,7 +247,7 @@ export default function FormCompletionDemo() {
                     context={profileContext}
                     autoFocus
                   />
-                  
+
                   <SmartFormField
                     control={profileForm.control}
                     name="lastName"
@@ -287,7 +302,7 @@ export default function FormCompletionDemo() {
                     context={profileContext}
                     showHistoryButton
                   />
-                  
+
                   <SmartFormField
                     control={profileForm.control}
                     name="state"
@@ -296,7 +311,7 @@ export default function FormCompletionDemo() {
                     enableAutoComplete={formMemoryEnabled}
                     context={profileContext}
                   />
-                  
+
                   <SmartFormField
                     control={profileForm.control}
                     name="zipCode"
@@ -327,7 +342,7 @@ export default function FormCompletionDemo() {
                     enableAutoComplete={formMemoryEnabled}
                     context={profileContext}
                   />
-                  
+
                   <SmartFormField
                     control={profileForm.control}
                     name="jobTitle"
@@ -339,12 +354,14 @@ export default function FormCompletionDemo() {
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => profileForm.reset()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => profileForm.reset()}
+                  >
                     Clear
                   </Button>
-                  <Button type="submit">
-                    Save Profile
-                  </Button>
+                  <Button type="submit">Save Profile</Button>
                 </div>
               </form>
             </Form>
@@ -365,7 +382,10 @@ export default function FormCompletionDemo() {
           </CardHeader>
           <CardContent>
             <Form {...shippingForm}>
-              <form onSubmit={shippingForm.handleSubmit(onShippingSubmit)} className="space-y-4">
+              <form
+                onSubmit={shippingForm.handleSubmit(onShippingSubmit)}
+                className="space-y-4"
+              >
                 <SmartFormField
                   control={shippingForm.control}
                   name="fullName"
@@ -406,7 +426,7 @@ export default function FormCompletionDemo() {
                     enableAutoComplete={formMemoryEnabled}
                     context={shippingContext}
                   />
-                  
+
                   <SmartFormField
                     control={shippingForm.control}
                     name="state"
@@ -428,7 +448,7 @@ export default function FormCompletionDemo() {
                     enableAutoComplete={formMemoryEnabled}
                     context={shippingContext}
                   />
-                  
+
                   <SmartFormField
                     control={shippingForm.control}
                     name="country"
@@ -451,12 +471,14 @@ export default function FormCompletionDemo() {
                 />
 
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => shippingForm.reset()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => shippingForm.reset()}
+                  >
                     Clear
                   </Button>
-                  <Button type="submit">
-                    Save Address
-                  </Button>
+                  <Button type="submit">Save Address</Button>
                 </div>
               </form>
             </Form>

@@ -1,8 +1,22 @@
 import { Redirect } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Activity, Users, BarChart3, Settings, Copy, MessageSquareWarning } from "lucide-react";
+import {
+  Shield,
+  Activity,
+  Users,
+  BarChart3,
+  Settings,
+  Copy,
+  MessageSquareWarning,
+} from "lucide-react";
 import { AdminActivityMonitor } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
 import { DuplicateManager, DuplicateDetection } from "@/components/duplicates";
@@ -10,24 +24,22 @@ import { ModerationQueue, ModerationStats } from "@/components/moderation";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
-  
+
   // Redirect if not admin
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
         <Card>
-          <CardContent className="p-8 text-center">
-            Loading...
-          </CardContent>
+          <CardContent className="p-8 text-center">Loading...</CardContent>
         </Card>
       </div>
     );
   }
-  
+
   if (!user || !user.isAdmin) {
     return <Redirect to="/" />;
   }
-  
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
@@ -46,7 +58,7 @@ export default function AdminDashboard() {
           </Badge>
         </div>
       </div>
-      
+
       <Tabs defaultValue="activity" className="space-y-6">
         <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="activity" className="flex items-center gap-2">
@@ -74,18 +86,18 @@ export default function AdminDashboard() {
             Settings
           </TabsTrigger>
         </TabsList>
-        
+
         {/* Activity Monitor Tab */}
         <TabsContent value="activity" className="space-y-6">
           <AdminActivityMonitor />
         </TabsContent>
-        
+
         {/* Moderation Tab */}
         <TabsContent value="moderation" className="space-y-6">
           <ModerationStats isAdmin={true} />
           <ModerationQueue isAdmin={true} />
         </TabsContent>
-        
+
         {/* Duplicates Tab */}
         <TabsContent value="duplicates" className="space-y-6">
           <div className="grid gap-6">
@@ -93,7 +105,7 @@ export default function AdminDashboard() {
             <DuplicateManager />
           </div>
         </TabsContent>
-        
+
         {/* User Management Tab */}
         <TabsContent value="users" className="space-y-6">
           <Card>
@@ -108,12 +120,13 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                User management functionality is available in the Settings page under Admin Management.
+                User management functionality is available in the Settings page
+                under Admin Management.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           <Card>
@@ -144,10 +157,12 @@ export default function AdminDashboard() {
                     </ul>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Performance Metrics</CardTitle>
+                    <CardTitle className="text-base">
+                      Performance Metrics
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
@@ -165,7 +180,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* System Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
           <Card>
@@ -184,28 +199,45 @@ export default function AdminDashboard() {
                   <div>
                     <h3 className="font-medium mb-2">Data Retention</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Configure how long different types of data are retained in the system
+                      Configure how long different types of data are retained in
+                      the system
                     </p>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Activity Logs</label>
-                        <p className="text-xs text-muted-foreground">Currently: 90 days</p>
+                        <label className="text-sm font-medium">
+                          Activity Logs
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Currently: 90 days
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">API Usage Logs</label>
-                        <p className="text-xs text-muted-foreground">Currently: 30 days</p>
+                        <label className="text-sm font-medium">
+                          API Usage Logs
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Currently: 30 days
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Chat History</label>
-                        <p className="text-xs text-muted-foreground">Currently: Indefinite</p>
+                        <label className="text-sm font-medium">
+                          Chat History
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Currently: Indefinite
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Expired Food Items</label>
-                        <p className="text-xs text-muted-foreground">Currently: 7 days after expiry</p>
+                        <label className="text-sm font-medium">
+                          Expired Food Items
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Currently: 7 days after expiry
+                        </p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-medium mb-2">System Limits</h3>
                     <p className="text-sm text-muted-foreground mb-3">
@@ -213,20 +245,36 @@ export default function AdminDashboard() {
                     </p>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">API Rate Limit</label>
-                        <p className="text-xs text-muted-foreground">100 requests per minute</p>
+                        <label className="text-sm font-medium">
+                          API Rate Limit
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          100 requests per minute
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Recipe Generation Daily Limit</label>
-                        <p className="text-xs text-muted-foreground">50 recipes per user</p>
+                        <label className="text-sm font-medium">
+                          Recipe Generation Daily Limit
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          50 recipes per user
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Max Food Items per User</label>
-                        <p className="text-xs text-muted-foreground">1000 items</p>
+                        <label className="text-sm font-medium">
+                          Max Food Items per User
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          1000 items
+                        </p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Max Chat History</label>
-                        <p className="text-xs text-muted-foreground">500 messages</p>
+                        <label className="text-sm font-medium">
+                          Max Chat History
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          500 messages
+                        </p>
                       </div>
                     </div>
                   </div>

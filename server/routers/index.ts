@@ -1,14 +1,14 @@
 /**
  * Centralized Router Configuration
- * 
+ *
  * This file consolidates all API route definitions and provides a single
  * entry point for route registration. Routes are organized by domain:
- * 
+ *
  * ROUTE STRUCTURE:
  * ================
- * 
+ *
  * /api/v1                                  - API Version 1 Base
- * 
+ *
  * USER DOMAIN (/api/v1/...)
  * --------------------------
  * /auth                                    - Authentication & user management
@@ -23,7 +23,7 @@
  * /autosave                                - Auto-save functionality
  * /autocomplete                            - Autocomplete suggestions
  * /validation                              - Data validation
- * 
+ *
  * ADMIN DOMAIN (/api/v1/admin/...)
  * ---------------------------------
  * /admin                                   - Base admin operations
@@ -36,7 +36,7 @@
  * /admin/moderation                        - Content moderation
  * /admin/ai-metrics                        - AI usage metrics & monitoring
  * /admin/seed                              - Seed data endpoints
- * 
+ *
  * PLATFORM DOMAIN (/api/v1/...)
  * ------------------------------
  * Core Services:
@@ -50,12 +50,12 @@
  * /feedback                                - User feedback collection
  * /fraud-detection                         - Fraud detection services
  * /scheduling                              - Scheduling & calendar services
- * 
+ *
  * AI Services (/api/v1/ai/...):
  * /ai/content                              - Content generation, drafting, writing
  * /ai/analysis                             - Sentiment, trends, predictions, insights
  * /ai/media                                - Images, vision, voice processing
- * 
+ *
  * HEALTH & STATUS
  * ---------------
  * /health                                  - Health check (no auth required)
@@ -66,7 +66,11 @@
 import { Application, Router } from "express";
 import { createServer, type Server } from "http";
 import { API_CONFIG } from "../config/api.config";
-import { setupApiVersionRedirects, addDeprecationHeaders, handleRedirectErrors } from "../middleware/api-version-handler";
+import {
+  setupApiVersionRedirects,
+  addDeprecationHeaders,
+  handleRedirectErrors,
+} from "../middleware/api-version-handler";
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { isAdmin } from "../middleware/rbac.middleware";
@@ -116,15 +120,14 @@ import schedulingRouter from "./platform/scheduling.router";
 import donationsRouter from "./platform/donations.router";
 
 // AI services (consolidated under platform)
-import contentRouter from "./platform/ai/content.router";       // Merges: generation, drafting, excerpt, writing
-import analysisRouter from "./platform/ai/analysis.router";     // Includes: insights, recommendations, natural-query
-import mediaRouter from "./platform/ai/media.router";           // Merges: images, vision, voice
-import mlRouter from "./platform/ml.router";                    // ML/semantic search endpoints
+import contentRouter from "./platform/ai/content.router"; // Merges: generation, drafting, excerpt, writing
+import analysisRouter from "./platform/ai/analysis.router"; // Includes: insights, recommendations, natural-query
+import mediaRouter from "./platform/ai/media.router"; // Merges: images, vision, voice
+import mlRouter from "./platform/ml.router"; // ML/semantic search endpoints
 
 // Additional platform services
 import barcodeLookupRouter from "./platform/barcode-lookup.router";
 import recommendationsRouter from "./platform/recommendations.router";
-
 
 // ====================================================================
 // UTILITIES & SEED DATA
@@ -139,22 +142,22 @@ import { storage } from "../storage/index";
  */
 export function setupRouters(app: Application): void {
   // API versioning configuration
-  const API_PREFIX = '/api/v1';
-  
+  const API_PREFIX = "/api/v1";
+
   // Setup middleware
   setupApiVersionRedirects(app);
   app.use(addDeprecationHeaders);
   app.use(activityLoggingMiddleware);
-  
+
   // ====================================================================
   // USER ENDPOINTS
   // ====================================================================
-  
+
   // Authentication & User Management
   app.use(`${API_PREFIX}/auth`, authRouter);
   // Legacy auth path for OAuth callbacks (OAuth providers are configured with /api/auth/* URLs)
-  app.use('/api/auth', authRouter);
-  
+  app.use("/api/auth", authRouter);
+
   // Core Food & Recipe Management
   app.use(`${API_PREFIX}/inventory`, inventoryRouter);
   app.use(`${API_PREFIX}/inventory/shopping-list`, shoppingListRouter); // Primary shopping list path
@@ -162,11 +165,11 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/recipes`, recipesRouter);
   app.use(`${API_PREFIX}/meal-plans`, mealPlanningRouter);
   app.use(`${API_PREFIX}/shopping-list`, shoppingListRouter); // Legacy shopping list path (backward compatible)
-  
+
   // Chat & Communication
   app.use(`${API_PREFIX}/chat`, chatRouter);
   app.use(`${API_PREFIX}/chats`, chatRouter); // SSE streaming endpoint
-  
+
   // Utility Features
   app.use(`${API_PREFIX}/appliances`, appliancesRouter);
   app.use(`${API_PREFIX}/nutrition`, nutritionRouter);
@@ -174,68 +177,111 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/autosave`, autosaveRouter);
   app.use(`${API_PREFIX}/autocomplete`, autocompleteRouter);
   app.use(`${API_PREFIX}/validation`, validationRouter);
-  
+
   // User Profile
   app.use(`${API_PREFIX}/profile`, profileRouter);
   app.use(`${API_PREFIX}/user/profile`, profileRouter); // Alias for user-prefixed path
-  
+
   // ====================================================================
   // ADMIN ENDPOINTS
   // All admin endpoints require authentication + admin role
   // Note: adminRouter handles /users internally, so we only mount at /admin
   // ====================================================================
-  
+
   app.use(`${API_PREFIX}/admin`, isAuthenticated, isAdmin, adminRouter);
-  app.use(`${API_PREFIX}/admin/experiments`, isAuthenticated, isAdmin, abTestingRouter);
-  app.use(`${API_PREFIX}/admin/cohorts`, isAuthenticated, isAdmin, cohortsRouter);
-  app.use(`${API_PREFIX}/admin/maintenance`, isAuthenticated, isAdmin, maintenanceRouter);
-  app.use(`${API_PREFIX}/admin/tickets`, isAuthenticated, isAdmin, ticketRoutingRouter);
-  app.use(`${API_PREFIX}/admin/pricing`, isAuthenticated, isAdmin, pricingRouter);
-  app.use(`${API_PREFIX}/admin/moderation`, isAuthenticated, isAdmin, moderationRouter);
-  app.use(`${API_PREFIX}/admin/ai-metrics`, isAuthenticated, isAdmin, aiMetricsRouter);
-  
+  app.use(
+    `${API_PREFIX}/admin/experiments`,
+    isAuthenticated,
+    isAdmin,
+    abTestingRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/cohorts`,
+    isAuthenticated,
+    isAdmin,
+    cohortsRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/maintenance`,
+    isAuthenticated,
+    isAdmin,
+    maintenanceRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/tickets`,
+    isAuthenticated,
+    isAdmin,
+    ticketRoutingRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/pricing`,
+    isAuthenticated,
+    isAdmin,
+    pricingRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/moderation`,
+    isAuthenticated,
+    isAdmin,
+    moderationRouter,
+  );
+  app.use(
+    `${API_PREFIX}/admin/ai-metrics`,
+    isAuthenticated,
+    isAdmin,
+    aiMetricsRouter,
+  );
+
   // Admin seed data endpoints (combined router to avoid double-mount)
-  app.use(`${API_PREFIX}/admin/seed`, isAuthenticated, isAdmin, createSeedRouter(storage));
-  
+  app.use(
+    `${API_PREFIX}/admin/seed`,
+    isAuthenticated,
+    isAdmin,
+    createSeedRouter(storage),
+  );
+
   // ====================================================================
   // PLATFORM ENDPOINTS
   // ====================================================================
-  
+
   // Analytics & Monitoring
   app.use(`${API_PREFIX}/analytics`, analyticsRouter);
   app.use(`${API_PREFIX}/activities`, activityLogsRouter);
   app.use(`${API_PREFIX}/activity-logs`, activityLogsRouter); // Frontend-expected path
-  
+
   // Notifications
   app.use(`${API_PREFIX}/notifications`, notificationsRouter);
   app.use(`${API_PREFIX}/notifications/tokens`, pushTokensRouter);
-  app.use(`${API_PREFIX}/notifications/intelligent`, intelligentNotificationsRouter);
-  
+  app.use(
+    `${API_PREFIX}/notifications/intelligent`,
+    intelligentNotificationsRouter,
+  );
+
   // Data Management
   app.use(`${API_PREFIX}/batch`, batchRouter);
   app.use(`${API_PREFIX}/data-completion`, createDataCompletionRoutes(storage));
   app.use(`${API_PREFIX}/feedback`, feedbackRouter);
-  
+
   // Specialized Services
   app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
   app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
-  
+
   // Barcode lookup & Recommendations
   app.use(`${API_PREFIX}/barcodelookup`, barcodeLookupRouter);
   app.use(`${API_PREFIX}/recommendations`, recommendationsRouter);
-  
+
   // FDC (USDA Food Data Central) endpoints - alias to inventory FDC
   app.use(`${API_PREFIX}/fdc`, inventoryRouter);
-  
+
   // Donations (no auth required for public access)
   app.use(`${API_PREFIX}/donations`, donationsRouter);
-  app.use('/api/donations', donationsRouter); // Legacy path
-  
+  app.use("/api/donations", donationsRouter); // Legacy path
+
   // AI Services (consolidated under platform)
-  app.use(`${API_PREFIX}/ai/content`, contentRouter);    // Generation, drafting, excerpts, writing
-  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);  // Sentiment, trends, predictions, insights
-  app.use(`${API_PREFIX}/ai/media`, mediaRouter);        // Images, vision, voice processing
-  
+  app.use(`${API_PREFIX}/ai/content`, contentRouter); // Generation, drafting, excerpts, writing
+  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter); // Sentiment, trends, predictions, insights
+  app.use(`${API_PREFIX}/ai/media`, mediaRouter); // Images, vision, voice processing
+
   // Legacy backward compatibility routes for AI endpoints
   app.use(`${API_PREFIX}/ai/generation`, contentRouter);
   app.use(`${API_PREFIX}/ai/drafts`, contentRouter);
@@ -247,46 +293,46 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/ai/recommendations`, analysisRouter);
   app.use(`${API_PREFIX}/natural-query`, analysisRouter);
   app.use(`${API_PREFIX}/images`, mediaRouter);
-  
+
   // ====================================================================
   // LEGACY ROUTE MOUNTS (direct handlers to avoid 301 redirect issues with POST)
   // These duplicate the versioned routes but are needed because:
   // - 301 redirects can change POST to GET in some browsers
   // - Frontend code uses non-versioned paths for backward compatibility
   // ====================================================================
-  
+
   // User endpoints (direct mount, no redirect)
-  app.use('/api/recipes', recipesRouter);
-  app.use('/api/chat', chatRouter);
-  app.use('/api/chats', chatRouter);
-  app.use('/api/shopping-list', shoppingListRouter);
-  app.use('/api/meal-plans', mealPlanningRouter);
-  app.use('/api/user/inventory', inventoryRouter);
-  app.use('/api/user/profile', profileRouter);
-  app.use('/api/inventory', inventoryRouter);
-  app.use('/api/storage-locations', inventoryRouter);
-  app.use('/api/food-items', inventoryRouter);
-  app.use('/api/nutrition', nutritionRouter);
-  app.use('/api/cooking-terms', cookingTermsRouter);
-  app.use('/api/profile', profileRouter);
-  
+  app.use("/api/recipes", recipesRouter);
+  app.use("/api/chat", chatRouter);
+  app.use("/api/chats", chatRouter);
+  app.use("/api/shopping-list", shoppingListRouter);
+  app.use("/api/meal-plans", mealPlanningRouter);
+  app.use("/api/user/inventory", inventoryRouter);
+  app.use("/api/user/profile", profileRouter);
+  app.use("/api/inventory", inventoryRouter);
+  app.use("/api/storage-locations", inventoryRouter);
+  app.use("/api/food-items", inventoryRouter);
+  app.use("/api/nutrition", nutritionRouter);
+  app.use("/api/cooking-terms", cookingTermsRouter);
+  app.use("/api/profile", profileRouter);
+
   // ML/AI endpoints (frontend calls /api/ml/search/semantic)
-  app.use('/api/ml', mlRouter);
-  app.use('/api/ai', contentRouter);
-  
+  app.use("/api/ml", mlRouter);
+  app.use("/api/ai", contentRouter);
+
   // Barcode lookup and recommendations (legacy paths)
-  app.use('/api/barcodelookup', barcodeLookupRouter);
-  app.use('/api/recommendations', recommendationsRouter);
-  app.use('/api/fdc', inventoryRouter);
-  app.use('/api/activity-logs', activityLogsRouter);
-  
+  app.use("/api/barcodelookup", barcodeLookupRouter);
+  app.use("/api/recommendations", recommendationsRouter);
+  app.use("/api/fdc", inventoryRouter);
+  app.use("/api/activity-logs", activityLogsRouter);
+
   // Also mount at versioned path
   app.use(`${API_PREFIX}/ml`, mlRouter);
-  
+
   // ====================================================================
   // HEALTH & STATUS ENDPOINTS (No authentication required)
   // ====================================================================
-  
+
   // Health check endpoint - Available at both root and versioned paths
   const healthResponse = (_req: any, res: any) => {
     res.json({
@@ -294,34 +340,37 @@ export function setupRouters(app: Application): void {
       version: API_CONFIG.VERSION,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || "development",
     });
   };
-  
-  app.get('/health', healthResponse);
+
+  app.get("/health", healthResponse);
   app.get(`${API_PREFIX}/health`, healthResponse);
-  
+
   // API information endpoint
   app.get(`${API_PREFIX}/info`, (_req: any, res: any) => {
     res.json({
       version: API_CONFIG.VERSION,
       deprecationDate: API_CONFIG.DEPRECATION_DATE,
       documentation: `${API_PREFIX}/docs`,
-      supportedVersions: ['v1'],
-      currentVersion: 'v1'
+      supportedVersions: ["v1"],
+      currentVersion: "v1",
     });
   });
-  
+
   // Legacy health endpoint for backward compatibility
-  app.get('/api/health', (_req: any, res: any) => {
-    res.setHeader('X-Deprecation-Warning', `This endpoint is deprecated. Use /health or ${API_PREFIX}/health instead`);
-    res.json({ 
+  app.get("/api/health", (_req: any, res: any) => {
+    res.setHeader(
+      "X-Deprecation-Warning",
+      `This endpoint is deprecated. Use /health or ${API_PREFIX}/health instead`,
+    );
+    res.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     });
   });
-  
+
   // Error handling for API versioning
   app.use(handleRedirectErrors);
 }

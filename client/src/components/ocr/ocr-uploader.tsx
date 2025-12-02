@@ -1,6 +1,6 @@
 /**
  * OCR Uploader Component
- * 
+ *
  * Handles file uploads for OCR processing with drag-and-drop support
  * and image preview capabilities.
  */
@@ -21,9 +21,16 @@ interface OCRUploaderProps {
 
 export function OCRUploader({
   onFileSelect,
-  acceptedFormats = ["image/jpeg", "image/png", "image/webp", "image/tiff", "image/bmp", "application/pdf"],
+  acceptedFormats = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/tiff",
+    "image/bmp",
+    "application/pdf",
+  ],
   maxSizeInMB = 20,
-  className
+  className,
 }: OCRUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -31,49 +38,56 @@ export function OCRUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const validateFile = useCallback((file: File): boolean => {
-    // Check file type
-    if (!acceptedFormats.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image (JPEG, PNG, WebP, TIFF, BMP) or PDF file",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    // Check file size
-    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-    if (file.size > maxSizeInBytes) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSizeInMB}MB`,
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  }, [acceptedFormats, maxSizeInMB, toast]);
-
-  const handleFileSelect = useCallback((file: File) => {
-    if (validateFile(file)) {
-      setSelectedFile(file);
-      
-      // Create preview for images
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewUrl(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setPreviewUrl(null);
+  const validateFile = useCallback(
+    (file: File): boolean => {
+      // Check file type
+      if (!acceptedFormats.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description:
+            "Please upload an image (JPEG, PNG, WebP, TIFF, BMP) or PDF file",
+          variant: "destructive",
+        });
+        return false;
       }
-      
-      onFileSelect(file);
-    }
-  }, [validateFile, onFileSelect]);
+
+      // Check file size
+      const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        toast({
+          title: "File too large",
+          description: `File size must be less than ${maxSizeInMB}MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      return true;
+    },
+    [acceptedFormats, maxSizeInMB, toast],
+  );
+
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      if (validateFile(file)) {
+        setSelectedFile(file);
+
+        // Create preview for images
+        if (file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setPreviewUrl(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setPreviewUrl(null);
+        }
+
+        onFileSelect(file);
+      }
+    },
+    [validateFile, onFileSelect],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -87,23 +101,29 @@ export function OCRUploader({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  }, [handleFileSelect]);
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    },
+    [handleFileSelect],
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  }, [handleFileSelect]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    },
+    [handleFileSelect],
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedFile(null);
@@ -118,7 +138,7 @@ export function OCRUploader({
       className={cn(
         "border-2 border-dashed p-8 transition-colors",
         isDragging && "border-primary bg-primary/5",
-        className
+        className,
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -158,8 +178,13 @@ export function OCRUploader({
             <div className="relative flex items-center justify-center gap-4 rounded-lg border bg-muted p-8">
               <FileText className="h-12 w-12 text-muted-foreground" />
               <div className="text-left">
-                <p className="font-medium" data-testid="text-filename">{selectedFile.name}</p>
-                <p className="text-sm text-muted-foreground" data-testid="text-filesize">
+                <p className="font-medium" data-testid="text-filename">
+                  {selectedFile.name}
+                </p>
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-testid="text-filesize"
+                >
                   {(selectedFile.size / 1024).toFixed(1)} KB
                 </p>
               </div>

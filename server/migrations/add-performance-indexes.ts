@@ -107,7 +107,6 @@ async function addIndexes() {
     // console.log("  • Shopping list operations");
     // console.log("  • Chat history retrieval");
     // console.log("  • Analytics queries");
-
   } catch (error) {
     console.error("❌ Error adding indexes:", error);
     process.exit(1);

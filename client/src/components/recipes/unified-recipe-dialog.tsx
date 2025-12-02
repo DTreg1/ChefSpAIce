@@ -18,20 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  ChefHat, 
-  Clock, 
-  Users, 
-  Sparkles, 
-  GraduationCap, 
-  Utensils, 
-  ShoppingBasket, 
-  ChevronDown, 
-  ChevronUp, 
+import {
+  ChefHat,
+  Clock,
+  Users,
+  Sparkles,
+  GraduationCap,
+  Utensils,
+  ShoppingBasket,
+  ChevronDown,
+  ChevronUp,
   Zap,
   Loader2,
   Package,
-  X
+  X,
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -52,8 +52,8 @@ interface RecipePreferences {
   specificItems?: string[];
 }
 
-const PREF_KEY = 'unified-recipe-preferences';
-const SMART_PREF_KEY = 'smart-recipe-preferences';
+const PREF_KEY = "unified-recipe-preferences";
+const SMART_PREF_KEY = "smart-recipe-preferences";
 
 interface SmartRecipePreferences {
   lastCuisineType?: string;
@@ -75,11 +75,13 @@ function getStoredPreferences(): Partial<RecipePreferences> {
 function getSmartPreferences(): SmartRecipePreferences {
   try {
     const stored = localStorage.getItem(SMART_PREF_KEY);
-    return stored ? JSON.parse(stored) : {
-      preferExpiringItems: true,
-      lastServingSize: 4,
-      lastCookingTime: "30",
-    };
+    return stored
+      ? JSON.parse(stored)
+      : {
+          preferExpiringItems: true,
+          lastServingSize: 4,
+          lastCookingTime: "30",
+        };
   } catch {
     return {
       preferExpiringItems: true,
@@ -96,21 +98,21 @@ function storePreferences(prefs: RecipePreferences) {
 function getSmartDefaults(): RecipePreferences {
   const hour = new Date().getHours();
   const stored = getStoredPreferences();
-  
-  let mealType: RecipePreferences['mealType'] = 'dinner';
-  let timeConstraint: RecipePreferences['timeConstraint'] = 'moderate';
-  
+
+  let mealType: RecipePreferences["mealType"] = "dinner";
+  let timeConstraint: RecipePreferences["timeConstraint"] = "moderate";
+
   if (hour >= 5 && hour < 11) {
-    mealType = 'breakfast';
-    timeConstraint = 'quick';
+    mealType = "breakfast";
+    timeConstraint = "quick";
   } else if (hour >= 11 && hour < 14) {
-    mealType = 'lunch';
-    timeConstraint = 'quick';
+    mealType = "lunch";
+    timeConstraint = "quick";
   } else if (hour >= 14 && hour < 17) {
-    mealType = 'snack';
-    timeConstraint = 'quick';
+    mealType = "snack";
+    timeConstraint = "quick";
   }
-  
+
   return {
     timeConstraint: stored.timeConstraint || timeConstraint,
     servings: stored.servings || 4,
@@ -130,52 +132,66 @@ interface UnifiedRecipeDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function UnifiedRecipeDialog({ 
-  onRecipeGenerated, 
-  open: externalOpen, 
-  onOpenChange: externalOnOpenChange
+export function UnifiedRecipeDialog({
+  onRecipeGenerated,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: UnifiedRecipeDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
-  
+
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
   const { toast } = useToast();
-  
-  const [preferences, setPreferences] = useState<RecipePreferences>(getSmartDefaults());
 
-  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
+  const [preferences, setPreferences] =
+    useState<RecipePreferences>(getSmartDefaults());
+
+  const { data: foodItemsResponse } = useQuery<{
+    data: FoodItem[];
+    pagination?: unknown;
+  }>({
     queryKey: ["/api/food-items"],
   });
-  
+
   // Extract the data array from the paginated response
-  const foodItems = Array.isArray(foodItemsResponse) 
-    ? foodItemsResponse 
+  const foodItems = Array.isArray(foodItemsResponse)
+    ? foodItemsResponse
     : foodItemsResponse?.data || [];
 
   // Calculate expiring items and analyze inventory
-  const inventoryAnalysis = foodItems.reduce((acc: { expiring: FoodItem[], expiringCount: number, highQuantity: FoodItem[] }, item: FoodItem) => {
-    if (item.expirationDate) {
-      const daysUntilExpiration = Math.floor(
-        (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
-        (1000 * 60 * 60 * 24)
-      );
-      if (daysUntilExpiration <= 3) {
-        acc.expiring.push(item);
-        acc.expiringCount++;
+  const inventoryAnalysis = foodItems.reduce(
+    (
+      acc: {
+        expiring: FoodItem[];
+        expiringCount: number;
+        highQuantity: FoodItem[];
+      },
+      item: FoodItem,
+    ) => {
+      if (item.expirationDate) {
+        const daysUntilExpiration = Math.floor(
+          (new Date(item.expirationDate).getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+        if (daysUntilExpiration <= 3) {
+          acc.expiring.push(item);
+          acc.expiringCount++;
+        }
       }
-    }
-    
-    if (parseFloat(item.quantity) > 5) {
-      acc.highQuantity.push(item);
-    }
-    
-    return acc;
-  }, {
-    expiring: [] as FoodItem[],
-    expiringCount: 0,
-    highQuantity: [] as FoodItem[]
-  });
+
+      if (parseFloat(item.quantity) > 5) {
+        acc.highQuantity.push(item);
+      }
+
+      return acc;
+    },
+    {
+      expiring: [] as FoodItem[],
+      expiringCount: 0,
+      highQuantity: [] as FoodItem[],
+    },
+  );
 
   const smartPreferences = getSmartPreferences();
   const hasItems = foodItems.length > 0;
@@ -186,29 +202,35 @@ export function UnifiedRecipeDialog({
     mutationFn: async () => {
       const smartRequest: any = {
         onlyUseOnHand: true,
-        prioritizeExpiring: smartPreferences.preferExpiringItems && expiringCount > 0,
+        prioritizeExpiring:
+          smartPreferences.preferExpiringItems && expiringCount > 0,
         servings: smartPreferences.lastServingSize || 4,
         maxCookingTime: smartPreferences.lastCookingTime || "30",
       };
 
       if (expiringCount > 0) {
-        smartRequest.expiringItems = inventoryAnalysis.expiring.map((item: FoodItem) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
-          daysUntilExpiration: Math.floor(
-            (new Date(item.expirationDate!).getTime() - new Date().getTime()) / 
-            (1000 * 60 * 60 * 24)
-          )
-        }));
+        smartRequest.expiringItems = inventoryAnalysis.expiring.map(
+          (item: FoodItem) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            daysUntilExpiration: Math.floor(
+              (new Date(item.expirationDate!).getTime() -
+                new Date().getTime()) /
+                (1000 * 60 * 60 * 24),
+            ),
+          }),
+        );
       }
 
       if ((inventoryAnalysis.highQuantity.length ?? 0) > 0) {
-        smartRequest.abundantItems = inventoryAnalysis.highQuantity.map((item: FoodItem) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit
-        }));
+        smartRequest.abundantItems = inventoryAnalysis.highQuantity.map(
+          (item: FoodItem) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+          }),
+        );
       }
 
       if (smartPreferences.lastCuisineType) {
@@ -216,37 +238,48 @@ export function UnifiedRecipeDialog({
       }
 
       if (smartPreferences.lastDietaryRestrictions?.length) {
-        smartRequest.dietaryRestrictions = smartPreferences.lastDietaryRestrictions;
+        smartRequest.dietaryRestrictions =
+          smartPreferences.lastDietaryRestrictions;
       }
 
-      const response = await apiRequest("/api/recipes/generate", "POST", smartRequest);
+      const response = await apiRequest(
+        "/api/recipes/generate",
+        "POST",
+        smartRequest,
+      );
       return response;
     },
     onSuccess: async (recipe: Recipe) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      
+
       const recipesWithMatching = await queryClient.fetchQuery({
         queryKey: ["/api/recipes"],
         staleTime: 0,
       });
-      
-      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
-      
-      const smartMessage = expiringCount > 0 
-        ? `Using ${expiringCount} expiring item${expiringCount > 1 ? 's' : ''}`
-        : "Using only what's in your kitchen";
-      
+
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find(
+        (r: Recipe) => r.id === recipe.id,
+      );
+
+      const smartMessage =
+        expiringCount > 0
+          ? `Using ${expiringCount} expiring item${expiringCount > 1 ? "s" : ""}`
+          : "Using only what's in your kitchen";
+
       toast({
         title: "🪄 " + recipe.title,
         description: smartMessage,
       });
-      
+
       onRecipeGenerated?.(updatedRecipe || recipe);
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const errorMessage = error instanceof Error ? error.message : "Could not generate smart recipe";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Could not generate smart recipe";
       toast({
         title: "Generation Failed",
         description: errorMessage,
@@ -259,31 +292,34 @@ export function UnifiedRecipeDialog({
   const generateRecipeMutation = useMutation({
     mutationFn: async (prefs: RecipePreferences) => {
       storePreferences(prefs);
-      
+
       const response = await apiRequest("/api/recipes/generate", "POST", prefs);
       return response;
     },
     onSuccess: async (recipe: Recipe) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      
+
       const recipesWithMatching = await queryClient.fetchQuery({
         queryKey: ["/api/recipes"],
         staleTime: 0,
       });
-      
-      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
-      
+
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find(
+        (r: Recipe) => r.id === recipe.id,
+      );
+
       toast({
         title: "Recipe Generated!",
         description: `${recipe.title} - Customized to your preferences`,
       });
-      
+
       onRecipeGenerated?.(updatedRecipe || recipe);
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate recipe";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to generate recipe";
       toast({
         title: "Error",
         description: errorMessage,
@@ -302,10 +338,14 @@ export function UnifiedRecipeDialog({
 
   const getTimeLabel = (value: string) => {
     switch (value) {
-      case "quick": return "< 30 min";
-      case "moderate": return "30-60 min";
-      case "elaborate": return "> 60 min";
-      default: return value;
+      case "quick":
+        return "< 30 min";
+      case "moderate":
+        return "30-60 min";
+      case "elaborate":
+        return "> 60 min";
+      default:
+        return value;
     }
   };
 
@@ -316,23 +356,27 @@ export function UnifiedRecipeDialog({
   };
 
   const toggleFoodItem = (itemName: string) => {
-    setPreferences(prev => {
+    setPreferences((prev) => {
       const current = prev.specificItems || [];
       const isSelected = current.includes(itemName);
       return {
         ...prev,
-        specificItems: isSelected 
-          ? current.filter(name => name !== itemName)
-          : [...current, itemName]
+        specificItems: isSelected
+          ? current.filter((name) => name !== itemName)
+          : [...current, itemName],
       };
     });
   };
 
-  const isGenerating = smartGenerateRecipeMutation.isPending || generateRecipeMutation.isPending;
+  const isGenerating =
+    smartGenerateRecipeMutation.isPending || generateRecipeMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md bg-muted" data-testid="dialog-unified-recipe">
+      <DialogContent
+        className="sm:max-w-md bg-muted"
+        data-testid="dialog-unified-recipe"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ChefHat className="w-5 h-5 text-primary" />
@@ -372,7 +416,8 @@ export function UnifiedRecipeDialog({
             </Button>
             {expiringCount > 0 ? (
               <p className="text-xs text-muted-foreground text-center">
-                Uses {expiringCount} expiring item{expiringCount > 1 ? 's' : ''} - no shopping needed
+                Uses {expiringCount} expiring item{expiringCount > 1 ? "s" : ""}{" "}
+                - no shopping needed
               </p>
             ) : (
               <p className="text-xs text-muted-foreground text-center">
@@ -390,18 +435,27 @@ export function UnifiedRecipeDialog({
             data-testid="button-toggle-customization"
           >
             <span>Customize Recipe Options</span>
-            {showCustomization ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showCustomization ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
           </Button>
 
           {/* Customization Options */}
           {showCustomization && (
-            <div className={cn(
-              "space-y-4 pt-2",
-              "animate-in slide-in-from-top-2 duration-200"
-            )}>
+            <div
+              className={cn(
+                "space-y-4 pt-2",
+                "animate-in slide-in-from-top-2 duration-200",
+              )}
+            >
               {/* Time Constraint */}
               <div className="space-y-2">
-                <Label htmlFor="time" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="time"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <Clock className="w-3 h-3" />
                   Time Available
                 </Label>
@@ -409,9 +463,15 @@ export function UnifiedRecipeDialog({
                   {(["quick", "moderate", "elaborate"] as const).map((time) => (
                     <Button
                       key={time}
-                      variant={preferences.timeConstraint === time ? "default" : "outline"}
+                      variant={
+                        preferences.timeConstraint === time
+                          ? "default"
+                          : "outline"
+                      }
                       size="sm"
-                      onClick={() => setPreferences({ ...preferences, timeConstraint: time })}
+                      onClick={() =>
+                        setPreferences({ ...preferences, timeConstraint: time })
+                      }
                       className="flex-1"
                       data-testid={`button-time-${time}`}
                     >
@@ -423,17 +483,32 @@ export function UnifiedRecipeDialog({
 
               {/* Meal Type */}
               <div className="space-y-2">
-                <Label htmlFor="meal-type" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="meal-type"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <Utensils className="w-3 h-3" />
                   Meal Type
                 </Label>
                 <div className="flex flex-wrap gap-1">
-                  {(["breakfast", "lunch", "dinner", "snack", "dessert"] as const).map((meal) => (
+                  {(
+                    [
+                      "breakfast",
+                      "lunch",
+                      "dinner",
+                      "snack",
+                      "dessert",
+                    ] as const
+                  ).map((meal) => (
                     <Badge
                       key={meal}
-                      variant={preferences.mealType === meal ? "default" : "outline"}
+                      variant={
+                        preferences.mealType === meal ? "default" : "outline"
+                      }
                       className="cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => setPreferences({ ...preferences, mealType: meal })}
+                      onClick={() =>
+                        setPreferences({ ...preferences, mealType: meal })
+                      }
                       data-testid={`badge-meal-${meal}`}
                     >
                       {meal.charAt(0).toUpperCase() + meal.slice(1)}
@@ -444,7 +519,10 @@ export function UnifiedRecipeDialog({
 
               {/* Servings */}
               <div className="space-y-2">
-                <Label htmlFor="servings" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="servings"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <Users className="w-3 h-3" />
                   Servings: {preferences.servings}
                 </Label>
@@ -454,7 +532,9 @@ export function UnifiedRecipeDialog({
                   max={12}
                   step={1}
                   value={[preferences.servings]}
-                  onValueChange={(value) => setPreferences({ ...preferences, servings: value[0] })}
+                  onValueChange={(value) =>
+                    setPreferences({ ...preferences, servings: value[0] })
+                  }
                   className="w-full"
                   data-testid="slider-servings"
                 />
@@ -462,7 +542,10 @@ export function UnifiedRecipeDialog({
 
               {/* Only Use On Hand */}
               <div className="flex items-center justify-between">
-                <Label htmlFor="on-hand" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="on-hand"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <ShoppingBasket className="w-3 h-3" />
                   Only use ingredients I have
                 </Label>
@@ -481,12 +564,15 @@ export function UnifiedRecipeDialog({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-sm">
                     <Package className="w-3 h-3" />
-                    Specific Foods to Use ({preferences.specificItems?.length || 0} selected)
+                    Specific Foods to Use (
+                    {preferences.specificItems?.length || 0} selected)
                   </Label>
                   <ScrollArea className="h-40 border rounded-md p-2">
                     <div className="flex flex-wrap gap-1">
                       {foodItems.map((item) => {
-                        const isSelected = preferences.specificItems?.includes(item.name) || false;
+                        const isSelected =
+                          preferences.specificItems?.includes(item.name) ||
+                          false;
                         return (
                           <Badge
                             key={item.id}
@@ -507,17 +593,23 @@ export function UnifiedRecipeDialog({
 
               {/* Difficulty */}
               <div className="space-y-2">
-                <Label htmlFor="difficulty" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="difficulty"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <GraduationCap className="w-3 h-3" />
                   Difficulty Level
                 </Label>
                 <Select
                   value={preferences.difficulty}
-                  onValueChange={(value: "beginner" | "intermediate" | "advanced" | "expert") =>
-                    setPreferences({ ...preferences, difficulty: value })
-                  }
+                  onValueChange={(
+                    value: "beginner" | "intermediate" | "advanced" | "expert",
+                  ) => setPreferences({ ...preferences, difficulty: value })}
                 >
-                  <SelectTrigger id="difficulty" data-testid="select-difficulty">
+                  <SelectTrigger
+                    id="difficulty"
+                    data-testid="select-difficulty"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -531,9 +623,13 @@ export function UnifiedRecipeDialog({
 
               {/* Creativity Slider */}
               <div className="space-y-2">
-                <Label htmlFor="creativity" className="flex items-center gap-2 text-sm">
+                <Label
+                  htmlFor="creativity"
+                  className="flex items-center gap-2 text-sm"
+                >
                   <Sparkles className="w-3 h-3" />
-                  Creativity: {getCreativityLabel(preferences.creativity)} ({preferences.creativity})
+                  Creativity: {getCreativityLabel(preferences.creativity)} (
+                  {preferences.creativity})
                 </Label>
                 <Slider
                   id="creativity"
@@ -541,7 +637,9 @@ export function UnifiedRecipeDialog({
                   max={10}
                   step={1}
                   value={[preferences.creativity]}
-                  onValueChange={(value) => setPreferences({ ...preferences, creativity: value[0] })}
+                  onValueChange={(value) =>
+                    setPreferences({ ...preferences, creativity: value[0] })
+                  }
                   className="w-full"
                   data-testid="slider-creativity"
                 />
@@ -560,7 +658,10 @@ export function UnifiedRecipeDialog({
                 <Select
                   value={preferences.cuisineType || "any"}
                   onValueChange={(value) =>
-                    setPreferences({ ...preferences, cuisineType: value === "any" ? undefined : value })
+                    setPreferences({
+                      ...preferences,
+                      cuisineType: value === "any" ? undefined : value,
+                    })
                   }
                 >
                   <SelectTrigger id="cuisine" data-testid="select-cuisine">

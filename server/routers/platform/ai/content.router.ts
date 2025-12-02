@@ -1,6 +1,6 @@
 /**
  * Consolidated AI Content Router
- * 
+ *
  * Unified router for all AI content generation services including:
  * - Writing assistance (grammar, style, tone adjustment)
  * - Content generation (expansion, summarization)
@@ -8,25 +8,31 @@
  * - Recipe and meal generation
  * - Smart email/message drafting
  * - Excerpt generation and A/B testing
- * 
+ *
  * Base path: /api/ai/content
- * 
+ *
  * Sub-routes:
  * - /drafts/* - Email/message drafting
  * - /excerpts/* - Excerpt generation and optimization
  * - /* - General content generation
- * 
+ *
  * @module server/routers/ai/content.router
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../../middleware/auth.middleware";
+import {
+  isAuthenticated,
+  getAuthenticatedUserId,
+} from "../../../middleware/auth.middleware";
 import { storage } from "../../../storage/index";
 import { z } from "zod";
 import OpenAI from "openai";
 import { getOpenAIClient } from "../../../config/openai-config";
 import { rateLimiters } from "../../../middleware/rate-limit.middleware";
-import { circuitBreakers, executeWithBreaker } from "../../../middleware/circuit-breaker.middleware";
+import {
+  circuitBreakers,
+  executeWithBreaker,
+} from "../../../middleware/circuit-breaker.middleware";
 import {
   AIError,
   handleOpenAIError,
@@ -51,18 +57,28 @@ const openaiBreaker = circuitBreakers.openaiGeneration;
 
 const analyzeTextSchema = z.object({
   text: z.string().min(1).max(50000),
-  options: z.object({
-    checkGrammar: z.boolean().default(true),
-    checkSpelling: z.boolean().default(true),
-    checkStyle: z.boolean().default(true),
-    suggestTone: z.boolean().default(true),
-    targetTone: z.enum(["formal", "casual", "professional", "friendly", "academic"]).optional(),
-  }).optional(),
+  options: z
+    .object({
+      checkGrammar: z.boolean().default(true),
+      checkSpelling: z.boolean().default(true),
+      checkStyle: z.boolean().default(true),
+      suggestTone: z.boolean().default(true),
+      targetTone: z
+        .enum(["formal", "casual", "professional", "friendly", "academic"])
+        .optional(),
+    })
+    .optional(),
 });
 
 const adjustToneSchema = z.object({
   text: z.string().min(1).max(10000),
-  targetTone: z.enum(["formal", "casual", "professional", "friendly", "academic"]),
+  targetTone: z.enum([
+    "formal",
+    "casual",
+    "professional",
+    "friendly",
+    "academic",
+  ]),
 });
 
 const expandTextSchema = z.object({
@@ -85,12 +101,14 @@ const translateSchema = z.object({
 
 const recipeGenerationSchema = z.object({
   ingredients: z.array(z.string()).min(1),
-  preferences: z.object({
-    cuisineType: z.string().optional(),
-    dietaryRestrictions: z.array(z.string()).optional(),
-    cookingTime: z.enum(["quick", "moderate", "lengthy"]).optional(),
-    difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-  }).optional(),
+  preferences: z
+    .object({
+      cuisineType: z.string().optional(),
+      dietaryRestrictions: z.array(z.string()).optional(),
+      cookingTime: z.enum(["quick", "moderate", "lengthy"]).optional(),
+      difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+    })
+    .optional(),
   servings: z.number().min(1).max(20).default(4),
 });
 
@@ -102,10 +120,31 @@ const paraphraseSchema = z.object({
 const generateExcerptSchema = z.object({
   content: z.string().min(50, "Content must be at least 50 characters"),
   contentId: z.string().min(1),
-  targetPlatform: z.enum(['twitter', 'linkedin', 'facebook', 'instagram', 'generic']).optional(),
-  excerptType: z.enum(['social', 'email', 'card', 'meta', 'summary']).optional(),
-  tone: z.enum(['professional', 'casual', 'formal', 'friendly', 'exciting', 'informative']).optional(),
-  style: z.enum(['descriptive', 'action-oriented', 'question-based', 'teaser', 'summary']).optional(),
+  targetPlatform: z
+    .enum(["twitter", "linkedin", "facebook", "instagram", "generic"])
+    .optional(),
+  excerptType: z
+    .enum(["social", "email", "card", "meta", "summary"])
+    .optional(),
+  tone: z
+    .enum([
+      "professional",
+      "casual",
+      "formal",
+      "friendly",
+      "exciting",
+      "informative",
+    ])
+    .optional(),
+  style: z
+    .enum([
+      "descriptive",
+      "action-oriented",
+      "question-based",
+      "teaser",
+      "summary",
+    ])
+    .optional(),
   targetAudience: z.string().optional(),
   callToAction: z.boolean().optional(),
   hashtags: z.boolean().optional(),
@@ -128,31 +167,41 @@ const trackPerformanceSchema = z.object({
   conversions: z.number().min(0).optional(),
   bounces: z.number().min(0).optional(),
   timeOnPage: z.number().min(0).optional(),
-  platformMetrics: z.object({
-    twitter: z.object({
-      impressions: z.number().optional(),
-      retweets: z.number().optional(),
-      likes: z.number().optional(),
-      replies: z.number().optional(),
-    }).optional(),
-    linkedin: z.object({
-      impressions: z.number().optional(),
-      reactions: z.number().optional(),
-      comments: z.number().optional(),
-      reposts: z.number().optional(),
-    }).optional(),
-    facebook: z.object({
-      reach: z.number().optional(),
-      reactions: z.number().optional(),
-      comments: z.number().optional(),
-      shares: z.number().optional(),
-    }).optional(),
-    email: z.object({
-      opens: z.number().optional(),
-      clicks: z.number().optional(),
-      forwards: z.number().optional(),
-    }).optional(),
-  }).optional(),
+  platformMetrics: z
+    .object({
+      twitter: z
+        .object({
+          impressions: z.number().optional(),
+          retweets: z.number().optional(),
+          likes: z.number().optional(),
+          replies: z.number().optional(),
+        })
+        .optional(),
+      linkedin: z
+        .object({
+          impressions: z.number().optional(),
+          reactions: z.number().optional(),
+          comments: z.number().optional(),
+          reposts: z.number().optional(),
+        })
+        .optional(),
+      facebook: z
+        .object({
+          reach: z.number().optional(),
+          reactions: z.number().optional(),
+          comments: z.number().optional(),
+          shares: z.number().optional(),
+        })
+        .optional(),
+      email: z
+        .object({
+          opens: z.number().optional(),
+          clicks: z.number().optional(),
+          forwards: z.number().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 // ==================== HELPER FUNCTIONS ====================
@@ -168,12 +217,15 @@ function calculateReadability(text: string): number {
 }
 
 function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 }
 
 function detectTone(text: string): string {
   const result = sentiment.analyze(text);
-  
+
   if (result.score > 5) return "positive";
   if (result.score < -5) return "negative";
   if (result.score > 2) return "friendly";
@@ -183,9 +235,9 @@ function detectTone(text: string): string {
 
 function checkOpenAIConfiguration(res: Response): boolean {
   if (!openai) {
-    res.status(503).json({ 
+    res.status(503).json({
       error: "AI service not configured",
-      message: "OpenAI API key is required for this feature."
+      message: "OpenAI API key is required for this feature.",
     });
     return false;
   }
@@ -195,26 +247,27 @@ function checkOpenAIConfiguration(res: Response): boolean {
 async function generateDraftVariations(
   originalMessage: string,
   contextType: string,
-  tones: string[]
+  tones: string[],
 ): Promise<Array<{ content: string; tone: string }>> {
   if (!openai) {
     throw new Error("OpenAI client not configured");
   }
 
   const contextInstructions: Record<string, string> = {
-    'customer_complaint': 'You are responding to a customer complaint. Be professional, acknowledge their concerns, and offer solutions.',
-    'email': 'You are drafting a professional email response.',
-    'message': 'You are drafting a conversational message response.',
-    'comment': 'You are drafting a comment or forum response.'
+    customer_complaint:
+      "You are responding to a customer complaint. Be professional, acknowledge their concerns, and offer solutions.",
+    email: "You are drafting a professional email response.",
+    message: "You are drafting a conversational message response.",
+    comment: "You are drafting a comment or forum response.",
   };
 
   const toneDescriptions: Record<string, string> = {
-    'formal': 'Use formal language with proper business etiquette',
-    'casual': 'Use relaxed, conversational language',
-    'friendly': 'Use warm, approachable language with a positive tone',
-    'apologetic': 'Express sincere regret and take responsibility',
-    'solution-focused': 'Emphasize practical solutions and next steps',
-    'empathetic': 'Show understanding and compassion for their situation'
+    formal: "Use formal language with proper business etiquette",
+    casual: "Use relaxed, conversational language",
+    friendly: "Use warm, approachable language with a positive tone",
+    apologetic: "Express sincere regret and take responsibility",
+    "solution-focused": "Emphasize practical solutions and next steps",
+    empathetic: "Show understanding and compassion for their situation",
   };
 
   const systemPrompt = `You are an expert at crafting contextual responses. ${contextInstructions[contextType] || contextInstructions.email}
@@ -222,28 +275,34 @@ async function generateDraftVariations(
 Generate ${tones.length} different response drafts to the following message, each with a different tone.
 
 Tones to use:
-${tones.map(tone => `- ${tone}: ${toneDescriptions[tone] || tone}`).join('\n')}
+${tones.map((tone) => `- ${tone}: ${toneDescriptions[tone] || tone}`).join("\n")}
 
 Return a JSON object with a "drafts" array containing objects with "content" and "tone" fields.
 Each draft should be complete and ready to send.`;
-  
+
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Original message to respond to:\n"${originalMessage}"` }
+      {
+        role: "user",
+        content: `Original message to respond to:\n"${originalMessage}"`,
+      },
     ],
     response_format: { type: "json_object" },
     max_tokens: 2000,
-    temperature: 0.8
+    temperature: 0.8,
   });
-  
-  const result = JSON.parse(completion.choices[0]?.message?.content || '{"drafts":[]}');
+
+  const result = JSON.parse(
+    completion.choices[0]?.message?.content || '{"drafts":[]}',
+  );
   const drafts = result.drafts || [];
-  
+
   return tones.map((tone, index) => ({
-    content: drafts[index]?.content || `[Draft generation failed for ${tone} tone]`,
-    tone: tone
+    content:
+      drafts[index]?.content || `[Draft generation failed for ${tone} tone]`,
+    tone: tone,
   }));
 }
 
@@ -253,43 +312,47 @@ Each draft should be complete and ready to send.`;
  * POST /api/ai/content/analyze
  * Analyze text for grammar, style, and tone improvements
  */
-router.post("/analyze", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = analyzeTextSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, options } = validation.data;
-    const {
-      checkGrammar = true,
-      checkSpelling = true,
-      checkStyle = true,
-      suggestTone = true,
-      targetTone,
-    } = options || {};
-    
-    const wordCount = countWords(text);
-    const readabilityScore = calculateReadability(text);
-    const detectedTone = detectTone(text);
-    
-    const session = await storage.platform.ai.createWritingSession(userId, {
-      sessionType: 'review',
-      startContent: text,
-      documentId: null,
-      suggestionsAccepted: 0,
-      suggestionsRejected: 0,
-    });
-    
-    const suggestions: any[] = [];
-    
-    if (checkStyle || suggestTone) {
-      const prompt = `Analyze this text for writing improvements:
+router.post(
+  "/analyze",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = analyzeTextSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, options } = validation.data;
+      const {
+        checkGrammar = true,
+        checkSpelling = true,
+        checkStyle = true,
+        suggestTone = true,
+        targetTone,
+      } = options || {};
+
+      const wordCount = countWords(text);
+      const readabilityScore = calculateReadability(text);
+      const detectedTone = detectTone(text);
+
+      const session = await storage.platform.ai.createWritingSession(userId, {
+        sessionType: "review",
+        startContent: text,
+        documentId: null,
+        suggestionsAccepted: 0,
+        suggestionsRejected: 0,
+      });
+
+      const suggestions: any[] = [];
+
+      if (checkStyle || suggestTone) {
+        const prompt = `Analyze this text for writing improvements:
 
 Text: "${text}"
 
@@ -308,81 +371,93 @@ For each suggestion, provide:
 
 Format as JSON array. Only return valid JSON, no other text.`;
 
-      const completion = await openaiBreaker.execute(async () => {
-        return await openai!.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 2000,
-          temperature: 0.3,
-          response_format: { type: "json_object" },
+        const completion = await openaiBreaker.execute(async () => {
+          return await openai!.chat.completions.create({
+            model: "gpt-4o",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 2000,
+            temperature: 0.3,
+            response_format: { type: "json_object" },
+          });
         });
-      });
 
-      try {
-        const aiSuggestions = JSON.parse(completion.choices[0]?.message?.content || "[]");
-        if (Array.isArray(aiSuggestions)) {
-          suggestions.push(...aiSuggestions);
+        try {
+          const aiSuggestions = JSON.parse(
+            completion.choices[0]?.message?.content || "[]",
+          );
+          if (Array.isArray(aiSuggestions)) {
+            suggestions.push(...aiSuggestions);
+          }
+        } catch (parseError) {
+          console.error("Error parsing AI suggestions:", parseError);
         }
-      } catch (parseError) {
-        console.error("Error parsing AI suggestions:", parseError);
       }
+
+      if (suggestions.length > 0) {
+        await storage.platform.ai.addWritingSuggestions(
+          session.id,
+          suggestions.map((s) => ({
+            suggestionType: (s.type || "style") as
+              | "tone"
+              | "grammar"
+              | "style"
+              | "clarity"
+              | "vocabulary",
+            originalText: s.original || "",
+            suggestedText: s.suggested || "",
+            reason: s.reason,
+          })),
+        );
+      }
+
+      res.json({
+        sessionId: session.id,
+        metrics: {
+          wordCount,
+          readabilityScore,
+          tone: detectedTone,
+          targetTone: targetTone || detectedTone,
+        },
+        suggestions,
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-    
-    if (suggestions.length > 0) {
-      await storage.platform.ai.addWritingSuggestions(
-        session.id,
-        suggestions.map(s => ({
-          suggestionType: (s.type || "style") as "tone" | "grammar" | "style" | "clarity" | "vocabulary",
-          originalText: s.original || "",
-          suggestedText: s.suggested || "",
-          reason: s.reason,
-        }))
-      );
-    }
-    
-    res.json({
-      sessionId: session.id,
-      metrics: {
-        wordCount,
-        readabilityScore,
-        tone: detectedTone,
-        targetTone: targetTone || detectedTone,
-      },
-      suggestions,
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+  },
+);
 
 /**
  * POST /api/ai/content/tone
  * Adjust the tone of text
  */
-router.post("/tone", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = adjustToneSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, targetTone } = validation.data;
-    
-    const toneDescriptions = {
-      formal: "formal, professional, and respectful",
-      casual: "casual, conversational, and relaxed",
-      professional: "professional, clear, and business-appropriate",
-      friendly: "friendly, warm, and approachable",
-      academic: "academic, scholarly, and precise",
-    };
-    
-    const prompt = `Rewrite this text to have a ${toneDescriptions[targetTone]} tone:
+router.post(
+  "/tone",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = adjustToneSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, targetTone } = validation.data;
+
+      const toneDescriptions = {
+        formal: "formal, professional, and respectful",
+        casual: "casual, conversational, and relaxed",
+        professional: "professional, clear, and business-appropriate",
+        friendly: "friendly, warm, and approachable",
+        academic: "academic, scholarly, and precise",
+      };
+
+      const prompt = `Rewrite this text to have a ${toneDescriptions[targetTone]} tone:
 
 "${text}"
 
@@ -390,53 +465,58 @@ Maintain the same meaning and key points, but adjust the language, word choice, 
 
 Return only the rewritten text, no explanations.`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 2000,
-        temperature: 0.5,
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 2000,
+          temperature: 0.5,
+        });
       });
-    });
-    
-    const adjustedText = completion.choices[0]?.message?.content || text;
-    
-    res.json({
-      originalText: text,
-      adjustedText,
-      targetTone,
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const adjustedText = completion.choices[0]?.message?.content || text;
+
+      res.json({
+        originalText: text,
+        adjustedText,
+        targetTone,
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/expand
  * Expand text to be more detailed
  */
-router.post("/expand", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = expandTextSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, targetLength } = validation.data;
-    
-    const expansionFactors = {
-      short: "slightly (about 25% more)",
-      medium: "moderately (about 50% more)",
-      long: "significantly (about 100% more)",
-    };
-    
-    const prompt = `Expand this text ${expansionFactors[targetLength]}:
+router.post(
+  "/expand",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = expandTextSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, targetLength } = validation.data;
+
+      const expansionFactors = {
+        short: "slightly (about 25% more)",
+        medium: "moderately (about 50% more)",
+        long: "significantly (about 100% more)",
+      };
+
+      const prompt = `Expand this text ${expansionFactors[targetLength]}:
 
 "${text}"
 
@@ -444,61 +524,66 @@ Add relevant details, examples, and explanations to make the text more comprehen
 
 Return only the expanded text, no explanations.`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 3000,
-        temperature: 0.7,
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 3000,
+          temperature: 0.7,
+        });
       });
-    });
-    
-    const expandedText = completion.choices[0]?.message?.content || text;
-    
-    res.json({
-      originalText: text,
-      expandedText,
-      originalLength: countWords(text),
-      expandedLength: countWords(expandedText),
-      targetLength,
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const expandedText = completion.choices[0]?.message?.content || text;
+
+      res.json({
+        originalText: text,
+        expandedText,
+        originalLength: countWords(text),
+        expandedLength: countWords(expandedText),
+        targetLength,
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/summarize
  * Summarize text content
  */
-router.post("/summarize", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = summarizeTextSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, length, format } = validation.data;
-    
-    const lengthDescriptions = {
-      brief: "very brief (2-3 sentences)",
-      moderate: "moderate (1-2 paragraphs)",
-      detailed: "detailed (3-4 paragraphs)",
-    };
-    
-    const formatInstructions = {
-      paragraph: "Format as continuous paragraphs.",
-      bullets: "Format as bullet points.",
-      outline: "Format as a hierarchical outline.",
-    };
-    
-    const prompt = `Summarize this text in a ${lengthDescriptions[length]} manner:
+router.post(
+  "/summarize",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = summarizeTextSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, length, format } = validation.data;
+
+      const lengthDescriptions = {
+        brief: "very brief (2-3 sentences)",
+        moderate: "moderate (1-2 paragraphs)",
+        detailed: "detailed (3-4 paragraphs)",
+      };
+
+      const formatInstructions = {
+        paragraph: "Format as continuous paragraphs.",
+        bullets: "Format as bullet points.",
+        outline: "Format as a hierarchical outline.",
+      };
+
+      const prompt = `Summarize this text in a ${lengthDescriptions[length]} manner:
 
 "${text}"
 
@@ -506,73 +591,81 @@ ${formatInstructions[format]}
 
 Focus on the key points and main ideas. Return only the summary, no explanations.`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 1000,
-        temperature: 0.3,
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 1000,
+          temperature: 0.3,
+        });
       });
-    });
-    
-    const summary = completion.choices[0]?.message?.content || "";
-    
-    res.json({
-      originalLength: countWords(text),
-      summary,
-      summaryLength: countWords(summary),
-      format,
-      compressionRatio: (countWords(summary) / countWords(text)).toFixed(2),
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const summary = completion.choices[0]?.message?.content || "";
+
+      res.json({
+        originalLength: countWords(text),
+        summary,
+        summaryLength: countWords(summary),
+        format,
+        compressionRatio: (countWords(summary) / countWords(text)).toFixed(2),
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/paraphrase
  * Paraphrase text while maintaining meaning
  */
-router.post("/paraphrase", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = paraphraseSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, style } = validation.data;
-    
-    const completion = await openai!.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Paraphrase the following text ${style ? `in a ${style} style` : ""}.
+router.post(
+  "/paraphrase",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = paraphraseSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, style } = validation.data;
+
+      const completion = await openai!.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Paraphrase the following text ${style ? `in a ${style} style` : ""}.
           Provide 3 different variations.
-          Return JSON: { "variations": ["version1", "version2", "version3"] }`
-        },
-        {
-          role: "user",
-          content: text
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1500
-    });
-    
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{"variations":[]}');
-    res.json({ variations: result.variations || [] });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+          Return JSON: { "variations": ["version1", "version2", "version3"] }`,
+          },
+          {
+            role: "user",
+            content: text,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+      });
+
+      const result = JSON.parse(
+        completion.choices[0]?.message?.content || '{"variations":[]}',
+      );
+      res.json({ variations: result.variations || [] });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 // ==================== TRANSLATION ENDPOINTS ====================
 
@@ -580,21 +673,26 @@ router.post("/paraphrase", isAuthenticated, rateLimiters.openai.middleware(), as
  * POST /api/ai/content/translate
  * Translate text between languages
  */
-router.post("/translate", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = translateSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { text, sourceLang, targetLang, preserveFormatting } = validation.data;
-    
-    const prompt = `Translate the following text ${sourceLang ? `from ${sourceLang}` : ""} to ${targetLang}:
+router.post(
+  "/translate",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = translateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { text, sourceLang, targetLang, preserveFormatting } =
+        validation.data;
+
+      const prompt = `Translate the following text ${sourceLang ? `from ${sourceLang}` : ""} to ${targetLang}:
 
 "${text}"
 
@@ -602,85 +700,94 @@ ${preserveFormatting ? "Preserve the original formatting, including line breaks 
 
 Return only the translated text, no explanations.`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 3000,
-        temperature: 0.3,
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 3000,
+          temperature: 0.3,
+        });
       });
-    });
-    
-    const translatedText = completion.choices[0]?.message?.content || "";
-    
-    const translation = await storage.platform.ai.translateContent(userId, {
-      originalText: text,
-      translatedText,
-      sourceLanguage: sourceLang || "auto",
-      targetLanguage: targetLang,
-      confidence: 0.95,
-    });
-    
-    res.json({
-      translationId: translation.id,
-      sourceText: text,
-      translatedText,
-      sourceLang: sourceLang || "auto-detected",
-      targetLang,
-      wordCount: {
-        source: countWords(text),
-        translated: countWords(translatedText),
-      },
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const translatedText = completion.choices[0]?.message?.content || "";
+
+      const translation = await storage.platform.ai.translateContent(userId, {
+        originalText: text,
+        translatedText,
+        sourceLanguage: sourceLang || "auto",
+        targetLanguage: targetLang,
+        confidence: 0.95,
+      });
+
+      res.json({
+        translationId: translation.id,
+        sourceText: text,
+        translatedText,
+        sourceLang: sourceLang || "auto-detected",
+        targetLang,
+        wordCount: {
+          source: countWords(text),
+          translated: countWords(translatedText),
+        },
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/translate/detect
  * Detect the language of text
  */
-router.post("/translate/detect", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const { text } = req.body;
-    
-    if (!text || text.length < 3) {
-      return res.status(400).json({ error: "Text too short for language detection" });
-    }
-    
-    const prompt = `Detect the language of this text and return only the ISO 639-1 language code (e.g., 'en' for English, 'es' for Spanish):
+router.post(
+  "/translate/detect",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const { text } = req.body;
+
+      if (!text || text.length < 3) {
+        return res
+          .status(400)
+          .json({ error: "Text too short for language detection" });
+      }
+
+      const prompt = `Detect the language of this text and return only the ISO 639-1 language code (e.g., 'en' for English, 'es' for Spanish):
 
 "${text}"
 
 Return only the 2-letter language code, nothing else.`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 10,
-        temperature: 0,
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 10,
+          temperature: 0,
+        });
       });
-    });
-    
-    const detectedLang = completion.choices[0]?.message?.content?.trim().toLowerCase() || "unknown";
-    
-    res.json({
-      detectedLanguage: detectedLang,
-      confidence: 0.95,
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const detectedLang =
+        completion.choices[0]?.message?.content?.trim().toLowerCase() ||
+        "unknown";
+
+      res.json({
+        detectedLanguage: detectedLang,
+        confidence: 0.95,
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 // ==================== RECIPE GENERATION ENDPOINTS ====================
 
@@ -688,21 +795,25 @@ Return only the 2-letter language code, nothing else.`;
  * POST /api/ai/content/recipe
  * Generate a recipe based on ingredients and preferences
  */
-router.post("/recipe", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const validation = recipeGenerationSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.flatten() });
-    }
-    
-    const { ingredients, preferences, servings } = validation.data;
-    
-    const prompt = `Create a recipe using these ingredients: ${ingredients.join(", ")}
+router.post(
+  "/recipe",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const validation = recipeGenerationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.flatten() });
+      }
+
+      const { ingredients, preferences, servings } = validation.data;
+
+      const prompt = `Create a recipe using these ingredients: ${ingredients.join(", ")}
 
 Preferences:
 - Servings: ${servings}
@@ -721,48 +832,52 @@ Provide a complete recipe with:
 
 Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficulty, ingredients (array), instructions (array), nutrition (object with calories, protein, carbs, fat).`;
 
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 2000,
-        temperature: 0.7,
-        response_format: { type: "json_object" },
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 2000,
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        });
       });
-    });
-    
-    const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-    
-    const recipe = await storage.user.recipes.createRecipe(userId, {
-      userId,
-      title: recipeData.name || "AI Generated Recipe",
-      ingredients: recipeData.ingredients || ingredients.map((i: string) => i),
-      instructions: recipeData.instructions || [],
-      usedIngredients: ingredients,
-      prepTime: String(recipeData.prepTime || 15),
-      cookTime: String(recipeData.cookTime || 30),
-      servings: servings,
-      difficulty: recipeData.difficulty || "medium",
-      cuisine: preferences?.cuisineType || "International",
-      dietaryInfo: preferences?.dietaryRestrictions || [],
-      imageUrl: null,
-      source: "ai_generated",
-    });
-    
-    res.json({
-      recipeId: recipe.id,
-      recipe: recipeData,
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        model: "gpt-4o",
-        basedOnIngredients: ingredients,
-      },
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const recipeData = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
+
+      const recipe = await storage.user.recipes.createRecipe(userId, {
+        userId,
+        title: recipeData.name || "AI Generated Recipe",
+        ingredients:
+          recipeData.ingredients || ingredients.map((i: string) => i),
+        instructions: recipeData.instructions || [],
+        usedIngredients: ingredients,
+        prepTime: String(recipeData.prepTime || 15),
+        cookTime: String(recipeData.cookTime || 30),
+        servings: servings,
+        difficulty: recipeData.difficulty || "medium",
+        cuisine: preferences?.cuisineType || "International",
+        dietaryInfo: preferences?.dietaryRestrictions || [],
+        imageUrl: null,
+        source: "ai_generated",
+      });
+
+      res.json({
+        recipeId: recipe.id,
+        recipe: recipeData,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          model: "gpt-4o",
+          basedOnIngredients: ingredients,
+        },
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 // ==================== AI CONVERSATION ENDPOINTS ====================
 // Note: Conversation-based chat endpoints are temporarily disabled.
@@ -773,99 +888,118 @@ Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficult
  * POST /api/ai/content/chat
  * Simple AI chat - send a message and get a response
  */
-router.post("/chat", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const { message } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
-    }
-    
-    // Get recent chat history
-    const recentMessages = await storage.user.chat.getChatMessages(userId, 10);
-    
-    const completion = await openaiBreaker.execute(async () => {
-      return await openai!.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful kitchen and cooking assistant. Help users with recipes, meal planning, ingredient substitutions, cooking techniques, and food-related questions. Be friendly, informative, and provide practical advice.",
-          },
-          ...recentMessages.map((m: any) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          })),
-          { role: "user", content: message },
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
+router.post(
+  "/chat",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const { message } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Get recent chat history
+      const recentMessages = await storage.user.chat.getChatMessages(
+        userId,
+        10,
+      );
+
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a helpful kitchen and cooking assistant. Help users with recipes, meal planning, ingredient substitutions, cooking techniques, and food-related questions. Be friendly, informative, and provide practical advice.",
+            },
+            ...recentMessages.map((m: any) => ({
+              role: m.role as "user" | "assistant",
+              content: m.content,
+            })),
+            { role: "user", content: message },
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        });
       });
-    });
-    
-    const assistantMessage = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
-    
-    // Save user message
-    await storage.user.chat.createChatMessage(userId, {
-      role: "user",
-      content: message,
-    });
-    
-    // Save assistant response
-    const savedMessage = await storage.user.chat.createChatMessage(userId, {
-      role: "assistant",
-      content: assistantMessage,
-    });
-    
-    res.json({
-      message: savedMessage,
-      response: assistantMessage,
-    });
-  } catch (error) {
-    const aiError = handleOpenAIError(error as Error);
-    res.status(aiError.statusCode).json(createErrorResponse(aiError));
-  }
-});
+
+      const assistantMessage =
+        completion.choices[0]?.message?.content ||
+        "I'm sorry, I couldn't generate a response.";
+
+      // Save user message
+      await storage.user.chat.createChatMessage(userId, {
+        role: "user",
+        content: message,
+      });
+
+      // Save assistant response
+      const savedMessage = await storage.user.chat.createChatMessage(userId, {
+        role: "assistant",
+        content: assistantMessage,
+      });
+
+      res.json({
+        message: savedMessage,
+        response: assistantMessage,
+      });
+    } catch (error) {
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
+    }
+  },
+);
 
 /**
  * GET /api/ai/content/chat/history
  * Get chat history for the authenticated user
  */
-router.get("/chat/history", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const limit = parseInt(req.query.limit as string) || 50;
-    const messages = await storage.user.chat.getChatMessages(userId, limit);
-    res.json(messages);
-  } catch (error) {
-    console.error("Error fetching chat history:", error);
-    res.status(500).json({ error: "Failed to fetch chat history" });
-  }
-});
+router.get(
+  "/chat/history",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const messages = await storage.user.chat.getChatMessages(userId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      res.status(500).json({ error: "Failed to fetch chat history" });
+    }
+  },
+);
 
 /**
  * DELETE /api/ai/content/chat/history
  * Delete chat history for the authenticated user
  */
-router.delete("/chat/history", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    await storage.user.chat.deleteChatHistory(userId);
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting chat history:", error);
-    res.status(500).json({ error: "Failed to delete chat history" });
-  }
-});
+router.delete(
+  "/chat/history",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      await storage.user.chat.deleteChatHistory(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting chat history:", error);
+      res.status(500).json({ error: "Failed to delete chat history" });
+    }
+  },
+);
 
 // ==================== DRAFTING ENDPOINTS ====================
 
@@ -873,296 +1007,391 @@ router.delete("/chat/history", isAuthenticated, async (req: Request, res: Respon
  * GET /api/ai/content/drafts/templates
  * Get available draft templates
  */
-router.get("/drafts/templates", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const category = req.query.category as string | undefined;
-    const templates = await storage.platform.ai.getDraftTemplates(category);
-    res.json(templates);
-  } catch (error) {
-    console.error("Error fetching templates:", error);
-    res.status(500).json({ error: "Failed to fetch templates" });
-  }
-});
+router.get(
+  "/drafts/templates",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const templates = await storage.platform.ai.getDraftTemplates(category);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/drafts/templates
  * Create a new draft template
  */
-router.post("/drafts/templates", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const schema = z.object({
-      name: z.string().min(1),
-      category: z.enum(['email', 'document', 'social', 'recipe', 'letter', 'report']),
-      templateContent: z.string().min(1),
-      tone: z.enum(['formal', 'casual', 'professional', 'friendly', 'persuasive']).optional(),
-      language: z.string().length(2).default('en'),
-      variables: z.array(z.string()).optional(),
-      isPublic: z.boolean().default(false)
-    });
-    
-    const data = schema.parse(req.body);
-    const template = await storage.platform.ai.createDraftTemplate({
-      ...data,
-      createdBy: userId
-    });
-    res.json(template);
-  } catch (error) {
-    console.error("Error creating template:", error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Validation failed", details: error.errors });
+router.post(
+  "/drafts/templates",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const schema = z.object({
+        name: z.string().min(1),
+        category: z.enum([
+          "email",
+          "document",
+          "social",
+          "recipe",
+          "letter",
+          "report",
+        ]),
+        templateContent: z.string().min(1),
+        tone: z
+          .enum(["formal", "casual", "professional", "friendly", "persuasive"])
+          .optional(),
+        language: z.string().length(2).default("en"),
+        variables: z.array(z.string()).optional(),
+        isPublic: z.boolean().default(false),
+      });
+
+      const data = schema.parse(req.body);
+      const template = await storage.platform.ai.createDraftTemplate({
+        ...data,
+        createdBy: userId,
+      });
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create template" });
     }
-    res.status(500).json({ error: "Failed to create template" });
-  }
-});
+  },
+);
 
 /**
  * POST /api/ai/content/drafts/generate
  * Generate draft variations based on context
  */
-router.post("/drafts/generate", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const schema = z.object({
-      originalMessage: z.string().min(1),
-      contextType: z.enum(['email', 'message', 'comment', 'customer_complaint']).default('email'),
-      tones: z.array(z.enum(['formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic'])).optional(),
-      subject: z.string().optional(),
-      approach: z.string().optional()
-    });
-    
-    const { originalMessage, contextType, tones, subject, approach } = schema.parse(req.body);
-    
-    const selectedTones = tones || (contextType === 'customer_complaint' 
-      ? ['apologetic', 'solution-focused', 'empathetic']
-      : ['formal', 'casual', 'friendly']);
-    
-    const drafts = await generateDraftVariations(originalMessage, contextType, selectedTones);
-    
-    const savedDrafts = await Promise.all(
-      drafts.map((draft, index) => storage.platform.ai.createGeneratedDraft(userId, {
-        prompt: originalMessage,
-        generatedContent: draft.content,
-        contentType: 'text',
-        metadata: {
-          model: 'gpt-4o-mini',
-          temperature: 0.8,
-          subject: subject || 'General response',
-          approach: approach || (index === 0 ? 'Direct' : index === 1 ? 'Detailed' : 'Concise'),
-          variationNumber: index + 1,
-          contextType,
-          tone: draft.tone
-        } as Record<string, any>
-      }))
-    );
-    
-    res.json(savedDrafts);
-  } catch (error) {
-    console.error("Error generating drafts:", error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Validation failed", details: error.errors });
+router.post(
+  "/drafts/generate",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const schema = z.object({
+        originalMessage: z.string().min(1),
+        contextType: z
+          .enum(["email", "message", "comment", "customer_complaint"])
+          .default("email"),
+        tones: z
+          .array(
+            z.enum([
+              "formal",
+              "casual",
+              "friendly",
+              "apologetic",
+              "solution-focused",
+              "empathetic",
+            ]),
+          )
+          .optional(),
+        subject: z.string().optional(),
+        approach: z.string().optional(),
+      });
+
+      const { originalMessage, contextType, tones, subject, approach } =
+        schema.parse(req.body);
+
+      const selectedTones =
+        tones ||
+        (contextType === "customer_complaint"
+          ? ["apologetic", "solution-focused", "empathetic"]
+          : ["formal", "casual", "friendly"]);
+
+      const drafts = await generateDraftVariations(
+        originalMessage,
+        contextType,
+        selectedTones,
+      );
+
+      const savedDrafts = await Promise.all(
+        drafts.map((draft, index) =>
+          storage.platform.ai.createGeneratedDraft(userId, {
+            prompt: originalMessage,
+            generatedContent: draft.content,
+            contentType: "text",
+            metadata: {
+              model: "gpt-4o-mini",
+              temperature: 0.8,
+              subject: subject || "General response",
+              approach:
+                approach ||
+                (index === 0 ? "Direct" : index === 1 ? "Detailed" : "Concise"),
+              variationNumber: index + 1,
+              contextType,
+              tone: draft.tone,
+            } as Record<string, any>,
+          }),
+        ),
+      );
+
+      res.json(savedDrafts);
+    } catch (error) {
+      console.error("Error generating drafts:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to generate drafts" });
     }
-    res.status(500).json({ error: "Failed to generate drafts" });
-  }
-});
+  },
+);
 
 /**
  * POST /api/ai/content/drafts/quick-reply
  * Generate quick contextual replies
  */
-router.post("/drafts/quick-reply", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const { message, sentiment: msgSentiment } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
-    }
-    
-    const completion = await openai!.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Generate 3 quick reply options for the given message. 
+router.post(
+  "/drafts/quick-reply",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const { message, sentiment: msgSentiment } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const completion = await openai!.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Generate 3 quick reply options for the given message. 
           Consider the sentiment: ${msgSentiment || "neutral"}.
-          Return JSON: { "replies": ["reply1", "reply2", "reply3"] }`
-        },
-        {
-          role: "user",
-          content: `Message to reply to: "${message}"`
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 200
-    });
-    
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{"replies":[]}');
-    
-    res.json(result.replies || []);
-  } catch (error) {
-    console.error("Error generating quick replies:", error);
-    res.status(500).json({ error: "Failed to generate quick replies" });
-  }
-});
+          Return JSON: { "replies": ["reply1", "reply2", "reply3"] }`,
+          },
+          {
+            role: "user",
+            content: `Message to reply to: "${message}"`,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 200,
+      });
+
+      const result = JSON.parse(
+        completion.choices[0]?.message?.content || '{"replies":[]}',
+      );
+
+      res.json(result.replies || []);
+    } catch (error) {
+      console.error("Error generating quick replies:", error);
+      res.status(500).json({ error: "Failed to generate quick replies" });
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/drafts/improve
  * Improve/polish an existing draft
  */
-router.post("/drafts/improve", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const { draft, improvements } = req.body;
-    
-    if (!draft) {
-      return res.status(400).json({ error: "Draft is required" });
-    }
-    
-    const improvementsList = improvements || ["clarity", "conciseness", "tone"];
-    
-    const completion = await openai!.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Improve the following draft focusing on: ${improvementsList.join(", ")}.
+router.post(
+  "/drafts/improve",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const { draft, improvements } = req.body;
+
+      if (!draft) {
+        return res.status(400).json({ error: "Draft is required" });
+      }
+
+      const improvementsList = improvements || [
+        "clarity",
+        "conciseness",
+        "tone",
+      ];
+
+      const completion = await openai!.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Improve the following draft focusing on: ${improvementsList.join(", ")}.
           Return JSON: { 
             "improved": "improved text",
             "changes": ["change1", "change2"],
             "suggestions": ["suggestion1", "suggestion2"]
-          }`
-        },
-        {
-          role: "user",
-          content: draft
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1000
-    });
-    
-    const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
-    res.json(result);
-  } catch (error) {
-    console.error("Error improving draft:", error);
-    res.status(500).json({ error: "Failed to improve draft" });
-  }
-});
+          }`,
+          },
+          {
+            role: "user",
+            content: draft,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const result = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Error improving draft:", error);
+      res.status(500).json({ error: "Failed to improve draft" });
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/drafts/feedback
  * Track if draft was used/edited
  */
-router.post("/drafts/feedback", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const schema = z.object({
-      draftId: z.string(),
-      selected: z.boolean(),
-      edited: z.boolean().optional(),
-      editedContent: z.string().optional(),
-      rating: z.number().min(1).max(5).optional()
-    });
-    
-    const { draftId, selected, edited, editedContent, rating } = schema.parse(req.body);
-    
-    const updates: Record<string, any> = {};
-    
-    if (edited && editedContent) {
-      updates.editedContent = editedContent;
+router.post(
+  "/drafts/feedback",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const schema = z.object({
+        draftId: z.string(),
+        selected: z.boolean(),
+        edited: z.boolean().optional(),
+        editedContent: z.string().optional(),
+        rating: z.number().min(1).max(5).optional(),
+      });
+
+      const { draftId, selected, edited, editedContent, rating } = schema.parse(
+        req.body,
+      );
+
+      const updates: Record<string, any> = {};
+
+      if (edited && editedContent) {
+        updates.editedContent = editedContent;
+      }
+
+      if (rating) {
+        updates.rating = rating;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await storage.platform.ai.updateGeneratedDraft(
+          userId,
+          draftId,
+          updates,
+        );
+      }
+
+      res.json({ success: true, selected, edited: !!edited });
+    } catch (error) {
+      console.error("Error submitting draft feedback:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to submit draft feedback" });
     }
-    
-    if (rating) {
-      updates.rating = rating;
-    }
-    
-    if (Object.keys(updates).length > 0) {
-      await storage.platform.ai.updateGeneratedDraft(userId, draftId, updates);
-    }
-    
-    res.json({ success: true, selected, edited: !!edited });
-  } catch (error) {
-    console.error("Error submitting draft feedback:", error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Validation failed", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to submit draft feedback" });
-  }
-});
+  },
+);
 
 /**
  * GET /api/ai/content/drafts/history
  * Get user's draft history
  */
-router.get("/drafts/history", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const templateId = req.query.templateId as string | undefined;
-    const history = await storage.platform.ai.getGeneratedDrafts(userId, templateId);
-    res.json(history);
-  } catch (error) {
-    console.error("Error fetching draft history:", error);
-    res.status(500).json({ error: "Failed to fetch draft history" });
-  }
-});
+router.get(
+  "/drafts/history",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const templateId = req.query.templateId as string | undefined;
+      const history = await storage.platform.ai.getGeneratedDrafts(
+        userId,
+        templateId,
+      );
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching draft history:", error);
+      res.status(500).json({ error: "Failed to fetch draft history" });
+    }
+  },
+);
 
 /**
  * GET /api/ai/content/drafts/:id
  * Get a specific draft by ID
  */
-router.get("/drafts/:id", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const { id } = req.params;
-    const draft = await storage.platform.ai.getGeneratedDraft(userId, id);
-    
-    if (!draft) {
-      return res.status(404).json({ error: "Draft not found" });
+router.get(
+  "/drafts/:id",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const { id } = req.params;
+      const draft = await storage.platform.ai.getGeneratedDraft(userId, id);
+
+      if (!draft) {
+        return res.status(404).json({ error: "Draft not found" });
+      }
+
+      res.json(draft);
+    } catch (error) {
+      console.error("Error fetching draft:", error);
+      res.status(500).json({ error: "Failed to fetch draft" });
     }
-    
-    res.json(draft);
-  } catch (error) {
-    console.error("Error fetching draft:", error);
-    res.status(500).json({ error: "Failed to fetch draft" });
-  }
-});
+  },
+);
 
 /**
  * DELETE /api/ai/content/drafts/:id
  * Delete a specific draft
  */
-router.delete("/drafts/:id", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const { id } = req.params;
-    await storage.platform.ai.deleteGeneratedDraft(userId, id);
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting draft:", error);
-    res.status(500).json({ error: "Failed to delete draft" });
-  }
-});
+router.delete(
+  "/drafts/:id",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const { id } = req.params;
+      await storage.platform.ai.deleteGeneratedDraft(userId, id);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      res.status(500).json({ error: "Failed to delete draft" });
+    }
+  },
+);
 
 // ==================== EXCERPT ENDPOINTS ====================
 
@@ -1170,360 +1399,431 @@ router.delete("/drafts/:id", isAuthenticated, async (req: Request, res: Response
  * POST /api/ai/content/excerpts/generate
  * Generate multiple excerpt variants for A/B testing
  */
-router.post("/excerpts/generate", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
+router.post(
+  "/excerpts/generate",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
 
-    const validatedData = generateExcerptSchema.parse(req.body);
-    
-    const generatedExcerpts = await excerptService.generateExcerpts({
-      content: validatedData.content,
-      targetPlatform: validatedData.targetPlatform,
-      excerptType: validatedData.excerptType,
-      tone: validatedData.tone,
-      style: validatedData.style,
-      targetAudience: validatedData.targetAudience,
-      callToAction: validatedData.callToAction,
-      hashtags: validatedData.hashtags,
-      emojis: validatedData.emojis,
-      maxCharacters: validatedData.maxCharacters,
-      temperature: validatedData.temperature,
-      variantCount: validatedData.variantCount,
-    });
+      const validatedData = generateExcerptSchema.parse(req.body);
 
-    const savedExcerpts = [];
-    for (const generated of generatedExcerpts) {
-      // Map to available Excerpt schema fields
-      const excerpt = await storage.platform.ai.createExcerpt({
-        summaryId: validatedData.contentId,
-        excerpt: generated.text,
-        importance: generated.variant === 'A' ? 1.0 : 0.5,
-        category: validatedData.excerptType || 'quote',
-        context: JSON.stringify({
-          targetPlatform: validatedData.targetPlatform,
-          characterCount: generated.characterCount,
-          wordCount: generated.wordCount,
-          variant: generated.variant,
-          generationParams: generated.generationParams,
-          metadata: generated.metadata,
-        }),
-        position: savedExcerpts.length,
+      const generatedExcerpts = await excerptService.generateExcerpts({
+        content: validatedData.content,
+        targetPlatform: validatedData.targetPlatform,
+        excerptType: validatedData.excerptType,
+        tone: validatedData.tone,
+        style: validatedData.style,
+        targetAudience: validatedData.targetAudience,
+        callToAction: validatedData.callToAction,
+        hashtags: validatedData.hashtags,
+        emojis: validatedData.emojis,
+        maxCharacters: validatedData.maxCharacters,
+        temperature: validatedData.temperature,
+        variantCount: validatedData.variantCount,
       });
-      savedExcerpts.push(excerpt);
-    }
 
-    res.json({ 
-      success: true, 
-      excerpts: savedExcerpts,
-      message: `Generated ${savedExcerpts.length} excerpt variants` 
-    });
-  } catch (error) {
-    console.error('Error generating excerpts:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      const savedExcerpts = [];
+      for (const generated of generatedExcerpts) {
+        // Map to available Excerpt schema fields
+        const excerpt = await storage.platform.ai.createExcerpt({
+          summaryId: validatedData.contentId,
+          excerpt: generated.text,
+          importance: generated.variant === "A" ? 1.0 : 0.5,
+          category: validatedData.excerptType || "quote",
+          context: JSON.stringify({
+            targetPlatform: validatedData.targetPlatform,
+            characterCount: generated.characterCount,
+            wordCount: generated.wordCount,
+            variant: generated.variant,
+            generationParams: generated.generationParams,
+            metadata: generated.metadata,
+          }),
+          position: savedExcerpts.length,
+        });
+        savedExcerpts.push(excerpt);
+      }
+
+      res.json({
+        success: true,
+        excerpts: savedExcerpts,
+        message: `Generated ${savedExcerpts.length} excerpt variants`,
+      });
+    } catch (error) {
+      console.error("Error generating excerpts:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Invalid request data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to generate excerpts" });
     }
-    res.status(500).json({ error: 'Failed to generate excerpts' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/ai/content/excerpts/test
  * Get A/B test variants for a content
  */
-router.get("/excerpts/test", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.get(
+  "/excerpts/test",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { contentId } = req.query;
+      if (!contentId || typeof contentId !== "string") {
+        return res.status(400).json({ error: "Content ID is required" });
+      }
+
+      // Use getExcerptsBySummary instead since getExcerptsByContent doesn't exist
+      const excerpts =
+        await storage.platform.ai.getExcerptsBySummary(contentId);
+
+      if (excerpts.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "No excerpts found for this content" });
+      }
+
+      const variants = excerpts.map((excerpt: any) => ({
+        id: excerpt.id,
+        variant: excerpt.variant,
+        text: excerpt.excerptText,
+        characterCount: excerpt.characterCount,
+        wordCount: excerpt.wordCount,
+        ctr: excerpt.clickThroughRate,
+        isActive: excerpt.isActive,
+        platform: excerpt.targetPlatform,
+        type: excerpt.excerptType,
+      }));
+
+      res.json({
+        success: true,
+        variants,
+        activeVariant: variants.find((v: any) => v.isActive),
+      });
+    } catch (error) {
+      console.error("Error getting test variants:", error);
+      res.status(500).json({ error: "Failed to get test variants" });
     }
-
-    const { contentId } = req.query;
-    if (!contentId || typeof contentId !== 'string') {
-      return res.status(400).json({ error: 'Content ID is required' });
-    }
-
-    // Use getExcerptsBySummary instead since getExcerptsByContent doesn't exist
-    const excerpts = await storage.platform.ai.getExcerptsBySummary(contentId);
-    
-    if (excerpts.length === 0) {
-      return res.status(404).json({ error: 'No excerpts found for this content' });
-    }
-
-    const variants = excerpts.map((excerpt: any) => ({
-      id: excerpt.id,
-      variant: excerpt.variant,
-      text: excerpt.excerptText,
-      characterCount: excerpt.characterCount,
-      wordCount: excerpt.wordCount,
-      ctr: excerpt.clickThroughRate,
-      isActive: excerpt.isActive,
-      platform: excerpt.targetPlatform,
-      type: excerpt.excerptType,
-    }));
-
-    res.json({ 
-      success: true, 
-      variants,
-      activeVariant: variants.find((v: any) => v.isActive),
-    });
-  } catch (error) {
-    console.error('Error getting test variants:', error);
-    res.status(500).json({ error: 'Failed to get test variants' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/ai/content/excerpts/performance
  * Get performance metrics for excerpts
  */
-router.get("/excerpts/performance", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.get(
+  "/excerpts/performance",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { excerptId, startDate, endDate } = req.query;
+
+      if (!excerptId || typeof excerptId !== "string") {
+        return res.status(400).json({ error: "Excerpt ID is required" });
+      }
+
+      const start = startDate ? new Date(startDate as string) : undefined;
+      const end = endDate ? new Date(endDate as string) : undefined;
+
+      const performance =
+        await storage.platform.ai.getExcerptPerformance(excerptId);
+
+      // Filter by date range if provided
+      const filteredPerformance = performance.filter((perf) => {
+        if (!perf.createdAt) return true;
+        const perfDate = new Date(perf.createdAt);
+        if (start && perfDate < start) return false;
+        if (end && perfDate > end) return false;
+        return true;
+      });
+
+      // Use fields available in ExcerptPerformance schema
+      const totals = filteredPerformance.reduce(
+        (acc, perf: any) => ({
+          engagementScore: acc.engagementScore + (perf.engagementScore || 0),
+          clicks: acc.clicks + (perf.clickThrough ? 1 : 0),
+          timeViewed: acc.timeViewed + (perf.timeViewed || 0),
+        }),
+        {
+          engagementScore: 0,
+          clicks: 0,
+          timeViewed: 0,
+        },
+      );
+
+      const aggregateMetrics = {
+        totalRecords: filteredPerformance.length,
+        averageEngagementScore:
+          filteredPerformance.length > 0
+            ? totals.engagementScore / filteredPerformance.length
+            : 0,
+        clickThroughCount: totals.clicks,
+        averageTimeViewed:
+          filteredPerformance.length > 0
+            ? totals.timeViewed / filteredPerformance.length
+            : 0,
+      };
+
+      res.json({
+        success: true,
+        daily: performance,
+        aggregate: aggregateMetrics,
+      });
+    } catch (error) {
+      console.error("Error getting performance metrics:", error);
+      res.status(500).json({ error: "Failed to get performance metrics" });
     }
-
-    const { excerptId, startDate, endDate } = req.query;
-    
-    if (!excerptId || typeof excerptId !== 'string') {
-      return res.status(400).json({ error: 'Excerpt ID is required' });
-    }
-
-    const start = startDate ? new Date(startDate as string) : undefined;
-    const end = endDate ? new Date(endDate as string) : undefined;
-
-    const performance = await storage.platform.ai.getExcerptPerformance(excerptId);
-    
-    // Filter by date range if provided
-    const filteredPerformance = performance.filter(perf => {
-      if (!perf.createdAt) return true;
-      const perfDate = new Date(perf.createdAt);
-      if (start && perfDate < start) return false;
-      if (end && perfDate > end) return false;
-      return true;
-    });
-
-    // Use fields available in ExcerptPerformance schema
-    const totals = filteredPerformance.reduce((acc, perf: any) => ({
-      engagementScore: acc.engagementScore + (perf.engagementScore || 0),
-      clicks: acc.clicks + (perf.clickThrough ? 1 : 0),
-      timeViewed: acc.timeViewed + (perf.timeViewed || 0),
-    }), {
-      engagementScore: 0,
-      clicks: 0,
-      timeViewed: 0,
-    });
-
-    const aggregateMetrics = {
-      totalRecords: filteredPerformance.length,
-      averageEngagementScore: filteredPerformance.length > 0 ? totals.engagementScore / filteredPerformance.length : 0,
-      clickThroughCount: totals.clicks,
-      averageTimeViewed: filteredPerformance.length > 0 ? totals.timeViewed / filteredPerformance.length : 0,
-    };
-
-    res.json({ 
-      success: true, 
-      daily: performance,
-      aggregate: aggregateMetrics,
-    });
-  } catch (error) {
-    console.error('Error getting performance metrics:', error);
-    res.status(500).json({ error: 'Failed to get performance metrics' });
-  }
-});
+  },
+);
 
 /**
  * PUT /api/ai/content/excerpts/optimize
  * Optimize excerpt based on performance
  */
-router.put("/excerpts/optimize", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.put(
+  "/excerpts/optimize",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const validatedData = optimizeExcerptSchema.parse(req.body);
+
+      // Use getExcerptsBySummary as fallback
+      const excerpts = await storage.platform.ai.getExcerptsBySummary(
+        validatedData.excerptId,
+      );
+      const excerpt =
+        excerpts.find((e: any) => e.id === validatedData.excerptId) ||
+        excerpts[0];
+
+      if (!excerpt) {
+        return res.status(404).json({ error: "Excerpt not found" });
+      }
+
+      const performance = await storage.platform.ai.getExcerptPerformance(
+        validatedData.excerptId,
+      );
+      if (performance.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "No performance data available for optimization" });
+      }
+
+      // Use available ExcerptPerformance fields
+      const totals = performance.reduce(
+        (acc, perf: any) => ({
+          clicks: acc.clicks + (perf.clickThrough ? 1 : 0),
+          engagementScore: acc.engagementScore + (perf.engagementScore || 0),
+        }),
+        { clicks: 0, engagementScore: 0 },
+      );
+
+      const performanceData = {
+        ctr: performance.length > 0 ? totals.clicks / performance.length : 0,
+        shareRate: 0,
+        engagementRate:
+          performance.length > 0
+            ? totals.engagementScore / performance.length
+            : 0,
+      };
+
+      // Use the excerpt field (not excerptText)
+      const optimized = await excerptService.optimizeExcerpt(
+        excerpt.excerpt,
+        performanceData,
+        validatedData.targetCTR || 0.2,
+      );
+
+      // Map to available Excerpt schema fields
+      const optimizedExcerpt = await storage.platform.ai.createExcerpt({
+        summaryId: excerpt.summaryId,
+        excerpt: optimized.text,
+        importance: 0.5,
+        category: excerpt.category || "quote",
+        context: JSON.stringify({
+          characterCount: optimized.characterCount,
+          wordCount: optimized.wordCount,
+          variant: optimized.variant,
+          generationParams: optimized.generationParams,
+          metadata: optimized.metadata,
+        }),
+        position: (excerpt.position || 0) + 1,
+      });
+
+      res.json({
+        success: true,
+        original: excerpt,
+        optimized: optimizedExcerpt,
+        performanceData,
+        message: "Excerpt optimized based on performance data",
+      });
+    } catch (error) {
+      console.error("Error optimizing excerpt:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Invalid request data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to optimize excerpt" });
     }
-
-    const validatedData = optimizeExcerptSchema.parse(req.body);
-
-    // Use getExcerptsBySummary as fallback
-    const excerpts = await storage.platform.ai.getExcerptsBySummary(validatedData.excerptId);
-    const excerpt = excerpts.find((e: any) => e.id === validatedData.excerptId) || excerpts[0];
-    
-    if (!excerpt) {
-      return res.status(404).json({ error: 'Excerpt not found' });
-    }
-
-    const performance = await storage.platform.ai.getExcerptPerformance(validatedData.excerptId);
-    if (performance.length === 0) {
-      return res.status(400).json({ error: 'No performance data available for optimization' });
-    }
-
-    // Use available ExcerptPerformance fields
-    const totals = performance.reduce((acc, perf: any) => ({
-      clicks: acc.clicks + (perf.clickThrough ? 1 : 0),
-      engagementScore: acc.engagementScore + (perf.engagementScore || 0),
-    }), { clicks: 0, engagementScore: 0 });
-
-    const performanceData = {
-      ctr: performance.length > 0 ? totals.clicks / performance.length : 0,
-      shareRate: 0,
-      engagementRate: performance.length > 0 ? totals.engagementScore / performance.length : 0,
-    };
-
-    // Use the excerpt field (not excerptText)
-    const optimized = await excerptService.optimizeExcerpt(
-      excerpt.excerpt,
-      performanceData,
-      validatedData.targetCTR || 0.2
-    );
-
-    // Map to available Excerpt schema fields
-    const optimizedExcerpt = await storage.platform.ai.createExcerpt({
-      summaryId: excerpt.summaryId,
-      excerpt: optimized.text,
-      importance: 0.5,
-      category: excerpt.category || 'quote',
-      context: JSON.stringify({
-        characterCount: optimized.characterCount,
-        wordCount: optimized.wordCount,
-        variant: optimized.variant,
-        generationParams: optimized.generationParams,
-        metadata: optimized.metadata,
-      }),
-      position: (excerpt.position || 0) + 1,
-    });
-
-    res.json({ 
-      success: true, 
-      original: excerpt,
-      optimized: optimizedExcerpt,
-      performanceData,
-      message: 'Excerpt optimized based on performance data',
-    });
-  } catch (error) {
-    console.error('Error optimizing excerpt:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
-    }
-    res.status(500).json({ error: 'Failed to optimize excerpt' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/ai/content/excerpts/:contentId
  * Get all excerpts for a content
  */
-router.get("/excerpts/:contentId", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.get(
+  "/excerpts/:contentId",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { contentId } = req.params;
+      // Use getExcerptsBySummary as fallback
+      const excerpts =
+        await storage.platform.ai.getExcerptsBySummary(contentId);
+
+      res.json({
+        success: true,
+        excerpts,
+        count: excerpts.length,
+      });
+    } catch (error) {
+      console.error("Error getting excerpts:", error);
+      res.status(500).json({ error: "Failed to get excerpts" });
     }
-
-    const { contentId } = req.params;
-    // Use getExcerptsBySummary as fallback
-    const excerpts = await storage.platform.ai.getExcerptsBySummary(contentId);
-
-    res.json({ 
-      success: true, 
-      excerpts,
-      count: excerpts.length,
-    });
-  } catch (error) {
-    console.error('Error getting excerpts:', error);
-    res.status(500).json({ error: 'Failed to get excerpts' });
-  }
-});
+  },
+);
 
 /**
  * PUT /api/ai/content/excerpts/:excerptId/activate
  * Set an excerpt as active
  */
-router.put("/excerpts/:excerptId/activate", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.put(
+  "/excerpts/:excerptId/activate",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { excerptId } = req.params;
+      const { contentId } = req.body;
+
+      if (!contentId) {
+        return res.status(400).json({ error: "Content ID is required" });
+      }
+
+      // Use updateExcerpt to increase importance (marking as preferred)
+      await storage.platform.ai.updateExcerpt(excerptId, { importance: 1.0 });
+
+      res.json({
+        success: true,
+        message: "Excerpt activated successfully",
+      });
+    } catch (error) {
+      console.error("Error activating excerpt:", error);
+      res.status(500).json({ error: "Failed to activate excerpt" });
     }
-
-    const { excerptId } = req.params;
-    const { contentId } = req.body;
-
-    if (!contentId) {
-      return res.status(400).json({ error: 'Content ID is required' });
-    }
-
-    // Use updateExcerpt to increase importance (marking as preferred)
-    await storage.platform.ai.updateExcerpt(excerptId, { importance: 1.0 });
-
-    res.json({ 
-      success: true, 
-      message: 'Excerpt activated successfully',
-    });
-  } catch (error) {
-    console.error('Error activating excerpt:', error);
-    res.status(500).json({ error: 'Failed to activate excerpt' });
-  }
-});
+  },
+);
 
 /**
  * DELETE /api/ai/content/excerpts/:excerptId
  * Delete an excerpt
  */
-router.delete("/excerpts/:excerptId", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+router.delete(
+  "/excerpts/:excerptId",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { excerptId } = req.params;
+      await storage.platform.ai.deleteExcerpt(excerptId);
+
+      res.json({
+        success: true,
+        message: "Excerpt deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting excerpt:", error);
+      res.status(500).json({ error: "Failed to delete excerpt" });
     }
-
-    const { excerptId } = req.params;
-    await storage.platform.ai.deleteExcerpt(excerptId);
-
-    res.json({ 
-      success: true, 
-      message: 'Excerpt deleted successfully',
-    });
-  } catch (error) {
-    console.error('Error deleting excerpt:', error);
-    res.status(500).json({ error: 'Failed to delete excerpt' });
-  }
-});
+  },
+);
 
 /**
  * POST /api/ai/content/excerpts/:excerptId/track
  * Track a performance event for an excerpt
  */
-router.post("/excerpts/:excerptId/track", async (req: Request, res: Response) => {
-  try {
-    const { excerptId } = req.params;
-    const validatedData = trackPerformanceSchema.parse(req.body);
+router.post(
+  "/excerpts/:excerptId/track",
+  async (req: Request, res: Response) => {
+    try {
+      const { excerptId } = req.params;
+      const validatedData = trackPerformanceSchema.parse(req.body);
 
-    // Use available InsertExcerptPerformance fields
-    const performance = await storage.platform.ai.recordExcerptPerformance({
-      excerptId,
-      usageContext: 'viewed',
-      engagementScore: validatedData.engagements ? (validatedData.engagements / 10) : (validatedData.clicks ? 0.5 : 0.1),
-      clickThrough: validatedData.clicks ? validatedData.clicks > 0 : false,
-      timeViewed: validatedData.timeOnPage || 0,
-    });
+      // Use available InsertExcerptPerformance fields
+      const performance = await storage.platform.ai.recordExcerptPerformance({
+        excerptId,
+        usageContext: "viewed",
+        engagementScore: validatedData.engagements
+          ? validatedData.engagements / 10
+          : validatedData.clicks
+            ? 0.5
+            : 0.1,
+        clickThrough: validatedData.clicks ? validatedData.clicks > 0 : false,
+        timeViewed: validatedData.timeOnPage || 0,
+      });
 
-    res.json({ 
-      success: true, 
-      performance,
-      message: 'Performance tracked successfully',
-    });
-  } catch (error) {
-    console.error('Error tracking performance:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+      res.json({
+        success: true,
+        performance,
+        message: "Performance tracked successfully",
+      });
+    } catch (error) {
+      console.error("Error tracking performance:", error);
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Invalid request data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to track performance" });
     }
-    res.status(500).json({ error: 'Failed to track performance' });
-  }
-});
+  },
+);
 
 // ==================== WRITING SESSIONS ENDPOINTS ====================
 
@@ -1531,104 +1831,126 @@ router.post("/excerpts/:excerptId/track", async (req: Request, res: Response) =>
  * GET /api/ai/content/writing/sessions
  * List user's writing sessions
  */
-router.get("/writing/sessions", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const limit = parseInt(req.query.limit as string) || 20;
-    const sessions = await storage.platform.ai.getWritingSessions(userId, limit);
-    
-    res.json(sessions);
-  } catch (error) {
-    console.error("Error fetching sessions:", error);
-    res.status(500).json({ error: "Failed to fetch sessions" });
-  }
-});
+router.get(
+  "/writing/sessions",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const limit = parseInt(req.query.limit as string) || 20;
+      const sessions = await storage.platform.ai.getWritingSessions(
+        userId,
+        limit,
+      );
+
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      res.status(500).json({ error: "Failed to fetch sessions" });
+    }
+  },
+);
 
 /**
  * GET /api/ai/content/writing/sessions/:id
  * Get a specific writing session
  */
-router.get("/writing/sessions/:id", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const { id } = req.params;
-    
-    const session = await storage.platform.ai.getWritingSession(userId, id);
-    if (!session) {
-      return res.status(404).json({ error: "Session not found" });
+router.get(
+  "/writing/sessions/:id",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const { id } = req.params;
+
+      const session = await storage.platform.ai.getWritingSession(userId, id);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const suggestions = await storage.platform.ai.getWritingSuggestions(id);
+
+      res.json({ ...session, suggestions });
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      res.status(500).json({ error: "Failed to fetch session" });
     }
-    
-    const suggestions = await storage.platform.ai.getWritingSuggestions(id);
-    
-    res.json({ ...session, suggestions });
-  } catch (error) {
-    console.error("Error fetching session:", error);
-    res.status(500).json({ error: "Failed to fetch session" });
-  }
-});
+  },
+);
 
 /**
  * GET /api/ai/content/writing/stats
  * Get user's writing statistics
  */
-router.get("/writing/stats", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const stats = await storage.platform.ai.getWritingStats(userId);
-    res.json(stats);
-  } catch (error) {
-    console.error("Error fetching writing stats:", error);
-    res.status(500).json({ error: "Failed to fetch writing stats" });
-  }
-});
+router.get(
+  "/writing/stats",
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const stats = await storage.platform.ai.getWritingStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching writing stats:", error);
+      res.status(500).json({ error: "Failed to fetch writing stats" });
+    }
+  },
+);
 
 /**
  * POST /api/ai/content/writing/check-plagiarism
  * Check for potential plagiarism (basic implementation)
  */
-router.post("/writing/check-plagiarism", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
-  try {
-    if (!checkOpenAIConfiguration(res)) return;
-    
-    const { text } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ error: "Text is required" });
-    }
-    
-    const completion = await openai!.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Analyze if this text contains common phrases or appears to be original.
+router.post(
+  "/writing/check-plagiarism",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    try {
+      if (!checkOpenAIConfiguration(res)) return;
+
+      const { text } = req.body;
+
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      const completion = await openai!.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Analyze if this text contains common phrases or appears to be original.
           Return JSON: { 
             "originalityScore": 0-100,
             "flaggedPhrases": ["phrase1", "phrase2"],
             "recommendation": "text recommendation"
-          }`
-        },
-        {
-          role: "user",
-          content: text
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 500
-    });
-    
-    const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
-    res.json(result);
-  } catch (error) {
-    console.error("Error checking plagiarism:", error);
-    res.status(500).json({ error: "Failed to check plagiarism" });
-  }
-});
+          }`,
+          },
+          {
+            role: "user",
+            content: text,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 500,
+      });
+
+      const result = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Error checking plagiarism:", error);
+      res.status(500).json({ error: "Failed to check plagiarism" });
+    }
+  },
+);
 
 export default router;

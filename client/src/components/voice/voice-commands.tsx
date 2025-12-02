@@ -1,6 +1,6 @@
 /**
  * Voice Commands Component (Task 8)
- * 
+ *
  * Provides voice command interface using Web Speech API.
  */
 
@@ -9,7 +9,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +29,7 @@ import {
   X,
   History,
   HelpCircle,
-  Activity
+  Activity,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -55,31 +61,36 @@ export function VoiceCommands() {
 
   // Check for Web Speech API support
   useEffect(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
       setIsSupported(false);
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     const recognitionInstance = new SpeechRecognition();
 
     recognitionInstance.continuous = true;
     recognitionInstance.interimResults = true;
-    recognitionInstance.lang = 'en-US';
+    recognitionInstance.lang = "en-US";
 
     recognitionInstance.onstart = () => {
       setIsListening(true);
-      console.log('Voice recognition started');
+      console.log("Voice recognition started");
     };
 
     recognitionInstance.onresult = (event: any) => {
-      let interimText = '';
-      let finalText = '';
+      let interimText = "";
+      let finalText = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalText += transcript + ' ';
+          finalText += transcript + " ";
         } else {
           interimText += transcript;
         }
@@ -87,25 +98,25 @@ export function VoiceCommands() {
 
       if (finalText) {
         setTranscript((prev) => prev + finalText);
-        setInterimTranscript('');
+        setInterimTranscript("");
       } else {
         setInterimTranscript(interimText);
       }
     };
 
     recognitionInstance.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      console.error("Speech recognition error:", event.error);
       setIsListening(false);
       toast({
         title: "Voice Error",
         description: `Speech recognition error: ${event.error}`,
-        variant: "destructive"
+        variant: "destructive",
       });
     };
 
     recognitionInstance.onend = () => {
       setIsListening(false);
-      console.log('Voice recognition ended');
+      console.log("Voice recognition ended");
     };
 
     setRecognition(recognitionInstance);
@@ -115,19 +126,27 @@ export function VoiceCommands() {
   const { data: availableCommands = [] } = useQuery<CommandInfo[]>({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.list],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.list, "GET");
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.media.voice.commands.list,
+        "GET",
+      );
       return response;
-    }
+    },
   });
 
   // Fetch command history
-  const { data: commandHistory = [], isLoading: historyLoading } = useQuery<VoiceCommand[]>({
+  const { data: commandHistory = [], isLoading: historyLoading } = useQuery<
+    VoiceCommand[]
+  >({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.history],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.history, "GET");
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.media.voice.commands.history,
+        "GET",
+      );
       return response;
     },
-    enabled: showHistory
+    enabled: showHistory,
   });
 
   // Fetch usage statistics
@@ -138,39 +157,52 @@ export function VoiceCommands() {
   }>({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.stats, "GET");
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.media.voice.commands.stats,
+        "GET",
+      );
       return response;
-    }
+    },
   });
 
   // Process voice command
   const processCommandMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.process, "POST", { text });
+      const response = await apiRequest(
+        API_ENDPOINTS.ai.media.voice.commands.process,
+        "POST",
+        { text },
+      );
       return response;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.commands.history] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats] });
-      
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.voice.commands.history],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats],
+      });
+
       // Speak the response if available
-      if (data.processedCommand?.response && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(data.processedCommand.response);
+      if (data.processedCommand?.response && "speechSynthesis" in window) {
+        const utterance = new SpeechSynthesisUtterance(
+          data.processedCommand.response,
+        );
         window.speechSynthesis.speak(utterance);
       }
-      
+
       toast({
         title: "Command Processed",
-        description: data.processedCommand?.actionTaken || "Action completed"
+        description: data.processedCommand?.actionTaken || "Action completed",
       });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to process voice command.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const startListening = () => {
@@ -203,7 +235,8 @@ export function VoiceCommands() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Voice commands are not supported in your browser. Please use Chrome or Edge.
+          Voice commands are not supported in your browser. Please use Chrome or
+          Edge.
         </AlertDescription>
       </Alert>
     );
@@ -257,7 +290,9 @@ export function VoiceCommands() {
               {(transcript || interimTranscript) && (
                 <Card>
                   <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground mb-2">Transcript:</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Transcript:
+                    </p>
                     <p className="font-medium" data-testid="text-transcript">
                       {transcript}
                       <span className="text-muted-foreground italic">
@@ -306,8 +341,10 @@ export function VoiceCommands() {
                       <Volume2
                         className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground"
                         onClick={() => {
-                          if ('speechSynthesis' in window) {
-                            const utterance = new SpeechSynthesisUtterance(cmd.example);
+                          if ("speechSynthesis" in window) {
+                            const utterance = new SpeechSynthesisUtterance(
+                              cmd.example,
+                            );
                             window.speechSynthesis.speak(utterance);
                           }
                         }}
@@ -334,23 +371,31 @@ export function VoiceCommands() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Commands</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Commands
+                  </span>
                   <span className="font-medium">{stats.totalCommands}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Success Rate</span>
-                  <Badge variant={stats.successRate > 0.8 ? "default" : "secondary"}>
+                  <span className="text-sm text-muted-foreground">
+                    Success Rate
+                  </span>
+                  <Badge
+                    variant={stats.successRate > 0.8 ? "default" : "secondary"}
+                  >
                     {Math.round(stats.successRate * 100)}%
                   </Badge>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Command Usage</p>
-                  {Object.entries(stats.commandBreakdown || {}).map(([cmd, count]) => (
-                    <div key={cmd} className="flex justify-between text-sm">
-                      <span className="capitalize">{cmd}</span>
-                      <span>{count as number}</span>
-                    </div>
-                  ))}
+                  {Object.entries(stats.commandBreakdown || {}).map(
+                    ([cmd, count]) => (
+                      <div key={cmd} className="flex justify-between text-sm">
+                        <span className="capitalize">{cmd}</span>
+                        <span>{count as number}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -377,7 +422,9 @@ export function VoiceCommands() {
                   {historyLoading ? (
                     <p className="text-sm text-muted-foreground">Loading...</p>
                   ) : commandHistory.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No commands yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      No commands yet
+                    </p>
                   ) : (
                     commandHistory.slice(0, 5).map((cmd: VoiceCommand) => (
                       <div
@@ -386,7 +433,9 @@ export function VoiceCommands() {
                         data-testid={`history-item-${cmd.id}`}
                       >
                         <div className="flex justify-between items-start">
-                          <p className="text-sm line-clamp-2">{cmd.transcript}</p>
+                          <p className="text-sm line-clamp-2">
+                            {cmd.transcript}
+                          </p>
                           {cmd.success ? (
                             <Check className="h-3 w-3 text-green-500" />
                           ) : (

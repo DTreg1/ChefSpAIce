@@ -1,29 +1,34 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface SummaryLengthSelectorProps {
   length: number;
-  type: 'tldr' | 'bullet' | 'paragraph';
+  type: "tldr" | "bullet" | "paragraph";
   onLengthChange: (length: number) => void;
-  onTypeChange: (type: 'tldr' | 'bullet' | 'paragraph') => void;
+  onTypeChange: (type: "tldr" | "bullet" | "paragraph") => void;
 }
 
-export default function SummaryLengthSelector({ 
-  length, 
-  type, 
-  onLengthChange, 
-  onTypeChange 
+export default function SummaryLengthSelector({
+  length,
+  type,
+  onLengthChange,
+  onTypeChange,
 }: SummaryLengthSelectorProps) {
-  
   const getMaxLength = () => {
     switch (type) {
-      case 'tldr':
+      case "tldr":
         return 3; // 1-3 sentences
-      case 'bullet':
+      case "bullet":
         return 5; // 1-5 bullet points
-      case 'paragraph':
+      case "paragraph":
         return 5; // 1-5 sentences
       default:
         return 3;
@@ -32,12 +37,12 @@ export default function SummaryLengthSelector({
 
   const getLengthLabel = () => {
     switch (type) {
-      case 'tldr':
-        return `${length} sentence${length > 1 ? 's' : ''}`;
-      case 'bullet':
-        return `${length} bullet point${length > 1 ? 's' : ''}`;
-      case 'paragraph':
-        return `${length} sentence${length > 1 ? 's' : ''}`;
+      case "tldr":
+        return `${length} sentence${length > 1 ? "s" : ""}`;
+      case "bullet":
+        return `${length} bullet point${length > 1 ? "s" : ""}`;
+      case "paragraph":
+        return `${length} sentence${length > 1 ? "s" : ""}`;
       default:
         return `${length}`;
     }
@@ -50,7 +55,9 @@ export default function SummaryLengthSelector({
         <Label htmlFor="summary-type">Summary Format</Label>
         <RadioGroup
           value={type}
-          onValueChange={(value) => onTypeChange(value as 'tldr' | 'bullet' | 'paragraph')}
+          onValueChange={(value) =>
+            onTypeChange(value as "tldr" | "bullet" | "paragraph")
+          }
           className="flex flex-row gap-4"
           data-testid="radio-summary-type"
         >
@@ -79,7 +86,9 @@ export default function SummaryLengthSelector({
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label htmlFor="summary-length">Summary Length</Label>
-          <span className="text-sm text-muted-foreground">{getLengthLabel()}</span>
+          <span className="text-sm text-muted-foreground">
+            {getLengthLabel()}
+          </span>
         </div>
         <Slider
           id="summary-length"

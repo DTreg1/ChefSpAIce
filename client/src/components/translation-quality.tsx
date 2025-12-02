@@ -1,12 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Zap, 
-  BarChart2, 
-  Award,
-  AlertCircle,
-  CheckCircle
-} from "lucide-react";
+import { Zap, BarChart2, Award, AlertCircle, CheckCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -15,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 
 interface TranslationQualityProps {
-  quality: 'fast' | 'balanced' | 'high';
+  quality: "fast" | "balanced" | "high";
   isVerified?: boolean;
   confidence?: number;
   className?: string;
@@ -25,36 +19,36 @@ export function TranslationQuality({
   quality,
   isVerified = false,
   confidence,
-  className
+  className,
 }: TranslationQualityProps) {
   const qualityConfig = {
     fast: {
       icon: Zap,
-      label: 'Fast',
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      description: 'Quick translation, may lack nuance',
+      label: "Fast",
+      color: "text-yellow-500",
+      bgColor: "bg-yellow-500/10",
+      description: "Quick translation, may lack nuance",
       speed: 100,
-      accuracy: 60
+      accuracy: 60,
     },
     balanced: {
       icon: BarChart2,
-      label: 'Balanced',
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-      description: 'Good balance of speed and quality',
+      label: "Balanced",
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+      description: "Good balance of speed and quality",
       speed: 70,
-      accuracy: 80
+      accuracy: 80,
     },
     high: {
       icon: Award,
-      label: 'High Quality',
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-      description: 'Most accurate, context-aware translation',
+      label: "High Quality",
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
+      description: "Most accurate, context-aware translation",
       speed: 40,
-      accuracy: 95
-    }
+      accuracy: 95,
+    },
   };
 
   const config = qualityConfig[quality];
@@ -69,7 +63,7 @@ export function TranslationQuality({
               <div className={`p-2 rounded-lg ${config.bgColor}`}>
                 <Icon className={`h-4 w-4 ${config.color}`} />
               </div>
-              
+
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{config.label}</span>
@@ -80,14 +74,14 @@ export function TranslationQuality({
                     </Badge>
                   )}
                 </div>
-                
+
                 {confidence !== undefined && (
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-muted-foreground">
                       Confidence:
                     </span>
-                    <Progress 
-                      value={confidence} 
+                    <Progress
+                      value={confidence}
                       className="h-1.5 w-20"
                       data-testid="progress-confidence"
                     />
@@ -99,7 +93,7 @@ export function TranslationQuality({
               </div>
             </div>
           </TooltipTrigger>
-          
+
           <TooltipContent>
             <div className="space-y-2 p-1">
               <p className="text-sm">{config.description}</p>
@@ -112,7 +106,9 @@ export function TranslationQuality({
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs text-muted-foreground">Accuracy:</span>
+                  <span className="text-xs text-muted-foreground">
+                    Accuracy:
+                  </span>
                   <div className="flex items-center gap-1">
                     <Progress value={config.accuracy} className="h-1 w-16" />
                     <span className="text-xs">{config.accuracy}%</span>
@@ -123,7 +119,7 @@ export function TranslationQuality({
           </TooltipContent>
         </Tooltip>
 
-        {!isVerified && quality !== 'high' && (
+        {!isVerified && quality !== "high" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <AlertCircle className="h-4 w-4 text-yellow-500" />

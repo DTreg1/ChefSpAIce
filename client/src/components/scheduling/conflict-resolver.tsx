@@ -1,12 +1,25 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, CheckCircle, Clock, Calendar, Users, ArrowRight } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Calendar,
+  Users,
+  ArrowRight,
+} from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, parseISO } from "date-fns";
@@ -22,29 +35,32 @@ interface ConflictResolverProps {
 interface Conflict {
   event1: MeetingEvents;
   event2: MeetingEvents;
-  type: 'overlap' | 'back-to-back' | 'double-booked';
-  severity: 'high' | 'medium' | 'low';
+  type: "overlap" | "back-to-back" | "double-booked";
+  severity: "high" | "medium" | "low";
   suggestions: string[];
 }
 
 export function ConflictResolver({
   userId,
   startTime: initialStartTime,
-  endTime: initialEndTime
+  endTime: initialEndTime,
 }: ConflictResolverProps) {
-  const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(null);
+  const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(
+    null,
+  );
   const [resolving, setResolving] = useState(false);
   const { toast } = useToast();
 
   // Persist date range in state to keep query key stable across renders
   const [dateRange] = useState(() => {
     const start = initialStartTime || new Date();
-    const end = initialEndTime || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const end =
+      initialEndTime || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     return {
       startTime: start,
       endTime: end,
       startISO: start.toISOString(),
-      endISO: end.toISOString()
+      endISO: end.toISOString(),
     };
   });
 
@@ -54,58 +70,61 @@ export function ConflictResolver({
     queryFn: async () => {
       const params = new URLSearchParams({
         startTime: dateRange.startISO,
-        endTime: dateRange.endISO
+        endTime: dateRange.endISO,
       });
       const response = await fetch(`/api/schedule/conflicts?${params}`);
       if (!response.ok) throw new Error("Failed to fetch conflicts");
-      const events = await response.json() as MeetingEvents[];
-      
+      const events = (await response.json()) as MeetingEvents[];
+
       // Analyze conflicts
       const conflicts: Conflict[] = [];
       for (let i = 0; i < events.length; i++) {
         for (let j = i + 1; j < events.length; j++) {
           const event1 = events[i];
           const event2 = events[j];
-          
+
           const start1 = new Date(event1.startTime).getTime();
           const end1 = new Date(event1.endTime).getTime();
           const start2 = new Date(event2.startTime).getTime();
           const end2 = new Date(event2.endTime).getTime();
-          
+
           // Check for overlap
-          if ((start1 < end2 && end1 > start2)) {
+          if (start1 < end2 && end1 > start2) {
             conflicts.push({
               event1,
               event2,
-              type: 'overlap',
-              severity: 'high',
+              type: "overlap",
+              severity: "high",
               suggestions: [
                 `Reschedule ${event2.title} to a later time`,
                 `Shorten ${event1.title} to avoid overlap`,
-                `Cancel one of the meetings`
-              ]
+                `Cancel one of the meetings`,
+              ],
             });
           }
-          
+
           // Check for back-to-back (no buffer time)
-          else if (Math.abs(end1 - start2) < 1000 * 60 || Math.abs(end2 - start1) < 1000 * 60) {
+          else if (
+            Math.abs(end1 - start2) < 1000 * 60 ||
+            Math.abs(end2 - start1) < 1000 * 60
+          ) {
             conflicts.push({
               event1,
               event2,
-              type: 'back-to-back',
-              severity: 'medium',
+              type: "back-to-back",
+              severity: "medium",
               suggestions: [
-                'Add 15-minute buffer between meetings',
-                'Combine meetings if related topics',
-                'Move one meeting to a different day'
-              ]
+                "Add 15-minute buffer between meetings",
+                "Combine meetings if related topics",
+                "Move one meeting to a different day",
+              ],
             });
           }
         }
       }
-      
+
       return conflicts;
-    }
+    },
   });
 
   // Resolve conflict mutation
@@ -115,14 +134,14 @@ export function ConflictResolver({
       const response = await apiRequest("/api/schedule/optimize", "POST", {
         startDate: dateRange.startISO,
         endDate: dateRange.endISO,
-        action: resolution.action
+        action: resolution.action,
       });
       return response;
     },
     onSuccess: () => {
       toast({
         title: "Conflict resolved",
-        description: "The scheduling conflict has been resolved successfully"
+        description: "The scheduling conflict has been resolved successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/conflicts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/events"] });
@@ -131,9 +150,9 @@ export function ConflictResolver({
       toast({
         title: "Resolution failed",
         description: error.message || "Could not resolve the conflict",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleResolve = async (conflict: Conflict, suggestion: string) => {
@@ -141,7 +160,7 @@ export function ConflictResolver({
     try {
       await resolveMutation.mutateAsync({
         conflictId: `${conflict.event1.id}_${conflict.event2.id}`,
-        action: suggestion
+        action: suggestion,
       });
       setSelectedConflict(null);
     } finally {
@@ -151,19 +170,27 @@ export function ConflictResolver({
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'destructive';
-      case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'default';
+      case "high":
+        return "destructive";
+      case "medium":
+        return "secondary";
+      case "low":
+        return "outline";
+      default:
+        return "default";
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'overlap': return <AlertTriangle className="h-4 w-4" />;
-      case 'back-to-back': return <Clock className="h-4 w-4" />;
-      case 'double-booked': return <Users className="h-4 w-4" />;
-      default: return <Calendar className="h-4 w-4" />;
+      case "overlap":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "back-to-back":
+        return <Clock className="h-4 w-4" />;
+      case "double-booked":
+        return <Users className="h-4 w-4" />;
+      default:
+        return <Calendar className="h-4 w-4" />;
     }
   };
 
@@ -191,7 +218,7 @@ export function ConflictResolver({
               </TabsTrigger>
               <TabsTrigger value="resolved">Resolved</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="conflicts">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-4">
@@ -207,21 +234,28 @@ export function ConflictResolver({
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
                               {getTypeIcon(conflict.type)}
-                              <Badge variant={getSeverityColor(conflict.severity)}>
+                              <Badge
+                                variant={getSeverityColor(conflict.severity)}
+                              >
                                 {conflict.severity} severity
                               </Badge>
                               <Badge variant="outline">
-                                {conflict.type.replace('-', ' ')}
+                                {conflict.type.replace("-", " ")}
                               </Badge>
                             </div>
-                            
+
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">
                                   {conflict.event1.title}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  {format(parseISO(conflict.event1.startTime.toString()), "MMM d, h:mm a")}
+                                  {format(
+                                    parseISO(
+                                      conflict.event1.startTime.toString(),
+                                    ),
+                                    "MMM d, h:mm a",
+                                  )}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -230,12 +264,17 @@ export function ConflictResolver({
                                   {conflict.event2.title}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  {format(parseISO(conflict.event2.startTime.toString()), "MMM d, h:mm a")}
+                                  {format(
+                                    parseISO(
+                                      conflict.event2.startTime.toString(),
+                                    ),
+                                    "MMM d, h:mm a",
+                                  )}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          
+
                           <Button
                             variant="outline"
                             size="sm"
@@ -252,7 +291,7 @@ export function ConflictResolver({
                   ))}
                 </div>
               </ScrollArea>
-              
+
               {selectedConflict && (
                 <div className="mt-4 p-4 border rounded-lg bg-muted/50">
                   <h4 className="font-medium mb-3">Resolution Options</h4>
@@ -266,7 +305,9 @@ export function ConflictResolver({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleResolve(selectedConflict, suggestion)}
+                          onClick={() =>
+                            handleResolve(selectedConflict, suggestion)
+                          }
                           disabled={resolving}
                           data-testid={`resolve-option-${index}`}
                         >
@@ -278,11 +319,13 @@ export function ConflictResolver({
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="resolved">
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle className="h-12 w-12 text-green-600 mb-4" />
-                <p className="text-lg font-medium">No Recently Resolved Conflicts</p>
+                <p className="text-lg font-medium">
+                  No Recently Resolved Conflicts
+                </p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Resolved conflicts will appear here
                 </p>

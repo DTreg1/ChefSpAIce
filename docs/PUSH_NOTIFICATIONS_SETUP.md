@@ -55,12 +55,14 @@ This guide will walk you through setting up push notifications for both Android 
 Add one of these to your `.env` file:
 
 **Option A: Direct JSON (Recommended for Replit)**
+
 ```bash
 # Copy the entire JSON content as a single-line string
 FCM_SERVICE_ACCOUNT='{"type":"service_account","project_id":"your-project",...}'
 ```
 
 **Option B: File Path**
+
 ```bash
 # Save the JSON file and reference its path
 FCM_SERVICE_ACCOUNT_PATH=/path/to/firebase-serviceAccount.json
@@ -107,10 +109,11 @@ FCM_SERVICE_ACCOUNT_PATH=/path/to/firebase-serviceAccount.json
 **Option A: Base64 Encoded Key (Recommended for Replit)**
 
 1. Convert your .p8 file to base64:
+
    ```bash
    # On Mac/Linux:
    base64 -i AuthKey_ABC123DEFG.p8 > key_base64.txt
-   
+
    # On Windows (PowerShell):
    [Convert]::ToBase64String([System.IO.File]::ReadAllBytes("AuthKey_ABC123DEFG.p8")) | Out-File key_base64.txt
    ```
@@ -125,6 +128,7 @@ FCM_SERVICE_ACCOUNT_PATH=/path/to/firebase-serviceAccount.json
    ```
 
 **Option B: File Path**
+
 ```bash
 APNS_KEY_ID=ABC123DEFG
 APNS_TEAM_ID=123ABC456D
@@ -147,11 +151,13 @@ APNS_PRODUCTION=false
 ### Required Secrets
 
 For Android:
+
 - `FCM_SERVICE_ACCOUNT` - The entire JSON content as a string
 
 For iOS:
+
 - `APNS_KEY_ID` - Your 10-character Key ID
-- `APNS_TEAM_ID` - Your 10-character Team ID  
+- `APNS_TEAM_ID` - Your 10-character Team ID
 - `APNS_KEY_CONTENT` - Base64 encoded .p8 file content
 - `APNS_BUNDLE_ID` - Your app bundle ID
 - `APNS_PRODUCTION` - "true" or "false"
@@ -163,16 +169,19 @@ For iOS:
 After adding credentials, restart your application and check the server logs for:
 
 ✅ Success Messages:
+
 - `✅ FCM initialized with service account from environment`
 - `✅ APNs initialized successfully with P8 key`
 
 ⚠️ Warning Messages:
+
 - `⚠️ FCM credentials not configured`
 - `⚠️ APNs credentials not configured`
 
 ### Testing Push Notifications
 
 #### Android Testing
+
 1. Build for Android: `npm run build && npx cap sync android`
 2. Open in Android Studio: `npx cap open android`
 3. Run on real device (not emulator)
@@ -180,6 +189,7 @@ After adding credentials, restart your application and check the server logs for
 5. Check server logs for successful token registration
 
 #### iOS Testing
+
 1. Build for iOS: `npm run build && npx cap sync ios`
 2. Open in Xcode: `npx cap open ios`
 3. Ensure Push Notifications capability is enabled in Xcode
@@ -192,22 +202,26 @@ After adding credentials, restart your application and check the server logs for
 ### Common Firebase Issues
 
 **"Invalid service account"**
+
 - Ensure you copied the entire JSON correctly
 - Check for line breaks or formatting issues
 - Verify it's from the correct Firebase project
 
 **"Permission denied"**
+
 - Ensure Firebase Cloud Messaging API is enabled in Google Cloud Console
 - Check service account has necessary permissions
 
 ### Common Apple Issues
 
 **"Invalid token"**
+
 - Verify Key ID and Team ID are correct
 - Ensure using correct environment (development vs production)
 - Check .p8 file was properly encoded to base64
 
 **"Missing authentication"**
+
 - Verify all required environment variables are set
 - Check for typos in variable names
 - Ensure secrets are accessible to your application
@@ -225,14 +239,17 @@ After adding credentials, restart your application and check the server logs for
 ## Security Best Practices
 
 1. **Never commit credentials to Git**
+
    - Use environment variables or secret management
    - Add credential files to `.gitignore`
 
 2. **Rotate keys regularly**
+
    - Apple keys don't expire, but rotate for security
    - Firebase credentials should be rotated periodically
 
 3. **Use different credentials for environments**
+
    - Separate development and production credentials
    - Use `APNS_PRODUCTION=false` for development
 
@@ -261,6 +278,7 @@ Once credentials are configured:
 ## Need Help?
 
 If you encounter issues:
+
 1. Check server logs for specific error messages
 2. Verify all steps were followed correctly
 3. Ensure you're testing on real devices

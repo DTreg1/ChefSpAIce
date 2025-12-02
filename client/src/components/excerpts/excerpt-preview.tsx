@@ -1,23 +1,30 @@
 /**
  * ExcerptPreview Component
- * 
+ *
  * Displays a preview of an excerpt with performance metrics and interaction buttons.
  * Shows character count, word count, CTR, and allows copying and activation.
- * 
+ *
  * @module client/src/components/excerpt-preview
  */
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Copy, 
-  CheckCircle, 
-  TrendingUp, 
-  Eye, 
-  MousePointer, 
+import {
+  Copy,
+  CheckCircle,
+  TrendingUp,
+  Eye,
+  MousePointer,
   Share2,
   BarChart3,
   Star,
@@ -40,7 +47,7 @@ interface ExcerptPreviewProps {
   onEdit?: (excerptId: string) => void;
   onTrackClick?: (excerptId: string) => void;
   showControls?: boolean;
-  variant?: 'compact' | 'full';
+  variant?: "compact" | "full";
 }
 
 export function ExcerptPreview({
@@ -51,7 +58,7 @@ export function ExcerptPreview({
   onEdit,
   onTrackClick,
   showControls = true,
-  variant = 'full',
+  variant = "full",
 }: ExcerptPreviewProps) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -82,30 +89,39 @@ export function ExcerptPreview({
 
   const getPlatformColor = (platform?: string) => {
     switch (platform) {
-      case 'twitter': return 'bg-blue-500';
-      case 'linkedin': return 'bg-blue-700';
-      case 'facebook': return 'bg-blue-600';
-      case 'instagram': return 'bg-gradient-to-br from-purple-600 to-pink-500';
-      default: return 'bg-muted';
+      case "twitter":
+        return "bg-blue-500";
+      case "linkedin":
+        return "bg-blue-700";
+      case "facebook":
+        return "bg-blue-600";
+      case "instagram":
+        return "bg-gradient-to-br from-purple-600 to-pink-500";
+      default:
+        return "bg-muted";
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'social': return <Share2 className="h-3 w-3" />;
-      case 'email': return <Eye className="h-3 w-3" />;
-      case 'meta': return <BarChart3 className="h-3 w-3" />;
-      default: return null;
+      case "social":
+        return <Share2 className="h-3 w-3" />;
+      case "email":
+        return <Eye className="h-3 w-3" />;
+      case "meta":
+        return <BarChart3 className="h-3 w-3" />;
+      default:
+        return null;
     }
   };
 
   const ctrPercentage = performance ? performance.ctr * 100 : 0;
   const ctrTarget = 20; // 20% target CTR
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
-      <Card 
-        className={`hover-elevate cursor-pointer ${isActive ? 'ring-2 ring-primary' : ''}`}
+      <Card
+        className={`hover-elevate cursor-pointer ${isActive ? "ring-2 ring-primary" : ""}`}
         onClick={handleCardClick}
         data-testid={`card-excerpt-${excerpt.id}`}
       >
@@ -133,11 +149,9 @@ export function ExcerptPreview({
               {excerpt.excerpt.length} chars
             </span>
           </div>
-          
-          <p className="text-sm line-clamp-3 mb-2">
-            {excerpt.excerpt}
-          </p>
-          
+
+          <p className="text-sm line-clamp-3 mb-2">{excerpt.excerpt}</p>
+
           {performance && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -160,15 +174,15 @@ export function ExcerptPreview({
   }
 
   return (
-    <Card 
-      className={`hover-elevate ${isActive ? 'ring-2 ring-primary' : ''}`}
+    <Card
+      className={`hover-elevate ${isActive ? "ring-2 ring-primary" : ""}`}
       data-testid={`card-excerpt-full-${excerpt.id}`}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">
-              {excerpt.category || 'Excerpt'}
+              {excerpt.category || "Excerpt"}
             </CardTitle>
             {isActive && (
               <Badge className="bg-green-500 text-white">
@@ -178,7 +192,7 @@ export function ExcerptPreview({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {getTypeIcon(excerpt.category || '')}
+            {getTypeIcon(excerpt.category || "")}
             {excerpt.importance && (
               <Badge variant="outline" className="text-xs">
                 Importance: {(excerpt.importance * 100).toFixed(0)}%
@@ -187,18 +201,17 @@ export function ExcerptPreview({
           </div>
         </div>
         <CardDescription>
-          {excerpt.excerpt.length} characters • {excerpt.excerpt.split(/\s+/).length} words
+          {excerpt.excerpt.length} characters •{" "}
+          {excerpt.excerpt.split(/\s+/).length} words
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div 
+        <div
           className="bg-muted p-4 rounded-md cursor-pointer hover:bg-muted/80 transition-colors"
           onClick={handleCardClick}
         >
-          <p className="text-sm whitespace-pre-wrap">
-            {excerpt.excerpt}
-          </p>
+          <p className="text-sm whitespace-pre-wrap">{excerpt.excerpt}</p>
         </div>
 
         {performance && (
@@ -213,11 +226,16 @@ export function ExcerptPreview({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>CTR</span>
-                  <span className="font-medium">{ctrPercentage.toFixed(1)}%</span>
+                  <span className="font-medium">
+                    {ctrPercentage.toFixed(1)}%
+                  </span>
                 </div>
-                <Progress value={(ctrPercentage / ctrTarget) * 100} className="h-2" />
+                <Progress
+                  value={(ctrPercentage / ctrTarget) * 100}
+                  className="h-2"
+                />
                 <p className="text-xs text-muted-foreground">
-                  Target: {ctrTarget}% {ctrPercentage >= ctrTarget && '✅'}
+                  Target: {ctrTarget}% {ctrPercentage >= ctrTarget && "✅"}
                 </p>
               </div>
 
@@ -235,7 +253,9 @@ export function ExcerptPreview({
                 <div className="space-y-1">
                   <Share2 className="h-4 w-4 mx-auto text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">Shares</p>
-                  <p className="text-sm font-medium">{performance.shares || 0}</p>
+                  <p className="text-sm font-medium">
+                    {performance.shares || 0}
+                  </p>
                 </div>
               </div>
             </div>

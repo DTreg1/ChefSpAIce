@@ -1,12 +1,12 @@
 /**
  * Shared type-safe request helpers for authenticated routes
- * 
+ *
  * These helpers eliminate the need for `as any` type assertions
  * throughout the router files.
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
+import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 
 /**
  * Type-safe authenticated request with guaranteed user
@@ -40,7 +40,7 @@ export function validateBody<T extends z.ZodSchema>(schema: T) {
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation error",
-        details: validation.error.errors
+        details: validation.error.errors,
       });
     }
     req.body = validation.data;
@@ -53,7 +53,7 @@ export function validateBody<T extends z.ZodSchema>(schema: T) {
  */
 export function getQueryParam(req: Request, param: string): string | undefined {
   const value = req.query[param];
-  return typeof value === 'string' ? value : undefined;
+  return typeof value === "string" ? value : undefined;
 }
 
 /**
@@ -73,10 +73,15 @@ export function getPaginationParams(req: Request): PaginationParams {
 /**
  * Standard error response helper
  */
-export function sendError(res: Response, status: number, message: string, details?: any) {
+export function sendError(
+  res: Response,
+  status: number,
+  message: string,
+  details?: any,
+) {
   return res.status(status).json({
     error: message,
-    ...(details && { details })
+    ...(details && { details }),
   });
 }
 

@@ -1,5 +1,8 @@
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
 import { storage } from "../../storage/index";
 import { openai } from "../../integrations/openai";
@@ -20,15 +23,19 @@ router.get(
       const userRecipes = await storage.user.recipes.getRecipes(userId);
       const inventoryItems = await storage.user.inventory.getFoodItems(userId);
 
-      const availableIngredients = inventoryItems.map((item: any) => item.name).join(", ");
+      const availableIngredients = inventoryItems
+        .map((item: any) => item.name)
+        .join(", ");
 
       if (!openai) {
-        const recommendations = userRecipes.slice(0, limit).map((recipe: any) => ({
-          id: recipe.id,
-          title: recipe.title,
-          reason: "Based on your saved recipes",
-          score: 0.8,
-        }));
+        const recommendations = userRecipes
+          .slice(0, limit)
+          .map((recipe: any) => ({
+            id: recipe.id,
+            title: recipe.title,
+            reason: "Based on your saved recipes",
+            score: 0.8,
+          }));
 
         return res.json({
           recommendations,
@@ -57,7 +64,9 @@ Return as JSON array with format:
 
       let recommendations = [];
       try {
-        recommendations = JSON.parse(completion.choices[0].message?.content || "[]");
+        recommendations = JSON.parse(
+          completion.choices[0].message?.content || "[]",
+        );
       } catch {
         recommendations = [];
       }
@@ -74,7 +83,7 @@ Return as JSON array with format:
       console.error("Error generating recipe recommendations:", error);
       throw new ApiError("Unable to generate recipe recommendations", 500);
     }
-  })
+  }),
 );
 
 router.get(
@@ -91,7 +100,7 @@ router.get(
       const userRecipes = await storage.user.recipes.getRecipes(userId);
 
       const existingIngredients = new Set(
-        inventoryItems.map((item: any) => item.name.toLowerCase())
+        inventoryItems.map((item: any) => item.name.toLowerCase()),
       );
 
       const recipeIngredients: Record<string, number> = {};
@@ -100,7 +109,8 @@ router.get(
         for (const ingredient of ingredients) {
           const normalized = ingredient.toLowerCase().trim();
           if (!existingIngredients.has(normalized)) {
-            recipeIngredients[normalized] = (recipeIngredients[normalized] || 0) + 1;
+            recipeIngredients[normalized] =
+              (recipeIngredients[normalized] || 0) + 1;
           }
         }
       }
@@ -127,7 +137,7 @@ router.get(
       console.error("Error generating ingredient recommendations:", error);
       throw new ApiError("Unable to generate ingredient recommendations", 500);
     }
-  })
+  }),
 );
 
 router.get(
@@ -143,16 +153,26 @@ router.get(
       const inventoryItems = await storage.user.inventory.getFoodItems(userId);
       const userRecipes = await storage.user.recipes.getRecipes(userId);
 
-      const availableIngredients = inventoryItems.map((item: any) => item.name).join(", ");
+      const availableIngredients = inventoryItems
+        .map((item: any) => item.name)
+        .join(", ");
 
       if (!openai) {
         const mealPlan = Array.from({ length: days }, (_, i) => ({
           day: i + 1,
-          date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          date: new Date(Date.now() + i * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           meals: {
-            breakfast: userRecipes[i % userRecipes.length]?.title || "Suggested breakfast",
-            lunch: userRecipes[(i + 1) % userRecipes.length]?.title || "Suggested lunch",
-            dinner: userRecipes[(i + 2) % userRecipes.length]?.title || "Suggested dinner",
+            breakfast:
+              userRecipes[i % userRecipes.length]?.title ||
+              "Suggested breakfast",
+            lunch:
+              userRecipes[(i + 1) % userRecipes.length]?.title ||
+              "Suggested lunch",
+            dinner:
+              userRecipes[(i + 2) % userRecipes.length]?.title ||
+              "Suggested dinner",
           },
         }));
 
@@ -181,14 +201,18 @@ Return as JSON array with format:
 
       let mealPlanData = [];
       try {
-        mealPlanData = JSON.parse(completion.choices[0].message?.content || "[]");
+        mealPlanData = JSON.parse(
+          completion.choices[0].message?.content || "[]",
+        );
       } catch {
         mealPlanData = [];
       }
 
       const mealPlan = mealPlanData.map((day: any, i: number) => ({
         day: day.day || i + 1,
-        date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() + i * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
         meals: {
           breakfast: day.breakfast,
           lunch: day.lunch,
@@ -209,7 +233,7 @@ Return as JSON array with format:
       console.error("Error generating meal plan recommendations:", error);
       throw new ApiError("Unable to generate meal plan recommendations", 500);
     }
-  })
+  }),
 );
 
 export default router;

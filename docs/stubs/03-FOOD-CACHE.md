@@ -10,9 +10,9 @@ Cache management methods are stubs. The cache table may or may not exist - need 
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `getUSDACacheStats()` | Get cache statistics |
+| Method                     | Description              |
+| -------------------------- | ------------------------ |
+| `getUSDACacheStats()`      | Get cache statistics     |
 | `clearOldCache(olderThan)` | Remove old cache entries |
 
 ---

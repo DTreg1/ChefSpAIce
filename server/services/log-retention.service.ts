@@ -1,6 +1,6 @@
 /**
  * Log Retention Service
- * 
+ *
  * Manages automatic cleanup of old activity logs based on retention policies.
  * Runs periodic cleanup jobs to remove expired logs and maintain database performance.
  */
@@ -19,7 +19,7 @@ interface RetentionPolicy {
 class LogRetentionService {
   private cleanupJob: cron.ScheduledTask | null = null;
   private isRunning = false;
-  
+
   // Default retention policies
   private policies: RetentionPolicy[] = [
     {
@@ -43,23 +43,28 @@ class LogRetentionService {
     {
       name: "critical_actions",
       retentionDays: 365,
-      actions: ["settings_changed", "data_exported", "data_imported", "account_deleted"],
+      actions: [
+        "settings_changed",
+        "data_exported",
+        "data_imported",
+        "account_deleted",
+      ],
       enabled: true,
     },
   ];
-  
+
   constructor() {
     // Initialize with default schedule (daily at 2 AM)
     this.initializeSchedule();
   }
-  
+
   /**
    * Initialize the cron schedule for cleanup jobs
    */
   private initializeSchedule() {
     // Run daily at 2 AM server time
     const schedule = "0 2 * * *";
-    
+
     this.cleanupJob = cron.schedule(
       schedule,
       async () => {
@@ -67,15 +72,15 @@ class LogRetentionService {
       },
       {
         timezone: process.env.TZ || "UTC",
-      }
+      },
     );
-    
+
     // console.log("[LogRetention] Cleanup job scheduled for daily execution at 2 AM");
-    
+
     // Also run cleanup on service initialization if not recently run
     this.runInitialCleanupCheck();
   }
-  
+
   /**
    * Check if cleanup should run on startup
    */
@@ -84,10 +89,10 @@ class LogRetentionService {
       // Check if cleanup was run in the last 24 hours
       const lastCleanup = await this.getLastCleanupTime();
       const now = new Date();
-      const hoursSinceLastCleanup = lastCleanup 
+      const hoursSinceLastCleanup = lastCleanup
         ? (now.getTime() - lastCleanup.getTime()) / (1000 * 60 * 60)
         : Number.MAX_VALUE;
-      
+
       if (hoursSinceLastCleanup > 24) {
         // console.log("[LogRetention] Running initial cleanup (last run:", lastCleanup || "never", ")");
         await this.runCleanup();
@@ -98,7 +103,7 @@ class LogRetentionService {
       console.error("[LogRetention] Error checking initial cleanup:", error);
     }
   }
-  
+
   /**
    * Get the last cleanup time from system logs
    */
@@ -109,18 +114,18 @@ class LogRetentionService {
         action: "log_cleanup_completed",
         limit: 1,
       });
-      
+
       if (logs && logs.length > 0) {
         return new Date(logs[0].timestamp);
       }
-      
+
       return null;
     } catch (error) {
       console.error("[LogRetention] Error getting last cleanup time:", error);
       return null;
     }
   }
-  
+
   /**
    * Run the cleanup process for all policies
    */
@@ -129,41 +134,45 @@ class LogRetentionService {
       // console.log("[LogRetention] Cleanup already in progress, skipping...");
       return;
     }
-    
+
     this.isRunning = true;
     const startTime = new Date();
     let totalDeleted = 0;
-    const results: Array<{ policy: string; deleted: number; error?: string }> = [];
-    
+    const results: Array<{ policy: string; deleted: number; error?: string }> =
+      [];
+
     try {
       // console.log("[LogRetention] Starting scheduled cleanup at", startTime.toISOString());
-      
+
       // Process each retention policy
       for (const policy of this.policies) {
         if (!policy.enabled) {
           // console.log(`[LogRetention] Skipping disabled policy: ${policy.name}`);
           continue;
         }
-        
+
         try {
           const deleted = await this.processPolicyCleanup(policy);
           totalDeleted += deleted;
           results.push({ policy: policy.name, deleted });
-          
+
           // console.log(`[LogRetention] Policy ${policy.name}: Deleted ${deleted} logs`);
         } catch (error: Error | unknown) {
-          console.error(`[LogRetention] Error processing policy ${policy.name}:`, error);
-          results.push({ 
-            policy: policy.name, 
-            deleted: 0, 
-            error: error instanceof Error ? error.message : String(error)
+          console.error(
+            `[LogRetention] Error processing policy ${policy.name}:`,
+            error,
+          );
+          results.push({
+            policy: policy.name,
+            deleted: 0,
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
-      
+
       const endTime = new Date();
       const duration = endTime.getTime() - startTime.getTime();
-      
+
       // Log the cleanup completion as a system event
       const metadata: Record<string, any> = {
         totalDeleted,
@@ -172,7 +181,7 @@ class LogRetentionService {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
       };
-      
+
       await storage.platform.system.createActivityLog({
         userId: null, // System action
         activityType: "view", // Using 'view' for system monitoring actions
@@ -182,19 +191,19 @@ class LogRetentionService {
         details: metadata,
         success: true,
       });
-      
+
       console.log(
-        `[LogRetention] Cleanup completed. Total deleted: ${totalDeleted}, Duration: ${duration}ms`
+        `[LogRetention] Cleanup completed. Total deleted: ${totalDeleted}, Duration: ${duration}ms`,
       );
     } catch (error) {
       console.error("[LogRetention] Fatal error during cleanup:", error);
-      
+
       // Log the error as a system event
       const errorMetadata: Record<string, any> = {
         error: error instanceof Error ? error.message : "Unknown error",
         startTime: startTime.toISOString(),
       };
-      
+
       await storage.platform.system.createActivityLog({
         userId: null,
         activityType: "view", // Using 'view' for system monitoring actions
@@ -209,29 +218,32 @@ class LogRetentionService {
       this.isRunning = false;
     }
   }
-  
+
   /**
    * Process cleanup for a specific retention policy
    */
   private async processPolicyCleanup(policy: RetentionPolicy): Promise<number> {
     // Build the action filter based on policy
     const actionFilter = this.buildActionFilter(policy);
-    
+
     try {
       // Delete old logs based on the policy
       // cleanupOldActivityLogs expects retentionDays (how many days to keep)
       const deletedCount = await storage.platform.system.cleanupOldActivityLogs(
         policy.retentionDays,
-        actionFilter.excludeActions
+        actionFilter.excludeActions,
       );
-      
+
       return deletedCount;
     } catch (error) {
-      console.error(`[LogRetention] Error deleting logs for policy ${policy.name}:`, error);
+      console.error(
+        `[LogRetention] Error deleting logs for policy ${policy.name}:`,
+        error,
+      );
       throw error;
     }
   }
-  
+
   /**
    * Build action filter for a retention policy
    */
@@ -243,18 +255,18 @@ class LogRetentionService {
       includeActions?: string[];
       excludeActions?: string[];
     } = {};
-    
+
     if (policy.actions) {
       filter.includeActions = policy.actions;
     }
-    
+
     if (policy.excludeActions) {
       filter.excludeActions = policy.excludeActions;
     }
-    
+
     return filter;
   }
-  
+
   /**
    * Update retention policies
    */
@@ -262,14 +274,14 @@ class LogRetentionService {
     this.policies = policies;
     // console.log("[LogRetention] Policies updated:", policies.length, "policies");
   }
-  
+
   /**
    * Get current retention policies
    */
   public getPolicies(): RetentionPolicy[] {
     return this.policies;
   }
-  
+
   /**
    * Manually trigger cleanup (for admin use)
    */
@@ -282,13 +294,13 @@ class LogRetentionService {
       await this.runCleanup();
       return { success: true };
     } catch (error: Error | unknown) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Cleanup failed" 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Cleanup failed",
       };
     }
   }
-  
+
   /**
    * Stop the cleanup job
    */
@@ -298,7 +310,7 @@ class LogRetentionService {
       // console.log("[LogRetention] Cleanup job stopped");
     }
   }
-  
+
   /**
    * Start the cleanup job
    */
@@ -308,14 +320,14 @@ class LogRetentionService {
       // console.log("[LogRetention] Cleanup job started");
     }
   }
-  
+
   /**
    * Check if cleanup job is running
    */
   public isJobRunning(): boolean {
     return this.isRunning;
   }
-  
+
   /**
    * Get cleanup status
    */
@@ -326,7 +338,7 @@ class LogRetentionService {
     policies: RetentionPolicy[];
   }> {
     const lastRun = await this.getLastCleanupTime();
-    
+
     // Calculate next run time (next 2 AM)
     const now = new Date();
     const nextRun = new Date();
@@ -334,7 +346,7 @@ class LogRetentionService {
     if (nextRun <= now) {
       nextRun.setDate(nextRun.getDate() + 1);
     }
-    
+
     return {
       isRunning: this.isRunning,
       lastRun,

@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/scheduling.storage.ts
  * @description Meeting scheduling and appointment management storage operations
- * 
+ *
  * Domain: Scheduling & Calendar
  * Scope: Meeting preferences, AI suggestions, scheduling patterns, calendar events
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (SchedulingStorage) for dependency injection and testing
  * - Export singleton INSTANCE (schedulingStorage) for convenience in production code
@@ -12,8 +12,23 @@
  */
 
 import { db } from "../../db";
-import { and, eq, desc, asc, sql, gte, lte, ne, or, type SQL } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  and,
+  eq,
+  desc,
+  asc,
+  sql,
+  gte,
+  lte,
+  ne,
+  or,
+  type SQL,
+} from "drizzle-orm";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { ISchedulingStorage } from "../interfaces/ISchedulingStorage";
 import {
   schedulingPreferences,
@@ -36,7 +51,7 @@ import {
 
 /**
  * Scheduling Storage
- * 
+ *
  * Manages meeting scheduling, preferences, AI-powered time suggestions,
  * pattern learning, and conflict detection for optimal calendar management.
  */
@@ -44,7 +59,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   // ==================== Scheduling Preferences ====================
 
   async getSchedulingPreferences(
-    userId: string
+    userId: string,
   ): Promise<SchedulingPreferences | undefined> {
     const [prefs] = await db
       .select()
@@ -56,7 +71,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async upsertSchedulingPreferences(
     userId: string,
-    preferences: Omit<InsertSchedulingPreferences, "userId">
+    preferences: Omit<InsertSchedulingPreferences, "userId">,
   ): Promise<SchedulingPreferences> {
     const existing = await this.getSchedulingPreferences(userId);
 
@@ -93,7 +108,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   // ==================== Meeting Suggestions ====================
 
   async getMeetingSuggestions(
-    meetingId: string
+    meetingId: string,
   ): Promise<MeetingSuggestions | undefined> {
     const [suggestions] = await db
       .select()
@@ -105,7 +120,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async getUserMeetingSuggestions(
     userId: string,
-    status?: string
+    status?: string,
   ): Promise<MeetingSuggestions[]> {
     const conditions: SQL<unknown>[] = [];
 
@@ -130,7 +145,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   }
 
   async createMeetingSuggestions(
-    suggestions: InsertMeetingSuggestions
+    suggestions: InsertMeetingSuggestions,
   ): Promise<MeetingSuggestions> {
     const [created] = await db
       .insert(meetingSuggestions)
@@ -142,7 +157,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async updateMeetingSuggestionStatus(
     meetingId: string,
     selectedTime?: SelectedTimeSlot,
-    selectedBy?: string
+    selectedBy?: string,
   ): Promise<MeetingSuggestions> {
     const updateData: Record<string, unknown> = {};
 
@@ -179,7 +194,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async getSchedulingPatternByType(
     userId: string,
-    patternType: string
+    patternType: string,
   ): Promise<SchedulingPatterns | undefined> {
     const [pattern] = await db
       .select()
@@ -187,8 +202,8 @@ export class SchedulingStorage implements ISchedulingStorage {
       .where(
         and(
           eq(schedulingPatterns.userId, userId),
-          eq(schedulingPatterns.patternType, patternType)
-        )
+          eq(schedulingPatterns.patternType, patternType),
+        ),
       )
       .limit(1);
     return pattern;
@@ -196,7 +211,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async upsertSchedulingPattern(
     userId: string,
-    pattern: Omit<InsertSchedulingPatterns, "userId">
+    pattern: Omit<InsertSchedulingPatterns, "userId">,
   ): Promise<SchedulingPatterns> {
     const existing = await db
       .select()
@@ -204,8 +219,8 @@ export class SchedulingStorage implements ISchedulingStorage {
       .where(
         and(
           eq(schedulingPatterns.userId, userId),
-          eq(schedulingPatterns.patternType, pattern.patternType)
-        )
+          eq(schedulingPatterns.patternType, pattern.patternType),
+        ),
       )
       .limit(1);
 
@@ -254,11 +269,11 @@ export class SchedulingStorage implements ISchedulingStorage {
     // Generate insights based on patterns and events
     if (patterns.length > 0) {
       const highConfidencePatterns = patterns.filter(
-        (p) => (p.accuracyScore || 0) > 70
+        (p) => (p.accuracyScore || 0) > 70,
       );
       if (highConfidencePatterns.length > 0) {
         insights.push(
-          `You have ${highConfidencePatterns.length} strong scheduling patterns identified.`
+          `You have ${highConfidencePatterns.length} strong scheduling patterns identified.`,
         );
       }
     }
@@ -266,7 +281,7 @@ export class SchedulingStorage implements ISchedulingStorage {
     if (events.length > 0) {
       const meetingsPerDay = events.length / 30;
       insights.push(
-        `You average ${meetingsPerDay.toFixed(1)} meetings per day.`
+        `You average ${meetingsPerDay.toFixed(1)} meetings per day.`,
       );
 
       // Find busiest day of week
@@ -277,9 +292,9 @@ export class SchedulingStorage implements ISchedulingStorage {
       });
 
       const busiestDay = Object.entries(dayCount).sort(
-        (a, b) => b[1] - a[1]
+        (a, b) => b[1] - a[1],
       )[0];
-      
+
       if (busiestDay) {
         const dayNames = [
           "Sunday",
@@ -291,7 +306,7 @@ export class SchedulingStorage implements ISchedulingStorage {
           "Saturday",
         ];
         insights.push(
-          `Your busiest day is ${dayNames[parseInt(busiestDay[0])]} with ${busiestDay[1]} meetings.`
+          `Your busiest day is ${dayNames[parseInt(busiestDay[0])]} with ${busiestDay[1]} meetings.`,
         );
       }
 
@@ -299,12 +314,12 @@ export class SchedulingStorage implements ISchedulingStorage {
       const durations = events.map(
         (e) =>
           (new Date(e.endTime).getTime() - new Date(e.startTime).getTime()) /
-          (1000 * 60)
+          (1000 * 60),
       );
       const avgDuration =
         durations.reduce((a, b) => a + b, 0) / durations.length;
       insights.push(
-        `Your average meeting duration is ${Math.round(avgDuration)} minutes.`
+        `Your average meeting duration is ${Math.round(avgDuration)} minutes.`,
       );
     }
 
@@ -319,7 +334,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       startTime?: Date;
       endTime?: Date;
       status?: string;
-    }
+    },
   ): Promise<MeetingEvents[]> {
     const conditions: SQL<unknown>[] = [eq(meetingEvents.userId, userId)];
 
@@ -342,13 +357,13 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async getMeetingEvent(
     eventId: string,
-    userId: string
+    userId: string,
   ): Promise<MeetingEvents | undefined> {
     const [event] = await db
       .select()
       .from(meetingEvents)
       .where(
-        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId))
+        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId)),
       )
       .limit(1);
     return event;
@@ -364,12 +379,12 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async updateMeetingEvent(
     eventId: string,
-    updates: Partial<MeetingEvents>
+    updates: Partial<MeetingEvents>,
   ): Promise<MeetingEvents> {
     const [updated] = await db
       .update(meetingEvents)
       .set({
-        ...(updates),
+        ...updates,
         updatedAt: new Date(),
       })
       .where(eq(meetingEvents.id, eventId))
@@ -381,13 +396,13 @@ export class SchedulingStorage implements ISchedulingStorage {
     await db
       .delete(meetingEvents)
       .where(
-        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId))
+        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId)),
       );
   }
 
   async cancelMeetingEvent(
     eventId: string,
-    userId: string
+    userId: string,
   ): Promise<MeetingEvents> {
     const [updated] = await db
       .update(meetingEvents)
@@ -396,7 +411,7 @@ export class SchedulingStorage implements ISchedulingStorage {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId))
+        and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId)),
       )
       .returning();
     return updated;
@@ -407,7 +422,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async findSchedulingConflicts(
     userId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<MeetingEvents[]> {
     return await db
       .select()
@@ -420,32 +435,32 @@ export class SchedulingStorage implements ISchedulingStorage {
             // Event starts during the proposed time
             and(
               gte(meetingEvents.startTime, startTime),
-              lte(meetingEvents.startTime, endTime)
+              lte(meetingEvents.startTime, endTime),
             ),
             // Event ends during the proposed time
             and(
               gte(meetingEvents.endTime, startTime),
-              lte(meetingEvents.endTime, endTime)
+              lte(meetingEvents.endTime, endTime),
             ),
             // Event encompasses the proposed time
             and(
               lte(meetingEvents.startTime, startTime),
-              gte(meetingEvents.endTime, endTime)
-            )
-          )
-        )
+              gte(meetingEvents.endTime, endTime),
+            ),
+          ),
+        ),
       );
   }
 
   async checkAvailability(
     userId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<{ available: boolean; conflicts: MeetingEvents[] }> {
     const conflicts = await this.findSchedulingConflicts(
       userId,
       startTime,
-      endTime
+      endTime,
     );
     return {
       available: conflicts.length === 0,
@@ -457,7 +472,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async getMeetingStats(
     userId: string,
-    period: "day" | "week" | "month"
+    period: "day" | "week" | "month",
   ): Promise<{
     totalMeetings: number;
     averagePerDay: number;
@@ -501,13 +516,13 @@ export class SchedulingStorage implements ISchedulingStorage {
     events.forEach((e) => {
       const start = new Date(e.startTime);
       const end = new Date(e.endTime);
-      
+
       const day = start.getDay();
       const hour = start.getHours();
-      
+
       dayCount[day] = (dayCount[day] || 0) + 1;
       hourCount[hour] = (hourCount[hour] || 0) + 1;
-      
+
       totalParticipants += e.participants?.length || 0;
       totalDuration += (end.getTime() - start.getTime()) / (1000 * 60);
     });
@@ -523,15 +538,18 @@ export class SchedulingStorage implements ISchedulingStorage {
     ];
 
     const busiestDayNum = Object.entries(dayCount).sort(
-      (a, b) => b[1] - a[1]
+      (a, b) => b[1] - a[1],
     )[0]?.[0];
-    const busiestDay = busiestDayNum ? dayNames[parseInt(busiestDayNum)] : "N/A";
+    const busiestDay = busiestDayNum
+      ? dayNames[parseInt(busiestDayNum)]
+      : "N/A";
 
     const busiestHour = Object.entries(hourCount).sort(
-      (a, b) => b[1] - a[1]
+      (a, b) => b[1] - a[1],
     )[0]?.[0];
 
-    const averageDuration = totalMeetings > 0 ? totalDuration / totalMeetings : 0;
+    const averageDuration =
+      totalMeetings > 0 ? totalDuration / totalMeetings : 0;
     const participantCount = totalParticipants;
 
     return {
@@ -546,7 +564,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async getUpcomingMeetings(
     userId: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<MeetingEvents[]> {
     return await db
       .select()
@@ -555,8 +573,8 @@ export class SchedulingStorage implements ISchedulingStorage {
         and(
           eq(meetingEvents.userId, userId),
           gte(meetingEvents.startTime, new Date()),
-          ne(meetingEvents.status, "cancelled")
-        )
+          ne(meetingEvents.status, "cancelled"),
+        ),
       )
       .orderBy(asc(meetingEvents.startTime))
       .limit(limit);
@@ -572,7 +590,9 @@ export class SchedulingStorage implements ISchedulingStorage {
       .orderBy(asc(meetingSchedules.startTime));
   }
 
-  async getMeetingSchedule(scheduleId: string): Promise<MeetingSchedule | undefined> {
+  async getMeetingSchedule(
+    scheduleId: string,
+  ): Promise<MeetingSchedule | undefined> {
     const [schedule] = await db
       .select()
       .from(meetingSchedules)
@@ -581,7 +601,9 @@ export class SchedulingStorage implements ISchedulingStorage {
     return schedule;
   }
 
-  async createMeetingSchedule(schedule: InsertMeetingSchedule): Promise<MeetingSchedule> {
+  async createMeetingSchedule(
+    schedule: InsertMeetingSchedule,
+  ): Promise<MeetingSchedule> {
     const [created] = await db
       .insert(meetingSchedules)
       .values(schedule as typeof meetingSchedules.$inferInsert)
@@ -591,7 +613,7 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async updateMeetingSchedule(
     scheduleId: string,
-    data: Partial<Omit<MeetingSchedule, "id" | "createdAt">>
+    data: Partial<Omit<MeetingSchedule, "id" | "createdAt">>,
   ): Promise<MeetingSchedule> {
     const [updated] = await db
       .update(meetingSchedules)
@@ -613,7 +635,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async getMeetingsByDateRange(
     userId: string,
     start: Date,
-    end: Date
+    end: Date,
   ): Promise<MeetingSchedule[]> {
     return await db
       .select()
@@ -623,8 +645,8 @@ export class SchedulingStorage implements ISchedulingStorage {
           eq(meetingSchedules.userId, userId),
           gte(meetingSchedules.startTime, start),
           lte(meetingSchedules.endTime, end),
-          ne(meetingSchedules.status, "cancelled")
-        )
+          ne(meetingSchedules.status, "cancelled"),
+        ),
       )
       .orderBy(asc(meetingSchedules.startTime));
   }
@@ -633,7 +655,7 @@ export class SchedulingStorage implements ISchedulingStorage {
     userId: string,
     start: Date,
     end: Date,
-    excludeScheduleId?: string
+    excludeScheduleId?: string,
   ): Promise<MeetingSchedule[]> {
     const conditions: SQL<unknown>[] = [
       eq(meetingSchedules.userId, userId),
@@ -642,18 +664,18 @@ export class SchedulingStorage implements ISchedulingStorage {
         // New meeting starts during existing meeting
         and(
           gte(meetingSchedules.startTime, start),
-          lte(meetingSchedules.startTime, end)
+          lte(meetingSchedules.startTime, end),
         ),
         // New meeting ends during existing meeting
         and(
           gte(meetingSchedules.endTime, start),
-          lte(meetingSchedules.endTime, end)
+          lte(meetingSchedules.endTime, end),
         ),
         // Existing meeting encompasses the new meeting
         and(
           lte(meetingSchedules.startTime, start),
-          gte(meetingSchedules.endTime, end)
-        )
+          gte(meetingSchedules.endTime, end),
+        ),
       )!,
     ];
 
@@ -671,20 +693,24 @@ export class SchedulingStorage implements ISchedulingStorage {
   async getAvailableSlots(
     userId: string,
     date: Date,
-    durationMinutes: number
+    durationMinutes: number,
   ): Promise<Array<{ start: Date; end: Date }>> {
     // Set working hours (9 AM to 5 PM by default)
     const dayStart = new Date(date);
     dayStart.setHours(9, 0, 0, 0);
-    
+
     const dayEnd = new Date(date);
     dayEnd.setHours(17, 0, 0, 0);
 
     // Get user preferences for working hours if available
     const preferences = await this.getSchedulingPreferences(userId);
     if (preferences?.workingHours) {
-      const [startHour, startMin] = preferences.workingHours.start.split(":").map(Number);
-      const [endHour, endMin] = preferences.workingHours.end.split(":").map(Number);
+      const [startHour, startMin] = preferences.workingHours.start
+        .split(":")
+        .map(Number);
+      const [endHour, endMin] = preferences.workingHours.end
+        .split(":")
+        .map(Number);
       dayStart.setHours(startHour, startMin, 0, 0);
       dayEnd.setHours(endHour, endMin, 0, 0);
     }
@@ -698,8 +724,8 @@ export class SchedulingStorage implements ISchedulingStorage {
           eq(meetingSchedules.userId, userId),
           gte(meetingSchedules.startTime, dayStart),
           lte(meetingSchedules.endTime, dayEnd),
-          ne(meetingSchedules.status, "cancelled")
-        )
+          ne(meetingSchedules.status, "cancelled"),
+        ),
       )
       .orderBy(asc(meetingSchedules.startTime));
 
@@ -716,7 +742,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       // Check if there's a gap before this meeting
       if (meetingStart > currentTime) {
         const gapDuration = meetingStart - currentTime;
-        
+
         // If gap is large enough for the requested duration
         if (gapDuration >= durationMs) {
           // Generate slots within this gap

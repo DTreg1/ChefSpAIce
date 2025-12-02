@@ -18,30 +18,30 @@ import type {
 export interface ISchedulingStorage {
   // ==================== Scheduling Preferences ====================
   getSchedulingPreferences(
-    userId: string
+    userId: string,
   ): Promise<SchedulingPreferences | undefined>;
   upsertSchedulingPreferences(
     userId: string,
-    preferences: Omit<InsertSchedulingPreferences, "userId">
+    preferences: Omit<InsertSchedulingPreferences, "userId">,
   ): Promise<SchedulingPreferences>;
   deleteSchedulingPreferences(userId: string): Promise<void>;
 
   // ==================== Meeting Suggestions ====================
   getMeetingSuggestions(
-    meetingId: string
+    meetingId: string,
   ): Promise<MeetingSuggestions | undefined>;
   getUserMeetingSuggestions(
     userId: string,
-    status?: string
+    status?: string,
   ): Promise<MeetingSuggestions[]>;
   createMeetingSuggestions(
-    suggestions: InsertMeetingSuggestions
+    suggestions: InsertMeetingSuggestions,
   ): Promise<MeetingSuggestions>;
   /** Update meeting suggestion status when a time is selected */
   updateMeetingSuggestionStatus(
     meetingId: string,
     selectedTime?: SelectedTimeSlot,
-    selectedBy?: string
+    selectedBy?: string,
   ): Promise<MeetingSuggestions>;
   deleteMeetingSuggestions(meetingId: string): Promise<void>;
 
@@ -49,11 +49,11 @@ export interface ISchedulingStorage {
   getSchedulingPatterns(userId: string): Promise<SchedulingPatterns[]>;
   getSchedulingPatternByType(
     userId: string,
-    patternType: string
+    patternType: string,
   ): Promise<SchedulingPatterns | undefined>;
   upsertSchedulingPattern(
     userId: string,
-    pattern: Omit<InsertSchedulingPatterns, "userId">
+    pattern: Omit<InsertSchedulingPatterns, "userId">,
   ): Promise<SchedulingPatterns>;
   deleteSchedulingPattern(patternId: string): Promise<void>;
   analyzeSchedulingPatterns(userId: string): Promise<{
@@ -68,16 +68,16 @@ export interface ISchedulingStorage {
       startTime?: Date;
       endTime?: Date;
       status?: string;
-    }
+    },
   ): Promise<MeetingEvents[]>;
   getMeetingEvent(
     eventId: string,
-    userId: string
+    userId: string,
   ): Promise<MeetingEvents | undefined>;
   createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents>;
   updateMeetingEvent(
     eventId: string,
-    updates: Partial<MeetingEvents>
+    updates: Partial<MeetingEvents>,
   ): Promise<MeetingEvents>;
   deleteMeetingEvent(userId: string, eventId: string): Promise<void>;
   cancelMeetingEvent(eventId: string, userId: string): Promise<MeetingEvents>;
@@ -86,18 +86,18 @@ export interface ISchedulingStorage {
   findSchedulingConflicts(
     userId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<MeetingEvents[]>;
   checkAvailability(
     userId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<{ available: boolean; conflicts: MeetingEvents[] }>;
 
   // ==================== Statistics & Analytics ====================
   getMeetingStats(
     userId: string,
-    period: "day" | "week" | "month"
+    period: "day" | "week" | "month",
   ): Promise<{
     totalMeetings: number;
     averagePerDay: number;
@@ -106,8 +106,5 @@ export interface ISchedulingStorage {
     averageDuration: number;
     participantCount: number;
   }>;
-  getUpcomingMeetings(
-    userId: string,
-    limit?: number
-  ): Promise<MeetingEvents[]>;
+  getUpcomingMeetings(userId: string, limit?: number): Promise<MeetingEvents[]>;
 }

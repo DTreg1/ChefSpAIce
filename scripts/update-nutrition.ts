@@ -6,7 +6,11 @@
 
 import { db } from "../server/db";
 import { userInventory } from "../shared/schema";
-import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "../server/usda";
+import {
+  searchUSDAFoods,
+  getFoodByFdcId,
+  isNutritionDataValid,
+} from "../server/usda";
 import { eq } from "drizzle-orm";
 
 async function updateMissingNutrition() {
@@ -18,8 +22,10 @@ async function updateMissingNutrition() {
     console.log(`Found ${allItems.length} total food items`);
 
     // Filter items without nutrition
-    const itemsWithoutNutrition = allItems.filter(item => !item.nutrition);
-    console.log(`Found ${itemsWithoutNutrition.length} items without nutrition data\n`);
+    const itemsWithoutNutrition = allItems.filter((item) => !item.nutrition);
+    console.log(
+      `Found ${itemsWithoutNutrition.length} items without nutrition data\n`,
+    );
 
     if (itemsWithoutNutrition.length === 0) {
       console.log("All items already have nutrition data!");
@@ -35,10 +41,14 @@ async function updateMissingNutrition() {
       try {
         let nutrition = null;
         let usdaData = null;
-        
+
         // Try extracting FDC ID from existing USDA data first
         let fdcId = null;
-        if (item.usdaData && typeof item.usdaData === 'object' && 'fdcId' in item.usdaData) {
+        if (
+          item.usdaData &&
+          typeof item.usdaData === "object" &&
+          "fdcId" in item.usdaData
+        ) {
           fdcId = item.usdaData.fdcId;
         }
 
@@ -83,17 +93,17 @@ async function updateMissingNutrition() {
           console.log(`  ❌ No nutrition data found\n`);
           continue;
         }
-        
+
         // Parse and validate nutrition data before saving
         let nutritionData: any;
         let weightInGrams: number | null = null;
-        
+
         try {
           nutritionData = JSON.parse(nutrition);
           const quantity = parseFloat(item.quantity) || 1;
           const servingSize = parseFloat(nutritionData.servingSize) || 100;
           weightInGrams = quantity * servingSize;
-          
+
           // Validate the nutrition data
           if (!isNutritionDataValid(nutritionData, item.name)) {
             console.log(`  ⚠️ Skipping item due to invalid nutrition data\n`);
@@ -120,7 +130,7 @@ async function updateMissingNutrition() {
         console.log(`  ✅ Updated successfully\n`);
 
         // Add a small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
         console.error(`  ❌ Error processing item:`, error);
         failed++;
@@ -133,7 +143,6 @@ async function updateMissingNutrition() {
     console.log(`❌ Failed: ${failed} items`);
     console.log(`📊 Total processed: ${itemsWithoutNutrition.length} items`);
     console.log("========================================\n");
-
   } catch (error) {
     console.error("Fatal error during nutrition update:", error);
     process.exit(1);

@@ -1,14 +1,14 @@
 import { memo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Lightbulb,
   Star,
   Info,
   TrendingUp,
   Copy,
   Check,
-  X
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 interface KeyPointsProps {
   keyPoints: string[];
   title?: string;
-  variant?: 'default' | 'highlight' | 'compact' | 'cards';
+  variant?: "default" | "highlight" | "compact" | "cards";
   showCopyButton?: boolean;
   onPointClick?: (index: number, point: string) => void;
   onRemove?: (index: number) => void;
@@ -27,11 +27,11 @@ interface KeyPointsProps {
 export const KeyPoints = memo(function KeyPoints({
   keyPoints,
   title = "Key Points",
-  variant = 'default',
+  variant = "default",
   showCopyButton = false,
   onPointClick,
   onRemove,
-  className = ""
+  className = "",
 }: KeyPointsProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
@@ -58,7 +58,7 @@ export const KeyPoints = memo(function KeyPoints({
       <Star className="h-4 w-4" />,
       <TrendingUp className="h-4 w-4" />,
       <Lightbulb className="h-4 w-4" />,
-      <Info className="h-4 w-4" />
+      <Info className="h-4 w-4" />,
     ];
     return icons[index % icons.length];
   };
@@ -81,8 +81,8 @@ export const KeyPoints = memo(function KeyPoints({
           <span className="text-primary mt-1 flex-shrink-0">
             {getIcon(index)}
           </span>
-          <span 
-            className={`flex-1 text-sm ${onPointClick ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+          <span
+            className={`flex-1 text-sm ${onPointClick ? "cursor-pointer hover:text-primary transition-colors" : ""}`}
             onClick={() => onPointClick?.(index, point)}
           >
             {point}
@@ -134,9 +134,7 @@ export const KeyPoints = memo(function KeyPoints({
           data-testid={`keypoint-highlight-${index}`}
         >
           <div className="flex items-start gap-2">
-            <span className="text-primary flex-shrink-0">
-              {getIcon(index)}
-            </span>
+            <span className="text-primary flex-shrink-0">{getIcon(index)}</span>
             <p className="text-sm font-medium">{point}</p>
           </div>
         </motion.div>
@@ -150,7 +148,7 @@ export const KeyPoints = memo(function KeyPoints({
         <Badge
           key={index}
           variant="secondary"
-          className={`${onPointClick ? 'cursor-pointer hover-elevate' : ''}`}
+          className={`${onPointClick ? "cursor-pointer hover-elevate" : ""}`}
           onClick={() => onPointClick?.(index, point)}
           data-testid={`keypoint-compact-${index}`}
         >
@@ -183,8 +181,8 @@ export const KeyPoints = memo(function KeyPoints({
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card 
-              className={`hover-elevate ${onPointClick ? 'cursor-pointer' : ''}`}
+            <Card
+              className={`hover-elevate ${onPointClick ? "cursor-pointer" : ""}`}
               onClick={() => onPointClick?.(index, point)}
               data-testid={`keypoint-card-${index}`}
             >
@@ -219,11 +217,11 @@ export const KeyPoints = memo(function KeyPoints({
 
   const renderContent = () => {
     switch (variant) {
-      case 'highlight':
+      case "highlight":
         return renderHighlight();
-      case 'compact':
+      case "compact":
         return renderCompact();
-      case 'cards':
+      case "cards":
         return renderCards();
       default:
         return renderDefault();
@@ -241,9 +239,7 @@ export const KeyPoints = memo(function KeyPoints({
           <Badge variant="outline">{keyPoints.length}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {renderContent()}
-      </CardContent>
+      <CardContent>{renderContent()}</CardContent>
     </Card>
   );
 });
@@ -255,7 +251,7 @@ interface InlineKeyPointsProps {
 
 export const InlineKeyPoints = memo(function InlineKeyPoints({
   keyPoints,
-  className = ""
+  className = "",
 }: InlineKeyPointsProps) {
   if (keyPoints.length === 0) return null;
 

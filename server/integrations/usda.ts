@@ -540,13 +540,15 @@ export async function searchUSDAFoods(
       // Use fallback data when USDA API is unavailable
       console.log("USDA API unavailable, using fallback nutrition data");
       const fallbackResult = fallbackSearch(query, pageSize || 20);
-      console.log(`Returning ${fallbackResult.foods.length} fallback food items for query: "${query}"`);
+      console.log(
+        `Returning ${fallbackResult.foods.length} fallback food items for query: "${query}"`,
+      );
       return fallbackResult;
     }
 
     // Check if response is JSON (not HTML)
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
       console.error("USDA API returned non-JSON response, using fallback data");
       const fallbackResult = fallbackSearch(query, pageSize || 20);
       return fallbackResult;
@@ -556,7 +558,9 @@ export async function searchUSDAFoods(
     try {
       data = await response.json();
     } catch (error) {
-      console.error("Failed to parse USDA API response as JSON, using fallback data");
+      console.error(
+        "Failed to parse USDA API response as JSON, using fallback data",
+      );
       const fallbackResult = fallbackSearch(query, pageSize || 20);
       return fallbackResult;
     }
@@ -638,8 +642,8 @@ export async function getFoodByFdcId(
     }
 
     // Check if response is JSON (not HTML)
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
       console.error("USDA API returned non-JSON response, using fallback data");
       return getFallbackFoodById(String(fdcId));
     }
@@ -648,7 +652,9 @@ export async function getFoodByFdcId(
       const food: FDCFood = await response.json();
       return mapFDCFoodToUSDAItem(food);
     } catch (error) {
-      console.error("Failed to parse USDA API response as JSON, using fallback data");
+      console.error(
+        "Failed to parse USDA API response as JSON, using fallback data",
+      );
       return getFallbackFoodById(String(fdcId));
     }
   } catch (error: Error | unknown) {

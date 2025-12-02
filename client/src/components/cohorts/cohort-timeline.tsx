@@ -1,10 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Calendar, TrendingUp, TrendingDown, Users, Activity, AlertCircle } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Activity,
+  AlertCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
@@ -17,36 +39,39 @@ interface CohortTimelineProps {
 
 export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
   const { toast } = useToast();
-  
+
   const metricsQuery = useQuery({
-    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), 'metrics'],
+    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), "metrics"],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohortId)}/metrics`);
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.cohorts.item(cohortId)}/metrics`,
+      );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch metrics");
       }
       const data = await response.json();
-      
+
       // Group metrics by date
       const metricsByDate: Record<string, any> = {};
       (data.metrics as CohortMetric[]).forEach((metric) => {
-        const dateStr = metric.metricDate instanceof Date 
-          ? metric.metricDate.toISOString() 
-          : String(metric.metricDate);
+        const dateStr =
+          metric.metricDate instanceof Date
+            ? metric.metricDate.toISOString()
+            : String(metric.metricDate);
         if (!metricsByDate[dateStr]) {
           metricsByDate[dateStr] = { date: dateStr };
         }
         metricsByDate[dateStr][metric.metricName] = metric.value;
       });
-      
+
       // Convert to array and sort by date
-      return Object.values(metricsByDate).sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
+      return Object.values(metricsByDate).sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
       );
     },
   });
-  
+
   if (metricsQuery.isLoading) {
     return (
       <Card>
@@ -63,9 +88,10 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
       </Card>
     );
   }
-  
+
   if (metricsQuery.error) {
-    const errorMessage = (metricsQuery.error as Error).message || "Failed to load timeline data";
+    const errorMessage =
+      (metricsQuery.error as Error).message || "Failed to load timeline data";
     return (
       <Card>
         <CardHeader>
@@ -73,56 +99,53 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
             <Calendar className="h-5 w-5" />
             Timeline
           </CardTitle>
-          <CardDescription>
-            Failed to load timeline metrics
-          </CardDescription>
+          <CardDescription>Failed to load timeline metrics</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {errorMessage}
-            </AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
     );
   }
-  
+
   const timelineData = metricsQuery.data || [];
-  
+
   // Get all unique metric names
   const metricNames = new Set<string>();
-  timelineData.forEach(dataPoint => {
-    Object.keys(dataPoint).forEach(key => {
+  timelineData.forEach((dataPoint) => {
+    Object.keys(dataPoint).forEach((key) => {
       if (key !== "date") {
         metricNames.add(key);
       }
     });
   });
-  
+
   const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
   const metricArray = Array.from(metricNames);
-  
+
   const formatMetricName = (name: string) => {
-    return name.split("_").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ");
+    return name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
-  
+
   const calculateTrend = (data: any[], metric: string) => {
     if (data.length < 2) return null;
-    
+
     const firstValue = data[0][metric] || 0;
     const lastValue = data[data.length - 1][metric] || 0;
     const change = ((lastValue - firstValue) / firstValue) * 100;
-    
+
     return {
       direction: change >= 0 ? "up" : "down",
       percentage: Math.abs(change),
     };
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -139,7 +162,9 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
           <div className="text-center py-8 text-muted-foreground">
             <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No timeline data available yet</p>
-            <p className="text-sm">Metrics will appear here as they are collected</p>
+            <p className="text-sm">
+              Metrics will appear here as they are collected
+            </p>
           </div>
         ) : (
           <>
@@ -147,18 +172,16 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   tickFormatter={(date) => format(new Date(date), "MMM d")}
                 />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   labelFormatter={(date) => format(new Date(date), "PPP")}
                   formatter={(value: number) => value.toFixed(2)}
                 />
-                <Legend 
-                  formatter={(value) => formatMetricName(value)}
-                />
+                <Legend formatter={(value) => formatMetricName(value)} />
                 {metricArray.map((metric, index) => (
                   <Line
                     key={metric}
@@ -172,21 +195,24 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
                 ))}
               </LineChart>
             </ResponsiveContainer>
-            
+
             {/* Metric Trends */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {metricArray.map((metric, index) => {
                 const trend = calculateTrend(timelineData, metric);
-                const latestValue = timelineData[timelineData.length - 1][metric];
-                
+                const latestValue =
+                  timelineData[timelineData.length - 1][metric];
+
                 return (
-                  <div 
+                  <div
                     key={metric}
                     className="p-3 border rounded-lg space-y-2"
                     data-testid={`metric-trend-${metric}`}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{formatMetricName(metric)}</p>
+                      <p className="text-sm font-medium">
+                        {formatMetricName(metric)}
+                      </p>
                       {trend && (
                         <div className="flex items-center gap-1">
                           {trend.direction === "up" ? (
@@ -194,24 +220,28 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
                           ) : (
                             <TrendingDown className="h-3 w-3 text-red-500" />
                           )}
-                          <span className={`text-xs ${
-                            trend.direction === "up" ? "text-green-500" : "text-red-500"
-                          }`}>
+                          <span
+                            className={`text-xs ${
+                              trend.direction === "up"
+                                ? "text-green-500"
+                                : "text-red-500"
+                            }`}
+                          >
                             {trend.percentage.toFixed(1)}%
                           </span>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Current</span>
+                      <span className="text-xs text-muted-foreground">
+                        Current
+                      </span>
                       <Badge variant="secondary">
                         {latestValue?.toFixed(2) || "N/A"}
                       </Badge>
                     </div>
-                    <div 
-                      className="h-1 bg-muted rounded-full overflow-hidden"
-                    >
-                      <div 
+                    <div className="h-1 bg-muted rounded-full overflow-hidden">
+                      <div
                         className="h-full transition-all duration-500"
                         style={{
                           width: `${Math.min(100, latestValue || 0)}%`,
@@ -223,13 +253,17 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
                 );
               })}
             </div>
-            
+
             {/* Date Range */}
             {timelineData.length > 0 && (
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3" />
                 <span>
-                  {format(new Date(timelineData[0].date), "PPP")} - {format(new Date(timelineData[timelineData.length - 1].date), "PPP")}
+                  {format(new Date(timelineData[0].date), "PPP")} -{" "}
+                  {format(
+                    new Date(timelineData[timelineData.length - 1].date),
+                    "PPP",
+                  )}
                 </span>
               </div>
             )}

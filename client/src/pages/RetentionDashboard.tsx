@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,9 +14,9 @@ import { Progress } from "@/components/ui/progress";
 import { ChurnRiskIndicator } from "@/components/predictions/churn-risk-indicator";
 import { PredictedActions } from "@/components/predictions/predicted-actions";
 import { InterventionSuggestions } from "@/components/predictions/intervention-suggestions";
-import { 
-  Users, 
-  TrendingDown, 
+import {
+  Users,
+  TrendingDown,
   Target,
   Sparkles,
   AlertTriangle,
@@ -19,43 +25,51 @@ import {
   BarChart3,
   RefreshCw,
   Send,
-  Shield
+  Shield,
 } from "lucide-react";
 import type { UserPrediction } from "@shared/schema";
 
 export default function RetentionDashboard() {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
-  const [selectedPrediction, setSelectedPrediction] = useState<UserPrediction | undefined>();
+  const [selectedPrediction, setSelectedPrediction] = useState<
+    UserPrediction | undefined
+  >();
 
   // Get high-risk churn users
-  const { data: churnData, isLoading: churnLoading, refetch: refetchChurn } = useQuery({
-    queryKey: ['/api/predict/churn'],
+  const {
+    data: churnData,
+    isLoading: churnLoading,
+    refetch: refetchChurn,
+  } = useQuery({
+    queryKey: ["/api/predict/churn"],
     queryFn: async () => {
-      const response = await fetch('/api/predict/churn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/predict/churn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ threshold: 0.7, limit: 20 }),
       });
-      if (!response.ok) throw new Error('Failed to fetch churn data');
+      if (!response.ok) throw new Error("Failed to fetch churn data");
       return response.json();
-    }
+    },
   });
 
   // Get user segments
-  const { data: segmentsData, isLoading: segmentsLoading } = useQuery<{ segments: any[] }>({
-    queryKey: ['/api/predict/segments'],
+  const { data: segmentsData, isLoading: segmentsLoading } = useQuery<{
+    segments: any[];
+  }>({
+    queryKey: ["/api/predict/segments"],
   });
 
   // Get accuracy statistics
-  const { data: accuracyData, isLoading: accuracyLoading } = useQuery<{ 
-    stats: { 
+  const { data: accuracyData, isLoading: accuracyLoading } = useQuery<{
+    stats: {
       averageAccuracy: number;
       totalPredictions?: number;
       correctPredictions?: number;
       accuracyByType?: Record<string, number>;
-    } 
+    };
   }>({
-    queryKey: ['/api/predict/accuracy/stats', 'month'],
+    queryKey: ["/api/predict/accuracy/stats", "month"],
   });
 
   const handleUserSelect = (userId: string, prediction?: UserPrediction) => {
@@ -66,7 +80,9 @@ export default function RetentionDashboard() {
   };
 
   const totalAtRisk = churnData?.churnRisks?.length || 0;
-  const criticalRisk = churnData?.churnRisks?.filter((r: UserPrediction) => r.confidence >= 0.8).length || 0;
+  const criticalRisk =
+    churnData?.churnRisks?.filter((r: UserPrediction) => r.confidence >= 0.8)
+      .length || 0;
   const avgAccuracy = accuracyData?.stats?.averageAccuracy || 0;
 
   return (
@@ -74,12 +90,14 @@ export default function RetentionDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Retention Dashboard</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">
+            Retention Dashboard
+          </h1>
           <p className="text-muted-foreground">
             AI-powered churn prediction and retention management
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => refetchChurn()}
           data-testid="button-refresh-dashboard"
         >
@@ -95,7 +113,12 @@ export default function RetentionDashboard() {
             <CardTitle className="text-sm font-medium">At-Risk Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-at-risk-count">{totalAtRisk}</div>
+            <div
+              className="text-2xl font-bold"
+              data-testid="text-at-risk-count"
+            >
+              {totalAtRisk}
+            </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <AlertTriangle className="h-3 w-3" />
               <span>{criticalRisk} critical</span>
@@ -105,7 +128,9 @@ export default function RetentionDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Model Accuracy</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Model Accuracy
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-accuracy">
@@ -117,10 +142,15 @@ export default function RetentionDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Interventions Sent</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Interventions Sent
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-interventions-sent">
+            <div
+              className="text-2xl font-bold"
+              data-testid="text-interventions-sent"
+            >
               {Math.floor(Math.random() * 50) + 100}
             </div>
             <div className="flex items-center gap-1 text-xs text-green-600">
@@ -132,10 +162,15 @@ export default function RetentionDashboard() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Retention Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Retention Rate
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-retention-rate">
+            <div
+              className="text-2xl font-bold"
+              data-testid="text-retention-rate"
+            >
               78.5%
             </div>
             <div className="flex items-center gap-1 text-xs text-green-600">
@@ -174,14 +209,14 @@ export default function RetentionDashboard() {
               <CardHeader>
                 <CardTitle>High Churn Risk Users</CardTitle>
                 <CardDescription>
-                  Users with {'>'}70% probability of churning
+                  Users with {">"}70% probability of churning
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {churnLoading ? (
                     <div className="animate-pulse space-y-2">
-                      {[1, 2, 3].map(i => (
+                      {[1, 2, 3].map((i) => (
                         <div key={i} className="h-16 bg-muted rounded"></div>
                       ))}
                     </div>
@@ -195,14 +230,24 @@ export default function RetentionDashboard() {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium">User {risk.userId.slice(-8)}</p>
+                            <p className="font-medium">
+                              User {risk.userId.slice(-8)}
+                            </p>
                             <p className="text-xs text-muted-foreground">
-                              Last active: {new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                              Last active:{" "}
+                              {new Date(
+                                Date.now() -
+                                  Math.random() * 7 * 24 * 60 * 60 * 1000,
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant={risk.confidence >= 0.8 ? "destructive" : "default"}
+                            <Badge
+                              variant={
+                                risk.confidence >= 0.8
+                                  ? "destructive"
+                                  : "default"
+                              }
                               data-testid={`badge-risk-${risk.userId}`}
                             >
                               {Math.round(risk.confidence * 100)}% risk
@@ -224,7 +269,7 @@ export default function RetentionDashboard() {
               userId={selectedUserId}
               prediction={selectedPrediction}
               onInterventionSent={(intervention) => {
-                console.log('Intervention sent:', intervention);
+                console.log("Intervention sent:", intervention);
               }}
             />
           </div>
@@ -232,54 +277,59 @@ export default function RetentionDashboard() {
 
         <TabsContent value="segments" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {segmentsLoading ? (
-              [1, 2, 3, 4].map(i => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="animate-pulse space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-8 bg-muted rounded"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              segmentsData?.segments?.map((segment: any) => (
-                <Card key={segment.id}>
-                  <CardHeader>
-                    <CardTitle className="text-sm">{segment.name}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {segment.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold">{segment.userCount}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {(segment.averageProbability * 100).toFixed(0)}% avg
-                        </Badge>
+            {segmentsLoading
+              ? [1, 2, 3, 4].map((i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <div className="animate-pulse space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                        <div className="h-8 bg-muted rounded"></div>
                       </div>
-                      <Progress 
-                        value={segment.averageProbability * 100} 
-                        className="h-1"
-                      />
-                      <div className="pt-2 space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Recommended Actions:
-                        </p>
-                        {segment.recommendedActions.slice(0, 2).map((action: string, idx: number) => (
-                          <div key={idx} className="text-xs flex items-center gap-1">
-                            <Shield className="h-3 w-3" />
-                            {action}
-                          </div>
-                        ))}
+                    </CardContent>
+                  </Card>
+                ))
+              : segmentsData?.segments?.map((segment: any) => (
+                  <Card key={segment.id}>
+                    <CardHeader>
+                      <CardTitle className="text-sm">{segment.name}</CardTitle>
+                      <CardDescription className="text-xs">
+                        {segment.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl font-bold">
+                            {segment.userCount}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {(segment.averageProbability * 100).toFixed(0)}% avg
+                          </Badge>
+                        </div>
+                        <Progress
+                          value={segment.averageProbability * 100}
+                          className="h-1"
+                        />
+                        <div className="pt-2 space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Recommended Actions:
+                          </p>
+                          {segment.recommendedActions
+                            .slice(0, 2)
+                            .map((action: string, idx: number) => (
+                              <div
+                                key={idx}
+                                className="text-xs flex items-center gap-1"
+                              >
+                                <Shield className="h-3 w-3" />
+                                {action}
+                              </div>
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+                    </CardContent>
+                  </Card>
+                ))}
           </div>
         </TabsContent>
 
@@ -287,13 +337,15 @@ export default function RetentionDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {selectedUserId ? (
               <>
-                <ChurnRiskIndicator 
+                <ChurnRiskIndicator
                   userId={selectedUserId}
                   onInterventionClick={(pred) => setSelectedPrediction(pred)}
                 />
-                <PredictedActions 
+                <PredictedActions
                   userId={selectedUserId}
-                  onActionClick={(action) => console.log('Action clicked:', action)}
+                  onActionClick={(action) =>
+                    console.log("Action clicked:", action)
+                  }
                 />
               </>
             ) : (
@@ -330,7 +382,10 @@ export default function RetentionDashboard() {
                         Average Accuracy
                       </p>
                       <p className="text-2xl font-bold">
-                        {((accuracyData?.stats?.averageAccuracy || 0) * 100).toFixed(1)}%
+                        {(
+                          (accuracyData?.stats?.averageAccuracy || 0) * 100
+                        ).toFixed(1)}
+                        %
                       </p>
                     </div>
                     <div>
@@ -354,22 +409,29 @@ export default function RetentionDashboard() {
                   {accuracyData?.stats?.accuracyByType && (
                     <div className="space-y-2 pt-4 border-t">
                       <p className="text-sm font-medium">Accuracy by Type</p>
-                      {Object.entries(accuracyData.stats.accuracyByType).map(([type, accuracy]) => (
-                        <div key={type} className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Progress 
-                              value={(accuracy as number) * 100} 
-                              className="w-24 h-2"
-                            />
-                            <span className="text-sm font-medium">
-                              {((accuracy as number) * 100).toFixed(0)}%
+                      {Object.entries(accuracyData.stats.accuracyByType).map(
+                        ([type, accuracy]) => (
+                          <div
+                            key={type}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {type
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase())}
                             </span>
+                            <div className="flex items-center gap-2">
+                              <Progress
+                                value={(accuracy as number) * 100}
+                                className="w-24 h-2"
+                              />
+                              <span className="text-sm font-medium">
+                                {((accuracy as number) * 100).toFixed(0)}%
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   )}
                 </>

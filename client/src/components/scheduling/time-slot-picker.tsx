@@ -1,13 +1,31 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, Users, MapPin, AlertCircle, Sparkles } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Users,
+  MapPin,
+  AlertCircle,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, parseISO, addDays, isWeekend } from "date-fns";
@@ -38,7 +56,7 @@ export function TimeSlotPicker({
   participants,
   duration = 30,
   onTimeSelected,
-  dateRange
+  dateRange,
 }: TimeSlotPickerProps) {
   const [selectedSlot, setSelectedSlot] = useState<SuggestedTime | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,25 +68,29 @@ export function TimeSlotPicker({
       const response = await apiRequest("/api/schedule/suggest", "POST", {
         participants,
         duration,
-        mustBeWithin: dateRange ? {
-          start: dateRange.start.toISOString(),
-          end: dateRange.end.toISOString()
-        } : undefined,
+        mustBeWithin: dateRange
+          ? {
+              start: dateRange.start.toISOString(),
+              end: dateRange.end.toISOString(),
+            }
+          : undefined,
         allowWeekends: false,
-        preferredTimeOfDay: "morning"
+        preferredTimeOfDay: "morning",
       });
       return response as MeetingSuggestions;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/schedule/suggestions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/schedule/suggestions"],
+      });
     },
     onError: (error: any) => {
       toast({
         title: "Failed to get suggestions",
         description: error.message || "Could not generate meeting suggestions",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Get user's scheduling preferences
@@ -78,7 +100,7 @@ export function TimeSlotPicker({
       const response = await fetch("/api/schedule/preferences");
       if (!response.ok) throw new Error("Failed to fetch preferences");
       return response.json();
-    }
+    },
   });
 
   useEffect(() => {
@@ -97,25 +119,29 @@ export function TimeSlotPicker({
 
   const acceptSuggestion = async () => {
     if (!suggestMutation.data || !selectedSlot) return;
-    
+
     setLoading(true);
     try {
-      await apiRequest(`/api/schedule/suggestions/${suggestMutation.data.meetingId}`, "PUT", {
-        status: "accepted",
-        selectedTime: selectedSlot
-      });
-      
+      await apiRequest(
+        `/api/schedule/suggestions/${suggestMutation.data.meetingId}`,
+        "PUT",
+        {
+          status: "accepted",
+          selectedTime: selectedSlot,
+        },
+      );
+
       toast({
         title: "Meeting scheduled",
         description: `Meeting scheduled for ${format(parseISO(selectedSlot.start), "PPp")}`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/events"] });
     } catch (error) {
       toast({
         title: "Failed to schedule",
         description: "Could not schedule the meeting",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -152,16 +178,18 @@ export function TimeSlotPicker({
             <TabsTrigger value="calendar">Calendar View</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="suggestions" className="space-y-4">
             {suggestMutation.isPending && (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                <p className="text-muted-foreground">Analyzing schedules and preferences...</p>
+                <p className="text-muted-foreground">
+                  Analyzing schedules and preferences...
+                </p>
                 <Progress value={33} className="w-full max-w-xs" />
               </div>
             )}
-            
+
             {suggestMutation.data && (
               <>
                 <div className="flex items-center justify-between mb-4">
@@ -169,8 +197,15 @@ export function TimeSlotPicker({
                     <Badge variant="outline">
                       {suggestMutation.data.suggestedTimes.length} Options Found
                     </Badge>
-                    <Badge variant={getScoreBadge(suggestMutation.data.confidenceScores.overall)}>
-                      {Math.round(suggestMutation.data.confidenceScores.overall * 100)}% Confidence
+                    <Badge
+                      variant={getScoreBadge(
+                        suggestMutation.data.confidenceScores.overall,
+                      )}
+                    >
+                      {Math.round(
+                        suggestMutation.data.confidenceScores.overall * 100,
+                      )}
+                      % Confidence
                     </Badge>
                   </div>
                   <Button
@@ -182,7 +217,7 @@ export function TimeSlotPicker({
                     Refresh Suggestions
                   </Button>
                 </div>
-                
+
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
                     {suggestMutation.data.suggestedTimes.map((slot, index) => (
@@ -206,21 +241,25 @@ export function TimeSlotPicker({
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
                                 <span>
-                                  {format(parseISO(slot.start), "h:mm a")} - {format(parseISO(slot.end), "h:mm a")}
+                                  {format(parseISO(slot.start), "h:mm a")} -{" "}
+                                  {format(parseISO(slot.end), "h:mm a")}
                                 </span>
                               </div>
                               {slot.conflicts.length > 0 && (
                                 <div className="flex items-center gap-2">
                                   <AlertCircle className="h-4 w-4 text-yellow-600" />
                                   <span className="text-sm text-muted-foreground">
-                                    {slot.conflicts.length} minor conflict{slot.conflicts.length > 1 ? 's' : ''}
+                                    {slot.conflicts.length} minor conflict
+                                    {slot.conflicts.length > 1 ? "s" : ""}
                                   </span>
                                 </div>
                               )}
                             </div>
-                            
+
                             <div className="text-right space-y-2">
-                              <div className={`text-2xl font-bold ${getScoreColor(slot.score)}`}>
+                              <div
+                                className={`text-2xl font-bold ${getScoreColor(slot.score)}`}
+                              >
                                 {Math.round(slot.score * 100)}%
                               </div>
                               <TooltipProvider>
@@ -232,22 +271,46 @@ export function TimeSlotPicker({
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <div className="space-y-1">
-                                      <p>Time Zone Fit: {Math.round(slot.optimality.timeZoneFit * 100)}%</p>
-                                      <p>Preference Match: {Math.round(slot.optimality.preferenceMatch * 100)}%</p>
-                                      <p>Minimal Disruption: {Math.round(slot.optimality.scheduleDisruption * 100)}%</p>
+                                      <p>
+                                        Time Zone Fit:{" "}
+                                        {Math.round(
+                                          slot.optimality.timeZoneFit * 100,
+                                        )}
+                                        %
+                                      </p>
+                                      <p>
+                                        Preference Match:{" "}
+                                        {Math.round(
+                                          slot.optimality.preferenceMatch * 100,
+                                        )}
+                                        %
+                                      </p>
+                                      <p>
+                                        Minimal Disruption:{" "}
+                                        {Math.round(
+                                          slot.optimality.scheduleDisruption *
+                                            100,
+                                        )}
+                                        %
+                                      </p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
                           </div>
-                          
+
                           {slot.conflicts.length > 0 && (
                             <div className="mt-4 pt-4 border-t">
-                              <p className="text-sm font-medium mb-2">Conflicts:</p>
+                              <p className="text-sm font-medium mb-2">
+                                Conflicts:
+                              </p>
                               <div className="space-y-1">
                                 {slot.conflicts.map((conflict, i) => (
-                                  <div key={i} className="text-xs text-muted-foreground">
+                                  <div
+                                    key={i}
+                                    className="text-xs text-muted-foreground"
+                                  >
                                     • {conflict.description}
                                   </div>
                                 ))}
@@ -259,7 +322,7 @@ export function TimeSlotPicker({
                     ))}
                   </div>
                 </ScrollArea>
-                
+
                 {selectedSlot && (
                   <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button
@@ -279,11 +342,13 @@ export function TimeSlotPicker({
                 )}
               </>
             )}
-            
+
             {suggestMutation.isError && (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Failed to generate suggestions</p>
+                <p className="text-muted-foreground">
+                  Failed to generate suggestions
+                </p>
                 <Button
                   variant="outline"
                   className="mt-4"
@@ -294,7 +359,7 @@ export function TimeSlotPicker({
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="calendar" className="space-y-4">
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="h-12 w-12 mx-auto mb-4" />
@@ -302,7 +367,7 @@ export function TimeSlotPicker({
               <p className="text-sm mt-2">Coming soon...</p>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="preferences" className="space-y-4">
             {preferences && (
               <div className="space-y-4">
@@ -314,25 +379,48 @@ export function TimeSlotPicker({
                       <span>{preferences.timezone}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Buffer Time:</span>
+                      <span className="text-muted-foreground">
+                        Buffer Time:
+                      </span>
                       <span>{preferences.bufferTime} minutes</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Working Hours:</span>
-                      <span>{preferences.workingHours.start} - {preferences.workingHours.end}</span>
+                      <span className="text-muted-foreground">
+                        Working Hours:
+                      </span>
+                      <span>
+                        {preferences.workingHours.start} -{" "}
+                        {preferences.workingHours.end}
+                      </span>
                     </div>
                     <Separator className="my-2" />
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Prefer Video:</span>
-                      <span>{preferences.meetingPreferences.preferVideo ? "Yes" : "No"}</span>
+                      <span className="text-muted-foreground">
+                        Prefer Video:
+                      </span>
+                      <span>
+                        {preferences.meetingPreferences.preferVideo
+                          ? "Yes"
+                          : "No"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Max Daily Meetings:</span>
-                      <span>{preferences.meetingPreferences.maxDailyMeetings}</span>
+                      <span className="text-muted-foreground">
+                        Max Daily Meetings:
+                      </span>
+                      <span>
+                        {preferences.meetingPreferences.maxDailyMeetings}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Avoid Back-to-Back:</span>
-                      <span>{preferences.meetingPreferences.avoidBackToBack ? "Yes" : "No"}</span>
+                      <span className="text-muted-foreground">
+                        Avoid Back-to-Back:
+                      </span>
+                      <span>
+                        {preferences.meetingPreferences.avoidBackToBack
+                          ? "Yes"
+                          : "No"}
+                      </span>
                     </div>
                   </div>
                 </div>

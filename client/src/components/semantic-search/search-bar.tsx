@@ -48,7 +48,7 @@ export function SearchBar({
         onSearch(query);
       }
     },
-    [query, onSearch]
+    [query, onSearch],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +62,7 @@ export function SearchBar({
           <Search
             className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground",
-              isLoading && "animate-pulse"
+              isLoading && "animate-pulse",
             )}
             data-testid="icon-search"
           />

@@ -1,6 +1,6 @@
 /**
  * Session Configuration
- * 
+ *
  * Configures express-session with PostgreSQL storage
  */
 
@@ -12,7 +12,7 @@ const pgStore = connectPg(session);
 
 export function getSessionMiddleware() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  
+
   return session({
     secret: oauthConfig.session.secret,
     store: new pgStore({

@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/images.storage.ts
  * @description Image processing and preset management storage operations
- * 
+ *
  * Domain: Image Processing
  * Scope: Processing jobs, presets, image operations
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (ImagesStorage) for dependency injection and testing
  * - Export singleton INSTANCE (imagesStorage) for convenience in production code
@@ -24,14 +24,16 @@ import {
 
 /**
  * Images Storage
- * 
+ *
  * Manages image processing jobs and presets.
  * Handles job creation, status updates, and preset management.
  */
 export class ImagesStorage {
   // ==================== Image Processing Jobs ====================
 
-  async createImageProcessingJob(job: InsertImageProcessingJob): Promise<ImageProcessingJob> {
+  async createImageProcessingJob(
+    job: InsertImageProcessingJob,
+  ): Promise<ImageProcessingJob> {
     const [created] = await db
       .insert(imageProcessingJobs)
       .values(job as typeof imageProcessingJobs.$inferInsert)
@@ -41,7 +43,7 @@ export class ImagesStorage {
 
   async updateImageProcessingJob(
     jobId: string,
-    data: Partial<Omit<ImageProcessingJob, "id" | "createdAt">>
+    data: Partial<Omit<ImageProcessingJob, "id" | "createdAt">>,
   ): Promise<ImageProcessingJob> {
     const [updated] = await db
       .update(imageProcessingJobs)
@@ -51,7 +53,9 @@ export class ImagesStorage {
     return updated;
   }
 
-  async getImageProcessingJob(jobId: string): Promise<ImageProcessingJob | undefined> {
+  async getImageProcessingJob(
+    jobId: string,
+  ): Promise<ImageProcessingJob | undefined> {
     const [job] = await db
       .select()
       .from(imageProcessingJobs)
@@ -118,10 +122,7 @@ export class ImagesStorage {
         .orderBy(asc(imagePresets.name));
     }
 
-    return await db
-      .select()
-      .from(imagePresets)
-      .orderBy(asc(imagePresets.name));
+    return await db.select().from(imagePresets).orderBy(asc(imagePresets.name));
   }
 
   async getImagePreset(presetId: number): Promise<ImagePreset | undefined> {
@@ -143,7 +144,7 @@ export class ImagesStorage {
 
   async updateImagePreset(
     presetId: number,
-    data: Partial<Omit<ImagePreset, "id" | "createdAt">>
+    data: Partial<Omit<ImagePreset, "id" | "createdAt">>,
   ): Promise<ImagePreset> {
     const [updated] = await db
       .update(imagePresets)
@@ -157,9 +158,7 @@ export class ImagesStorage {
   }
 
   async deleteImagePreset(presetId: number): Promise<void> {
-    await db
-      .delete(imagePresets)
-      .where(eq(imagePresets.id, presetId));
+    await db.delete(imagePresets).where(eq(imagePresets.id, presetId));
   }
 }
 

@@ -1,13 +1,16 @@
 /**
  * Auto-Save Router
- * 
+ *
  * Handles intelligent auto-save operations with draft versioning
  * and typing pattern learning for personalized save timing.
  */
 
 import { Router } from "express";
 import { storage } from "../../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { insertAutoSaveDraftSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -23,27 +26,46 @@ router.post("/draft", isAuthenticated, async (req: any, res) => {
 
     // Validate request body - omit userId since it comes from auth session
     const draftSchema = insertAutoSaveDraftSchema
-      .omit({ userId: true, id: true, savedAt: true, contentHash: true, version: true })
+      .omit({
+        userId: true,
+        id: true,
+        savedAt: true,
+        contentHash: true,
+        version: true,
+      })
       .extend({
         documentId: z.string().min(1),
-        documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
+        documentType: z
+          .enum([
+            "chat",
+            "recipe",
+            "note",
+            "meal_plan",
+            "shopping_list",
+            "other",
+          ])
+          .optional(),
         content: z.string(),
-        metadata: z.object({
-          cursorPosition: z.number().optional(),
-          scrollPosition: z.number().optional(),
-          selectedText: z.string().optional(),
-          editorState: z.any().optional(),
-          deviceInfo: z.object({
-            browser: z.string().optional(),
-            os: z.string().optional(),
-            screenSize: z.string().optional(),
-          }).optional(),
-        }).optional(),
+        metadata: z
+          .object({
+            cursorPosition: z.number().optional(),
+            scrollPosition: z.number().optional(),
+            selectedText: z.string().optional(),
+            editorState: z.any().optional(),
+            deviceInfo: z
+              .object({
+                browser: z.string().optional(),
+                os: z.string().optional(),
+                screenSize: z.string().optional(),
+              })
+              .optional(),
+          })
+          .optional(),
         isAutoSave: z.boolean().optional(),
       });
 
     const validatedData = draftSchema.parse(req.body);
-    
+
     // Save the draft (version is calculated internally by saveDraft)
     const savedDraft = await storage.platform.ai.saveDraft({
       ...validatedData,
@@ -88,7 +110,7 @@ router.get("/restore", isAuthenticated, async (req: any, res) => {
     }
 
     const draft = await storage.platform.ai.getLatestDraft(userId, documentId);
-    
+
     if (!draft) {
       return res.status(404).json({
         message: "No draft found for this document",
@@ -123,7 +145,11 @@ router.get("/versions", isAuthenticated, async (req: any, res) => {
     }
 
     const limitNum = limit ? parseInt(limit as string, 10) : 10;
-    const versions = await storage.platform.ai.getDraftVersions(userId, documentId, limitNum);
+    const versions = await storage.platform.ai.getDraftVersions(
+      userId,
+      documentId,
+      limitNum,
+    );
 
     res.json({
       success: true,
@@ -168,33 +194,37 @@ router.delete("/draft/:id", isAuthenticated, async (req: any, res) => {
 });
 
 // DELETE /api/autosave/document/:documentId - Delete all drafts for a document
-router.delete("/document/:documentId", isAuthenticated, async (req: any, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+router.delete(
+  "/document/:documentId",
+  isAuthenticated,
+  async (req: any, res) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
-    const { documentId } = req.params;
-    if (!documentId) {
-      return res.status(400).json({
-        message: "Document ID is required",
+      const { documentId } = req.params;
+      if (!documentId) {
+        return res.status(400).json({
+          message: "Document ID is required",
+        });
+      }
+
+      await storage.platform.ai.deleteDocumentDrafts(userId, documentId);
+
+      res.json({
+        success: true,
+        message: "All drafts for document deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting document drafts:", error);
+      res.status(500).json({
+        message: "Failed to delete document drafts",
       });
     }
-
-    await storage.platform.ai.deleteDocumentDrafts(userId, documentId);
-
-    res.json({
-      success: true,
-      message: "All drafts for document deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error deleting document drafts:", error);
-    res.status(500).json({
-      message: "Failed to delete document drafts",
-    });
-  }
-});
+  },
+);
 
 // POST /api/autosave/cleanup - Clean up old drafts
 router.post("/cleanup", isAuthenticated, async (req: any, res) => {
@@ -249,7 +279,10 @@ router.put("/patterns", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const updatedPatterns = await storage.platform.ai.updateSavePatterns(userId, req.body);
+    const updatedPatterns = await storage.platform.ai.updateSavePatterns(
+      userId,
+      req.body,
+    );
 
     res.json({
       success: true,

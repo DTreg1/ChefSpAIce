@@ -4,16 +4,16 @@ This document provides step-by-step prompts to implement all remaining stub meth
 
 ## Overview of Remaining Stubs
 
-| Domain | Count | Priority | Description |
-|--------|-------|----------|-------------|
-| [Chat Storage](#1-chat-storage) | 4 | High | Chat message persistence |
-| [Food Storage - Appliances](#2-food-storage---appliances) | 15 | Medium | Kitchen appliance management |
-| [Food Storage - Cache](#3-food-storage---cache) | 2 | Low | USDA API cache management |
-| [Support Storage](#4-support-storage) | 5 | Medium | Ticket responses & moderation |
-| [Security Storage](#5-security-storage) | 3 | Medium | Privacy request handling |
-| [Experiments Storage](#6-experiments-storage) | 1 | Low | A/B test insights |
-| [Scheduling Storage](#7-scheduling-storage) | 8 | Medium | Meeting schedules |
-| [Image Processing](#8-image-processing-storage) | 6 | Medium | Image processing jobs |
+| Domain                                                    | Count | Priority | Description                   |
+| --------------------------------------------------------- | ----- | -------- | ----------------------------- |
+| [Chat Storage](#1-chat-storage)                           | 4     | High     | Chat message persistence      |
+| [Food Storage - Appliances](#2-food-storage---appliances) | 15    | Medium   | Kitchen appliance management  |
+| [Food Storage - Cache](#3-food-storage---cache)           | 2     | Low      | USDA API cache management     |
+| [Support Storage](#4-support-storage)                     | 5     | Medium   | Ticket responses & moderation |
+| [Security Storage](#5-security-storage)                   | 3     | Medium   | Privacy request handling      |
+| [Experiments Storage](#6-experiments-storage)             | 1     | Low      | A/B test insights             |
+| [Scheduling Storage](#7-scheduling-storage)               | 8     | Medium   | Meeting schedules             |
+| [Image Processing](#8-image-processing-storage)           | 6     | Medium   | Image processing jobs         |
 
 **Total: 44 stub methods**
 
@@ -24,6 +24,7 @@ This document provides step-by-step prompts to implement all remaining stub meth
 **File:** `server/storage/domains/chat.storage.ts`
 
 **Methods to implement:**
+
 - `getChatMessages(userId, limit)`
 - `getChatMessagesPaginated(userId, limit, offset)`
 - `createChatMessage(userId, message)`
@@ -65,6 +66,7 @@ Use Drizzle ORM with proper typing. Import the new chat_messages table from the 
 **File:** `server/storage/domains/food.storage.ts`
 
 **Methods to implement:**
+
 - `getAppliances()`
 - `getUserAppliances(userId)`
 - `getUserAppliancesByCategory(userId, category)`
@@ -143,6 +145,7 @@ Use Drizzle ORM with proper imports from the new schema tables.
 **File:** `server/storage/domains/food.storage.ts`
 
 **Methods to implement:**
+
 - `getUSDACacheStats()`
 - `clearOldCache(olderThan)`
 
@@ -184,6 +187,7 @@ Use Drizzle ORM count and aggregation functions.
 **File:** `server/storage/domains/support.storage.ts`
 
 **Methods to implement:**
+
 - `addTicketResponse(ticketId, response)`
 - `getTicketResponses(ticketId)`
 - `getModerationLogs(filters)`
@@ -241,6 +245,7 @@ Use Drizzle ORM with proper imports from the new schema tables.
 **File:** `server/storage/domains/security.storage.ts`
 
 **Methods to implement:**
+
 - `logPrivacyRequest(request)`
 - `getPrivacyRequests(filters)`
 - `processPrivacyRequest(requestId, status, processedBy)`
@@ -285,6 +290,7 @@ Use Drizzle ORM with proper typing and imports.
 **File:** `server/storage/domains/experiments.storage.ts`
 
 **Methods to implement:**
+
 - `createAbTestInsight(insight)`
 
 ### Prompt 6.1: Verify AbTestInsight Schema
@@ -322,6 +328,7 @@ The insight should contain analysis results like statistical significance, winne
 **File:** `server/storage/domains/scheduling.storage.ts` (may need to create)
 
 **Methods to implement:**
+
 - `getMeetingSchedules(userId)`
 - `getMeetingSchedule(scheduleId)`
 - `createMeetingSchedule(schedule)`
@@ -381,6 +388,7 @@ Use Drizzle ORM. For getAvailableSlots, implement logic to find gaps between exi
 **File:** `server/storage/domains/images.storage.ts` (may need to create or add to ai-ml.storage.ts)
 
 **Methods to implement:**
+
 - `createImageProcessingJob(job)`
 - `updateImageProcessingJob(jobId, data)`
 - `getImageProcessingJob(jobId)`
@@ -444,16 +452,16 @@ Use Drizzle ORM with proper imports from the new schema tables.
 
 For detailed step-by-step instructions, see the individual files in `docs/stubs/`:
 
-| # | File | Methods |
-|---|------|---------|
-| 1 | [01-CHAT-STORAGE.md](stubs/01-CHAT-STORAGE.md) | 4 |
-| 2 | [02-FOOD-APPLIANCES.md](stubs/02-FOOD-APPLIANCES.md) | 15 |
-| 3 | [03-FOOD-CACHE.md](stubs/03-FOOD-CACHE.md) | 2 |
-| 4 | [04-SUPPORT-STORAGE.md](stubs/04-SUPPORT-STORAGE.md) | 5 |
-| 5 | [05-SECURITY-STORAGE.md](stubs/05-SECURITY-STORAGE.md) | 3 |
-| 6 | [06-EXPERIMENTS-STORAGE.md](stubs/06-EXPERIMENTS-STORAGE.md) | 1 |
-| 7 | [07-SCHEDULING-STORAGE.md](stubs/07-SCHEDULING-STORAGE.md) | 8 |
-| 8 | [08-IMAGE-PROCESSING.md](stubs/08-IMAGE-PROCESSING.md) | 6 |
+| #   | File                                                         | Methods |
+| --- | ------------------------------------------------------------ | ------- |
+| 1   | [01-CHAT-STORAGE.md](stubs/01-CHAT-STORAGE.md)               | 4       |
+| 2   | [02-FOOD-APPLIANCES.md](stubs/02-FOOD-APPLIANCES.md)         | 15      |
+| 3   | [03-FOOD-CACHE.md](stubs/03-FOOD-CACHE.md)                   | 2       |
+| 4   | [04-SUPPORT-STORAGE.md](stubs/04-SUPPORT-STORAGE.md)         | 5       |
+| 5   | [05-SECURITY-STORAGE.md](stubs/05-SECURITY-STORAGE.md)       | 3       |
+| 6   | [06-EXPERIMENTS-STORAGE.md](stubs/06-EXPERIMENTS-STORAGE.md) | 1       |
+| 7   | [07-SCHEDULING-STORAGE.md](stubs/07-SCHEDULING-STORAGE.md)   | 8       |
+| 8   | [08-IMAGE-PROCESSING.md](stubs/08-IMAGE-PROCESSING.md)       | 6       |
 
 ---
 

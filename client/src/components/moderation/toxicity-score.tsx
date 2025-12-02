@@ -1,6 +1,11 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +35,7 @@ const scoreLabels: { [key: string]: string } = {
   sexual: "Sexual Content",
   sexualMinors: "Sexual Content (Minors)",
   violence: "Violence",
-  violenceGraphic: "Graphic Violence"
+  violenceGraphic: "Graphic Violence",
 };
 
 function getScoreColor(score: number): string {
@@ -61,7 +66,7 @@ export function ToxicityScore({
   scores,
   threshold = 0.5,
   showLabels = true,
-  compact = false
+  compact = false,
 }: ToxicityScoreProps) {
   // Sort scores by value (highest first)
   const sortedScores = Object.entries(scores)
@@ -70,7 +75,10 @@ export function ToxicityScore({
 
   if (sortedScores.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground" data-testid="text-no-scores">
+      <div
+        className="text-sm text-muted-foreground"
+        data-testid="text-no-scores"
+      >
         No toxicity scores available
       </div>
     );
@@ -80,14 +88,19 @@ export function ToxicityScore({
     // Show only the highest score in compact mode
     const [topCategory, topScore] = sortedScores[0];
     const label = scoreLabels[topCategory] || topCategory;
-    
+
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2" data-testid="toxicity-score-compact">
+            <div
+              className="flex items-center gap-2"
+              data-testid="toxicity-score-compact"
+            >
               {getScoreIcon(topScore, threshold)}
-              <span className={cn("text-sm font-medium", getScoreColor(topScore))}>
+              <span
+                className={cn("text-sm font-medium", getScoreColor(topScore))}
+              >
                 {(topScore * 100).toFixed(0)}%
               </span>
               <Badge variant="outline" className="text-xs">
@@ -119,7 +132,7 @@ export function ToxicityScore({
         const label = scoreLabels[key] || key;
         const percentage = Math.round(value * 100);
         const isAboveThreshold = value >= threshold;
-        
+
         return (
           <div key={key} className="space-y-1" data-testid={`score-${key}`}>
             <div className="flex items-center justify-between">
@@ -129,11 +142,11 @@ export function ToxicityScore({
                   <span className="text-sm font-medium">{label}</span>
                 )}
               </div>
-              <span 
+              <span
                 className={cn(
                   "text-sm font-medium",
                   getScoreColor(value),
-                  isAboveThreshold && "font-bold"
+                  isAboveThreshold && "font-bold",
                 )}
                 data-testid={`score-value-${key}`}
               >
@@ -141,12 +154,9 @@ export function ToxicityScore({
               </span>
             </div>
             <div className="relative">
-              <Progress 
-                value={percentage} 
-                className="h-2"
-              />
+              <Progress value={percentage} className="h-2" />
               {isAboveThreshold && (
-                <div 
+                <div
                   className="absolute top-0 h-full border-l-2 border-red-600 dark:border-red-400"
                   style={{ left: `${threshold * 100}%` }}
                 />
@@ -155,11 +165,11 @@ export function ToxicityScore({
           </div>
         );
       })}
-      
+
       <div className="mt-2 pt-2 border-t">
         <p className="text-xs text-muted-foreground">
-          Threshold: {(threshold * 100).toFixed(0)}% • 
-          Violations: {sortedScores.filter(([_, v]) => v >= threshold).length}
+          Threshold: {(threshold * 100).toFixed(0)}% • Violations:{" "}
+          {sortedScores.filter(([_, v]) => v >= threshold).length}
         </p>
       </div>
     </div>

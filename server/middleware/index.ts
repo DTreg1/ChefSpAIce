@@ -21,6 +21,6 @@ export * from "./circuit-breaker.middleware";
 export { default as rateLimiters, createRateLimiter } from "./rateLimit";
 import rateLimitersInternal from "./rateLimit";
 export const apiRateLimit = rateLimitersInternal.general.middleware();
-export const analyticsRateLimit = rateLimitersInternal.general.middleware(); 
+export const analyticsRateLimit = rateLimitersInternal.general.middleware();
 export const authRateLimit = rateLimitersInternal.expensive.middleware();
 export const strictRateLimit = rateLimitersInternal.expensive.middleware();

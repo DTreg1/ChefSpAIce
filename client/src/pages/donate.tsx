@@ -1,12 +1,24 @@
 // Donation page with Stripe integration (from blueprint:javascript_stripe)
-import { useState, useEffect } from 'react';
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { useState, useEffect } from "react";
+import {
+  useStripe,
+  Elements,
+  PaymentElement,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,10 +32,26 @@ const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 // Donation form component that handles payment processing
-const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: { 
-  donorInfo: { donorName: string; donorEmail: string; message: string; anonymous: boolean },
-  setDonorInfo: React.Dispatch<React.SetStateAction<{ donorName: string; donorEmail: string; message: string; anonymous: boolean }>>,
-  clientSecret: string
+const DonationForm = ({
+  donorInfo,
+  setDonorInfo,
+  clientSecret,
+}: {
+  donorInfo: {
+    donorName: string;
+    donorEmail: string;
+    message: string;
+    anonymous: boolean;
+  };
+  setDonorInfo: React.Dispatch<
+    React.SetStateAction<{
+      donorName: string;
+      donorEmail: string;
+      message: string;
+      anonymous: boolean;
+    }>
+  >;
+  clientSecret: string;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -43,15 +71,19 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
     try {
       // First, update the donation record with donor info on the server
       // We'll extract the payment intent ID from the clientSecret
-      const paymentIntentId = clientSecret.split('_secret_')[0];
-      
-      await apiRequest(`${API_ENDPOINTS.donations.create}/update-donor-info`, "POST", {
-        paymentIntentId,
-        donorName: donorInfo.donorName,
-        donorEmail: donorInfo.donorEmail,
-        message: donorInfo.message,
-        anonymous: donorInfo.anonymous
-      });
+      const paymentIntentId = clientSecret.split("_secret_")[0];
+
+      await apiRequest(
+        `${API_ENDPOINTS.donations.create}/update-donor-info`,
+        "POST",
+        {
+          paymentIntentId,
+          donorName: donorInfo.donorName,
+          donorEmail: donorInfo.donorEmail,
+          message: donorInfo.message,
+          anonymous: donorInfo.anonymous,
+        },
+      );
 
       // Now confirm the payment (donor info is already saved server-side)
       const { error } = await stripe.confirmPayment({
@@ -60,10 +92,12 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
           return_url: `${window.location.origin}/donate/success`,
           payment_method_data: {
             billing_details: {
-              name: donorInfo.anonymous ? 'Anonymous' : donorInfo.donorName || 'Anonymous',
+              name: donorInfo.anonymous
+                ? "Anonymous"
+                : donorInfo.donorName || "Anonymous",
               email: donorInfo.donorEmail || undefined,
-            }
-          }
+            },
+          },
         },
       });
 
@@ -95,7 +129,9 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
             type="text"
             placeholder="John Doe"
             value={donorInfo.donorName}
-            onChange={(e) => setDonorInfo(prev => ({ ...prev, donorName: e.target.value }))}
+            onChange={(e) =>
+              setDonorInfo((prev) => ({ ...prev, donorName: e.target.value }))
+            }
             disabled={donorInfo.anonymous}
             data-testid="input-donor-name"
           />
@@ -108,7 +144,9 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
             type="email"
             placeholder="john@example.com"
             value={donorInfo.donorEmail}
-            onChange={(e) => setDonorInfo(prev => ({ ...prev, donorEmail: e.target.value }))}
+            onChange={(e) =>
+              setDonorInfo((prev) => ({ ...prev, donorEmail: e.target.value }))
+            }
             disabled={donorInfo.anonymous}
             data-testid="input-donor-email"
           />
@@ -120,7 +158,9 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
             id="message"
             placeholder="Leave a supportive message..."
             value={donorInfo.message}
-            onChange={(e) => setDonorInfo(prev => ({ ...prev, message: e.target.value }))}
+            onChange={(e) =>
+              setDonorInfo((prev) => ({ ...prev, message: e.target.value }))
+            }
             disabled={donorInfo.anonymous}
             data-testid="input-donor-message"
           />
@@ -130,16 +170,21 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
           <Checkbox
             id="anonymous"
             checked={donorInfo.anonymous}
-            onCheckedChange={(checked) => setDonorInfo(prev => ({ 
-              ...prev, 
-              anonymous: checked as boolean,
-              donorName: checked ? '' : prev.donorName,
-              donorEmail: checked ? '' : prev.donorEmail,
-              message: checked ? '' : prev.message
-            }))}
+            onCheckedChange={(checked) =>
+              setDonorInfo((prev) => ({
+                ...prev,
+                anonymous: checked as boolean,
+                donorName: checked ? "" : prev.donorName,
+                donorEmail: checked ? "" : prev.donorEmail,
+                message: checked ? "" : prev.message,
+              }))
+            }
             data-testid="checkbox-anonymous"
           />
-          <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">
+          <Label
+            htmlFor="anonymous"
+            className="text-sm font-medium cursor-pointer"
+          >
             Make this donation anonymous
           </Label>
         </div>
@@ -149,9 +194,9 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
         <PaymentElement />
       </div>
 
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing} 
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
         className="w-full"
         data-testid="button-donate-submit"
       >
@@ -174,7 +219,7 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
 // Recent donations display component
 const RecentDonations = () => {
   const { data: donations, isLoading } = useQuery<any[]>({
-    queryKey: ['/api/donations/recent'],
+    queryKey: ["/api/donations/recent"],
   });
 
   if (isLoading || !donations || donations.length === 0) {
@@ -190,22 +235,37 @@ const RecentDonations = () => {
       <CardContent>
         <div className="space-y-3">
           {donations.slice(0, 5).map((donation: any) => (
-            <div key={donation.id} className="flex items-center justify-between py-2 border-b last:border-0">
+            <div
+              key={donation.id}
+              className="flex items-center justify-between py-2 border-b last:border-0"
+            >
               <div>
-                <p className="font-medium" data-testid={`text-donor-name-${donation.id}`}>
+                <p
+                  className="font-medium"
+                  data-testid={`text-donor-name-${donation.id}`}
+                >
                   {donation.donorName}
                 </p>
                 {donation.message && (
-                  <p className="text-sm text-muted-foreground" data-testid={`text-donor-message-${donation.id}`}>
+                  <p
+                    className="text-sm text-muted-foreground"
+                    data-testid={`text-donor-message-${donation.id}`}
+                  >
                     {donation.message}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <p className="font-semibold" data-testid={`text-donation-amount-${donation.id}`}>
+                <p
+                  className="font-semibold"
+                  data-testid={`text-donation-amount-${donation.id}`}
+                >
                   ${(donation.amount / 100).toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground" data-testid={`text-donation-date-${donation.id}`}>
+                <p
+                  className="text-xs text-muted-foreground"
+                  data-testid={`text-donation-date-${donation.id}`}
+                >
                   {new Date(donation.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -224,16 +284,19 @@ export default function DonatePage() {
   const [customAmount, setCustomAmount] = useState("");
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
   const [donorInfo, setDonorInfo] = useState({
-    donorName: '',
-    donorEmail: '',
-    message: '',
-    anonymous: false
+    donorName: "",
+    donorEmail: "",
+    message: "",
+    anonymous: false,
   });
   const { toast } = useToast();
 
   // Donation statistics
-  const { data: stats } = useQuery<{ totalAmount: number, donationCount: number }>({
-    queryKey: ['/api/donations/stats'],
+  const { data: stats } = useQuery<{
+    totalAmount: number;
+    donationCount: number;
+  }>({
+    queryKey: ["/api/donations/stats"],
   });
 
   const predefinedAmounts = [500, 1000, 2000, 5000, 10000]; // In cents
@@ -259,20 +322,27 @@ export default function DonatePage() {
     await createPaymentIntent(amountInCents);
   };
 
-  const createPaymentIntent = async (amountInCents: number, donorData?: {
-    donorEmail?: string;
-    donorName?: string;
-    message?: string;
-    anonymous?: boolean;
-  }) => {
+  const createPaymentIntent = async (
+    amountInCents: number,
+    donorData?: {
+      donorEmail?: string;
+      donorName?: string;
+      message?: string;
+      anonymous?: boolean;
+    },
+  ) => {
     setIsCreatingIntent(true);
     try {
-      const response = await apiRequest("/api/donations/create-payment-intent", "POST", { 
-        amount: amountInCents,
-        ...donorData
-      });
+      const response = await apiRequest(
+        "/api/donations/create-payment-intent",
+        "POST",
+        {
+          amount: amountInCents,
+          ...donorData,
+        },
+      );
       const data = response;
-      
+
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
       } else {
@@ -281,7 +351,10 @@ export default function DonatePage() {
     } catch (error: Error | unknown) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to initialize donation",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to initialize donation",
         variant: "destructive",
       });
     } finally {
@@ -313,12 +386,14 @@ export default function DonatePage() {
             <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <CardTitle>Donations Coming Soon</CardTitle>
             <CardDescription>
-              We're still setting up our donation system. Please check back later!
+              We're still setting up our donation system. Please check back
+              later!
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground">
-              Thank you for your interest in supporting us. We appreciate your patience.
+              Thank you for your interest in supporting us. We appreciate your
+              patience.
             </p>
           </CardContent>
         </Card>
@@ -340,19 +415,26 @@ export default function DonatePage() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-4">Support Our Mission</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Your donation helps us continue providing tools to reduce food waste and make meal planning easier for everyone.
+          Your donation helps us continue providing tools to reduce food waste
+          and make meal planning easier for everyone.
         </p>
-        
+
         {stats && (
           <div className="mt-6 flex justify-center gap-8">
             <div>
-              <p className="text-3xl font-bold text-primary" data-testid="text-total-raised">
+              <p
+                className="text-3xl font-bold text-primary"
+                data-testid="text-total-raised"
+              >
                 ${(stats.totalAmount / 100).toFixed(0)}
               </p>
               <p className="text-sm text-muted-foreground">Total Raised</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-primary" data-testid="text-total-donors">
+              <p
+                className="text-3xl font-bold text-primary"
+                data-testid="text-total-donors"
+              >
                 {stats.donationCount}
               </p>
               <p className="text-sm text-muted-foreground">Supporters</p>
@@ -367,7 +449,9 @@ export default function DonatePage() {
           <Card>
             <CardHeader>
               <CardTitle>Select Amount</CardTitle>
-              <CardDescription>Choose a donation amount or enter a custom value</CardDescription>
+              <CardDescription>
+                Choose a donation amount or enter a custom value
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
@@ -394,7 +478,7 @@ export default function DonatePage() {
                       disabled={isCreatingIntent}
                       data-testid="input-custom-amount"
                     />
-                    <Button 
+                    <Button
                       onClick={handleCustomAmount}
                       disabled={isCreatingIntent || !customAmount}
                       data-testid="button-set-custom-amount"
@@ -415,23 +499,29 @@ export default function DonatePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Payment Details</CardTitle>
-                <CardDescription>Complete your secure donation through Stripe</CardDescription>
+                <CardDescription>
+                  Complete your secure donation through Stripe
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <Elements 
+                <Elements
                   key={clientSecret}
-                  stripe={stripePromise} 
-                  options={{ 
+                  stripe={stripePromise}
+                  options={{
                     clientSecret,
                     appearance: {
-                      theme: 'stripe',
+                      theme: "stripe",
                       variables: {
-                        colorPrimary: 'hsl(var(--primary))',
-                      }
-                    }
+                        colorPrimary: "hsl(var(--primary))",
+                      },
+                    },
                   }}
                 >
-                  <DonationForm donorInfo={donorInfo} setDonorInfo={setDonorInfo} clientSecret={clientSecret} />
+                  <DonationForm
+                    donorInfo={donorInfo}
+                    setDonorInfo={setDonorInfo}
+                    clientSecret={clientSecret}
+                  />
                 </Elements>
               </CardContent>
             </Card>
@@ -440,7 +530,7 @@ export default function DonatePage() {
 
         <div className="space-y-6">
           <RecentDonations />
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Why Donate?</CardTitle>
@@ -467,7 +557,8 @@ export default function DonatePage() {
             </CardContent>
             <CardFooter>
               <p className="text-xs text-muted-foreground">
-                All donations are processed securely through Stripe. Your support is greatly appreciated!
+                All donations are processed securely through Stripe. Your
+                support is greatly appreciated!
               </p>
             </CardFooter>
           </Card>

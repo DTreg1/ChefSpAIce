@@ -31,7 +31,11 @@ interface QueryHistoryProps {
 }
 
 export function QueryHistory({ onSelectQuery }: QueryHistoryProps) {
-  const { data: history, isLoading, refetch } = useQuery<QueryLog[]>({
+  const {
+    data: history,
+    isLoading,
+    refetch,
+  } = useQuery<QueryLog[]>({
     queryKey: ["/api/query/history"],
   });
 

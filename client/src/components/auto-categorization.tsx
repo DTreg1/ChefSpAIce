@@ -3,16 +3,29 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { FolderOpen, Sparkles, Tag, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AutoCategorizationProps {
   contentId: string;
-  contentType: 'recipe' | 'inventory';
+  contentType: "recipe" | "inventory";
   currentCategory?: string;
   currentTags?: string[];
   onCategoryUpdate?: (category: string) => void;
@@ -33,9 +46,9 @@ export function AutoCategorization({
   // Categorization mutation
   const categorizeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ml.categorize, 'POST', {
+      const response = await apiRequest(API_ENDPOINTS.ml.categorize, "POST", {
         contentId,
-        contentType
+        contentType,
       });
       return response;
     },
@@ -47,7 +60,12 @@ export function AutoCategorization({
         title: "Categorization Complete",
         description: `Category: ${data.category}`,
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_ENDPOINTS.recipes.list,
+          API_ENDPOINTS.inventory.foodItems,
+        ],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -61,10 +79,14 @@ export function AutoCategorization({
   // Auto-tagging mutation
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ml.tags.generate, 'POST', {
-        contentId,
-        contentType
-      });
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.tags.generate,
+        "POST",
+        {
+          contentId,
+          contentType,
+        },
+      );
       return response;
     },
     onSuccess: (data) => {
@@ -75,7 +97,12 @@ export function AutoCategorization({
         title: "Auto-Tagging Complete",
         description: `Added ${data.tags.length} tags`,
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_ENDPOINTS.recipes.list,
+          API_ENDPOINTS.inventory.foodItems,
+        ],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -90,7 +117,10 @@ export function AutoCategorization({
   const batchCategorizeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      const response = await apiRequest(API_ENDPOINTS.ml.categorizeBatch, 'POST');
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.categorizeBatch,
+        "POST",
+      );
       setIsProcessing(false);
       return response;
     },
@@ -99,7 +129,12 @@ export function AutoCategorization({
         title: "Batch Categorization Complete",
         description: `Categorized ${data.processed} items`,
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_ENDPOINTS.recipes.list,
+          API_ENDPOINTS.inventory.foodItems,
+        ],
+      });
     },
     onError: (error: any) => {
       setIsProcessing(false);
@@ -134,9 +169,9 @@ export function AutoCategorization({
           ) : (
             <FolderOpen className="h-4 w-4 mr-1" />
           )}
-          {currentCategory ? 'Re-categorize' : 'Auto-Categorize'}
+          {currentCategory ? "Re-categorize" : "Auto-Categorize"}
         </Button>
-        
+
         <Button
           size="sm"
           variant="outline"
@@ -156,7 +191,10 @@ export function AutoCategorization({
       {currentCategory && (
         <div className="flex items-center gap-2 mt-2">
           <span className="text-sm text-muted-foreground">Category:</span>
-          <Badge variant="secondary" data-testid={`badge-category-${contentId}`}>
+          <Badge
+            variant="secondary"
+            data-testid={`badge-category-${contentId}`}
+          >
             <FolderOpen className="h-3 w-3 mr-1" />
             {currentCategory}
           </Badge>
@@ -167,7 +205,12 @@ export function AutoCategorization({
         <div className="flex items-center gap-2 flex-wrap mt-2">
           <span className="text-sm text-muted-foreground">Tags:</span>
           {currentTags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs" data-testid={`badge-tag-${tag}`}>
+            <Badge
+              key={tag}
+              variant="outline"
+              className="text-xs"
+              data-testid={`badge-tag-${tag}`}
+            >
               <Tag className="h-3 w-3 mr-1" />
               {tag}
             </Badge>
@@ -182,7 +225,9 @@ interface BatchCategorizationDialogProps {
   trigger?: React.ReactNode;
 }
 
-export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialogProps) {
+export function BatchCategorizationDialog({
+  trigger,
+}: BatchCategorizationDialogProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
@@ -191,7 +236,10 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
   const { data: stats } = useQuery({
     queryKey: [API_ENDPOINTS.ml.stats.uncategorized],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ml.stats.uncategorized, 'GET');
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.stats.uncategorized,
+        "GET",
+      );
       return response;
     },
   });
@@ -201,14 +249,17 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
     mutationFn: async () => {
       setIsProcessing(true);
       setProgress(0);
-      
+
       // Simulate progress updates
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
+        setProgress((prev) => Math.min(prev + 10, 90));
       }, 1000);
-      
+
       try {
-        const response = await apiRequest(API_ENDPOINTS.ml.categorizeBatch, 'POST');
+        const response = await apiRequest(
+          API_ENDPOINTS.ml.categorizeBatch,
+          "POST",
+        );
         clearInterval(progressInterval);
         setProgress(100);
         return response;
@@ -222,7 +273,12 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
         title: "Batch Processing Complete",
         description: `Successfully categorized ${data.processed} items`,
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_ENDPOINTS.recipes.list,
+          API_ENDPOINTS.inventory.foodItems,
+        ],
+      });
       setIsProcessing(false);
       setProgress(0);
     },
@@ -251,7 +307,8 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
         <DialogHeader>
           <DialogTitle>AI Batch Categorization</DialogTitle>
           <DialogDescription>
-            Use AI to automatically categorize and tag all uncategorized items in your inventory
+            Use AI to automatically categorize and tag all uncategorized items
+            in your inventory
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -263,13 +320,19 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Recipes:</span>
-                  <span className="font-medium" data-testid="text-uncategorized-recipes">
+                  <span
+                    className="font-medium"
+                    data-testid="text-uncategorized-recipes"
+                  >
                     {stats?.recipes || 0}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Inventory Items:</span>
-                  <span className="font-medium" data-testid="text-uncategorized-inventory">
+                  <span
+                    className="font-medium"
+                    data-testid="text-uncategorized-inventory"
+                  >
                     {stats?.inventory || 0}
                   </span>
                 </div>
@@ -295,8 +358,11 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
 
           <Button
             onClick={() => batchMutation.mutate()}
-            disabled={isProcessing || batchMutation.isPending || 
-                     ((stats?.recipes || 0) + (stats?.inventory || 0)) === 0}
+            disabled={
+              isProcessing ||
+              batchMutation.isPending ||
+              (stats?.recipes || 0) + (stats?.inventory || 0) === 0
+            }
             className="w-full"
             data-testid="button-start-batch-categorization"
           >

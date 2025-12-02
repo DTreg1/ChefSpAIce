@@ -15,7 +15,7 @@ export interface ModerationResult {
 export async function moderateFeedback(
   content: string,
   type: string,
-  existingFeedback: Feedback[]
+  existingFeedback: Feedback[],
 ): Promise<ModerationResult> {
   try {
     const prompt = `You are an AI moderator for user feedback. Analyze the following feedback and provide:
@@ -31,7 +31,10 @@ Feedback Type: ${type}
 Feedback Content: "${content}"
 
 Existing Feedback (to check for duplicates):
-${existingFeedback.slice(0, 20).map(f => `ID: ${f.id}, Content: ${f.message || 'N/A'}`).join('\n')}
+${existingFeedback
+  .slice(0, 20)
+  .map((f) => `ID: ${f.id}, Content: ${f.message || "N/A"}`)
+  .join("\n")}
 
 Respond ONLY with a valid JSON object in this exact format:
 {
@@ -50,19 +53,20 @@ Respond ONLY with a valid JSON object in this exact format:
       messages: [
         {
           role: "system",
-          content: "You are a helpful AI moderator that analyzes user feedback. Always respond with valid JSON only, no additional text."
+          content:
+            "You are a helpful AI moderator that analyzes user feedback. Always respond with valid JSON only, no additional text.",
         },
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.3,
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       isFlagged: result.isFlagged || false,
       flagReason: result.flagReason || undefined,
@@ -71,9 +75,8 @@ Respond ONLY with a valid JSON object in this exact format:
       sentiment: result.sentiment || undefined,
       tags: result.tags || [],
       similarTo: result.similarTo || undefined,
-      summary: result.summary || undefined
+      summary: result.summary || undefined,
     };
-
   } catch (error) {
     console.error("Error moderating feedback:", error);
     // Return safe defaults if moderation fails
@@ -88,7 +91,7 @@ Respond ONLY with a valid JSON object in this exact format:
 }
 
 export async function consolidateFeedback(
-  feedbackItems: Feedback[]
+  feedbackItems: Feedback[],
 ): Promise<string> {
   try {
     if (feedbackItems.length === 0) {
@@ -98,7 +101,7 @@ export async function consolidateFeedback(
     const prompt = `Consolidate and summarize the following user feedback into key themes and insights. Group similar feedback together and highlight the most important points.
 
 Feedback:
-${feedbackItems.map((f, i) => `${i + 1}. [${f.type}] ${f.message || 'N/A'} (Priority: ${f.priority || 'N/A'}, Sentiment: ${f.sentiment || 'N/A'})`).join('\n')}
+${feedbackItems.map((f, i) => `${i + 1}. [${f.type}] ${f.message || "N/A"} (Priority: ${f.priority || "N/A"}, Sentiment: ${f.sentiment || "N/A"})`).join("\n")}
 
 Provide a concise summary (max 300 words) highlighting:
 - Main themes and patterns
@@ -111,19 +114,19 @@ Provide a concise summary (max 300 words) highlighting:
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant that analyzes and consolidates user feedback."
+          content:
+            "You are a helpful assistant that analyzes and consolidates user feedback.",
         },
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.5,
-      max_tokens: 500
+      max_tokens: 500,
     });
 
     return response.choices[0].message.content || "Unable to generate summary.";
-
   } catch (error) {
     console.error("Error consolidating feedback:", error);
     return "Error generating feedback summary.";

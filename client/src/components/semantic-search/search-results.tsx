@@ -3,19 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  FileText, 
-  Package, 
-  Calendar, 
+import {
+  FileText,
+  Package,
+  Calendar,
   MessageSquare,
   TrendingUp,
-  AlertCircle 
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SearchResult {
   id: string;
-  type: 'recipe' | 'inventory' | 'meal_plan' | 'chat' | 'custom';
+  type: "recipe" | "inventory" | "meal_plan" | "chat" | "custom";
   title: string;
   description?: string;
   content: string;
@@ -54,9 +54,21 @@ const typeColors = {
 };
 
 function getRelevanceLabel(score: number): { label: string; color: string } {
-  if (score >= 0.9) return { label: "Exact Match", color: "text-green-600 dark:text-green-400" };
-  if (score >= 0.8) return { label: "High Relevance", color: "text-blue-600 dark:text-blue-400" };
-  if (score >= 0.7) return { label: "Good Match", color: "text-yellow-600 dark:text-yellow-400" };
+  if (score >= 0.9)
+    return {
+      label: "Exact Match",
+      color: "text-green-600 dark:text-green-400",
+    };
+  if (score >= 0.8)
+    return {
+      label: "High Relevance",
+      color: "text-blue-600 dark:text-blue-400",
+    };
+  if (score >= 0.7)
+    return {
+      label: "Good Match",
+      color: "text-yellow-600 dark:text-yellow-400",
+    };
   return { label: "Related", color: "text-gray-600 dark:text-gray-400" };
 }
 
@@ -79,7 +91,7 @@ export function SearchResults({
           clickPosition: index + 1, // 1-based position
           timeToClick,
         } as any,
-        index + 1
+        index + 1,
       );
     }
   };
@@ -139,7 +151,10 @@ export function SearchResults({
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <CardTitle className="text-base line-clamp-1" data-testid={`text-result-title-${index}`}>
+                      <CardTitle
+                        className="text-base line-clamp-1"
+                        data-testid={`text-result-title-${index}`}
+                      >
                         {result.title}
                       </CardTitle>
                       {result.description && (
@@ -151,11 +166,13 @@ export function SearchResults({
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Badge variant="outline" className="capitalize">
-                      {result.type.replace('_', ' ')}
+                      {result.type.replace("_", " ")}
                     </Badge>
                     <div className="flex items-center gap-1">
                       <TrendingUp className={cn("h-3 w-3", relevance.color)} />
-                      <span className={cn("text-xs font-medium", relevance.color)}>
+                      <span
+                        className={cn("text-xs font-medium", relevance.color)}
+                      >
                         {relevance.label}
                       </span>
                     </div>
@@ -167,17 +184,16 @@ export function SearchResults({
               </CardHeader>
               {result.content && (
                 <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-3" data-testid={`text-result-content-${index}`}>
+                  <p
+                    className="text-sm text-muted-foreground line-clamp-3"
+                    data-testid={`text-result-content-${index}`}
+                  >
                     {result.content}
                   </p>
                   {result.metadata?.tags && result.metadata.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-3">
                       {result.metadata.tags.slice(0, 5).map((tag, i) => (
-                        <Badge
-                          key={i}
-                          variant="secondary"
-                          className="text-xs"
-                        >
+                        <Badge key={i} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}

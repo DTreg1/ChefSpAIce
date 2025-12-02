@@ -23,7 +23,7 @@ export function AudioRecorder({
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const animationFrameRef = useRef<number | null>(null);
@@ -38,29 +38,31 @@ export function AudioRecorder({
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
-      
+
       analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
-      
+
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm",
       });
-      
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
-      
+
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
         onRecordingComplete?.(audioBlob);
         audioChunksRef.current = [];
       };
-      
+
       mediaRecorderRef.current = mediaRecorder;
-      
+
       return { stream, analyser };
     } catch (error) {
       console.error("Error accessing microphone:", error);
@@ -72,13 +74,13 @@ export function AudioRecorder({
   const startRecording = async () => {
     try {
       const { analyser } = await initializeAudio();
-      
+
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.start();
         setIsRecording(true);
         setIsPaused(false);
         onRecordingStart?.();
-        
+
         // Start timer
         timerRef.current = setInterval(() => {
           setRecordingTime((prev) => {
@@ -90,7 +92,7 @@ export function AudioRecorder({
             return newTime;
           });
         }, 1000);
-        
+
         // Start visualizer
         visualizeAudio(analyser);
       }
@@ -106,22 +108,24 @@ export function AudioRecorder({
       setIsRecording(false);
       setIsPaused(false);
       onRecordingStop?.();
-      
+
       // Stop all tracks
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
+
       // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      
+
       // Stop animation
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      
+
       setRecordingTime(0);
       setAudioLevel(0);
       setWaveformData([]);
@@ -134,7 +138,7 @@ export function AudioRecorder({
       if (isPaused) {
         mediaRecorderRef.current.resume();
         setIsPaused(false);
-        
+
         // Resume timer
         timerRef.current = setInterval(() => {
           setRecordingTime((prev) => {
@@ -146,7 +150,7 @@ export function AudioRecorder({
             return newTime;
           });
         }, 1000);
-        
+
         // Resume visualizer
         if (analyserRef.current) {
           visualizeAudio(analyserRef.current);
@@ -154,13 +158,13 @@ export function AudioRecorder({
       } else {
         mediaRecorderRef.current.pause();
         setIsPaused(true);
-        
+
         // Pause timer
         if (timerRef.current) {
           clearInterval(timerRef.current);
           timerRef.current = null;
         }
-        
+
         // Pause animation
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
@@ -174,22 +178,22 @@ export function AudioRecorder({
   const visualizeAudio = (analyser: AnalyserNode) => {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    
+
     const draw = () => {
       animationFrameRef.current = requestAnimationFrame(draw);
-      
+
       analyser.getByteFrequencyData(dataArray);
-      
+
       // Calculate average audio level
       const average = dataArray.reduce((a, b) => a + b) / bufferLength;
       setAudioLevel(average / 255);
-      
+
       // Update waveform data (keep last 50 samples)
       setWaveformData((prev) => {
         const newData = [...prev, average / 255];
         return newData.slice(-50);
       });
-      
+
       // Draw waveform on canvas
       if (canvasRef.current) {
         const canvas = canvasRef.current;
@@ -199,29 +203,29 @@ export function AudioRecorder({
           ctx.lineWidth = 2;
           ctx.strokeStyle = "hsl(var(--primary))";
           ctx.beginPath();
-          
+
           const sliceWidth = canvas.width / bufferLength;
           let x = 0;
-          
+
           for (let i = 0; i < bufferLength; i++) {
             const v = dataArray[i] / 128.0;
             const y = (v * canvas.height) / 2;
-            
+
             if (i === 0) {
               ctx.moveTo(x, y);
             } else {
               ctx.lineTo(x, y);
             }
-            
+
             x += sliceWidth;
           }
-          
+
           ctx.lineTo(canvas.width, canvas.height / 2);
           ctx.stroke();
         }
       }
     };
-    
+
     draw();
   };
 
@@ -248,7 +252,7 @@ export function AudioRecorder({
             {formatTime(recordingTime)} / {formatTime(maxDuration)}
           </div>
         </div>
-        
+
         {/* Waveform Visualization */}
         <div className="relative h-32 bg-muted rounded-lg overflow-hidden">
           <canvas
@@ -263,7 +267,7 @@ export function AudioRecorder({
             </div>
           )}
         </div>
-        
+
         {/* Audio Level Indicator */}
         {isRecording && (
           <div className="space-y-2">
@@ -274,15 +278,15 @@ export function AudioRecorder({
             <Progress value={audioLevel * 100} className="h-2" />
           </div>
         )}
-        
+
         {/* Recording Progress */}
         {recordingTime > 0 && (
-          <Progress 
-            value={(recordingTime / maxDuration) * 100} 
+          <Progress
+            value={(recordingTime / maxDuration) * 100}
             className="h-1"
           />
         )}
-        
+
         {/* Control Buttons */}
         <div className="flex items-center justify-center gap-2">
           {!isRecording ? (
@@ -322,7 +326,7 @@ export function AudioRecorder({
             </>
           )}
         </div>
-        
+
         {/* Visual Waveform Bars */}
         {isRecording && waveformData.length > 0 && (
           <div className="flex items-end justify-center gap-1 h-16">
@@ -331,7 +335,7 @@ export function AudioRecorder({
                 key={index}
                 className={cn(
                   "w-1 bg-primary rounded-full transition-all duration-150",
-                  isPaused && "opacity-50"
+                  isPaused && "opacity-50",
                 )}
                 style={{
                   height: `${level * 100}%`,
@@ -340,15 +344,17 @@ export function AudioRecorder({
             ))}
           </div>
         )}
-        
+
         {/* Status Indicator */}
         <div className="flex items-center justify-center">
           {isRecording && (
             <div className="flex items-center gap-2 text-sm">
-              <div className={cn(
-                "w-2 h-2 rounded-full",
-                isPaused ? "bg-yellow-500" : "bg-red-500 animate-pulse"
-              )} />
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  isPaused ? "bg-yellow-500" : "bg-red-500 animate-pulse",
+                )}
+              />
               <span className="text-muted-foreground">
                 {isPaused ? "Paused" : "Recording..."}
               </span>

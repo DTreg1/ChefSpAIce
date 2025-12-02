@@ -28,7 +28,7 @@ export interface ISecurityStorage {
   createModerationLog(log: InsertModerationLog): Promise<ModerationLog>;
   updateModerationLog(
     id: string,
-    updates: Partial<InsertModerationLog>
+    updates: Partial<InsertModerationLog>,
   ): Promise<void>;
   getModerationQueue(
     userId: string,
@@ -37,7 +37,7 @@ export interface ISecurityStorage {
       status?: string;
       severity?: string;
       contentType?: string;
-    }
+    },
   ): Promise<ModerationLog[]>;
   getModerationStats(timeRange?: { start: Date; end: Date }): Promise<{
     totalChecked: number;
@@ -55,28 +55,28 @@ export interface ISecurityStorage {
   restoreBlockedContent(id: string, restoredBy: string): Promise<void>;
   getBlockedContent(
     userId: string,
-    filters?: { status?: string }
+    filters?: { status?: string },
   ): Promise<BlockedContent[]>;
   deleteBlockedContent(id: string): Promise<void>;
 
   // ==================== Moderation Appeals ====================
   createModerationAppeal(
-    appeal: InsertModerationAppeal
+    appeal: InsertModerationAppeal,
   ): Promise<ModerationAppeal>;
   getModerationAppeal(id: string): Promise<ModerationAppeal | undefined>;
   updateModerationAppeal(
     id: string,
-    updates: Partial<InsertModerationAppeal>
+    updates: Partial<InsertModerationAppeal>,
   ): Promise<void>;
   getModerationAppeals(
     userId: string,
-    filters?: { status?: string }
+    filters?: { status?: string },
   ): Promise<ModerationAppeal[]>;
   decideModerationAppeal(
     id: string,
     decision: "approved" | "rejected" | "partially_approved",
     decisionReason: string,
-    decidedBy: string
+    decidedBy: string,
   ): Promise<void>;
 
   // ==================== Fraud Detection ====================
@@ -84,7 +84,7 @@ export interface ISecurityStorage {
   getFraudScores(userId: string, limit?: number): Promise<FraudScore[]>;
   getLatestFraudScore(userId: string): Promise<FraudScore | undefined>;
   createFraudDetectionResult(
-    result: InsertFraudDetectionResult
+    result: InsertFraudDetectionResult,
   ): Promise<FraudDetectionResult>;
   getFraudDetectionResults(
     userId: string,
@@ -92,43 +92,41 @@ export interface ISecurityStorage {
       analysisType?: string;
       riskLevel?: string;
       startDate?: Date;
-    }
+    },
   ): Promise<FraudDetectionResult[]>;
   getHighRiskUsers(
     threshold: number,
-    limit?: number
+    limit?: number,
   ): Promise<Array<{ userId: string; score: number; timestamp: Date }>>;
 
   // ==================== Suspicious Activities ====================
   createSuspiciousActivity(
-    activity: InsertSuspiciousActivity
+    activity: InsertSuspiciousActivity,
   ): Promise<SuspiciousActivity>;
   getSuspiciousActivities(
     userId?: string,
-    isAdmin?: boolean
+    isAdmin?: boolean,
   ): Promise<SuspiciousActivity[]>;
   updateSuspiciousActivity(
     activityId: string,
     status: "pending" | "reviewing" | "confirmed" | "dismissed" | "escalated",
-    resolvedAt?: Date
+    resolvedAt?: Date,
   ): Promise<void>;
   getSuspiciousActivitiesByType(
     activityType: string,
-    limit?: number
+    limit?: number,
   ): Promise<SuspiciousActivity[]>;
 
   // ==================== Fraud Reviews ====================
   createFraudReview(review: InsertFraudReview): Promise<FraudReview>;
   getFraudReviews(userId: string): Promise<FraudReview[]>;
-  getActiveRestrictions(
-    userId: string
-  ): Promise<FraudReview | undefined>;
+  getActiveRestrictions(userId: string): Promise<FraudReview | undefined>;
   /** Block a user for fraud with optional restrictions */
   blockUserForFraud(
     userId: string,
     reviewerId: string,
     reason: string,
-    restrictions?: FraudReviewRestrictions
+    restrictions?: FraudReviewRestrictions,
   ): Promise<FraudReview>;
 
   // ==================== Fraud Statistics ====================
@@ -147,7 +145,7 @@ export interface ISecurityStorage {
   getPrivacySettings(userId: string): Promise<PrivacySettings | undefined>;
   upsertPrivacySettings(
     userId: string,
-    settings: Omit<InsertPrivacySettings, "userId">
+    settings: Omit<InsertPrivacySettings, "userId">,
   ): Promise<PrivacySettings>;
   deletePrivacySettings(userId: string): Promise<void>;
 }

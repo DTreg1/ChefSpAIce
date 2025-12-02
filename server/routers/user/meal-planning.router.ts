@@ -1,16 +1,13 @@
 import { Router, Request, Response } from "express";
 import { storage } from "../../storage/index";
-import { 
-  insertMealPlanSchema, 
-  type MealPlan
-} from "@shared/schema";
+import { insertMealPlanSchema, type MealPlan } from "@shared/schema";
 import { isAuthenticated } from "../../middleware/oauth.middleware";
 
 const router = Router();
 
 /**
  * Meal Planning Router
- * 
+ *
  * Handles meal plan CRUD operations for scheduling recipes to specific dates and meal types.
  * Shopping list functionality has been consolidated into the inventory router.
  */
@@ -19,9 +16,9 @@ const router = Router();
 
 /**
  * GET /
- * 
+ *
  * Retrieves meal plans for the authenticated user with optional filtering.
- * 
+ *
  * Query Parameters:
  * - date: String (optional) - Filter by specific date
  * - startDate: String (optional) - Filter by date range start
@@ -36,11 +33,11 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
 
     // Get meal plans with date range filtering
     let plans = await storage.user.recipes.getMealPlans(
-      userId, 
+      userId,
       startDate as string | undefined,
-      endDate as string | undefined
+      endDate as string | undefined,
     );
-    
+
     // Apply additional filters in application layer
     if (date) {
       plans = plans.filter((p: MealPlan) => p.date === date);
@@ -48,7 +45,7 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
     if (mealType) {
       plans = plans.filter((p: MealPlan) => p.mealType === mealType);
     }
-    
+
     res.json(plans);
   } catch (error) {
     console.error("Error fetching meal plans:", error);
@@ -58,9 +55,9 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
 
 /**
  * POST /
- * 
+ *
  * Creates a new meal plan entry.
- * 
+ *
  * Request Body (validated against insertMealPlanSchema):
  * - recipeId: String (required) - ID of the recipe to schedule
  * - date: String (required) - Date for the meal plan
@@ -68,76 +65,72 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
  * - servings: Number (optional) - Number of servings
  * - notes: String (optional) - Additional notes
  */
-router.post(
-  "/",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertMealPlanSchema.safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({
-          error: "Validation error",
-          details: validation.error.errors
-        });
-      }
+router.post("/", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const validation = insertMealPlanSchema.safeParse(req.body);
 
-      const mealPlan = await storage.user.recipes.createMealPlan({
-        ...validation.data,
-        userId
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Validation error",
+        details: validation.error.errors,
       });
-      
-      res.json(mealPlan);
-    } catch (error) {
-      console.error("Error creating meal plan:", error);
-      res.status(500).json({ error: "Failed to create meal plan" });
     }
+
+    const mealPlan = await storage.user.recipes.createMealPlan({
+      ...validation.data,
+      userId,
+    });
+
+    res.json(mealPlan);
+  } catch (error) {
+    console.error("Error creating meal plan:", error);
+    res.status(500).json({ error: "Failed to create meal plan" });
   }
-);
+});
 
 /**
  * PUT /:id
- * 
+ *
  * Updates an existing meal plan.
- * 
+ *
  * Path Parameters:
  * - id: String - Meal plan ID
- * 
+ *
  * Request Body: Partial meal plan fields to update
  */
-router.put(
-  "/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const mealPlanId = req.params.id;
-      
-      // Verify meal plan belongs to user
-      const plans = await storage.user.recipes.getMealPlans(userId);
-      const existing = plans.find((p: MealPlan) => p.id === mealPlanId);
-      
-      if (!existing) {
-        return res.status(404).json({ error: "Meal plan not found" });
-      }
-      
-      const updated = await storage.user.recipes.updateMealPlan(mealPlanId, userId, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating meal plan:", error);
-      res.status(500).json({ error: "Failed to update meal plan" });
+router.put("/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const mealPlanId = req.params.id;
+
+    // Verify meal plan belongs to user
+    const plans = await storage.user.recipes.getMealPlans(userId);
+    const existing = plans.find((p: MealPlan) => p.id === mealPlanId);
+
+    if (!existing) {
+      return res.status(404).json({ error: "Meal plan not found" });
     }
+
+    const updated = await storage.user.recipes.updateMealPlan(
+      mealPlanId,
+      userId,
+      req.body,
+    );
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating meal plan:", error);
+    res.status(500).json({ error: "Failed to update meal plan" });
   }
-);
+});
 
 /**
  * DELETE /:id
- * 
+ *
  * Deletes a meal plan.
- * 
+ *
  * Path Parameters:
  * - id: String - Meal plan ID to delete
  */
@@ -146,15 +139,15 @@ router.delete("/:id", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const mealPlanId = req.params.id;
-    
+
     // Verify meal plan belongs to user
     const plans = await storage.user.recipes.getMealPlans(userId);
     const existing = plans.find((p: MealPlan) => p.id === mealPlanId);
-    
+
     if (!existing) {
       return res.status(404).json({ error: "Meal plan not found" });
     }
-    
+
     await storage.user.recipes.deleteMealPlan(mealPlanId, userId);
     res.json({ message: "Meal plan deleted successfully" });
   } catch (error) {

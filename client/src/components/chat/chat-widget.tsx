@@ -72,14 +72,16 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
   const [satisfaction, setSatisfaction] = useState<number>(3);
   const { toast } = useToast();
 
-  const { data: chatHistory } = useQuery<Array<{ id: string; role: string; content: string; createdAt: Date | null }>>({
+  const { data: chatHistory } = useQuery<
+    Array<{ id: string; role: string; content: string; createdAt: Date | null }>
+  >({
     queryKey: ["/api/chat/messages"],
     enabled: isOpen && widgetMode === "chat",
   });
 
   useEffect(() => {
     if (chatHistory) {
-      const uiMessages: ChatMessageUI[] = chatHistory.map(msg => ({
+      const uiMessages: ChatMessageUI[] = chatHistory.map((msg) => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
@@ -105,7 +107,9 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
       });
       resetFeedbackForm();
       setWidgetMode("chat");
-      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list] });
+      void queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.feedback.list],
+      });
     },
     onError: () => {
       toast({
@@ -333,7 +337,9 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
                       <div className="text-center text-muted-foreground py-8">
                         <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p className="text-sm">Start a conversation</p>
-                        <p className="text-xs mt-1">Ask me anything about cooking!</p>
+                        <p className="text-xs mt-1">
+                          Ask me anything about cooking!
+                        </p>
                       </div>
                     )}
 
@@ -342,7 +348,7 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
                         key={msg.id}
                         className={cn(
                           "flex gap-2",
-                          msg.role === "user" ? "justify-end" : "justify-start"
+                          msg.role === "user" ? "justify-end" : "justify-start",
                         )}
                       >
                         {msg.role === "assistant" && (
@@ -357,10 +363,12 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
                             "max-w-[80%] rounded-lg px-3 py-2 text-sm",
                             msg.role === "user"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted",
                           )}
                         >
-                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="whitespace-pre-wrap break-words">
+                            {msg.content}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -373,7 +381,9 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
                           </AvatarFallback>
                         </Avatar>
                         <div className="max-w-[80%] rounded-lg px-3 py-2 text-sm bg-muted">
-                          <p className="whitespace-pre-wrap break-words">{streamingContent}</p>
+                          <p className="whitespace-pre-wrap break-words">
+                            {streamingContent}
+                          </p>
                         </div>
                       </div>
                     )}

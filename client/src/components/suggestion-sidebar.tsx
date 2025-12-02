@@ -1,6 +1,6 @@
 /**
  * SuggestionSidebar Component
- * 
+ *
  * Sidebar panel showing all writing suggestions with accept/reject controls.
  * Groups suggestions by type and severity for easy navigation.
  */
@@ -35,15 +35,19 @@ export function SuggestionSidebar({
   const [selectedType, setSelectedType] = useState<string>("all");
 
   // Filter suggestions by type
-  const filteredSuggestions = selectedType === "all" 
-    ? suggestions 
-    : suggestions.filter(s => s.suggestionType === selectedType);
+  const filteredSuggestions =
+    selectedType === "all"
+      ? suggestions
+      : suggestions.filter((s) => s.suggestionType === selectedType);
 
   // Group suggestions by type for counts
-  const suggestionCounts = suggestions.reduce((acc, s) => {
-    acc[s.suggestionType] = (acc[s.suggestionType] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const suggestionCounts = suggestions.reduce(
+    (acc, s) => {
+      acc[s.suggestionType] = (acc[s.suggestionType] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -78,11 +82,9 @@ export function SuggestionSidebar({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Suggestions</CardTitle>
-          <Badge variant="secondary">
-            {suggestions.length} total
-          </Badge>
+          <Badge variant="secondary">{suggestions.length} total</Badge>
         </div>
-        
+
         {suggestions.length > 0 && (
           <div className="flex gap-2 mt-2">
             <Button
@@ -108,7 +110,7 @@ export function SuggestionSidebar({
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent className="flex-1 p-0">
         {suggestions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
@@ -117,57 +119,100 @@ export function SuggestionSidebar({
             <p className="text-xs">Click Analyze to check your text</p>
           </div>
         ) : (
-          <Tabs value={selectedType} onValueChange={setSelectedType} className="h-full flex flex-col">
+          <Tabs
+            value={selectedType}
+            onValueChange={setSelectedType}
+            className="h-full flex flex-col"
+          >
             <TabsList className="grid grid-cols-6 w-full rounded-none border-b">
-              <TabsTrigger value="all" className="text-xs" data-testid="tab-all">
+              <TabsTrigger
+                value="all"
+                className="text-xs"
+                data-testid="tab-all"
+              >
                 All
               </TabsTrigger>
-              <TabsTrigger value="grammar" className="text-xs" data-testid="tab-grammar">
+              <TabsTrigger
+                value="grammar"
+                className="text-xs"
+                data-testid="tab-grammar"
+              >
                 📝 ({suggestionCounts.grammar || 0})
               </TabsTrigger>
-              <TabsTrigger value="spelling" className="text-xs" data-testid="tab-spelling">
+              <TabsTrigger
+                value="spelling"
+                className="text-xs"
+                data-testid="tab-spelling"
+              >
                 🔤 ({suggestionCounts.spelling || 0})
               </TabsTrigger>
-              <TabsTrigger value="style" className="text-xs" data-testid="tab-style">
+              <TabsTrigger
+                value="style"
+                className="text-xs"
+                data-testid="tab-style"
+              >
                 ✨ ({suggestionCounts.style || 0})
               </TabsTrigger>
-              <TabsTrigger value="tone" className="text-xs" data-testid="tab-tone">
+              <TabsTrigger
+                value="tone"
+                className="text-xs"
+                data-testid="tab-tone"
+              >
                 🎯 ({suggestionCounts.tone || 0})
               </TabsTrigger>
-              <TabsTrigger value="clarity" className="text-xs" data-testid="tab-clarity">
+              <TabsTrigger
+                value="clarity"
+                className="text-xs"
+                data-testid="tab-clarity"
+              >
                 💡 ({suggestionCounts.clarity || 0})
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value={selectedType} className="flex-1 mt-0">
               <ScrollArea className="h-[500px] px-4">
                 <div className="space-y-2 py-2">
                   {filteredSuggestions.map((suggestion) => (
-                    <Card 
-                      key={suggestion.id} 
+                    <Card
+                      key={suggestion.id}
                       className={cn(
                         "p-3 space-y-2 transition-morph",
-                        suggestion.accepted === true && "opacity-50 bg-green-50 dark:bg-green-950",
-                        suggestion.accepted === false && "opacity-50 bg-red-50 dark:bg-red-950"
+                        suggestion.accepted === true &&
+                          "opacity-50 bg-green-50 dark:bg-green-950",
+                        suggestion.accepted === false &&
+                          "opacity-50 bg-red-50 dark:bg-red-950",
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
-                            <span>{getTypeIcon(suggestion.suggestionType)}</span>
-                            <Badge variant={getSeverityColor(suggestion.severity)} className="text-xs">
+                            <span>
+                              {getTypeIcon(suggestion.suggestionType)}
+                            </span>
+                            <Badge
+                              variant={getSeverityColor(suggestion.severity)}
+                              className="text-xs"
+                            >
                               {suggestion.severity}
                             </Badge>
                           </div>
-                          
+
                           <div className="space-y-1">
                             <div className="text-xs">
-                              <span className="text-muted-foreground">Original: </span>
-                              <span className="line-through opacity-70">{suggestion.originalSnippet}</span>
+                              <span className="text-muted-foreground">
+                                Original:{" "}
+                              </span>
+                              <span className="line-through opacity-70">
+                                {suggestion.originalSnippet}
+                              </span>
                             </div>
                             <div className="text-xs">
-                              <span className="text-muted-foreground">Suggested: </span>
-                              <span className="font-semibold">{suggestion.suggestedSnippet}</span>
+                              <span className="text-muted-foreground">
+                                Suggested:{" "}
+                              </span>
+                              <span className="font-semibold">
+                                {suggestion.suggestedSnippet}
+                              </span>
                             </div>
                             {suggestion.reason && (
                               <div className="text-xs text-muted-foreground italic">
@@ -176,7 +221,7 @@ export function SuggestionSidebar({
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-1">
                           <Button
                             size="sm"

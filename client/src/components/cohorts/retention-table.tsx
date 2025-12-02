@@ -1,9 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TrendingUp, TrendingDown, Users, Calendar, AlertCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Calendar,
+  AlertCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { Cohort } from "@shared/schema";
@@ -22,30 +39,43 @@ interface RetentionTableProps {
   periods?: number[];
 }
 
-export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }: RetentionTableProps) {
+export function RetentionTable({
+  cohorts,
+  periods = [0, 1, 7, 14, 30, 60, 90],
+}: RetentionTableProps) {
   const retentionQueries = useQuery({
-    queryKey: [API_ENDPOINTS.admin.cohorts.list, 'retention', cohorts.map(c => c.id), periods],
+    queryKey: [
+      API_ENDPOINTS.admin.cohorts.list,
+      "retention",
+      cohorts.map((c) => c.id),
+      periods,
+    ],
     queryFn: async () => {
       const retentionData = await Promise.all(
         cohorts.map(async (cohort) => {
-          const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohort.id)}/retention`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ periods }),
-          });
+          const response = await fetch(
+            `${API_ENDPOINTS.admin.cohorts.item(cohort.id)}/retention`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ periods }),
+            },
+          );
           const data = await response.json();
-          return { 
-            retention: Array.isArray(data.retention) ? data.retention : data.retention?.retention || [], 
-            cohortName: cohort.cohortName, 
-            cohortDate: cohort.createdAt 
+          return {
+            retention: Array.isArray(data.retention)
+              ? data.retention
+              : data.retention?.retention || [],
+            cohortName: cohort.cohortName,
+            cohortDate: cohort.createdAt,
           };
-        })
+        }),
       );
       return retentionData;
     },
     enabled: cohorts.length > 0,
   });
-  
+
   const getHeatmapColor = (rate: number) => {
     if (rate >= 80) return "bg-green-500 dark:bg-green-600";
     if (rate >= 60) return "bg-green-400 dark:bg-green-500";
@@ -54,11 +84,11 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
     if (rate >= 10) return "bg-red-400 dark:bg-red-500";
     return "bg-red-500 dark:bg-red-600";
   };
-  
+
   const getTextColor = (rate: number) => {
     return rate >= 50 ? "text-white" : "text-foreground";
   };
-  
+
   const formatPeriodLabel = (period: number) => {
     if (period === 0) return "Day 0";
     if (period === 1) return "Day 1";
@@ -69,19 +99,19 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
     if (period === 90) return "Month 3";
     return `Day ${period}`;
   };
-  
+
   const getTrendIcon = (current: number, previous?: number) => {
     if (!previous) return null;
     const diff = current - previous;
     if (Math.abs(diff) < 1) return null;
-    
+
     return diff > 0 ? (
       <TrendingUp className="h-3 w-3 text-green-500" />
     ) : (
       <TrendingDown className="h-3 w-3 text-red-500" />
     );
   };
-  
+
   if (!cohorts.length) {
     return (
       <Card>
@@ -91,13 +121,14 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
             Retention Heatmap
           </CardTitle>
           <CardDescription>
-            No cohorts selected. Create or select cohorts to view retention analysis.
+            No cohorts selected. Create or select cohorts to view retention
+            analysis.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
-  
+
   if (retentionQueries.isLoading) {
     return (
       <Card>
@@ -114,7 +145,7 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
       </Card>
     );
   }
-  
+
   if (retentionQueries.error) {
     return (
       <Card>
@@ -132,9 +163,9 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
       </Card>
     );
   }
-  
+
   const retentionData = retentionQueries.data || [];
-  
+
   return (
     <Card>
       <CardHeader>
@@ -159,7 +190,10 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                   </div>
                 </th>
                 {periods.map((period) => (
-                  <th key={period} className="text-center py-3 px-2 font-medium text-sm">
+                  <th
+                    key={period}
+                    className="text-center py-3 px-2 font-medium text-sm"
+                  >
                     {formatPeriodLabel(period)}
                   </th>
                 ))}
@@ -168,32 +202,44 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
             <tbody>
               {cohorts.map((cohort, cohortIndex) => {
                 const cohortRetention = retentionData[cohortIndex];
-                const baseCount = cohortRetention?.retention?.find((r: any) => r.period === 0)?.count || cohort.userCount || 100;
-                
+                const baseCount =
+                  cohortRetention?.retention?.find((r: any) => r.period === 0)
+                    ?.count ||
+                  cohort.userCount ||
+                  100;
+
                 return (
-                  <tr key={cohort.id} className="border-b" data-testid={`row-cohort-${cohort.id}`}>
+                  <tr
+                    key={cohort.id}
+                    className="border-b"
+                    data-testid={`row-cohort-${cohort.id}`}
+                  >
                     <td className="py-3 px-4">
                       <div className="space-y-1">
                         <div className="font-medium">{cohort.cohortName}</div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {cohort.createdAt && format(new Date(cohort.createdAt), "MMM d, yyyy")}
+                          {cohort.createdAt &&
+                            format(new Date(cohort.createdAt), "MMM d, yyyy")}
                         </div>
                       </div>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant="secondary">
-                        {baseCount}
-                      </Badge>
+                      <Badge variant="secondary">{baseCount}</Badge>
                     </td>
                     {periods.map((period, periodIndex) => {
-                      const retentionPoint = cohortRetention?.retention?.find((r: any) => r.period === period);
+                      const retentionPoint = cohortRetention?.retention?.find(
+                        (r: any) => r.period === period,
+                      );
                       const rate = retentionPoint?.rate || 0;
                       const count = retentionPoint?.count || 0;
-                      const previousPoint = periodIndex > 0 ? 
-                        cohortRetention?.retention?.find((r: any) => r.period === periods[periodIndex - 1]) : 
-                        null;
-                      
+                      const previousPoint =
+                        periodIndex > 0
+                          ? cohortRetention?.retention?.find(
+                              (r: any) => r.period === periods[periodIndex - 1],
+                            )
+                          : null;
+
                       return (
                         <td key={period} className="text-center py-2 px-1">
                           <TooltipProvider>
@@ -208,14 +254,18 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                                   data-testid={`cell-${cohort.id}-${period}`}
                                 >
                                   <div className="flex items-center justify-center gap-1">
-                                    {period === 0 ? "100%" : `${rate.toFixed(1)}%`}
+                                    {period === 0
+                                      ? "100%"
+                                      : `${rate.toFixed(1)}%`}
                                     {getTrendIcon(rate, previousPoint?.rate)}
                                   </div>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-1">
-                                  <p className="font-medium">{cohort.cohortName}</p>
+                                  <p className="font-medium">
+                                    {cohort.cohortName}
+                                  </p>
                                   <p>{formatPeriodLabel(period)}</p>
                                   <p className="text-sm">
                                     {count} of {baseCount} users
@@ -225,7 +275,12 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                                   </p>
                                   {previousPoint && (
                                     <p className="text-xs text-muted-foreground">
-                                      {rate > previousPoint.rate ? "+" : ""}{(rate - previousPoint.rate).toFixed(1)}% from {formatPeriodLabel(periods[periodIndex - 1])}
+                                      {rate > previousPoint.rate ? "+" : ""}
+                                      {(rate - previousPoint.rate).toFixed(1)}%
+                                      from{" "}
+                                      {formatPeriodLabel(
+                                        periods[periodIndex - 1],
+                                      )}
                                     </p>
                                   )}
                                 </div>
@@ -241,7 +296,7 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
             </tbody>
           </table>
         </div>
-        
+
         {/* Legend */}
         <div className="mt-6 pt-6 border-t">
           <div className="flex items-center justify-between">

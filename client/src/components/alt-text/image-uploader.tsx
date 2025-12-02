@@ -1,6 +1,6 @@
 /**
  * Image Uploader Component
- * 
+ *
  * Provides drag-and-drop or click-to-upload functionality for images
  * with automatic alt text generation using GPT-4 Vision.
  */
@@ -24,7 +24,10 @@ interface ImageUploaderProps {
   context?: string;
 }
 
-export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) {
+export function ImageUploader({
+  onImageUploaded,
+  context,
+}: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageTitle, setImageTitle] = useState("");
@@ -36,7 +39,11 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
   // Generate alt text mutation
   const generateAltTextMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest(API_ENDPOINTS.ai.media.vision.altText.generate, "POST", data);
+      const res = await apiRequest(
+        API_ENDPOINTS.ai.media.vision.altText.generate,
+        "POST",
+        data,
+      );
       return res;
     },
     onSuccess: (response) => {
@@ -44,7 +51,9 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
         title: "Success",
         description: `Alt text generated: "${response.data?.altText}"`,
       });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.images.enhance] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.images.enhance],
+      });
       if (onImageUploaded && response.data?.imageId) {
         onImageUploaded(response.data);
       }
@@ -54,15 +63,19 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
       toast({
         title: "Error",
         description: "Failed to generate alt text. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Check if decorative mutation
   const checkDecorativeMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest(`${API_ENDPOINTS.ai.media.vision.altText.generate}/check-decorative`, "POST", data);
+      const res = await apiRequest(
+        `${API_ENDPOINTS.ai.media.vision.altText.generate}/check-decorative`,
+        "POST",
+        data,
+      );
       return res;
     },
   });
@@ -82,15 +95,15 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
     setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(file => file.type.startsWith("image/"));
-    
+    const imageFile = files.find((file) => file.type.startsWith("image/"));
+
     if (imageFile) {
       await processImage(imageFile);
     } else {
       toast({
         title: "Invalid file",
         description: "Please upload an image file",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -108,27 +121,28 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
       setPreviewUrl(dataUrl);
-      
+
       // Here you would typically upload to cloud storage
       // For now, we'll use the data URL directly
       // In production, you'd upload to object storage and get a permanent URL
-      
+
       // Generate alt text
       await generateAltTextMutation.mutateAsync({
         imageUrl: dataUrl,
-        context: imageContext
+        context: imageContext,
       });
 
       // Check if decorative
       const decorativeResult = await checkDecorativeMutation.mutateAsync({
         imageUrl: dataUrl,
-        context: imageContext
+        context: imageContext,
       });
-      
+
       if (decorativeResult.data?.isDecorative) {
         toast({
           title: "Decorative Image Detected",
-          description: "This image appears to be decorative and may not need alt text.",
+          description:
+            "This image appears to be decorative and may not need alt text.",
         });
       }
     };
@@ -171,9 +185,10 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
           className={`
             relative border-2 border-dashed rounded-lg p-8
             transition-all duration-200 cursor-pointer
-            ${isDragging 
-              ? "border-primary bg-primary/5" 
-              : "border-muted-foreground/25 hover:border-primary/50"
+            ${
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50"
             }
             ${previewUrl ? "bg-muted/10" : ""}
           `}
@@ -194,9 +209,9 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
 
           {previewUrl ? (
             <div className="relative">
-              <img 
-                src={previewUrl} 
-                alt="Preview" 
+              <img
+                src={previewUrl}
+                alt="Preview"
                 className="max-w-full max-h-[400px] mx-auto rounded-lg"
               />
               <Button
@@ -211,14 +226,14 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
               >
                 <X className="w-4 h-4" />
               </Button>
-              
+
               {generateAltTextMutation.isPending && (
                 <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
                   <Loader2 className="w-8 h-8 animate-spin" />
                   <span className="ml-2">Generating alt text...</span>
                 </div>
               )}
-              
+
               {generateAltTextMutation.isSuccess && (
                 <div className="mt-4 p-4 bg-muted rounded-lg">
                   <Label className="font-semibold">Generated Alt Text:</Label>
@@ -227,11 +242,20 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
                   </p>
                   <div className="mt-2 flex gap-2 flex-wrap">
                     <Badge variant="secondary">
-                      Confidence: {Math.round((generateAltTextMutation.data?.data?.confidence || 0) * 100)}%
+                      Confidence:{" "}
+                      {Math.round(
+                        (generateAltTextMutation.data?.data?.confidence || 0) *
+                          100,
+                      )}
+                      %
                     </Badge>
-                    {generateAltTextMutation.data?.data?.objectsDetected?.map((obj: string) => (
-                      <Badge key={obj} variant="outline">{obj}</Badge>
-                    ))}
+                    {generateAltTextMutation.data?.data?.objectsDetected?.map(
+                      (obj: string) => (
+                        <Badge key={obj} variant="outline">
+                          {obj}
+                        </Badge>
+                      ),
+                    )}
                   </div>
                 </div>
               )}

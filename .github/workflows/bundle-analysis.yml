@@ -2,18 +2,18 @@ name: Bundle Size Analysis
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   schedule:
     # Run weekly on Mondays at 9:00 AM UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch: # Allow manual triggering
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,8 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -73,13 +73,13 @@ jobs:
           script: |
             const bundleSize = '${{ steps.bundle-size.outputs.size }}';
             const comment = `## Bundle Size Analysis
-            
+
             📦 **Total Bundle Size:** \`${bundleSize}\`
-            
+
             📊 [View detailed bundle analysis](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
+
             Download the \`bundle-stats.html\` artifact to see an interactive visualization.`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -95,7 +95,7 @@ jobs:
             BUNDLE_SIZE_KB=$(du -sk dist | cut -f1)
           fi
           MAX_SIZE_KB=5000
-          
+
           if [ "$BUNDLE_SIZE_KB" -gt "$MAX_SIZE_KB" ]; then
             echo "⚠️ Warning: Bundle size ($BUNDLE_SIZE_KB KB) exceeds threshold ($MAX_SIZE_KB KB)"
             echo "Consider optimizing your bundle by:"

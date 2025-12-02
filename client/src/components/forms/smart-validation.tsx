@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, AlertCircle, Lightbulb, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,12 +60,14 @@ export function SmartValidation({
   className,
 }: SmartValidationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [appliedSuggestion, setAppliedSuggestion] = useState<string | null>(null);
+  const [appliedSuggestion, setAppliedSuggestion] = useState<string | null>(
+    null,
+  );
 
   const handleApplySuggestion = (suggestionValue: string, action?: string) => {
     setAppliedSuggestion(suggestionValue);
     onApplySuggestion?.(suggestionValue, action);
-    
+
     // Auto-collapse after applying
     setTimeout(() => setIsExpanded(false), 1500);
   };
@@ -79,7 +86,7 @@ export function SmartValidation({
         className={cn(
           "mt-2 rounded-md border bg-background p-3",
           errors.length > 0 && "border-destructive/50 bg-destructive/5",
-          className
+          className,
         )}
         data-testid={`validation-error-${fieldName}`}
       >
@@ -91,7 +98,7 @@ export function SmartValidation({
               <p className="text-sm font-medium text-destructive">
                 {errors[0]}
               </p>
-              
+
               {/* Format Hints */}
               {formatHints.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -100,7 +107,7 @@ export function SmartValidation({
               )}
             </div>
           </div>
-          
+
           {(suggestions.length > 0 || quickFixes.length > 0) && (
             <Button
               variant="ghost"
@@ -137,7 +144,9 @@ export function SmartValidation({
                         key={index}
                         variant="outline"
                         size="sm"
-                        onClick={() => handleApplySuggestion(fix.value, fix.action)}
+                        onClick={() =>
+                          handleApplySuggestion(fix.value, fix.action)
+                        }
                         className="text-xs h-7"
                         data-testid={`button-quick-fix-${fieldName}-${index}`}
                       >
@@ -160,7 +169,12 @@ export function SmartValidation({
                       <SuggestionCard
                         key={index}
                         suggestion={suggestion}
-                        onApply={() => handleApplySuggestion(suggestion.value, suggestion.action)}
+                        onApply={() =>
+                          handleApplySuggestion(
+                            suggestion.value,
+                            suggestion.action,
+                          )
+                        }
                         isApplied={appliedSuggestion === suggestion.value}
                         fieldName={fieldName}
                         index={index}
@@ -194,21 +208,25 @@ function SuggestionCard({
   fieldName: string;
   index: number;
 }) {
-  const confidenceColor = 
-    suggestion.confidence >= 0.8 ? "text-green-600" :
-    suggestion.confidence >= 0.5 ? "text-yellow-600" :
-    "text-red-600";
-    
-  const confidenceLabel = 
-    suggestion.confidence >= 0.8 ? "High" :
-    suggestion.confidence >= 0.5 ? "Medium" :
-    "Low";
+  const confidenceColor =
+    suggestion.confidence >= 0.8
+      ? "text-green-600"
+      : suggestion.confidence >= 0.5
+        ? "text-yellow-600"
+        : "text-red-600";
+
+  const confidenceLabel =
+    suggestion.confidence >= 0.8
+      ? "High"
+      : suggestion.confidence >= 0.5
+        ? "Medium"
+        : "Low";
 
   return (
     <div
       className={cn(
         "flex items-start gap-2 p-2 rounded-md border",
-        isApplied ? "bg-green-50 border-green-200" : "bg-muted/50"
+        isApplied ? "bg-green-50 border-green-200" : "bg-muted/50",
       )}
       data-testid={`suggestion-card-${fieldName}-${index}`}
     >
@@ -217,10 +235,7 @@ function SuggestionCard({
           <code className="text-xs bg-background px-1.5 py-0.5 rounded">
             {suggestion.value}
           </code>
-          <Badge 
-            variant="outline" 
-            className={cn("text-xs", confidenceColor)}
-          >
+          <Badge variant="outline" className={cn("text-xs", confidenceColor)}>
             {confidenceLabel} ({Math.round(suggestion.confidence * 100)}%)
           </Badge>
           {isApplied && (
@@ -230,9 +245,7 @@ function SuggestionCard({
             </Badge>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {suggestion.reasoning}
-        </p>
+        <p className="text-xs text-muted-foreground">{suggestion.reasoning}</p>
       </div>
       {!isApplied && (
         <Button
@@ -271,7 +284,7 @@ export function ValidationSuccess({
         transition={{ duration: 0.2 }}
         className={cn(
           "mt-2 flex items-center gap-2 text-sm text-green-600",
-          className
+          className,
         )}
         data-testid={`validation-success-${fieldName}`}
       >
@@ -299,8 +312,7 @@ export function FormatHelper({
 
   return (
     <div className={cn("mt-1 text-xs text-muted-foreground", className)}>
-      <span className="font-medium">Format:</span>{" "}
-      {examples.join(" or ")}
+      <span className="font-medium">Format:</span> {examples.join(" or ")}
     </div>
   );
 }

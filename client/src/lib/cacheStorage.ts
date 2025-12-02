@@ -8,7 +8,11 @@ const CACHE_VERSION = 1;
 const DEFAULT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export class CacheStorage {
-  static set<T>(key: string, data: T, expiryMs: number = DEFAULT_EXPIRY_MS): void {
+  static set<T>(
+    key: string,
+    data: T,
+    expiryMs: number = DEFAULT_EXPIRY_MS,
+  ): void {
     try {
       const entry: CacheEntry<T> = {
         data,
@@ -27,7 +31,7 @@ export class CacheStorage {
       if (!item) return null;
 
       const entry: CacheEntry<T> = JSON.parse(item);
-      
+
       if (entry.version !== CACHE_VERSION) {
         this.remove(key);
         return null;
@@ -60,13 +64,13 @@ export class CacheStorage {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('cache:')) {
+        if (key && key.startsWith("cache:")) {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (error) {
-      console.error('Failed to clear cache:', error);
+      console.error("Failed to clear cache:", error);
     }
   }
 }

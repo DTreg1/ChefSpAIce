@@ -1,6 +1,6 @@
-declare module '@nicokaiser/passport-apple' {
-  import { Strategy } from 'passport-strategy';
-  
+declare module "@nicokaiser/passport-apple" {
+  import { Strategy } from "passport-strategy";
+
   export interface AppleStrategyOptions {
     clientID: string;
     teamID: string;
@@ -9,7 +9,7 @@ declare module '@nicokaiser/passport-apple' {
     callbackURL: string;
     scope?: string[];
   }
-  
+
   export interface AppleProfile {
     id: string;
     email?: string;
@@ -20,7 +20,7 @@ declare module '@nicokaiser/passport-apple' {
     provider: string;
     _json?: any;
   }
-  
+
   export default class AppleStrategy extends Strategy {
     constructor(
       options: AppleStrategyOptions,
@@ -29,10 +29,10 @@ declare module '@nicokaiser/passport-apple' {
         refreshToken: string,
         idToken: any,
         profile: AppleProfile,
-        done: (error: any, user?: any) => void
-      ) => void
+        done: (error: any, user?: any) => void,
+      ) => void,
     );
-    
+
     name: string;
     authenticate(req: any, options?: any): void;
   }

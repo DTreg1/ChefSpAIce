@@ -1,15 +1,27 @@
 /**
  * Image Editor Component
- * 
+ *
  * Main editing interface with tools for image enhancement.
  * Provides controls for background removal, cropping, filters, and quality.
  */
 
 import { useState, useCallback, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -17,17 +29,17 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Wand2, 
-  Crop, 
-  Download, 
-  Upload, 
+import {
+  Wand2,
+  Crop,
+  Download,
+  Upload,
   RotateCw,
   Palette,
   Sliders,
   Scissors,
   Image as ImageIcon,
-  Loader2
+  Loader2,
 } from "lucide-react";
 
 interface ImageEditorProps {
@@ -71,24 +83,27 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
   const { toast } = useToast();
 
   // Handle file upload
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image smaller than 10MB",
-          variant: "destructive",
-        });
-        return;
-      }
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: "Please select an image smaller than 10MB",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const url = URL.createObjectURL(file);
-      setImageUrl(url);
-      setProcessedUrl("");
-      if (onFileChange) onFileChange(file);
-    }
-  }, [onFileChange, toast]);
+        const url = URL.createObjectURL(file);
+        setImageUrl(url);
+        setProcessedUrl("");
+        if (onFileChange) onFileChange(file);
+      }
+    },
+    [onFileChange, toast],
+  );
 
   // Process image with selected operations
   const processImage = async () => {
@@ -103,11 +118,11 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
 
     setIsProcessing(true);
     const formData = new FormData();
-    
+
     if (file) {
       formData.append("image", file);
     }
-    
+
     // Determine endpoint based on primary operation
     let endpoint = "/api/images/enhance";
     if (operations.backgroundRemoval) {
@@ -129,7 +144,7 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
 
       const result = await response.json();
       setProcessedUrl(result.processedUrl);
-      
+
       if (onSave) {
         onSave(result.processedUrl);
       }
@@ -151,10 +166,10 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
 
   // Add filter
   const addFilter = (type: string, intensity: number) => {
-    setOperations(prev => ({
+    setOperations((prev) => ({
       ...prev,
       filters: [
-        ...prev.filters.filter(f => f.type !== type),
+        ...prev.filters.filter((f) => f.type !== type),
         { type, intensity },
       ],
     }));
@@ -162,9 +177,9 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
 
   // Remove filter
   const removeFilter = (type: string) => {
-    setOperations(prev => ({
+    setOperations((prev) => ({
       ...prev,
-      filters: prev.filters.filter(f => f.type !== type),
+      filters: prev.filters.filter((f) => f.type !== type),
     }));
   };
 
@@ -183,7 +198,7 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                 className="hidden"
                 data-testid="file-input"
               />
-              
+
               <Button
                 size="lg"
                 onClick={() => fileInputRef.current?.click()}
@@ -193,7 +208,7 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                 <Upload className="h-5 w-5" />
                 Upload Image
               </Button>
-              
+
               <p className="text-sm text-muted-foreground mt-4">
                 Supports JPEG, PNG, WebP, and GIF (max 10MB)
               </p>
@@ -221,14 +236,14 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                     alt="Preview"
                     className="w-full h-full object-contain"
                   />
-                  
+
                   {isProcessing && (
                     <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex gap-2 mt-4">
                   <Button
                     onClick={() => fileInputRef.current?.click()}
@@ -239,7 +254,7 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                     <Upload className="h-4 w-4 mr-2" />
                     Change Image
                   </Button>
-                  
+
                   {processedUrl && (
                     <>
                       <Button
@@ -251,12 +266,8 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                         <RotateCw className="h-4 w-4 mr-2" />
                         Reset
                       </Button>
-                      
-                      <Button
-                        asChild
-                        size="sm"
-                        data-testid="download-button"
-                      >
+
+                      <Button asChild size="sm" data-testid="download-button">
                         <a href={processedUrl} download>
                           <Download className="h-4 w-4 mr-2" />
                           Download
@@ -291,44 +302,53 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                         <Switch
                           id="bg-removal"
                           checked={operations.backgroundRemoval}
-                          onCheckedChange={(checked) => 
-                            setOperations(prev => ({ ...prev, backgroundRemoval: checked }))
+                          onCheckedChange={(checked) =>
+                            setOperations((prev) => ({
+                              ...prev,
+                              backgroundRemoval: checked,
+                            }))
                           }
                           data-testid="switch-bg-removal"
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <Label htmlFor="auto-crop">Auto Crop</Label>
                         <Switch
                           id="auto-crop"
                           checked={operations.autoCrop}
-                          onCheckedChange={(checked) => 
-                            setOperations(prev => ({ ...prev, autoCrop: checked }))
+                          onCheckedChange={(checked) =>
+                            setOperations((prev) => ({
+                              ...prev,
+                              autoCrop: checked,
+                            }))
                           }
                           data-testid="switch-auto-crop"
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <Label htmlFor="enhance">Quality Enhancement</Label>
                         <Switch
                           id="enhance"
                           checked={operations.qualityEnhancement}
-                          onCheckedChange={(checked) => 
-                            setOperations(prev => ({ ...prev, qualityEnhancement: checked }))
+                          onCheckedChange={(checked) =>
+                            setOperations((prev) => ({
+                              ...prev,
+                              qualityEnhancement: checked,
+                            }))
                           }
                           data-testid="switch-enhance"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="pt-4 space-y-3">
                       <Label>Output Format</Label>
                       <Select
                         value={operations.format}
-                        onValueChange={(value) => 
-                          setOperations(prev => ({ ...prev, format: value }))
+                        onValueChange={(value) =>
+                          setOperations((prev) => ({ ...prev, format: value }))
                         }
                       >
                         <SelectTrigger data-testid="select-format">
@@ -340,13 +360,16 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                           <SelectItem value="webp">WebP</SelectItem>
                         </SelectContent>
                       </Select>
-                      
+
                       <div className="space-y-2">
                         <Label>Quality: {operations.compression}%</Label>
                         <Slider
                           value={[operations.compression]}
-                          onValueChange={([value]) => 
-                            setOperations(prev => ({ ...prev, compression: value }))
+                          onValueChange={([value]) =>
+                            setOperations((prev) => ({
+                              ...prev,
+                              compression: value,
+                            }))
                           }
                           min={10}
                           max={100}
@@ -361,13 +384,18 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                   <TabsContent value="adjust" className="space-y-4">
                     <div className="space-y-3">
                       <div className="space-y-2">
-                        <Label>Brightness: {operations.colorAdjustments.brightness}</Label>
+                        <Label>
+                          Brightness: {operations.colorAdjustments.brightness}
+                        </Label>
                         <Slider
                           value={[operations.colorAdjustments.brightness]}
-                          onValueChange={([value]) => 
-                            setOperations(prev => ({
+                          onValueChange={([value]) =>
+                            setOperations((prev) => ({
                               ...prev,
-                              colorAdjustments: { ...prev.colorAdjustments, brightness: value }
+                              colorAdjustments: {
+                                ...prev.colorAdjustments,
+                                brightness: value,
+                              },
                             }))
                           }
                           min={-100}
@@ -376,15 +404,20 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                           data-testid="slider-brightness"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label>Contrast: {operations.colorAdjustments.contrast}</Label>
+                        <Label>
+                          Contrast: {operations.colorAdjustments.contrast}
+                        </Label>
                         <Slider
                           value={[operations.colorAdjustments.contrast]}
-                          onValueChange={([value]) => 
-                            setOperations(prev => ({
+                          onValueChange={([value]) =>
+                            setOperations((prev) => ({
                               ...prev,
-                              colorAdjustments: { ...prev.colorAdjustments, contrast: value }
+                              colorAdjustments: {
+                                ...prev.colorAdjustments,
+                                contrast: value,
+                              },
                             }))
                           }
                           min={-100}
@@ -393,15 +426,20 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                           data-testid="slider-contrast"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label>Saturation: {operations.colorAdjustments.saturation}</Label>
+                        <Label>
+                          Saturation: {operations.colorAdjustments.saturation}
+                        </Label>
                         <Slider
                           value={[operations.colorAdjustments.saturation]}
-                          onValueChange={([value]) => 
-                            setOperations(prev => ({
+                          onValueChange={([value]) =>
+                            setOperations((prev) => ({
                               ...prev,
-                              colorAdjustments: { ...prev.colorAdjustments, saturation: value }
+                              colorAdjustments: {
+                                ...prev.colorAdjustments,
+                                saturation: value,
+                              },
                             }))
                           }
                           min={-100}
@@ -416,22 +454,28 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
                   {/* Filters */}
                   <TabsContent value="filters" className="space-y-4">
                     <div className="space-y-2">
-                      {["blur", "grayscale", "sepia"].map(filter => {
-                        const active = operations.filters.some(f => f.type === filter);
+                      {["blur", "grayscale", "sepia"].map((filter) => {
+                        const active = operations.filters.some(
+                          (f) => f.type === filter,
+                        );
                         return (
                           <Button
                             key={filter}
                             variant={active ? "default" : "outline"}
                             size="sm"
                             className="w-full justify-start"
-                            onClick={() => 
-                              active ? removeFilter(filter) : addFilter(filter, 50)
+                            onClick={() =>
+                              active
+                                ? removeFilter(filter)
+                                : addFilter(filter, 50)
                             }
                             data-testid={`filter-${filter}`}
                           >
                             <Palette className="h-4 w-4 mr-2" />
                             {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                            {active && <Badge className="ml-auto">Active</Badge>}
+                            {active && (
+                              <Badge className="ml-auto">Active</Badge>
+                            )}
                           </Button>
                         );
                       })}

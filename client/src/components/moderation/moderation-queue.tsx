@@ -3,28 +3,40 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { ToxicityScore } from "./toxicity-score";
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Clock, 
-  User, 
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  User,
   Calendar,
   MessageSquare,
   FileText,
   Star,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -39,7 +51,7 @@ interface ModerationLog {
   modelUsed: string;
   confidence: number;
   categories: string[];
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   manualReview: boolean;
   reviewedBy?: string;
   reviewNotes?: string;
@@ -57,59 +69,85 @@ const contentTypeIcons = {
   comment: MessageSquare,
   review: Star,
   chat: MessageSquare,
-  profile: User
+  profile: User,
 };
 
 const severityColors = {
   low: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  medium: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+  medium:
+    "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
   high: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-  critical: "bg-red-200 text-red-900 dark:bg-red-900/30 dark:text-red-300"
+  critical: "bg-red-200 text-red-900 dark:bg-red-900/30 dark:text-red-300",
 };
 
 export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
-  const [selectedStatus, setSelectedStatus] = useState<string>("pending_review");
-  const [selectedSeverity, setSelectedSeverity] = useState<string | undefined>();
+  const [selectedStatus, setSelectedStatus] =
+    useState<string>("pending_review");
+  const [selectedSeverity, setSelectedSeverity] = useState<
+    string | undefined
+  >();
   const [selectedLog, setSelectedLog] = useState<ModerationLog | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [page, setPage] = useState(1);
   const { toast } = useToast();
 
   // Fetch moderation queue
-  const { data: queueData, isLoading, refetch } = useQuery({
-    queryKey: [API_ENDPOINTS.admin.moderation, 'queue', selectedStatus, selectedSeverity, page],
+  const {
+    data: queueData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      API_ENDPOINTS.admin.moderation,
+      "queue",
+      selectedStatus,
+      selectedSeverity,
+      page,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10'
+        limit: "10",
       });
-      if (selectedStatus && selectedStatus !== 'all') {
-        params.append('status', selectedStatus);
+      if (selectedStatus && selectedStatus !== "all") {
+        params.append("status", selectedStatus);
       }
-      if (selectedSeverity && selectedSeverity !== 'all') {
-        params.append('severity', selectedSeverity);
+      if (selectedSeverity && selectedSeverity !== "all") {
+        params.append("severity", selectedSeverity);
       }
-      const response = await apiRequest(`${API_ENDPOINTS.admin.moderation}/queue?${params}`, 'GET');
+      const response = await apiRequest(
+        `${API_ENDPOINTS.admin.moderation}/queue?${params}`,
+        "GET",
+      );
       return response;
     },
-    enabled: isAdmin
+    enabled: isAdmin,
   });
 
   // Take action on moderated content
   const actionMutation = useMutation({
-    mutationFn: async ({ logId, action, reason, notes }: {
+    mutationFn: async ({
+      logId,
+      action,
+      reason,
+      notes,
+    }: {
       logId: string;
-      action: 'approve' | 'block' | 'escalate' | 'dismiss';
+      action: "approve" | "block" | "escalate" | "dismiss";
       reason?: string;
       notes?: string;
     }) => {
-      const response = await apiRequest(`${API_ENDPOINTS.admin.moderation}/action`, 'POST', { logId, action, reason, notes });
+      const response = await apiRequest(
+        `${API_ENDPOINTS.admin.moderation}/action`,
+        "POST",
+        { logId, action, reason, notes },
+      );
       return response;
     },
     onSuccess: () => {
       toast({
         title: "Action taken",
-        description: "The moderation action has been processed successfully."
+        description: "The moderation action has been processed successfully.",
       });
       refetch();
       setSelectedLog(null);
@@ -119,18 +157,20 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
       toast({
         title: "Error",
         description: "Failed to process moderation action.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleAction = (action: 'approve' | 'block' | 'escalate' | 'dismiss') => {
+  const handleAction = (
+    action: "approve" | "block" | "escalate" | "dismiss",
+  ) => {
     if (!selectedLog) return;
-    
+
     actionMutation.mutate({
       logId: selectedLog.id,
       action,
-      notes: reviewNotes
+      notes: reviewNotes,
     });
   };
 
@@ -166,7 +206,10 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
         <CardContent>
           <div className="flex gap-4">
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[200px]" data-testid="select-status-filter">
+              <SelectTrigger
+                className="w-[200px]"
+                data-testid="select-status-filter"
+              >
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -178,8 +221,14 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
               </SelectContent>
             </Select>
 
-            <Select value={selectedSeverity || "all"} onValueChange={setSelectedSeverity}>
-              <SelectTrigger className="w-[200px]" data-testid="select-severity-filter">
+            <Select
+              value={selectedSeverity || "all"}
+              onValueChange={setSelectedSeverity}
+            >
+              <SelectTrigger
+                className="w-[200px]"
+                data-testid="select-severity-filter"
+              >
                 <SelectValue placeholder="Filter by severity" />
               </SelectTrigger>
               <SelectContent>
@@ -207,13 +256,18 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
             </Card>
           ) : (
             logs.map((log: ModerationLog) => {
-              const ContentIcon = contentTypeIcons[log.contentType as keyof typeof contentTypeIcons] || FileText;
-              
+              const ContentIcon =
+                contentTypeIcons[
+                  log.contentType as keyof typeof contentTypeIcons
+                ] || FileText;
+
               return (
-                <Card 
+                <Card
                   key={log.id}
                   className={`cursor-pointer transition-colors ${
-                    selectedLog?.id === log.id ? 'ring-2 ring-primary' : 'hover:bg-accent'
+                    selectedLog?.id === log.id
+                      ? "ring-2 ring-primary"
+                      : "hover:bg-accent"
                   }`}
                   onClick={() => setSelectedLog(log)}
                   data-testid={`moderation-item-${log.id}`}
@@ -240,13 +294,17 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {format(new Date(log.createdAt), 'MMM d, h:mm a')}
+                        {format(new Date(log.createdAt), "MMM d, h:mm a")}
                       </span>
                     </div>
                     {log.categories.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {log.categories.slice(0, 3).map((cat) => (
-                          <Badge key={cat} variant="outline" className="text-xs">
+                          <Badge
+                            key={cat}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {cat}
                           </Badge>
                         ))}
@@ -262,14 +320,14 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
               );
             })
           )}
-          
+
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 data-testid="button-prev-page"
               >
@@ -281,7 +339,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p) => p + 1)}
                 disabled={page >= pagination.totalPages}
                 data-testid="button-next-page"
               >
@@ -312,7 +370,9 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
 
                 {/* Toxicity Scores */}
                 <div>
-                  <label className="text-sm font-medium">Toxicity Analysis</label>
+                  <label className="text-sm font-medium">
+                    Toxicity Analysis
+                  </label>
                   <div className="mt-2">
                     <ToxicityScore scores={selectedLog.toxicityScores} />
                   </div>
@@ -326,7 +386,9 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Confidence:</span>
-                    <span className="ml-2">{(selectedLog.confidence * 100).toFixed(1)}%</span>
+                    <span className="ml-2">
+                      {(selectedLog.confidence * 100).toFixed(1)}%
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Action Taken:</span>
@@ -334,7 +396,9 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Content ID:</span>
-                    <span className="ml-2 text-xs">{selectedLog.contentId}</span>
+                    <span className="ml-2 text-xs">
+                      {selectedLog.contentId}
+                    </span>
                   </div>
                 </div>
 
@@ -354,7 +418,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => handleAction('approve')}
+                  onClick={() => handleAction("approve")}
                   disabled={actionMutation.isPending}
                   data-testid="button-approve"
                 >
@@ -364,7 +428,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleAction('block')}
+                  onClick={() => handleAction("block")}
                   disabled={actionMutation.isPending}
                   data-testid="button-block"
                 >
@@ -374,7 +438,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAction('escalate')}
+                  onClick={() => handleAction("escalate")}
                   disabled={actionMutation.isPending}
                   data-testid="button-escalate"
                 >
@@ -384,7 +448,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAction('dismiss')}
+                  onClick={() => handleAction("dismiss")}
                   disabled={actionMutation.isPending}
                   data-testid="button-dismiss"
                 >

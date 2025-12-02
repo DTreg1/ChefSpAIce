@@ -1,14 +1,14 @@
 /**
  * @file server/storage/interfaces/IFoodStorage.ts
  * @description Interface for food inventory and nutrition storage operations
- * 
+ *
  * This interface defines the contract for food-related storage operations including:
  * - Food item management with filtering and pagination
  * - Storage location management with item counts
  * - Cooking terms glossary management
  * - Appliance library and user appliance management
  * - USDA cache management
- * 
+ *
  * Note: This interface overlaps with IInventoryStorage for food items.
  * FoodStorage provides additional features like pagination options and cooking terms.
  */
@@ -41,7 +41,7 @@ export type FoodSortBy = "name" | "expirationDate" | "createdAt";
  */
 export interface IFoodStorage {
   // ==================== Food Inventory Methods ====================
-  
+
   /**
    * Get food items for a user with optional filtering
    * @param userId - The user's UUID
@@ -54,9 +54,9 @@ export interface IFoodStorage {
     userId: string,
     storageLocationId?: string,
     foodCategory?: string,
-    limit?: number
+    limit?: number,
   ): Promise<UserInventory[]>;
-  
+
   /**
    * Get paginated food items with filtering and sorting options
    * @param userId - The user's UUID
@@ -73,9 +73,9 @@ export interface IFoodStorage {
     limit?: number,
     storageLocationId?: string,
     foodCategory?: string,
-    sortBy?: FoodSortBy
+    sortBy?: FoodSortBy,
   ): Promise<PaginatedResponse<UserInventory>>;
-  
+
   /**
    * Get a single food item by ID
    * @param userId - The user's UUID (for ownership verification)
@@ -83,7 +83,7 @@ export interface IFoodStorage {
    * @returns The food item or null if not found
    */
   getFoodItem(userId: string, id: string): Promise<UserInventory | null>;
-  
+
   /**
    * Create a new food item
    * @param userId - The user's UUID
@@ -92,9 +92,9 @@ export interface IFoodStorage {
    */
   createFoodItem(
     userId: string,
-    item: Omit<InsertUserInventory, "userId">
+    item: Omit<InsertUserInventory, "userId">,
   ): Promise<UserInventory>;
-  
+
   /**
    * Update an existing food item
    * @param userId - The user's UUID (for ownership verification)
@@ -106,32 +106,32 @@ export interface IFoodStorage {
   updateFoodItem(
     userId: string,
     id: string,
-    item: Partial<Omit<InsertUserInventory, "userId">>
+    item: Partial<Omit<InsertUserInventory, "userId">>,
   ): Promise<UserInventory>;
-  
+
   /**
    * Delete a food item permanently
    * @param userId - The user's UUID (for ownership verification)
    * @param id - The food item's UUID
    */
   deleteFoodItem(userId: string, id: string): Promise<void>;
-  
+
   /**
    * Get all unique food categories for a user
    * @param userId - The user's UUID
    * @returns Array of category names, sorted alphabetically
    */
   getFoodCategories(userId: string): Promise<string[]>;
-  
+
   // ==================== Storage Location Methods ====================
-  
+
   /**
    * Get all active storage locations for a user with item counts
    * @param userId - The user's UUID
    * @returns Array of storage locations with itemCount, ordered by sortOrder
    */
   getStorageLocations(userId: string): Promise<StorageLocationWithCount[]>;
-  
+
   /**
    * Get a single storage location by ID
    * @param userId - The user's UUID (for ownership verification)
@@ -139,7 +139,7 @@ export interface IFoodStorage {
    * @returns The storage location or null if not found
    */
   getStorageLocation(userId: string, id: string): Promise<UserStorage | null>;
-  
+
   /**
    * Create a new storage location
    * Sort order is automatically assigned as max + 1
@@ -149,9 +149,9 @@ export interface IFoodStorage {
    */
   createStorageLocation(
     userId: string,
-    location: { name: string; icon?: string }
+    location: { name: string; icon?: string },
   ): Promise<UserStorage>;
-  
+
   /**
    * Update an existing storage location
    * @param userId - The user's UUID (for ownership verification)
@@ -163,9 +163,9 @@ export interface IFoodStorage {
   updateStorageLocation(
     userId: string,
     id: string,
-    updates: Partial<UserStorage>
+    updates: Partial<UserStorage>,
   ): Promise<UserStorage>;
-  
+
   /**
    * Delete a storage location
    * @param userId - The user's UUID (for ownership verification)
@@ -173,43 +173,43 @@ export interface IFoodStorage {
    * @throws Error if location is default or contains items
    */
   deleteStorageLocation(userId: string, id: string): Promise<void>;
-  
+
   // ==================== Cooking Terms Methods ====================
-  
+
   /**
    * Get all cooking terms from the glossary
    * @returns Array of all cooking terms
    */
   getCookingTerms(): Promise<CookingTerm[]>;
-  
+
   /**
    * Get a single cooking term by ID
    * @param id - The cooking term's numeric ID
    * @returns The cooking term or null if not found
    */
   getCookingTerm(id: number): Promise<CookingTerm | null>;
-  
+
   /**
    * Get a cooking term by its exact term name
    * @param term - The term to look up (e.g., 'julienne', 'blanch')
    * @returns The cooking term or null if not found
    */
   getCookingTermByTerm(term: string): Promise<CookingTerm | null>;
-  
+
   /**
    * Get all cooking terms in a specific category
    * @param category - The category to filter by (e.g., 'techniques', 'equipment')
    * @returns Array of cooking terms in that category
    */
   getCookingTermsByCategory(category: string): Promise<CookingTerm[]>;
-  
+
   /**
    * Create a new cooking term
    * @param term - Cooking term data to insert
    * @returns The newly created cooking term
    */
   createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm>;
-  
+
   /**
    * Update an existing cooking term
    * @param id - The cooking term's numeric ID
@@ -219,15 +219,15 @@ export interface IFoodStorage {
    */
   updateCookingTerm(
     id: number,
-    term: Partial<InsertCookingTerm>
+    term: Partial<InsertCookingTerm>,
   ): Promise<CookingTerm>;
-  
+
   /**
    * Delete a cooking term
    * @param id - The cooking term's numeric ID
    */
   deleteCookingTerm(id: number): Promise<void>;
-  
+
   /**
    * Search cooking terms by text
    * Searches in term name, definitions, and related terms
@@ -305,7 +305,10 @@ export interface IFoodStorage {
    * @returns The updated appliance
    * @throws Error if appliance not found
    */
-  updateAppliance(id: string, data: Partial<InsertApplianceLibrary>): Promise<ApplianceLibrary>;
+  updateAppliance(
+    id: string,
+    data: Partial<InsertApplianceLibrary>,
+  ): Promise<ApplianceLibrary>;
 
   /**
    * Delete an appliance from the master library (admin)
@@ -320,7 +323,9 @@ export interface IFoodStorage {
    * @param userId - The user's UUID
    * @returns Array of user appliances with optional library appliance data
    */
-  getUserAppliances(userId: string): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>;
+  getUserAppliances(
+    userId: string,
+  ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>;
 
   /**
    * Get user's appliances filtered by category
@@ -330,7 +335,7 @@ export interface IFoodStorage {
    */
   getUserAppliancesByCategory(
     userId: string,
-    category: string
+    category: string,
   ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>;
 
   /**
@@ -341,7 +346,7 @@ export interface IFoodStorage {
    */
   addUserAppliance(
     userId: string,
-    data: Omit<InsertUserAppliance, "userId">
+    data: Omit<InsertUserAppliance, "userId">,
   ): Promise<UserAppliance>;
 
   /**
@@ -355,7 +360,7 @@ export interface IFoodStorage {
   updateUserAppliance(
     userId: string,
     applianceId: string,
-    data: Partial<Omit<InsertUserAppliance, "userId">>
+    data: Partial<Omit<InsertUserAppliance, "userId">>,
   ): Promise<UserAppliance>;
 
   /**

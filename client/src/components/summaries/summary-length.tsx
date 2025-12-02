@@ -14,7 +14,7 @@ interface SummaryLengthProps {
   value: number;
   onChange: (value: number) => void;
   disabled?: boolean;
-  mode?: 'slider' | 'select' | 'both';
+  mode?: "slider" | "select" | "both";
   className?: string;
 }
 
@@ -22,8 +22,8 @@ export const SummaryLength = memo(function SummaryLength({
   value,
   onChange,
   disabled = false,
-  mode = 'both',
-  className = ""
+  mode = "both",
+  className = "",
 }: SummaryLengthProps) {
   const getLengthLabel = (length: number) => {
     if (length <= 2) return "Very Short";
@@ -63,11 +63,13 @@ export const SummaryLength = memo(function SummaryLength({
           </Label>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span data-testid="text-length-label">{getLengthLabel(value)}</span>
-            <span data-testid="text-length-description">{getLengthDescription(value)}</span>
+            <span data-testid="text-length-description">
+              {getLengthDescription(value)}
+            </span>
           </div>
         </div>
 
-        {(mode === 'slider' || mode === 'both') && (
+        {(mode === "slider" || mode === "both") && (
           <div className="space-y-2">
             <Slider
               id="summary-length"
@@ -87,14 +89,14 @@ export const SummaryLength = memo(function SummaryLength({
           </div>
         )}
 
-        {(mode === 'select' || mode === 'both') && (
-          <Select 
-            value={value.toString()} 
+        {(mode === "select" || mode === "both") && (
+          <Select
+            value={value.toString()}
             onValueChange={handleSelectChange}
             disabled={disabled}
           >
-            <SelectTrigger 
-              className="w-full" 
+            <SelectTrigger
+              className="w-full"
               data-testid="select-summary-length"
             >
               <SelectValue placeholder="Select summary length" />

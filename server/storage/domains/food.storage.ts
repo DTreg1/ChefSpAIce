@@ -1,7 +1,7 @@
 /**
  * @file server/storage/domains/food.storage.ts
  * @description Food inventory and nutrition domain storage implementation
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (FoodStorage) for dependency injection and testing
  * - Export singleton INSTANCE (foodStorage) for convenience in production code
@@ -9,7 +9,18 @@
  */
 
 import { db } from "../../db";
-import { eq, and, desc, sql, ilike, or, lt, count, min, max } from "drizzle-orm";
+import {
+  eq,
+  and,
+  desc,
+  sql,
+  ilike,
+  or,
+  lt,
+  count,
+  min,
+  max,
+} from "drizzle-orm";
 import {
   userInventory,
   userStorage,
@@ -428,7 +439,7 @@ export class FoodStorage implements IFoodStorage {
       .selectDistinct({ category: applianceLibrary.category })
       .from(applianceLibrary)
       .orderBy(applianceLibrary.category);
-    
+
     return results.map((r) => r.category);
   }
 
@@ -442,7 +453,9 @@ export class FoodStorage implements IFoodStorage {
   /**
    * Get appliances from library filtered by category
    */
-  async getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]> {
+  async getApplianceLibraryByCategory(
+    category: string,
+  ): Promise<ApplianceLibrary[]> {
     return await db
       .select()
       .from(applianceLibrary)
@@ -461,8 +474,8 @@ export class FoodStorage implements IFoodStorage {
       .where(
         or(
           ilike(applianceLibrary.name, searchPattern),
-          ilike(applianceLibrary.description, searchPattern)
-        )
+          ilike(applianceLibrary.description, searchPattern),
+        ),
       )
       .orderBy(applianceLibrary.name);
   }
@@ -472,14 +485,19 @@ export class FoodStorage implements IFoodStorage {
   /**
    * User appliance with joined library data
    */
-  async getUserAppliances(userId: string): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]> {
+  async getUserAppliances(
+    userId: string,
+  ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]> {
     const results = await db
       .select({
         userAppliance: userAppliances,
         libraryAppliance: applianceLibrary,
       })
       .from(userAppliances)
-      .leftJoin(applianceLibrary, eq(userAppliances.applianceId, applianceLibrary.id))
+      .leftJoin(
+        applianceLibrary,
+        eq(userAppliances.applianceId, applianceLibrary.id),
+      )
       .where(eq(userAppliances.userId, userId))
       .orderBy(userAppliances.category, userAppliances.createdAt);
 
@@ -494,7 +512,7 @@ export class FoodStorage implements IFoodStorage {
    */
   async getUserAppliancesByCategory(
     userId: string,
-    category: string
+    category: string,
   ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]> {
     const results = await db
       .select({
@@ -502,12 +520,15 @@ export class FoodStorage implements IFoodStorage {
         libraryAppliance: applianceLibrary,
       })
       .from(userAppliances)
-      .leftJoin(applianceLibrary, eq(userAppliances.applianceId, applianceLibrary.id))
+      .leftJoin(
+        applianceLibrary,
+        eq(userAppliances.applianceId, applianceLibrary.id),
+      )
       .where(
         and(
           eq(userAppliances.userId, userId),
-          eq(userAppliances.category, category)
-        )
+          eq(userAppliances.category, category),
+        ),
       )
       .orderBy(userAppliances.createdAt);
 
@@ -520,12 +541,14 @@ export class FoodStorage implements IFoodStorage {
   /**
    * Add a new appliance to the master library (admin)
    */
-  async createAppliance(data: InsertApplianceLibrary): Promise<ApplianceLibrary> {
+  async createAppliance(
+    data: InsertApplianceLibrary,
+  ): Promise<ApplianceLibrary> {
     const [created] = await db
       .insert(applianceLibrary)
       .values(data)
       .returning();
-    
+
     return created;
   }
 
@@ -534,7 +557,7 @@ export class FoodStorage implements IFoodStorage {
    */
   async updateAppliance(
     id: string,
-    data: Partial<InsertApplianceLibrary>
+    data: Partial<InsertApplianceLibrary>,
   ): Promise<ApplianceLibrary> {
     const [updated] = await db
       .update(applianceLibrary)
@@ -553,9 +576,7 @@ export class FoodStorage implements IFoodStorage {
    * Delete an appliance from the master library (admin)
    */
   async deleteAppliance(id: string): Promise<void> {
-    await db
-      .delete(applianceLibrary)
-      .where(eq(applianceLibrary.id, id));
+    await db.delete(applianceLibrary).where(eq(applianceLibrary.id, id));
   }
 
   /**
@@ -563,7 +584,7 @@ export class FoodStorage implements IFoodStorage {
    */
   async addUserAppliance(
     userId: string,
-    data: Omit<InsertUserAppliance, "userId">
+    data: Omit<InsertUserAppliance, "userId">,
   ): Promise<UserAppliance> {
     const [created] = await db
       .insert(userAppliances)
@@ -582,7 +603,7 @@ export class FoodStorage implements IFoodStorage {
   async updateUserAppliance(
     userId: string,
     applianceId: string,
-    data: Partial<Omit<InsertUserAppliance, "userId">>
+    data: Partial<Omit<InsertUserAppliance, "userId">>,
   ): Promise<UserAppliance> {
     const [updated] = await db
       .update(userAppliances)
@@ -593,8 +614,8 @@ export class FoodStorage implements IFoodStorage {
       .where(
         and(
           eq(userAppliances.id, applianceId),
-          eq(userAppliances.userId, userId)
-        )
+          eq(userAppliances.userId, userId),
+        ),
       )
       .returning();
 
@@ -608,14 +629,17 @@ export class FoodStorage implements IFoodStorage {
   /**
    * Remove an appliance from user's collection
    */
-  async deleteUserAppliance(userId: string, applianceId: string): Promise<void> {
+  async deleteUserAppliance(
+    userId: string,
+    applianceId: string,
+  ): Promise<void> {
     await db
       .delete(userAppliances)
       .where(
         and(
           eq(userAppliances.id, applianceId),
-          eq(userAppliances.userId, userId)
-        )
+          eq(userAppliances.userId, userId),
+        ),
       );
   }
 
@@ -649,7 +673,7 @@ export class FoodStorage implements IFoodStorage {
       .where(lt(usdaCache.expiresAt, now));
 
     const sizeResult = await db.execute<{ total_size: string }>(
-      sql`SELECT COALESCE(SUM(pg_column_size(data)), 0)::text as total_size FROM usda_cache`
+      sql`SELECT COALESCE(SUM(pg_column_size(data)), 0)::text as total_size FROM usda_cache`,
     );
 
     return {

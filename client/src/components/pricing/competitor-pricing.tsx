@@ -1,19 +1,40 @@
 /**
  * Competitor Pricing Component
- * 
+ *
  * Tracks and displays competitor pricing information.
  * Shows market positioning and competitive analysis.
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { TrendingUp, TrendingDown, Target, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
@@ -30,7 +51,7 @@ interface CompetitorAnalysis {
   productName: string;
   ourPrice: number;
   marketAverage: string;
-  pricePosition: 'above_market' | 'at_market' | 'below_market';
+  pricePosition: "above_market" | "at_market" | "below_market";
   priceGap: string;
   competitors: CompetitorData[];
   recommendation: string;
@@ -43,36 +64,42 @@ interface CompetitorPricingProps {
   basePrice: number;
 }
 
-export function CompetitorPricing({ productId, productName, basePrice }: CompetitorPricingProps) {
+export function CompetitorPricing({
+  productId,
+  productName,
+  basePrice,
+}: CompetitorPricingProps) {
   // Fetch competitor analysis
   const { data, isLoading, error, refetch } = useQuery<CompetitorAnalysis>({
-    queryKey: [API_ENDPOINTS.admin.pricing.rules, 'competition', productId],
+    queryKey: [API_ENDPOINTS.admin.pricing.rules, "competition", productId],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/competition/${productId}?useAI=true`);
-      if (!response.ok) throw new Error('Failed to fetch competitor data');
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.pricing.rules}/competition/${productId}?useAI=true`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch competitor data");
       return response.json();
     },
-    refetchInterval: 300000 // Refresh every 5 minutes
+    refetchInterval: 300000, // Refresh every 5 minutes
   });
 
   // Get position color
   const getPositionColor = (position: string) => {
     switch (position) {
-      case 'above_market':
-        return 'destructive';
-      case 'below_market':
-        return 'secondary';
+      case "above_market":
+        return "destructive";
+      case "below_market":
+        return "secondary";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   // Get position icon
   const getPositionIcon = (position: string) => {
     switch (position) {
-      case 'above_market':
+      case "above_market":
         return <TrendingUp className="h-4 w-4" />;
-      case 'below_market':
+      case "below_market":
         return <TrendingDown className="h-4 w-4" />;
       default:
         return <Target className="h-4 w-4" />;
@@ -81,11 +108,11 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
 
   // Calculate price range
   const getPriceRange = (competitors: CompetitorData[]) => {
-    const prices = competitors.map(c => c.price);
+    const prices = competitors.map((c) => c.price);
     return {
       min: Math.min(...prices),
       max: Math.max(...prices),
-      spread: Math.max(...prices) - Math.min(...prices)
+      spread: Math.max(...prices) - Math.min(...prices),
     };
   };
 
@@ -119,19 +146,22 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
   }
 
   const priceRange = getPriceRange(data.competitors);
-  const chartData = data.competitors.map(comp => ({
+  const chartData = data.competitors.map((comp) => ({
     name: comp.competitorName,
     price: comp.price,
-    color: comp.price > basePrice ? 'hsl(var(--destructive))' : 
-           comp.price < basePrice ? 'hsl(var(--chart-2))' : 
-           'hsl(var(--chart-1))'
+    color:
+      comp.price > basePrice
+        ? "hsl(var(--destructive))"
+        : comp.price < basePrice
+          ? "hsl(var(--chart-2))"
+          : "hsl(var(--chart-1))",
   }));
 
   // Add our price to chart
   chartData.push({
-    name: 'Our Price',
+    name: "Our Price",
     price: basePrice,
-    color: 'hsl(var(--primary))'
+    color: "hsl(var(--primary))",
   });
 
   return (
@@ -161,31 +191,32 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
           <div className="space-y-4">
             {/* Position Badges */}
             <div className="flex gap-2">
-              <Badge variant={getPositionColor(data.pricePosition)} className="gap-1">
+              <Badge
+                variant={getPositionColor(data.pricePosition)}
+                className="gap-1"
+              >
                 {getPositionIcon(data.pricePosition)}
-                {data.pricePosition.replace('_', ' ').toUpperCase()}
+                {data.pricePosition.replace("_", " ").toUpperCase()}
               </Badge>
-              <Badge variant="outline">
-                Gap: {data.priceGap}
-              </Badge>
-              <Badge variant="outline">
-                Market Avg: ${data.marketAverage}
-              </Badge>
+              <Badge variant="outline">Gap: {data.priceGap}</Badge>
+              <Badge variant="outline">Market Avg: ${data.marketAverage}</Badge>
             </div>
 
             {/* Price Range Progress */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Price Range</span>
-                <span>${priceRange.min.toFixed(2)} - ${priceRange.max.toFixed(2)}</span>
+                <span>
+                  ${priceRange.min.toFixed(2)} - ${priceRange.max.toFixed(2)}
+                </span>
               </div>
               <div className="relative">
                 <Progress value={0} className="h-2" />
-                <div 
+                <div
                   className="absolute top-0 h-2 bg-primary rounded-full"
                   style={{
                     left: `${((basePrice - priceRange.min) / priceRange.spread) * 100}%`,
-                    width: '4px'
+                    width: "4px",
                   }}
                 />
               </div>
@@ -210,23 +241,25 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
       <Card>
         <CardHeader>
           <CardTitle>Price Comparison</CardTitle>
-          <CardDescription>
-            How we compare to competitors
-          </CardDescription>
+          <CardDescription>How we compare to competitors</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="name"
                 angle={-45}
                 textAnchor="end"
                 height={80}
                 className="text-xs"
               />
-              <YAxis 
-                label={{ value: 'Price ($)', angle: -90, position: 'insideLeft' }}
+              <YAxis
+                label={{
+                  value: "Price ($)",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
                 className="text-xs"
               />
               <Tooltip
@@ -270,14 +303,19 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
                 <div className="flex-1">
                   <h4 className="font-medium">{comp.competitorName}</h4>
                   <p className="text-sm text-muted-foreground">
-                    via {comp.source} • Updated {new Date(comp.lastUpdated).toLocaleDateString()}
+                    via {comp.source} • Updated{" "}
+                    {new Date(comp.lastUpdated).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="font-medium">${comp.price.toFixed(2)}</p>
-                    <Badge 
-                      variant={parseFloat(comp.priceDifference) > 0 ? "destructive" : "secondary"}
+                    <Badge
+                      variant={
+                        parseFloat(comp.priceDifference) > 0
+                          ? "destructive"
+                          : "secondary"
+                      }
                       className="text-xs"
                     >
                       {comp.priceDifference}
@@ -301,7 +339,7 @@ export function CompetitorPricing({ productId, productName, basePrice }: Competi
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              {data.aiInsights.split('\n').map((paragraph, idx) => (
+              {data.aiInsights.split("\n").map((paragraph, idx) => (
                 <p key={idx} className="mb-2 text-sm">
                   {paragraph}
                 </p>

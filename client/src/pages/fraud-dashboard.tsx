@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Download,
   Filter,
-  Eye
+  Eye,
 } from "lucide-react";
 import { SuspiciousActivityAlert } from "@/components/suspicious-activity-alert";
 import { UserRiskProfile } from "@/components/user-risk-profile";
@@ -26,7 +26,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -34,20 +34,15 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -55,7 +50,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -63,7 +58,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,10 +72,10 @@ interface SuspiciousActivity {
   userId: string;
   type: string;
   description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   timestamp: string;
   autoBlocked: boolean;
-  status: 'pending' | 'reviewing' | 'confirmed' | 'dismissed' | 'escalated';
+  status: "pending" | "reviewing" | "confirmed" | "dismissed" | "escalated";
 }
 
 interface FraudStats {
@@ -96,46 +91,59 @@ interface FraudStats {
 
 export default function FraudDashboard() {
   const { toast } = useToast();
-  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
-  const [selectedActivity, setSelectedActivity] = useState<SuspiciousActivity | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    "day" | "week" | "month"
+  >("day");
+  const [selectedActivity, setSelectedActivity] =
+    useState<SuspiciousActivity | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
   // Fetch fraud alerts
-  const { data: alertData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery<{ alerts: SuspiciousActivity[] }>({
-    queryKey: ["/api/fraud/alerts"]
+  const {
+    data: alertData,
+    isLoading: alertsLoading,
+    refetch: refetchAlerts,
+  } = useQuery<{ alerts: SuspiciousActivity[] }>({
+    queryKey: ["/api/fraud/alerts"],
   });
 
   // Fetch fraud statistics
   const { data: statsData, isLoading: statsLoading } = useQuery<FraudStats>({
-    queryKey: ["/api/fraud/report", selectedPeriod]
+    queryKey: ["/api/fraud/report", selectedPeriod],
   });
 
   // Fetch fraud patterns
-  const { data: patternsData } = useQuery<{ topRiskFactors: Array<{ factor: string; score: number; trend: string }> }>({
+  const { data: patternsData } = useQuery<{
+    topRiskFactors: Array<{ factor: string; score: number; trend: string }>;
+  }>({
     queryKey: ["/api/fraud/patterns"],
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Mutation to review activity
   const reviewMutation = useMutation({
-    mutationFn: async ({ activityId, decision, notes }: {
+    mutationFn: async ({
+      activityId,
+      decision,
+      notes,
+    }: {
       activityId: string;
-      decision: 'confirm' | 'dismiss' | 'escalate';
+      decision: "confirm" | "dismiss" | "escalate";
       notes: string;
     }) => {
       return apiRequest("/api/fraud/review", "POST", {
         activityId,
         decision,
-        notes
+        notes,
       });
     },
     onSuccess: () => {
       toast({
         title: "Review submitted",
-        description: "The suspicious activity has been reviewed successfully."
+        description: "The suspicious activity has been reviewed successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/fraud/alerts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/fraud/report"] });
@@ -147,37 +155,46 @@ export default function FraudDashboard() {
       toast({
         title: "Review failed",
         description: "Failed to submit review. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleReview = (decision: 'confirm' | 'dismiss' | 'escalate') => {
+  const handleReview = (decision: "confirm" | "dismiss" | "escalate") => {
     if (selectedActivity) {
       reviewMutation.mutate({
         activityId: selectedActivity.id,
         decision,
-        notes: reviewNotes
+        notes: reviewNotes,
       });
     }
   };
 
   const getSeverityBadgeColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case 'high': return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
-      case 'medium': return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      default: return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+      case "critical":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "high":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      default:
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case 'escalated': return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-      case 'dismissed': return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case 'reviewing': return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+      case "confirmed":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "escalated":
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
+      case "dismissed":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case "reviewing":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
   };
 
@@ -186,13 +203,18 @@ export default function FraudDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Fraud Detection Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Fraud Detection Dashboard
+          </h1>
           <p className="text-muted-foreground">
             Monitor and review suspicious activities across the platform
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedPeriod} onValueChange={(v: any) => setSelectedPeriod(v)}>
+          <Select
+            value={selectedPeriod}
+            onValueChange={(v: any) => setSelectedPeriod(v)}
+          >
             <SelectTrigger className="w-32" data-testid="select-period">
               <SelectValue />
             </SelectTrigger>
@@ -218,7 +240,7 @@ export default function FraudDashboard() {
       </div>
 
       {/* Real-time Suspicious Activity Alert Banner */}
-      <SuspiciousActivityAlert 
+      <SuspiciousActivityAlert
         className="mb-4"
         dismissable={true}
         autoHideDelay={0}
@@ -229,14 +251,19 @@ export default function FraudDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Risk Score</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Average Risk Score
+              </CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {(statsData.averageScore * 100).toFixed(1)}%
               </div>
-              <Progress value={statsData.averageScore * 100} className="mt-2 h-2" />
+              <Progress
+                value={statsData.averageScore * 100}
+                className="mt-2 h-2"
+              />
               <p className="text-xs text-muted-foreground mt-2">
                 From {statsData.totalScores} assessments
               </p>
@@ -245,7 +272,9 @@ export default function FraudDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">High Risk Users</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                High Risk Users
+              </CardTitle>
               <AlertTriangle className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
@@ -260,11 +289,15 @@ export default function FraudDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Suspicious Activities</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Suspicious Activities
+              </CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statsData.suspiciousActivitiesCount}</div>
+              <div className="text-2xl font-bold">
+                {statsData.suspiciousActivitiesCount}
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
                 {statsData.autoBlockedCount} auto-blocked
               </p>
@@ -273,7 +306,9 @@ export default function FraudDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reviews Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Reviews Completed
+              </CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
@@ -335,12 +370,22 @@ export default function FraudDashboard() {
                           {activity.description}
                         </TableCell>
                         <TableCell>
-                          <Badge className={cn("capitalize", getSeverityBadgeColor(activity.severity))}>
+                          <Badge
+                            className={cn(
+                              "capitalize",
+                              getSeverityBadgeColor(activity.severity),
+                            )}
+                          >
                             {activity.severity}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={cn("capitalize", getStatusBadgeColor(activity.status))}>
+                          <Badge
+                            className={cn(
+                              "capitalize",
+                              getStatusBadgeColor(activity.status),
+                            )}
+                          >
                             {activity.status}
                           </Badge>
                         </TableCell>
@@ -405,12 +450,17 @@ export default function FraudDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {patternsData?.topRiskFactors?.map((factor: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <span className="text-sm">{factor.factor}</span>
-                      <Badge variant="outline">{factor.count}</Badge>
-                    </div>
-                  ))}
+                  {patternsData?.topRiskFactors?.map(
+                    (factor: any, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm">{factor.factor}</span>
+                        <Badge variant="outline">{factor.count}</Badge>
+                      </div>
+                    ),
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -427,8 +477,12 @@ export default function FraudDashboard() {
                         <span>{type.type}</span>
                         <span className="font-mono">{type.count}</span>
                       </div>
-                      <Progress 
-                        value={(type.count / (statsData.suspiciousActivitiesCount || 1)) * 100} 
+                      <Progress
+                        value={
+                          (type.count /
+                            (statsData.suspiciousActivitiesCount || 1)) *
+                          100
+                        }
                         className="h-2"
                       />
                     </div>
@@ -441,7 +495,7 @@ export default function FraudDashboard() {
 
         <TabsContent value="analytics" className="space-y-4">
           <FraudMetrics refreshInterval={30000} />
-          
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -456,13 +510,17 @@ export default function FraudDashboard() {
                         <span className="text-sm font-mono">{risk.count}</span>
                       </div>
                       <Progress
-                        value={(risk.count / (statsData.suspiciousActivitiesCount || 1)) * 100}
+                        value={
+                          (risk.count /
+                            (statsData.suspiciousActivitiesCount || 1)) *
+                          100
+                        }
                         className={cn(
                           "h-2",
-                          risk.level === 'critical' && "[&>div]:bg-red-500",
-                          risk.level === 'high' && "[&>div]:bg-orange-500",
-                          risk.level === 'medium' && "[&>div]:bg-yellow-500",
-                          risk.level === 'low' && "[&>div]:bg-green-500"
+                          risk.level === "critical" && "[&>div]:bg-red-500",
+                          risk.level === "high" && "[&>div]:bg-orange-500",
+                          risk.level === "medium" && "[&>div]:bg-yellow-500",
+                          risk.level === "low" && "[&>div]:bg-green-500",
                         )}
                       />
                     </div>
@@ -474,7 +532,9 @@ export default function FraudDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Temporal Patterns</CardTitle>
-                <CardDescription>Activity distribution over time</CardDescription>
+                <CardDescription>
+                  Activity distribution over time
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
@@ -509,7 +569,12 @@ export default function FraudDashboard() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Severity:</span>
-                  <Badge className={cn("capitalize", getSeverityBadgeColor(selectedActivity.severity))}>
+                  <Badge
+                    className={cn(
+                      "capitalize",
+                      getSeverityBadgeColor(selectedActivity.severity),
+                    )}
+                  >
                     {selectedActivity.severity}
                   </Badge>
                 </div>
@@ -542,7 +607,7 @@ export default function FraudDashboard() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => handleReview('confirm')}
+              onClick={() => handleReview("confirm")}
               disabled={reviewMutation.isPending}
               data-testid="button-confirm-fraud"
             >
@@ -550,7 +615,7 @@ export default function FraudDashboard() {
               Confirm Fraud
             </Button>
             <Button
-              onClick={() => handleReview('dismiss')}
+              onClick={() => handleReview("dismiss")}
               disabled={reviewMutation.isPending}
               data-testid="button-dismiss-activity"
             >

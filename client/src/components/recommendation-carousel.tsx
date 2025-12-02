@@ -3,7 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ContentCard } from "@/components/cards";
-import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, TrendingUp } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  RefreshCw,
+  TrendingUp,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,7 +41,7 @@ export const RecommendationCarousel = ({
   onItemClick,
   className = "",
   autoPlay = false,
-  autoPlayInterval = 5000
+  autoPlayInterval = 5000,
 }: RecommendationCarouselProps) => {
   const { toast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,14 +61,16 @@ export const RecommendationCarousel = ({
           body: JSON.stringify({
             query: "trending popular interesting",
             contentType,
-            limit: 12
-          })
+            limit: 12,
+          }),
         });
         if (!response.ok) throw new Error("Failed to fetch recommendations");
         return response.json();
       }
-      
-      const response = await fetch(`/api/recommendations/user/${userId}?type=${contentType}&limit=12`);
+
+      const response = await fetch(
+        `/api/recommendations/user/${userId}?type=${contentType}&limit=12`,
+      );
       if (!response.ok) throw new Error("Failed to fetch recommendations");
       return response.json();
     },
@@ -76,7 +84,7 @@ export const RecommendationCarousel = ({
   useEffect(() => {
     if (autoPlay && items.length > itemsPerView) {
       intervalRef.current = setInterval(() => {
-        setCurrentIndex(prev => {
+        setCurrentIndex((prev) => {
           if (prev >= maxIndex) return 0;
           return prev + 1;
         });
@@ -90,12 +98,12 @@ export const RecommendationCarousel = ({
 
   const handlePrevious = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    setCurrentIndex(prev => Math.max(0, prev - 1));
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
   };
 
   const handleNext = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    setCurrentIndex(prev => Math.min(maxIndex, prev + 1));
+    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
   };
 
   const handleRefresh = async () => {
@@ -141,7 +149,9 @@ export const RecommendationCarousel = ({
               disabled={isRefreshing || isLoading}
               data-testid="button-refresh-carousel"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
             </Button>
             <div className="flex items-center gap-1">
               <Button
@@ -175,17 +185,16 @@ export const RecommendationCarousel = ({
           </div>
         ) : items.length > 0 ? (
           <>
-            <div 
-              ref={carouselRef}
-              className="overflow-hidden"
-            >
-              <div 
+            <div ref={carouselRef} className="overflow-hidden">
+              <div
                 className="flex transition-transform duration-300 ease-in-out"
-                style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
+                style={{
+                  transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
+                }}
               >
                 {items.map((item: RecommendationItem) => (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     className="w-full md:w-1/2 lg:w-1/3 flex-shrink-0 px-2"
                   >
                     <ContentCard
@@ -206,14 +215,16 @@ export const RecommendationCarousel = ({
             {/* Dots indicator */}
             {items.length > itemsPerView && (
               <div className="flex justify-center mt-4 gap-1">
-                {Array.from({ length: Math.ceil(items.length / itemsPerView) }).map((_, i) => (
+                {Array.from({
+                  length: Math.ceil(items.length / itemsPerView),
+                }).map((_, i) => (
                   <button
                     key={i}
                     onClick={() => handleDotClick(i)}
                     className={`h-2 w-2 rounded-full transition-all ${
-                      Math.floor(currentIndex / itemsPerView) === i 
-                        ? 'bg-primary w-6' 
-                        : 'bg-muted-foreground/30'
+                      Math.floor(currentIndex / itemsPerView) === i
+                        ? "bg-primary w-6"
+                        : "bg-muted-foreground/30"
                     }`}
                     data-testid={`carousel-dot-${i}`}
                   />
@@ -225,7 +236,9 @@ export const RecommendationCarousel = ({
           <div className="text-center py-12 text-muted-foreground">
             <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p className="text-sm font-medium">No recommendations available</p>
-            <p className="text-xs mt-1">Check back later for personalized content</p>
+            <p className="text-xs mt-1">
+              Check back later for personalized content
+            </p>
           </div>
         )}
       </CardContent>

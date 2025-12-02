@@ -64,8 +64,11 @@ export function QueryResults({
   const executeMutation = useMutation({
     mutationFn: async () => {
       if (!queryId || !sql) throw new Error("No query to execute");
-      
-      const response = await apiRequest("/api/query/execute", "POST", { queryId, sql });
+
+      const response = await apiRequest("/api/query/execute", "POST", {
+        queryId,
+        sql,
+      });
       return response;
     },
     onSuccess: (data) => {
@@ -80,7 +83,8 @@ export function QueryResults({
     onError: (error) => {
       toast({
         title: "Execution failed",
-        description: error instanceof Error ? error.message : "Failed to execute query",
+        description:
+          error instanceof Error ? error.message : "Failed to execute query",
         variant: "destructive",
       });
     },
@@ -89,8 +93,11 @@ export function QueryResults({
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!queryId) throw new Error("No query to save");
-      
-      const response = await apiRequest("/api/query/save", "POST", { queryId, savedName });
+
+      const response = await apiRequest("/api/query/save", "POST", {
+        queryId,
+        savedName,
+      });
       return response;
     },
     onSuccess: () => {
@@ -105,7 +112,8 @@ export function QueryResults({
     onError: (error) => {
       toast({
         title: "Save failed",
-        description: error instanceof Error ? error.message : "Failed to save query",
+        description:
+          error instanceof Error ? error.message : "Failed to save query",
         variant: "destructive",
       });
     },
@@ -121,9 +129,14 @@ export function QueryResults({
 
   const getConfidenceBadge = (conf?: number) => {
     if (!conf) return null;
-    const variant = conf > 0.8 ? "default" : conf > 0.5 ? "secondary" : "destructive";
+    const variant =
+      conf > 0.8 ? "default" : conf > 0.5 ? "secondary" : "destructive";
     const label = conf > 0.8 ? "High" : conf > 0.5 ? "Medium" : "Low";
-    return <Badge variant={variant}>{label} Confidence ({Math.round(conf * 100)}%)</Badge>;
+    return (
+      <Badge variant={variant}>
+        {label} Confidence ({Math.round(conf * 100)}%)
+      </Badge>
+    );
   };
 
   if (!sql) {
@@ -171,18 +184,26 @@ export function QueryResults({
             <div className="bg-muted p-4 rounded-md font-mono text-sm overflow-x-auto">
               <pre data-testid="text-generated-sql">{sql}</pre>
             </div>
-            
+
             {tablesAccessed && tablesAccessed.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Tables accessed:</span>
+                <span className="text-sm text-muted-foreground">
+                  Tables accessed:
+                </span>
                 {tablesAccessed.map((table) => (
-                  <Badge key={table} variant="secondary">{table}</Badge>
+                  <Badge key={table} variant="secondary">
+                    {table}
+                  </Badge>
                 ))}
               </div>
             )}
 
             <div className="flex items-center gap-2">
-              <Button onClick={handleExecute} disabled={executeMutation.isPending} data-testid="button-execute-query">
+              <Button
+                onClick={handleExecute}
+                disabled={executeMutation.isPending}
+                data-testid="button-execute-query"
+              >
                 {executeMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -195,9 +216,9 @@ export function QueryResults({
                   </>
                 )}
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 onClick={() => setSaveDialogOpen(true)}
                 disabled={!queryId}
                 data-testid="button-save-query"
@@ -247,7 +268,9 @@ export function QueryResults({
                         {Object.values(row).map((value: any, cellIndex) => (
                           <TableCell key={cellIndex}>
                             {value === null ? (
-                              <span className="text-muted-foreground">NULL</span>
+                              <span className="text-muted-foreground">
+                                NULL
+                              </span>
                             ) : typeof value === "object" ? (
                               JSON.stringify(value)
                             ) : (
@@ -266,7 +289,9 @@ export function QueryResults({
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground">Execute the query to see results</p>
+              <p className="text-muted-foreground">
+                Execute the query to see results
+              </p>
             )}
           </TabsContent>
         </Tabs>
@@ -296,8 +321,8 @@ export function QueryResults({
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={!savedName.trim() || saveMutation.isPending}
               data-testid="button-confirm-save"
             >

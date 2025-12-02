@@ -1,94 +1,121 @@
 /**
  * Activity Logger Service
- * 
+ *
  * Centralized service for logging all user actions and system events.
  * Provides async logging with batching, error handling, and performance optimizations.
  */
 
 import { db } from "../db";
-import { activityLogs, type InsertActivityLog, type ActivityLog } from "@shared/schema";
+import {
+  activityLogs,
+  type InsertActivityLog,
+  type ActivityLog,
+} from "@shared/schema";
 import { eq, sql, and, desc, gte, lte, inArray, isNull } from "drizzle-orm";
 import { retryWithBackoff } from "../utils/retry-handler";
 
 // Define all tracked action types as constants for consistency
 export const ActivityActions = {
   // User actions
-  LOGIN: 'login',
-  LOGOUT: 'logout', 
-  SIGNUP: 'signup',
-  SETTINGS_CHANGED: 'settings_changed',
-  PROFILE_UPDATED: 'profile_updated',
-  
+  LOGIN: "login",
+  LOGOUT: "logout",
+  SIGNUP: "signup",
+  SETTINGS_CHANGED: "settings_changed",
+  PROFILE_UPDATED: "profile_updated",
+
   // Food inventory
-  FOOD_ADDED: 'food_added',
-  FOOD_UPDATED: 'food_updated',
-  FOOD_DELETED: 'food_deleted',
-  FOOD_CONSUMED: 'food_consumed',
-  FOOD_EXPIRED: 'food_expired',
-  
+  FOOD_ADDED: "food_added",
+  FOOD_UPDATED: "food_updated",
+  FOOD_DELETED: "food_deleted",
+  FOOD_CONSUMED: "food_consumed",
+  FOOD_EXPIRED: "food_expired",
+
   // Recipes
-  RECIPE_GENERATED: 'recipe_generated',
-  RECIPE_SAVED: 'recipe_saved',
-  RECIPE_UPDATED: 'recipe_updated',
-  RECIPE_DELETED: 'recipe_deleted',
-  RECIPE_RATED: 'recipe_rated',
-  RECIPE_VIEWED: 'recipe_viewed',
-  RECIPE_FAVORITED: 'recipe_favorited',
-  
+  RECIPE_GENERATED: "recipe_generated",
+  RECIPE_SAVED: "recipe_saved",
+  RECIPE_UPDATED: "recipe_updated",
+  RECIPE_DELETED: "recipe_deleted",
+  RECIPE_RATED: "recipe_rated",
+  RECIPE_VIEWED: "recipe_viewed",
+  RECIPE_FAVORITED: "recipe_favorited",
+
   // AI chat
-  MESSAGE_SENT: 'message_sent',
-  AI_RESPONSE_RECEIVED: 'ai_response_received',
-  CHAT_CLEARED: 'chat_cleared',
-  
+  MESSAGE_SENT: "message_sent",
+  AI_RESPONSE_RECEIVED: "ai_response_received",
+  CHAT_CLEARED: "chat_cleared",
+
   // Notifications
-  NOTIFICATION_SENT: 'notification_sent',
-  NOTIFICATION_DELIVERED: 'notification_delivered',
-  NOTIFICATION_DISMISSED: 'notification_dismissed',
-  NOTIFICATION_FAILED: 'notification_failed',
-  
+  NOTIFICATION_SENT: "notification_sent",
+  NOTIFICATION_DELIVERED: "notification_delivered",
+  NOTIFICATION_DISMISSED: "notification_dismissed",
+  NOTIFICATION_FAILED: "notification_failed",
+
   // Shopping
-  SHOPPING_LIST_CREATED: 'shopping_list_created',
-  SHOPPING_ITEM_ADDED: 'shopping_item_added',
-  SHOPPING_ITEM_CHECKED: 'shopping_item_checked',
-  SHOPPING_LIST_CLEARED: 'shopping_list_cleared',
-  
+  SHOPPING_LIST_CREATED: "shopping_list_created",
+  SHOPPING_ITEM_ADDED: "shopping_item_added",
+  SHOPPING_ITEM_CHECKED: "shopping_item_checked",
+  SHOPPING_LIST_CLEARED: "shopping_list_cleared",
+
   // Meal planning
-  MEAL_PLANNED: 'meal_planned',
-  MEAL_COMPLETED: 'meal_completed',
-  MEAL_SKIPPED: 'meal_skipped',
-  MEAL_UPDATED: 'meal_updated',
-  
+  MEAL_PLANNED: "meal_planned",
+  MEAL_COMPLETED: "meal_completed",
+  MEAL_SKIPPED: "meal_skipped",
+  MEAL_UPDATED: "meal_updated",
+
   // System events
-  DATA_EXPORTED: 'data_exported',
-  DATA_IMPORTED: 'data_imported',
-  BULK_IMPORT: 'bulk_import',
-  CLEANUP_JOB: 'cleanup_job',
-  ERROR_OCCURRED: 'error_occurred',
-  API_CALL: 'api_call',
-  CACHE_CLEARED: 'cache_cleared',
-  
+  DATA_EXPORTED: "data_exported",
+  DATA_IMPORTED: "data_imported",
+  BULK_IMPORT: "bulk_import",
+  CLEANUP_JOB: "cleanup_job",
+  ERROR_OCCURRED: "error_occurred",
+  API_CALL: "api_call",
+  CACHE_CLEARED: "cache_cleared",
+
   // Admin actions
-  ADMIN_USER_CREATED: 'admin_user_created',
-  ADMIN_USER_DELETED: 'admin_user_deleted',
-  ADMIN_PERMISSION_CHANGED: 'admin_permission_changed',
-  
+  ADMIN_USER_CREATED: "admin_user_created",
+  ADMIN_USER_DELETED: "admin_user_deleted",
+  ADMIN_PERMISSION_CHANGED: "admin_permission_changed",
+
   // Feedback
-  FEEDBACK_SUBMITTED: 'feedback_submitted',
-  FEEDBACK_RESPONDED: 'feedback_responded',
-  FEEDBACK_RESOLVED: 'feedback_resolved',
-  
+  FEEDBACK_SUBMITTED: "feedback_submitted",
+  FEEDBACK_RESPONDED: "feedback_responded",
+  FEEDBACK_RESOLVED: "feedback_resolved",
+
   // Payments
-  DONATION_MADE: 'donation_made',
-  PAYMENT_FAILED: 'payment_failed',
+  DONATION_MADE: "donation_made",
+  PAYMENT_FAILED: "payment_failed",
 } as const;
 
-export type ActivityAction = typeof ActivityActions[keyof typeof ActivityActions];
+export type ActivityAction =
+  (typeof ActivityActions)[keyof typeof ActivityActions];
 
 export interface ActivityLogParams {
   userId?: string | null;
   action: ActivityAction | string;
-  activityType?: 'view' | 'login' | 'logout' | 'create' | 'update' | 'delete' | 'export' | 'import';
-  resourceType: 'user' | 'recipe' | 'shopping_list' | 'meal_plan' | 'inventory' | 'settings' | 'food_item' | 'chat' | 'storage_location' | 'appliance' | 'notification' | 'admin' | 'feedback' | 'api';
+  activityType?:
+    | "view"
+    | "login"
+    | "logout"
+    | "create"
+    | "update"
+    | "delete"
+    | "export"
+    | "import";
+  resourceType:
+    | "user"
+    | "recipe"
+    | "shopping_list"
+    | "meal_plan"
+    | "inventory"
+    | "settings"
+    | "food_item"
+    | "chat"
+    | "storage_location"
+    | "appliance"
+    | "notification"
+    | "admin"
+    | "feedback"
+    | "api";
   resourceId?: string | null;
   details?: Record<string, any>;
   ipAddress?: string | null;
@@ -135,7 +162,7 @@ export class ActivityLogger {
       const logEntry: InsertActivityLog = {
         userId: params.userId || null,
         action: params.action,
-        activityType: params.activityType || 'view',
+        activityType: params.activityType || "view",
         resourceType: params.resourceType as any,
         resourceId: params.resourceId || null,
         details: params.details || undefined,
@@ -152,7 +179,7 @@ export class ActivityLogger {
         await this.processBatch();
       }
     } catch (error) {
-      console.error('[ActivityLogger] Error queuing activity log:', error);
+      console.error("[ActivityLogger] Error queuing activity log:", error);
       // Don't throw - logging should never break the application
     }
   }
@@ -165,7 +192,7 @@ export class ActivityLogger {
       const logEntry: InsertActivityLog = {
         userId: params.userId || null,
         action: params.action,
-        activityType: params.activityType || 'view',
+        activityType: params.activityType || "view",
         resourceType: params.resourceType as any,
         resourceId: params.resourceId || null,
         details: params.details || undefined,
@@ -176,7 +203,10 @@ export class ActivityLogger {
 
       await db.insert(activityLogs).values(logEntry);
     } catch (error) {
-      console.error('[ActivityLogger] Error logging activity synchronously:', error);
+      console.error(
+        "[ActivityLogger] Error logging activity synchronously:",
+        error,
+      );
       // Don't throw - logging should never break the application
     }
   }
@@ -186,13 +216,10 @@ export class ActivityLogger {
    */
   public async getActivityLogs(
     userId?: string | null,
-    filters?: ActivityFilters
+    filters?: ActivityFilters,
   ): Promise<ActivityLog[]> {
     try {
-      let query = db
-        .select()
-        .from(activityLogs)
-        .$dynamic();
+      let query = db.select().from(activityLogs).$dynamic();
 
       const conditions: any[] = [];
 
@@ -244,7 +271,7 @@ export class ActivityLogger {
 
       return await query;
     } catch (error) {
-      console.error('[ActivityLogger] Error fetching activity logs:', error);
+      console.error("[ActivityLogger] Error fetching activity logs:", error);
       throw error;
     }
   }
@@ -254,7 +281,7 @@ export class ActivityLogger {
    */
   public async getUserTimeline(
     userId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<ActivityLog[]> {
     return this.getActivityLogs(userId, { limit });
   }
@@ -263,7 +290,7 @@ export class ActivityLogger {
    * Get system events (activities with no user)
    */
   public async getSystemEvents(
-    filters?: ActivityFilters
+    filters?: ActivityFilters,
   ): Promise<ActivityLog[]> {
     try {
       let query = db
@@ -290,7 +317,8 @@ export class ActivityLogger {
         conditions.push(lte(activityLogs.timestamp, filters.endDate));
       }
 
-      query = query.where(and(...conditions))
+      query = query
+        .where(and(...conditions))
         .orderBy(desc(activityLogs.timestamp));
 
       if (filters?.limit) {
@@ -302,7 +330,7 @@ export class ActivityLogger {
 
       return await query;
     } catch (error) {
-      console.error('[ActivityLogger] Error fetching system events:', error);
+      console.error("[ActivityLogger] Error fetching system events:", error);
       throw error;
     }
   }
@@ -313,11 +341,11 @@ export class ActivityLogger {
   public async getActivityStats(
     userId?: string | null,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<any> {
     try {
       const conditions: any[] = [];
-      
+
       if (userId) {
         conditions.push(eq(activityLogs.userId, userId));
       }
@@ -328,7 +356,8 @@ export class ActivityLogger {
         conditions.push(lte(activityLogs.timestamp, endDate));
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get action counts
       const actionCounts = await db
@@ -366,7 +395,7 @@ export class ActivityLogger {
         byResourceType: resourceTypeCounts,
       };
     } catch (error) {
-      console.error('[ActivityLogger] Error fetching activity stats:', error);
+      console.error("[ActivityLogger] Error fetching activity stats:", error);
       throw error;
     }
   }
@@ -376,38 +405,34 @@ export class ActivityLogger {
    */
   public async cleanupOldLogs(
     retentionDays: number = 90,
-    excludeActions?: string[]
+    excludeActions?: string[],
   ): Promise<number> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-      const conditions: any[] = [
-        lte(activityLogs.timestamp, cutoffDate)
-      ];
+      const conditions: any[] = [lte(activityLogs.timestamp, cutoffDate)];
 
       // Exclude certain important actions from cleanup
       if (excludeActions && excludeActions.length > 0) {
         conditions.push(
           sql`${activityLogs.action} NOT IN (${sql.raw(
-            excludeActions.map(a => `'${a}'`).join(',')
-          )})`
+            excludeActions.map((a) => `'${a}'`).join(","),
+          )})`,
         );
       }
 
-      const result = await db
-        .delete(activityLogs)
-        .where(and(...conditions));
+      const result = await db.delete(activityLogs).where(and(...conditions));
 
       const deletedCount = result.rowCount || 0;
 
       // Log the cleanup as a system event
       await this.logActivity({
         action: ActivityActions.CLEANUP_JOB,
-        activityType: 'delete',
-        resourceType: 'settings',
+        activityType: "delete",
+        resourceType: "settings",
         details: {
-          type: 'activity_logs_cleanup',
+          type: "activity_logs_cleanup",
           retentionDays,
           deletedCount,
           cutoffDate: cutoffDate.toISOString(),
@@ -416,7 +441,7 @@ export class ActivityLogger {
 
       return deletedCount;
     } catch (error) {
-      console.error('[ActivityLogger] Error cleaning up old logs:', error);
+      console.error("[ActivityLogger] Error cleaning up old logs:", error);
       throw error;
     }
   }
@@ -427,23 +452,23 @@ export class ActivityLogger {
   public async exportUserLogs(userId: string): Promise<ActivityLog[]> {
     try {
       const logs = await this.getActivityLogs(userId);
-      
+
       // Log the export action
       await this.logActivity({
         userId,
         action: ActivityActions.DATA_EXPORTED,
-        activityType: 'export',
-        resourceType: 'user',
+        activityType: "export",
+        resourceType: "user",
         resourceId: userId,
         details: {
-          type: 'activity_logs',
+          type: "activity_logs",
           count: logs.length,
         },
       });
 
       return logs;
     } catch (error) {
-      console.error('[ActivityLogger] Error exporting user logs:', error);
+      console.error("[ActivityLogger] Error exporting user logs:", error);
       throw error;
     }
   }
@@ -459,7 +484,7 @@ export class ActivityLogger {
 
       return result.rowCount || 0;
     } catch (error) {
-      console.error('[ActivityLogger] Error deleting user logs:', error);
+      console.error("[ActivityLogger] Error deleting user logs:", error);
       throw error;
     }
   }
@@ -469,8 +494,8 @@ export class ActivityLogger {
     // Process batch periodically
     this.batchTimer = setInterval(() => {
       if (this.logQueue.length > 0 && !this.isProcessing) {
-        this.processBatch().catch(error => {
-          console.error('[ActivityLogger] Batch processing error:', error);
+        this.processBatch().catch((error) => {
+          console.error("[ActivityLogger] Batch processing error:", error);
         });
       }
     }, this.BATCH_DELAY_MS);
@@ -482,11 +507,11 @@ export class ActivityLogger {
     }
 
     this.isProcessing = true;
-    
+
     try {
       // Take up to BATCH_SIZE items from the queue
       const batch = this.logQueue.splice(0, this.BATCH_SIZE);
-      
+
       if (batch.length === 0) {
         return;
       }
@@ -499,15 +524,19 @@ export class ActivityLogger {
         {
           maxRetries: this.MAX_RETRY_ATTEMPTS,
           onRetry: (attempt, error, delay) => {
-            console.error('[ActivityLogger] Error processing batch:', error);
-            console.log(`[ActivityLogger] Retrying batch after ${delay}ms (attempt ${attempt + 1}/${this.MAX_RETRY_ATTEMPTS + 1})`);
-          }
-        }
+            console.error("[ActivityLogger] Error processing batch:", error);
+            console.log(
+              `[ActivityLogger] Retrying batch after ${delay}ms (attempt ${attempt + 1}/${this.MAX_RETRY_ATTEMPTS + 1})`,
+            );
+          },
+        },
       );
-      
+
       // console.log(`[ActivityLogger] Processed batch of ${batch.length} logs`);
     } catch (error) {
-      console.error('[ActivityLogger] Max retry attempts reached. Discarding batch.');
+      console.error(
+        "[ActivityLogger] Max retry attempts reached. Discarding batch.",
+      );
       // In production, you might want to save these to a file or alternate storage
     } finally {
       this.isProcessing = false;
@@ -531,10 +560,10 @@ export class ActivityLogger {
       clearInterval(this.batchTimer);
       this.batchTimer = null;
     }
-    
+
     // Process any remaining logs
-    this.flush().catch(error => {
-      console.error('[ActivityLogger] Error flushing logs on destroy:', error);
+    this.flush().catch((error) => {
+      console.error("[ActivityLogger] Error flushing logs on destroy:", error);
     });
   }
 }

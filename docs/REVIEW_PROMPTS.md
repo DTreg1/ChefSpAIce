@@ -7,7 +7,7 @@ This document provides effective prompt templates for conducting thorough code r
 ### 1. Context Section
 
 ```
-Please review the [DIRECTORY_PATH] directory in this [PROJECT_TYPE] application. 
+Please review the [DIRECTORY_PATH] directory in this [PROJECT_TYPE] application.
 The directory contains [BRIEF_DESCRIPTION_OF_CONTENTS] and is responsible for [PRIMARY_PURPOSE].
 Key dependencies include: [LIST_MAIN_DEPENDENCIES]
 ```
@@ -20,7 +20,7 @@ Focus your review on:
 1. **Functional Correctness**: Does the code achieve its intended purpose?
 2. **Architecture & Patterns**: Are design patterns consistently applied?
 3. **Data Modeling**: Is the schema properly defined and typed?
-4. **Cross-cutting Concerns**: 
+4. **Cross-cutting Concerns**:
    - API contracts and validation
    - Shared schema alignment
    - State management (React Query usage)
@@ -72,18 +72,18 @@ Provide findings in this format:
 Here's how you might use this template for reviewing a specific directory:
 
 ```
-Please review the `/server/routers` directory in this full-stack JavaScript application. 
-The directory contains Express route handlers and is responsible for all API endpoints. 
+Please review the `/server/routers` directory in this full-stack JavaScript application.
+The directory contains Express route handlers and is responsible for all API endpoints.
 Key dependencies include Drizzle ORM, Zod validation, and the storage interface.
 
-Focus on: API contract validation, proper use of the storage interface, error handling, 
+Focus on: API contract validation, proper use of the storage interface, error handling,
 authentication middleware usage, and TypeScript typing consistency.
 
-Please verify that all routes validate inputs using Zod schemas, responses match the 
-shared schema types, authentication is properly applied where needed, and error responses 
+Please verify that all routes validate inputs using Zod schemas, responses match the
+shared schema types, authentication is properly applied where needed, and error responses
 follow a consistent format.
 
-Provide critical issues first, followed by improvements, using the format: 
+Provide critical issues first, followed by improvements, using the format:
 Issue description, specific location, impact explanation, and concrete fix steps.
 ```
 
@@ -98,6 +98,7 @@ Issue description, specific location, impact explanation, and concrete fix steps
 ## Quick Templates by Directory Type
 
 ### Frontend Components Review
+
 ```
 Review `/client/src/components` focusing on:
 - Component composition and reusability
@@ -108,6 +109,7 @@ Review `/client/src/components` focusing on:
 ```
 
 ### API Routes Review
+
 ```
 Review `/server/routes` focusing on:
 - Input validation with Zod schemas
@@ -118,6 +120,7 @@ Review `/server/routes` focusing on:
 ```
 
 ### Shared Schema Review
+
 ```
 Review `/shared/schema.ts` focusing on:
 - Type definitions completeness
@@ -128,6 +131,7 @@ Review `/shared/schema.ts` focusing on:
 ```
 
 ### Storage Layer Review
+
 ```
 Review `/server/storage` focusing on:
 - Interface implementation completeness

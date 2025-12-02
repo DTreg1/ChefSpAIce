@@ -11,14 +11,30 @@ export function useNotificationHistory(includeDismissed: boolean = false) {
 
 export function useDismissNotification() {
   return useMutation({
-    mutationFn: async ({ notificationId, dismissedBy }: { notificationId: string; dismissedBy?: string }) => {
-      return apiRequest(API_ENDPOINTS.notifications.dismiss(notificationId), 'POST', { dismissedBy });
+    mutationFn: async ({
+      notificationId,
+      dismissedBy,
+    }: {
+      notificationId: string;
+      dismissedBy?: string;
+    }) => {
+      return apiRequest(
+        API_ENDPOINTS.notifications.dismiss(notificationId),
+        "POST",
+        { dismissedBy },
+      );
     },
     onSuccess: () => {
       // Invalidate both dismissed and undismissed queries
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.notifications.history, true] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.notifications.history, false] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.notifications.unreadCount] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.notifications.history, true],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.notifications.history, false],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.notifications.unreadCount],
+      });
     },
   });
 }

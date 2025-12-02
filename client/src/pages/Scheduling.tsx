@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Sparkles, BarChart, Target, AlertTriangle } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  Sparkles,
+  BarChart,
+  Target,
+  AlertTriangle,
+} from "lucide-react";
 import { TimeSlotPicker } from "@/components/scheduling/time-slot-picker";
 import { AvailabilityGrid } from "@/components/scheduling/availability-grid";
 import { ConflictResolver } from "@/components/scheduling/conflict-resolver";
@@ -19,7 +32,7 @@ export default function Scheduling() {
     "bob@example.com",
     "charlie@example.com",
     "diana@example.com",
-    "edward@example.com"
+    "edward@example.com",
   ]);
   const [meetingDuration, setMeetingDuration] = useState(30);
   const [newParticipant, setNewParticipant] = useState("");
@@ -31,13 +44,13 @@ export default function Scheduling() {
       setNewParticipant("");
       toast({
         title: "Participant added",
-        description: `${newParticipant} has been added to the meeting`
+        description: `${newParticipant} has been added to the meeting`,
       });
     }
   };
 
   const handleRemoveParticipant = (email: string) => {
-    setParticipants(participants.filter(p => p !== email));
+    setParticipants(participants.filter((p) => p !== email));
   };
 
   return (
@@ -77,7 +90,9 @@ export default function Scheduling() {
                 {[15, 30, 45, 60, 90].map((duration) => (
                   <Button
                     key={duration}
-                    variant={meetingDuration === duration ? "default" : "outline"}
+                    variant={
+                      meetingDuration === duration ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => setMeetingDuration(duration)}
                     data-testid={`duration-${duration}`}
@@ -95,10 +110,15 @@ export default function Scheduling() {
                   placeholder="Enter email address"
                   value={newParticipant}
                   onChange={(e) => setNewParticipant(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && handleAddParticipant()
+                  }
                   data-testid="input-participant"
                 />
-                <Button onClick={handleAddParticipant} data-testid="button-add-participant">
+                <Button
+                  onClick={handleAddParticipant}
+                  data-testid="button-add-participant"
+                >
                   Add
                 </Button>
               </div>
@@ -152,16 +172,14 @@ export default function Scheduling() {
             onTimeSelected={(time) => {
               toast({
                 title: "Time selected",
-                description: `Meeting scheduled for ${new Date(time.start).toLocaleString()}`
+                description: `Meeting scheduled for ${new Date(time.start).toLocaleString()}`,
               });
             }}
           />
         </TabsContent>
 
         <TabsContent value="availability">
-          <AvailabilityGrid
-            participants={participants}
-          />
+          <AvailabilityGrid participants={participants} />
         </TabsContent>
 
         <TabsContent value="conflicts">
@@ -183,7 +201,9 @@ export default function Scheduling() {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold">5</p>
-              <p className="text-sm text-muted-foreground">Active Participants</p>
+              <p className="text-sm text-muted-foreground">
+                Active Participants
+              </p>
             </div>
           </CardContent>
         </Card>

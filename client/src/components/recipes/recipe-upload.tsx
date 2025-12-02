@@ -11,7 +11,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, Camera, Loader2, CheckCircle, X, Image as ImageIcon } from "lucide-react";
+import {
+  Upload,
+  Camera,
+  Loader2,
+  CheckCircle,
+  X,
+  Image as ImageIcon,
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Recipe } from "@shared/schema";
@@ -26,7 +33,7 @@ export function RecipeUpload() {
   const uploadRecipeMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
       const response = await apiRequest("/api/recipes/from-image", "POST", {
-        image: imageBase64
+        image: imageBase64,
       });
       return response;
     },
@@ -42,7 +49,10 @@ export function RecipeUpload() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Extraction Failed",
-        description: error instanceof Error ? error.message : "Could not extract recipe from image. Please try a clearer photo.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not extract recipe from image. Please try a clearer photo.",
         variant: "destructive",
       });
     },
@@ -113,7 +123,8 @@ export function RecipeUpload() {
         <DialogHeader>
           <DialogTitle>Upload Recipe from Image</DialogTitle>
           <DialogDescription>
-            Take a photo or upload an image of a paper recipe. Our AI will extract the ingredients and instructions for you.
+            Take a photo or upload an image of a paper recipe. Our AI will
+            extract the ingredients and instructions for you.
           </DialogDescription>
         </DialogHeader>
 
@@ -121,7 +132,9 @@ export function RecipeUpload() {
           {!selectedImage ? (
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                isDragging
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25"
               }`}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -133,8 +146,12 @@ export function RecipeUpload() {
                   <Camera className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <p className="text-lg font-medium">Drag and drop your recipe photo here</p>
-                  <p className="text-sm text-muted-foreground mt-1">or click to select a file</p>
+                  <p className="text-lg font-medium">
+                    Drag and drop your recipe photo here
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    or click to select a file
+                  </p>
                 </div>
                 <input
                   type="file"

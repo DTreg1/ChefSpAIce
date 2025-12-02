@@ -1,12 +1,18 @@
 /**
  * TagDemo Page
- * 
+ *
  * Demonstration page for the auto-tagging feature.
  * Tests tag generation for various content types including articles about sustainable farming.
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { TagEditor, TagCloud } from "@/components/tags";
@@ -59,7 +65,9 @@ const SAMPLE_ARTICLES = {
 
 export default function TagDemo() {
   const { toast } = useToast();
-  const [selectedArticle, setSelectedArticle] = useState(SAMPLE_ARTICLES.sustainableFarming);
+  const [selectedArticle, setSelectedArticle] = useState(
+    SAMPLE_ARTICLES.sustainableFarming,
+  );
   const [customContent, setCustomContent] = useState("");
   const [generatedTags, setGeneratedTags] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -109,7 +117,7 @@ export default function TagDemo() {
       });
       return;
     }
-    
+
     handleGenerateTags({
       id: `custom-${Date.now()}`,
       title: "Custom Content",
@@ -123,7 +131,8 @@ export default function TagDemo() {
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold">Auto-Tagging Feature Demo</h1>
         <p className="text-muted-foreground">
-          Test the AI-powered tag generation using OpenAI GPT-3.5-turbo and TensorFlow.js
+          Test the AI-powered tag generation using OpenAI GPT-3.5-turbo and
+          TensorFlow.js
         </p>
       </div>
 
@@ -228,12 +237,15 @@ export default function TagDemo() {
                     data-testid={`generated-tag-${tag.name}`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">#{tag.name.replace('#', '')}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Source: {tag.source || 'ai-generated'}
+                      <span className="font-medium">
+                        #{tag.name.replace("#", "")}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        Relevance: {Math.round((tag.relevanceScore || 0.8) * 100)}%
+                        Source: {tag.source || "ai-generated"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Relevance:{" "}
+                        {Math.round((tag.relevanceScore || 0.8) * 100)}%
                       </span>
                     </div>
                     {tag.usageCount > 0 && (
@@ -249,10 +261,12 @@ export default function TagDemo() {
               {selectedArticle.id === "demo-sustainable-farming" && (
                 <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                   <p className="text-green-700 dark:text-green-300 font-medium">
-                    ✓ Success! Generated relevant tags for sustainable farming article:
+                    ✓ Success! Generated relevant tags for sustainable farming
+                    article:
                   </p>
                   <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                    Tags include: #sustainability, #agriculture, #environment, #farming, #green-tech
+                    Tags include: #sustainability, #agriculture, #environment,
+                    #farming, #green-tech
                   </p>
                 </div>
               )}
@@ -265,9 +279,7 @@ export default function TagDemo() {
       <Card>
         <CardHeader>
           <CardTitle>Popular Tags</CardTitle>
-          <CardDescription>
-            Trending tags across all content
-          </CardDescription>
+          <CardDescription>Trending tags across all content</CardDescription>
         </CardHeader>
         <CardContent>
           <TagCloud limit={20} />

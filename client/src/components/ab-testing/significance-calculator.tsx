@@ -1,15 +1,45 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, Area, AreaChart } from "recharts";
-import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
+} from "recharts";
+import {
+  Calculator,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Info,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type AbTest, type AbTestVariantMetric, type AbTestInsight } from "@shared/schema";
+import {
+  type AbTest,
+  type AbTestVariantMetric,
+  type AbTestInsight,
+} from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
   variantMetrics?: AbTestVariantMetric[];
@@ -20,10 +50,12 @@ interface SignificanceCalculatorProps {
   test: TestWithDetails;
 }
 
-export default function SignificanceCalculator({ test }: SignificanceCalculatorProps) {
+export default function SignificanceCalculator({
+  test,
+}: SignificanceCalculatorProps) {
   const { toast } = useToast();
   const [analysis, setAnalysis] = useState<any>(null);
-  
+
   const latestMetric = test.variantMetrics?.[0];
 
   useEffect(() => {
@@ -55,24 +87,35 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
   const metricData = analysis?.insights || latestMetric;
 
   const getConfidenceLevel = (confidence: number) => {
-    if (confidence >= 0.99) return { label: "Very High", color: "text-green-600 dark:text-green-400" };
-    if (confidence >= 0.95) return { label: "High", color: "text-green-600 dark:text-green-400" };
-    if (confidence >= 0.90) return { label: "Moderate", color: "text-yellow-600 dark:text-yellow-400" };
+    if (confidence >= 0.99)
+      return {
+        label: "Very High",
+        color: "text-green-600 dark:text-green-400",
+      };
+    if (confidence >= 0.95)
+      return { label: "High", color: "text-green-600 dark:text-green-400" };
+    if (confidence >= 0.9)
+      return {
+        label: "Moderate",
+        color: "text-yellow-600 dark:text-yellow-400",
+      };
     return { label: "Low", color: "text-red-600 dark:text-red-400" };
   };
 
-  const chartData = significanceData ? [
-    {
-      name: "Variant A",
-      "Conversion Rate": (significanceData.conversionRateA || 0) * 100,
-      "Sample Size": significanceData.sampleSizeA || 0,
-    },
-    {
-      name: "Variant B",
-      "Conversion Rate": (significanceData.conversionRateB || 0) * 100,
-      "Sample Size": significanceData.sampleSizeB || 0,
-    }
-  ] : [];
+  const chartData = significanceData
+    ? [
+        {
+          name: "Variant A",
+          "Conversion Rate": (significanceData.conversionRateA || 0) * 100,
+          "Sample Size": significanceData.sampleSizeA || 0,
+        },
+        {
+          name: "Variant B",
+          "Conversion Rate": (significanceData.conversionRateB || 0) * 100,
+          "Sample Size": significanceData.sampleSizeB || 0,
+        },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
@@ -88,12 +131,14 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
                 Analyze test results for statistical confidence
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={() => analyzeTest.mutate()}
               disabled={analyzeTest.isPending}
               data-testid="button-analyze"
             >
-              {analyzeTest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {analyzeTest.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {analyzeTest.isPending ? "Analyzing..." : "Run Analysis"}
             </Button>
           </div>
@@ -112,18 +157,28 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
                 <MetricCard
                   label="Confidence"
                   value={`${((metricData.confidence || 0) * 100).toFixed(1)}%`}
-                  description={getConfidenceLevel(metricData.confidence || 0).label}
-                  className={getConfidenceLevel(metricData.confidence || 0).color}
+                  description={
+                    getConfidenceLevel(metricData.confidence || 0).label
+                  }
+                  className={
+                    getConfidenceLevel(metricData.confidence || 0).color
+                  }
                 />
                 <MetricCard
                   label="Conversion Rate"
                   value={`${((metricData.conversionRate || 0) * 100).toFixed(1)}%`}
                   description="Performance metric"
-                  highlight={metricData.conversionRate && metricData.conversionRate > 0.1}
+                  highlight={
+                    metricData.conversionRate && metricData.conversionRate > 0.1
+                  }
                 />
                 <MetricCard
                   label="Result"
-                  value={metricData.isSignificant ? metricData.variant : "Inconclusive"}
+                  value={
+                    metricData.isSignificant
+                      ? metricData.variant
+                      : "Inconclusive"
+                  }
                   description={metricData.recommendation || "Continue testing"}
                   highlight={metricData.isSignificant}
                 />
@@ -132,10 +187,17 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
               {/* Confidence Progress */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Statistical Confidence</span>
-                  <span className="font-medium">{((metricData.confidence || 0) * 100).toFixed(1)}%</span>
+                  <span className="text-muted-foreground">
+                    Statistical Confidence
+                  </span>
+                  <span className="font-medium">
+                    {((metricData.confidence || 0) * 100).toFixed(1)}%
+                  </span>
                 </div>
-                <Progress value={(metricData.confidence || 0) * 100} className="h-3" />
+                <Progress
+                  value={(metricData.confidence || 0) * 100}
+                  className="h-3"
+                />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>0%</span>
                   <span>95% (Target)</span>
@@ -146,7 +208,9 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
               {/* Chart */}
               {chartData.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Conversion Rate Comparison</h3>
+                  <h3 className="text-sm font-medium">
+                    Conversion Rate Comparison
+                  </h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -181,13 +245,15 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
                       <span className="text-sm">
-                        {metricData.variant} shows statistically significant improvement
+                        {metricData.variant} shows statistically significant
+                        improvement
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
                       <span className="text-sm">
-                        Confidence level: {((metricData.confidence || 0) * 100).toFixed(1)}%
+                        Confidence level:{" "}
+                        {((metricData.confidence || 0) * 100).toFixed(1)}%
                       </span>
                     </div>
                   </div>
@@ -195,20 +261,23 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
               )}
 
               {/* Warnings for inconclusive tests */}
-              {!metricData.isSignificant && metricData.sampleSize && metricData.sampleSize < 100 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <p className="font-medium">Important Considerations</p>
-                      <p className="text-sm">
-                        Sample size ({metricData.sampleSize}) may be too small for reliable results. 
-                        Continue testing to gather more data.
-                      </p>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
+              {!metricData.isSignificant &&
+                metricData.sampleSize &&
+                metricData.sampleSize < 100 && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">Important Considerations</p>
+                        <p className="text-sm">
+                          Sample size ({metricData.sampleSize}) may be too small
+                          for reliable results. Continue testing to gather more
+                          data.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
             </>
           )}
 
@@ -216,7 +285,8 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Click "Run Analysis" to calculate statistical significance and get AI-powered insights for this test.
+                Click "Run Analysis" to calculate statistical significance and
+                get AI-powered insights for this test.
               </AlertDescription>
             </Alert>
           )}
@@ -234,11 +304,20 @@ interface MetricCardProps {
   className?: string;
 }
 
-function MetricCard({ label, value, description, highlight, className }: MetricCardProps) {
+function MetricCard({
+  label,
+  value,
+  description,
+  highlight,
+  className,
+}: MetricCardProps) {
   return (
     <div className="space-y-1">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? 'text-primary' : ''} ${className || ''}`} data-testid={`text-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+      <p
+        className={`text-2xl font-bold ${highlight ? "text-primary" : ""} ${className || ""}`}
+        data-testid={`text-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      >
         {value}
       </p>
       {description && (

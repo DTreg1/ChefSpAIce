@@ -15,7 +15,7 @@ import type { InsertFeedback } from "@shared/schema";
 
 interface StarRatingProps {
   contextId: string;
-  contextType: 'recipe' | 'food_item';
+  contextType: "recipe" | "food_item";
   initialRating?: number;
   showTextFeedback?: boolean;
   className?: string;
@@ -28,7 +28,7 @@ export function StarRating({
   initialRating = 0,
   showTextFeedback = false,
   className,
-  onRatingSubmit
+  onRatingSubmit,
 }: StarRatingProps) {
   const [rating, setRating] = useState(initialRating);
   const [hoverRating, setHoverRating] = useState(0);
@@ -38,31 +38,35 @@ export function StarRating({
 
   const submitRatingMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest(API_ENDPOINTS.feedback.submit, 'POST', data);
+      const res = await apiRequest(API_ENDPOINTS.feedback.submit, "POST", data);
       return res;
     },
     onSuccess: () => {
       setHasSubmitted(true);
       setIsOpen(false);
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list] });
-      if (contextType === 'recipe') {
-        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.feedback.list],
+      });
+      if (contextType === "recipe") {
+        queryClient.invalidateQueries({
+          queryKey: [API_ENDPOINTS.recipes.list],
+        });
       }
       if (onRatingSubmit) {
         onRatingSubmit(rating, comment);
       }
-    }
+    },
   });
 
   const handleRatingClick = (newRating: number) => {
     setRating(newRating);
-    
+
     if (showTextFeedback) {
       setIsOpen(true);
     } else {
       // Submit immediately without text feedback
       submitRatingMutation.mutate({
-        type: newRating >= 4 ? 'praise' : 'complaint',
+        type: newRating >= 4 ? "praise" : "complaint",
         message: `User gave ${newRating} stars (${contextId})`,
         rating: newRating,
       });
@@ -71,8 +75,10 @@ export function StarRating({
 
   const handleSubmitWithComment = () => {
     submitRatingMutation.mutate({
-      type: rating >= 4 ? 'praise' : 'complaint',
-      message: comment ? `${comment} (${rating} stars - ${contextId})` : `User gave ${rating} stars (${contextId})`,
+      type: rating >= 4 ? "praise" : "complaint",
+      message: comment
+        ? `${comment} (${rating} stars - ${contextId})`
+        : `User gave ${rating} stars (${contextId})`,
       rating: rating,
     });
   };
@@ -90,17 +96,17 @@ export function StarRating({
           disabled={submitRatingMutation.isPending || hasSubmitted}
           className={cn(
             "transition-all focus:outline-none",
-            hasSubmitted && "cursor-default"
+            hasSubmitted && "cursor-default",
           )}
           data-testid={`button-star-${star}`}
         >
           <Star
             className={cn(
               "w-5 h-5 transition-colors",
-              (hoverRating >= star || rating >= star)
+              hoverRating >= star || rating >= star
                 ? "fill-yellow-500 text-yellow-500"
                 : "text-muted-foreground hover:text-yellow-500/70",
-              submitRatingMutation.isPending && "opacity-50"
+              submitRatingMutation.isPending && "opacity-50",
             )}
           />
         </button>
@@ -125,9 +131,11 @@ export function StarRating({
       <PopoverContent className="w-80" align="start">
         <div className="space-y-3">
           <div className="font-medium text-sm">
-            {rating >= 4 ? "Great! What did you like?" :
-             rating <= 2 ? "Sorry to hear that. What went wrong?" :
-             "Thanks for rating! Any comments?"}
+            {rating >= 4
+              ? "Great! What did you like?"
+              : rating <= 2
+                ? "Sorry to hear that. What went wrong?"
+                : "Thanks for rating! Any comments?"}
           </div>
           <Textarea
             placeholder="Optional feedback..."
@@ -145,7 +153,7 @@ export function StarRating({
                 setIsOpen(false);
                 // Submit without comment
                 submitRatingMutation.mutate({
-                  type: rating >= 4 ? 'praise' : 'complaint',
+                  type: rating >= 4 ? "praise" : "complaint",
                   message: `User gave ${rating} stars (${contextId})`,
                   rating: rating,
                 });

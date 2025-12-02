@@ -29,17 +29,17 @@ export interface ISystemStorage {
   // ==================== API Usage Logging ====================
   logApiUsage(
     userId: string,
-    log: Omit<InsertApiUsageLog, "userId">
+    log: Omit<InsertApiUsageLog, "userId">,
   ): Promise<ApiUsageLog>;
   getApiUsageLogs(
     userId: string,
     apiName?: string,
-    limit?: number
+    limit?: number,
   ): Promise<ApiUsageLog[]>;
   getApiUsageStats(
     userId: string,
     apiName: string,
-    days?: number
+    days?: number,
   ): Promise<{
     totalCalls: number;
     successfulCalls: number;
@@ -51,7 +51,7 @@ export interface ISystemStorage {
   getApiUsageTrends(
     userId: string,
     apiName: string,
-    days?: number
+    days?: number,
   ): Promise<
     Array<{
       date: string;
@@ -62,7 +62,7 @@ export interface ISystemStorage {
   >;
   getAllApiUsageStats(
     userId: string,
-    days?: number
+    days?: number,
   ): Promise<
     Array<{
       apiName: string;
@@ -89,7 +89,7 @@ export interface ISystemStorage {
       success?: boolean;
       limit?: number;
       offset?: number;
-    }
+    },
   ): Promise<ActivityLog[]>;
   getActivityLogsPaginated(
     userId?: string | null,
@@ -103,9 +103,12 @@ export interface ISystemStorage {
       startDate?: Date;
       endDate?: Date;
       success?: boolean;
-    }
+    },
   ): Promise<PaginatedResponse<ActivityLog>>;
-  getUserActivityTimeline(userId: string, limit?: number): Promise<ActivityLog[]>;
+  getUserActivityTimeline(
+    userId: string,
+    limit?: number,
+  ): Promise<ActivityLog[]>;
   getSystemActivityLogs(filters?: {
     activityType?: string | string[];
     action?: string | string[];
@@ -116,7 +119,7 @@ export interface ISystemStorage {
   getActivityStats(
     userId?: string | null,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byActivityType: Array<{ activityType: string; count: number }>;
@@ -124,29 +127,32 @@ export interface ISystemStorage {
     byAction: Array<{ action: string; count: number }>;
     successRate: number;
   }>;
-  getRecentErrors(userId?: string | null, limit?: number): Promise<ActivityLog[]>;
+  getRecentErrors(
+    userId?: string | null,
+    limit?: number,
+  ): Promise<ActivityLog[]>;
   cleanupOldActivityLogs(
     retentionDays?: number,
-    excludeActivityTypes?: string[]
+    excludeActivityTypes?: string[],
   ): Promise<number>;
 
   // ==================== System Metrics ====================
   recordSystemMetric(
-    metric: Omit<InsertSystemMetric, "timestamp">
+    metric: Omit<InsertSystemMetric, "timestamp">,
   ): Promise<SystemMetric>;
   getSystemMetrics(
     metricType?: string,
     metricName?: string,
     startDate?: Date,
     endDate?: Date,
-    limit?: number
+    limit?: number,
   ): Promise<SystemMetric[]>;
   getLatestSystemMetrics(metricType?: string): Promise<SystemMetric[]>;
   getMetricAggregates(
     metricName: string,
     startDate: Date,
     endDate: Date,
-    interval?: "hour" | "day" | "week"
+    interval?: "hour" | "day" | "week",
   ): Promise<
     Array<{
       period: string;
@@ -160,12 +166,12 @@ export interface ISystemStorage {
 
   // ==================== Maintenance Predictions ====================
   createMaintenancePrediction(
-    prediction: Omit<InsertMaintenancePrediction, "createdAt">
+    prediction: Omit<InsertMaintenancePrediction, "createdAt">,
   ): Promise<MaintenancePrediction>;
   getMaintenancePredictions(
     component?: string,
     risk?: string,
-    isAddressed?: boolean
+    isAddressed?: boolean,
   ): Promise<MaintenancePrediction[]>;
   getHighRiskPredictions(): Promise<MaintenancePrediction[]>;
   markPredictionAddressed(predictionId: string): Promise<MaintenancePrediction>;
@@ -173,18 +179,18 @@ export interface ISystemStorage {
 
   // ==================== Maintenance History ====================
   recordMaintenanceHistory(
-    history: Omit<InsertMaintenanceHistory, "id">
+    history: Omit<InsertMaintenanceHistory, "id">,
   ): Promise<MaintenanceHistory>;
   getMaintenanceHistory(
     component?: string,
     maintenanceType?: string,
-    limit?: number
+    limit?: number,
   ): Promise<MaintenanceHistory[]>;
   getRecentMaintenance(limit?: number): Promise<MaintenanceHistory[]>;
   getMaintenanceStats(
     component?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byType: Array<{ maintenanceType: string; count: number }>;
@@ -194,7 +200,7 @@ export interface ISystemStorage {
   }>;
   updateMaintenanceHistory(
     historyId: string,
-    updates: Partial<Omit<InsertMaintenanceHistory, "id" | "startedAt">>
+    updates: Partial<Omit<InsertMaintenanceHistory, "id" | "startedAt">>,
   ): Promise<MaintenanceHistory>;
   deleteMaintenanceHistory(historyId: string): Promise<void>;
 

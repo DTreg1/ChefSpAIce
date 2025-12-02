@@ -33,23 +33,20 @@ export interface IContentStorage {
   // ==================== Content Categories ====================
   getContentCategories(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<ContentCategory[]>;
   assignContentCategory(
-    assignment: InsertContentCategory
+    assignment: InsertContentCategory,
   ): Promise<ContentCategory>;
-  removeContentCategory(
-    contentId: string,
-    categoryId: number
-  ): Promise<void>;
+  removeContentCategory(contentId: string, categoryId: number): Promise<void>;
   getContentByCategory(
     categoryId: number,
     contentType?: string,
-    limit?: number
+    limit?: number,
   ): Promise<ContentCategory[]>;
   setPrimaryCategory(
     contentId: string,
-    categoryId: number
+    categoryId: number,
   ): Promise<ContentCategory>;
 
   // ==================== Tags ====================
@@ -65,36 +62,33 @@ export interface IContentStorage {
   // ==================== Content Tags ====================
   getContentTags(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<Array<ContentTag & { tag: Tag }>>;
   assignContentTag(assignment: InsertContentTag): Promise<ContentTag>;
-  removeContentTag(
-    contentId: string,
-    tagId: number
-  ): Promise<void>;
+  removeContentTag(contentId: string, tagId: number): Promise<void>;
   getContentByTag(
     tagId: number,
     contentType?: string,
-    limit?: number
+    limit?: number,
   ): Promise<ContentTag[]>;
   bulkAssignTags(
     contentId: string,
     contentType: string,
-    tagNames: string[]
+    tagNames: string[],
   ): Promise<ContentTag[]>;
 
   // ==================== Content Embeddings ====================
   upsertContentEmbedding(
-    embedding: InsertContentEmbedding
+    embedding: InsertContentEmbedding,
   ): Promise<ContentEmbedding>;
   getContentEmbedding(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<ContentEmbedding | undefined>;
   searchByEmbedding(
     queryEmbedding: number[],
     contentType: string,
-    limit?: number
+    limit?: number,
   ): Promise<Array<ContentEmbedding & { similarity: number }>>;
   deleteContentEmbedding(contentId: string, contentType: string): Promise<void>;
 
@@ -102,32 +96,32 @@ export interface IContentStorage {
   getDuplicates(contentId: string): Promise<DuplicatePair[]>;
   getPendingDuplicates(
     contentType?: string,
-    limit?: number
+    limit?: number,
   ): Promise<DuplicatePair[]>;
   createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair>;
   updateDuplicateStatus(
     pairId: string,
     isConfirmed: boolean | null,
     isDismissed: boolean,
-    reviewedBy: string
+    reviewedBy: string,
   ): Promise<DuplicatePair>;
   findPotentialDuplicates(
     contentId: string,
     contentType: string,
-    similarityThreshold?: number
+    similarityThreshold?: number,
   ): Promise<DuplicatePair[]>;
 
   // ==================== Related Content Cache ====================
   getRelatedContent(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<RelatedContentCache | undefined>;
   cacheRelatedContent(
-    cache: InsertRelatedContentCache
+    cache: InsertRelatedContentCache,
   ): Promise<RelatedContentCache>;
   invalidateRelatedContentCache(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<void>;
   cleanExpiredCache(): Promise<number>;
 
@@ -144,7 +138,7 @@ export interface IContentStorage {
   }>;
   getContentOrganization(
     contentId: string,
-    contentType: string
+    contentType: string,
   ): Promise<{
     categories: Category[];
     tags: Tag[];

@@ -59,7 +59,7 @@ export default function QueryBuilder() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <NaturalQueryInput onQueryConverted={handleQueryConverted} />
-          
+
           {currentQuery && (
             <QueryResults
               queryId={currentQuery.queryId}
@@ -84,11 +84,11 @@ export default function QueryBuilder() {
                 Saved
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="history" className="mt-4">
               <QueryHistory onSelectQuery={handleSelectHistoryQuery} />
             </TabsContent>
-            
+
             <TabsContent value="saved" className="mt-4">
               <SavedQueries onSelectQuery={handleSelectSavedQuery} />
             </TabsContent>

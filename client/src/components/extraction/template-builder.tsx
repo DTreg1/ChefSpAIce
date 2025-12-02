@@ -1,31 +1,43 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Trash2, 
-  GripVertical, 
-  Save, 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  Save,
   FileCode,
   Copy,
   Settings,
   Wand2,
-  TestTube
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+  TestTube,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface FieldDefinition {
   id: string;
   name: string;
-  type: 'string' | 'number' | 'date' | 'boolean' | 'array' | 'object';
+  type: "string" | "number" | "date" | "boolean" | "array" | "object";
   description: string;
   required: boolean;
   examples?: string[];
@@ -53,37 +65,46 @@ interface TemplateBuilderProps {
 export function TemplateBuilder({
   initialTemplate,
   onSave,
-  className
+  className,
 }: TemplateBuilderProps) {
   const { toast } = useToast();
-  const [templateName, setTemplateName] = useState(initialTemplate?.name || '');
-  const [templateDescription, setTemplateDescription] = useState(initialTemplate?.description || '');
-  const [fields, setFields] = useState<FieldDefinition[]>(
-    initialTemplate?.schema?.fields || []
+  const [templateName, setTemplateName] = useState(initialTemplate?.name || "");
+  const [templateDescription, setTemplateDescription] = useState(
+    initialTemplate?.description || "",
   );
-  const [exampleText, setExampleText] = useState(initialTemplate?.exampleText || '');
-  const [systemPrompt, setSystemPrompt] = useState(initialTemplate?.systemPrompt || '');
+  const [fields, setFields] = useState<FieldDefinition[]>(
+    initialTemplate?.schema?.fields || [],
+  );
+  const [exampleText, setExampleText] = useState(
+    initialTemplate?.exampleText || "",
+  );
+  const [systemPrompt, setSystemPrompt] = useState(
+    initialTemplate?.systemPrompt || "",
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
-  
+
   // Extraction config
-  const [model, setModel] = useState(initialTemplate?.extractionConfig?.model || 'gpt-3.5-turbo');
+  const [model, setModel] = useState(
+    initialTemplate?.extractionConfig?.model || "gpt-3.5-turbo",
+  );
   const [temperature, setTemperature] = useState(
-    initialTemplate?.extractionConfig?.temperature?.toString() || '0.3'
+    initialTemplate?.extractionConfig?.temperature?.toString() || "0.3",
   );
   const [confidenceThreshold, setConfidenceThreshold] = useState(
-    initialTemplate?.extractionConfig?.confidenceThreshold?.toString() || '0.85'
+    initialTemplate?.extractionConfig?.confidenceThreshold?.toString() ||
+      "0.85",
   );
 
   // Add new field
   const addField = () => {
     const newField: FieldDefinition = {
       id: `field_${Date.now()}`,
-      name: '',
-      type: 'string',
-      description: '',
+      name: "",
+      type: "string",
+      description: "",
       required: false,
-      examples: []
+      examples: [],
     };
     setFields([...fields, newField]);
   };
@@ -113,7 +134,7 @@ export function TemplateBuilder({
     const draggedField = fields[draggedItem];
     const newFields = fields.filter((_, i) => i !== draggedItem);
     newFields.splice(index, 0, draggedField);
-    
+
     setFields(newFields);
     setDraggedItem(index);
   };
@@ -126,7 +147,7 @@ export function TemplateBuilder({
   // Add example to field
   const addExample = (fieldIndex: number, example: string) => {
     if (!example.trim()) return;
-    
+
     const field = fields[fieldIndex];
     const examples = field.examples || [];
     if (!examples.includes(example)) {
@@ -138,8 +159,8 @@ export function TemplateBuilder({
   const removeExample = (fieldIndex: number, exampleIndex: number) => {
     const field = fields[fieldIndex];
     const examples = field.examples || [];
-    updateField(fieldIndex, { 
-      examples: examples.filter((_, i) => i !== exampleIndex) 
+    updateField(fieldIndex, {
+      examples: examples.filter((_, i) => i !== exampleIndex),
     });
   };
 
@@ -151,8 +172,8 @@ export function TemplateBuilder({
       schema: {
         fields: fields.map(({ id, ...field }) => ({
           ...field,
-          examples: field.examples?.filter(e => e.trim())
-        }))
+          examples: field.examples?.filter((e) => e.trim()),
+        })),
       },
       exampleText,
       systemPrompt,
@@ -160,8 +181,8 @@ export function TemplateBuilder({
         model,
         temperature: parseFloat(temperature),
         confidenceThreshold: parseFloat(confidenceThreshold),
-        enableStructuredOutput: true
-      }
+        enableStructuredOutput: true,
+      },
     };
   };
 
@@ -189,8 +210,10 @@ export function TemplateBuilder({
     onSave(template);
   };
 
-  const isValid = templateName && fields.length > 0 && 
-    fields.every(f => f.name && f.description);
+  const isValid =
+    templateName &&
+    fields.length > 0 &&
+    fields.every((f) => f.name && f.description);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -216,7 +239,7 @@ export function TemplateBuilder({
               data-testid="input-template-name"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="template-description">Description</Label>
             <Textarea
@@ -244,11 +267,7 @@ export function TemplateBuilder({
                 Define the fields to extract from text
               </CardDescription>
             </div>
-            <Button
-              size="sm"
-              onClick={addField}
-              data-testid="button-add-field"
-            >
+            <Button size="sm" onClick={addField} data-testid="button-add-field">
               <Plus className="w-4 h-4 mr-1" />
               Add Field
             </Button>
@@ -266,13 +285,13 @@ export function TemplateBuilder({
                   onDragEnd={handleDragEnd}
                   className={cn(
                     "p-4 border rounded-lg cursor-move",
-                    draggedItem === index && "opacity-50"
+                    draggedItem === index && "opacity-50",
                   )}
                   data-testid={`field-${index}`}
                 >
                   <div className="flex items-start gap-3">
                     <GripVertical className="w-5 h-5 text-muted-foreground mt-2" />
-                    
+
                     <div className="flex-1 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
@@ -280,16 +299,20 @@ export function TemplateBuilder({
                           <Input
                             placeholder="e.g., customerName"
                             value={field.name}
-                            onChange={(e) => updateField(index, { name: e.target.value })}
+                            onChange={(e) =>
+                              updateField(index, { name: e.target.value })
+                            }
                             data-testid={`field-name-${index}`}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label>Data Type</Label>
                           <Select
                             value={field.type}
-                            onValueChange={(value: any) => updateField(index, { type: value })}
+                            onValueChange={(value: any) =>
+                              updateField(index, { type: value })
+                            }
                           >
                             <SelectTrigger data-testid={`field-type-${index}`}>
                               <SelectValue />
@@ -305,28 +328,34 @@ export function TemplateBuilder({
                           </Select>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label>Description*</Label>
                         <Input
                           placeholder="Describe what to extract for this field"
                           value={field.description}
-                          onChange={(e) => updateField(index, { description: e.target.value })}
+                          onChange={(e) =>
+                            updateField(index, { description: e.target.value })
+                          }
                           data-testid={`field-description-${index}`}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Switch
                             id={`required-${index}`}
                             checked={field.required}
-                            onCheckedChange={(checked) => updateField(index, { required: checked })}
+                            onCheckedChange={(checked) =>
+                              updateField(index, { required: checked })
+                            }
                             data-testid={`field-required-${index}`}
                           />
-                          <Label htmlFor={`required-${index}`}>Required Field</Label>
+                          <Label htmlFor={`required-${index}`}>
+                            Required Field
+                          </Label>
                         </div>
-                        
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -336,7 +365,7 @@ export function TemplateBuilder({
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                      
+
                       {/* Examples */}
                       <div className="space-y-2">
                         <Label className="text-xs">Examples (optional)</Label>
@@ -344,9 +373,9 @@ export function TemplateBuilder({
                           <Input
                             placeholder="Add example value"
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
+                              if (e.key === "Enter") {
                                 addExample(index, e.currentTarget.value);
-                                e.currentTarget.value = '';
+                                e.currentTarget.value = "";
                               }
                             }}
                             className="text-sm"
@@ -373,10 +402,11 @@ export function TemplateBuilder({
                   </div>
                 </div>
               ))}
-              
+
               {fields.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  No fields defined. Click "Add Field" to start building your schema.
+                  No fields defined. Click "Add Field" to start building your
+                  schema.
                 </div>
               )}
             </div>
@@ -419,11 +449,11 @@ export function TemplateBuilder({
               Advanced Settings
             </div>
             <span className="text-xs text-muted-foreground">
-              {showAdvanced ? 'Hide' : 'Show'}
+              {showAdvanced ? "Hide" : "Show"}
             </span>
           </Button>
         </CardHeader>
-        
+
         {showAdvanced && (
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -436,7 +466,7 @@ export function TemplateBuilder({
                 rows={4}
               />
             </div>
-            
+
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Model</Label>
@@ -451,7 +481,7 @@ export function TemplateBuilder({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Temperature</Label>
                 <Input
@@ -463,7 +493,7 @@ export function TemplateBuilder({
                   onChange={(e) => setTemperature(e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Confidence Threshold</Label>
                 <Input
@@ -491,7 +521,7 @@ export function TemplateBuilder({
           <Save className="w-4 h-4 mr-1" />
           Save Template
         </Button>
-        
+
         <Button
           variant="outline"
           onClick={copyTemplateJson}

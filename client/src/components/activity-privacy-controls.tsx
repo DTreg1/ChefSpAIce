@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -43,49 +49,56 @@ const defaultSettings: PrivacySettings = {
 
 export default function ActivityPrivacyControls() {
   const { toast } = useToast();
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(defaultSettings);
-  
+  const [privacySettings, setPrivacySettings] =
+    useState<PrivacySettings>(defaultSettings);
+
   // Fetch saved privacy settings on mount
-  const { data: savedSettings, isLoading: isLoadingSettings } = useQuery<PrivacySettings>({
-    queryKey: ["/api/user/privacy-settings"],
-    queryFn: async () => {
-      const response = await fetch("/api/user/privacy-settings", {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        // Return defaults if endpoint doesn't exist or fails
-        if (response.status === 404) {
-          return defaultSettings;
+  const { data: savedSettings, isLoading: isLoadingSettings } =
+    useQuery<PrivacySettings>({
+      queryKey: ["/api/user/privacy-settings"],
+      queryFn: async () => {
+        const response = await fetch("/api/user/privacy-settings", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          // Return defaults if endpoint doesn't exist or fails
+          if (response.status === 404) {
+            return defaultSettings;
+          }
+          throw new Error("Failed to fetch privacy settings");
         }
-        throw new Error("Failed to fetch privacy settings");
-      }
-      return response.json();
-    },
-  });
-  
+        return response.json();
+      },
+    });
+
   // Hydrate state when saved settings are loaded
   useEffect(() => {
     if (savedSettings) {
       setPrivacySettings({
-        hideFromAdmin: savedSettings.hideFromAdmin ?? defaultSettings.hideFromAdmin,
-        autoDeleteDays: savedSettings.autoDeleteDays ?? defaultSettings.autoDeleteDays,
-        excludeFromAnalytics: savedSettings.excludeFromAnalytics ?? defaultSettings.excludeFromAnalytics,
-        sensitiveActions: savedSettings.sensitiveActions ?? defaultSettings.sensitiveActions,
+        hideFromAdmin:
+          savedSettings.hideFromAdmin ?? defaultSettings.hideFromAdmin,
+        autoDeleteDays:
+          savedSettings.autoDeleteDays ?? defaultSettings.autoDeleteDays,
+        excludeFromAnalytics:
+          savedSettings.excludeFromAnalytics ??
+          defaultSettings.excludeFromAnalytics,
+        sensitiveActions:
+          savedSettings.sensitiveActions ?? defaultSettings.sensitiveActions,
       });
     }
   }, [savedSettings]);
-  
+
   // Export activity logs
   const exportMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch("/api/activity-logs/export", {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to export activity logs");
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -105,19 +118,22 @@ export default function ActivityPrivacyControls() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to export activity logs.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to export activity logs.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Delete all activity logs
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("/api/activity-logs", "DELETE", {
         confirm: true,
       });
-      
+
       return response;
     },
     onSuccess: (data) => {
@@ -130,19 +146,24 @@ export default function ActivityPrivacyControls() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete activity logs.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete activity logs.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Save privacy settings
   const saveSettingsMutation = useMutation({
     mutationFn: async (settings: PrivacySettings) => {
       return await apiRequest("/api/user/privacy-settings", "PUT", settings);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["/api/user/privacy-settings"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["/api/user/privacy-settings"],
+      });
       toast({
         title: "Success",
         description: "Privacy settings updated successfully.",
@@ -151,32 +172,36 @@ export default function ActivityPrivacyControls() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update privacy settings.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update privacy settings.",
         variant: "destructive",
       });
     },
   });
-  
+
   const handleToggleHideFromAdmin = (checked: boolean) => {
-    setPrivacySettings(prev => ({ ...prev, hideFromAdmin: checked }));
+    setPrivacySettings((prev) => ({ ...prev, hideFromAdmin: checked }));
   };
-  
+
   const handleToggleAnalytics = (checked: boolean) => {
-    setPrivacySettings(prev => ({ ...prev, excludeFromAnalytics: checked }));
+    setPrivacySettings((prev) => ({ ...prev, excludeFromAnalytics: checked }));
   };
-  
+
   const handleAutoDeleteChange = (value: string) => {
     const days = value === "never" ? null : parseInt(value);
-    setPrivacySettings(prev => ({ ...prev, autoDeleteDays: days }));
+    setPrivacySettings((prev) => ({ ...prev, autoDeleteDays: days }));
   };
-  
+
   const handleSaveSettings = () => {
     saveSettingsMutation.mutate(privacySettings);
   };
-  
+
   // Compute disabled state for controls
-  const isControlsDisabled = isLoadingSettings || saveSettingsMutation.isPending;
-  
+  const isControlsDisabled =
+    isLoadingSettings || saveSettingsMutation.isPending;
+
   // Show loading state while fetching saved settings
   if (isLoadingSettings) {
     return (
@@ -201,7 +226,7 @@ export default function ActivityPrivacyControls() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Privacy Settings */}
@@ -219,11 +244,11 @@ export default function ActivityPrivacyControls() {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              These settings help you control your privacy. Your core app functionality 
-              will not be affected by these privacy choices.
+              These settings help you control your privacy. Your core app
+              functionality will not be affected by these privacy choices.
             </AlertDescription>
           </Alert>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -242,7 +267,7 @@ export default function ActivityPrivacyControls() {
                 data-testid="switch-hide-admin"
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="exclude-analytics" className="text-base">
@@ -260,7 +285,7 @@ export default function ActivityPrivacyControls() {
                 data-testid="switch-exclude-analytics"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="auto-delete">Auto-Delete Activity Logs</Label>
               <Select
@@ -268,11 +293,16 @@ export default function ActivityPrivacyControls() {
                 onValueChange={handleAutoDeleteChange}
                 disabled={isControlsDisabled}
               >
-                <SelectTrigger id="auto-delete" data-testid="select-auto-delete">
+                <SelectTrigger
+                  id="auto-delete"
+                  data-testid="select-auto-delete"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="never">Never (Manual deletion only)</SelectItem>
+                  <SelectItem value="never">
+                    Never (Manual deletion only)
+                  </SelectItem>
                   <SelectItem value="7">After 7 days</SelectItem>
                   <SelectItem value="30">After 30 days</SelectItem>
                   <SelectItem value="60">After 60 days</SelectItem>
@@ -282,23 +312,26 @@ export default function ActivityPrivacyControls() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Automatically delete your activity logs after the specified period
+                Automatically delete your activity logs after the specified
+                period
               </p>
             </div>
           </div>
-          
+
           <div className="flex justify-end">
             <Button
               onClick={handleSaveSettings}
               disabled={saveSettingsMutation.isPending}
               data-testid="button-save-privacy"
             >
-              {saveSettingsMutation.isPending ? "Saving..." : "Save Privacy Settings"}
+              {saveSettingsMutation.isPending
+                ? "Saving..."
+                : "Save Privacy Settings"}
             </Button>
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Data Management */}
       <Card>
         <CardHeader>
@@ -306,9 +339,7 @@ export default function ActivityPrivacyControls() {
             <Lock className="h-5 w-5" />
             Data Management
           </CardTitle>
-          <CardDescription>
-            Export or delete your activity data
-          </CardDescription>
+          <CardDescription>Export or delete your activity data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -325,10 +356,12 @@ export default function ActivityPrivacyControls() {
                 data-testid="button-export-data"
               >
                 <Download className="h-4 w-4 mr-2" />
-                {exportMutation.isPending ? "Exporting..." : "Export Activity Logs"}
+                {exportMutation.isPending
+                  ? "Exporting..."
+                  : "Export Activity Logs"}
               </Button>
             </div>
-            
+
             <div className="space-y-2">
               <h4 className="font-medium">Delete All Activity Logs</h4>
               <p className="text-sm text-muted-foreground">
@@ -343,22 +376,27 @@ export default function ActivityPrivacyControls() {
                     data-testid="button-delete-all-logs"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {deleteMutation.isPending ? "Deleting..." : "Delete All Logs"}
+                    {deleteMutation.isPending
+                      ? "Deleting..."
+                      : "Delete All Logs"}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Are you absolutely sure?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete all your 
-                      activity logs from our servers. You will lose:
+                      This action cannot be undone. This will permanently delete
+                      all your activity logs from our servers. You will lose:
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Complete activity history</li>
                         <li>Usage patterns and analytics</li>
                         <li>Audit trail of all actions</li>
                       </ul>
                       <p className="mt-3 font-medium">
-                        Consider exporting your data first if you want to keep a copy.
+                        Consider exporting your data first if you want to keep a
+                        copy.
                       </p>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -380,7 +418,7 @@ export default function ActivityPrivacyControls() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* GDPR Information */}
       <Card>
         <CardHeader>
@@ -397,7 +435,8 @@ export default function ActivityPrivacyControls() {
             <div>
               <h4 className="font-medium mb-2">GDPR Compliance</h4>
               <p className="text-sm text-muted-foreground">
-                We comply with GDPR and other data protection regulations. You have the right to:
+                We comply with GDPR and other data protection regulations. You
+                have the right to:
               </p>
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside">
                 <li>Access your personal data (export function)</li>
@@ -407,7 +446,7 @@ export default function ActivityPrivacyControls() {
                 <li>Data portability (export in machine-readable format)</li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-medium mb-2">Data Retention Policy</h4>
               <p className="text-sm text-muted-foreground">
@@ -420,15 +459,16 @@ export default function ActivityPrivacyControls() {
                 <li>Aggregated analytics: Indefinite (anonymized)</li>
               </ul>
               <p className="text-sm text-muted-foreground mt-2">
-                You can override these defaults with your privacy settings above.
+                You can override these defaults with your privacy settings
+                above.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-medium mb-2">Contact</h4>
               <p className="text-sm text-muted-foreground">
-                For any privacy concerns or to exercise your rights, please contact our 
-                data protection officer through the Settings page.
+                For any privacy concerns or to exercise your rights, please
+                contact our data protection officer through the Settings page.
               </p>
             </div>
           </div>

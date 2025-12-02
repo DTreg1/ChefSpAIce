@@ -1,4 +1,10 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, Edit, RefreshCw } from "lucide-react";
@@ -17,9 +23,12 @@ interface DraftSuggestionsProps {
 const toneColors: Record<string, string> = {
   formal: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   casual: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  friendly: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  apologetic: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  "solution-focused": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  friendly:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  apologetic:
+    "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  "solution-focused":
+    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
   empathetic: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
 };
 
@@ -35,7 +44,9 @@ export function DraftSuggestions({
 
   const handleCopyDraft = async (draft: GeneratedDraft) => {
     try {
-      await navigator.clipboard.writeText(draft.editedContent || draft.generatedContent);
+      await navigator.clipboard.writeText(
+        draft.editedContent || draft.generatedContent,
+      );
       setCopiedId(draft.id);
       onSelectDraft(draft);
       setTimeout(() => setCopiedId(null), 2000);
@@ -46,7 +57,8 @@ export function DraftSuggestions({
     } catch (err) {
       toast({
         title: "Copy failed",
-        description: "Unable to copy draft. Please check your browser permissions or try again.",
+        description:
+          "Unable to copy draft. Please check your browser permissions or try again.",
         variant: "destructive",
       });
     }

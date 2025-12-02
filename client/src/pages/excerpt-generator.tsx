@@ -1,9 +1,9 @@
 /**
  * Excerpt Generator Page
- * 
+ *
  * Main page for creating, testing, and optimizing content excerpts
  * with AI-powered generation and performance tracking.
- * 
+ *
  * @module client/src/pages/excerpt-generator
  */
 
@@ -11,7 +11,13 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -19,10 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Sparkles, 
-  FileText, 
-  FlaskConical, 
+import {
+  Sparkles,
+  FileText,
+  FlaskConical,
   BarChart3,
   Plus,
   Settings,
@@ -30,7 +36,12 @@ import {
   Loader2,
   Copy,
 } from "lucide-react";
-import { ExcerptEditor, ExcerptPreview, ExcerptTester, type ExcerptGenerationOptions } from "@/components/excerpts";
+import {
+  ExcerptEditor,
+  ExcerptPreview,
+  ExcerptTester,
+  type ExcerptGenerationOptions,
+} from "@/components/excerpts";
 import { PerformanceMetrics } from "@/components/analytics";
 import type { Excerpt } from "@shared/schema";
 
@@ -54,10 +65,10 @@ export default function ExcerptGeneratorPage() {
 
   // Fetch excerpts for content
   const { data: excerpts = [], isLoading: loadingExcerpts } = useQuery({
-    queryKey: ['/api/excerpts', contentId],
+    queryKey: ["/api/excerpts", contentId],
     queryFn: async () => {
       try {
-        const response = await apiRequest(`/api/excerpts/${contentId}`, 'GET');
+        const response = await apiRequest(`/api/excerpts/${contentId}`, "GET");
         return response.excerpts || [];
       } catch (error) {
         return [];
@@ -68,12 +79,15 @@ export default function ExcerptGeneratorPage() {
 
   // Fetch performance data
   const { data: performanceData } = useQuery({
-    queryKey: ['/api/excerpts/performance', excerpts],
+    queryKey: ["/api/excerpts/performance", excerpts],
     queryFn: async () => {
       const perfData: Record<string, any> = {};
       for (const excerpt of excerpts) {
         try {
-          const response = await apiRequest(`/api/excerpts/performance?excerptId=${excerpt.id}`, 'GET');
+          const response = await apiRequest(
+            `/api/excerpts/performance?excerptId=${excerpt.id}`,
+            "GET",
+          );
           perfData[excerpt.id] = {
             views: response.aggregate?.totalViews || 0,
             clicks: response.aggregate?.totalClicks || 0,
@@ -92,7 +106,7 @@ export default function ExcerptGeneratorPage() {
   // Generate excerpts mutation
   const generateMutation = useMutation({
     mutationFn: async (options: ExcerptGenerationOptions) => {
-      const response = await apiRequest('/api/excerpts/generate', 'POST', {
+      const response = await apiRequest("/api/excerpts/generate", "POST", {
         ...options,
         content,
         contentId,
@@ -102,7 +116,9 @@ export default function ExcerptGeneratorPage() {
     onSuccess: (data) => {
       if (data.excerpts) {
         setGeneratedExcerpts(data.excerpts);
-        queryClient.invalidateQueries({ queryKey: ['/api/excerpts', contentId] });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/excerpts", contentId],
+        });
         toast({
           title: "Excerpts Generated",
           description: `Successfully generated ${data.excerpts.length} excerpt variants`,
@@ -122,10 +138,12 @@ export default function ExcerptGeneratorPage() {
   // Activate excerpt mutation
   const activateMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest(`/api/excerpts/${excerptId}/activate`, 'PUT', { contentId });
+      return await apiRequest(`/api/excerpts/${excerptId}/activate`, "PUT", {
+        contentId,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/excerpts', contentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/excerpts", contentId] });
       toast({
         title: "Excerpt Activated",
         description: "The selected excerpt is now active",
@@ -143,26 +161,28 @@ export default function ExcerptGeneratorPage() {
   // Track performance mutation
   const trackMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest(`/api/excerpts/${excerptId}/track`, 'POST', {
+      return await apiRequest(`/api/excerpts/${excerptId}/track`, "POST", {
         views: 1,
         clicks: Math.random() > 0.8 ? 1 : 0, // Simulate click
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/excerpts/performance'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/excerpts/performance"],
+      });
     },
   });
 
   // Optimize excerpt mutation
   const optimizeMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest('/api/excerpts/optimize', 'PUT', {
+      return await apiRequest("/api/excerpts/optimize", "PUT", {
         excerptId,
         targetCTR: 0.2,
       });
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/excerpts', contentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/excerpts", contentId] });
       toast({
         title: "Excerpt Optimized",
         description: "Generated an optimized version based on performance data",
@@ -194,14 +214,17 @@ export default function ExcerptGeneratorPage() {
   };
 
   const allExcerpts = [...excerpts, ...generatedExcerpts];
-  const activeExcerpt = allExcerpts.find(e => e.isActive);
+  const activeExcerpt = allExcerpts.find((e) => e.isActive);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Smart Excerpt Generator</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Smart Excerpt Generator
+        </h1>
         <p className="text-muted-foreground mt-2">
-          Create compelling preview snippets optimized for sharing and engagement
+          Create compelling preview snippets optimized for sharing and
+          engagement
         </p>
       </div>
 
@@ -225,7 +248,8 @@ export default function ExcerptGeneratorPage() {
             />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {content.length} characters • {content.split(/\s+/).filter(w => w).length} words
+                {content.length} characters •{" "}
+                {content.split(/\s+/).filter((w) => w).length} words
               </span>
               <Button
                 variant="outline"
@@ -241,7 +265,11 @@ export default function ExcerptGeneratorPage() {
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="generate">
             <Sparkles className="h-4 w-4 mr-1" />
@@ -275,7 +303,11 @@ export default function ExcerptGeneratorPage() {
               excerpts={allExcerpts}
               performance={performanceData}
               onSelectWinner={(id) => activateMutation.mutate(id)}
-              onRefreshData={() => queryClient.invalidateQueries({ queryKey: ['/api/excerpts/performance'] })}
+              onRefreshData={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["/api/excerpts/performance"],
+                })
+              }
               isLoading={loadingExcerpts}
             />
           ) : (
@@ -313,7 +345,8 @@ export default function ExcerptGeneratorPage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No active excerpt selected. Activate an excerpt to see its performance metrics.
+                No active excerpt selected. Activate an excerpt to see its
+                performance metrics.
               </AlertDescription>
             </Alert>
           )}
@@ -326,10 +359,11 @@ export default function ExcerptGeneratorPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">All Excerpts</h3>
                   <Badge variant="outline">
-                    {allExcerpts.length} variant{allExcerpts.length !== 1 ? 's' : ''}
+                    {allExcerpts.length} variant
+                    {allExcerpts.length !== 1 ? "s" : ""}
                   </Badge>
                 </div>
-                
+
                 {allExcerpts.map((excerpt) => (
                   <ExcerptPreview
                     key={excerpt.id}
@@ -348,9 +382,11 @@ export default function ExcerptGeneratorPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      const bestExcerpt = allExcerpts.reduce((best, current) => 
-                        (performanceData?.[current.id]?.ctr || 0) > (performanceData?.[best.id]?.ctr || 0) 
-                          ? current : best
+                      const bestExcerpt = allExcerpts.reduce((best, current) =>
+                        (performanceData?.[current.id]?.ctr || 0) >
+                        (performanceData?.[best.id]?.ctr || 0)
+                          ? current
+                          : best,
                       );
                       if (bestExcerpt) {
                         optimizeMutation.mutate(bestExcerpt.id);
@@ -385,7 +421,9 @@ export default function ExcerptGeneratorPage() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No excerpts created yet</p>
+                  <p className="text-muted-foreground">
+                    No excerpts created yet
+                  </p>
                   <Button
                     className="mt-4"
                     onClick={() => setActiveTab("generate")}

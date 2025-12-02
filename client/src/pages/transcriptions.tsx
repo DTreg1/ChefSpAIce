@@ -11,37 +11,48 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { AudioRecorder } from "@/components/voice";
 import { TranscriptEditor } from "@/components/transcript-editor";
-import { PlaybackControls, TimestampJump } from "@/components/playback-controls";
+import {
+  PlaybackControls,
+  TimestampJump,
+} from "@/components/playback-controls";
 import { ExportOptions, ExportFormat } from "@/components/export-options";
 import { cn } from "@/lib/utils";
-import { 
-  FileAudio, 
-  Upload, 
-  Loader2, 
-  Clock, 
-  Globe, 
-  Trash2, 
+import {
+  FileAudio,
+  Upload,
+  Loader2,
+  Clock,
+  Globe,
+  Trash2,
   RefreshCw,
-  Search
+  Search,
 } from "lucide-react";
 import type { Transcription } from "@shared/schema";
 
 export default function TranscriptionsPage() {
   const { toast } = useToast();
-  const [selectedTranscription, setSelectedTranscription] = useState<Transcription | null>(null);
+  const [selectedTranscription, setSelectedTranscription] =
+    useState<Transcription | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Fetch transcriptions
-  const { data: transcriptions, isLoading, refetch } = useQuery({
+  const {
+    data: transcriptions,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list],
     queryFn: async () => {
-      const response = await fetch(`${API_ENDPOINTS.ai.media.voice.transcriptions.list}?limit=20`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_ENDPOINTS.ai.media.voice.transcriptions.list}?limit=20`,
+        {
+          credentials: "include",
+        },
+      );
       if (!response.ok) throw new Error("Failed to fetch transcriptions");
       return response.json();
     },
@@ -67,7 +78,9 @@ export default function TranscriptionsPage() {
         description: "Your audio has been transcribed successfully",
       });
       setSelectedTranscription(data.transcription);
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list],
+      });
       setAudioBlob(null);
     },
     onError: (error: Error) => {
@@ -81,24 +94,27 @@ export default function TranscriptionsPage() {
 
   // Edit transcript mutation
   const editMutation = useMutation({
-    mutationFn: async ({ 
-      transcriptionId, 
-      timestamp, 
-      original_text, 
-      corrected_text 
+    mutationFn: async ({
+      transcriptionId,
+      timestamp,
+      original_text,
+      corrected_text,
     }: any) => {
-      const response = await fetch(API_ENDPOINTS.ai.media.voice.transcriptions.edit(transcriptionId), {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        API_ENDPOINTS.ai.media.voice.transcriptions.edit(transcriptionId),
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            timestamp,
+            original_text,
+            corrected_text,
+          }),
+          credentials: "include",
         },
-        body: JSON.stringify({
-          timestamp,
-          original_text,
-          corrected_text,
-        }),
-        credentials: "include",
-      });
+      );
       if (!response.ok) throw new Error("Failed to edit transcript");
       return response.json();
     },
@@ -108,7 +124,9 @@ export default function TranscriptionsPage() {
         description: "Transcription has been updated",
       });
       setSelectedTranscription(data.transcription);
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list],
+      });
     },
     onError: () => {
       toast({
@@ -122,10 +140,13 @@ export default function TranscriptionsPage() {
   // Delete transcription mutation
   const deleteMutation = useMutation({
     mutationFn: async (transcriptionId: string) => {
-      const response = await fetch(API_ENDPOINTS.ai.media.voice.transcriptions.delete(transcriptionId), {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        API_ENDPOINTS.ai.media.voice.transcriptions.delete(transcriptionId),
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
       if (!response.ok) throw new Error("Failed to delete transcription");
       return response.json();
     },
@@ -135,7 +156,9 @@ export default function TranscriptionsPage() {
         description: "Transcription has been deleted",
       });
       setSelectedTranscription(null);
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list],
+      });
     },
     onError: () => {
       toast({
@@ -149,30 +172,35 @@ export default function TranscriptionsPage() {
   // Handle recording complete
   const handleRecordingComplete = async (blob: Blob) => {
     setAudioBlob(blob);
-    
+
     // Automatically start transcription
     const formData = new FormData();
     formData.append("audio", blob, "recording.webm");
     formData.append("language", "en");
-    formData.append("title", `Recording from ${new Date().toLocaleDateString()}`);
+    formData.append(
+      "title",
+      `Recording from ${new Date().toLocaleDateString()}`,
+    );
     formData.append("startTime", Date.now().toString());
-    
+
     setIsUploading(true);
     await uploadMutation.mutateAsync(formData);
     setIsUploading(false);
   };
 
   // Handle file upload
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append("audio", file);
     formData.append("language", "en");
     formData.append("title", file.name);
     formData.append("startTime", Date.now().toString());
-    
+
     setIsUploading(true);
     await uploadMutation.mutateAsync(formData);
     setIsUploading(false);
@@ -181,7 +209,7 @@ export default function TranscriptionsPage() {
   // Handle transcript save
   const handleTranscriptSave = async () => {
     if (!selectedTranscription) return;
-    
+
     // Here you would save the edited transcript
     toast({
       title: "Saved",
@@ -192,12 +220,12 @@ export default function TranscriptionsPage() {
   // Handle segment edit
   const handleSegmentEdit = async (segmentId: string, newText: string) => {
     if (!selectedTranscription) return;
-    
+
     // Find the segment
     const metadata = selectedTranscription.metadata as any;
     const segments = metadata?.transcriptData?.segments || [];
     const segment = segments.find((s: any) => s.id === segmentId);
-    
+
     if (segment) {
       await editMutation.mutateAsync({
         transcriptionId: selectedTranscription.id,
@@ -211,27 +239,32 @@ export default function TranscriptionsPage() {
   // Handle export
   const handleExport = async (format: ExportFormat) => {
     if (!selectedTranscription) return;
-    
+
     const response = await fetch(
-      API_ENDPOINTS.ai.media.voice.transcriptions.export(selectedTranscription.id, format),
+      API_ENDPOINTS.ai.media.voice.transcriptions.export(
+        selectedTranscription.id,
+        format,
+      ),
       {
         credentials: "include",
-      }
+      },
     );
-    
+
     if (!response.ok) {
       throw new Error("Export failed");
     }
-    
+
     // Handle download based on format
     const contentDisposition = response.headers.get("content-disposition");
-    const filename = contentDisposition
-      ?.split("filename=")[1]
-      ?.replace(/"/g, "") || `transcription.${format}`;
-    
+    const filename =
+      contentDisposition?.split("filename=")[1]?.replace(/"/g, "") ||
+      `transcription.${format}`;
+
     if (format === "json") {
       const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       downloadBlob(blob, filename);
     } else {
       const blob = await response.blob();
@@ -266,7 +299,9 @@ export default function TranscriptionsPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Speech-to-Text Transcription</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Speech-to-Text Transcription
+        </h1>
         <p className="text-muted-foreground">
           Record or upload audio to transcribe using OpenAI Whisper API
         </p>
@@ -280,14 +315,14 @@ export default function TranscriptionsPage() {
               <TabsTrigger value="record">Record</TabsTrigger>
               <TabsTrigger value="upload">Upload</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="record">
               <AudioRecorder
                 maxDuration={300}
                 onRecordingComplete={handleRecordingComplete}
               />
             </TabsContent>
-            
+
             <TabsContent value="upload">
               <Card>
                 <CardContent className="p-6">
@@ -370,7 +405,9 @@ export default function TranscriptionsPage() {
               isPlaying={isPlaying}
               onSegmentClick={(timestamp) => {
                 // Seek to timestamp in audio player
-                const audioElement = document.querySelector("audio") as HTMLAudioElement;
+                const audioElement = document.querySelector(
+                  "audio",
+                ) as HTMLAudioElement;
                 if (audioElement) {
                   audioElement.currentTime = timestamp;
                 }
@@ -434,9 +471,13 @@ export default function TranscriptionsPage() {
                     {transcriptions?.data
                       ?.filter((t: Transcription) =>
                         searchQuery
-                          ? t.transcript.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (t.metadata)?.title?.toLowerCase().includes(searchQuery.toLowerCase())
-                          : true
+                          ? t.transcript
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()) ||
+                            t.metadata?.title
+                              ?.toLowerCase()
+                              .includes(searchQuery.toLowerCase())
+                          : true,
                       )
                       .map((transcription: Transcription) => {
                         const metadata = transcription.metadata;
@@ -445,9 +486,12 @@ export default function TranscriptionsPage() {
                             key={transcription.id}
                             className={cn(
                               "p-3 rounded-lg border cursor-pointer hover-elevate transition-all",
-                              selectedTranscription?.id === transcription.id && "bg-primary/10 border-primary"
+                              selectedTranscription?.id === transcription.id &&
+                                "bg-primary/10 border-primary",
                             )}
-                            onClick={() => setSelectedTranscription(transcription)}
+                            onClick={() =>
+                              setSelectedTranscription(transcription)
+                            }
                             data-testid={`transcription-${transcription.id}`}
                           >
                             <div className="flex items-start justify-between">
@@ -464,13 +508,19 @@ export default function TranscriptionsPage() {
                                     {formatDuration(transcription.duration)}
                                   </Badge>
                                   {transcription.language && (
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
                                       <Globe className="h-3 w-3 mr-1" />
                                       {transcription.language}
                                     </Badge>
                                   )}
                                   {transcription.status === "processing" && (
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
                                       Processing...
                                     </Badge>
                                   )}

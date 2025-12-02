@@ -11,29 +11,34 @@ interface TranslationToggleProps {
 
 export function TranslationToggle({ className }: TranslationToggleProps) {
   const { toast } = useToast();
-  
+
   // Fetch current language preferences
-  const { data: preferences = { autoTranslate: false, preferredLanguages: [] }, isLoading } = useQuery<{
+  const {
+    data: preferences = { autoTranslate: false, preferredLanguages: [] },
+    isLoading,
+  } = useQuery<{
     autoTranslate: boolean;
     preferredLanguages: string[];
   }>({
-    queryKey: ['/api/languages/preferences']
+    queryKey: ["/api/languages/preferences"],
   });
 
   // Update preferences mutation
   const updatePreferences = useMutation({
     mutationFn: async (autoTranslate: boolean) => {
-      return apiRequest('/api/languages/preferences', 'POST', {
+      return apiRequest("/api/languages/preferences", "POST", {
         ...preferences,
-        autoTranslate
+        autoTranslate,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/languages/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/languages/preferences"],
+      });
       toast({
         title: "Translation settings updated",
-        description: preferences.autoTranslate 
-          ? "Auto-translation disabled" 
+        description: preferences.autoTranslate
+          ? "Auto-translation disabled"
           : "Auto-translation enabled",
       });
     },
@@ -41,9 +46,9 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
       toast({
         title: "Error",
         description: "Failed to update translation settings",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleToggle = (checked: boolean) => {
@@ -56,7 +61,13 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <Globe className={preferences.autoTranslate ? "h-4 w-4 text-primary" : "h-4 w-4 text-muted-foreground"} />
+      <Globe
+        className={
+          preferences.autoTranslate
+            ? "h-4 w-4 text-primary"
+            : "h-4 w-4 text-muted-foreground"
+        }
+      />
       <Switch
         id="auto-translate"
         checked={preferences.autoTranslate}
@@ -64,10 +75,7 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
         disabled={updatePreferences.isPending}
         data-testid="toggle-auto-translate"
       />
-      <Label 
-        htmlFor="auto-translate" 
-        className="cursor-pointer select-none"
-      >
+      <Label htmlFor="auto-translate" className="cursor-pointer select-none">
         Auto-translate
       </Label>
     </div>

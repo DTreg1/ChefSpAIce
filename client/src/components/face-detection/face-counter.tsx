@@ -1,19 +1,31 @@
 /**
  * FaceCounter Component
- * 
+ *
  * Component for counting faces in images.
  * Useful for group photo analysis and attendance tracking.
  */
 
-import { useState } from 'react';
-import { Users, Hash, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useState } from "react";
+import {
+  Users,
+  Hash,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FaceCounterProps {
   imageFile: File | null;
@@ -41,35 +53,39 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
   // Mutation for counting faces
   const countFacesMutation = useMutation({
     mutationFn: async () => {
-      if (!imageFile) throw new Error('No image file provided');
-      
+      if (!imageFile) throw new Error("No image file provided");
+
       const formData = new FormData();
-      formData.append('image', imageFile);
-      
-      return apiRequest('/api/faces/count', 'POST', formData) as Promise<CountResponse>;
+      formData.append("image", imageFile);
+
+      return apiRequest(
+        "/api/faces/count",
+        "POST",
+        formData,
+      ) as Promise<CountResponse>;
     },
     onSuccess: (data) => {
       setCurrentCount(data.faceCount);
       onCountComplete?.(data.faceCount);
-      
+
       // Add to history
       const result: CountResult = {
         count: data.faceCount,
         timestamp: new Date(),
-        filename: imageFile?.name || 'Unknown',
+        filename: imageFile?.name || "Unknown",
       };
-      setCountHistory(prev => [result, ...prev].slice(0, 5)); // Keep last 5
-      
+      setCountHistory((prev) => [result, ...prev].slice(0, 5)); // Keep last 5
+
       toast({
-        title: 'Count Complete',
+        title: "Count Complete",
         description: data.message,
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Count Failed',
-        description: error.message || 'Failed to count faces',
-        variant: 'destructive',
+        title: "Count Failed",
+        description: error.message || "Failed to count faces",
+        variant: "destructive",
       });
     },
   });
@@ -83,19 +99,19 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
 
   // Get count badge variant
   const getCountBadgeVariant = (count: number) => {
-    if (count === 0) return 'destructive';
-    if (count === 1) return 'secondary';
-    if (count <= 5) return 'default';
-    return 'outline';
+    if (count === 0) return "destructive";
+    if (count === 1) return "secondary";
+    if (count <= 5) return "default";
+    return "outline";
   };
 
   // Get count message
   const getCountMessage = (count: number) => {
-    if (count === 0) return 'No faces detected in the image';
-    if (count === 1) return 'Perfect for a profile photo!';
-    if (count <= 3) return 'Small group detected';
-    if (count <= 10) return 'Medium-sized group';
-    return 'Large group photo!';
+    if (count === 0) return "No faces detected in the image";
+    if (count === 1) return "Perfect for a profile photo!";
+    if (count <= 3) return "Small group detected";
+    if (count <= 10) return "Medium-sized group";
+    return "Large group photo!";
   };
 
   return (
@@ -141,9 +157,9 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
             </div>
             <div className="space-y-2">
               <p className="text-lg font-semibold">
-                {currentCount} {currentCount === 1 ? 'Face' : 'Faces'} Detected
+                {currentCount} {currentCount === 1 ? "Face" : "Faces"} Detected
               </p>
-              <Badge 
+              <Badge
                 variant={getCountBadgeVariant(currentCount)}
                 className="mx-auto"
                 data-testid="badge-count-status"
@@ -164,7 +180,9 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
                 <ul className="text-sm space-y-1">
                   <li>• Total faces: {currentCount}</li>
                   <li>• Image: {imageFile?.name}</li>
-                  <li>• Size: {((imageFile?.size || 0) / 1024).toFixed(1)} KB</li>
+                  <li>
+                    • Size: {((imageFile?.size || 0) / 1024).toFixed(1)} KB
+                  </li>
                   <li>• Time: {new Date().toLocaleTimeString()}</li>
                 </ul>
               </div>
@@ -175,16 +193,21 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
         {/* Count History */}
         {countHistory.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">Recent Counts</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              Recent Counts
+            </h3>
             <div className="space-y-2">
               {countHistory.map((result, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
                   data-testid={`div-history-${index}`}
                 >
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="min-w-[2rem] text-center">
+                    <Badge
+                      variant="outline"
+                      className="min-w-[2rem] text-center"
+                    >
                       {result.count}
                     </Badge>
                     <span className="text-sm truncate max-w-[150px]">

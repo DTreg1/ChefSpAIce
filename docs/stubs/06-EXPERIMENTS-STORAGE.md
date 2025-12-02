@@ -10,8 +10,8 @@ The `createAbTestInsight` method is a stub. The table likely exists but needs ve
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
+| Method                         | Description                          |
+| ------------------------------ | ------------------------------------ |
 | `createAbTestInsight(insight)` | Create analysis insight for A/B test |
 
 ---

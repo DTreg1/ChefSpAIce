@@ -1,6 +1,6 @@
 /**
  * Writing Assistant Component (Task 10)
- * 
+ *
  * Comprehensive writing assistance with grammar checking, style suggestions, and tone adjustment.
  */
 
@@ -10,7 +10,13 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -38,7 +44,7 @@ import {
   X,
   TrendingUp,
   BookOpen,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,17 +92,21 @@ export function WritingAssistant() {
     style: true,
     tone: true,
     clarity: true,
-    conciseness: false
+    conciseness: false,
   });
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(
+    new Set(),
+  );
   const [copiedText, setCopiedText] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
   const { toast } = useToast();
 
   // Fetch writing stats
   const { data: stats } = useQuery<WritingStats>({
-    queryKey: ["/api/writing/stats"]
+    queryKey: ["/api/writing/stats"],
   });
 
   // Analyze text
@@ -110,7 +120,7 @@ export function WritingAssistant() {
         text,
         type: textType,
         targetTone,
-        checkFor
+        checkFor,
       });
       return response.json();
     },
@@ -119,16 +129,16 @@ export function WritingAssistant() {
       setAnalysisResult(data.analysis);
       toast({
         title: "Analysis Complete",
-        description: `Found ${data.analysis.suggestions.length} suggestions`
+        description: `Found ${data.analysis.suggestions.length} suggestions`,
       });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to analyze text.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Improve text
@@ -137,12 +147,12 @@ export function WritingAssistant() {
       if (!currentSessionId) return;
 
       const suggestionIds = Array.from(selectedSuggestions).map(
-        index => analysisResult?.suggestions[index]?.suggestionType || ""
+        (index) => analysisResult?.suggestions[index]?.suggestionType || "",
       );
 
       const response = await apiRequest("/api/writing/improve", "POST", {
         sessionId: currentSessionId,
-        suggestionIds
+        suggestionIds,
       });
       return response.json();
     },
@@ -152,10 +162,10 @@ export function WritingAssistant() {
         setSelectedSuggestions(new Set());
         toast({
           title: "Text Improved",
-          description: "Applied selected improvements"
+          description: "Applied selected improvements",
         });
       }
-    }
+    },
   });
 
   // Adjust tone
@@ -164,7 +174,7 @@ export function WritingAssistant() {
       const response = await apiRequest("/api/writing/adjust-tone", "POST", {
         text,
         currentTone: analysisResult?.metrics.tone,
-        targetTone: newTone
+        targetTone: newTone,
       });
       return response;
     },
@@ -172,9 +182,9 @@ export function WritingAssistant() {
       setText(data.adjustedText);
       toast({
         title: "Tone Adjusted",
-        description: `Changed tone to ${targetTone}`
+        description: `Changed tone to ${targetTone}`,
       });
-    }
+    },
   });
 
   // Paraphrase text
@@ -182,32 +192,36 @@ export function WritingAssistant() {
     mutationFn: async () => {
       const response = await apiRequest("/api/writing/paraphrase", "POST", {
         text,
-        style: textType
+        style: textType,
       });
       return response;
     },
     onSuccess: () => {
       toast({
         title: "Paraphrased",
-        description: "Generated alternative versions"
+        description: "Generated alternative versions",
       });
-    }
+    },
   });
 
   // Check plagiarism
   const plagiarismMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/writing/check-plagiarism", "POST", { 
-        text 
-      });
+      const response = await apiRequest(
+        "/api/writing/check-plagiarism",
+        "POST",
+        {
+          text,
+        },
+      );
       return response;
     },
     onSuccess: (data) => {
       toast({
         title: "Plagiarism Check",
-        description: `Originality score: ${data.originalityScore}%`
+        description: `Originality score: ${data.originalityScore}%`,
       });
-    }
+    },
   });
 
   const handleCopyText = async () => {
@@ -217,7 +231,7 @@ export function WritingAssistant() {
       setTimeout(() => setCopiedText(false), 2000);
       toast({
         title: "Copied",
-        description: "Text copied to clipboard"
+        description: "Text copied to clipboard",
       });
     } catch (error) {
       toast({
@@ -286,7 +300,9 @@ export function WritingAssistant() {
                 <div className="flex justify-between items-center">
                   <Label>Your Text</Label>
                   <span className="text-sm text-muted-foreground">
-                    {text.split(/\s+/).filter(w => w).length} words • {text.split(/[.!?]+/).filter(s => s.trim()).length} sentences
+                    {text.split(/\s+/).filter((w) => w).length} words •{" "}
+                    {text.split(/[.!?]+/).filter((s) => s.trim()).length}{" "}
+                    sentences
                   </span>
                 </div>
                 <Textarea
@@ -304,7 +320,10 @@ export function WritingAssistant() {
                 <div className="space-y-2">
                   <Label>Text Type</Label>
                   <Select value={textType} onValueChange={setTextType}>
-                    <SelectTrigger className="w-40" data-testid="select-text-type">
+                    <SelectTrigger
+                      className="w-40"
+                      data-testid="select-text-type"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -321,7 +340,10 @@ export function WritingAssistant() {
                 <div className="space-y-2">
                   <Label>Target Tone (Optional)</Label>
                   <Select value={targetTone} onValueChange={setTargetTone}>
-                    <SelectTrigger className="w-40" data-testid="select-target-tone">
+                    <SelectTrigger
+                      className="w-40"
+                      data-testid="select-target-tone"
+                    >
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
@@ -343,8 +365,11 @@ export function WritingAssistant() {
                     <div key={key} className="flex items-center space-x-2">
                       <Switch
                         checked={value}
-                        onCheckedChange={(checked) => 
-                          setCheckOptions(prev => ({ ...prev, [key]: checked }))
+                        onCheckedChange={(checked) =>
+                          setCheckOptions((prev) => ({
+                            ...prev,
+                            [key]: checked,
+                          }))
                         }
                         data-testid={`switch-${key}`}
                       />
@@ -423,51 +448,62 @@ export function WritingAssistant() {
                     ) : (
                       <>
                         <div className="space-y-3">
-                          {analysisResult.suggestions.map((suggestion, index) => (
-                            <Card
-                              key={index}
-                              className={`cursor-pointer transition-colors ${
-                                selectedSuggestions.has(index) ? "border-primary" : ""
-                              }`}
-                              onClick={() => {
-                                const newSet = new Set(selectedSuggestions);
-                                if (newSet.has(index)) {
-                                  newSet.delete(index);
-                                } else {
-                                  newSet.add(index);
-                                }
-                                setSelectedSuggestions(newSet);
-                              }}
-                              data-testid={`suggestion-${index}`}
-                            >
-                              <CardContent className="p-3 space-y-2">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex items-center gap-2">
-                                    {getSuggestionIcon(suggestion.suggestionType)}
-                                    <Badge variant="outline" className="capitalize">
-                                      {suggestion.suggestionType}
-                                    </Badge>
+                          {analysisResult.suggestions.map(
+                            (suggestion, index) => (
+                              <Card
+                                key={index}
+                                className={`cursor-pointer transition-colors ${
+                                  selectedSuggestions.has(index)
+                                    ? "border-primary"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  const newSet = new Set(selectedSuggestions);
+                                  if (newSet.has(index)) {
+                                    newSet.delete(index);
+                                  } else {
+                                    newSet.add(index);
+                                  }
+                                  setSelectedSuggestions(newSet);
+                                }}
+                                data-testid={`suggestion-${index}`}
+                              >
+                                <CardContent className="p-3 space-y-2">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                      {getSuggestionIcon(
+                                        suggestion.suggestionType,
+                                      )}
+                                      <Badge
+                                        variant="outline"
+                                        className="capitalize"
+                                      >
+                                        {suggestion.suggestionType}
+                                      </Badge>
+                                    </div>
+                                    {selectedSuggestions.has(index) && (
+                                      <Check className="h-4 w-4 text-primary" />
+                                    )}
                                   </div>
-                                  {selectedSuggestions.has(index) && (
-                                    <Check className="h-4 w-4 text-primary" />
+                                  <div className="space-y-1">
+                                    <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm">
+                                      <span className="line-through">
+                                        {suggestion.originalSnippet}
+                                      </span>
+                                    </div>
+                                    <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-sm">
+                                      {suggestion.suggestedSnippet}
+                                    </div>
+                                  </div>
+                                  {suggestion.reason && (
+                                    <p className="text-sm text-muted-foreground">
+                                      {suggestion.reason}
+                                    </p>
                                   )}
-                                </div>
-                                <div className="space-y-1">
-                                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm">
-                                    <span className="line-through">{suggestion.originalSnippet}</span>
-                                  </div>
-                                  <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-sm">
-                                    {suggestion.suggestedSnippet}
-                                  </div>
-                                </div>
-                                {suggestion.reason && (
-                                  <p className="text-sm text-muted-foreground">
-                                    {suggestion.reason}
-                                  </p>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ),
+                          )}
                         </div>
                         {selectedSuggestions.size > 0 && (
                           <Button
@@ -475,7 +511,9 @@ export function WritingAssistant() {
                             disabled={improveMutation.isPending}
                             className="w-full"
                           >
-                            Apply {selectedSuggestions.size} Selected Improvement{selectedSuggestions.size !== 1 ? "s" : ""}
+                            Apply {selectedSuggestions.size} Selected
+                            Improvement
+                            {selectedSuggestions.size !== 1 ? "s" : ""}
                           </Button>
                         )}
                       </>
@@ -487,55 +525,83 @@ export function WritingAssistant() {
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Overall Score</span>
-                            <span className={`text-2xl font-bold ${getScoreColor(analysisResult.overallScore)}`}>
+                            <span className="text-sm text-muted-foreground">
+                              Overall Score
+                            </span>
+                            <span
+                              className={`text-2xl font-bold ${getScoreColor(analysisResult.overallScore)}`}
+                            >
                               {analysisResult.overallScore}%
                             </span>
                           </div>
-                          <Progress value={analysisResult.overallScore} className="mt-2" />
+                          <Progress
+                            value={analysisResult.overallScore}
+                            className="mt-2"
+                          />
                         </CardContent>
                       </Card>
 
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Readability</span>
-                            <span className={`text-2xl font-bold ${getScoreColor(analysisResult.metrics.readability)}`}>
+                            <span className="text-sm text-muted-foreground">
+                              Readability
+                            </span>
+                            <span
+                              className={`text-2xl font-bold ${getScoreColor(analysisResult.metrics.readability)}`}
+                            >
                               {analysisResult.metrics.readability}%
                             </span>
                           </div>
-                          <Progress value={analysisResult.metrics.readability} className="mt-2" />
+                          <Progress
+                            value={analysisResult.metrics.readability}
+                            className="mt-2"
+                          />
                         </CardContent>
                       </Card>
 
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Clarity</span>
-                            <span className={`text-2xl font-bold ${getScoreColor(analysisResult.metrics.clarity)}`}>
+                            <span className="text-sm text-muted-foreground">
+                              Clarity
+                            </span>
+                            <span
+                              className={`text-2xl font-bold ${getScoreColor(analysisResult.metrics.clarity)}`}
+                            >
                               {analysisResult.metrics.clarity}%
                             </span>
                           </div>
-                          <Progress value={analysisResult.metrics.clarity} className="mt-2" />
+                          <Progress
+                            value={analysisResult.metrics.clarity}
+                            className="mt-2"
+                          />
                         </CardContent>
                       </Card>
 
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Current Tone</span>
-                            <Badge className="capitalize">{analysisResult.metrics.tone}</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Current Tone
+                            </span>
+                            <Badge className="capitalize">
+                              {analysisResult.metrics.tone}
+                            </Badge>
                           </div>
-                          {targetTone && targetTone !== analysisResult.metrics.tone && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="mt-2 w-full"
-                              onClick={() => adjustToneMutation.mutate(targetTone)}
-                            >
-                              Adjust to {targetTone}
-                            </Button>
-                          )}
+                          {targetTone &&
+                            targetTone !== analysisResult.metrics.tone && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2 w-full"
+                                onClick={() =>
+                                  adjustToneMutation.mutate(targetTone)
+                                }
+                              >
+                                Adjust to {targetTone}
+                              </Button>
+                            )}
                         </CardContent>
                       </Card>
                     </div>
@@ -544,29 +610,34 @@ export function WritingAssistant() {
                   <TabsContent value="paraphrase" className="space-y-4">
                     {paraphraseMutation.data ? (
                       <div className="space-y-3">
-                        {paraphraseMutation.data.map((variation: string, index: number) => (
-                          <Card key={index}>
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <Badge variant="outline">Version {index + 1}</Badge>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setText(variation)}
-                                >
-                                  Use This
-                                </Button>
-                              </div>
-                              <p className="text-sm">{variation}</p>
-                            </CardContent>
-                          </Card>
-                        ))}
+                        {paraphraseMutation.data.map(
+                          (variation: string, index: number) => (
+                            <Card key={index}>
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <Badge variant="outline">
+                                    Version {index + 1}
+                                  </Badge>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setText(variation)}
+                                  >
+                                    Use This
+                                  </Button>
+                                </div>
+                                <p className="text-sm">{variation}</p>
+                              </CardContent>
+                            </Card>
+                          ),
+                        )}
                       </div>
                     ) : (
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Click "Paraphrase" to generate alternative versions of your text.
+                          Click "Paraphrase" to generate alternative versions of
+                          your text.
                         </AlertDescription>
                       </Alert>
                     )}
@@ -586,7 +657,9 @@ export function WritingAssistant() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span>Originality Score</span>
-                    <span className={`text-2xl font-bold ${getScoreColor(plagiarismMutation.data.originalityScore)}`}>
+                    <span
+                      className={`text-2xl font-bold ${getScoreColor(plagiarismMutation.data.originalityScore)}`}
+                    >
                       {plagiarismMutation.data.originalityScore}%
                     </span>
                   </div>
@@ -594,9 +667,13 @@ export function WritingAssistant() {
                   {plagiarismMutation.data.flaggedPhrases?.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Flagged Phrases:</p>
-                      {plagiarismMutation.data.flaggedPhrases.map((phrase: string, i: number) => (
-                        <p key={i} className="text-sm text-muted-foreground">• {phrase}</p>
-                      ))}
+                      {plagiarismMutation.data.flaggedPhrases.map(
+                        (phrase: string, i: number) => (
+                          <p key={i} className="text-sm text-muted-foreground">
+                            • {phrase}
+                          </p>
+                        ),
+                      )}
                     </div>
                   )}
                   {plagiarismMutation.data.recommendation && (
@@ -622,11 +699,15 @@ export function WritingAssistant() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Sessions</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Sessions
+                  </span>
                   <span className="font-medium">{stats.totalSessions}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Suggestions Applied</span>
+                  <span className="text-sm text-muted-foreground">
+                    Suggestions Applied
+                  </span>
                   <span className="font-medium">
                     {stats.acceptedSuggestions} / {stats.totalSuggestions}
                   </span>
@@ -635,8 +716,13 @@ export function WritingAssistant() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Common Issues</p>
                   {stats.commonIssues.map((issue) => (
-                    <div key={issue.type} className="flex justify-between text-sm">
-                      <span className="capitalize text-muted-foreground">{issue.type}</span>
+                    <div
+                      key={issue.type}
+                      className="flex justify-between text-sm"
+                    >
+                      <span className="capitalize text-muted-foreground">
+                        {issue.type}
+                      </span>
                       <Badge variant="outline">{issue.count}</Badge>
                     </div>
                   ))}
@@ -645,7 +731,7 @@ export function WritingAssistant() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-500" />
                   <span className="text-sm">
-                    {stats.acceptedSuggestions > 0 
+                    {stats.acceptedSuggestions > 0
                       ? `${Math.round((stats.acceptedSuggestions / stats.totalSuggestions) * 100)}% improvement rate`
                       : "Start improving your writing"}
                   </span>

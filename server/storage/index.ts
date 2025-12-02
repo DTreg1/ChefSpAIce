@@ -1,4 +1,4 @@
-import { StorageRoot } from './StorageRoot';
+import { StorageRoot } from "./StorageRoot";
 
 // Create the root storage instance with three-tier architecture
 // Access patterns:
@@ -8,4 +8,4 @@ import { StorageRoot } from './StorageRoot';
 export const storage = new StorageRoot();
 
 // Export storage errors for use across the application
-export * from './errors';
+export * from "./errors";

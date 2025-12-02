@@ -41,7 +41,11 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const { data: savedQueries, isLoading, refetch } = useQuery<SavedQuery[]>({
+  const {
+    data: savedQueries,
+    isLoading,
+    refetch,
+  } = useQuery<SavedQuery[]>({
     queryKey: ["/api/query/saved"],
   });
 
@@ -61,7 +65,8 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
     onError: (error) => {
       toast({
         title: "Delete failed",
-        description: error instanceof Error ? error.message : "Failed to delete query",
+        description:
+          error instanceof Error ? error.message : "Failed to delete query",
         variant: "destructive",
       });
     },
@@ -92,7 +97,9 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center h-[150px] text-muted-foreground">
           <p>No saved queries yet</p>
-          <p className="text-sm">Save queries from the results panel to reuse them later</p>
+          <p className="text-sm">
+            Save queries from the results panel to reuse them later
+          </p>
         </CardContent>
       </Card>
     );
@@ -145,7 +152,8 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
                       )}
                       {query.metadata?.confidence && (
                         <Badge variant="outline" className="text-xs">
-                          {Math.round(query.metadata.confidence * 100)}% confidence
+                          {Math.round(query.metadata.confidence * 100)}%
+                          confidence
                         </Badge>
                       )}
                     </div>
@@ -187,8 +195,8 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove saved query?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the query from your saved list. The query will still
-              appear in your history.
+              This will remove the query from your saved list. The query will
+              still appear in your history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

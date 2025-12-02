@@ -1,21 +1,21 @@
 /**
  * Vector Math Utilities
- * 
+ *
  * Shared mathematical operations for vector calculations.
  * Used primarily for embedding-based similarity calculations.
  */
 
 /**
  * Calculate cosine similarity between two vectors
- * 
+ *
  * Measures the cosine of the angle between two vectors, returning a value between -1 and 1.
  * Values closer to 1 indicate high similarity, 0 indicates orthogonality, -1 indicates opposition.
- * 
+ *
  * @param vecA - First vector
  * @param vecB - Second vector
  * @returns Cosine similarity score between -1 and 1
  * @throws Error if vectors have different dimensions
- * 
+ *
  * @example
  * const similarity = cosineSimilarity([1, 0, 0], [1, 0, 0]); // 1.0 (identical)
  * const similarity = cosineSimilarity([1, 0, 0], [0, 1, 0]); // 0.0 (orthogonal)
@@ -47,7 +47,7 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 
 /**
  * Calculate dot product of two vectors
- * 
+ *
  * @param vecA - First vector
  * @param vecB - Second vector
  * @returns Dot product value
@@ -67,7 +67,7 @@ export function dotProduct(vecA: number[], vecB: number[]): number {
 
 /**
  * Calculate the Euclidean (L2) norm of a vector
- * 
+ *
  * @param vec - Input vector
  * @returns Euclidean norm (magnitude) of the vector
  */
@@ -81,7 +81,7 @@ export function euclideanNorm(vec: number[]): number {
 
 /**
  * Normalize a vector to unit length
- * 
+ *
  * @param vec - Input vector
  * @returns Normalized vector with unit length
  */
@@ -90,12 +90,12 @@ export function normalizeVector(vec: number[]): number[] {
   if (norm === 0) {
     return vec.map(() => 0);
   }
-  return vec.map(v => v / norm);
+  return vec.map((v) => v / norm);
 }
 
 /**
  * Calculate Euclidean distance between two vectors
- * 
+ *
  * @param vecA - First vector
  * @param vecB - Second vector
  * @returns Euclidean distance
@@ -116,7 +116,7 @@ export function euclideanDistance(vecA: number[], vecB: number[]): number {
 
 /**
  * Add two vectors element-wise
- * 
+ *
  * @param vecA - First vector
  * @param vecB - Second vector
  * @returns Sum vector
@@ -131,7 +131,7 @@ export function addVectors(vecA: number[], vecB: number[]): number[] {
 
 /**
  * Subtract two vectors element-wise (vecA - vecB)
- * 
+ *
  * @param vecA - First vector
  * @param vecB - Second vector
  * @returns Difference vector
@@ -146,18 +146,18 @@ export function subtractVectors(vecA: number[], vecB: number[]): number[] {
 
 /**
  * Multiply a vector by a scalar
- * 
+ *
  * @param vec - Input vector
  * @param scalar - Scalar multiplier
  * @returns Scaled vector
  */
 export function scaleVector(vec: number[], scalar: number): number[] {
-  return vec.map(v => v * scalar);
+  return vec.map((v) => v * scalar);
 }
 
 /**
  * Calculate the mean (average) of multiple vectors
- * 
+ *
  * @param vectors - Array of vectors to average
  * @returns Mean vector
  * @throws Error if no vectors provided or vectors have different dimensions
@@ -179,5 +179,5 @@ export function meanVector(vectors: number[][]): number[] {
     }
   }
 
-  return result.map(v => v / vectors.length);
+  return result.map((v) => v / vectors.length);
 }

@@ -1,24 +1,30 @@
 /**
  * Preset Selector Component
- * 
+ *
  * Quick selection of predefined enhancement presets.
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
+import {
   Package,
   User,
   Mountain,
   FileText,
   Share2,
-  Settings
+  Settings,
 } from "lucide-react";
 
 interface Preset {
@@ -42,13 +48,13 @@ export function PresetSelector({ onSelect, selectedId }: PresetSelectorProps) {
 
   // Fetch presets
   const { data: presets, isLoading } = useQuery<Preset[]>({
-    queryKey: ['/api/images/presets', category],
+    queryKey: ["/api/images/presets", category],
     queryFn: async () => {
       const params = category !== "all" ? `?category=${category}` : "";
       const response = await fetch(`/api/images/presets${params}`);
       if (!response.ok) throw new Error("Failed to fetch presets");
       return response.json();
-    }
+    },
   });
 
   // Get icon for category
@@ -88,42 +94,47 @@ export function PresetSelector({ onSelect, selectedId }: PresetSelectorProps) {
           >
             All
           </Button>
-          {["product", "portrait", "landscape", "social_media", "custom"].map(cat => (
-            <Button
-              key={cat}
-              size="sm"
-              variant={category === cat ? "default" : "outline"}
-              onClick={() => setCategory(cat)}
-              className="gap-1"
-              data-testid={`category-${cat}`}
-            >
-              {getCategoryIcon(cat)}
-              {cat.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase())}
-            </Button>
-          ))}
+          {["product", "portrait", "landscape", "social_media", "custom"].map(
+            (cat) => (
+              <Button
+                key={cat}
+                size="sm"
+                variant={category === cat ? "default" : "outline"}
+                onClick={() => setCategory(cat)}
+                className="gap-1"
+                data-testid={`category-${cat}`}
+              >
+                {getCategoryIcon(cat)}
+                {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+              </Button>
+            ),
+          )}
         </div>
 
         {/* Presets List */}
         {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-20" />
             ))}
           </div>
         ) : (
-          <RadioGroup value={selectedId} onValueChange={(value) => {
-            const preset = presets?.find(p => p.id === value);
-            if (preset) onSelect(preset);
-          }}>
+          <RadioGroup
+            value={selectedId}
+            onValueChange={(value) => {
+              const preset = presets?.find((p) => p.id === value);
+              if (preset) onSelect(preset);
+            }}
+          >
             <div className="space-y-3">
-              {presets?.map(preset => (
+              {presets?.map((preset) => (
                 <div
                   key={preset.id}
                   className="flex items-start space-x-3 p-3 border rounded-lg hover-elevate cursor-pointer"
                   data-testid={`preset-${preset.id}`}
                 >
                   <RadioGroupItem value={preset.id} id={preset.id} />
-                  
+
                   {preset.thumbnailUrl && (
                     <div className="w-16 h-16 rounded overflow-hidden bg-muted flex-shrink-0">
                       <img
@@ -133,7 +144,7 @@ export function PresetSelector({ onSelect, selectedId }: PresetSelectorProps) {
                       />
                     </div>
                   )}
-                  
+
                   <div className="flex-1">
                     <Label htmlFor={preset.id} className="cursor-pointer">
                       <div className="flex items-center gap-2 mb-1">
@@ -153,7 +164,7 @@ export function PresetSelector({ onSelect, selectedId }: PresetSelectorProps) {
                       <p className="text-sm text-muted-foreground">
                         {preset.description}
                       </p>
-                      
+
                       {/* Operations Summary */}
                       <div className="flex flex-wrap gap-1 mt-2">
                         {preset.operations.backgroundRemoval && (
@@ -186,7 +197,7 @@ export function PresetSelector({ onSelect, selectedId }: PresetSelectorProps) {
                   </div>
                 </div>
               ))}
-              
+
               {presets?.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No presets available for this category

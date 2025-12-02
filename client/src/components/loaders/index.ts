@@ -1,4 +1,9 @@
-export { SkeletonLoader, BasicCardSkeleton, TableSkeleton, ListSkeleton } from "./skeleton-loader";
+export {
+  SkeletonLoader,
+  BasicCardSkeleton,
+  TableSkeleton,
+  ListSkeleton,
+} from "./skeleton-loader";
 export {
   CardSkeleton,
   GridSkeleton,
@@ -6,10 +11,13 @@ export {
   MealPlannerSkeleton,
   RecipeListSkeleton,
   ShoppingListSkeleton,
-  StorageSkeleton
+  StorageSkeleton,
 } from "./skeletons";
 export { FoodCardSkeleton, FoodCardSkeletonGrid } from "./food-card-skeleton";
-export { RecipeCardSkeleton, RecipeCardSkeletonGrid } from "./recipe-card-skeleton";
+export {
+  RecipeCardSkeleton,
+  RecipeCardSkeletonGrid,
+} from "./recipe-card-skeleton";
 export { LoadingDots } from "./loading-dots";
 export { CookLoader } from "./loading-cook";
 export type { LoaderProps } from "./loading-cook";

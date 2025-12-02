@@ -37,7 +37,7 @@ export const RelatedContentSidebar = ({
   contentType = "article",
   title = "Related Content",
   onItemClick,
-  className = ""
+  className = "",
 }: RelatedContentProps) => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -46,7 +46,9 @@ export const RelatedContentSidebar = ({
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["/api/content", contentId, "related"],
     queryFn: async () => {
-      const response = await fetch(`/api/content/${contentId}/related?type=${contentType}&limit=10`);
+      const response = await fetch(
+        `/api/content/${contentId}/related?type=${contentType}&limit=10`,
+      );
       if (!response.ok) throw new Error("Failed to fetch related content");
       return response.json();
     },
@@ -58,7 +60,10 @@ export const RelatedContentSidebar = ({
     setIsRefreshing(true);
     try {
       // Clear cache and refresh embeddings
-      await apiRequest(`/api/content/${contentId}/cache?type=${contentType}`, "DELETE");
+      await apiRequest(
+        `/api/content/${contentId}/cache?type=${contentType}`,
+        "DELETE",
+      );
       await refetch();
       toast({
         title: "Content refreshed",
@@ -82,7 +87,9 @@ export const RelatedContentSidebar = ({
     return "text-gray-400";
   };
 
-  const getRelevanceBadgeVariant = (score: number): "default" | "secondary" | "outline" | "destructive" => {
+  const getRelevanceBadgeVariant = (
+    score: number,
+  ): "default" | "secondary" | "outline" | "destructive" => {
     if (score >= 0.9) return "default";
     if (score >= 0.8) return "secondary";
     return "outline";
@@ -107,7 +114,9 @@ export const RelatedContentSidebar = ({
             disabled={isRefreshing || isLoading}
             data-testid="button-refresh-related"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
       </CardHeader>
@@ -136,16 +145,16 @@ export const RelatedContentSidebar = ({
                     </h4>
                     <ChevronRight className="h-4 w-4 text-muted-foreground ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
-                  
+
                   {item.metadata?.description && (
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                       {item.metadata.description}
                     </p>
                   )}
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         variant={getRelevanceBadgeVariant(item.score)}
                         className="text-xs"
                       >
@@ -159,13 +168,10 @@ export const RelatedContentSidebar = ({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Visual similarity indicator */}
                   <div className="mt-2">
-                    <Progress 
-                      value={item.score * 100} 
-                      className="h-1"
-                    />
+                    <Progress value={item.score * 100} className="h-1" />
                   </div>
                 </div>
               ))}
@@ -174,7 +180,9 @@ export const RelatedContentSidebar = ({
             <div className="text-center py-8 text-muted-foreground">
               <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No related content found</p>
-              <p className="text-xs mt-1">Try refreshing to update recommendations</p>
+              <p className="text-xs mt-1">
+                Try refreshing to update recommendations
+              </p>
             </div>
           )}
         </ScrollArea>

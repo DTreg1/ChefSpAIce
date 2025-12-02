@@ -1,13 +1,51 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { format } from "date-fns";
-import { Search, Filter, TrendingUp, TrendingDown, Minus, Download, Calendar } from "lucide-react";
+import {
+  Search,
+  Filter,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Download,
+  Calendar,
+} from "lucide-react";
 import { type AbTest, type AbTestVariantMetric } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
@@ -25,8 +63,11 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   const [sortBy, setSortBy] = useState("date");
 
   // Filter and sort tests
-  let filteredTests = tests.filter(test => {
-    if (searchTerm && !test.testName.toLowerCase().includes(searchTerm.toLowerCase())) {
+  let filteredTests = tests.filter((test) => {
+    if (
+      searchTerm &&
+      !test.testName.toLowerCase().includes(searchTerm.toLowerCase())
+    ) {
       return false;
     }
     if (statusFilter !== "all" && test.status !== statusFilter) {
@@ -39,8 +80,8 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   // Helper to get best metric for a test
   const getBestMetric = (test: TestWithDetails) => {
     if (!test.variantMetrics || test.variantMetrics.length === 0) return null;
-    return test.variantMetrics.reduce((best, current) => 
-      (current.confidence || 0) > (best.confidence || 0) ? current : best
+    return test.variantMetrics.reduce((best, current) =>
+      (current.confidence || 0) > (best.confidence || 0) ? current : best,
     );
   };
 
@@ -48,17 +89,24 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   const calculateLift = (test: TestWithDetails) => {
     const metrics = test.variantMetrics || [];
     if (metrics.length < 2) return 0;
-    const control = metrics.find(m => m.variant === 'control');
-    const variant = metrics.find(m => m.variant !== 'control');
+    const control = metrics.find((m) => m.variant === "control");
+    const variant = metrics.find((m) => m.variant !== "control");
     if (!control || !variant || control.conversionRate === 0) return 0;
-    return ((variant.conversionRate - control.conversionRate) / control.conversionRate) * 100;
+    return (
+      ((variant.conversionRate - control.conversionRate) /
+        control.conversionRate) *
+      100
+    );
   };
 
   // Sort tests
   filteredTests = [...filteredTests].sort((a, b) => {
     switch (sortBy) {
       case "date":
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        return (
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+        );
       case "confidence":
         const aMetric = getBestMetric(a);
         const bMetric = getBestMetric(b);
@@ -74,11 +122,11 @@ export default function TestHistory({ tests }: TestHistoryProps) {
 
   // Calculate timeline data for chart
   const timelineData = tests
-    .filter(t => t.status === 'completed' && t.endDate)
-    .map(test => {
+    .filter((t) => t.status === "completed" && t.endDate)
+    .map((test) => {
       const bestMetric = getBestMetric(test);
       return {
-        date: format(new Date(test.endDate!), 'MMM dd'),
+        date: format(new Date(test.endDate!), "MMM dd"),
         lift: calculateLift(test),
         confidence: (bestMetric?.confidence || 0) * 100,
         name: test.testName,
@@ -91,24 +139,27 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   const determineWinner = (test: TestWithDetails): string | null => {
     const metrics = test.variantMetrics || [];
     if (metrics.length < 2) return null;
-    const significant = metrics.filter(m => m.isSignificant);
-    if (significant.length === 0) return 'inconclusive';
-    const best = significant.reduce((best, current) => 
-      (current.conversionRate || 0) > (best.conversionRate || 0) ? current : best
+    const significant = metrics.filter((m) => m.isSignificant);
+    if (significant.length === 0) return "inconclusive";
+    const best = significant.reduce((best, current) =>
+      (current.conversionRate || 0) > (best.conversionRate || 0)
+        ? current
+        : best,
     );
     return best.variant;
   };
 
   // Calculate summary statistics
-  const totalCompleted = tests.filter(t => t.status === 'completed').length;
-  const averageLift = tests
-    .filter(t => t.status === 'completed')
-    .reduce((acc, t) => acc + calculateLift(t), 0) / (totalCompleted || 1);
-  
-  const successfulTests = tests.filter(t => {
-    if (t.status !== 'completed') return false;
+  const totalCompleted = tests.filter((t) => t.status === "completed").length;
+  const averageLift =
+    tests
+      .filter((t) => t.status === "completed")
+      .reduce((acc, t) => acc + calculateLift(t), 0) / (totalCompleted || 1);
+
+  const successfulTests = tests.filter((t) => {
+    if (t.status !== "completed") return false;
     const winner = determineWinner(t);
-    return winner && winner !== 'inconclusive';
+    return winner && winner !== "inconclusive";
   }).length;
 
   const getStatusBadge = (status: string) => {
@@ -128,17 +179,29 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   };
 
   // Helper to get variant names from configuration
-  const getVariantNames = (test: TestWithDetails): { variantA: string; variantB: string } => {
+  const getVariantNames = (
+    test: TestWithDetails,
+  ): { variantA: string; variantB: string } => {
     const config = test.configuration;
-    const variantA = config?.controlGroup?.features?.name || 'Control';
-    const variantB = config?.variants?.[0]?.name || 'Variant B';
+    const variantA = config?.controlGroup?.features?.name || "Control";
+    const variantB = config?.variants?.[0]?.name || "Variant B";
     return { variantA, variantB };
   };
 
   const exportData = () => {
     const csv = [
-      ['Test Name', 'Status', 'Variant A', 'Variant B', 'Winner', 'Confidence', 'Lift %', 'Start Date', 'End Date'],
-      ...filteredTests.map(test => {
+      [
+        "Test Name",
+        "Status",
+        "Variant A",
+        "Variant B",
+        "Winner",
+        "Confidence",
+        "Lift %",
+        "Start Date",
+        "End Date",
+      ],
+      ...filteredTests.map((test) => {
         const { variantA, variantB } = getVariantNames(test);
         const bestMetric = getBestMetric(test);
         const winner = determineWinner(test);
@@ -147,20 +210,26 @@ export default function TestHistory({ tests }: TestHistoryProps) {
           test.status,
           variantA,
           variantB,
-          winner || 'N/A',
-          bestMetric?.confidence ? (bestMetric.confidence * 100).toFixed(2) + '%' : 'N/A',
-          calculateLift(test).toFixed(2) + '%',
-          test.startDate ? format(new Date(test.startDate), 'yyyy-MM-dd') : 'N/A',
-          test.endDate ? format(new Date(test.endDate), 'yyyy-MM-dd') : 'N/A',
+          winner || "N/A",
+          bestMetric?.confidence
+            ? (bestMetric.confidence * 100).toFixed(2) + "%"
+            : "N/A",
+          calculateLift(test).toFixed(2) + "%",
+          test.startDate
+            ? format(new Date(test.startDate), "yyyy-MM-dd")
+            : "N/A",
+          test.endDate ? format(new Date(test.endDate), "yyyy-MM-dd") : "N/A",
         ];
-      })
-    ].map(row => row.join(',')).join('\n');
+      }),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `ab-test-history-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `ab-test-history-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
   };
 
@@ -185,7 +254,10 @@ export default function TestHistory({ tests }: TestHistoryProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalCompleted > 0 ? ((successfulTests / totalCompleted) * 100).toFixed(0) : 0}%
+              {totalCompleted > 0
+                ? ((successfulTests / totalCompleted) * 100).toFixed(0)
+                : 0}
+              %
             </div>
             <p className="text-xs text-muted-foreground">
               {successfulTests} clear winners
@@ -213,7 +285,9 @@ export default function TestHistory({ tests }: TestHistoryProps) {
         <Card>
           <CardHeader>
             <CardTitle>Performance Trend</CardTitle>
-            <CardDescription>Lift percentage over time for completed tests</CardDescription>
+            <CardDescription>
+              Lift percentage over time for completed tests
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -222,7 +296,13 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Area type="monotone" dataKey="lift" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                <Area
+                  type="monotone"
+                  dataKey="lift"
+                  stroke="#8884d8"
+                  fill="#8884d8"
+                  fillOpacity={0.6}
+                />
                 <Line type="monotone" dataKey="confidence" stroke="#82ca9d" />
               </AreaChart>
             </ResponsiveContainer>
@@ -235,7 +315,12 @@ export default function TestHistory({ tests }: TestHistoryProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Test History</CardTitle>
-            <Button variant="outline" size="sm" onClick={exportData} data-testid="button-export">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportData}
+              data-testid="button-export"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
@@ -256,7 +341,10 @@ export default function TestHistory({ tests }: TestHistoryProps) {
               </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]" data-testid="select-status-filter">
+              <SelectTrigger
+                className="w-[150px]"
+                data-testid="select-status-filter"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -268,7 +356,10 @@ export default function TestHistory({ tests }: TestHistoryProps) {
               </SelectContent>
             </Select>
             <Select value={metricFilter} onValueChange={setMetricFilter}>
-              <SelectTrigger className="w-[150px]" data-testid="select-metric-filter">
+              <SelectTrigger
+                className="w-[150px]"
+                data-testid="select-metric-filter"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -308,14 +399,19 @@ export default function TestHistory({ tests }: TestHistoryProps) {
               <TableBody>
                 {filteredTests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-muted-foreground"
+                    >
                       No tests found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredTests.map((test) => (
                     <TableRow key={test.id} data-testid={`row-test-${test.id}`}>
-                      <TableCell className="font-medium">{test.testName}</TableCell>
+                      <TableCell className="font-medium">
+                        {test.testName}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadge(test.status)}>
                           {test.status}
@@ -327,28 +423,44 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                         Variants: {test.configuration?.variants?.length || 1}
                       </TableCell>
                       <TableCell>
-                        {test.variantMetrics && test.variantMetrics.length > 0 && test.variantMetrics[0].isSignificant ? (
+                        {test.variantMetrics &&
+                        test.variantMetrics.length > 0 &&
+                        test.variantMetrics[0].isSignificant ? (
                           <Badge variant="outline">
-                            {test.variantMetrics[0].recommendation || 'Significant'}
+                            {test.variantMetrics[0].recommendation ||
+                              "Significant"}
                           </Badge>
                         ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
+                          <span className="text-sm text-muted-foreground">
+                            -
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        {test.variantMetrics && test.variantMetrics.length > 0 && test.variantMetrics[0].confidence ? (
+                        {test.variantMetrics &&
+                        test.variantMetrics.length > 0 &&
+                        test.variantMetrics[0].confidence ? (
                           <span className="text-sm font-medium">
-                            {(test.variantMetrics[0].confidence * 100).toFixed(1)}%
+                            {(test.variantMetrics[0].confidence * 100).toFixed(
+                              1,
+                            )}
+                            %
                           </span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
+                          <span className="text-sm text-muted-foreground">
+                            -
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
                         {(() => {
                           const lift = calculateLift(test);
                           if (lift === 0) {
-                            return <span className="text-sm text-muted-foreground">-</span>;
+                            return (
+                              <span className="text-sm text-muted-foreground">
+                                -
+                              </span>
+                            );
                           }
                           return (
                             <div className="flex items-center gap-1">
@@ -361,7 +473,9 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                         })()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {test.createdAt ? format(new Date(test.createdAt), 'MMM dd, yyyy') : '-'}
+                        {test.createdAt
+                          ? format(new Date(test.createdAt), "MMM dd, yyyy")
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))

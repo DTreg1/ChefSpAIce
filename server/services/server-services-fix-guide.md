@@ -1,16 +1,17 @@
 # Server Services Fix Guide
 
 > **Historical Reference Document**
-> 
-> This document was created as a reference guide for service improvements. Many of these issues have been addressed in subsequent sprints (particularly Sprint 3 and 4). 
-> 
+>
+> This document was created as a reference guide for service improvements. Many of these issues have been addressed in subsequent sprints (particularly Sprint 3 and 4).
+>
 > **Status Summary:**
+>
 > - Phase 1 (Critical Fixes): Partially addressed - chatService.ts refactored, embeddings.ts fixed
 > - Phase 2 (Error Handling): Outstanding - review individual items for current status
 > - Phase 3 (Performance): Outstanding - batch optimization opportunities remain
 > - Phase 4 (Architecture): Complete - OpenAI client consolidated, vectorMath utilities created
 > - Phase 5-6 (Security/Quality): Outstanding - review for current applicability
-> 
+>
 > Use as a reference for understanding past technical debt and improvement patterns.
 
 A comprehensive, step-by-step guide to fix logical errors and improve the server/services directory.
@@ -318,7 +319,7 @@ Create a shared OpenAI client factory at server/integrations/openaiClient.ts:
 
 2. Update these services to use the shared client:
    - sentimentService.ts
-   - analytics.service.ts  
+   - analytics.service.ts
    - predictionService.ts
    - duplicate-detection.service.ts
    - chatService.ts
@@ -402,7 +403,7 @@ Create shared vector utilities at server/utils/vectorMath.ts:
 Strengthen VAPID key validation in server/services/push-notification.service.ts:
 
 1. Replace the warning-only approach (lines 16-26) with:
-   
+
    if (process.env.NODE_ENV === 'production') {
      if (!isVapidConfigured) {
        throw new Error('VAPID keys must be configured for production. Generate with: npx web-push generate-vapid-keys');
@@ -427,7 +428,7 @@ Strengthen VAPID key validation in server/services/push-notification.service.ts:
 
 **Copy this prompt:**
 
-```
+````
 Add prompt sanitization in server/services/fraud.service.ts:
 
 1. Create a sanitizeForPrompt helper function:
@@ -447,7 +448,7 @@ Add prompt sanitization in server/services/fraud.service.ts:
 3. Do the same in analyzeContentPatterns (line 346)
 
 4. Consider using structured data format instead of free-form JSON in prompts
-```
+````
 
 ---
 
@@ -549,31 +550,37 @@ Re-enable queue processing in server/services/notification-scheduler.service.ts:
 Use this checklist to track progress:
 
 ### Phase 1: Critical Fixes
+
 - [ ] 1.1 predictionService.ts - Real metrics
 - [ ] 1.2 chatService.ts - Migration
 - [ ] 1.3 duplicate-detection.service.ts - LSP errors
 - [ ] 1.4 embeddings.ts - Null storage
 
 ### Phase 2: Error Handling
+
 - [ ] 2.1 fraud.service.ts - Fail-safe
 - [ ] 2.2 moderation.service.ts - Safe fallback
 - [ ] 2.3 sentimentService.ts - Error visibility
 
 ### Phase 3: Performance
+
 - [ ] 3.1 trend-analyzer.service.ts - Batch writes
 - [ ] 3.2 push-notification.service.ts - Parallel sends
 - [ ] 3.3 duplicate-detection.service.ts - N+1 fix
 
 ### Phase 4: Architecture
+
 - [ ] 4.1 Shared OpenAI client factory
 - [ ] 4.2 Model version registry
 - [ ] 4.3 Shared vector math utilities
 
 ### Phase 5: Security
+
 - [ ] 5.1 VAPID validation
 - [ ] 5.2 AI prompt sanitization
 
 ### Phase 6: Code Quality
+
 - [ ] 6.1 Magic numbers extraction
 - [ ] 6.2 Dead code removal
 - [ ] 6.3 Queue processing re-enable
@@ -582,28 +589,28 @@ Use this checklist to track progress:
 
 ## Summary of Issues Found
 
-| Category | File | Issue | Priority |
-|----------|------|-------|----------|
-| Critical | predictionService.ts | Mock data in production | P0 |
-| Critical | chatService.ts | Broken/deprecated service | P0 |
-| Critical | duplicate-detection.service.ts | 22 LSP errors | P0 |
-| Critical | embeddings.ts | Null storage reference | P0 |
-| Error Handling | fraud.service.ts | Zero fraud score on error | P1 |
-| Error Handling | moderation.service.ts | Approves on error | P1 |
-| Error Handling | sentimentService.ts | Silent error swallowing | P1 |
-| Performance | trend-analyzer.service.ts | N+1 queries | P2 |
-| Performance | push-notification.service.ts | Sequential sends | P2 |
-| Performance | duplicate-detection.service.ts | N+1 in getPendingDuplicates | P2 |
-| Architecture | Multiple files | Inconsistent OpenAI init | P2 |
-| Architecture | Multiple files | Model version chaos | P2 |
-| Architecture | 2 files | Duplicate cosine similarity | P3 |
-| Security | push-notification.service.ts | Weak VAPID validation | P1 |
-| Security | fraud.service.ts | Unsanitized prompts | P1 |
-| Code Quality | lightweightPrediction.ts | Magic numbers | P3 |
-| Code Quality | apiCache.service.ts | Dead code | P3 |
-| Code Quality | notification-scheduler.service.ts | Disabled feature | P2 |
+| Category       | File                              | Issue                       | Priority |
+| -------------- | --------------------------------- | --------------------------- | -------- |
+| Critical       | predictionService.ts              | Mock data in production     | P0       |
+| Critical       | chatService.ts                    | Broken/deprecated service   | P0       |
+| Critical       | duplicate-detection.service.ts    | 22 LSP errors               | P0       |
+| Critical       | embeddings.ts                     | Null storage reference      | P0       |
+| Error Handling | fraud.service.ts                  | Zero fraud score on error   | P1       |
+| Error Handling | moderation.service.ts             | Approves on error           | P1       |
+| Error Handling | sentimentService.ts               | Silent error swallowing     | P1       |
+| Performance    | trend-analyzer.service.ts         | N+1 queries                 | P2       |
+| Performance    | push-notification.service.ts      | Sequential sends            | P2       |
+| Performance    | duplicate-detection.service.ts    | N+1 in getPendingDuplicates | P2       |
+| Architecture   | Multiple files                    | Inconsistent OpenAI init    | P2       |
+| Architecture   | Multiple files                    | Model version chaos         | P2       |
+| Architecture   | 2 files                           | Duplicate cosine similarity | P3       |
+| Security       | push-notification.service.ts      | Weak VAPID validation       | P1       |
+| Security       | fraud.service.ts                  | Unsanitized prompts         | P1       |
+| Code Quality   | lightweightPrediction.ts          | Magic numbers               | P3       |
+| Code Quality   | apiCache.service.ts               | Dead code                   | P3       |
+| Code Quality   | notification-scheduler.service.ts | Disabled feature            | P2       |
 
 ---
 
-*Generated on: November 26, 2025*
-*Status: Historical Reference - Many items addressed in Sprint 3 and 4*
+_Generated on: November 26, 2025_
+_Status: Historical Reference - Many items addressed in Sprint 3 and 4_

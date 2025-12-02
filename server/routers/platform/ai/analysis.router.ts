@@ -589,7 +589,9 @@ router.post(
       let interventions: Record<string, any> = {};
       if (includeInterventions && predictions.length > 0) {
         for (const pred of predictions.slice(0, Math.min(5, limit))) {
-          const intervention = await predictionService.generateIntervention(pred as any);
+          const intervention = await predictionService.generateIntervention(
+            pred as any,
+          );
           interventions[pred.userId] = intervention;
         }
       }
@@ -1198,7 +1200,9 @@ router.get(
       const validated = schema.parse({ userId, type, limit });
 
       // Import and use embeddings service
-      const { EmbeddingsService } = await import("../../../services/embeddings.service");
+      const { EmbeddingsService } = await import(
+        "../../../services/embeddings.service"
+      );
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const recommendations =
@@ -1257,7 +1261,9 @@ router.get(
     try {
       const validated = schema.parse({ id, type, limit });
 
-      const { EmbeddingsService } = await import("../../../services/embeddings.service");
+      const { EmbeddingsService } = await import(
+        "../../../services/embeddings.service"
+      );
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const relatedContent = await embeddingsService.findRelatedContent(
@@ -1316,7 +1322,9 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../../services/embeddings.service");
+      const { EmbeddingsService } = await import(
+        "../../../services/embeddings.service"
+      );
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const embedding = await embeddingsService.createContentEmbedding(
@@ -1387,7 +1395,9 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../../services/embeddings.service");
+      const { EmbeddingsService } = await import(
+        "../../../services/embeddings.service"
+      );
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const result = await embeddingsService.refreshEmbeddings(
@@ -1444,7 +1454,9 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../../services/embeddings.service");
+      const { EmbeddingsService } = await import(
+        "../../../services/embeddings.service"
+      );
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       // Generate embedding for the query

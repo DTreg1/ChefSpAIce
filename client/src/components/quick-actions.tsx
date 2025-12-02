@@ -1,6 +1,6 @@
-import { HelpCircle, Lightbulb, BookOpen, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HelpCircle, Lightbulb, BookOpen, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface QuickActionsProps {
   onActionClick: (action: string) => void;
@@ -8,29 +8,31 @@ interface QuickActionsProps {
 
 const actions = [
   {
-    id: 'help',
+    id: "help",
     icon: HelpCircle,
-    label: 'How can I help?',
-    prompt: 'What features does this app have and how can I use them effectively?'
+    label: "How can I help?",
+    prompt:
+      "What features does this app have and how can I use them effectively?",
   },
   {
-    id: 'suggestions',
+    id: "suggestions",
     icon: Lightbulb,
-    label: 'Get suggestions',
-    prompt: 'Can you suggest some recipes based on what I have in my inventory?'
+    label: "Get suggestions",
+    prompt:
+      "Can you suggest some recipes based on what I have in my inventory?",
   },
   {
-    id: 'learn',
+    id: "learn",
     icon: BookOpen,
-    label: 'Learn cooking tips',
-    prompt: 'Give me some useful cooking tips and techniques'
+    label: "Learn cooking tips",
+    prompt: "Give me some useful cooking tips and techniques",
   },
   {
-    id: 'settings',
+    id: "settings",
     icon: Settings,
-    label: 'App guidance',
-    prompt: 'How do I customize my preferences and settings in this app?'
-  }
+    label: "App guidance",
+    prompt: "How do I customize my preferences and settings in this app?",
+  },
 ];
 
 export function QuickActions({ onActionClick }: QuickActionsProps) {

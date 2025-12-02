@@ -47,7 +47,7 @@ export function Logo({
         className={cn(
           sizes.container,
           "rounded-xl bg-gradient-to-br from-primary to-primary/5 flex items-center justify-center shadow-lg glow-primary",
-          iconClassName
+          iconClassName,
         )}
       >
         <ChefHat className={cn(sizes.icon, "text-primary-foreground")} />
@@ -57,7 +57,7 @@ export function Logo({
           className={cn(
             sizes.text,
             "font-semibold text-gradient-primary font-sans",
-            textClassName
+            textClassName,
           )}
         >
           ChefSpAIce

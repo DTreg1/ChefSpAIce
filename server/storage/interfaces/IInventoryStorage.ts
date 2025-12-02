@@ -1,7 +1,7 @@
 /**
  * @file server/storage/interfaces/IInventoryStorage.ts
  * @description Interface for inventory management including food items, storage locations, and shopping lists
- * 
+ *
  * This interface defines the contract for all inventory-related storage operations including:
  * - Food item CRUD with expiration tracking
  * - Storage location management
@@ -51,7 +51,7 @@ export interface GroupedShoppingItemsResult {
  */
 export interface IInventoryStorage {
   // ============= Food Items =============
-  
+
   /**
    * Get all food items for a user with optional filtering by status
    * @param userId - The user's UUID
@@ -62,7 +62,7 @@ export interface IInventoryStorage {
     userId: string,
     filter?: FoodItemFilter,
   ): Promise<UserInventory[]>;
-  
+
   /**
    * Get paginated food items for a user
    * @param userId - The user's UUID
@@ -77,7 +77,7 @@ export interface IInventoryStorage {
     offset: number,
     filter?: FoodItemFilter,
   ): Promise<{ items: UserInventory[]; total: number }>;
-  
+
   /**
    * Get a single food item by ID
    * @param userId - The user's UUID (for ownership verification)
@@ -85,7 +85,7 @@ export interface IInventoryStorage {
    * @returns The food item or undefined if not found
    */
   getFoodItem(userId: string, id: string): Promise<UserInventory | undefined>;
-  
+
   /**
    * Create a new food item in inventory
    * @param userId - The user's UUID
@@ -96,7 +96,7 @@ export interface IInventoryStorage {
     userId: string,
     item: InsertUserInventory,
   ): Promise<UserInventory>;
-  
+
   /**
    * Update an existing food item
    * @param userId - The user's UUID (for ownership verification)
@@ -109,21 +109,21 @@ export interface IInventoryStorage {
     id: string,
     updates: Partial<UserInventory>,
   ): Promise<UserInventory | undefined>;
-  
+
   /**
    * Delete a food item permanently
    * @param userId - The user's UUID (for ownership verification)
    * @param id - The food item's UUID
    */
   deleteFoodItem(userId: string, id: string): Promise<void>;
-  
+
   /**
    * Get all unique food categories for a user's inventory
    * @param userId - The user's UUID
    * @returns Array of unique category names, sorted alphabetically
    */
   getFoodCategories(userId: string): Promise<string[]>;
-  
+
   /**
    * Get items that are expiring soon or already expired
    * @param userId - The user's UUID
@@ -134,9 +134,9 @@ export interface IInventoryStorage {
     userId: string,
     daysAhead?: number,
   ): Promise<ExpiringItemsResult>;
-  
+
   // ============= Storage Locations =============
-  
+
   /**
    * Get all active storage locations for a user
    * Includes item count for each location
@@ -144,7 +144,7 @@ export interface IInventoryStorage {
    * @returns Array of storage locations with item counts, ordered by sortOrder
    */
   getStorageLocations(userId: string): Promise<UserStorage[]>;
-  
+
   /**
    * Get a single storage location by ID
    * @param userId - The user's UUID (for ownership verification)
@@ -155,7 +155,7 @@ export interface IInventoryStorage {
     userId: string,
     id: string,
   ): Promise<UserStorage | undefined>;
-  
+
   /**
    * Create a new storage location
    * @param userId - The user's UUID
@@ -169,7 +169,7 @@ export interface IInventoryStorage {
       "id" | "userId" | "createdAt" | "updatedAt"
     >,
   ): Promise<UserStorage>;
-  
+
   /**
    * Update an existing storage location
    * @param userId - The user's UUID (for ownership verification)
@@ -183,7 +183,7 @@ export interface IInventoryStorage {
     id: string,
     updates: Partial<UserStorage>,
   ): Promise<UserStorage | undefined>;
-  
+
   /**
    * Delete a storage location
    * @param userId - The user's UUID (for ownership verification)
@@ -191,30 +191,30 @@ export interface IInventoryStorage {
    * @throws Error if location is a default or contains items
    */
   deleteStorageLocation(userId: string, id: string): Promise<void>;
-  
+
   // ============= Shopping List Operations =============
-  
+
   /**
    * Get all shopping list items for a user
    * @param userId - The user's UUID
    * @returns Array of shopping items, ordered by purchased status and name
    */
   getShoppingItems(userId: string): Promise<ShoppingItem[]>;
-  
+
   /**
    * Get shopping list items grouped by category
    * @param userId - The user's UUID
    * @returns Object containing items, grouped items by category, and category totals
    */
   getGroupedShoppingItems(userId: string): Promise<GroupedShoppingItemsResult>;
-  
+
   /**
    * Create a new shopping list item
    * @param item - Shopping item data including userId
    * @returns The newly created shopping item
    */
   createShoppingItem(item: InsertShoppingItem): Promise<ShoppingItem>;
-  
+
   /**
    * Update an existing shopping list item
    * @param userId - The user's UUID (for ownership verification)
@@ -225,23 +225,23 @@ export interface IInventoryStorage {
   updateShoppingItem(
     userId: string,
     id: string,
-    updates: Partial<ShoppingItem>
+    updates: Partial<ShoppingItem>,
   ): Promise<ShoppingItem | undefined>;
-  
+
   /**
    * Delete a shopping list item
    * @param userId - The user's UUID (for ownership verification)
    * @param id - The shopping item's UUID
    */
   deleteShoppingItem(userId: string, id: string): Promise<void>;
-  
+
   /**
    * Clear all purchased (checked) items from the shopping list
    * @param userId - The user's UUID
    * @returns The number of items deleted
    */
   clearCheckedShoppingItems(userId: string): Promise<number>;
-  
+
   /**
    * Add missing ingredients from a recipe to the shopping list
    * Skips ingredients that are already on the list
@@ -253,6 +253,6 @@ export interface IInventoryStorage {
   addMissingIngredientsToShoppingList(
     userId: string,
     recipeId: string,
-    servings?: number
+    servings?: number,
   ): Promise<{ added: number; skipped: number }>;
 }

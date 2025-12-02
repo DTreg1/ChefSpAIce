@@ -1,6 +1,6 @@
 /**
  * Environment Variable Validator
- * 
+ *
  * Validates required and optional environment variables at startup.
  * Ensures no sensitive defaults are used in production.
  */
@@ -20,224 +20,224 @@ interface EnvVarConfig {
 const ENV_CONFIGS: Record<string, EnvVarConfig[]> = {
   core: [
     {
-      name: 'PORT',
+      name: "PORT",
       required: false,
-      description: 'Server port',
-      defaultValue: '5000',
-      validator: (val) => !isNaN(parseInt(val))
+      description: "Server port",
+      defaultValue: "5000",
+      validator: (val) => !isNaN(parseInt(val)),
     },
     {
-      name: 'NODE_ENV',
+      name: "NODE_ENV",
       required: false,
-      description: 'Node environment',
-      defaultValue: 'development',
-      validator: (val) => ['development', 'production', 'test'].includes(val)
+      description: "Node environment",
+      defaultValue: "development",
+      validator: (val) => ["development", "production", "test"].includes(val),
     },
     {
-      name: 'SESSION_SECRET',
+      name: "SESSION_SECRET",
       required: true,
       sensitive: true,
-      description: 'Session encryption secret (min 32 characters)',
-      validator: (val) => val.length >= 32
-    }
+      description: "Session encryption secret (min 32 characters)",
+      validator: (val) => val.length >= 32,
+    },
   ],
   database: [
     {
-      name: 'DATABASE_URL',
+      name: "DATABASE_URL",
       required: false,
       sensitive: true,
-      description: 'PostgreSQL connection string'
-    }
+      description: "PostgreSQL connection string",
+    },
   ],
   oauth: [
     {
-      name: 'GOOGLE_CLIENT_ID',
+      name: "GOOGLE_CLIENT_ID",
       required: false,
       sensitive: true,
-      description: 'Google OAuth client ID'
+      description: "Google OAuth client ID",
     },
     {
-      name: 'GOOGLE_CLIENT_SECRET',
+      name: "GOOGLE_CLIENT_SECRET",
       required: false,
       sensitive: true,
-      description: 'Google OAuth client secret'
+      description: "Google OAuth client secret",
     },
     {
-      name: 'GITHUB_CLIENT_ID',
+      name: "GITHUB_CLIENT_ID",
       required: false,
       sensitive: true,
-      description: 'GitHub OAuth client ID'
+      description: "GitHub OAuth client ID",
     },
     {
-      name: 'GITHUB_CLIENT_SECRET',
+      name: "GITHUB_CLIENT_SECRET",
       required: false,
       sensitive: true,
-      description: 'GitHub OAuth client secret'
+      description: "GitHub OAuth client secret",
     },
     {
-      name: 'TWITTER_CLIENT_ID',
+      name: "TWITTER_CLIENT_ID",
       required: false,
       sensitive: true,
-      description: 'Twitter/X OAuth 2.0 client ID'
+      description: "Twitter/X OAuth 2.0 client ID",
     },
     {
-      name: 'TWITTER_CLIENT_SECRET',
+      name: "TWITTER_CLIENT_SECRET",
       required: false,
       sensitive: true,
-      description: 'Twitter/X OAuth 2.0 client secret'
+      description: "Twitter/X OAuth 2.0 client secret",
     },
     {
-      name: 'APPLE_CLIENT_ID',
+      name: "APPLE_CLIENT_ID",
       required: false,
       sensitive: true,
-      description: 'Apple OAuth client ID'
+      description: "Apple OAuth client ID",
     },
     {
-      name: 'APPLE_TEAM_ID',
+      name: "APPLE_TEAM_ID",
       required: false,
       sensitive: true,
-      description: 'Apple developer team ID'
+      description: "Apple developer team ID",
     },
     {
-      name: 'APPLE_KEY_ID',
+      name: "APPLE_KEY_ID",
       required: false,
       sensitive: true,
-      description: 'Apple OAuth key ID'
+      description: "Apple OAuth key ID",
     },
     {
-      name: 'APPLE_PRIVATE_KEY',
+      name: "APPLE_PRIVATE_KEY",
       required: false,
       sensitive: true,
-      description: 'Apple OAuth private key'
+      description: "Apple OAuth private key",
     },
     {
-      name: 'REPLIT_CLIENT_ID',
+      name: "REPLIT_CLIENT_ID",
       required: false,
       sensitive: true,
-      description: 'Replit OAuth client ID'
+      description: "Replit OAuth client ID",
     },
     {
-      name: 'REPLIT_CLIENT_SECRET',
+      name: "REPLIT_CLIENT_SECRET",
       required: false,
       sensitive: true,
-      description: 'Replit OAuth client secret'
-    }
+      description: "Replit OAuth client secret",
+    },
   ],
   ai: [
     {
-      name: 'OPENAI_API_KEY',
+      name: "OPENAI_API_KEY",
       required: false,
       sensitive: true,
-      description: 'OpenAI API key for chat features'
+      description: "OpenAI API key for chat features",
     },
     {
-      name: 'AI_INTEGRATIONS_OPENAI_API_KEY',
+      name: "AI_INTEGRATIONS_OPENAI_API_KEY",
       required: false,
       sensitive: true,
-      description: 'OpenAI API key via Replit AI integrations'
+      description: "OpenAI API key via Replit AI integrations",
     },
     {
-      name: 'AI_INTEGRATIONS_OPENAI_BASE_URL',
+      name: "AI_INTEGRATIONS_OPENAI_BASE_URL",
       required: false,
-      description: 'OpenAI base URL for Replit AI integrations'
-    }
+      description: "OpenAI base URL for Replit AI integrations",
+    },
   ],
   storage: [
     {
-      name: 'PUBLIC_OBJECT_SEARCH_PATHS',
+      name: "PUBLIC_OBJECT_SEARCH_PATHS",
       required: false,
-      description: 'Public object storage paths'
+      description: "Public object storage paths",
     },
     {
-      name: 'PRIVATE_OBJECT_DIR',
+      name: "PRIVATE_OBJECT_DIR",
       required: false,
-      description: 'Private object storage directory'
-    }
+      description: "Private object storage directory",
+    },
   ],
   stripe: [
     {
-      name: 'STRIPE_SECRET_KEY',
+      name: "STRIPE_SECRET_KEY",
       required: false,
       sensitive: true,
-      description: 'Stripe secret key for payments'
+      description: "Stripe secret key for payments",
     },
     {
-      name: 'STRIPE_WEBHOOK_SECRET',
+      name: "STRIPE_WEBHOOK_SECRET",
       required: false,
       sensitive: true,
-      description: 'Stripe webhook endpoint secret'
-    }
+      description: "Stripe webhook endpoint secret",
+    },
   ],
   push: [
     {
-      name: 'FCM_PROJECT_ID',
+      name: "FCM_PROJECT_ID",
       required: false,
-      description: 'Firebase Cloud Messaging project ID'
+      description: "Firebase Cloud Messaging project ID",
     },
     {
-      name: 'FCM_PRIVATE_KEY',
-      required: false,
-      sensitive: true,
-      description: 'Firebase service account private key'
-    },
-    {
-      name: 'FCM_CLIENT_EMAIL',
-      required: false,
-      description: 'Firebase service account email'
-    },
-    {
-      name: 'APNS_KEY_ID',
+      name: "FCM_PRIVATE_KEY",
       required: false,
       sensitive: true,
-      description: 'Apple Push Notification key ID'
+      description: "Firebase service account private key",
     },
     {
-      name: 'APNS_TEAM_ID',
+      name: "FCM_CLIENT_EMAIL",
       required: false,
-      description: 'Apple Push Notification team ID'
+      description: "Firebase service account email",
     },
     {
-      name: 'APNS_BUNDLE_ID',
+      name: "APNS_KEY_ID",
       required: false,
-      description: 'iOS app bundle identifier'
+      sensitive: true,
+      description: "Apple Push Notification key ID",
     },
     {
-      name: 'APNS_KEY_PATH',
+      name: "APNS_TEAM_ID",
       required: false,
-      description: 'Path to Apple Push Notification key file'
+      description: "Apple Push Notification team ID",
     },
     {
-      name: 'VAPID_PUBLIC_KEY',
+      name: "APNS_BUNDLE_ID",
+      required: false,
+      description: "iOS app bundle identifier",
+    },
+    {
+      name: "APNS_KEY_PATH",
+      required: false,
+      description: "Path to Apple Push Notification key file",
+    },
+    {
+      name: "VAPID_PUBLIC_KEY",
       required: false,
       sensitive: false,
-      description: 'VAPID public key for web push'
+      description: "VAPID public key for web push",
     },
     {
-      name: 'VAPID_PRIVATE_KEY',
+      name: "VAPID_PRIVATE_KEY",
       required: false,
       sensitive: true,
-      description: 'VAPID private key for web push'
-    }
+      description: "VAPID private key for web push",
+    },
   ],
   twilio: [
     {
-      name: 'TWILIO_ACCOUNT_SID',
+      name: "TWILIO_ACCOUNT_SID",
       required: false,
       sensitive: true,
-      description: 'Twilio account SID'
+      description: "Twilio account SID",
     },
     {
-      name: 'TWILIO_AUTH_TOKEN',
+      name: "TWILIO_AUTH_TOKEN",
       required: false,
       sensitive: true,
-      description: 'Twilio auth token'
+      description: "Twilio auth token",
     },
     {
-      name: 'TWILIO_PHONE_NUMBER',
+      name: "TWILIO_PHONE_NUMBER",
       required: false,
-      description: 'Twilio phone number for SMS'
-    }
-  ]
+      description: "Twilio phone number for SMS",
+    },
+  ],
 };
 
 /**
@@ -260,20 +260,22 @@ export function validateEnvironment(): ValidationResult {
     errors: [],
     warnings: [],
     missingRequired: [],
-    missingOptional: []
+    missingOptional: [],
   };
 
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
 
   for (const [category, configs] of Object.entries(ENV_CONFIGS)) {
     for (const config of configs) {
       const value = process.env[config.name];
 
       // Check if variable exists
-      if (!value || value.trim() === '') {
+      if (!value || value.trim() === "") {
         if (config.required) {
           result.valid = false;
-          result.errors.push(`Missing required environment variable: ${config.name} (${config.description || category})`);
+          result.errors.push(
+            `Missing required environment variable: ${config.name} (${config.description || category})`,
+          );
           result.missingRequired.push(config.name);
         } else {
           // Apply default value for non-sensitive optional variables
@@ -289,33 +291,41 @@ export function validateEnvironment(): ValidationResult {
       // Check for placeholder values in production
       if (isProduction && config.sensitive) {
         const lowerValue = value.toLowerCase();
-        if (lowerValue.includes('placeholder') || 
-            lowerValue.includes('not-needed') ||
-            lowerValue === 'test' ||
-            lowerValue === 'demo') {
+        if (
+          lowerValue.includes("placeholder") ||
+          lowerValue.includes("not-needed") ||
+          lowerValue === "test" ||
+          lowerValue === "demo"
+        ) {
           result.valid = false;
-          result.errors.push(`Invalid placeholder value for ${config.name} in production`);
+          result.errors.push(
+            `Invalid placeholder value for ${config.name} in production`,
+          );
         }
       }
 
       // Run custom validator if provided
       if (config.validator && !config.validator(value)) {
         result.valid = false;
-        result.errors.push(`Invalid value for ${config.name}: ${config.description || 'validation failed'}`);
+        result.errors.push(
+          `Invalid value for ${config.name}: ${config.description || "validation failed"}`,
+        );
       }
     }
   }
 
   // Generate warnings for missing optional sensitive variables
   if (result.missingOptional.length > 0) {
-    const sensitiveOptional = result.missingOptional.filter(name => 
-      Object.values(ENV_CONFIGS).some(configs => 
-        configs.find(c => c.name === name && c.sensitive)
-      )
+    const sensitiveOptional = result.missingOptional.filter((name) =>
+      Object.values(ENV_CONFIGS).some((configs) =>
+        configs.find((c) => c.name === name && c.sensitive),
+      ),
     );
-    
+
     if (sensitiveOptional.length > 0) {
-      result.warnings.push(`Optional sensitive variables not configured: ${sensitiveOptional.join(', ')}`);
+      result.warnings.push(
+        `Optional sensitive variables not configured: ${sensitiveOptional.join(", ")}`,
+      );
     }
   }
 
@@ -328,25 +338,27 @@ export function validateEnvironment(): ValidationResult {
  */
 export function getSafeEnvVar(name: string): string | undefined {
   const value = process.env[name];
-  
+
   if (!value) return undefined;
-  
+
   // Check if this is a sensitive variable
   const config = Object.values(ENV_CONFIGS)
     .flat()
-    .find(c => c.name === name);
-  
+    .find((c) => c.name === name);
+
   if (config?.sensitive) {
     const lowerValue = value.toLowerCase();
-    if (lowerValue.includes('placeholder') || 
-        lowerValue.includes('not-needed') ||
-        lowerValue === 'test' ||
-        lowerValue === 'demo' ||
-        value === '') {
+    if (
+      lowerValue.includes("placeholder") ||
+      lowerValue.includes("not-needed") ||
+      lowerValue === "test" ||
+      lowerValue === "demo" ||
+      value === ""
+    ) {
       return undefined;
     }
   }
-  
+
   return value;
 }
 
@@ -356,13 +368,15 @@ export function getSafeEnvVar(name: string): string | undefined {
  */
 export function initializeEnvironment(): void {
   const validation = validateEnvironment();
-  
+
   if (!validation.valid) {
-    console.error('❌ Environment validation failed:');
-    validation.errors.forEach(error => console.error(`   - ${error}`));
-    
-    if (process.env.NODE_ENV === 'production') {
-      console.error('\n⚠️  Cannot start application in production with invalid environment');
+    console.error("❌ Environment validation failed:");
+    validation.errors.forEach((error) => console.error(`   - ${error}`));
+
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "\n⚠️  Cannot start application in production with invalid environment",
+      );
       process.exit(1);
     }
   }

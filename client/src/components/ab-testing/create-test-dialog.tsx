@@ -1,14 +1,31 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -33,7 +50,11 @@ interface FormData {
   targetSampleSize?: number;
 }
 
-export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTestDialogProps) {
+export default function CreateTestDialog({
+  open,
+  onClose,
+  onSuccess,
+}: CreateTestDialogProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<FormData>>({
     testName: "",
@@ -42,7 +63,7 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
     startDate: new Date(),
     endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
     status: "draft",
-    targetSampleSize: 1000
+    targetSampleSize: 1000,
   });
 
   const createTest = useMutation({
@@ -67,8 +88,12 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.testName || !formData.variantAName || !formData.variantBName) {
+
+    if (
+      !formData.testName ||
+      !formData.variantAName ||
+      !formData.variantBName
+    ) {
       toast({
         title: "Validation error",
         description: "Please fill in all required fields",
@@ -90,14 +115,16 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
       configuration: {
         controlGroup: {
           size: 0.5,
-          features: { name: formData.variantAName }
+          features: { name: formData.variantAName },
         },
-        variants: [{
-          name: formData.variantBName,
-          size: 0.5,
-          features: {}
-        }]
-      }
+        variants: [
+          {
+            name: formData.variantBName,
+            size: 0.5,
+            features: {},
+          },
+        ],
+      },
     };
 
     createTest.mutate(testData);
@@ -121,7 +148,9 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 id="name"
                 placeholder="e.g., Homepage CTA Button Test"
                 value={formData.testName}
-                onChange={(e) => setFormData({ ...formData, testName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, testName: e.target.value })
+                }
                 data-testid="input-test-name"
               />
             </div>
@@ -133,7 +162,9 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                   id="variantA"
                   placeholder="e.g., Blue button"
                   value={formData.variantAName}
-                  onChange={(e) => setFormData({ ...formData, variantAName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, variantAName: e.target.value })
+                  }
                   data-testid="input-variant-a"
                 />
               </div>
@@ -143,7 +174,9 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                   id="variantB"
                   placeholder="e.g., Green button"
                   value={formData.variantBName}
-                  onChange={(e) => setFormData({ ...formData, variantBName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, variantBName: e.target.value })
+                  }
                   data-testid="input-variant-b"
                 />
               </div>
@@ -155,10 +188,12 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 id="hypothesis"
                 placeholder="e.g., Changing the button color to green will increase click-through rate by 10%"
                 value={formData.hypothesis}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  hypothesis: e.target.value 
-                })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    hypothesis: e.target.value,
+                  })
+                }
                 data-testid="textarea-hypothesis"
               />
             </div>
@@ -172,19 +207,28 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                       variant="outline"
                       className={cn(
                         "justify-start text-left font-normal",
-                        !formData.startDate && "text-muted-foreground"
+                        !formData.startDate && "text-muted-foreground",
                       )}
                       data-testid="button-start-date"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.startDate ? format(formData.startDate, "PPP") : <span>Pick a date</span>}
+                      {formData.startDate ? (
+                        format(formData.startDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.startDate}
-                      onSelect={(date) => setFormData({ ...formData, startDate: date || new Date() })}
+                      onSelect={(date) =>
+                        setFormData({
+                          ...formData,
+                          startDate: date || new Date(),
+                        })
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -199,19 +243,28 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                       variant="outline"
                       className={cn(
                         "justify-start text-left font-normal",
-                        !formData.endDate && "text-muted-foreground"
+                        !formData.endDate && "text-muted-foreground",
                       )}
                       data-testid="button-end-date"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.endDate ? format(formData.endDate, "PPP") : <span>Pick a date</span>}
+                      {formData.endDate ? (
+                        format(formData.endDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.endDate}
-                      onSelect={(date) => setFormData({ ...formData, endDate: date || new Date() })}
+                      onSelect={(date) =>
+                        setFormData({
+                          ...formData,
+                          endDate: date || new Date(),
+                        })
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -222,9 +275,19 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => setFormData({ ...formData, status: value as "draft" | "running" | "paused" | "completed" | "cancelled" })}
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      status: value as
+                        | "draft"
+                        | "running"
+                        | "paused"
+                        | "completed"
+                        | "cancelled",
+                    })
+                  }
                 >
                   <SelectTrigger id="status" data-testid="select-status">
                     <SelectValue />
@@ -245,10 +308,12 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                   min="100"
                   step="100"
                   value={formData.targetSampleSize}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    targetSampleSize: parseInt(e.target.value) 
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      targetSampleSize: parseInt(e.target.value),
+                    })
+                  }
                   data-testid="input-sample-size"
                 />
               </div>
@@ -259,8 +324,14 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createTest.isPending} data-testid="button-submit">
-              {createTest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button
+              type="submit"
+              disabled={createTest.isPending}
+              data-testid="button-submit"
+            >
+              {createTest.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Create Test
             </Button>
           </DialogFooter>

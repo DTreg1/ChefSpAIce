@@ -1,7 +1,14 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, TrendingUp, Clock, User, ChevronRight, Star } from "lucide-react";
+import {
+  Sparkles,
+  TrendingUp,
+  Clock,
+  User,
+  ChevronRight,
+  Star,
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface ContentCardProps {
@@ -33,7 +40,7 @@ export const ContentCard = ({
   metadata,
   onClick,
   className = "",
-  showSimilarity = true
+  showSimilarity = true,
 }: ContentCardProps) => {
   const formatScore = (score: number) => {
     return `${Math.round(score * 100)}%`;
@@ -46,7 +53,9 @@ export const ContentCard = ({
     return "bg-gray-400";
   };
 
-  const getSimilarityBadgeVariant = (score: number): "default" | "secondary" | "outline" => {
+  const getSimilarityBadgeVariant = (
+    score: number,
+  ): "default" | "secondary" | "outline" => {
     if (score >= 0.9) return "default";
     if (score >= 0.8) return "secondary";
     return "outline";
@@ -55,16 +64,16 @@ export const ContentCard = ({
   const formatDate = (dateString: string | undefined) => {
     // Guard against undefined or empty dates
     if (!dateString) return "Unknown";
-    
+
     const date = new Date(dateString);
-    
+
     // Guard against invalid dates
     if (isNaN(date.getTime())) return "Unknown";
-    
+
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -74,7 +83,7 @@ export const ContentCard = ({
   };
 
   return (
-    <Card 
+    <Card
       className={`group cursor-pointer hover-elevate transition-all duration-200 overflow-hidden ${className}`}
       onClick={onClick}
       data-testid={`content-card-${id}`}
@@ -89,7 +98,7 @@ export const ContentCard = ({
           />
         </div>
       )}
-      
+
       <CardHeader className="pb-3">
         <div className="space-y-2">
           {/* Type and Category badges */}
@@ -103,7 +112,7 @@ export const ContentCard = ({
               </Badge>
             )}
             {showSimilarity && similarityScore !== undefined && (
-              <Badge 
+              <Badge
                 variant={getSimilarityBadgeVariant(similarityScore)}
                 className="text-xs"
               >
@@ -132,9 +141,10 @@ export const ContentCard = ({
                 <span>{metadata.readTime} min read</span>
               </div>
             )}
-            {metadata?.publishedAt && formatDate(metadata.publishedAt) !== "Unknown" && (
-              <span>{formatDate(metadata.publishedAt)}</span>
-            )}
+            {metadata?.publishedAt &&
+              formatDate(metadata.publishedAt) !== "Unknown" && (
+                <span>{formatDate(metadata.publishedAt)}</span>
+              )}
           </div>
         </div>
       </CardHeader>
@@ -150,7 +160,7 @@ export const ContentCard = ({
         {/* Tags */}
         {metadata?.tags && metadata.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {metadata.tags.slice(0, 3).map(tag => (
+            {metadata.tags.slice(0, 3).map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs">
                 {tag}
               </Badge>
@@ -170,8 +180,8 @@ export const ContentCard = ({
               <Star
                 key={i}
                 className={`h-3 w-3 ${
-                  i < Math.floor(metadata.rating || 0) 
-                    ? "fill-yellow-400 text-yellow-400" 
+                  i < Math.floor(metadata.rating || 0)
+                    ? "fill-yellow-400 text-yellow-400"
                     : "text-gray-300"
                 }`}
               />
@@ -187,19 +197,18 @@ export const ContentCard = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Relevance</span>
-              <span className="font-medium">{formatScore(similarityScore)}</span>
+              <span className="font-medium">
+                {formatScore(similarityScore)}
+              </span>
             </div>
-            <Progress 
-              value={(similarityScore || 0) * 100} 
-              className="h-1.5"
-            />
+            <Progress value={(similarityScore || 0) * 100} className="h-1.5" />
           </div>
         )}
 
         {/* Action Button */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="w-full group-hover:bg-primary/10"
           onClick={(e) => {
             e.stopPropagation();

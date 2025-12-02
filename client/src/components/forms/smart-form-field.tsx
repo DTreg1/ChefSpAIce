@@ -1,9 +1,9 @@
 /**
  * SmartFormField Component
- * 
+ *
  * Intelligent form field wrapper that adds ML-powered auto-completion
  * to any form field. Integrates with react-hook-form and shadcn/ui.
- * 
+ *
  * Features:
  * - Seamless integration with existing forms
  * - Automatic context detection
@@ -46,7 +46,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface SmartFormFieldProps<
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > {
   control: Control<TFieldValues>;
   name: TName;
@@ -67,7 +67,7 @@ interface SmartFormFieldProps<
 
 export function SmartFormField<
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
   control,
   name,
@@ -85,17 +85,21 @@ export function SmartFormField<
   autoFocus = false,
   required = false,
 }: SmartFormFieldProps<TFieldValues, TName>) {
-  const [autoCompleteEnabled, setAutoCompleteEnabled] = useState(enableAutoComplete);
+  const [autoCompleteEnabled, setAutoCompleteEnabled] =
+    useState(enableAutoComplete);
   const [learningEnabled, setLearningEnabled] = useState(enableLearning);
   const [showHistory, setShowHistory] = useState(false);
 
   // Clear field history
   const { mutate: clearHistory } = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/autocomplete/history?fieldName=${name}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/api/autocomplete/history?fieldName=${name}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to clear history");
@@ -137,7 +141,8 @@ export function SmartFormField<
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="text-xs">
-                          Smart suggestions enabled based on your history and patterns
+                          Smart suggestions enabled based on your history and
+                          patterns
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -145,7 +150,7 @@ export function SmartFormField<
                 )}
               </FormLabel>
             )}
-            
+
             <div className="flex items-center gap-2">
               {showPrivacyToggle && (
                 <TooltipProvider>
@@ -171,7 +176,7 @@ export function SmartFormField<
                   </Tooltip>
                 </TooltipProvider>
               )}
-              
+
               {showHistoryButton && (
                 <TooltipProvider>
                   <Tooltip>
@@ -195,7 +200,7 @@ export function SmartFormField<
               )}
             </div>
           </div>
-          
+
           <FormControl>
             {autoCompleteEnabled ? (
               <AutoCompleteInput
@@ -222,17 +227,15 @@ export function SmartFormField<
               />
             )}
           </FormControl>
-          
+
           {description && <FormDescription>{description}</FormDescription>}
-          
+
           <FormMessage />
-          
+
           {autoCompleteEnabled && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Sparkles className="h-3 w-3" />
-              <span>
-                Press Tab or Enter to accept suggestions
-              </span>
+              <span>Press Tab or Enter to accept suggestions</span>
             </div>
           )}
         </FormItem>
@@ -243,7 +246,7 @@ export function SmartFormField<
 
 /**
  * FormMemoryToggle Component
- * 
+ *
  * Global toggle for form memory/auto-completion features
  */
 export function FormMemoryToggle({
@@ -272,8 +275,8 @@ export function FormMemoryToggle({
           </TooltipTrigger>
           <TooltipContent>
             <p className="max-w-xs text-xs">
-              When enabled, forms will remember your previous inputs and suggest them
-              as you type. Your data is stored securely and never shared.
+              When enabled, forms will remember your previous inputs and suggest
+              them as you type. Your data is stored securely and never shared.
             </p>
           </TooltipContent>
         </Tooltip>
@@ -284,7 +287,7 @@ export function FormMemoryToggle({
 
 /**
  * AutoFillAllButton Component
- * 
+ *
  * Button to auto-fill all form fields with smart suggestions
  */
 export function AutoFillAllButton({

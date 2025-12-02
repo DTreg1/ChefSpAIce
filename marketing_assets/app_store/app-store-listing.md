@@ -1,14 +1,17 @@
 # App Store Listing Content
 
 ## App Name
+
 ChefSpAIce - Smart Kitchen AI
 
 ## Subtitle (30 characters)
+
 Your AI-Powered Kitchen Helper
 
 ## App Store Description
 
 ### Short Description (80 characters)
+
 AI chef that knows what's in your fridge. Reduce waste, save money, eat better.
 
 ### Full Description
@@ -31,6 +34,7 @@ Powered by the USDA nutritional database, track calories, macros, and micronutri
 Plan your week with AI-suggested meals based on your schedule, preferences, and what's already in your kitchen. Generate shopping lists with one tap.
 
 **KEY FEATURES:**
+
 - Conversational AI chef assistant
 - Barcode scanner for instant product recognition
 - Recipe customization (servings, time, difficulty)
@@ -42,6 +46,7 @@ Plan your week with AI-suggested meals based on your schedule, preferences, and 
 - Multi-language support
 
 **PERFECT FOR:**
+
 - Busy professionals seeking meal efficiency
 - Health-conscious individuals tracking nutrition
 - Families reducing grocery expenses
@@ -49,6 +54,7 @@ Plan your week with AI-suggested meals based on your schedule, preferences, and 
 - Cooking beginners learning new skills
 
 **SUBSCRIPTION OPTIONS:**
+
 - Free: Basic inventory tracking and 10 AI recipes/month
 - Premium ($9.99/month): Unlimited AI recipes, meal planning, nutrition insights
 - Family ($14.99/month): Up to 6 accounts, shared lists, collaborative planning
@@ -56,20 +62,26 @@ Plan your week with AI-suggested meals based on your schedule, preferences, and 
 Join thousands who've revolutionized their cooking routine. Download ChefSpAIce today and let AI transform your kitchen experience.
 
 ## Keywords
+
 AI cooking, recipe generator, food inventory, meal planner, nutrition tracker, barcode scanner, smart kitchen, food waste, recipe app, cooking assistant, pantry manager, grocery list, meal prep, diet tracker, kitchen AI
 
 ## Categories
+
 Primary: Food & Drink
 Secondary: Health & Fitness
 
 ## Age Rating
+
 4+
 
 ## Privacy Policy URL
+
 https://chefspaice.app/privacy
 
 ## Support URL
+
 https://chefspaice.app/support
 
 ## Marketing URL
+
 https://chefspaice.app

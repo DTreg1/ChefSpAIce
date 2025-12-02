@@ -11,25 +11,27 @@ All appliance-related methods return empty arrays or stub objects because the ap
 ## Methods to Implement
 
 ### Appliance Library (Admin/System)
-| Method | Description |
-|--------|-------------|
-| `getAppliances()` | Get all appliances from library |
-| `getApplianceCategories()` | Get unique categories |
-| `getApplianceLibrary()` | Alias for getAppliances |
-| `getApplianceLibraryByCategory(category)` | Filter library by category |
-| `searchApplianceLibrary(query)` | Search appliances by name |
-| `createAppliance(appliance)` | Add to library (admin) |
-| `updateAppliance(id, data)` | Update library entry (admin) |
-| `deleteAppliance(id)` | Remove from library (admin) |
+
+| Method                                    | Description                     |
+| ----------------------------------------- | ------------------------------- |
+| `getAppliances()`                         | Get all appliances from library |
+| `getApplianceCategories()`                | Get unique categories           |
+| `getApplianceLibrary()`                   | Alias for getAppliances         |
+| `getApplianceLibraryByCategory(category)` | Filter library by category      |
+| `searchApplianceLibrary(query)`           | Search appliances by name       |
+| `createAppliance(appliance)`              | Add to library (admin)          |
+| `updateAppliance(id, data)`               | Update library entry (admin)    |
+| `deleteAppliance(id)`                     | Remove from library (admin)     |
 
 ### User Appliances
-| Method | Description |
-|--------|-------------|
-| `getUserAppliances(userId)` | Get user's appliances |
-| `getUserAppliancesByCategory(userId, category)` | Filter by category |
-| `addUserAppliance(userId, applianceId)` | Add appliance to user |
+
+| Method                                           | Description             |
+| ------------------------------------------------ | ----------------------- |
+| `getUserAppliances(userId)`                      | Get user's appliances   |
+| `getUserAppliancesByCategory(userId, category)`  | Filter by category      |
+| `addUserAppliance(userId, applianceId)`          | Add appliance to user   |
 | `updateUserAppliance(userId, applianceId, data)` | Update user's appliance |
-| `deleteUserAppliance(userId, applianceId)` | Remove from user |
+| `deleteUserAppliance(userId, applianceId)`       | Remove from user        |
 
 ---
 
@@ -86,18 +88,18 @@ const applianceLibrarySeed = [
   { name: 'Instant Pot', category: 'cooking', description: 'Multi-function pressure cooker', features: ['pressure-cook', 'slow-cook', 'sauté', 'steam'] },
   { name: 'Toaster Oven', category: 'cooking', description: 'Countertop oven', features: ['toast', 'bake', 'broil'] },
   { name: 'Grill', category: 'cooking', description: 'Indoor or outdoor grill', features: ['grill', 'sear'] },
-  
+
   // Refrigeration
   { name: 'Refrigerator', category: 'refrigeration', description: 'Main refrigerator', features: ['cool', 'crisper'] },
   { name: 'Freezer', category: 'refrigeration', description: 'Standalone freezer', features: ['freeze', 'deep-freeze'] },
-  
+
   // Prep
   { name: 'Food Processor', category: 'prep', description: 'Multi-blade food processor', features: ['chop', 'slice', 'shred', 'puree'] },
   { name: 'Blender', category: 'prep', description: 'High-speed blender', features: ['blend', 'puree', 'crush'] },
   { name: 'Stand Mixer', category: 'prep', description: 'Kitchen stand mixer', features: ['mix', 'knead', 'whip'] },
   { name: 'Hand Mixer', category: 'prep', description: 'Electric hand mixer', features: ['mix', 'whip'] },
   { name: 'Immersion Blender', category: 'prep', description: 'Stick blender', features: ['blend', 'puree'] },
-  
+
   // Small appliances
   { name: 'Coffee Maker', category: 'small', description: 'Drip coffee maker', features: ['brew', 'keep-warm'] },
   { name: 'Espresso Machine', category: 'small', description: 'Espresso and cappuccino maker', features: ['espresso', 'steam'] },

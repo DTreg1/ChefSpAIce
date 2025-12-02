@@ -138,10 +138,11 @@ export default function Onboarding() {
     });
 
   // Fetch common equipment from API
-  const { data: commonEquipment, isLoading: equipmentLoading } =
-    useQuery<ApplianceLibrary[]>({
-      queryKey: [API_ENDPOINTS.appliances.libraryCommon],
-    });
+  const { data: commonEquipment, isLoading: equipmentLoading } = useQuery<
+    ApplianceLibrary[]
+  >({
+    queryKey: [API_ENDPOINTS.appliances.libraryCommon],
+  });
 
   // Set all items as selected by default when data loads
   useEffect(() => {
@@ -212,7 +213,9 @@ export default function Onboarding() {
       toast({
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to save preferences. Please try again.",
+          error instanceof Error
+            ? error.message
+            : "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
     },
@@ -301,7 +304,11 @@ export default function Onboarding() {
   return (
     <div className="h-screen bg-black/80 p-4 py-8 overflow-hidden flex flex-col">
       <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col min-h-0">
-        <Card data-testid="card-onboarding" animate={false} className="flex flex-col min-h-0 max-h-full">
+        <Card
+          data-testid="card-onboarding"
+          animate={false}
+          className="flex flex-col min-h-0 max-h-full"
+        >
           <CardHeader className="text-center flex-shrink-0">
             <div className="flex justify-center mb-4">
               <ChefHat className="w-16 h-16 text-primary" />
@@ -394,7 +401,9 @@ export default function Onboarding() {
                 <div className="space-y-4">
                   <FormLabel>Select Your Kitchen Equipment</FormLabel>
                   <FormDescription>
-                    Select the appliances, cookware, and utensils you have available. This helps us suggest recipes tailored to your kitchen.
+                    Select the appliances, cookware, and utensils you have
+                    available. This helps us suggest recipes tailored to your
+                    kitchen.
                   </FormDescription>
                   {equipmentLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -403,58 +412,61 @@ export default function Onboarding() {
                   ) : commonEquipment && commonEquipment.length > 0 ? (
                     <div className="space-y-3">
                       {/* Group equipment by category */}
-                      {["cooking", "refrigeration", "prep", "small"].map((category) => {
-                        const categoryItems = commonEquipment.filter(
-                          (item) => item.category === category
-                        );
-                        if (categoryItems.length === 0) return null;
-                        
-                        const categoryIcons: Record<string, typeof Home> = {
-                          cooking: Home,
-                          refrigeration: Refrigerator,
-                          prep: Utensils,
-                          small: Package2,
-                        };
-                        const CategoryIcon = categoryIcons[category] || Package;
-                        
-                        const categoryLabels: Record<string, string> = {
-                          cooking: "Cooking Appliances",
-                          refrigeration: "Refrigeration",
-                          prep: "Prep Equipment",
-                          small: "Small Appliances",
-                        };
-                        
-                        return (
-                          <div key={category}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <CategoryIcon className="w-4 h-4 text-muted-foreground" />
-                              <h4 className="text-sm font-medium">
-                                {categoryLabels[category] || category}
-                              </h4>
+                      {["cooking", "refrigeration", "prep", "small"].map(
+                        (category) => {
+                          const categoryItems = commonEquipment.filter(
+                            (item) => item.category === category,
+                          );
+                          if (categoryItems.length === 0) return null;
+
+                          const categoryIcons: Record<string, typeof Home> = {
+                            cooking: Home,
+                            refrigeration: Refrigerator,
+                            prep: Utensils,
+                            small: Package2,
+                          };
+                          const CategoryIcon =
+                            categoryIcons[category] || Package;
+
+                          const categoryLabels: Record<string, string> = {
+                            cooking: "Cooking Appliances",
+                            refrigeration: "Refrigeration",
+                            prep: "Prep Equipment",
+                            small: "Small Appliances",
+                          };
+
+                          return (
+                            <div key={category}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <CategoryIcon className="w-4 h-4 text-muted-foreground" />
+                                <h4 className="text-sm font-medium">
+                                  {categoryLabels[category] || category}
+                                </h4>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {categoryItems.map((item) => (
+                                  <Badge
+                                    key={item.id}
+                                    variant={
+                                      selectedEquipment.includes(item.id)
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className="cursor-pointer hover-elevate active-elevate-2"
+                                    onClick={() => toggleEquipment(item.id)}
+                                    data-testid={`badge-equipment-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                  >
+                                    {item.name}
+                                    {selectedEquipment.includes(item.id) && (
+                                      <X className="w-3 h-3 ml-1" />
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {categoryItems.map((item) => (
-                                <Badge
-                                  key={item.id}
-                                  variant={
-                                    selectedEquipment.includes(item.id)
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  className="cursor-pointer hover-elevate active-elevate-2"
-                                  onClick={() => toggleEquipment(item.id)}
-                                  data-testid={`badge-equipment-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                                >
-                                  {item.name}
-                                  {selectedEquipment.includes(item.id) && (
-                                    <X className="w-3 h-3 ml-1" />
-                                  )}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        },
+                      )}
                     </div>
                   ) : (
                     <div className="text-center text-muted-foreground py-4">
@@ -463,7 +475,8 @@ export default function Onboarding() {
                   )}
                   {selectedEquipment.length > 0 && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      {selectedEquipment.length} item{selectedEquipment.length !== 1 ? "s" : ""} selected
+                      {selectedEquipment.length} item
+                      {selectedEquipment.length !== 1 ? "s" : ""} selected
                     </p>
                   )}
                 </div>

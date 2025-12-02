@@ -3,12 +3,32 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Search, Loader2, AlertTriangle, Merge, Copy, Trash2 } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  AlertTriangle,
+  Merge,
+  Copy,
+  Trash2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DuplicatePair {
@@ -17,7 +37,7 @@ interface DuplicatePair {
   contentId2: string;
   content1: any;
   content2: any;
-  contentType: 'recipe' | 'inventory';
+  contentType: "recipe" | "inventory";
   similarity: number;
   isResolved: boolean;
   resolutionAction?: string;
@@ -29,10 +49,17 @@ export function DuplicateDetection() {
   const { toast } = useToast();
 
   // Get duplicate pairs
-  const { data: duplicates, isLoading, refetch } = useQuery<DuplicatePair[]>({
+  const {
+    data: duplicates,
+    isLoading,
+    refetch,
+  } = useQuery<DuplicatePair[]>({
     queryKey: [API_ENDPOINTS.ml.duplicates.list],
     queryFn: async () => {
-      const response = await apiRequest(API_ENDPOINTS.ml.duplicates.list, 'GET');
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.duplicates.list,
+        "GET",
+      );
       return response;
     },
   });
@@ -41,7 +68,10 @@ export function DuplicateDetection() {
   const scanMutation = useMutation({
     mutationFn: async () => {
       setIsScanning(true);
-      const response = await apiRequest(API_ENDPOINTS.ml.duplicates.scan, 'POST');
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.duplicates.scan,
+        "POST",
+      );
       return response;
     },
     onSuccess: (data) => {
@@ -64,16 +94,24 @@ export function DuplicateDetection() {
 
   // Resolve duplicate mutation
   const resolveMutation = useMutation({
-    mutationFn: async ({ duplicateId, action, keepId }: {
+    mutationFn: async ({
+      duplicateId,
+      action,
+      keepId,
+    }: {
       duplicateId: string;
-      action: 'merge' | 'keep_both' | 'delete';
+      action: "merge" | "keep_both" | "delete";
       keepId?: string;
     }) => {
-      const response = await apiRequest(API_ENDPOINTS.ml.duplicates.resolve, 'POST', { 
-        duplicateId, 
-        action, 
-        keepId 
-      });
+      const response = await apiRequest(
+        API_ENDPOINTS.ml.duplicates.resolve,
+        "POST",
+        {
+          duplicateId,
+          action,
+          keepId,
+        },
+      );
       return response;
     },
     onSuccess: () => {
@@ -97,7 +135,10 @@ export function DuplicateDetection() {
     scanMutation.mutate();
   };
 
-  const handleResolve = (action: 'merge' | 'keep_both' | 'delete', keepId?: string) => {
+  const handleResolve = (
+    action: "merge" | "keep_both" | "delete",
+    keepId?: string,
+  ) => {
     if (!selectedPair) return;
     resolveMutation.mutate({
       duplicateId: selectedPair.id,
@@ -106,15 +147,17 @@ export function DuplicateDetection() {
     });
   };
 
-  const unresolvedCount = duplicates?.filter(d => !d.isResolved).length || 0;
+  const unresolvedCount = duplicates?.filter((d) => !d.isResolved).length || 0;
 
   const renderContentCard = (content: any, contentType: string) => {
     if (!content) return null;
-    
+
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-sm">{content.title || content.name || 'Unnamed'}</CardTitle>
+          <CardTitle className="text-sm">
+            {content.title || content.name || "Unnamed"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {content.description && (
@@ -124,20 +167,31 @@ export function DuplicateDetection() {
             <div>
               <strong>Ingredients:</strong>
               <ul className="list-disc list-inside mt-1">
-                {content.ingredients.slice(0, 3).map((ing: string, idx: number) => (
-                  <li key={idx} className="text-muted-foreground">{ing}</li>
-                ))}
+                {content.ingredients
+                  .slice(0, 3)
+                  .map((ing: string, idx: number) => (
+                    <li key={idx} className="text-muted-foreground">
+                      {ing}
+                    </li>
+                  ))}
                 {content.ingredients.length > 3 && (
-                  <li className="text-muted-foreground">...and {content.ingredients.length - 3} more</li>
+                  <li className="text-muted-foreground">
+                    ...and {content.ingredients.length - 3} more
+                  </li>
                 )}
               </ul>
             </div>
           )}
           {content.quantity && (
-            <p><strong>Quantity:</strong> {content.quantity} {content.unit}</p>
+            <p>
+              <strong>Quantity:</strong> {content.quantity} {content.unit}
+            </p>
           )}
           {content.expirationDate && (
-            <p><strong>Expires:</strong> {new Date(content.expirationDate).toLocaleDateString()}</p>
+            <p>
+              <strong>Expires:</strong>{" "}
+              {new Date(content.expirationDate).toLocaleDateString()}
+            </p>
           )}
           {content.createdAt && (
             <p className="text-xs text-muted-foreground">
@@ -181,7 +235,8 @@ export function DuplicateDetection() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            You have {unresolvedCount} unresolved duplicate{unresolvedCount !== 1 ? 's' : ''} that need attention.
+            You have {unresolvedCount} unresolved duplicate
+            {unresolvedCount !== 1 ? "s" : ""} that need attention.
           </AlertDescription>
         </Alert>
       )}
@@ -196,7 +251,8 @@ export function DuplicateDetection() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              No duplicates found. Click "Scan for Duplicates" to check for potential duplicates.
+              No duplicates found. Click "Scan for Duplicates" to check for
+              potential duplicates.
             </p>
           </CardContent>
         </Card>
@@ -204,42 +260,48 @@ export function DuplicateDetection() {
 
       {duplicates && duplicates.length > 0 && (
         <div className="space-y-4">
-          {duplicates.filter(d => !d.isResolved).map((pair) => (
-            <Card 
-              key={pair.id}
-              className="hover-elevate cursor-pointer"
-              onClick={() => setSelectedPair(pair)}
-              data-testid={`card-duplicate-${pair.id}`}
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Potential Duplicate {pair.contentType === 'recipe' ? 'Recipe' : 'Item'}
-                  </CardTitle>
-                  <Badge variant="secondary" data-testid={`badge-similarity-${pair.id}`}>
-                    {Math.round(pair.similarity * 100)}% Similar
-                  </Badge>
-                </div>
-                <CardDescription>
-                  {pair.content1?.title || pair.content1?.name || 'Item 1'} vs{' '}
-                  {pair.content2?.title || pair.content2?.name || 'Item 2'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPair(pair);
-                  }}
-                  data-testid={`button-view-details-${pair.id}`}
-                >
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {duplicates
+            .filter((d) => !d.isResolved)
+            .map((pair) => (
+              <Card
+                key={pair.id}
+                className="hover-elevate cursor-pointer"
+                onClick={() => setSelectedPair(pair)}
+                data-testid={`card-duplicate-${pair.id}`}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">
+                      Potential Duplicate{" "}
+                      {pair.contentType === "recipe" ? "Recipe" : "Item"}
+                    </CardTitle>
+                    <Badge
+                      variant="secondary"
+                      data-testid={`badge-similarity-${pair.id}`}
+                    >
+                      {Math.round(pair.similarity * 100)}% Similar
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    {pair.content1?.title || pair.content1?.name || "Item 1"} vs{" "}
+                    {pair.content2?.title || pair.content2?.name || "Item 2"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPair(pair);
+                    }}
+                    data-testid={`button-view-details-${pair.id}`}
+                  >
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       )}
 
@@ -251,24 +313,32 @@ export function DuplicateDetection() {
               Review the details and decide how to handle this duplicate.
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedPair && (
             <ScrollArea className="h-[500px] pr-4">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">Item 1</h4>
-                    {renderContentCard(selectedPair.content1, selectedPair.contentType)}
+                    {renderContentCard(
+                      selectedPair.content1,
+                      selectedPair.contentType,
+                    )}
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Item 2</h4>
-                    {renderContentCard(selectedPair.content2, selectedPair.contentType)}
+                    {renderContentCard(
+                      selectedPair.content2,
+                      selectedPair.contentType,
+                    )}
                   </div>
                 </div>
 
                 <div className="flex justify-center gap-2 pt-4 border-t">
                   <Button
-                    onClick={() => handleResolve('merge', selectedPair.contentId1)}
+                    onClick={() =>
+                      handleResolve("merge", selectedPair.contentId1)
+                    }
                     disabled={resolveMutation.isPending}
                     data-testid="button-merge-keep-first"
                   >
@@ -276,7 +346,9 @@ export function DuplicateDetection() {
                     Merge (Keep First)
                   </Button>
                   <Button
-                    onClick={() => handleResolve('merge', selectedPair.contentId2)}
+                    onClick={() =>
+                      handleResolve("merge", selectedPair.contentId2)
+                    }
                     disabled={resolveMutation.isPending}
                     variant="outline"
                     data-testid="button-merge-keep-second"
@@ -285,7 +357,7 @@ export function DuplicateDetection() {
                     Merge (Keep Second)
                   </Button>
                   <Button
-                    onClick={() => handleResolve('keep_both')}
+                    onClick={() => handleResolve("keep_both")}
                     disabled={resolveMutation.isPending}
                     variant="secondary"
                     data-testid="button-keep-both"
@@ -294,7 +366,9 @@ export function DuplicateDetection() {
                     Keep Both
                   </Button>
                   <Button
-                    onClick={() => handleResolve('delete', selectedPair.contentId2)}
+                    onClick={() =>
+                      handleResolve("delete", selectedPair.contentId2)
+                    }
                     disabled={resolveMutation.isPending}
                     variant="destructive"
                     data-testid="button-delete-duplicate"

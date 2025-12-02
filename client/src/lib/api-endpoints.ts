@@ -4,7 +4,7 @@
  * All endpoints use the new v1 API versioning
  */
 
-export const API_BASE = '/api/v1';
+export const API_BASE = "/api/v1";
 
 export const API_ENDPOINTS = {
   // User & Inventory endpoints
@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
     foodImages: `${API_BASE}/inventory/images`,
     onboardingItems: `${API_BASE}/inventory/common-items`,
   },
-  
+
   // Shopping List endpoints
   shoppingList: {
     list: `${API_BASE}/shopping-list`,
@@ -29,7 +29,7 @@ export const API_ENDPOINTS = {
     clearChecked: `${API_BASE}/shopping-list/clear-checked`,
     generateFromMealPlans: `${API_BASE}/shopping-list/generate-from-meal-plans`,
   },
-  
+
   // Barcode & Food Data endpoints
   barcode: {
     search: `${API_BASE}/barcodelookup`,
@@ -41,13 +41,13 @@ export const API_ENDPOINTS = {
       logs: `${API_BASE}/barcodelookup/usage/logs`,
     },
   },
-  
+
   fdc: {
     search: `${API_BASE}/fdc/search`,
     food: (fdcId: string) => `${API_BASE}/fdc/food/${fdcId}`,
     clearCache: `${API_BASE}/fdc/cache/clear`,
   },
-  
+
   // Recipe & Chat endpoints
   recipes: {
     list: `${API_BASE}/recipes`,
@@ -56,14 +56,14 @@ export const API_ENDPOINTS = {
     analyze: `${API_BASE}/recipes/analyze`,
     similar: `${API_BASE}/recipes/similar`,
   },
-  
+
   chat: {
     messages: `${API_BASE}/chat/messages`,
     clear: `${API_BASE}/chat/messages`,
     send: `${API_BASE}/chat`,
     stream: `${API_BASE}/chat/stream`,
   },
-  
+
   // Meal Planning endpoints
   mealPlans: {
     list: `${API_BASE}/meal-plans`,
@@ -72,7 +72,7 @@ export const API_ENDPOINTS = {
     update: (id: string) => `${API_BASE}/meal-plans/${id}`,
     delete: (id: string) => `${API_BASE}/meal-plans/${id}`,
   },
-  
+
   // AI Endpoints (Consolidated Router Structure)
   // New paths: /ai/content, /ai/analysis, /ai/media
   ai: {
@@ -103,10 +103,11 @@ export const API_ENDPOINTS = {
       conversations: {
         list: `${API_BASE}/ai/content/conversations`,
         create: `${API_BASE}/ai/content/conversations`,
-        messages: (id: string) => `${API_BASE}/ai/content/conversations/${id}/messages`,
+        messages: (id: string) =>
+          `${API_BASE}/ai/content/conversations/${id}/messages`,
       },
     },
-    
+
     // Analysis Router - Sentiment, trends, predictions, insights, recommendations
     analysis: {
       sentiment: `${API_BASE}/ai/analysis/sentiment`,
@@ -116,7 +117,8 @@ export const API_ENDPOINTS = {
         analyze: `${API_BASE}/ai/analysis/trends/analyze`,
       },
       predictions: {
-        user: (userId: string) => `${API_BASE}/ai/analysis/predict/user/${userId}`,
+        user: (userId: string) =>
+          `${API_BASE}/ai/analysis/predict/user/${userId}`,
         churn: `${API_BASE}/ai/analysis/predict/churn`,
         segments: `${API_BASE}/ai/analysis/predict/segments`,
       },
@@ -128,7 +130,8 @@ export const API_ENDPOINTS = {
         explain: `${API_BASE}/ai/analysis/insights/explain`,
       },
       recommendations: {
-        user: (userId: string) => `${API_BASE}/ai/analysis/recommendations/user/${userId}`,
+        user: (userId: string) =>
+          `${API_BASE}/ai/analysis/recommendations/user/${userId}`,
       },
       query: {
         natural: `${API_BASE}/ai/analysis/query/natural`,
@@ -136,7 +139,7 @@ export const API_ENDPOINTS = {
         history: `${API_BASE}/ai/analysis/query/history`,
       },
     },
-    
+
     // Media Router - Images, vision (OCR, faces, alt-text), voice
     media: {
       images: {
@@ -162,17 +165,22 @@ export const API_ENDPOINTS = {
           generate: `${API_BASE}/ai/media/vision/alt-text`,
           bulk: `${API_BASE}/ai/media/vision/alt-text/bulk`,
           update: (id: string) => `${API_BASE}/ai/media/vision/alt-text/${id}`,
-          suggestions: (id: string) => `${API_BASE}/ai/media/vision/alt-text/${id}/suggestions`,
+          suggestions: (id: string) =>
+            `${API_BASE}/ai/media/vision/alt-text/${id}/suggestions`,
         },
       },
       voice: {
         transcribe: `${API_BASE}/ai/media/voice/transcribe`,
         transcriptions: {
           list: `${API_BASE}/ai/media/voice/transcriptions`,
-          get: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
-          edit: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/edit`,
-          export: (id: string, format: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/export?format=${format}`,
-          delete: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
+          get: (id: string) =>
+            `${API_BASE}/ai/media/voice/transcriptions/${id}`,
+          edit: (id: string) =>
+            `${API_BASE}/ai/media/voice/transcriptions/${id}/edit`,
+          export: (id: string, format: string) =>
+            `${API_BASE}/ai/media/voice/transcriptions/${id}/export?format=${format}`,
+          delete: (id: string) =>
+            `${API_BASE}/ai/media/voice/transcriptions/${id}`,
           search: `${API_BASE}/ai/media/voice/transcriptions/search`,
         },
         commands: {
@@ -184,7 +192,7 @@ export const API_ENDPOINTS = {
         stats: `${API_BASE}/ai/media/voice/stats`,
       },
     },
-    
+
     // Legacy aliases for backward compatibility
     // These paths still work but prefer the new structured paths above
     writing: {
@@ -213,7 +221,7 @@ export const API_ENDPOINTS = {
     transcribe: `${API_BASE}/ai/transcribe`,
     voiceCommands: `${API_BASE}/ai/voice/commands`,
   },
-  
+
   // Nutrition endpoints
   nutrition: {
     data: `${API_BASE}/nutrition-data`,
@@ -221,16 +229,16 @@ export const API_ENDPOINTS = {
     goals: `${API_BASE}/nutrition/goals`,
     tracking: `${API_BASE}/nutrition/tracking`,
   },
-  
+
   // User & Auth endpoints (Note: auth uses /api without /v1 prefix for backward compat)
   auth: {
-    user: '/api/auth/user',
-    login: '/api/auth/login',
-    logout: '/api/auth/logout',
+    user: "/api/auth/user",
+    login: "/api/auth/login",
+    logout: "/api/auth/logout",
     callback: (provider: string) => `/api/auth/${provider}/callback`,
-    session: '/api/auth/session',
+    session: "/api/auth/session",
   },
-  
+
   users: {
     profile: `${API_BASE}/users/profile`,
     profilePicture: `${API_BASE}/profile/picture`,
@@ -238,7 +246,7 @@ export const API_ENDPOINTS = {
     updateProfile: `${API_BASE}/users/profile`,
     updatePreferences: `${API_BASE}/users/preferences`,
   },
-  
+
   // Admin endpoints
   admin: {
     users: `${API_BASE}/admin/users`,
@@ -263,7 +271,7 @@ export const API_ENDPOINTS = {
     tickets: `${API_BASE}/admin/tickets`,
     seed: `${API_BASE}/admin/seed`,
   },
-  
+
   // Platform & Analytics endpoints
   analytics: {
     events: `${API_BASE}/analytics/events`,
@@ -275,12 +283,12 @@ export const API_ENDPOINTS = {
       end: `${API_BASE}/analytics/sessions/end`,
     },
   },
-  
+
   activityLogs: {
     list: `${API_BASE}/activity-logs`,
     search: `${API_BASE}/activity-logs/search`,
   },
-  
+
   notifications: {
     list: `${API_BASE}/notifications`,
     markRead: (id: string) => `${API_BASE}/notifications/${id}/read`,
@@ -295,7 +303,7 @@ export const API_ENDPOINTS = {
     unreadCount: `${API_BASE}/notifications/unread-count`,
     intelligent: `${API_BASE}/notifications/intelligent`,
   },
-  
+
   // Feedback endpoints
   feedback: {
     submit: `${API_BASE}/feedback`,
@@ -306,7 +314,7 @@ export const API_ENDPOINTS = {
       trends: `${API_BASE}/feedback/analytics/trends`,
     },
   },
-  
+
   // Appliances & Kitchen endpoints
   appliances: {
     list: `${API_BASE}/appliances`,
@@ -314,19 +322,19 @@ export const API_ENDPOINTS = {
     userAppliances: `${API_BASE}/user-appliances`,
     libraryCommon: `${API_BASE}/appliances/appliance-library/common`,
   },
-  
+
   cookingTerms: {
     search: `${API_BASE}/cooking-terms`,
     term: (id: string) => `${API_BASE}/cooking-terms/${id}`,
   },
-  
+
   // Forms & Utilities endpoints
   autocomplete: {
     suggestions: `${API_BASE}/autocomplete`,
     ingredients: `${API_BASE}/autocomplete/ingredients`,
     recipes: `${API_BASE}/autocomplete/recipes`,
   },
-  
+
   validation: {
     validate: `${API_BASE}/validation`,
     rules: `${API_BASE}/validation/rules`,
@@ -334,44 +342,46 @@ export const API_ENDPOINTS = {
     form: `${API_BASE}/validate/form`,
     learn: `${API_BASE}/validate/learn`,
   },
-  
+
   autosave: {
     save: `${API_BASE}/autosave`,
     recover: `${API_BASE}/autosave/recover`,
     draft: `${API_BASE}/autosave/draft`,
     patterns: `${API_BASE}/autosave/patterns`,
-    versions: (documentId: string) => `${API_BASE}/autosave/versions/${documentId}`,
+    versions: (documentId: string) =>
+      `${API_BASE}/autosave/versions/${documentId}`,
     typingEvent: `${API_BASE}/autosave/typing-event`,
     checkConflicts: `${API_BASE}/autosave/check-conflicts`,
-    restore: (documentId: string) => `${API_BASE}/autosave/restore?documentId=${documentId}`,
+    restore: (documentId: string) =>
+      `${API_BASE}/autosave/restore?documentId=${documentId}`,
   },
-  
+
   // Batch processing endpoints
   batch: {
     process: `${API_BASE}/batch`,
     status: (id: string) => `${API_BASE}/batch/${id}/status`,
     result: (id: string) => `${API_BASE}/batch/${id}/result`,
   },
-  
+
   // Scheduling endpoints
   scheduling: {
     schedules: `${API_BASE}/scheduling`,
     schedule: (id: string) => `${API_BASE}/scheduling/${id}`,
     create: `${API_BASE}/scheduling`,
   },
-  
+
   // Recommendations
   recommendations: {
     recipes: `${API_BASE}/recommendations/recipes`,
     ingredients: `${API_BASE}/recommendations/ingredients`,
     mealPlans: `${API_BASE}/recommendations/meal-plans`,
   },
-  
+
   // Natural Query
   naturalQuery: {
     search: `${API_BASE}/natural-query`,
   },
-  
+
   // ML/Categorization endpoints
   ml: {
     categorize: `${API_BASE}/ml/categorize`,
@@ -383,7 +393,8 @@ export const API_ENDPOINTS = {
     },
     content: {
       tags: (contentId: string) => `${API_BASE}/ml/content/${contentId}/tags`,
-      removeTag: (contentId: string, tagId: string) => `${API_BASE}/ml/content/${contentId}/tags/${tagId}`,
+      removeTag: (contentId: string, tagId: string) =>
+        `${API_BASE}/ml/content/${contentId}/tags/${tagId}`,
     },
     duplicates: {
       list: `${API_BASE}/ml/duplicates`,
@@ -394,7 +405,7 @@ export const API_ENDPOINTS = {
       uncategorized: `${API_BASE}/ml/stats/uncategorized`,
     },
   },
-  
+
   // Donations endpoints
   donations: {
     list: `${API_BASE}/donations`,
@@ -404,11 +415,11 @@ export const API_ENDPOINTS = {
     verify: `${API_BASE}/donations/verify`,
     stats: `${API_BASE}/donations/stats`,
   },
-  
+
   // Health & System endpoints
   health: `${API_BASE}/health`,
   info: `${API_BASE}/info`,
-  
+
   // Logging endpoints
   logs: `${API_BASE}/logs`,
 };
@@ -418,15 +429,23 @@ export const API_ENDPOINTS = {
  */
 export function buildQueryString(params: Record<string, any>): string {
   const filtered = Object.entries(params)
-    .filter(([_, value]) => value !== undefined && value !== null && value !== '')
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
-  
-  return filtered.length > 0 ? `?${filtered.join('&')}` : '';
+    .filter(
+      ([_, value]) => value !== undefined && value !== null && value !== "",
+    )
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+    );
+
+  return filtered.length > 0 ? `?${filtered.join("&")}` : "";
 }
 
 /**
  * Helper function to get full URL with query parameters
  */
-export function getApiUrl(endpoint: string, params?: Record<string, any>): string {
+export function getApiUrl(
+  endpoint: string,
+  params?: Record<string, any>,
+): string {
   return params ? `${endpoint}${buildQueryString(params)}` : endpoint;
 }

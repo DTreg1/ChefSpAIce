@@ -1,6 +1,6 @@
 /**
  * Storage Error Tests
- * 
+ *
  * Tests for the storage error classes and error handling utilities.
  * Covers:
  * - StorageError base class
@@ -11,8 +11,8 @@
  * - wrapDatabaseError utility
  */
 
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
+import { describe, it, beforeEach } from "node:test";
+import assert from "node:assert";
 import {
   StorageError,
   StorageNotFoundError,
@@ -23,154 +23,148 @@ import {
   isStorageError,
   wrapDatabaseError,
   type StorageErrorContext,
-} from '../errors/StorageError';
+} from "../errors/StorageError";
 
-describe('StorageError', () => {
+describe("StorageError", () => {
   const baseContext: StorageErrorContext = {
-    domain: 'test',
-    operation: 'testOperation',
-    entityId: 'test-id',
-    entityType: 'TestEntity',
+    domain: "test",
+    operation: "testOperation",
+    entityId: "test-id",
+    entityType: "TestEntity",
   };
 
-  describe('StorageError base class', () => {
-    it('should create error with message, code, and context', () => {
+  describe("StorageError base class", () => {
+    it("should create error with message, code, and context", () => {
       const error = new StorageError(
-        'Test error message',
+        "Test error message",
         StorageErrorCode.UNKNOWN,
-        baseContext
+        baseContext,
       );
 
-      assert.strictEqual(error.message, 'Test error message');
+      assert.strictEqual(error.message, "Test error message");
       assert.strictEqual(error.code, StorageErrorCode.UNKNOWN);
-      assert.strictEqual(error.name, 'StorageError');
+      assert.strictEqual(error.name, "StorageError");
       assert.deepStrictEqual(error.context, baseContext);
       assert.ok(error.timestamp instanceof Date);
     });
 
-    it('should include original error when provided', () => {
-      const originalError = new Error('Original error');
+    it("should include original error when provided", () => {
+      const originalError = new Error("Original error");
       const error = new StorageError(
-        'Wrapped error',
+        "Wrapped error",
         StorageErrorCode.UNKNOWN,
         baseContext,
-        originalError
+        originalError,
       );
 
       assert.strictEqual(error.originalError, originalError);
     });
 
-    it('should generate JSON representation', () => {
+    it("should generate JSON representation", () => {
       const error = new StorageError(
-        'Test error',
+        "Test error",
         StorageErrorCode.UNKNOWN,
-        baseContext
+        baseContext,
       );
 
       const json = error.toJSON();
-      assert.strictEqual(json.name, 'StorageError');
-      assert.strictEqual(json.message, 'Test error');
+      assert.strictEqual(json.name, "StorageError");
+      assert.strictEqual(json.message, "Test error");
       assert.strictEqual(json.code, StorageErrorCode.UNKNOWN);
       assert.deepStrictEqual(json.context, baseContext);
-      assert.ok(typeof json.timestamp === 'string');
+      assert.ok(typeof json.timestamp === "string");
     });
 
-    it('should generate user-friendly message', () => {
+    it("should generate user-friendly message", () => {
       const error = new StorageError(
-        'Database failed',
+        "Database failed",
         StorageErrorCode.UNKNOWN,
-        baseContext
+        baseContext,
       );
 
       const userMessage = error.toUserMessage();
-      assert.ok(userMessage.includes('testOperation'));
-      assert.ok(userMessage.includes('test'));
-      assert.ok(userMessage.includes('test-id'));
+      assert.ok(userMessage.includes("testOperation"));
+      assert.ok(userMessage.includes("test"));
+      assert.ok(userMessage.includes("test-id"));
     });
   });
 
-  describe('StorageNotFoundError', () => {
-    it('should create not found error with correct code', () => {
-      const error = new StorageNotFoundError(
-        'Entity not found',
-        baseContext
-      );
+  describe("StorageNotFoundError", () => {
+    it("should create not found error with correct code", () => {
+      const error = new StorageNotFoundError("Entity not found", baseContext);
 
       assert.strictEqual(error.code, StorageErrorCode.NOT_FOUND);
-      assert.strictEqual(error.name, 'StorageNotFoundError');
+      assert.strictEqual(error.name, "StorageNotFoundError");
     });
 
-    it('should be instance of StorageError', () => {
-      const error = new StorageNotFoundError('Not found', baseContext);
+    it("should be instance of StorageError", () => {
+      const error = new StorageNotFoundError("Not found", baseContext);
       assert.ok(error instanceof StorageError);
     });
   });
 
-  describe('StorageValidationError', () => {
-    it('should create validation error with invalid fields', () => {
-      const invalidFields = ['email', 'password'];
+  describe("StorageValidationError", () => {
+    it("should create validation error with invalid fields", () => {
+      const invalidFields = ["email", "password"];
       const error = new StorageValidationError(
-        'Validation failed',
+        "Validation failed",
         baseContext,
-        invalidFields
+        invalidFields,
       );
 
       assert.strictEqual(error.code, StorageErrorCode.VALIDATION_FAILED);
-      assert.strictEqual(error.name, 'StorageValidationError');
+      assert.strictEqual(error.name, "StorageValidationError");
       assert.deepStrictEqual(error.invalidFields, invalidFields);
     });
 
-    it('should include invalid fields in JSON representation', () => {
-      const invalidFields = ['email'];
+    it("should include invalid fields in JSON representation", () => {
+      const invalidFields = ["email"];
       const error = new StorageValidationError(
-        'Invalid email',
+        "Invalid email",
         baseContext,
-        invalidFields
+        invalidFields,
       );
 
       const json = error.toJSON();
       assert.deepStrictEqual(json.invalidFields, invalidFields);
     });
 
-    it('should default to empty array for invalid fields', () => {
+    it("should default to empty array for invalid fields", () => {
       const error = new StorageValidationError(
-        'Validation failed',
-        baseContext
+        "Validation failed",
+        baseContext,
       );
 
       assert.deepStrictEqual(error.invalidFields, []);
     });
   });
 
-  describe('StorageConnectionError', () => {
-    it('should create connection error with retryable flag', () => {
+  describe("StorageConnectionError", () => {
+    it("should create connection error with retryable flag", () => {
       const error = new StorageConnectionError(
-        'Connection refused',
+        "Connection refused",
         baseContext,
         undefined,
-        true
+        true,
       );
 
       assert.strictEqual(error.code, StorageErrorCode.CONNECTION_ERROR);
-      assert.strictEqual(error.name, 'StorageConnectionError');
+      assert.strictEqual(error.name, "StorageConnectionError");
       assert.strictEqual(error.isRetryable, true);
     });
 
-    it('should default isRetryable to true', () => {
-      const error = new StorageConnectionError(
-        'Connection lost',
-        baseContext
-      );
+    it("should default isRetryable to true", () => {
+      const error = new StorageConnectionError("Connection lost", baseContext);
 
       assert.strictEqual(error.isRetryable, true);
     });
 
-    it('should include isRetryable in JSON representation', () => {
+    it("should include isRetryable in JSON representation", () => {
       const error = new StorageConnectionError(
-        'Timeout',
+        "Timeout",
         baseContext,
         undefined,
-        false
+        false,
       );
 
       const json = error.toJSON();
@@ -178,168 +172,187 @@ describe('StorageError', () => {
     });
   });
 
-  describe('StorageConstraintError', () => {
-    it('should create unique constraint error', () => {
+  describe("StorageConstraintError", () => {
+    it("should create unique constraint error", () => {
       const error = new StorageConstraintError(
-        'Duplicate entry',
+        "Duplicate entry",
         baseContext,
-        'unique',
-        'users_email_unique'
+        "unique",
+        "users_email_unique",
       );
 
       assert.strictEqual(error.code, StorageErrorCode.UNIQUE_VIOLATION);
-      assert.strictEqual(error.constraintType, 'unique');
-      assert.strictEqual(error.constraintName, 'users_email_unique');
+      assert.strictEqual(error.constraintType, "unique");
+      assert.strictEqual(error.constraintName, "users_email_unique");
     });
 
-    it('should create foreign key constraint error', () => {
+    it("should create foreign key constraint error", () => {
       const error = new StorageConstraintError(
-        'Referenced record not found',
+        "Referenced record not found",
         baseContext,
-        'foreign_key'
+        "foreign_key",
       );
 
       assert.strictEqual(error.code, StorageErrorCode.FOREIGN_KEY_VIOLATION);
-      assert.strictEqual(error.constraintType, 'foreign_key');
+      assert.strictEqual(error.constraintType, "foreign_key");
     });
 
-    it('should create not null constraint error', () => {
+    it("should create not null constraint error", () => {
       const error = new StorageConstraintError(
-        'Required field missing',
+        "Required field missing",
         baseContext,
-        'not_null'
+        "not_null",
       );
 
       assert.strictEqual(error.code, StorageErrorCode.NULL_VIOLATION);
     });
 
-    it('should create check constraint error', () => {
+    it("should create check constraint error", () => {
       const error = new StorageConstraintError(
-        'Invalid value',
+        "Invalid value",
         baseContext,
-        'check'
+        "check",
       );
 
       assert.strictEqual(error.code, StorageErrorCode.CHECK_VIOLATION);
     });
 
-    it('should include constraint info in JSON representation', () => {
+    it("should include constraint info in JSON representation", () => {
       const error = new StorageConstraintError(
-        'Constraint violated',
+        "Constraint violated",
         baseContext,
-        'unique',
-        'test_constraint'
+        "unique",
+        "test_constraint",
       );
 
       const json = error.toJSON();
-      assert.strictEqual(json.constraintType, 'unique');
-      assert.strictEqual(json.constraintName, 'test_constraint');
+      assert.strictEqual(json.constraintType, "unique");
+      assert.strictEqual(json.constraintName, "test_constraint");
     });
   });
 
-  describe('isStorageError helper', () => {
-    it('should return true for StorageError instances', () => {
-      const error = new StorageError('Test', StorageErrorCode.UNKNOWN, baseContext);
+  describe("isStorageError helper", () => {
+    it("should return true for StorageError instances", () => {
+      const error = new StorageError(
+        "Test",
+        StorageErrorCode.UNKNOWN,
+        baseContext,
+      );
       assert.strictEqual(isStorageError(error), true);
     });
 
-    it('should return true for StorageError subclasses', () => {
-      assert.strictEqual(isStorageError(new StorageNotFoundError('Not found', baseContext)), true);
-      assert.strictEqual(isStorageError(new StorageValidationError('Invalid', baseContext)), true);
-      assert.strictEqual(isStorageError(new StorageConnectionError('Failed', baseContext)), true);
-      assert.strictEqual(isStorageError(new StorageConstraintError('Violated', baseContext)), true);
+    it("should return true for StorageError subclasses", () => {
+      assert.strictEqual(
+        isStorageError(new StorageNotFoundError("Not found", baseContext)),
+        true,
+      );
+      assert.strictEqual(
+        isStorageError(new StorageValidationError("Invalid", baseContext)),
+        true,
+      );
+      assert.strictEqual(
+        isStorageError(new StorageConnectionError("Failed", baseContext)),
+        true,
+      );
+      assert.strictEqual(
+        isStorageError(new StorageConstraintError("Violated", baseContext)),
+        true,
+      );
     });
 
-    it('should return false for regular errors', () => {
-      assert.strictEqual(isStorageError(new Error('Regular error')), false);
+    it("should return false for regular errors", () => {
+      assert.strictEqual(isStorageError(new Error("Regular error")), false);
     });
 
-    it('should return false for non-error values', () => {
-      assert.strictEqual(isStorageError('string'), false);
+    it("should return false for non-error values", () => {
+      assert.strictEqual(isStorageError("string"), false);
       assert.strictEqual(isStorageError(null), false);
       assert.strictEqual(isStorageError(undefined), false);
       assert.strictEqual(isStorageError({}), false);
     });
   });
 
-  describe('wrapDatabaseError helper', () => {
+  describe("wrapDatabaseError helper", () => {
     const context: StorageErrorContext = {
-      domain: 'test',
-      operation: 'testOp',
+      domain: "test",
+      operation: "testOp",
     };
 
-    it('should wrap connection errors', () => {
-      const originalError = new Error('ECONNREFUSED');
+    it("should wrap connection errors", () => {
+      const originalError = new Error("ECONNREFUSED");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConnectionError);
       assert.strictEqual(wrapped.code, StorageErrorCode.CONNECTION_ERROR);
     });
 
-    it('should wrap connection timeout errors', () => {
-      const originalError = new Error('connection timeout');
+    it("should wrap connection timeout errors", () => {
+      const originalError = new Error("connection timeout");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConnectionError);
     });
 
-    it('should wrap unique constraint violations', () => {
-      const originalError = new Error('unique constraint violated');
+    it("should wrap unique constraint violations", () => {
+      const originalError = new Error("unique constraint violated");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConstraintError);
       assert.strictEqual(wrapped.code, StorageErrorCode.UNIQUE_VIOLATION);
     });
 
-    it('should wrap duplicate key errors', () => {
-      const originalError = new Error('duplicate key value');
+    it("should wrap duplicate key errors", () => {
+      const originalError = new Error("duplicate key value");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConstraintError);
-      assert.strictEqual((wrapped as StorageConstraintError).constraintType, 'unique');
+      assert.strictEqual(
+        (wrapped as StorageConstraintError).constraintType,
+        "unique",
+      );
     });
 
-    it('should wrap foreign key violations', () => {
-      const originalError = new Error('violates foreign key constraint');
+    it("should wrap foreign key violations", () => {
+      const originalError = new Error("violates foreign key constraint");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConstraintError);
       assert.strictEqual(wrapped.code, StorageErrorCode.FOREIGN_KEY_VIOLATION);
     });
 
-    it('should wrap null constraint violations', () => {
-      const originalError = new Error('null constraint violation');
+    it("should wrap null constraint violations", () => {
+      const originalError = new Error("null constraint violation");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConstraintError);
       assert.strictEqual(wrapped.code, StorageErrorCode.NULL_VIOLATION);
     });
 
-    it('should wrap check constraint violations', () => {
-      const originalError = new Error('check constraint failed');
+    it("should wrap check constraint violations", () => {
+      const originalError = new Error("check constraint failed");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageConstraintError);
       assert.strictEqual(wrapped.code, StorageErrorCode.CHECK_VIOLATION);
     });
 
-    it('should wrap unknown errors as generic StorageError', () => {
-      const originalError = new Error('Some unknown error');
+    it("should wrap unknown errors as generic StorageError", () => {
+      const originalError = new Error("Some unknown error");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.ok(wrapped instanceof StorageError);
       assert.strictEqual(wrapped.code, StorageErrorCode.UNKNOWN);
     });
 
-    it('should preserve original error', () => {
-      const originalError = new Error('Original message');
+    it("should preserve original error", () => {
+      const originalError = new Error("Original message");
       const wrapped = wrapDatabaseError(originalError, context);
 
       assert.strictEqual(wrapped.originalError, originalError);
     });
 
-    it('should handle non-Error objects', () => {
-      const wrapped = wrapDatabaseError('string error', context);
+    it("should handle non-Error objects", () => {
+      const wrapped = wrapDatabaseError("string error", context);
 
       assert.ok(wrapped instanceof StorageError);
       assert.ok(wrapped.originalError instanceof Error);
@@ -347,4 +360,4 @@ describe('StorageError', () => {
   });
 });
 
-console.log('Storage Error tests loaded successfully');
+console.log("Storage Error tests loaded successfully");

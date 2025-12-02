@@ -1,16 +1,34 @@
 import { useState } from "react";
-import { useNotificationHistory, useDismissNotification } from "@/hooks/useNotifications";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  useNotificationHistory,
+  useDismissNotification,
+} from "@/hooks/useNotifications";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Bell, Clock, AlertCircle, ChefHat, Utensils, FlaskConical } from "lucide-react";
+import {
+  X,
+  Bell,
+  Clock,
+  AlertCircle,
+  ChefHat,
+  Utensils,
+  FlaskConical,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 export default function NotificationsPage() {
   const [includeDismissed, setIncludeDismissed] = useState(false);
-  const { data: notifications, isLoading } = useNotificationHistory(includeDismissed);
+  const { data: notifications, isLoading } =
+    useNotificationHistory(includeDismissed);
   const dismissNotification = useDismissNotification();
   const { toast } = useToast();
 
@@ -18,7 +36,7 @@ export default function NotificationsPage() {
     try {
       await dismissNotification.mutateAsync({
         notificationId,
-        dismissedBy: 'web-app',
+        dismissedBy: "web-app",
       });
       toast({
         title: "Notification dismissed",
@@ -35,13 +53,13 @@ export default function NotificationsPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'expiring-food':
+      case "expiring-food":
         return <AlertCircle className="h-6 w-6" />;
-      case 'recipe-suggestion':
+      case "recipe-suggestion":
         return <ChefHat className="h-6 w-6" />;
-      case 'meal-reminder':
+      case "meal-reminder":
         return <Utensils className="h-6 w-6" />;
-      case 'test':
+      case "test":
         return <FlaskConical className="h-6 w-6" />;
       default:
         return <Bell className="h-6 w-6" />;
@@ -52,11 +70,17 @@ export default function NotificationsPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="text-page-title">
+          <h1
+            className="text-3xl font-bold flex items-center gap-2"
+            data-testid="text-page-title"
+          >
             <Bell className="h-8 w-8" />
             Notifications
           </h1>
-          <p className="text-muted-foreground mt-1" data-testid="text-page-description">
+          <p
+            className="text-muted-foreground mt-1"
+            data-testid="text-page-description"
+          >
             View and manage your notification history
           </p>
         </div>
@@ -67,7 +91,9 @@ export default function NotificationsPage() {
             onCheckedChange={setIncludeDismissed}
             data-testid="switch-show-dismissed"
           />
-          <Label htmlFor="show-dismissed" data-testid="label-show-dismissed">Show dismissed</Label>
+          <Label htmlFor="show-dismissed" data-testid="label-show-dismissed">
+            Show dismissed
+          </Label>
         </div>
       </div>
 
@@ -86,29 +112,53 @@ export default function NotificationsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className="mt-1" data-testid={`icon-notification-type-${notification.id}`}>
+                    <div
+                      className="mt-1"
+                      data-testid={`icon-notification-type-${notification.id}`}
+                    >
                       {getTypeIcon(notification.type)}
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-lg" data-testid={`text-notification-title-${notification.id}`}>
+                      <CardTitle
+                        className="text-lg"
+                        data-testid={`text-notification-title-${notification.id}`}
+                      >
                         {notification.title}
                       </CardTitle>
-                      <CardDescription className="mt-1" data-testid={`text-notification-body-${notification.id}`}>
+                      <CardDescription
+                        className="mt-1"
+                        data-testid={`text-notification-body-${notification.id}`}
+                      >
                         {notification.body}
                       </CardDescription>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1" data-testid={`text-notification-time-${notification.id}`}>
+                        <span
+                          className="flex items-center gap-1"
+                          data-testid={`text-notification-time-${notification.id}`}
+                        >
                           <Clock className="h-3 w-3" />
                           {formatDistanceToNow(new Date(notification.sentAt), {
                             addSuffix: true,
                           })}
                         </span>
-                        <span className="capitalize" data-testid={`text-notification-platform-${notification.id}`}>{notification.platform}</span>
+                        <span
+                          className="capitalize"
+                          data-testid={`text-notification-platform-${notification.id}`}
+                        >
+                          {notification.platform}
+                        </span>
                         {notification.dismissedAt && (
-                          <span className="text-muted-foreground" data-testid={`text-notification-dismissed-${notification.id}`}>
-                            Dismissed {formatDistanceToNow(new Date(notification.dismissedAt), {
-                              addSuffix: true,
-                            })}
+                          <span
+                            className="text-muted-foreground"
+                            data-testid={`text-notification-dismissed-${notification.id}`}
+                          >
+                            Dismissed{" "}
+                            {formatDistanceToNow(
+                              new Date(notification.dismissedAt),
+                              {
+                                addSuffix: true,
+                              },
+                            )}
                           </span>
                         )}
                       </div>

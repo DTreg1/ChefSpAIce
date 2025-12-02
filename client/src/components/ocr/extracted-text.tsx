@@ -1,6 +1,6 @@
 /**
  * Extracted Text Component
- * 
+ *
  * Displays OCR extracted text with editing capabilities and correction tracking
  */
 
@@ -37,7 +37,7 @@ export function ExtractedText({
   corrections = [],
   onSaveCorrection,
   readOnly = false,
-  className
+  className,
 }: ExtractedTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
@@ -81,7 +81,6 @@ export function ExtractedText({
     setHasChanges(false);
   }, [hasChanges, onSaveCorrection, originalFullText, editedText]);
 
-
   const getConfidenceColor = useCallback((conf: number) => {
     if (conf >= 90) return "text-green-600";
     if (conf >= 70) return "text-yellow-600";
@@ -99,7 +98,7 @@ export function ExtractedText({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg">Extracted Text</CardTitle>
         <div className="flex items-center gap-2">
-          <Badge 
+          <Badge
             variant={getConfidenceBadgeVariant(confidence)}
             data-testid="confidence-badge"
           >
@@ -144,13 +143,18 @@ export function ExtractedText({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Progress value={confidence} className="h-2" data-testid="confidence-progress" />
-        
+        <Progress
+          value={confidence}
+          className="h-2"
+          data-testid="confidence-progress"
+        />
+
         {confidence < 70 && (
           <Alert data-testid="alert-low-confidence">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Low confidence score. Please review and correct any errors in the extracted text.
+              Low confidence score. Please review and correct any errors in the
+              extracted text.
             </AlertDescription>
           </Alert>
         )}
@@ -190,7 +194,9 @@ export function ExtractedText({
                       {correction.originalText}
                     </span>
                     <span>→</span>
-                    <span className="font-medium">{correction.correctedText}</span>
+                    <span className="font-medium">
+                      {correction.correctedText}
+                    </span>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {correction.correctionType}

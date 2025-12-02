@@ -21,7 +21,10 @@ import {
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
-import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
+import type {
+  StorageLocation,
+  UserInventory as FoodItem,
+} from "@shared/schema";
 
 interface EditFoodDialogProps {
   open: boolean;
@@ -29,7 +32,11 @@ interface EditFoodDialogProps {
   item: FoodItem | null;
 }
 
-export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps) {
+export function EditFoodDialog({
+  open,
+  onOpenChange,
+  item,
+}: EditFoodDialogProps) {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [storageLocationId, setStorageLocationId] = useState("");
@@ -49,13 +56,25 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   const updateItemMutation = useMutation({
     mutationFn: async (data: unknown) => {
-      return await apiRequest(API_ENDPOINTS.inventory.foodItem(item?.id || ''), "PUT", data);
+      return await apiRequest(
+        API_ENDPOINTS.inventory.foodItem(item?.id || ""),
+        "PUT",
+        data,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.tracking] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.foodItems],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.storageLocations],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.data],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.nutrition.tracking],
+      });
       toast({
         title: "Success",
         description: "Food item updated",
@@ -128,7 +147,10 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
           <div className="space-y-2">
             <Label htmlFor="edit-storage">Storage Location *</Label>
-            <Select value={storageLocationId} onValueChange={setStorageLocationId}>
+            <Select
+              value={storageLocationId}
+              onValueChange={setStorageLocationId}
+            >
               <SelectTrigger data-testid="select-edit-storage">
                 <SelectValue />
               </SelectTrigger>
@@ -155,7 +177,11 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-edit">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            data-testid="button-cancel-edit"
+          >
             Cancel
           </Button>
           <Button

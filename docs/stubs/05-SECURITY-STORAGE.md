@@ -10,11 +10,11 @@ Privacy request methods are stubs because the table doesn't exist.
 
 ## Methods to Implement
 
-| Method | Description |
-|--------|-------------|
-| `logPrivacyRequest(request)` | Create privacy request |
-| `getPrivacyRequests(filters)` | Get requests with filters |
-| `processPrivacyRequest(requestId, status, processedBy)` | Update request status |
+| Method                                                  | Description               |
+| ------------------------------------------------------- | ------------------------- |
+| `logPrivacyRequest(request)`                            | Create privacy request    |
+| `getPrivacyRequests(filters)`                           | Get requests with filters |
+| `processPrivacyRequest(requestId, status, processedBy)` | Update request status     |
 
 ---
 

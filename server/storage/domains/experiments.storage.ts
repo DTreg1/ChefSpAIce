@@ -1,10 +1,10 @@
 /**
  * @file server/storage/domains/experiments.storage.ts
  * @description A/B testing and cohort analysis storage operations
- * 
+ *
  * Domain: Experiments & Testing
  * Scope: A/B tests, cohort analysis, statistical significance, insights
- * 
+ *
  * EXPORT PATTERN:
  * - Export CLASS (ExperimentsStorage) for dependency injection and testing
  * - Export singleton INSTANCE (experimentsStorage) for convenience in production code
@@ -13,7 +13,11 @@
 
 import { db } from "../../db";
 import { and, eq, desc, sql, gte, lte, type SQL } from "drizzle-orm";
-import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
+import {
+  createInsertData,
+  createUpdateData,
+  buildMetadata,
+} from "../../types/storage-helpers";
 import type { IExperimentsStorage } from "../interfaces/IExperimentsStorage";
 import {
   abTests,
@@ -41,7 +45,7 @@ import {
 
 /**
  * Experiments Storage
- * 
+ *
  * Manages A/B tests, cohort analysis, and experimental insights.
  * Provides statistical analysis and recommendation capabilities.
  */
@@ -85,7 +89,9 @@ export class ExperimentsStorage implements IExperimentsStorage {
       }
 
       if (conditions.length > 0) {
-        return await query.where(and(...conditions)).orderBy(desc(abTests.createdAt));
+        return await query
+          .where(and(...conditions))
+          .orderBy(desc(abTests.createdAt));
       }
     }
 
@@ -94,7 +100,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async updateAbTest(
     testId: string,
-    update: Partial<Omit<AbTest, "id" | "createdAt" | "updatedAt">>
+    update: Partial<Omit<AbTest, "id" | "createdAt" | "updatedAt">>,
   ): Promise<AbTest> {
     const [updatedTest] = await db
       .update(abTests)
@@ -122,8 +128,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
         and(
           eq(abTestResults.testId, result.testId),
           eq(abTestResults.userId, result.userId || ""),
-          eq(abTestResults.variant, result.variant)
-        )
+          eq(abTestResults.variant, result.variant),
+        ),
       )
       .limit(1);
 
@@ -147,7 +153,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async getAbTestResults(
     testId: string,
-    variant?: string
+    variant?: string,
   ): Promise<AbTestResult[]> {
     const baseConditions: SQL<unknown>[] = [eq(abTestResults.testId, testId)];
 
@@ -172,7 +178,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
     // Aggregate results by variant
     const aggregateVariant = (variantName: string): AbTestResult => {
       const variantResults = results.filter((r) => r.variant === variantName);
-      
+
       if (variantResults.length === 0) {
         return {
           id: "",
@@ -187,9 +193,12 @@ export class ExperimentsStorage implements IExperimentsStorage {
         };
       }
 
-      const totalConversions = variantResults.filter(r => r.converted).length;
+      const totalConversions = variantResults.filter((r) => r.converted).length;
       const totalExposures = variantResults.length;
-      const totalValue = variantResults.reduce((sum, r) => sum + (r.conversionValue || 0), 0);
+      const totalValue = variantResults.reduce(
+        (sum, r) => sum + (r.conversionValue || 0),
+        0,
+      );
 
       return {
         ...variantResults[0],
@@ -198,8 +207,10 @@ export class ExperimentsStorage implements IExperimentsStorage {
         metadata: {
           totalConversions,
           totalExposures,
-          conversionRate: totalExposures > 0 ? totalConversions / totalExposures : 0,
-          averageValue: totalConversions > 0 ? totalValue / totalConversions : 0,
+          conversionRate:
+            totalExposures > 0 ? totalConversions / totalExposures : 0,
+          averageValue:
+            totalConversions > 0 ? totalValue / totalConversions : 0,
         },
       };
     };
@@ -214,7 +225,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
     testId: string,
     userId: string,
     variant: string,
-    conversionValue?: number
+    conversionValue?: number,
   ): Promise<AbTestResult> {
     // Find the user's test result
     const [existing] = await db
@@ -224,8 +235,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
         and(
           eq(abTestResults.testId, testId),
           eq(abTestResults.userId, userId),
-          eq(abTestResults.variant, variant)
-        )
+          eq(abTestResults.variant, variant),
+        ),
       )
       .limit(1);
 
@@ -261,7 +272,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== A/B Test Variant Metrics ====================
 
   async upsertAbTestVariantMetric(
-    metric: InsertAbTestVariantMetric
+    metric: InsertAbTestVariantMetric,
   ): Promise<AbTestVariantMetric> {
     // Check if metric already exists for this test and variant
     const existing = await db
@@ -270,8 +281,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
       .where(
         and(
           eq(abTestVariantMetrics.testId, metric.testId),
-          eq(abTestVariantMetrics.variant, metric.variant)
-        )
+          eq(abTestVariantMetrics.variant, metric.variant),
+        ),
       )
       .limit(1);
 
@@ -293,7 +304,9 @@ export class ExperimentsStorage implements IExperimentsStorage {
     }
   }
 
-  async getAbTestVariantMetrics(testId: string): Promise<AbTestVariantMetric[]> {
+  async getAbTestVariantMetrics(
+    testId: string,
+  ): Promise<AbTestVariantMetric[]> {
     return await db
       .select()
       .from(abTestVariantMetrics)
@@ -301,7 +314,9 @@ export class ExperimentsStorage implements IExperimentsStorage {
       .orderBy(desc(abTestVariantMetrics.calculatedAt));
   }
 
-  async getLatestAbTestVariantMetric(testId: string): Promise<AbTestVariantMetric | undefined> {
+  async getLatestAbTestVariantMetric(
+    testId: string,
+  ): Promise<AbTestVariantMetric | undefined> {
     const [metric] = await db
       .select()
       .from(abTestVariantMetrics)
@@ -313,7 +328,9 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   // ==================== A/B Test Insights (General/Narrative) ====================
 
-  async createAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight> {
+  async createAbTestInsight(
+    insight: InsertAbTestInsight,
+  ): Promise<AbTestInsight> {
     const [created] = await db
       .insert(abTestInsights)
       .values(insight)
@@ -329,15 +346,18 @@ export class ExperimentsStorage implements IExperimentsStorage {
       .orderBy(desc(abTestInsights.createdAt));
   }
 
-  async getAbTestInsightsByType(testId: string, insightType: string): Promise<AbTestInsight[]> {
+  async getAbTestInsightsByType(
+    testId: string,
+    insightType: string,
+  ): Promise<AbTestInsight[]> {
     return await db
       .select()
       .from(abTestInsights)
       .where(
         and(
           eq(abTestInsights.testId, testId),
-          eq(abTestInsights.insightType, insightType)
-        )
+          eq(abTestInsights.insightType, insightType),
+        ),
       )
       .orderBy(desc(abTestInsights.createdAt));
   }
@@ -348,7 +368,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
     winner: "A" | "B" | "inconclusive";
     liftPercentage: number;
   }> {
-    const { variantA, variantB } = await this.getAggregatedAbTestResults(testId);
+    const { variantA, variantB } =
+      await this.getAggregatedAbTestResults(testId);
 
     const metadataA = variantA.metadata || {};
     const metadataB = variantB.metadata || {};
@@ -368,7 +389,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
     const standardError = Math.sqrt(
       pooledProbability *
         (1 - pooledProbability) *
-        (1 / (exposuresA || 1) + 1 / (exposuresB || 1))
+        (1 / (exposuresA || 1) + 1 / (exposuresB || 1)),
     );
 
     // Calculate z-score
@@ -458,7 +479,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
           variantMetrics,
           results,
         };
-      })
+      }),
     );
 
     // Sort by latest variant metric confidence if available
@@ -473,7 +494,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async implementAbTestWinner(
     testId: string,
-    variant: "A" | "B"
+    variant: "A" | "B",
   ): Promise<void> {
     // Update test status to completed
     await this.updateAbTest(testId, {
@@ -482,7 +503,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
     // Calculate and record variant metrics
     const stats = await this.calculateStatisticalSignificance(testId);
-    
+
     await this.upsertAbTestVariantMetric({
       testId,
       variant,
@@ -513,7 +534,10 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== Cohort Management ====================
 
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
-    const [newCohort] = await db.insert(cohorts).values(cohort as any).returning();
+    const [newCohort] = await db
+      .insert(cohorts)
+      .values(cohort as any)
+      .returning();
 
     // Refresh membership immediately for new cohort
     await this.refreshCohortMembership(newCohort.id);
@@ -552,7 +576,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async updateCohort(
     cohortId: string,
-    updates: Partial<InsertCohort>
+    updates: Partial<InsertCohort>,
   ): Promise<Cohort> {
     const [updated] = await db
       .update(cohorts)
@@ -589,12 +613,9 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== Cohort Metrics ====================
 
   async recordCohortMetrics(
-    metrics: InsertCohortMetric[]
+    metrics: InsertCohortMetric[],
   ): Promise<CohortMetric[]> {
-    const recorded = await db
-      .insert(cohortMetrics)
-      .values(metrics)
-      .returning();
+    const recorded = await db.insert(cohortMetrics).values(metrics).returning();
     return recorded;
   }
 
@@ -604,7 +625,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
       metricName?: string;
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<CohortMetric[]> {
     const conditions: any[] = [eq(cohortMetrics.cohortId, cohortId)];
 
@@ -629,7 +650,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async calculateCohortRetention(
     cohortId: string,
-    periods: number[]
+    periods: number[],
   ): Promise<{
     cohortId: string;
     retention: Array<{ period: number; rate: number; count: number }>;
@@ -639,7 +660,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
       throw new Error(`Cohort ${cohortId} not found`);
     }
 
-    const retention: Array<{ period: number; rate: number; count: number }> = [];
+    const retention: Array<{ period: number; rate: number; count: number }> =
+      [];
 
     // Simplified retention calculation
     // In production, this would query actual user activity data
@@ -669,7 +691,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async compareCohorts(
     cohortIds: string[],
-    metrics: string[]
+    metrics: string[],
   ): Promise<{
     comparison: Array<{
       cohortId: string;
@@ -684,7 +706,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
         for (const metric of metrics) {
           const metricData = cohortMetricsData.find(
-            (m) => m.metricName === metric
+            (m) => m.metricName === metric,
           );
           metricsMap[metric] = metricData?.value || 0;
         }
@@ -693,7 +715,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
           cohortId,
           metrics: metricsMap,
         };
-      })
+      }),
     );
 
     return { comparison };
@@ -702,7 +724,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== Cohort Insights ====================
 
   async createCohortInsight(
-    insight: InsertCohortInsight
+    insight: InsertCohortInsight,
   ): Promise<CohortInsight> {
     const [newInsight] = await db
       .insert(cohortInsights)
@@ -716,7 +738,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
     filters?: {
       insightType?: string;
       impact?: string;
-    }
+    },
   ): Promise<CohortInsight[]> {
     const conditions: SQL<unknown>[] = [eq(cohortInsights.cohortId, cohortId)];
 
@@ -749,14 +771,17 @@ export class ExperimentsStorage implements IExperimentsStorage {
     const insights: InsertCohortInsight[] = [];
 
     // Generate retention insight
-    if (recentMetrics.some(m => m.metricName.startsWith("retention"))) {
+    if (recentMetrics.some((m) => m.metricName.startsWith("retention"))) {
       insights.push({
         cohortId,
         insightType: "retention",
         insight: "Cohort retention rate is stable over the past 30 days",
         confidence: 0.85,
         impact: "medium",
-        recommendations: ["Monitor weekly trends", "Compare with other cohorts"],
+        recommendations: [
+          "Monitor weekly trends",
+          "Compare with other cohorts",
+        ],
       });
     }
 
@@ -768,13 +793,16 @@ export class ExperimentsStorage implements IExperimentsStorage {
         insight: "Large cohort with significant engagement potential",
         confidence: 0.9,
         impact: "high",
-        recommendations: ["Implement targeted campaigns", "Track conversion metrics"],
+        recommendations: [
+          "Implement targeted campaigns",
+          "Track conversion metrics",
+        ],
       });
     }
 
     // Create insights in database
     const createdInsights = await Promise.all(
-      insights.map(insight => this.createCohortInsight(insight))
+      insights.map((insight) => this.createCohortInsight(insight)),
     );
 
     return createdInsights;
@@ -782,7 +810,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
   async updateCohortInsightStatus(
     insightId: string,
-    status: string
+    status: string,
   ): Promise<CohortInsight> {
     const [updated] = await db
       .update(cohortInsights)

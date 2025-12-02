@@ -10,8 +10,12 @@ interface RateLimitData {
 }
 
 export function BarcodeRateLimitInfo() {
-  const { data: rateLimits, isLoading, error } = useQuery<RateLimitData>({
-    queryKey: [API_ENDPOINTS.barcode.search, 'rate-limits'],
+  const {
+    data: rateLimits,
+    isLoading,
+    error,
+  } = useQuery<RateLimitData>({
+    queryKey: [API_ENDPOINTS.barcode.search, "rate-limits"],
   });
 
   if (isLoading) {
@@ -22,13 +26,17 @@ export function BarcodeRateLimitInfo() {
     return null;
   }
 
-  const percentageRemaining = (rateLimits.remaining_requests / rateLimits.allowed_requests) * 100;
+  const percentageRemaining =
+    (rateLimits.remaining_requests / rateLimits.allowed_requests) * 100;
   const isLow = percentageRemaining < 20;
   const isVeryLow = percentageRemaining < 10;
-  
+
   const resetDate = new Date(rateLimits.reset_time);
   const now = new Date();
-  const hoursUntilReset = Math.max(0, Math.round((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60)));
+  const hoursUntilReset = Math.max(
+    0,
+    Math.round((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60)),
+  );
 
   return (
     <Alert variant={isVeryLow ? "destructive" : "default"} className="mb-4">
@@ -45,7 +53,8 @@ export function BarcodeRateLimitInfo() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="font-medium">
-                  {rateLimits.remaining_requests} of {rateLimits.allowed_requests}
+                  {rateLimits.remaining_requests} of{" "}
+                  {rateLimits.allowed_requests}
                 </span>
                 <span className="text-muted-foreground text-sm">
                   product image lookups remaining
@@ -60,7 +69,8 @@ export function BarcodeRateLimitInfo() {
             </div>
             {!!isVeryLow && (
               <p className="mt-2 text-sm">
-                You're running low on product image lookups. Consider uploading your own photos or waiting for the limit to reset.
+                You're running low on product image lookups. Consider uploading
+                your own photos or waiting for the limit to reset.
               </p>
             )}
           </AlertDescription>

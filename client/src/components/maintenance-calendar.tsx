@@ -1,13 +1,19 @@
 /**
  * Maintenance Calendar Component
- * 
+ *
  * Visual calendar for scheduled maintenance with drag-and-drop rescheduling
  */
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +36,15 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 interface MaintenancePrediction {
   id: string;
@@ -38,7 +52,7 @@ interface MaintenancePrediction {
   predictedIssue: string;
   probability: number;
   recommendedDate: string;
-  urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+  urgencyLevel: "low" | "medium" | "high" | "critical";
   estimatedDowntime?: number;
   preventiveActions?: string[];
   status: string;
@@ -54,9 +68,10 @@ interface MaintenanceSchedule {
 
 const urgencyColors: Record<string, string> = {
   low: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  medium:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
   high: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-  critical: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  critical: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
 const componentIcons: Record<string, string> = {
@@ -64,55 +79,64 @@ const componentIcons: Record<string, string> = {
   server: "🖥️",
   cache: "💾",
   api: "🌐",
-  storage: "📦"
+  storage: "📦",
 };
 
 export function MaintenanceCalendar() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedPrediction, setSelectedPrediction] = useState<MaintenancePrediction | null>(null);
+  const [selectedPrediction, setSelectedPrediction] =
+    useState<MaintenancePrediction | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
 
   // Fetch maintenance schedule
   const { data: schedule, isLoading } = useQuery<MaintenanceSchedule>({
-    queryKey: ['/api/maintenance/schedule'],
-    refetchInterval: 60000 // Refresh every minute
+    queryKey: ["/api/maintenance/schedule"],
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Complete maintenance mutation
   const completeMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest('/api/maintenance/complete', 'POST', data),
+      apiRequest("/api/maintenance/complete", "POST", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/schedule'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/maintenance/schedule"],
+      });
       toast({
         title: "Maintenance Completed",
-        description: "Maintenance has been marked as complete"
+        description: "Maintenance has been marked as complete",
       });
       setSelectedPrediction(null);
-    }
+    },
   });
 
   // Update prediction status mutation
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      apiRequest(`/api/maintenance/predictions/${id}/status`, 'PATCH', { status }),
+      apiRequest(`/api/maintenance/predictions/${id}/status`, "PATCH", {
+        status,
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/maintenance/schedule'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/maintenance/schedule"],
+      });
       toast({
         title: "Status Updated",
-        description: "Maintenance status has been updated"
+        description: "Maintenance status has been updated",
       });
-    }
+    },
   });
 
   // Get days with maintenance
-  const daysWithMaintenance = Object.keys(schedule?.byDate || {}).map(date => new Date(date));
+  const daysWithMaintenance = Object.keys(schedule?.byDate || {}).map(
+    (date) => new Date(date),
+  );
 
   // Get maintenance for selected date
-  const selectedDateMaintenance = selectedDate 
-    ? schedule?.byDate[format(selectedDate, 'yyyy-MM-dd')] || []
+  const selectedDateMaintenance = selectedDate
+    ? schedule?.byDate[format(selectedDate, "yyyy-MM-dd")] || []
     : [];
 
   // Navigate months
@@ -151,7 +175,7 @@ export function MaintenanceCalendar() {
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-lg">
-                  {format(currentMonth, 'MMMM yyyy')}
+                  {format(currentMonth, "MMMM yyyy")}
                 </h3>
                 <div className="flex items-center gap-2">
                   <Button
@@ -180,7 +204,7 @@ export function MaintenanceCalendar() {
                   </Button>
                 </div>
               </div>
-              
+
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -189,13 +213,13 @@ export function MaintenanceCalendar() {
                 onMonthChange={setCurrentMonth}
                 className="rounded-md border"
                 modifiers={{
-                  maintenance: daysWithMaintenance
+                  maintenance: daysWithMaintenance,
                 }}
                 modifiersStyles={{
-                  maintenance: { 
-                    backgroundColor: 'hsl(var(--primary) / 0.1)',
-                    fontWeight: 'bold'
-                  }
+                  maintenance: {
+                    backgroundColor: "hsl(var(--primary) / 0.1)",
+                    fontWeight: "bold",
+                  },
                 }}
               />
 
@@ -206,13 +230,19 @@ export function MaintenanceCalendar() {
                   <span>Has Maintenance</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="h-5 bg-red-100 text-red-800">Critical</Badge>
+                  <Badge className="h-5 bg-red-100 text-red-800">
+                    Critical
+                  </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="h-5 bg-orange-100 text-orange-800">High</Badge>
+                  <Badge className="h-5 bg-orange-100 text-orange-800">
+                    High
+                  </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="h-5 bg-yellow-100 text-yellow-800">Medium</Badge>
+                  <Badge className="h-5 bg-yellow-100 text-yellow-800">
+                    Medium
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -220,15 +250,15 @@ export function MaintenanceCalendar() {
             {/* Selected Date Details */}
             <div className="space-y-4">
               <h3 className="font-semibold">
-                {selectedDate ? format(selectedDate, 'PPP') : 'Select a date'}
+                {selectedDate ? format(selectedDate, "PPP") : "Select a date"}
               </h3>
-              
+
               {selectedDate && (
                 <ScrollArea className="h-[400px] pr-4">
                   {selectedDateMaintenance.length > 0 ? (
                     <div className="space-y-3">
                       {selectedDateMaintenance.map((prediction) => (
-                        <Card 
+                        <Card
                           key={prediction.id}
                           className="cursor-pointer hover-elevate"
                           onClick={() => setSelectedPrediction(prediction)}
@@ -236,8 +266,14 @@ export function MaintenanceCalendar() {
                         >
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
-                              <span className="text-2xl">{componentIcons[prediction.component]}</span>
-                              <Badge className={urgencyColors[prediction.urgencyLevel]}>
+                              <span className="text-2xl">
+                                {componentIcons[prediction.component]}
+                              </span>
+                              <Badge
+                                className={
+                                  urgencyColors[prediction.urgencyLevel]
+                                }
+                              >
                                 {prediction.urgencyLevel}
                               </Badge>
                             </div>
@@ -250,7 +286,7 @@ export function MaintenanceCalendar() {
                               </div>
                               <div className="flex items-center gap-2 text-xs">
                                 <Clock className="w-3 h-3" />
-                                {prediction.estimatedDowntime || 'N/A'} min
+                                {prediction.estimatedDowntime || "N/A"} min
                               </div>
                             </div>
                           </CardContent>
@@ -270,11 +306,13 @@ export function MaintenanceCalendar() {
               {schedule?.nextWindow && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Next Maintenance Window</CardTitle>
+                    <CardTitle className="text-sm">
+                      Next Maintenance Window
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {format(new Date(schedule.nextWindow), 'PPp')}
+                      {format(new Date(schedule.nextWindow), "PPp")}
                     </div>
                   </CardContent>
                 </Card>
@@ -286,61 +324,79 @@ export function MaintenanceCalendar() {
 
       {/* Maintenance Details Dialog */}
       {selectedPrediction && (
-        <Dialog 
-          open={!!selectedPrediction} 
+        <Dialog
+          open={!!selectedPrediction}
           onOpenChange={(open) => !open && setSelectedPrediction(null)}
         >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{componentIcons[selectedPrediction.component]}</span>
+                  <span className="text-2xl">
+                    {componentIcons[selectedPrediction.component]}
+                  </span>
                   {selectedPrediction.component} Maintenance
                 </div>
               </DialogTitle>
               <DialogDescription>
-                Scheduled for {format(new Date(selectedPrediction.recommendedDate), 'PPP')}
+                Scheduled for{" "}
+                {format(new Date(selectedPrediction.recommendedDate), "PPP")}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Issue Details</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Predicted Issue:</span>
-                    <span className="font-medium">{selectedPrediction.predictedIssue}</span>
+                    <span className="text-muted-foreground">
+                      Predicted Issue:
+                    </span>
+                    <span className="font-medium">
+                      {selectedPrediction.predictedIssue}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Probability:</span>
-                    <span className="font-medium">{Math.round(selectedPrediction.probability * 100)}%</span>
+                    <span className="font-medium">
+                      {Math.round(selectedPrediction.probability * 100)}%
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Urgency:</span>
-                    <Badge className={urgencyColors[selectedPrediction.urgencyLevel]}>
+                    <Badge
+                      className={urgencyColors[selectedPrediction.urgencyLevel]}
+                    >
                       {selectedPrediction.urgencyLevel}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Est. Downtime:</span>
-                    <span className="font-medium">{selectedPrediction.estimatedDowntime || 'N/A'} minutes</span>
+                    <span className="text-muted-foreground">
+                      Est. Downtime:
+                    </span>
+                    <span className="font-medium">
+                      {selectedPrediction.estimatedDowntime || "N/A"} minutes
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {selectedPrediction.preventiveActions && selectedPrediction.preventiveActions.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Preventive Actions</h4>
-                  <ul className="space-y-1">
-                    {selectedPrediction.preventiveActions.map((action, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">{action}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {selectedPrediction.preventiveActions &&
+                selectedPrediction.preventiveActions.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Preventive Actions</h4>
+                    <ul className="space-y-1">
+                      {selectedPrediction.preventiveActions.map(
+                        (action, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+                            <span className="text-sm">{action}</span>
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+                )}
             </div>
 
             <DialogFooter>
@@ -356,7 +412,7 @@ export function MaintenanceCalendar() {
                 onClick={() => {
                   updateStatusMutation.mutate({
                     id: selectedPrediction.id,
-                    status: 'dismissed'
+                    status: "dismissed",
                   });
                   setSelectedPrediction(null);
                 }}
@@ -371,8 +427,9 @@ export function MaintenanceCalendar() {
                     issue: selectedPrediction.predictedIssue,
                     predictionId: selectedPrediction.id,
                     downtimeMinutes: selectedPrediction.estimatedDowntime || 0,
-                    performedActions: selectedPrediction.preventiveActions || [],
-                    outcome: 'successful'
+                    performedActions:
+                      selectedPrediction.preventiveActions || [],
+                    outcome: "successful",
                   });
                 }}
                 disabled={completeMutation.isPending}

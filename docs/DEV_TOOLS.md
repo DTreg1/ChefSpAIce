@@ -34,6 +34,7 @@ vite build --config vite.analyze.config.ts
 ```
 
 This will:
+
 - Build your application
 - Generate a `bundle-stats.html` file with interactive visualization
 - Automatically open the report in your browser
@@ -73,6 +74,7 @@ Web Vital: LCP
 ### Production
 
 In production, metrics are automatically sent to `/api/analytics` endpoint using:
+
 - `navigator.sendBeacon()` when available (preferred)
 - `fetch()` with `keepalive` as fallback
 
@@ -89,9 +91,9 @@ To send metrics to a custom analytics service, modify `client/src/utils/reportWe
 ```typescript
 function sendToAnalytics(metric: Metric) {
   // Send to your analytics service
-  gtag('event', metric.name, {
+  gtag("event", metric.name, {
     value: Math.round(metric.value),
-    event_category: 'Web Vitals',
+    event_category: "Web Vitals",
     event_label: metric.id,
     non_interaction: true,
   });
@@ -158,19 +160,19 @@ Web Vitals are automatically collected in production. To view them:
 ### Example Backend Handler
 
 ```typescript
-app.post('/api/analytics', (req, res) => {
+app.post("/api/analytics", (req, res) => {
   const { name, value, rating, delta, id } = req.body;
-  
+
   // Log to analytics service
   analytics.track({
-    event: 'web_vital',
+    event: "web_vital",
     metric: name,
     value,
     rating,
     delta,
     id,
   });
-  
+
   res.sendStatus(200);
 });
 ```

@@ -9,14 +9,18 @@ interface VoiceControlsProps {
   className?: string;
 }
 
-export function VoiceControls({ text, autoPlay = false, className = "" }: VoiceControlsProps) {
+export function VoiceControls({
+  text,
+  autoPlay = false,
+  className = "",
+}: VoiceControlsProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     // Check if browser supports speech synthesis
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       setSpeechSupported(true);
     }
   }, []);
@@ -58,7 +62,7 @@ export function VoiceControls({ text, autoPlay = false, className = "" }: VoiceC
       };
 
       utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+        console.error("Speech synthesis error:", event);
         setIsSpeaking(false);
         toast({
           title: "Speech error",

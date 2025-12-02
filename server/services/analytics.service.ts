@@ -36,21 +36,24 @@ export class AnalyticsService {
     }
 
     // Sort by date
-    const sorted = [...dataPoints].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+    const sorted = [...dataPoints].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     // Calculate trend
     const recentPoints = sorted.slice(-7);
     const previousPoints = sorted.slice(-14, -7);
-    
-    const recentAvg = recentPoints.reduce((sum, p) => sum + p.value, 0) / recentPoints.length;
-    const previousAvg = previousPoints.length > 0 
-      ? previousPoints.reduce((sum, p) => sum + p.value, 0) / previousPoints.length
-      : recentPoints[0].value;
+
+    const recentAvg =
+      recentPoints.reduce((sum, p) => sum + p.value, 0) / recentPoints.length;
+    const previousAvg =
+      previousPoints.length > 0
+        ? previousPoints.reduce((sum, p) => sum + p.value, 0) /
+          previousPoints.length
+        : recentPoints[0].value;
 
     const percentageChange = ((recentAvg - previousAvg) / previousAvg) * 100;
-    
+
     // Determine trend
     let trend: "up" | "down" | "stable";
     if (percentageChange > 5) trend = "up";
@@ -58,10 +61,10 @@ export class AnalyticsService {
     else trend = "stable";
 
     // Detect anomalies (simple spike/drop detection)
-    const values = sorted.map(p => p.value);
+    const values = sorted.map((p) => p.value);
     const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
     const stdDev = Math.sqrt(
-      values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length
+      values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length,
     );
 
     const latestValue = sorted[sorted.length - 1].value;
@@ -88,16 +91,17 @@ export class AnalyticsService {
       metricName: string;
       dataPoints: Array<{ date: string; value: number }>;
       period: string;
-    }
+    },
   ): Promise<AnalyticsInsight> {
     try {
       // Analyze the data locally first
       const analysis = this.detectTrends(metricData.dataPoints);
-      
+
       // Calculate statistics
-      const values = metricData.dataPoints.map(p => p.value);
+      const values = metricData.dataPoints.map((p) => p.value);
       const currentValue = values[values.length - 1];
-      const previousValue = values.length > 1 ? values[values.length - 2] : currentValue;
+      const previousValue =
+        values.length > 1 ? values[values.length - 2] : currentValue;
       const average = values.reduce((sum, v) => sum + v, 0) / values.length;
       const min = Math.min(...values);
       const max = Math.max(...values);
@@ -114,10 +118,13 @@ Analyze this data and provide a clear, plain-language explanation:
 - Min: ${min}
 - Max: ${max}
 - Trend: ${analysis.trend} (${analysis.percentageChange.toFixed(1)}% change)
-${analysis.isAnomaly ? `- Anomaly Detected: ${analysis.anomalyDetails}` : ''}
+${analysis.isAnomaly ? `- Anomaly Detected: ${analysis.anomalyDetails}` : ""}
 
 Data points (last 10):
-${metricData.dataPoints.slice(-10).map(p => `${p.date}: ${p.value}`).join('\n')}
+${metricData.dataPoints
+  .slice(-10)
+  .map((p) => `${p.date}: ${p.value}`)
+  .join("\n")}
 
 Provide a response in JSON format with:
 {
@@ -148,12 +155,13 @@ Example for a traffic spike:
               messages: [
                 {
                   role: "system",
-                  content: "You are a data analyst expert who explains complex metrics in simple terms for non-technical users."
+                  content:
+                    "You are a data analyst expert who explains complex metrics in simple terms for non-technical users.",
                 },
                 {
                   role: "user",
-                  content: prompt
-                }
+                  content: prompt,
+                },
               ],
               response_format: { type: "json_object" },
               max_completion_tokens: 500,
@@ -161,7 +169,7 @@ Example for a traffic spike:
 
             const content = completion.choices[0]?.message?.content;
             if (!content) throw new Error("No response from OpenAI");
-            
+
             return JSON.parse(content);
           } catch (error: any) {
             if (isRateLimitError(error)) {
@@ -175,7 +183,7 @@ Example for a traffic spike:
           minTimeout: 2000,
           maxTimeout: 10000,
           factor: 2,
-        }
+        },
       );
 
       // Create the insight record
@@ -187,15 +195,17 @@ Example for a traffic spike:
         severity: analysis.isAnomaly ? "warning" : "info",
       } as unknown as InsertAnalyticsInsight;
 
-      return await storage.platform.analytics.createAnalyticsInsight(insightData);
+      return await storage.platform.analytics.createAnalyticsInsight(
+        insightData,
+      );
     } catch (error) {
       console.error("Failed to generate insight:", error);
-      
+
       // Fallback to basic insight without AI
       const analysis = this.detectTrends(metricData.dataPoints);
-      const values = metricData.dataPoints.map(p => p.value);
+      const values = metricData.dataPoints.map((p) => p.value);
       const currentValue = values[values.length - 1];
-      
+
       let insightText = `The ${metricData.metricName} is currently ${currentValue}`;
       if (analysis.trend === "up") {
         insightText += `, showing an upward trend with ${Math.abs(analysis.percentageChange).toFixed(1)}% increase`;
@@ -217,7 +227,9 @@ Example for a traffic spike:
         severity: analysis.isAnomaly ? "warning" : "info",
       } as unknown as InsertAnalyticsInsight;
 
-      return await storage.platform.analytics.createAnalyticsInsight(fallbackInsight);
+      return await storage.platform.analytics.createAnalyticsInsight(
+        fallbackInsight,
+      );
     }
   }
 
@@ -227,12 +239,12 @@ Example for a traffic spike:
   async explainMetric(
     userId: string,
     metricName: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<string> {
     try {
       const prompt = `Explain the metric "${metricName}" in simple terms that a non-technical person can understand.
       
-${context ? `Additional context: ${JSON.stringify(context, null, 2)}` : ''}
+${context ? `Additional context: ${JSON.stringify(context, null, 2)}` : ""}
 
 Provide a clear, concise explanation (2-3 sentences max) that:
 1. Explains what this metric measures
@@ -250,18 +262,21 @@ Example for "bounce_rate":
               messages: [
                 {
                   role: "system",
-                  content: "You are a helpful assistant who explains technical metrics in simple, everyday language."
+                  content:
+                    "You are a helpful assistant who explains technical metrics in simple, everyday language.",
                 },
                 {
                   role: "user",
-                  content: prompt
-                }
+                  content: prompt,
+                },
               ],
               max_completion_tokens: 200,
             });
 
-            return completion.choices[0]?.message?.content || 
-              "This metric helps track important aspects of your data.";
+            return (
+              completion.choices[0]?.message?.content ||
+              "This metric helps track important aspects of your data."
+            );
           } catch (error: any) {
             if (isRateLimitError(error)) {
               throw error;
@@ -274,26 +289,35 @@ Example for "bounce_rate":
           minTimeout: 2000,
           maxTimeout: 10000,
           factor: 2,
-        }
+        },
       );
 
       return response;
     } catch (error) {
       console.error("Failed to explain metric:", error);
-      
+
       // Fallback explanations for common metrics
       const fallbackExplanations: Record<string, string> = {
-        traffic: "Traffic measures how many people visit your website or application. Higher traffic generally means more visibility and potential customers.",
-        revenue: "Revenue is the total amount of money your business earns. Tracking revenue helps you understand your financial health and growth.",
-        conversion_rate: "Conversion rate shows what percentage of visitors complete a desired action (like making a purchase). Higher rates mean your site is more effective.",
-        bounce_rate: "Bounce rate shows the percentage of visitors who leave after viewing just one page. Lower rates suggest visitors find your content engaging.",
-        user_engagement: "User engagement measures how actively people interact with your application. Higher engagement often leads to better retention and success.",
-        page_load_time: "Page load time measures how quickly your pages display. Faster load times improve user experience and can boost conversions.",
-        error_rate: "Error rate tracks how often users encounter problems. Lower error rates mean a smoother, more reliable experience for your users."
+        traffic:
+          "Traffic measures how many people visit your website or application. Higher traffic generally means more visibility and potential customers.",
+        revenue:
+          "Revenue is the total amount of money your business earns. Tracking revenue helps you understand your financial health and growth.",
+        conversion_rate:
+          "Conversion rate shows what percentage of visitors complete a desired action (like making a purchase). Higher rates mean your site is more effective.",
+        bounce_rate:
+          "Bounce rate shows the percentage of visitors who leave after viewing just one page. Lower rates suggest visitors find your content engaging.",
+        user_engagement:
+          "User engagement measures how actively people interact with your application. Higher engagement often leads to better retention and success.",
+        page_load_time:
+          "Page load time measures how quickly your pages display. Faster load times improve user experience and can boost conversions.",
+        error_rate:
+          "Error rate tracks how often users encounter problems. Lower error rates mean a smoother, more reliable experience for your users.",
       };
 
-      return fallbackExplanations[metricName.toLowerCase()] || 
-        `${metricName} is an important metric that helps you track and understand your data patterns. Monitor it regularly to spot trends and make informed decisions.`;
+      return (
+        fallbackExplanations[metricName.toLowerCase()] ||
+        `${metricName} is an important metric that helps you track and understand your data patterns. Monitor it regularly to spot trends and make informed decisions.`
+      );
     }
   }
 }

@@ -9,18 +9,18 @@ interface VoiceFeedbackProps {
   autoHide?: boolean;
 }
 
-export function VoiceFeedback({ 
-  status, 
-  message, 
+export function VoiceFeedback({
+  status,
+  message,
   className,
-  autoHide = true 
+  autoHide = true,
 }: VoiceFeedbackProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (status !== "idle") {
       setVisible(true);
-      
+
       if (autoHide && (status === "success" || status === "error")) {
         const timer = setTimeout(() => {
           setVisible(false);
@@ -36,28 +36,28 @@ export function VoiceFeedback({
     idle: {
       icon: null,
       color: "",
-      defaultMessage: ""
+      defaultMessage: "",
     },
     listening: {
       icon: <Mic className="h-5 w-5 animate-pulse" />,
       color: "text-primary border-primary",
-      defaultMessage: "Listening..."
+      defaultMessage: "Listening...",
     },
     processing: {
       icon: <Loader2 className="h-5 w-5 animate-spin" />,
       color: "text-muted-foreground border-muted",
-      defaultMessage: "Processing command..."
+      defaultMessage: "Processing command...",
     },
     success: {
       icon: <CheckCircle2 className="h-5 w-5" />,
       color: "text-green-600 border-green-600 bg-green-50 dark:bg-green-950/20",
-      defaultMessage: "Command executed successfully"
+      defaultMessage: "Command executed successfully",
     },
     error: {
       icon: <XCircle className="h-5 w-5" />,
       color: "text-destructive border-destructive bg-destructive/10",
-      defaultMessage: "Failed to process command"
-    }
+      defaultMessage: "Failed to process command",
+    },
   };
 
   const config = statusConfig[status];
@@ -71,7 +71,7 @@ export function VoiceFeedback({
         "p-4 flex items-center gap-3",
         "animate-in fade-in slide-in-from-bottom-2 duration-300",
         config.color,
-        className
+        className,
       )}
       data-testid="voice-feedback"
     >
@@ -91,10 +91,13 @@ export function useVoiceFeedback() {
     status: VoiceFeedbackProps["status"];
     message?: string;
   }>({
-    status: "idle"
+    status: "idle",
   });
 
-  const showFeedback = (status: VoiceFeedbackProps["status"], message?: string) => {
+  const showFeedback = (
+    status: VoiceFeedbackProps["status"],
+    message?: string,
+  ) => {
     setFeedbackState({ status, message });
   };
 
@@ -107,10 +110,10 @@ export function useVoiceFeedback() {
     showFeedback,
     hideFeedback,
     VoiceFeedbackComponent: () => (
-      <VoiceFeedback 
-        status={feedbackState.status} 
+      <VoiceFeedback
+        status={feedbackState.status}
         message={feedbackState.message}
       />
-    )
+    ),
   };
 }

@@ -23,10 +23,12 @@ export function MotionButton({
 }: MotionButtonProps) {
   const variantClasses = {
     primary: "bg-primary text-primary-foreground border border-primary-border",
-    secondary: "bg-secondary text-secondary-foreground border border-secondary-border",
+    secondary:
+      "bg-secondary text-secondary-foreground border border-secondary-border",
     ghost: "border border-transparent",
     outline: "border [border-color:var(--button-outline)] shadow-xs",
-    destructive: "bg-destructive text-destructive-foreground border border-destructive-border",
+    destructive:
+      "bg-destructive text-destructive-foreground border border-destructive-border",
   };
 
   const sizeClasses = {
@@ -36,10 +38,13 @@ export function MotionButton({
     icon: "h-9 w-9",
   };
 
-  const glowClasses = glow ? 
-    variant === "primary" ? "glow-primary" : 
-    variant === "secondary" ? "glow-secondary" : 
-    "" : "";
+  const glowClasses = glow
+    ? variant === "primary"
+      ? "glow-primary"
+      : variant === "secondary"
+        ? "glow-secondary"
+        : ""
+    : "";
 
   return (
     <motion.button
@@ -52,33 +57,37 @@ export function MotionButton({
         variantClasses[variant],
         sizeClasses[size],
         glowClasses,
-        className
+        className,
       )}
-      whileHover={{ 
+      whileHover={{
         scale: 1.05,
-        transition: { duration: 0.2 }
+        transition: { duration: 0.2 },
       }}
-      whileTap={{ 
+      whileTap={{
         scale: 0.95,
-        transition: { duration: 0.1 }
+        transition: { duration: 0.1 },
       }}
       animate={
-        pulse ? {
-          scale: [1, 1.05, 1],
-          transition: {
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }
-        } : bounce ? {
-          y: [0, -5, 0],
-          transition: {
-            duration: 0.6,
-            repeat: Infinity,
-            repeatDelay: 2,
-            ease: "easeInOut"
-          }
-        } : undefined
+        pulse
+          ? {
+              scale: [1, 1.05, 1],
+              transition: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+            }
+          : bounce
+            ? {
+                y: [0, -5, 0],
+                transition: {
+                  duration: 0.6,
+                  repeat: Infinity,
+                  repeatDelay: 2,
+                  ease: "easeInOut",
+                },
+              }
+            : undefined
       }
       {...props}
     >

@@ -590,6 +590,7 @@ UTILITY DESIGN PRINCIPLES
 The schema is defined in `shared/schema.ts` and includes:
 
 **Core Entities:**
+
 - `users` - User accounts with OAuth support
 - `userRecipes` - Recipe storage with AI-generated metadata
 - `userInventory` - Pantry tracking
@@ -597,11 +598,13 @@ The schema is defined in `shared/schema.ts` and includes:
 - `mealPlans` - Meal planning calendar
 
 **AI/ML Entities:**
+
 - `contentEmbeddings` - Vector embeddings for search
 - `userChats` - AI conversation history
 - `userChatSummaries` - Summarized chat context
 
 **Platform Entities:**
+
 - `pushTokens` - Device push notification tokens
 - `notificationHistory` - Sent notification log
 - `activityLogs` - User activity tracking
@@ -609,6 +612,7 @@ The schema is defined in `shared/schema.ts` and includes:
 - `abTests` / `abTestVariants` - A/B testing
 
 **Billing Entities:**
+
 - `subscriptions` - User subscriptions
 - `paymentHistory` - Transaction records
 - `pricingTiers` - Available plans
@@ -634,11 +638,13 @@ The schema is defined in `shared/schema.ts` and includes:
 ## Sprint Progress
 
 ### Sprint 1 (Conservative) - Complete
+
 - Removed dead code and unused files
 - Standardized service naming (kebab-case)
 - Created initial architecture documentation
 
 ### Sprint 2 (Moderate) - Complete
+
 - Wired `barcode-lookup.service.ts` into `inventory.router.ts` (removed ~50 lines inline code)
 - Refactored `chat.service.ts` with proper storage integration:
   - `buildChatContext()` - Builds context with inventory and history
@@ -651,6 +657,7 @@ The schema is defined in `shared/schema.ts` and includes:
 - Marked `ml.service.ts` and `retention-campaigns.service.ts` as @experimental (require storage layer work)
 
 ### Sprint 3 (ML Services Activation) - Complete
+
 - Activated `ml.service.ts` with ContentStorage integration:
   - Semantic search using OpenAI embeddings (text-embedding-ada-002)
   - Auto-categorization with GPT
@@ -666,11 +673,13 @@ The schema is defined in `shared/schema.ts` and includes:
   - Scheduled jobs: Daily churn check (9 AM), Weekly re-engagement (Mondays), Monthly reports (1st)
 
 **Current Limitations:**
+
 - Retention campaigns use in-memory queue (not persisted across restarts)
 - Email delivery uses console fallback unless `EMAIL_SERVICE_PROVIDER` is configured (e.g., 'sendgrid', 'mailgun')
 - ML embeddings require OpenAI API key for generation
 
 ### Sprint 4 (Utilities Consolidation) - Complete
+
 - Created `server/utils/vectorMath.ts` with shared vector operations
 - Consolidated `cosineSimilarity` function used by multiple services
 - Updated `embeddings.service.ts` to use shared vectorMath utility
@@ -680,6 +689,7 @@ The schema is defined in `shared/schema.ts` and includes:
 - Documented layered utility pattern (ai-error-handler → retry-handler)
 
 ### Service Layer Pattern
+
 ```
 Routers (thin)          →  Services (business logic)  →  Storage (data)
 - HTTP/SSE handling        - Context building             - CRUD operations
@@ -689,6 +699,7 @@ Routers (thin)          →  Services (business logic)  →  Storage (data)
 ```
 
 ### Active ML/AI Services
+
 - `ml.service.ts` - Semantic search, auto-categorization, tagging, duplicate detection
 - `retention-campaigns.service.ts` - Automated retention campaigns with churn prediction
 - `prediction.service.ts` - User behavior prediction and intervention generation
@@ -697,5 +708,5 @@ Routers (thin)          →  Services (business logic)  →  Storage (data)
 
 ---
 
-*Last updated: November 2025*
-*Sprint 3 (ML Services Activation) and Sprint 4 (Utilities Consolidation) Complete*
+_Last updated: November 2025_
+_Sprint 3 (ML Services Activation) and Sprint 4 (Utilities Consolidation) Complete_

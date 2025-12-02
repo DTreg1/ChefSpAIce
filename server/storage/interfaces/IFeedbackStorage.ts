@@ -7,13 +7,13 @@ import type {
   UserFeedback,
   InsertUserFeedback,
   Donation,
-  InsertDonation
+  InsertDonation,
 } from "@shared/schema";
 
 /**
  * Feedback response data structure (for backward compatibility)
  * In the new schema, responses are embedded in the userFeedback table
- * 
+ *
  * @deprecated Responses are now embedded directly in the userFeedback table
  */
 export interface FeedbackResponse {
@@ -49,26 +49,40 @@ export interface IFeedbackStorage {
   getUserFeedback(userId: string): Promise<UserFeedback[]>;
   getAllFeedback(status?: string, type?: string): Promise<UserFeedback[]>;
   getCommunityFeedback(limit?: number): Promise<UserFeedback[]>;
-  getCommunityFeedbackForUser(userId: string, limit?: number): Promise<UserFeedback[]>;
-  updateFeedbackStatus(feedbackId: string, status: string): Promise<UserFeedback>;
+  getCommunityFeedbackForUser(
+    userId: string,
+    limit?: number,
+  ): Promise<UserFeedback[]>;
+  updateFeedbackStatus(
+    feedbackId: string,
+    status: string,
+  ): Promise<UserFeedback>;
   getFeedbackByContext(context: string): Promise<UserFeedback[]>;
-  
+
   // Feedback Responses (embedded in userFeedback table)
-  addFeedbackResponse(response: InsertFeedbackResponse): Promise<FeedbackResponse>;
+  addFeedbackResponse(
+    response: InsertFeedbackResponse,
+  ): Promise<FeedbackResponse>;
   getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
-  
+
   // Feedback Analytics
-  getFeedbackAnalytics(startDate?: Date, endDate?: Date): Promise<FeedbackAnalytics>;
-  
+  getFeedbackAnalytics(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<FeedbackAnalytics>;
+
   // Upvoting System (now uses JSONB array in userFeedback)
   upvoteFeedback(userId: string, feedbackId: string): Promise<void>;
   removeUpvote(userId: string, feedbackId: string): Promise<void>;
   hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean>;
   getFeedbackUpvoteCount(feedbackId: string): Promise<number>;
-  
+
   // Donations
   createDonation(donation: InsertDonation): Promise<Donation>;
-  updateDonation(donationId: string, updates: Partial<InsertDonation>): Promise<Donation>;
+  updateDonation(
+    donationId: string,
+    updates: Partial<InsertDonation>,
+  ): Promise<Donation>;
   getDonation(donationId: string): Promise<Donation | null>;
   getDonationByPaymentIntent(paymentIntentId: string): Promise<Donation | null>;
   getDonations(status?: string): Promise<Donation[]>;

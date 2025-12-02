@@ -1,8 +1,20 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Save, X, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -17,16 +29,39 @@ interface DraftEditorProps {
 }
 
 const TONE_OPTIONS = [
-  { value: "formal", label: "Formal", description: "Professional and businesslike" },
+  {
+    value: "formal",
+    label: "Formal",
+    description: "Professional and businesslike",
+  },
   { value: "casual", label: "Casual", description: "Relaxed and informal" },
-  { value: "friendly", label: "Friendly", description: "Warm and approachable" },
+  {
+    value: "friendly",
+    label: "Friendly",
+    description: "Warm and approachable",
+  },
   { value: "apologetic", label: "Apologetic", description: "Express regret" },
-  { value: "solution-focused", label: "Solution-Focused", description: "Emphasize solutions" },
-  { value: "empathetic", label: "Empathetic", description: "Show understanding" },
+  {
+    value: "solution-focused",
+    label: "Solution-Focused",
+    description: "Emphasize solutions",
+  },
+  {
+    value: "empathetic",
+    label: "Empathetic",
+    description: "Show understanding",
+  },
 ];
 
-export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProps) {
-  const [content, setContent] = useState(draft.editedContent || draft.generatedContent);
+export function DraftEditor({
+  draft,
+  onSave,
+  onCancel,
+  onCopy,
+}: DraftEditorProps) {
+  const [content, setContent] = useState(
+    draft.editedContent || draft.generatedContent,
+  );
   const [tone, setTone] = useState(draft.metadata?.tone || "formal");
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -37,7 +72,12 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
     setTone(draft.metadata?.tone || "formal");
     setHasChanges(false);
     setCopied(false);
-  }, [draft.id, draft.metadata?.tone, draft.editedContent, draft.generatedContent]);
+  }, [
+    draft.id,
+    draft.metadata?.tone,
+    draft.editedContent,
+    draft.generatedContent,
+  ]);
 
   const handleContentChange = (value: string) => {
     setContent(value);
@@ -61,7 +101,8 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
     } catch (err) {
       toast({
         title: "Copy failed",
-        description: "Unable to copy content. Please check your browser permissions or try again.",
+        description:
+          "Unable to copy content. Please check your browser permissions or try again.",
         variant: "destructive",
       });
     }

@@ -26,7 +26,7 @@ router.post("/create-payment-intent", async (req: Request, res: Response) => {
         enabled: true,
       },
       metadata: {
-        donorName: anonymous ? "Anonymous" : (donorName || "Anonymous"),
+        donorName: anonymous ? "Anonymous" : donorName || "Anonymous",
         donorEmail: donorEmail || "",
         message: message || "",
         anonymous: anonymous ? "true" : "false",
@@ -45,7 +45,7 @@ router.post("/create-payment-intent", async (req: Request, res: Response) => {
       message: message || undefined,
       isRecurring: false,
       metadata: {
-        donorName: anonymous ? "Anonymous" : (donorName || "Anonymous"),
+        donorName: anonymous ? "Anonymous" : donorName || "Anonymous",
         anonymous: anonymous || false,
       },
     });
@@ -59,14 +59,16 @@ router.post("/create-payment-intent", async (req: Request, res: Response) => {
 
 router.post("/update-donor-info", async (req: Request, res: Response) => {
   try {
-    const { paymentIntentId, donorName, donorEmail, message, anonymous } = req.body;
+    const { paymentIntentId, donorName, donorEmail, message, anonymous } =
+      req.body;
 
     if (!paymentIntentId) {
       return res.status(400).json({ error: "Payment intent ID required" });
     }
 
-    const donation = await storage.admin.billing.getDonationByPaymentIntent(paymentIntentId);
-    
+    const donation =
+      await storage.admin.billing.getDonationByPaymentIntent(paymentIntentId);
+
     if (!donation) {
       return res.status(404).json({ error: "Donation not found" });
     }
@@ -76,7 +78,7 @@ router.post("/update-donor-info", async (req: Request, res: Response) => {
       message: message || undefined,
       metadata: {
         ...(donation.metadata || {}),
-        donorName: anonymous ? "Anonymous" : (donorName || "Anonymous"),
+        donorName: anonymous ? "Anonymous" : donorName || "Anonymous",
         anonymous: anonymous || false,
       },
     });

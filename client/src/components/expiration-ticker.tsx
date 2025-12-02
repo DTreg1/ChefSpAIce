@@ -14,7 +14,7 @@ type ExpirationNotification = {
 
 export function ExpirationTicker() {
   const { data: notifications } = useQuery<ExpirationNotification[]>({
-    queryKey: [API_ENDPOINTS.notifications.list, 'expiration'],
+    queryKey: [API_ENDPOINTS.notifications.list, "expiration"],
   });
 
   const hasNotifications = notifications && notifications.length > 0;

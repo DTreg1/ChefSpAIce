@@ -1,11 +1,17 @@
 /**
  * Component Health Widget
- * 
+ *
  * Detailed health status for individual system components
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,7 +26,7 @@ import {
   Shield,
   TrendingDown,
   TrendingUp,
-  Wifi
+  Wifi,
 } from "lucide-react";
 import { format, formatDistance } from "date-fns";
 import {
@@ -68,25 +74,28 @@ const componentIcons: Record<string, any> = {
   server: Server,
   cache: HardDrive,
   api: Wifi,
-  storage: Shield
+  storage: Shield,
 };
 
 const statusColors: Record<string, string> = {
   healthy: "text-green-500",
   warning: "text-yellow-500",
-  critical: "text-red-500"
+  critical: "text-red-500",
 };
 
-export function ComponentHealth({ component, detailed = true }: ComponentHealthProps) {
+export function ComponentHealth({
+  component,
+  detailed = true,
+}: ComponentHealthProps) {
   // Fetch component health data
-  const { data: health, isLoading } = useQuery<{ 
+  const { data: health, isLoading } = useQuery<{
     avgAnomalyScore: number;
     recentMetrics: any[];
     predictions: any[];
     history: any[];
   }>({
     queryKey: [`/api/maintenance/components/${component}/health`],
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   if (isLoading) {
@@ -105,14 +114,19 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
 
   const Icon = componentIcons[component] || Server;
   const healthScore = Math.round(100 - (health?.avgAnomalyScore || 0) * 100);
-  const status = healthScore >= 80 ? 'healthy' : healthScore >= 60 ? 'warning' : 'critical';
+  const status =
+    healthScore >= 80 ? "healthy" : healthScore >= 60 ? "warning" : "critical";
 
   // Prepare chart data
-  const chartData = health?.recentMetrics?.slice(0, 20).reverse().map(m => ({
-    time: format(new Date(m.timestamp), 'HH:mm'),
-    value: m.value,
-    anomaly: (m.anomalyScore || 0) * 100
-  })) || [];
+  const chartData =
+    health?.recentMetrics
+      ?.slice(0, 20)
+      .reverse()
+      .map((m) => ({
+        time: format(new Date(m.timestamp), "HH:mm"),
+        value: m.value,
+        anomaly: (m.anomalyScore || 0) * 100,
+      })) || [];
 
   return (
     <Card>
@@ -125,7 +139,7 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
               <CardDescription>System Component Health</CardDescription>
             </div>
           </div>
-          <Badge variant={status === 'healthy' ? 'default' : 'destructive'}>
+          <Badge variant={status === "healthy" ? "default" : "destructive"}>
             {healthScore}% Healthy
           </Badge>
         </div>
@@ -144,23 +158,34 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold">
-              {health?.recentMetrics?.filter(m => (m.anomalyScore || 0) > 0.5).length || 0}
+              {health?.recentMetrics?.filter((m) => (m.anomalyScore || 0) > 0.5)
+                .length || 0}
             </div>
-            <div className="text-xs text-muted-foreground">Recent Anomalies</div>
+            <div className="text-xs text-muted-foreground">
+              Recent Anomalies
+            </div>
           </div>
           <div>
             <div className="text-2xl font-bold">
               {health?.predictions?.length || 0}
             </div>
-            <div className="text-xs text-muted-foreground">Active Predictions</div>
+            <div className="text-xs text-muted-foreground">
+              Active Predictions
+            </div>
           </div>
           <div>
             <div className="text-2xl font-bold">
-              {health?.history?.[0] 
-                ? formatDistance(new Date(health.history[0].resolvedAt), new Date(), { addSuffix: false })
-                : 'Never'}
+              {health?.history?.[0]
+                ? formatDistance(
+                    new Date(health.history[0].resolvedAt),
+                    new Date(),
+                    { addSuffix: false },
+                  )
+                : "Never"}
             </div>
-            <div className="text-xs text-muted-foreground">Last Maintenance</div>
+            <div className="text-xs text-muted-foreground">
+              Last Maintenance
+            </div>
           </div>
         </div>
 
@@ -176,17 +201,17 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
                     <XAxis dataKey="time" />
                     <YAxis />
                     <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#8884d8" 
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#8884d8"
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="anomaly" 
-                      stroke="#ef4444" 
+                    <Line
+                      type="monotone"
+                      dataKey="anomaly"
+                      stroke="#ef4444"
                       strokeWidth={1}
                       dot={false}
                     />
@@ -198,12 +223,19 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
             {/* Active Predictions */}
             {health?.predictions && health.predictions.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold mb-2">Active Predictions</h4>
+                <h4 className="text-sm font-semibold mb-2">
+                  Active Predictions
+                </h4>
                 <ScrollArea className="h-32">
                   <div className="space-y-2">
                     {health.predictions.map((pred: any) => (
-                      <div key={pred.id} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{pred.predictedIssue}</span>
+                      <div
+                        key={pred.id}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-muted-foreground">
+                          {pred.predictedIssue}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           {Math.round(pred.probability * 100)}%
                         </Badge>
@@ -217,14 +249,16 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
             {/* Maintenance History */}
             {health?.history && health.history.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold mb-2">Recent Maintenance</h4>
+                <h4 className="text-sm font-semibold mb-2">
+                  Recent Maintenance
+                </h4>
                 <ScrollArea className="h-32">
                   <div className="space-y-2">
                     {health.history.slice(0, 3).map((item: any) => (
                       <div key={item.id} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span>{item.issue}</span>
-                          {item.outcome === 'successful' ? (
+                          {item.outcome === "successful" ? (
                             <CheckCircle className="w-4 h-4 text-green-500" />
                           ) : (
                             <AlertTriangle className="w-4 h-4 text-yellow-500" />
@@ -232,7 +266,7 @@ export function ComponentHealth({ component, detailed = true }: ComponentHealthP
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
-                          {format(new Date(item.resolvedAt), 'PPP')}
+                          {format(new Date(item.resolvedAt), "PPP")}
                           <span>• {item.downtimeMinutes} min downtime</span>
                         </div>
                       </div>

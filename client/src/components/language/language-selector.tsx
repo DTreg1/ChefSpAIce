@@ -28,25 +28,30 @@ export function LanguageSelector({
   onChange,
   showNativeName = true,
   disabled = false,
-  placeholder = "Select language"
+  placeholder = "Select language",
 }: LanguageSelectorProps) {
   // Fetch supported languages
   const { data: languages = [], isLoading } = useQuery<Language[]>({
-    queryKey: ['/api/languages/supported'],
+    queryKey: ["/api/languages/supported"],
     staleTime: 60 * 60 * 1000, // Cache for 1 hour
   });
 
   // Get popular languages for quick access
-  const popularLanguages = ['en', 'es', 'fr', 'de', 'zh', 'ja'];
-  const popular = languages.filter(lang => popularLanguages.includes(lang.code));
-  const others = languages.filter(lang => !popularLanguages.includes(lang.code));
+  const popularLanguages = ["en", "es", "fr", "de", "zh", "ja"];
+  const popular = languages.filter((lang) =>
+    popularLanguages.includes(lang.code),
+  );
+  const others = languages.filter(
+    (lang) => !popularLanguages.includes(lang.code),
+  );
 
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled || isLoading}>
-      <SelectTrigger 
-        className="w-full" 
-        data-testid="select-language"
-      >
+    <Select
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled || isLoading}
+    >
+      <SelectTrigger className="w-full" data-testid="select-language">
         <div className="flex items-center gap-2">
           <Languages className="h-4 w-4" />
           <SelectValue placeholder={placeholder} />
@@ -59,8 +64,8 @@ export function LanguageSelector({
               Popular Languages
             </div>
             {popular.map((lang) => (
-              <SelectItem 
-                key={lang.code} 
+              <SelectItem
+                key={lang.code}
                 value={lang.code}
                 data-testid={`select-language-${lang.code}`}
               >
@@ -71,23 +76,25 @@ export function LanguageSelector({
                       {lang.nativeName}
                     </span>
                   )}
-                  {lang.code === 'en' && (
-                    <Badge variant="outline" className="ml-2">Default</Badge>
+                  {lang.code === "en" && (
+                    <Badge variant="outline" className="ml-2">
+                      Default
+                    </Badge>
                   )}
                 </div>
               </SelectItem>
             ))}
           </>
         )}
-        
+
         {others.length > 0 && (
           <>
             <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Other Languages
             </div>
             {others.map((lang) => (
-              <SelectItem 
-                key={lang.code} 
+              <SelectItem
+                key={lang.code}
                 value={lang.code}
                 data-testid={`select-language-${lang.code}`}
               >

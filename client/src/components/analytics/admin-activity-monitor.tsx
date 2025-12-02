@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import { 
+import {
   Activity,
   Users,
   AlertTriangle,
@@ -13,10 +13,16 @@ import {
   ChevronRight,
   Search,
   Shield,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,43 +90,50 @@ export default function AdminActivityMonitor() {
   const [actionFilter, setActionFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("today");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Get date range based on filter
   const getDateRange = () => {
     const now = new Date();
     switch (dateFilter) {
       case "today":
-        return { 
-          start: startOfDay(now), 
-          end: endOfDay(now) 
+        return {
+          start: startOfDay(now),
+          end: endOfDay(now),
         };
       case "week":
-        return { 
-          start: subDays(startOfDay(now), 7), 
-          end: endOfDay(now) 
+        return {
+          start: subDays(startOfDay(now), 7),
+          end: endOfDay(now),
         };
       case "month":
-        return { 
-          start: subDays(startOfDay(now), 30), 
-          end: endOfDay(now) 
+        return {
+          start: subDays(startOfDay(now), 30),
+          end: endOfDay(now),
         };
       default:
-        return { 
-          start: startOfDay(now), 
-          end: endOfDay(now) 
+        return {
+          start: startOfDay(now),
+          end: endOfDay(now),
         };
     }
   };
-  
+
   const dateRange = getDateRange();
-  
+
   // Fetch activity logs
-  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery<{
+  const {
+    data: logsData,
+    isLoading: logsLoading,
+    refetch: refetchLogs,
+  } = useQuery<{
     data: ActivityLog[];
     total: number;
     totalPages: number;
   }>({
-    queryKey: ["/api/admin/activity-logs", { page, userFilter, actionFilter, dateFilter }],
+    queryKey: [
+      "/api/admin/activity-logs",
+      { page, userFilter, actionFilter, dateFilter },
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -128,45 +141,49 @@ export default function AdminActivityMonitor() {
         startDate: dateRange.start.toISOString(),
         endDate: dateRange.end.toISOString(),
       });
-      
+
       if (userFilter) params.append("userId", userFilter);
       if (actionFilter !== "all") params.append("action", actionFilter);
-      
+
       const response = await fetch(`/api/admin/activity-logs?${params}`, {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch activity logs");
       }
-      
+
       return response.json();
     },
   });
-  
+
   // Fetch activity statistics
-  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery<ActivityStats>({
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useQuery<ActivityStats>({
     queryKey: ["/api/admin/activity-logs/stats", { userFilter, dateFilter }],
     queryFn: async () => {
       const params = new URLSearchParams({
         startDate: dateRange.start.toISOString(),
         endDate: dateRange.end.toISOString(),
       });
-      
+
       if (userFilter) params.append("userId", userFilter);
-      
+
       const response = await fetch(`/api/admin/activity-logs/stats?${params}`, {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch activity statistics");
       }
-      
+
       return response.json();
     },
   });
-  
+
   // Fetch system events (activities with no user)
   const { data: systemEvents, isLoading: _systemLoading } = useQuery<{
     data: ActivityLog[];
@@ -179,19 +196,22 @@ export default function AdminActivityMonitor() {
         endDate: dateRange.end.toISOString(),
         limit: "100",
       });
-      
-      const response = await fetch(`/api/admin/activity-logs/system?${params}`, {
-        credentials: "include",
-      });
-      
+
+      const response = await fetch(
+        `/api/admin/activity-logs/system?${params}`,
+        {
+          credentials: "include",
+        },
+      );
+
       if (!response.ok) {
         throw new Error("Failed to fetch system events");
       }
-      
+
       return response.json();
     },
   });
-  
+
   // Export all logs
   const handleExportAll = async () => {
     try {
@@ -199,17 +219,22 @@ export default function AdminActivityMonitor() {
         startDate: dateRange.start.toISOString(),
         endDate: dateRange.end.toISOString(),
       });
-      
-      const response = await fetch(`/api/admin/activity-logs?${params}&limit=10000`, {
-        credentials: "include",
-      });
-      
+
+      const response = await fetch(
+        `/api/admin/activity-logs?${params}&limit=10000`,
+        {
+          credentials: "include",
+        },
+      );
+
       if (!response.ok) {
         throw new Error("Failed to export logs");
       }
-      
+
       const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -222,7 +247,7 @@ export default function AdminActivityMonitor() {
       console.error("Error exporting logs:", error);
     }
   };
-  
+
   // Trigger cleanup
   const handleCleanup = async () => {
     try {
@@ -235,11 +260,11 @@ export default function AdminActivityMonitor() {
           excludeActions: ["login", "logout", "error_occurred"],
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to cleanup logs");
       }
-      
+
       const result = await response.json();
       alert(`Cleanup complete: ${result.deletedCount} logs removed`);
       void refetchLogs();
@@ -248,18 +273,18 @@ export default function AdminActivityMonitor() {
       console.error("Error cleaning up logs:", error);
     }
   };
-  
+
   const getTrendIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
     if (change < 0) return <TrendingDown className="h-4 w-4 text-red-500" />;
     return null;
   };
-  
+
   const formatChange = (change: number) => {
     const sign = change > 0 ? "+" : "";
     return `${sign}${change.toFixed(1)}%`;
   };
-  
+
   if (logsLoading || statsLoading) {
     return (
       <div className="space-y-6">
@@ -270,7 +295,7 @@ export default function AdminActivityMonitor() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
@@ -279,7 +304,7 @@ export default function AdminActivityMonitor() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Header Controls */}
@@ -297,7 +322,10 @@ export default function AdminActivityMonitor() {
             </div>
             <div className="flex items-center gap-2">
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-32" data-testid="select-date-filter">
+                <SelectTrigger
+                  className="w-32"
+                  data-testid="select-date-filter"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,65 +365,88 @@ export default function AdminActivityMonitor() {
           </div>
         </CardHeader>
       </Card>
-      
+
       {/* Stats Overview */}
       {!!statsData && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Actions</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Actions
+              </CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statsData.totalActions.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {statsData.totalActions.toLocaleString()}
+              </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {getTrendIcon(statsData.trends.actions.change)}
-                <span>{formatChange(statsData.trends.actions.change)} from previous period</span>
+                <span>
+                  {formatChange(statsData.trends.actions.change)} from previous
+                  period
+                </span>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Active Users
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{statsData.uniqueUsers}</div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {getTrendIcon(statsData.trends.users.change)}
-                <span>{formatChange(statsData.trends.users.change)} from previous period</span>
+                <span>
+                  {formatChange(statsData.trends.users.change)} from previous
+                  period
+                </span>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(statsData.errorRate * 100).toFixed(2)}%</div>
+              <div className="text-2xl font-bold">
+                {(statsData.errorRate * 100).toFixed(2)}%
+              </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {getTrendIcon(statsData.trends.errors.change)}
-                <span>{formatChange(statsData.trends.errors.change)} from previous period</span>
+                <span>
+                  {formatChange(statsData.trends.errors.change)} from previous
+                  period
+                </span>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Events</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                System Events
+              </CardTitle>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemEvents?.total || 0}</div>
-              <p className="text-xs text-muted-foreground">Automated system actions</p>
+              <div className="text-2xl font-bold">
+                {systemEvents?.total || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Automated system actions
+              </p>
             </CardContent>
           </Card>
         </div>
       )}
-      
+
       {/* Main Content Tabs */}
       <Card>
         <CardContent className="pt-6">
@@ -406,7 +457,7 @@ export default function AdminActivityMonitor() {
               <TabsTrigger value="users">User Activity</TabsTrigger>
               <TabsTrigger value="system">System Events</TabsTrigger>
             </TabsList>
-            
+
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
@@ -417,31 +468,44 @@ export default function AdminActivityMonitor() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {statsData?.topActions.slice(0, 5).map((action, index) => (
-                        <div key={action.action} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{index + 1}.</span>
-                            <span className="text-sm">
-                              {action.action.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-                            </span>
+                      {statsData?.topActions
+                        .slice(0, 5)
+                        .map((action, index) => (
+                          <div
+                            key={action.action}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {index + 1}.
+                              </span>
+                              <span className="text-sm">
+                                {action.action
+                                  .replace(/_/g, " ")
+                                  .replace(/\b\w/g, (c) => c.toUpperCase())}
+                              </span>
+                            </div>
+                            <Badge variant="secondary">{action.count}</Badge>
                           </div>
-                          <Badge variant="secondary">{action.count}</Badge>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 {/* Recent Errors */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Recent Errors</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {statsData?.recentErrors && statsData.recentErrors.length > 0 ? (
+                    {statsData?.recentErrors &&
+                    statsData.recentErrors.length > 0 ? (
                       <div className="space-y-2">
                         {statsData.recentErrors.slice(0, 5).map((error) => (
-                          <div key={error.id} className="flex flex-col gap-1 pb-2 border-b last:border-0">
+                          <div
+                            key={error.id}
+                            className="flex flex-col gap-1 pb-2 border-b last:border-0"
+                          >
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-medium text-destructive">
                                 {error.action.replace(/_/g, " ")}
@@ -459,23 +523,29 @@ export default function AdminActivityMonitor() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No recent errors</p>
+                      <p className="text-sm text-muted-foreground">
+                        No recent errors
+                      </p>
                     )}
                   </CardContent>
                 </Card>
               </div>
-              
+
               {/* Activity by Hour Chart (simplified) */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Activity Distribution (24h)</CardTitle>
+                  <CardTitle className="text-base">
+                    Activity Distribution (24h)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end gap-1 h-32">
                     {statsData?.actionsByHour.map((hour) => {
-                      const maxCount = Math.max(...(statsData.actionsByHour.map(h => h.count) || [1]));
+                      const maxCount = Math.max(
+                        ...(statsData.actionsByHour.map((h) => h.count) || [1]),
+                      );
                       const height = (hour.count / maxCount) * 100;
-                      
+
                       return (
                         <Tooltip key={hour.hour}>
                           <TooltipTrigger asChild>
@@ -486,7 +556,9 @@ export default function AdminActivityMonitor() {
                             />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{hour.hour}:00 - {hour.count} actions</p>
+                            <p>
+                              {hour.hour}:00 - {hour.count} actions
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       );
@@ -502,7 +574,7 @@ export default function AdminActivityMonitor() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Activity Logs Tab */}
             <TabsContent value="logs" className="space-y-4">
               <div className="flex items-center gap-4">
@@ -519,7 +591,10 @@ export default function AdminActivityMonitor() {
                   </div>
                 </div>
                 <Select value={actionFilter} onValueChange={setActionFilter}>
-                  <SelectTrigger className="w-48" data-testid="select-action-filter-admin">
+                  <SelectTrigger
+                    className="w-48"
+                    data-testid="select-action-filter-admin"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -531,7 +606,7 @@ export default function AdminActivityMonitor() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -546,75 +621,87 @@ export default function AdminActivityMonitor() {
                   </TableHeader>
                   <TableBody>
                     {logsData?.data
-                      .filter(log => !searchQuery || 
-                        log.user?.email.includes(searchQuery) || 
-                        log.userId?.includes(searchQuery))
+                      .filter(
+                        (log) =>
+                          !searchQuery ||
+                          log.user?.email.includes(searchQuery) ||
+                          log.userId?.includes(searchQuery),
+                      )
                       .map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="text-xs">
-                          {format(new Date(log.timestamp), "MMM d, HH:mm:ss")}
-                        </TableCell>
-                        <TableCell>
-                          {log.user ? (
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {log.user.firstName} {log.user.lastName}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {log.user.email}
-                              </span>
-                            </div>
-                          ) : (
-                            <Badge variant="outline">System</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={log.metadata?.success === false ? "destructive" : "default"}
-                            className="text-xs"
-                          >
-                            {log.action.replace(/_/g, " ")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {log.entity.replace(/_/g, " ")}
-                        </TableCell>
-                        <TableCell>
-                          {!!log.metadata && (
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
-                                  {JSON.stringify(log.metadata).substring(0, 50)}...
+                        <TableRow key={log.id}>
+                          <TableCell className="text-xs">
+                            {format(new Date(log.timestamp), "MMM d, HH:mm:ss")}
+                          </TableCell>
+                          <TableCell>
+                            {log.user ? (
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">
+                                  {log.user.firstName} {log.user.lastName}
                                 </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-sm">
-                                <pre className="text-xs">
-                                  {JSON.stringify(log.metadata, null, 2)}
-                                </pre>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {log.ipAddress || "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                                <span className="text-xs text-muted-foreground">
+                                  {log.user.email}
+                                </span>
+                              </div>
+                            ) : (
+                              <Badge variant="outline">System</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                log.metadata?.success === false
+                                  ? "destructive"
+                                  : "default"
+                              }
+                              className="text-xs"
+                            >
+                              {log.action.replace(/_/g, " ")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.entity.replace(/_/g, " ")}
+                          </TableCell>
+                          <TableCell>
+                            {!!log.metadata && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
+                                    {JSON.stringify(log.metadata).substring(
+                                      0,
+                                      50,
+                                    )}
+                                    ...
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-sm">
+                                  <pre className="text-xs">
+                                    {JSON.stringify(log.metadata, null, 2)}
+                                  </pre>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {log.ipAddress || "-"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
-              
+
               {/* Pagination */}
               {!!logsData && logsData.totalPages > 1 && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Page {page} of {logsData.totalPages} ({logsData.total} total logs)
+                    Page {page} of {logsData.totalPages} ({logsData.total} total
+                    logs)
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                       data-testid="button-prev-page"
                     >
@@ -624,7 +711,9 @@ export default function AdminActivityMonitor() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage(p => Math.min(logsData.totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(logsData.totalPages, p + 1))
+                      }
                       disabled={page === logsData.totalPages}
                       data-testid="button-next-page"
                     >
@@ -635,7 +724,7 @@ export default function AdminActivityMonitor() {
                 </div>
               )}
             </TabsContent>
-            
+
             {/* User Activity Tab */}
             <TabsContent value="users" className="space-y-4">
               <div className="rounded-md border">
@@ -653,7 +742,10 @@ export default function AdminActivityMonitor() {
                   <TableBody>
                     {/* This would need a separate endpoint to aggregate by user */}
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground"
+                      >
                         User aggregation data will be displayed here
                       </TableCell>
                     </TableRow>
@@ -661,17 +753,17 @@ export default function AdminActivityMonitor() {
                 </Table>
               </div>
             </TabsContent>
-            
+
             {/* System Events Tab */}
             <TabsContent value="system" className="space-y-4">
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  System events are automated actions without a user context, 
+                  System events are automated actions without a user context,
                   such as scheduled jobs, cleanup tasks, and system errors.
                 </AlertDescription>
               </Alert>
-              
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>

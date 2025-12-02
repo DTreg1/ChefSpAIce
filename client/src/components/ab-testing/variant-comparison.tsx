@@ -1,7 +1,20 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, DollarSign, Clock, Target, Activity } from "lucide-react";
+import {
+  Users,
+  TrendingUp,
+  DollarSign,
+  Clock,
+  Target,
+  Activity,
+} from "lucide-react";
 import { type AbTest, type AbTestResult } from "@shared/schema";
 
 interface AggregatedVariantData {
@@ -36,19 +49,23 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
     );
   }
 
-  const conversionRateA = aggregated.variantA.visitors > 0 
-    ? (aggregated.variantA.conversions / aggregated.variantA.visitors) * 100 
-    : 0;
-  const conversionRateB = aggregated.variantB.visitors > 0 
-    ? (aggregated.variantB.conversions / aggregated.variantB.visitors) * 100 
-    : 0;
+  const conversionRateA =
+    aggregated.variantA.visitors > 0
+      ? (aggregated.variantA.conversions / aggregated.variantA.visitors) * 100
+      : 0;
+  const conversionRateB =
+    aggregated.variantB.visitors > 0
+      ? (aggregated.variantB.conversions / aggregated.variantB.visitors) * 100
+      : 0;
 
-  const revenuePerVisitorA = aggregated.variantA.visitors > 0 
-    ? aggregated.variantA.revenue / aggregated.variantA.visitors 
-    : 0;
-  const revenuePerVisitorB = aggregated.variantB.visitors > 0 
-    ? aggregated.variantB.revenue / aggregated.variantB.visitors 
-    : 0;
+  const revenuePerVisitorA =
+    aggregated.variantA.visitors > 0
+      ? aggregated.variantA.revenue / aggregated.variantA.visitors
+      : 0;
+  const revenuePerVisitorB =
+    aggregated.variantB.visitors > 0
+      ? aggregated.variantB.revenue / aggregated.variantB.visitors
+      : 0;
 
   const getVariantColor = (isWinner: boolean) => {
     return isWinner ? "text-green-600 dark:text-green-400" : "";
@@ -68,7 +85,9 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline">Variant A</Badge>
-              <span className="text-sm font-medium">{test.configuration?.controlGroup?.features?.name || 'Control'}</span>
+              <span className="text-sm font-medium">
+                {test.configuration?.controlGroup?.features?.name || "Control"}
+              </span>
             </div>
             {!isVariantBWinner && conversionRateA > 0 && (
               <Badge variant="default">Leading</Badge>
@@ -120,7 +139,9 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline">Variant B</Badge>
-              <span className="text-sm font-medium">{test.configuration?.variants?.[0]?.name || 'Variant B'}</span>
+              <span className="text-sm font-medium">
+                {test.configuration?.variants?.[0]?.name || "Variant B"}
+              </span>
             </div>
             {isVariantBWinner && conversionRateB > 0 && (
               <Badge variant="default">Leading</Badge>
@@ -167,12 +188,14 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold">
-                  {conversionRateA > 0 
+                  {conversionRateA > 0
                     ? `${(((conversionRateB - conversionRateA) / conversionRateA) * 100).toFixed(1)}%`
                     : "N/A"}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {isVariantBWinner ? "Variant B is winning" : "Variant A is winning"}
+                  {isVariantBWinner
+                    ? "Variant B is winning"
+                    : "Variant A is winning"}
                 </div>
               </div>
             </div>
@@ -197,7 +220,10 @@ function MetricCard({ icon, label, value, className }: MetricCardProps) {
         {icon}
         <span className="text-xs">{label}</span>
       </div>
-      <div className={`text-xl font-semibold ${className || ""}`} data-testid={`text-${label.toLowerCase().replace(/[^a-z]/g, '-')}`}>
+      <div
+        className={`text-xl font-semibold ${className || ""}`}
+        data-testid={`text-${label.toLowerCase().replace(/[^a-z]/g, "-")}`}
+      >
         {value}
       </div>
     </div>

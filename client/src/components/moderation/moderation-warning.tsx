@@ -1,12 +1,18 @@
 import { AlertCircle, AlertTriangle, ShieldAlert, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 interface ModerationWarningProps {
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   categories: string[];
   message?: string;
   suggestions?: string[];
@@ -24,7 +30,7 @@ const severityConfig = {
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
     borderColor: "border-yellow-300 dark:border-yellow-800",
     title: "Content Notice",
-    badgeVariant: "secondary" as const
+    badgeVariant: "secondary" as const,
   },
   medium: {
     icon: AlertTriangle,
@@ -32,7 +38,7 @@ const severityConfig = {
     bgColor: "bg-orange-50 dark:bg-orange-900/20",
     borderColor: "border-orange-300 dark:border-orange-800",
     title: "Content Warning",
-    badgeVariant: "secondary" as const
+    badgeVariant: "secondary" as const,
   },
   high: {
     icon: ShieldAlert,
@@ -40,7 +46,7 @@ const severityConfig = {
     bgColor: "bg-red-50 dark:bg-red-900/20",
     borderColor: "border-red-300 dark:border-red-800",
     title: "Content Blocked",
-    badgeVariant: "destructive" as const
+    badgeVariant: "destructive" as const,
   },
   critical: {
     icon: ShieldAlert,
@@ -48,8 +54,8 @@ const severityConfig = {
     bgColor: "bg-red-100 dark:bg-red-900/30",
     borderColor: "border-red-500 dark:border-red-700",
     title: "Severe Violation",
-    badgeVariant: "destructive" as const
-  }
+    badgeVariant: "destructive" as const,
+  },
 };
 
 const categoryLabels: { [key: string]: string } = {
@@ -64,7 +70,7 @@ const categoryLabels: { [key: string]: string } = {
   harassment: "Harassment",
   hate: "Hate Speech",
   selfHarm: "Self-Harm",
-  violence: "Violence"
+  violence: "Violence",
 };
 
 export function ModerationWarning({
@@ -76,7 +82,7 @@ export function ModerationWarning({
   allowAppeal = false,
   onDismiss,
   onAppeal,
-  onEdit
+  onEdit,
 }: ModerationWarningProps) {
   const [isDismissed, setIsDismissed] = useState(false);
   const config = severityConfig[severity];
@@ -110,18 +116,21 @@ export function ModerationWarning({
       </CardHeader>
       <CardContent className="space-y-4">
         {message && (
-          <p className="text-sm text-muted-foreground" data-testid="text-warning-message">
+          <p
+            className="text-sm text-muted-foreground"
+            data-testid="text-warning-message"
+          >
             {message}
           </p>
         )}
-        
+
         {categories.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Detected Issues:</p>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
-                <Badge 
-                  key={category} 
+                <Badge
+                  key={category}
                   variant={config.badgeVariant}
                   data-testid={`badge-category-${category}`}
                 >
@@ -145,13 +154,13 @@ export function ModerationWarning({
           </div>
         )}
       </CardContent>
-      
+
       {(allowAppeal || onEdit) && (
         <CardFooter className="gap-2">
           {onEdit && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onEdit}
               data-testid="button-edit-content"
             >
@@ -159,9 +168,9 @@ export function ModerationWarning({
             </Button>
           )}
           {allowAppeal && onAppeal && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onAppeal}
               data-testid="button-appeal-decision"
             >

@@ -4,25 +4,25 @@ This document provides step-by-step instructions with copyable prompts to config
 
 ## Current Status Summary
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Database (PostgreSQL) | ✅ Working | Neon serverless via Drizzle ORM |
-| Health Check API | ✅ Working | `/health` endpoint |
-| Storage Layer (375 methods) | ✅ Working | 16 domains fully aligned, 1 partial (AI-ML) |
-| Google OAuth | ✅ Working | Requires credentials |
-| GitHub OAuth | ✅ Working | Requires credentials |
-| Twitter/X OAuth | ✅ Working | OAuth 2.0 with PKCE, requires credentials |
-| Apple OAuth | ✅ Working | Requires credentials |
-| Replit OAuth | ✅ Working | Uses OIDC integration |
-| Email/Password Auth | ✅ Working | Full registration/login flow |
-| Onboarding Flow | ✅ Working | Auto-redirects new users |
-| AI Chat (OpenAI) | ✅ Working | Requires OPENAI_API_KEY |
-| Push Notifications (Web) | ⚠️ Needs VAPID Keys | Code implemented, needs key configuration |
-| Push Notifications (FCM) | ⚠️ Needs Credentials | Android notifications |
-| Push Notifications (APNs) | ⚠️ Needs Credentials | iOS notifications |
-| Stripe Integration | ⚠️ Needs Setup | Webhook secret required |
-| Object Storage (GCS) | ⚠️ Needs Setup | Image uploads |
-| Twilio SMS | ❌ Not Configured | Optional feature |
+| Feature                     | Status               | Notes                                       |
+| --------------------------- | -------------------- | ------------------------------------------- |
+| Database (PostgreSQL)       | ✅ Working           | Neon serverless via Drizzle ORM             |
+| Health Check API            | ✅ Working           | `/health` endpoint                          |
+| Storage Layer (375 methods) | ✅ Working           | 16 domains fully aligned, 1 partial (AI-ML) |
+| Google OAuth                | ✅ Working           | Requires credentials                        |
+| GitHub OAuth                | ✅ Working           | Requires credentials                        |
+| Twitter/X OAuth             | ✅ Working           | OAuth 2.0 with PKCE, requires credentials   |
+| Apple OAuth                 | ✅ Working           | Requires credentials                        |
+| Replit OAuth                | ✅ Working           | Uses OIDC integration                       |
+| Email/Password Auth         | ✅ Working           | Full registration/login flow                |
+| Onboarding Flow             | ✅ Working           | Auto-redirects new users                    |
+| AI Chat (OpenAI)            | ✅ Working           | Requires OPENAI_API_KEY                     |
+| Push Notifications (Web)    | ⚠️ Needs VAPID Keys  | Code implemented, needs key configuration   |
+| Push Notifications (FCM)    | ⚠️ Needs Credentials | Android notifications                       |
+| Push Notifications (APNs)   | ⚠️ Needs Credentials | iOS notifications                           |
+| Stripe Integration          | ⚠️ Needs Setup       | Webhook secret required                     |
+| Object Storage (GCS)        | ⚠️ Needs Setup       | Image uploads                               |
+| Twilio SMS                  | ❌ Not Configured    | Optional feature                            |
 
 ---
 
@@ -31,6 +31,7 @@ This document provides step-by-step instructions with copyable prompts to config
 After successful authentication (via any method), users experience:
 
 1. **New Users** → Redirected to onboarding page with:
+
    - "Welcome to ChefSpAIce!" greeting
    - Storage areas setup (Refrigerator, Freezer, Pantry, Counter)
    - Kitchen Equipment selection
@@ -51,11 +52,13 @@ After successful authentication (via any method), users experience:
 The application uses PostgreSQL via Neon serverless. Database URL is automatically provided by Replit.
 
 **Environment Variable:**
+
 ```bash
 DATABASE_URL=postgresql://...  # Automatically set by Replit
 ```
 
 **Testing:**
+
 ```bash
 curl https://YOUR_DOMAIN/health
 ```
@@ -67,6 +70,7 @@ curl https://YOUR_DOMAIN/health
 **Status:** ✅ Auto-generated if not set
 
 **Environment Variable:**
+
 ```bash
 SESSION_SECRET=your-random-session-secret-at-least-32-chars
 ```
@@ -78,12 +82,14 @@ SESSION_SECRET=your-random-session-secret-at-least-32-chars
 **Status:** Requires API key for AI chat, recipe generation, and analysis features
 
 **Steps:**
+
 1. Go to [OpenAI Platform](https://platform.openai.com/)
 2. Navigate to API Keys
 3. Create a new secret key
 4. Copy the key
 
 **Environment Variable:**
+
 ```bash
 OPENAI_API_KEY=sk-...
 ```
@@ -97,6 +103,7 @@ OPENAI_API_KEY=sk-...
 **Status:** ✅ Code implemented, requires credentials
 
 **What you need:**
+
 - Google Cloud Console account
 - OAuth 2.0 Client ID and Secret
 
@@ -111,6 +118,7 @@ OPENAI_API_KEY=sk-...
 7. Copy the Client ID and Client Secret
 
 **Required Secrets:**
+
 ```bash
 GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret
@@ -123,6 +131,7 @@ GOOGLE_CLIENT_SECRET=your_client_secret
 **Status:** ✅ Code implemented, requires credentials
 
 **What you need:**
+
 - GitHub account
 - OAuth App credentials
 
@@ -138,6 +147,7 @@ GOOGLE_CLIENT_SECRET=your_client_secret
 5. Copy Client ID and generate a new Client Secret
 
 **Required Secrets:**
+
 ```bash
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
@@ -150,6 +160,7 @@ GITHUB_CLIENT_SECRET=your_client_secret
 **Status:** ✅ Code implemented, requires credentials
 
 **What you need:**
+
 - Twitter Developer account
 - OAuth 2.0 Client ID and Client Secret
 
@@ -167,6 +178,7 @@ GITHUB_CLIENT_SECRET=your_client_secret
 7. Copy the Client ID and Client Secret
 
 **Required Secrets:**
+
 ```bash
 TWITTER_CLIENT_ID=your_client_id
 TWITTER_CLIENT_SECRET=your_client_secret
@@ -181,6 +193,7 @@ TWITTER_CLIENT_SECRET=your_client_secret
 **Status:** ✅ Code implemented, requires credentials
 
 **What you need:**
+
 - Apple Developer account ($99/year)
 - Services ID and Private Key
 
@@ -198,6 +211,7 @@ TWITTER_CLIENT_SECRET=your_client_secret
    - Download the .p8 key file
 
 **Required Secrets:**
+
 ```bash
 APPLE_CLIENT_ID=com.yourcompany.chefspaice
 APPLE_TEAM_ID=your_10_char_team_id
@@ -223,6 +237,7 @@ Replit Auth uses OpenID Connect and is integrated via the Replit platform. The a
 3. Set callback URL: `https://YOUR_REPLIT_DOMAIN/api/auth/replit/callback`
 
 **Optional Secrets (for custom app):**
+
 ```bash
 REPLIT_CLIENT_ID=your_client_id
 REPLIT_CLIENT_SECRET=your_client_secret
@@ -235,12 +250,14 @@ REPLIT_CLIENT_SECRET=your_client_secret
 **Status:** ✅ Fully working
 
 Email/password authentication is fully configured and includes:
+
 - User registration with email, password, first name, last name
 - Secure password hashing with bcrypt
 - Automatic login after registration
 - Session-based authentication
 
 **Testing:**
+
 ```bash
 # Register a new user
 curl -X POST https://YOUR_REPLIT_DOMAIN/api/auth/email/register \
@@ -270,11 +287,13 @@ curl -X POST https://YOUR_REPLIT_DOMAIN/api/auth/email/login \
 **Status:** ⚠️ Requires VAPID keys
 
 **Generate VAPID Keys:**
+
 ```bash
 npx web-push generate-vapid-keys
 ```
 
 **Required Secrets:**
+
 ```bash
 VAPID_PUBLIC_KEY=BN...
 VAPID_PRIVATE_KEY=...
@@ -288,6 +307,7 @@ VAPID_SUBJECT=mailto:support@chefspaice.app
 **Status:** ⚠️ Code implemented, needs credentials
 
 **What you need:**
+
 - Firebase project with Cloud Messaging enabled
 - Service account JSON file
 
@@ -300,6 +320,7 @@ VAPID_SUBJECT=mailto:support@chefspaice.app
 5. Download the JSON file
 
 **Required Secrets:**
+
 ```bash
 FCM_SERVICE_ACCOUNT={"type":"service_account","project_id":"..."}
 ```
@@ -311,6 +332,7 @@ FCM_SERVICE_ACCOUNT={"type":"service_account","project_id":"..."}
 **Status:** ⚠️ Code implemented, needs credentials
 
 **What you need:**
+
 - Apple Developer account
 - APNs Key (.p8 file)
 - Bundle ID
@@ -323,6 +345,7 @@ FCM_SERVICE_ACCOUNT={"type":"service_account","project_id":"..."}
 4. Note your Key ID and Team ID
 
 **Required Secrets:**
+
 ```bash
 APNS_KEY_ID=your_10_char_key_id
 APNS_TEAM_ID=your_10_char_team_id
@@ -353,6 +376,7 @@ APNS_PRODUCTION=false
 5. Copy the Signing Secret
 
 **Required Secrets:**
+
 ```bash
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -368,6 +392,7 @@ VITE_STRIPE_PUBLIC_KEY=pk_...
 For image uploads and asset storage.
 
 **Required Secrets:**
+
 ```bash
 OBJECT_STORAGE_BUCKET=your-bucket-name
 GCS_SERVICE_ACCOUNT={"type":"service_account",...}
@@ -382,6 +407,7 @@ GCS_SERVICE_ACCOUNT={"type":"service_account",...}
 The USDA FoodData Central API provides nutrition data. Results are cached locally.
 
 **Optional Secret:**
+
 ```bash
 USDA_API_KEY=your_api_key
 ```
@@ -391,6 +417,7 @@ USDA_API_KEY=your_api_key
 ## Quick Reference: All Secrets
 
 ### High Priority (Core Features)
+
 ```bash
 # Database
 DATABASE_URL=                      # Auto-provided by Replit
@@ -403,6 +430,7 @@ OPENAI_API_KEY=                    # Required for AI chat
 ```
 
 ### Medium Priority (Authentication)
+
 ```bash
 # Google OAuth
 GOOGLE_CLIENT_ID=
@@ -424,6 +452,7 @@ APPLE_PRIVATE_KEY=
 ```
 
 ### Push Notifications
+
 ```bash
 # Web Push
 VAPID_PUBLIC_KEY=
@@ -441,6 +470,7 @@ APNS_KEY_CONTENT=
 ```
 
 ### Low Priority (Optional Features)
+
 ```bash
 # Stripe
 STRIPE_SECRET_KEY=
@@ -456,6 +486,7 @@ OBJECT_STORAGE_BUCKET=
 ## Testing Authentication
 
 ### Test OAuth Providers
+
 ```bash
 # Open these URLs in browser to test OAuth flows
 https://YOUR_REPLIT_DOMAIN/api/auth/google/login
@@ -466,6 +497,7 @@ https://YOUR_REPLIT_DOMAIN/api/auth/replit/login
 ```
 
 ### Verify Auth Status
+
 ```bash
 # Check current user session
 curl https://YOUR_REPLIT_DOMAIN/api/user
@@ -479,25 +511,33 @@ curl https://YOUR_REPLIT_DOMAIN/api/v1/auth/config-status
 ## Troubleshooting
 
 ### OAuth Callback Errors
+
 Common causes:
+
 1. **Callback URL mismatch** - Must exactly match what's registered with the provider
 2. **Missing or invalid secrets** - Double-check all credentials
 3. **HTTPS required** - OAuth providers require HTTPS for production
 
 ### Session Not Persisting
+
 Check:
+
 1. `SESSION_SECRET` is set and consistent
 2. Database connection is working
 3. The `sessions` table exists in database
 
 ### AI Features Not Working
+
 Check:
+
 1. `OPENAI_API_KEY` is set correctly
 2. Key has sufficient credits/quota
 3. Check server logs for API errors
 
 ### Push Notifications Not Sending
+
 Check:
+
 1. VAPID/FCM/APNs credentials are real (not placeholder)
 2. Device tokens are valid and registered
 3. Proper certificates are uploaded
@@ -507,12 +547,16 @@ Check:
 ## Architecture Notes
 
 ### Auth Routes
+
 Auth routes are mounted at two paths for compatibility:
+
 - `/api/auth/*` - Primary path for OAuth callbacks
 - `/api/v1/auth/*` - API versioned path
 
 ### API Response Format
+
 Paginated endpoints return:
+
 ```json
 {
   "data": [...],
@@ -542,4 +586,4 @@ Paginated endpoints return:
 
 ---
 
-*Last Updated: November 2025*
+_Last Updated: November 2025_

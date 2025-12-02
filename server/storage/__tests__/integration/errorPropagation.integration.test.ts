@@ -1,6 +1,6 @@
 /**
  * Storage Layer Integration Tests - Error Propagation
- * 
+ *
  * Tests error propagation from database through storage layers to API:
  * - Constraint violations (unique, foreign key)
  * - Not found errors
@@ -8,25 +8,25 @@
  * - Connection errors (simulated)
  */
 
-import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert';
-import { 
-  TestContext, 
-  testFactories, 
+import { describe, it, before, after, beforeEach, afterEach } from "node:test";
+import assert from "node:assert";
+import {
+  TestContext,
+  testFactories,
   generateTestEmail,
   verifyDatabaseConnection,
-} from './testUtils';
-import { StorageRoot } from '../../StorageRoot';
-import { 
-  StorageError, 
+} from "./testUtils";
+import { StorageRoot } from "../../StorageRoot";
+import {
+  StorageError,
   StorageNotFoundError,
   StorageValidationError,
   StorageConstraintError,
   StorageErrorCode,
   isStorageError,
-} from '../../errors/StorageError';
+} from "../../errors/StorageError";
 
-describe('Error Propagation Integration Tests', () => {
+describe("Error Propagation Integration Tests", () => {
   let storage: StorageRoot;
   let ctx: TestContext;
   let dbConnected: boolean;
@@ -34,7 +34,7 @@ describe('Error Propagation Integration Tests', () => {
   before(async () => {
     dbConnected = await verifyDatabaseConnection();
     if (!dbConnected) {
-      console.warn('Skipping integration tests: Database not available');
+      console.warn("Skipping integration tests: Database not available");
     }
     storage = new StorageRoot();
   });
@@ -49,8 +49,8 @@ describe('Error Propagation Integration Tests', () => {
     }
   });
 
-  describe('Constraint Violation Errors', () => {
-    it('should propagate unique constraint error for duplicate email', async function() {
+  describe("Constraint Violation Errors", () => {
+    it("should propagate unique constraint error for duplicate email", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -70,21 +70,21 @@ describe('Error Propagation Integration Tests', () => {
         caughtError = error;
       }
 
-      assert.ok(caughtError, 'Should throw an error');
-      assert.ok(isStorageError(caughtError), 'Should be a StorageError');
-      
+      assert.ok(caughtError, "Should throw an error");
+      assert.ok(isStorageError(caughtError), "Should be a StorageError");
+
       const storageError = caughtError as StorageError;
       assert.ok(
         storageError.code === StorageErrorCode.UNIQUE_VIOLATION ||
-        storageError.code === StorageErrorCode.CONSTRAINT_VIOLATION ||
-        storageError.message.includes('unique') ||
-        storageError.message.includes('duplicate') ||
-        storageError.message.includes('already exists'),
-        `Error should indicate unique constraint violation, got: ${storageError.code} - ${storageError.message}`
+          storageError.code === StorageErrorCode.CONSTRAINT_VIOLATION ||
+          storageError.message.includes("unique") ||
+          storageError.message.includes("duplicate") ||
+          storageError.message.includes("already exists"),
+        `Error should indicate unique constraint violation, got: ${storageError.code} - ${storageError.message}`,
       );
     });
 
-    it('should include constraint information in error', async function() {
+    it("should include constraint information in error", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -104,17 +104,20 @@ describe('Error Propagation Integration Tests', () => {
         caughtError = error;
       }
 
-      assert.ok(isStorageError(caughtError), 'Should be a StorageError');
-      
+      assert.ok(isStorageError(caughtError), "Should be a StorageError");
+
       const storageError = caughtError as StorageError;
-      assert.ok(storageError.context, 'Error should have context');
-      assert.ok(storageError.context.domain, 'Context should have domain');
-      assert.ok(storageError.context.operation, 'Context should have operation');
+      assert.ok(storageError.context, "Error should have context");
+      assert.ok(storageError.context.domain, "Context should have domain");
+      assert.ok(
+        storageError.context.operation,
+        "Context should have operation",
+      );
     });
   });
 
-  describe('Validation Errors', () => {
-    it('should propagate validation error for invalid recipe rating', async function() {
+  describe("Validation Errors", () => {
+    it("should propagate validation error for invalid recipe rating", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -125,7 +128,10 @@ describe('Error Propagation Integration Tests', () => {
       ctx.trackUser(user.id);
 
       const recipeData = testFactories.recipe(user.id);
-      const recipe = await storage.user.recipes.createRecipe(user.id, recipeData);
+      const recipe = await storage.user.recipes.createRecipe(
+        user.id,
+        recipeData,
+      );
       ctx.trackRecipe(recipe.id);
 
       let caughtError: unknown;
@@ -135,18 +141,18 @@ describe('Error Propagation Integration Tests', () => {
         caughtError = error;
       }
 
-      assert.ok(caughtError, 'Should throw an error for invalid rating');
-      assert.ok(isStorageError(caughtError), 'Should be a StorageError');
-      
+      assert.ok(caughtError, "Should throw an error for invalid rating");
+      assert.ok(isStorageError(caughtError), "Should be a StorageError");
+
       const storageError = caughtError as StorageError;
       assert.ok(
         storageError.code === StorageErrorCode.VALIDATION_FAILED ||
-        storageError instanceof StorageValidationError,
-        'Should be a validation error'
+          storageError instanceof StorageValidationError,
+        "Should be a validation error",
       );
     });
 
-    it('should propagate validation error for rating below minimum', async function() {
+    it("should propagate validation error for rating below minimum", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -157,7 +163,10 @@ describe('Error Propagation Integration Tests', () => {
       ctx.trackUser(user.id);
 
       const recipeData = testFactories.recipe(user.id);
-      const recipe = await storage.user.recipes.createRecipe(user.id, recipeData);
+      const recipe = await storage.user.recipes.createRecipe(
+        user.id,
+        recipeData,
+      );
       ctx.trackRecipe(recipe.id);
 
       let caughtError: unknown;
@@ -167,23 +176,27 @@ describe('Error Propagation Integration Tests', () => {
         caughtError = error;
       }
 
-      assert.ok(caughtError, 'Should throw an error for rating 0');
-      assert.ok(isStorageError(caughtError), 'Should be a StorageError');
+      assert.ok(caughtError, "Should throw an error for rating 0");
+      assert.ok(isStorageError(caughtError), "Should be a StorageError");
     });
   });
 
-  describe('Not Found Handling', () => {
-    it('should return undefined for non-existent user', async function() {
+  describe("Not Found Handling", () => {
+    it("should return undefined for non-existent user", async function () {
       if (!dbConnected) {
         this.skip();
         return;
       }
 
-      const result = await storage.getUserById('non-existent-user-id-12345');
-      assert.strictEqual(result, undefined, 'Should return undefined for non-existent user');
+      const result = await storage.getUserById("non-existent-user-id-12345");
+      assert.strictEqual(
+        result,
+        undefined,
+        "Should return undefined for non-existent user",
+      );
     });
 
-    it('should return undefined for non-existent recipe', async function() {
+    it("should return undefined for non-existent recipe", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -193,11 +206,18 @@ describe('Error Propagation Integration Tests', () => {
       const user = await storage.createUser(userData);
       ctx.trackUser(user.id);
 
-      const result = await storage.user.recipes.getRecipe(user.id, 'non-existent-recipe-id');
-      assert.strictEqual(result, undefined, 'Should return undefined for non-existent recipe');
+      const result = await storage.user.recipes.getRecipe(
+        user.id,
+        "non-existent-recipe-id",
+      );
+      assert.strictEqual(
+        result,
+        undefined,
+        "Should return undefined for non-existent recipe",
+      );
     });
 
-    it('should return undefined when toggling favorite for non-existent recipe', async function() {
+    it("should return undefined when toggling favorite for non-existent recipe", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -207,21 +227,24 @@ describe('Error Propagation Integration Tests', () => {
       const user = await storage.createUser(userData);
       ctx.trackUser(user.id);
 
-      const result = await storage.user.recipes.toggleRecipeFavorite(user.id, 'non-existent-id');
+      const result = await storage.user.recipes.toggleRecipeFavorite(
+        user.id,
+        "non-existent-id",
+      );
       assert.strictEqual(result, undefined);
     });
 
-    it('should return undefined for non-existent session', async function() {
+    it("should return undefined for non-existent session", async function () {
       if (!dbConnected) {
         this.skip();
         return;
       }
 
-      const result = await storage.getSession('non-existent-session-id');
+      const result = await storage.getSession("non-existent-session-id");
       assert.strictEqual(result, undefined);
     });
 
-    it('should return undefined for non-existent meal plan', async function() {
+    it("should return undefined for non-existent meal plan", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -231,13 +254,16 @@ describe('Error Propagation Integration Tests', () => {
       const user = await storage.createUser(userData);
       ctx.trackUser(user.id);
 
-      const result = await storage.user.recipes.getMealPlan(user.id, 'non-existent-plan-id');
+      const result = await storage.user.recipes.getMealPlan(
+        user.id,
+        "non-existent-plan-id",
+      );
       assert.strictEqual(result, undefined);
     });
   });
 
-  describe('Error Context Enrichment', () => {
-    it('should include domain in error context', async function() {
+  describe("Error Context Enrichment", () => {
+    it("should include domain in error context", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -259,11 +285,11 @@ describe('Error Propagation Integration Tests', () => {
 
       assert.ok(isStorageError(caughtError));
       const error = caughtError as StorageError;
-      
-      assert.ok(error.context.domain, 'Error context should have domain');
+
+      assert.ok(error.context.domain, "Error context should have domain");
     });
 
-    it('should include operation in error context', async function() {
+    it("should include operation in error context", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -285,11 +311,11 @@ describe('Error Propagation Integration Tests', () => {
 
       assert.ok(isStorageError(caughtError));
       const error = caughtError as StorageError;
-      
-      assert.ok(error.context.operation, 'Error context should have operation');
+
+      assert.ok(error.context.operation, "Error context should have operation");
     });
 
-    it('should include timestamp in error', async function() {
+    it("should include timestamp in error", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -311,13 +337,13 @@ describe('Error Propagation Integration Tests', () => {
 
       assert.ok(isStorageError(caughtError));
       const error = caughtError as StorageError;
-      
-      assert.ok(error.timestamp instanceof Date, 'Error should have timestamp');
+
+      assert.ok(error.timestamp instanceof Date, "Error should have timestamp");
     });
   });
 
-  describe('Error Type Preservation', () => {
-    it('should preserve StorageError type through facade layer', async function() {
+  describe("Error Type Preservation", () => {
+    it("should preserve StorageError type through facade layer", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -328,7 +354,10 @@ describe('Error Propagation Integration Tests', () => {
       ctx.trackUser(user.id);
 
       const recipeData = testFactories.recipe(user.id);
-      const recipe = await storage.user.recipes.createRecipe(user.id, recipeData);
+      const recipe = await storage.user.recipes.createRecipe(
+        user.id,
+        recipeData,
+      );
       ctx.trackRecipe(recipe.id);
 
       let caughtError: unknown;
@@ -338,10 +367,13 @@ describe('Error Propagation Integration Tests', () => {
         caughtError = error;
       }
 
-      assert.ok(caughtError instanceof StorageError, 'Error should be instance of StorageError');
+      assert.ok(
+        caughtError instanceof StorageError,
+        "Error should be instance of StorageError",
+      );
     });
 
-    it('should allow catching by specific error type', async function() {
+    it("should allow catching by specific error type", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -352,7 +384,10 @@ describe('Error Propagation Integration Tests', () => {
       ctx.trackUser(user.id);
 
       const recipeData = testFactories.recipe(user.id);
-      const recipe = await storage.user.recipes.createRecipe(user.id, recipeData);
+      const recipe = await storage.user.recipes.createRecipe(
+        user.id,
+        recipeData,
+      );
       ctx.trackRecipe(recipe.id);
 
       let isValidationError = false;
@@ -361,17 +396,20 @@ describe('Error Propagation Integration Tests', () => {
       } catch (error) {
         if (error instanceof StorageValidationError) {
           isValidationError = true;
-        } else if (isStorageError(error) && error.code === StorageErrorCode.VALIDATION_FAILED) {
+        } else if (
+          isStorageError(error) &&
+          error.code === StorageErrorCode.VALIDATION_FAILED
+        ) {
           isValidationError = true;
         }
       }
 
-      assert.ok(isValidationError, 'Should be catchable as validation error');
+      assert.ok(isValidationError, "Should be catchable as validation error");
     });
   });
 
-  describe('Error Recovery', () => {
-    it('should allow retry after constraint error', async function() {
+  describe("Error Recovery", () => {
+    it("should allow retry after constraint error", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -390,18 +428,18 @@ describe('Error Propagation Integration Tests', () => {
       } catch (error) {
         firstError = error;
       }
-      assert.ok(firstError, 'First attempt should fail');
+      assert.ok(firstError, "First attempt should fail");
 
       const differentEmail = generateTestEmail();
       userData2.email = differentEmail;
       const user2 = await storage.createUser(userData2);
       ctx.trackUser(user2.id);
 
-      assert.ok(user2.id, 'Second attempt with different email should succeed');
+      assert.ok(user2.id, "Second attempt with different email should succeed");
       assert.strictEqual(user2.email, differentEmail);
     });
 
-    it('should continue working after handling error', async function() {
+    it("should continue working after handling error", async function () {
       if (!dbConnected) {
         this.skip();
         return;
@@ -412,19 +450,25 @@ describe('Error Propagation Integration Tests', () => {
       ctx.trackUser(user.id);
 
       const recipeData = testFactories.recipe(user.id);
-      const recipe = await storage.user.recipes.createRecipe(user.id, recipeData);
+      const recipe = await storage.user.recipes.createRecipe(
+        user.id,
+        recipeData,
+      );
       ctx.trackRecipe(recipe.id);
 
       try {
         await storage.user.recipes.rateRecipe(user.id, recipe.id, 100);
-      } catch {
-      }
+      } catch {}
 
-      const validRating = await storage.user.recipes.rateRecipe(user.id, recipe.id, 5);
-      assert.ok(validRating, 'Valid rating should succeed after error');
+      const validRating = await storage.user.recipes.rateRecipe(
+        user.id,
+        recipe.id,
+        5,
+      );
+      assert.ok(validRating, "Valid rating should succeed after error");
       assert.strictEqual(validRating.rating, 5);
     });
   });
 });
 
-console.log('Error propagation integration tests loaded successfully');
+console.log("Error propagation integration tests loaded successfully");

@@ -5,16 +5,20 @@ interface NutritionFactsLabelProps {
   foodName?: string;
 }
 
-export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabelProps) {
+export function NutritionFactsLabel({
+  nutrition,
+  foodName,
+}: NutritionFactsLabelProps) {
   if (!nutrition) {
     return null;
   }
-  
+
   const servingSize = nutrition.servingSize || "100";
   const servingUnit = nutrition.servingUnit || "g";
 
   const calculateDV = (value: number | undefined, dv: number): number => {
-    if (value === undefined || value === null || !Number.isFinite(value)) return 0;
+    if (value === undefined || value === null || !Number.isFinite(value))
+      return 0;
     if (!dv || !Number.isFinite(dv) || dv === 0) return 0;
     return Math.round((value / dv) * 100);
   };
@@ -26,20 +30,19 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
   const proteinDV = calculateDV(nutrition.protein, 50);
 
   return (
-    <div 
+    <div
       className="border-2 border-foreground rounded-md p-2 w-full max-w-xs bg-background font-sans"
       data-testid="nutrition-facts-label"
     >
       <div className="border-b-8 border-foreground pb-1">
         <h2 className="text-3xl font-black">Nutrition Facts</h2>
-        {!!foodName && (
-          <p className="text-sm mt-1 font-medium">{foodName}</p>
-        )}
+        {!!foodName && <p className="text-sm mt-1 font-medium">{foodName}</p>}
       </div>
 
       <div className="border-b-4 border-foreground py-1">
         <p className="text-sm">
-          <span className="font-semibold">Serving size</span> {servingSize}{servingUnit}
+          <span className="font-semibold">Serving size</span> {servingSize}
+          {servingUnit}
         </p>
       </div>
 
@@ -59,9 +62,12 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div>
-          <span className="font-bold">Total Fat</span> {nutrition.fat?.toFixed(1) || 0}g
+          <span className="font-bold">Total Fat</span>{" "}
+          {nutrition.fat?.toFixed(1) || 0}g
         </div>
-        <span className="font-bold" data-testid="fat-dv">{totalFatDV}%</span>
+        <span className="font-bold" data-testid="fat-dv">
+          {totalFatDV}%
+        </span>
       </div>
 
       <div className="border-b border-foreground py-1 flex justify-between">
@@ -86,42 +92,56 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div>
-          <span className="font-bold">Sodium</span> {nutrition.sodium?.toFixed(0) || 0}mg
+          <span className="font-bold">Sodium</span>{" "}
+          {nutrition.sodium?.toFixed(0) || 0}mg
         </div>
-        <span className="font-bold" data-testid="sodium-dv">{sodiumDV}%</span>
+        <span className="font-bold" data-testid="sodium-dv">
+          {sodiumDV}%
+        </span>
       </div>
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div>
-          <span className="font-bold">Total Carbohydrate</span> {nutrition.carbohydrates?.toFixed(1) || 0}g
+          <span className="font-bold">Total Carbohydrate</span>{" "}
+          {nutrition.carbohydrates?.toFixed(1) || 0}g
         </div>
-        <span className="font-bold" data-testid="carbs-dv">{totalCarbDV}%</span>
+        <span className="font-bold" data-testid="carbs-dv">
+          {totalCarbDV}%
+        </span>
       </div>
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div className="ml-4">
-          <span className="font-bold">Dietary Fiber</span> {nutrition.fiber?.toFixed(1) || 0}g
+          <span className="font-bold">Dietary Fiber</span>{" "}
+          {nutrition.fiber?.toFixed(1) || 0}g
         </div>
-        <span className="font-bold" data-testid="fiber-dv">{fiberDV}%</span>
+        <span className="font-bold" data-testid="fiber-dv">
+          {fiberDV}%
+        </span>
       </div>
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div className="ml-4">
-          <span className="font-bold">Total Sugars</span> {nutrition.sugar?.toFixed(1) || 0}g
+          <span className="font-bold">Total Sugars</span>{" "}
+          {nutrition.sugar?.toFixed(1) || 0}g
         </div>
       </div>
 
       <div className="border-b-8 border-foreground py-1 flex justify-between">
         <div>
-          <span className="font-bold">Protein</span> {nutrition.protein?.toFixed(1) || 0}g
+          <span className="font-bold">Protein</span>{" "}
+          {nutrition.protein?.toFixed(1) || 0}g
         </div>
-        <span className="font-bold" data-testid="protein-dv">{proteinDV}%</span>
+        <span className="font-bold" data-testid="protein-dv">
+          {proteinDV}%
+        </span>
       </div>
 
       <div className="pt-2 text-xs leading-tight">
         <p className="border-b border-foreground pb-1">
-          * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 
-          2,000 calories a day is used for general nutrition advice.
+          * The % Daily Value (DV) tells you how much a nutrient in a serving of
+          food contributes to a daily diet. 2,000 calories a day is used for
+          general nutrition advice.
         </p>
       </div>
     </div>

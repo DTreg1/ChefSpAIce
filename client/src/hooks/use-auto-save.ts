@@ -1,20 +1,26 @@
 /**
  * Auto-Save Hook with TensorFlow.js Pause Detection
- * 
+ *
  * Intelligently detects typing pauses and triggers auto-save
  * based on learned user patterns and content analysis.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import * as tf from '@tensorflow/tfjs';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { API_ENDPOINTS } from '@/lib/api-endpoints';
+import { useEffect, useRef, useState, useCallback } from "react";
+import * as tf from "@tensorflow/tfjs";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface AutoSaveOptions {
   documentId: string;
-  documentType?: 'chat' | 'recipe' | 'note' | 'meal_plan' | 'shopping_list' | 'other';
+  documentType?:
+    | "chat"
+    | "recipe"
+    | "note"
+    | "meal_plan"
+    | "shopping_list"
+    | "other";
   minInterval?: number; // Minimum time between saves (ms)
   maxInterval?: number; // Maximum time between saves (ms)
   onSave?: (content: string) => void;
@@ -33,13 +39,10 @@ interface TypingPattern {
 /**
  * Custom hook for intelligent auto-save with TensorFlow.js
  */
-export function useAutoSave(
-  content: string,
-  options: AutoSaveOptions
-) {
+export function useAutoSave(content: string, options: AutoSaveOptions) {
   const {
     documentId,
-    documentType = 'other',
+    documentType = "other",
     minInterval = 2000,
     maxInterval = 30000,
     onSave,
@@ -52,7 +55,7 @@ export function useAutoSave(
 
   // Refs for tracking state without re-renders
   const contentRef = useRef(content);
-  const lastSaveRef = useRef('');
+  const lastSaveRef = useRef("");
   const lastSaveTimeRef = useRef(0);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const modelRef = useRef<tf.LayersModel | null>(null);
@@ -88,12 +91,12 @@ export function useAutoSave(
   const saveDraftMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch(API_ENDPOINTS.autosave.draft, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Failed to save draft');
+      if (!response.ok) throw new Error("Failed to save draft");
       return response.json();
     },
     onSuccess: (result) => {
@@ -103,7 +106,7 @@ export function useAutoSave(
       lastSaveRef.current = contentRef.current;
       lastSaveTimeRef.current = Date.now();
       onSave?.(contentRef.current);
-      
+
       // Invalidate versions query
       queryClient.invalidateQueries({
         queryKey: [API_ENDPOINTS.autosave.versions(documentId)],
@@ -111,7 +114,7 @@ export function useAutoSave(
     },
     onError: (error) => {
       setIsSaving(false);
-      console.error('Auto-save failed:', error);
+      console.error("Auto-save failed:", error);
       // Don't show toast for auto-save failures to avoid interrupting user
     },
   });
@@ -119,7 +122,7 @@ export function useAutoSave(
   // Mutation for recording typing events
   const recordEventMutation = useMutation({
     mutationFn: async (event: any) =>
-      apiRequest(API_ENDPOINTS.autosave.typingEvent, 'POST', event),
+      apiRequest(API_ENDPOINTS.autosave.typingEvent, "POST", event),
   });
 
   // Initialize TensorFlow.js model
@@ -132,23 +135,23 @@ export function useAutoSave(
             tf.layers.dense({
               inputShape: [5], // pauseDuration, burstLength, timeSinceLastSave, contentLength, isPunctuationEnd
               units: 8,
-              activation: 'relu',
+              activation: "relu",
             }),
             tf.layers.dense({
               units: 4,
-              activation: 'relu',
+              activation: "relu",
             }),
             tf.layers.dense({
               units: 1,
-              activation: 'sigmoid', // Output probability of needing save
+              activation: "sigmoid", // Output probability of needing save
             }),
           ],
         });
 
         model.compile({
           optimizer: tf.train.adam(0.001),
-          loss: 'binaryCrossentropy',
-          metrics: ['accuracy'],
+          loss: "binaryCrossentropy",
+          metrics: ["accuracy"],
         });
 
         modelRef.current = model;
@@ -159,25 +162,27 @@ export function useAutoSave(
             const savedWeights = userPatterns.modelWeights;
             if (Array.isArray(savedWeights) && savedWeights.length > 0) {
               // Convert saved weights back to tensors
-              const tensorWeights = savedWeights.map((weightData: any) => {
-                if (weightData && weightData.shape && weightData.values) {
-                  return tf.tensor(weightData.values, weightData.shape);
-                }
-                return null;
-              }).filter((t): t is tf.Tensor => t !== null);
-              
+              const tensorWeights = savedWeights
+                .map((weightData: any) => {
+                  if (weightData && weightData.shape && weightData.values) {
+                    return tf.tensor(weightData.values, weightData.shape);
+                  }
+                  return null;
+                })
+                .filter((t): t is tf.Tensor => t !== null);
+
               if (tensorWeights.length > 0) {
                 // Load the weights into the model
                 model.setWeights(tensorWeights);
-                console.log('Successfully loaded saved model weights');
+                console.log("Successfully loaded saved model weights");
               }
             }
           } catch (error) {
-            console.error('Failed to load model weights:', error);
+            console.error("Failed to load model weights:", error);
           }
         }
       } catch (error) {
-        console.error('Failed to initialize TensorFlow model:', error);
+        console.error("Failed to initialize TensorFlow model:", error);
       }
     };
 
@@ -195,59 +200,69 @@ export function useAutoSave(
   const calculateHash = useCallback(async (text: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
     return hashHex;
   }, []);
 
   // Predict if save is needed using TensorFlow.js
-  const shouldSave = useCallback(async (pauseDuration: number): Promise<boolean> => {
-    if (!modelRef.current) {
-      // Fallback to simple heuristic if model not loaded
-      const avgPause = userPatterns?.avgPauseDuration || 2000;
-      const sentencePause = userPatterns?.sentencePauseDuration || 2500;
-      const paragraphPause = userPatterns?.paragraphPauseDuration || 4000;
+  const shouldSave = useCallback(
+    async (pauseDuration: number): Promise<boolean> => {
+      if (!modelRef.current) {
+        // Fallback to simple heuristic if model not loaded
+        const avgPause = userPatterns?.avgPauseDuration || 2000;
+        const sentencePause = userPatterns?.sentencePauseDuration || 2500;
+        const paragraphPause = userPatterns?.paragraphPauseDuration || 4000;
 
-      // Check if pause is significant
-      if (pauseDuration > paragraphPause) return true;
-      if (pauseDuration > sentencePause && contentRef.current.endsWith('.')) return true;
-      if (pauseDuration > avgPause * 1.5) return true;
+        // Check if pause is significant
+        if (pauseDuration > paragraphPause) return true;
+        if (pauseDuration > sentencePause && contentRef.current.endsWith("."))
+          return true;
+        if (pauseDuration > avgPause * 1.5) return true;
 
-      return false;
-    }
+        return false;
+      }
 
-    try {
-      // Prepare input features
-      const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
-      const contentLength = contentRef.current.length;
-      const isPunctuationEnd = /[.!?]$/.test(contentRef.current.trim()) ? 1 : 0;
-      const currentBurst = patternRef.current.currentBurstLength;
+      try {
+        // Prepare input features
+        const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+        const contentLength = contentRef.current.length;
+        const isPunctuationEnd = /[.!?]$/.test(contentRef.current.trim())
+          ? 1
+          : 0;
+        const currentBurst = patternRef.current.currentBurstLength;
 
-      // Normalize features
-      const features = tf.tensor2d([[
-        pauseDuration / 5000, // Normalize to 0-1 (assuming max 5 seconds)
-        currentBurst / 100,   // Normalize burst length
-        Math.min(timeSinceLastSave / maxInterval, 1), // Time since last save
-        Math.min(contentLength / 10000, 1), // Content length
-        isPunctuationEnd,
-      ]]);
+        // Normalize features
+        const features = tf.tensor2d([
+          [
+            pauseDuration / 5000, // Normalize to 0-1 (assuming max 5 seconds)
+            currentBurst / 100, // Normalize burst length
+            Math.min(timeSinceLastSave / maxInterval, 1), // Time since last save
+            Math.min(contentLength / 10000, 1), // Content length
+            isPunctuationEnd,
+          ],
+        ]);
 
-      // Get prediction
-      const prediction = modelRef.current.predict(features) as tf.Tensor;
-      const probability = await prediction.data();
-      
-      features.dispose();
-      prediction.dispose();
+        // Get prediction
+        const prediction = modelRef.current.predict(features) as tf.Tensor;
+        const probability = await prediction.data();
 
-      // Save if probability > 0.5
-      return probability[0] > 0.5;
-    } catch (error) {
-      console.error('Model prediction failed:', error);
-      // Fallback to simple heuristic
-      return pauseDuration > (userPatterns?.avgPauseDuration || 2000) * 1.5;
-    }
-  }, [userPatterns, maxInterval]);
+        features.dispose();
+        prediction.dispose();
+
+        // Save if probability > 0.5
+        return probability[0] > 0.5;
+      } catch (error) {
+        console.error("Model prediction failed:", error);
+        // Fallback to simple heuristic
+        return pauseDuration > (userPatterns?.avgPauseDuration || 2000) * 1.5;
+      }
+    },
+    [userPatterns, maxInterval],
+  );
 
   // Perform auto-save
   const performAutoSave = useCallback(async () => {
@@ -266,10 +281,14 @@ export function useAutoSave(
       const contentHash = await calculateHash(contentRef.current);
 
       // Check for conflicts
-      const conflictCheck = await apiRequest(API_ENDPOINTS.autosave.checkConflicts, 'POST', {
-        documentId,
-        contentHash,
-      });
+      const conflictCheck = await apiRequest(
+        API_ENDPOINTS.autosave.checkConflicts,
+        "POST",
+        {
+          documentId,
+          contentHash,
+        },
+      );
 
       let finalContent = contentRef.current;
       let conflictResolved = false;
@@ -277,20 +296,26 @@ export function useAutoSave(
       if (conflictCheck.hasConflict && conflictCheck.latestVersion) {
         // Handle conflict
         if (onConflict) {
-          finalContent = onConflict(contentRef.current, conflictCheck.latestVersion.content);
+          finalContent = onConflict(
+            contentRef.current,
+            conflictCheck.latestVersion.content,
+          );
           conflictResolved = true;
         } else {
           // Default: Keep local changes
           toast({
             title: "Conflict detected",
-            description: "Your changes have been preserved. Review version history if needed.",
+            description:
+              "Your changes have been preserved. Review version history if needed.",
             variant: "default",
           });
         }
       }
 
       // Get cursor position and other metadata
-      const activeElement = document.activeElement as HTMLTextAreaElement | HTMLInputElement;
+      const activeElement = document.activeElement as
+        | HTMLTextAreaElement
+        | HTMLInputElement;
       const cursorPosition = activeElement?.selectionStart || 0;
       const scrollPosition = window.scrollY;
 
@@ -310,9 +335,8 @@ export function useAutoSave(
         isAutoSave: true,
         conflictResolved,
       });
-
     } catch (error) {
-      console.error('Auto-save error:', error);
+      console.error("Auto-save error:", error);
       setIsSaving(false);
     }
   }, [
@@ -334,14 +358,15 @@ export function useAutoSave(
     // Calculate pause duration
     if (pattern.lastKeyTime > 0) {
       const pauseDuration = now - pattern.lastKeyTime;
-      
+
       // If pause is significant, check if we should save
-      if (pauseDuration > 500) { // Min pause threshold
+      if (pauseDuration > 500) {
+        // Min pause threshold
         pattern.pauseDurations.push(pauseDuration);
         pattern.currentBurstLength = 0;
 
         // Check if save is needed
-        shouldSave(pauseDuration).then(shouldPerformSave => {
+        shouldSave(pauseDuration).then((shouldPerformSave) => {
           if (shouldPerformSave) {
             performAutoSave();
           }
@@ -350,7 +375,7 @@ export function useAutoSave(
         // Record typing event
         const isSentenceEnd = /[.!?]$/.test(contentRef.current.trim());
         const isParagraphEnd = /\n\n$/.test(contentRef.current);
-        
+
         recordEventMutation.mutate({
           pauseDuration,
           burstLength: pattern.currentBurstLength,
@@ -393,11 +418,14 @@ export function useAutoSave(
   useEffect(() => {
     const restoreDraft = async () => {
       try {
-        const response = await apiRequest(API_ENDPOINTS.autosave.restore(documentId), 'GET');
+        const response = await apiRequest(
+          API_ENDPOINTS.autosave.restore(documentId),
+          "GET",
+        );
         if (response.draft && response.draft.content !== content) {
           onRestore?.(response.draft.content);
           lastSaveRef.current = response.draft.content;
-          
+
           toast({
             title: "Draft restored",
             description: "Your previous work has been restored.",
@@ -428,12 +456,12 @@ export function useAutoSave(
   // Manual save function
   const manualSave = useCallback(async () => {
     await performAutoSave();
-    
+
     // Record as manual save for pattern learning
     recordEventMutation.mutate({
       wasManualSave: true,
     });
-    
+
     toast({
       title: "Saved",
       description: "Your work has been saved.",

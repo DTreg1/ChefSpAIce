@@ -1,7 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, Camera, X, Mic, MicOff, Volume2, Settings, Save } from "lucide-react";
+import {
+  Send,
+  Paperclip,
+  Camera,
+  X,
+  Mic,
+  MicOff,
+  Volume2,
+  Settings,
+  Save,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { VoiceState } from "@/hooks/useVoiceConversation";
 import {
@@ -21,10 +31,13 @@ import { Slider } from "@/components/ui/slider";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { AutoSaveIndicator } from "@/components/auto-save-indicator";
 import { VersionHistory } from "@/components/version-history";
-import { ConflictResolver, type ConflictResolutionStrategy } from "@/components/conflict-resolver";
+import {
+  ConflictResolver,
+  type ConflictResolutionStrategy,
+} from "@/components/conflict-resolver";
 
 interface Attachment {
-  type: 'image' | 'audio' | 'file';
+  type: "image" | "audio" | "file";
   url: string;
   name?: string;
   size?: number;
@@ -47,8 +60,8 @@ interface ChatInputProps {
   onSpeechPitchChange?: (pitch: number) => void;
 }
 
-export function ChatInput({ 
-  onSend, 
+export function ChatInput({
+  onSend,
   disabled = false,
   voiceState,
   voiceTranscript,
@@ -60,42 +73,43 @@ export function ChatInput({
   speechRate = 1,
   onSpeechRateChange,
   speechPitch = 1,
-  onSpeechPitchChange
+  onSpeechPitchChange,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showConflictResolver, setShowConflictResolver] = useState(false);
-  const [conflictData, setConflictData] = useState<{ local: string; remote: string } | null>(null);
+  const [conflictData, setConflictData] = useState<{
+    local: string;
+    remote: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  
+
   // Auto-save integration
-  const {
-    isSaving,
-    lastSaved,
-    hasUnsavedChanges,
-    manualSave,
-  } = useAutoSave(message, {
-    documentId: 'chat-draft',
-    documentType: 'chat',
-    minInterval: 2000,
-    maxInterval: 30000,
-    onRestore: (restoredContent) => {
-      setMessage(restoredContent);
-      toast({
-        title: "Draft restored",
-        description: "Your previous message has been restored.",
-        variant: "default",
-      });
+  const { isSaving, lastSaved, hasUnsavedChanges, manualSave } = useAutoSave(
+    message,
+    {
+      documentId: "chat-draft",
+      documentType: "chat",
+      minInterval: 2000,
+      maxInterval: 30000,
+      onRestore: (restoredContent) => {
+        setMessage(restoredContent);
+        toast({
+          title: "Draft restored",
+          description: "Your previous message has been restored.",
+          variant: "default",
+        });
+      },
+      onConflict: (localContent, remoteContent) => {
+        setConflictData({ local: localContent, remote: remoteContent });
+        setShowConflictResolver(true);
+        return localContent; // Default to local content
+      },
     },
-    onConflict: (localContent, remoteContent) => {
-      setConflictData({ local: localContent, remote: remoteContent });
-      setShowConflictResolver(true);
-      return localContent; // Default to local content
-    },
-  });
+  );
 
   // Update message with voice transcript when in voice mode
   useEffect(() => {
@@ -105,7 +119,11 @@ export function ChatInput({
   }, [voiceTranscript, voiceState?.isVoiceMode]);
 
   const handleSend = () => {
-    if ((message.trim() || attachments.length > 0) && !disabled && !isUploading) {
+    if (
+      (message.trim() || attachments.length > 0) &&
+      !disabled &&
+      !isUploading
+    ) {
       onSend(message.trim(), attachments.length > 0 ? attachments : undefined);
       setMessage("");
       setAttachments([]);
@@ -122,41 +140,41 @@ export function ChatInput({
   const uploadFile = async (file: File): Promise<Attachment | null> => {
     try {
       // Get upload URL from backend
-      const uploadUrlResponse = await fetch('/api/objects/upload', {
-        method: 'POST',
+      const uploadUrlResponse = await fetch("/api/objects/upload", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       if (!uploadUrlResponse.ok) {
-        throw new Error('Failed to get upload URL');
+        throw new Error("Failed to get upload URL");
       }
 
       const { uploadURL } = await uploadUrlResponse.json();
 
       // Upload file directly to object storage
       const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
         headers: {
-          'Content-Type': file.type || 'application/octet-stream',
+          "Content-Type": file.type || "application/octet-stream",
         },
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error("Failed to upload file");
       }
 
       // Create object path
-      const objectPath = `/objects/uploads/${uploadURL.split('/').pop()}`;
+      const objectPath = `/objects/uploads/${uploadURL.split("/").pop()}`;
 
       // Determine attachment type
-      let type: 'image' | 'audio' | 'file' = 'file';
-      if (file.type.startsWith('image/')) {
-        type = 'image';
-      } else if (file.type.startsWith('audio/')) {
-        type = 'audio';
+      let type: "image" | "audio" | "file" = "file";
+      if (file.type.startsWith("image/")) {
+        type = "image";
+      } else if (file.type.startsWith("audio/")) {
+        type = "audio";
       }
 
       return {
@@ -167,7 +185,7 @@ export function ChatInput({
         mimeType: file.type,
       };
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
       toast({
         title: "Upload failed",
         description: "Failed to upload file. Please try again.",
@@ -186,31 +204,33 @@ export function ChatInput({
     try {
       const uploadPromises = files.map(uploadFile);
       const uploadedAttachments = await Promise.all(uploadPromises);
-      const successfulAttachments = uploadedAttachments.filter((a): a is Attachment => a !== null);
-      
+      const successfulAttachments = uploadedAttachments.filter(
+        (a): a is Attachment => a !== null,
+      );
+
       if (successfulAttachments.length > 0) {
-        setAttachments(prev => [...prev, ...successfulAttachments]);
+        setAttachments((prev) => [...prev, ...successfulAttachments]);
         toast({
           title: "Files uploaded",
           description: `Successfully uploaded ${successfulAttachments.length} file(s)`,
         });
       }
     } catch (error) {
-      console.error('Error handling file selection:', error);
+      console.error("Error handling file selection:", error);
     } finally {
       setIsUploading(false);
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
       if (cameraInputRef.current) {
-        cameraInputRef.current.value = '';
+        cameraInputRef.current.value = "";
       }
     }
   };
 
   const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Get voice mode status
@@ -244,7 +264,9 @@ export function ChatInput({
               </div>
             )}
             {!isListening && !isSpeaking && !isProcessing && (
-              <span className="text-sm text-muted-foreground">Voice mode active - Start speaking</span>
+              <span className="text-sm text-muted-foreground">
+                Voice mode active - Start speaking
+              </span>
             )}
           </div>
           {isSpeaking && (
@@ -267,7 +289,7 @@ export function ChatInput({
         multiple
         accept="image/*,application/pdf,.doc,.docx,.txt"
         onChange={handleFileSelect}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
       <input
         ref={cameraInputRef}
@@ -275,9 +297,9 @@ export function ChatInput({
         accept="image/*"
         capture="environment"
         onChange={handleFileSelect}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
-      
+
       {/* Show attachments preview if any */}
       {attachments.length > 0 && (
         <div className="max-w-4xl mx-auto mb-3 flex flex-wrap gap-2">
@@ -287,12 +309,18 @@ export function ChatInput({
               className="bg-card border border-border rounded-lg px-3 py-2 flex items-center gap-2"
               data-testid={`attachment-preview-${index}`}
             >
-              {attachment.type === 'image' ? (
-                <img src={attachment.url} alt={attachment.name} className="w-10 h-10 object-cover rounded" />
+              {attachment.type === "image" ? (
+                <img
+                  src={attachment.url}
+                  alt={attachment.name}
+                  className="w-10 h-10 object-cover rounded"
+                />
               ) : (
                 <Paperclip className="w-4 h-4" />
               )}
-              <span className="text-sm truncate max-w-[150px]">{attachment.name}</span>
+              <span className="text-sm truncate max-w-[150px]">
+                {attachment.name}
+              </span>
               <Button
                 size="icon"
                 variant="ghost"
@@ -306,7 +334,7 @@ export function ChatInput({
           ))}
         </div>
       )}
-      
+
       <div className="max-w-4xl mx-auto">
         {/* Auto-save status bar */}
         <div className="flex items-center justify-between mb-2">
@@ -333,7 +361,7 @@ export function ChatInput({
             </Button>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
             {/* Attachment button */}
@@ -359,131 +387,148 @@ export function ChatInput({
               <Camera className="w-5 h-5" />
             </Button>
           </div>
-          
+
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
+            placeholder={
+              isVoiceMode
+                ? "Speak or type your message..."
+                : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
+            }
             className="resize-y text-sm min-h-[100px] max-h-[300px]"
             disabled={disabled || isVoiceMode}
             data-testid="input-chat-message"
           />
-          
+
           <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
-          {/* Send button */}
-          <Button
-            size="icon"
-            onClick={handleSend}
-            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || isVoiceMode}
-            className="flex-shrink-0 rounded-full w-10 h-10"
-            data-testid="button-send-message"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+            {/* Send button */}
+            <Button
+              size="icon"
+              onClick={handleSend}
+              disabled={
+                (!message.trim() && attachments.length === 0) ||
+                disabled ||
+                isUploading ||
+                isVoiceMode
+              }
+              className="flex-shrink-0 rounded-full w-10 h-10"
+              data-testid="button-send-message"
+            >
+              <Send className="w-5 h-5" />
+            </Button>
 
-          {/* Voice Mode Toggle Button */}
-          <Button
-            size="icon"
-            variant={isVoiceMode ? "default" : "outline"}
-            className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
-            onClick={onVoiceModeToggle}
-            disabled={disabled || isUploading}
-            data-testid="button-voice-mode"
-          >
-            {isVoiceMode ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
-          </Button>
+            {/* Voice Mode Toggle Button */}
+            <Button
+              size="icon"
+              variant={isVoiceMode ? "default" : "outline"}
+              className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? "animate-pulse" : ""}`}
+              onClick={onVoiceModeToggle}
+              disabled={disabled || isUploading}
+              data-testid="button-voice-mode"
+            >
+              {isVoiceMode ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </Button>
 
-          {/* Voice Settings Button */}
-          {voices.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="flex-shrink-0 rounded-full w-10 h-10"
-                  data-testid="button-voice-settings"
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Voice Settings</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Configure text-to-speech preferences
-                    </p>
-                  </div>
-                  
+            {/* Voice Settings Button */}
+            {voices.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="flex-shrink-0 rounded-full w-10 h-10"
+                    data-testid="button-voice-settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
                   <div className="grid gap-4">
-                    {/* Voice Selection */}
-                    <div className="grid gap-2">
-                      <Label htmlFor="voice">Voice</Label>
-                      <Select
-                        value={selectedVoice?.name || ""}
-                        onValueChange={(value: string) => {
-                          const voice = voices.find((v: SpeechSynthesisVoice) => v.name === value);
-                          if (voice && onVoiceChange) {
-                            onVoiceChange(voice);
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">
+                        Voice Settings
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Configure text-to-speech preferences
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4">
+                      {/* Voice Selection */}
+                      <div className="grid gap-2">
+                        <Label htmlFor="voice">Voice</Label>
+                        <Select
+                          value={selectedVoice?.name || ""}
+                          onValueChange={(value: string) => {
+                            const voice = voices.find(
+                              (v: SpeechSynthesisVoice) => v.name === value,
+                            );
+                            if (voice && onVoiceChange) {
+                              onVoiceChange(voice);
+                            }
+                          }}
+                        >
+                          <SelectTrigger id="voice">
+                            <SelectValue placeholder="Select a voice" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {voices.map((voice: SpeechSynthesisVoice) => (
+                              <SelectItem key={voice.name} value={voice.name}>
+                                {voice.name} ({voice.lang})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Speech Rate */}
+                      <div className="grid gap-2">
+                        <Label htmlFor="speech-rate">
+                          Speed: {speechRate.toFixed(1)}x
+                        </Label>
+                        <Slider
+                          id="speech-rate"
+                          min={0.5}
+                          max={2}
+                          step={0.1}
+                          value={[speechRate]}
+                          onValueChange={([value]: number[]) =>
+                            onSpeechRateChange?.(value)
                           }
-                        }}
-                      >
-                        <SelectTrigger id="voice">
-                          <SelectValue placeholder="Select a voice" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {voices.map((voice: SpeechSynthesisVoice) => (
-                            <SelectItem key={voice.name} value={voice.name}>
-                              {voice.name} ({voice.lang})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        />
+                      </div>
 
-                    {/* Speech Rate */}
-                    <div className="grid gap-2">
-                      <Label htmlFor="speech-rate">
-                        Speed: {speechRate.toFixed(1)}x
-                      </Label>
-                      <Slider
-                        id="speech-rate"
-                        min={0.5}
-                        max={2}
-                        step={0.1}
-                        value={[speechRate]}
-                        onValueChange={([value]: number[]) => onSpeechRateChange?.(value)}
-                      />
-                    </div>
-
-                    {/* Speech Pitch */}
-                    <div className="grid gap-2">
-                      <Label htmlFor="speech-pitch">
-                        Pitch: {speechPitch.toFixed(1)}
-                      </Label>
-                      <Slider
-                        id="speech-pitch"
-                        min={0.5}
-                        max={2}
-                        step={0.1}
-                        value={[speechPitch]}
-                        onValueChange={([value]: number[]) => onSpeechPitchChange?.(value)}
-                      />
+                      {/* Speech Pitch */}
+                      <div className="grid gap-2">
+                        <Label htmlFor="speech-pitch">
+                          Pitch: {speechPitch.toFixed(1)}
+                        </Label>
+                        <Slider
+                          id="speech-pitch"
+                          min={0.5}
+                          max={2}
+                          step={0.1}
+                          value={[speechPitch]}
+                          onValueChange={([value]: number[]) =>
+                            onSpeechPitchChange?.(value)
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
       </div>
-      
+
       {/* Conflict Resolver Dialog */}
       {conflictData && (
         <ConflictResolver
@@ -500,7 +545,7 @@ export function ChatInput({
             setConflictData(null);
             toast({
               title: "Conflict resolved",
-              description: `Applied ${strategy.replace('-', ' ')} strategy`,
+              description: `Applied ${strategy.replace("-", " ")} strategy`,
               variant: "default",
             });
           }}

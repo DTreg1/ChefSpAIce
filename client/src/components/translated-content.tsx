@@ -4,19 +4,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { 
-  Languages, 
-  Check, 
-  RefreshCw, 
-  Copy, 
+  Languages,
+  Check,
+  RefreshCw,
+  Copy,
   CheckCircle,
-  AlertCircle 
+  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface TranslatedContentProps {
   contentId: string;
   originalContent: string;
-  contentType?: 'post' | 'recipe' | 'message' | 'general';
+  contentType?: "post" | "recipe" | "message" | "general";
   context?: string;
   autoTranslate?: boolean;
   showOriginal?: boolean;
@@ -44,21 +39,21 @@ interface Translation {
 
 // Language code to abbreviation mapping for badge display
 const languageAbbreviations: Record<string, string> = {
-  'en': 'EN',
-  'es': 'ES',
-  'fr': 'FR',
-  'de': 'DE',
-  'it': 'IT',
-  'pt': 'PT',
-  'ru': 'RU',
-  'ja': 'JA',
-  'ko': 'KO',
-  'zh': 'ZH',
-  'ar': 'AR',
-  'hi': 'HI',
-  'nl': 'NL',
-  'sv': 'SV',
-  'pl': 'PL'
+  en: "EN",
+  es: "ES",
+  fr: "FR",
+  de: "DE",
+  it: "IT",
+  pt: "PT",
+  ru: "RU",
+  ja: "JA",
+  ko: "KO",
+  zh: "ZH",
+  ar: "AR",
+  hi: "HI",
+  nl: "NL",
+  sv: "SV",
+  pl: "PL",
 };
 
 // Helper to render language badge with abbreviation
@@ -71,28 +66,30 @@ const renderLanguageBadge = (languageCode: string) => (
 export function TranslatedContent({
   contentId,
   originalContent,
-  contentType = 'general',
+  contentType = "general",
   context,
   autoTranslate = true,
-  showOriginal = false
+  showOriginal = false,
 }: TranslatedContentProps) {
   const { toast } = useToast();
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [copiedLanguage, setCopiedLanguage] = useState<string | null>(null);
 
   // Fetch user's language preferences
-  const { data: preferences = { autoTranslate: false, preferredLanguages: [] } } = useQuery<{
+  const {
+    data: preferences = { autoTranslate: false, preferredLanguages: [] },
+  } = useQuery<{
     autoTranslate: boolean;
     preferredLanguages: string[];
   }>({
-    queryKey: ['/api/languages/preferences']
+    queryKey: ["/api/languages/preferences"],
   });
 
   // Fetch existing translations
-  const { 
-    data: translationsData = { translations: [] }, 
+  const {
+    data: translationsData = { translations: [] },
     isLoading: isLoadingTranslations,
-    refetch: refetchTranslations 
+    refetch: refetchTranslations,
   } = useQuery<{ translations: Translation[] }>({
     queryKey: [`/api/content/${contentId}/translations`],
     enabled: !!contentId,
@@ -101,39 +98,45 @@ export function TranslatedContent({
   const translations: Translation[] = translationsData.translations;
 
   // Fetch supported languages
-  const { data: languages = [] } = useQuery<Array<{ code: string; name: string }>>({
-    queryKey: ['/api/languages/supported'],
+  const { data: languages = [] } = useQuery<
+    Array<{ code: string; name: string }>
+  >({
+    queryKey: ["/api/languages/supported"],
     staleTime: 60 * 60 * 1000, // Cache for 1 hour
   });
 
   // Auto-translate on mount if enabled
   useEffect(() => {
     if (autoTranslate && preferences?.autoTranslate && !isLoadingTranslations) {
-      if (translations.length === 0 && preferences?.preferredLanguages?.length > 0) {
+      if (
+        translations.length === 0 &&
+        preferences?.preferredLanguages?.length > 0
+      ) {
         performTranslation.mutate({
-          targetLanguages: preferences.preferredLanguages
+          targetLanguages: preferences.preferredLanguages,
         });
       }
     }
   }, [
-    contentId, 
-    autoTranslate, 
-    preferences?.autoTranslate, 
+    contentId,
+    autoTranslate,
+    preferences?.autoTranslate,
     preferences?.preferredLanguages,
     isLoadingTranslations,
-    translations.length
+    translations.length,
   ]);
 
   // Translate content mutation
   const performTranslation = useMutation({
     mutationFn: async ({ targetLanguages }: { targetLanguages?: string[] }) => {
-      return apiRequest('/api/translate', 'POST', {
+      return apiRequest("/api/translate", "POST", {
         content: originalContent,
         contentId,
-        targetLanguages: targetLanguages || preferences?.preferredLanguages || ['es', 'fr', 'de'],
+        targetLanguages: targetLanguages ||
+          preferences?.preferredLanguages || ["es", "fr", "de"],
         contentType,
         context,
-        preserveFormatting: true
+        preserveFormatting: true,
       });
     },
     onSuccess: () => {
@@ -147,25 +150,27 @@ export function TranslatedContent({
       toast({
         title: "Translation failed",
         description: "Failed to translate content. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Verify translation mutation
   const verifyTranslation = useMutation({
     mutationFn: async (translationId: string) => {
-      return apiRequest('/api/translate/verify', 'POST', {
-        translationId
+      return apiRequest("/api/translate/verify", "POST", {
+        translationId,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/content/${contentId}/translations`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/content/${contentId}/translations`],
+      });
       toast({
         title: "Translation verified",
         description: "Translation has been marked as verified",
       });
-    }
+    },
   });
 
   // Copy translation to clipboard
@@ -182,14 +187,16 @@ export function TranslatedContent({
       toast({
         title: "Copy failed",
         description: "Failed to copy translation",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   // Get language name from code
   const getLanguageName = (code: string) => {
-    const lang = languages.find((l: { code: string; name: string }) => l.code === code);
+    const lang = languages.find(
+      (l: { code: string; name: string }) => l.code === code,
+    );
     return lang?.name || code.toUpperCase();
   };
 
@@ -238,27 +245,28 @@ export function TranslatedContent({
       <Tabs
         value={selectedLanguage}
         onValueChange={setSelectedLanguage}
-        defaultValue={translations[0]?.languageCode || 'en'}
+        defaultValue={translations[0]?.languageCode || "en"}
       >
         <div className="flex items-center justify-between mb-4">
           <TabsList className="grid grid-cols-auto gap-1">
             {showOriginal && (
-              <TabsTrigger 
-                value="original" 
-                data-testid="tab-original"
-              >
+              <TabsTrigger value="original" data-testid="tab-original">
                 Original
               </TabsTrigger>
             )}
             {translations.map((translation) => (
-              <TabsTrigger 
-                key={translation.languageCode} 
+              <TabsTrigger
+                key={translation.languageCode}
                 value={translation.languageCode}
                 data-testid={`tab-language-${translation.languageCode}`}
                 className="flex items-center gap-1.5"
               >
-                <Badge variant="outline" className="min-w-fit text-xs font-medium">
-                  {languageAbbreviations[translation.languageCode] || translation.languageCode.toUpperCase()}
+                <Badge
+                  variant="outline"
+                  className="min-w-fit text-xs font-medium"
+                >
+                  {languageAbbreviations[translation.languageCode] ||
+                    translation.languageCode.toUpperCase()}
                 </Badge>
                 {translation.isVerified && (
                   <CheckCircle className="h-3 w-3 text-green-500" />
@@ -274,7 +282,9 @@ export function TranslatedContent({
             disabled={performTranslation.isPending}
             data-testid="button-refresh-translations"
           >
-            <RefreshCw className={`h-4 w-4 ${performTranslation.isPending ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${performTranslation.isPending ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
 
@@ -289,15 +299,17 @@ export function TranslatedContent({
         )}
 
         {translations.map((translation) => (
-          <TabsContent 
-            key={translation.languageCode} 
+          <TabsContent
+            key={translation.languageCode}
             value={translation.languageCode}
             className="mt-4"
           >
             <Card className="p-4">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Badge variant={translation.isVerified ? "default" : "outline"}>
+                  <Badge
+                    variant={translation.isVerified ? "default" : "outline"}
+                  >
                     {translation.isVerified ? (
                       <>
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -311,10 +323,11 @@ export function TranslatedContent({
                     )}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    Updated {new Date(translation.updatedAt).toLocaleDateString()}
+                    Updated{" "}
+                    {new Date(translation.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {!translation.isVerified && (
                     <Button
@@ -331,7 +344,12 @@ export function TranslatedContent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => copyToClipboard(translation.translatedText, translation.languageCode)}
+                    onClick={() =>
+                      copyToClipboard(
+                        translation.translatedText,
+                        translation.languageCode,
+                      )
+                    }
                     data-testid={`button-copy-${translation.languageCode}`}
                   >
                     {copiedLanguage === translation.languageCode ? (
@@ -344,7 +362,11 @@ export function TranslatedContent({
               </div>
 
               <div className="prose max-w-none dark:prose-invert">
-                {translation.translatedText || <span className="text-muted-foreground">No translation available</span>}
+                {translation.translatedText || (
+                  <span className="text-muted-foreground">
+                    No translation available
+                  </span>
+                )}
               </div>
             </Card>
           </TabsContent>

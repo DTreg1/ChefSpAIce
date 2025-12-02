@@ -1,6 +1,6 @@
 /**
  * Alt Text Editor Component
- * 
+ *
  * Allows manual editing of alt text with real-time quality scoring
  * and suggestions for improvement.
  */
@@ -27,12 +27,12 @@ interface AltTextEditorProps {
   onSave?: (altText: string, isDecorative: boolean) => void;
 }
 
-export function AltTextEditor({ 
-  imageId, 
-  imageUrl, 
-  initialAltText = "", 
+export function AltTextEditor({
+  imageId,
+  imageUrl,
+  initialAltText = "",
   initialIsDecorative = false,
-  onSave 
+  onSave,
 }: AltTextEditorProps) {
   const [altText, setAltText] = useState(initialAltText);
   const [isDecorative, setIsDecorative] = useState(initialIsDecorative);
@@ -48,7 +48,11 @@ export function AltTextEditor({
   // Update alt text mutation
   const updateMutation = useMutation({
     mutationFn: async (data: { altText: string; isDecorative: boolean }) => {
-      const res = await apiRequest(`/api/images/${imageId}/alt-text`, "PUT", data);
+      const res = await apiRequest(
+        `/api/images/${imageId}/alt-text`,
+        "PUT",
+        data,
+      );
       return res;
     },
     onSuccess: (response) => {
@@ -64,15 +68,17 @@ export function AltTextEditor({
       toast({
         title: "Error",
         description: "Failed to update alt text. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Regenerate alt text mutation
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("/api/images/alt-text", "POST", { imageUrl });
+      const res = await apiRequest("/api/images/alt-text", "POST", {
+        imageUrl,
+      });
       return res;
     },
     onSuccess: (response) => {
@@ -86,9 +92,9 @@ export function AltTextEditor({
       toast({
         title: "Error",
         description: "Failed to regenerate alt text.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleSave = () => {
@@ -107,10 +113,14 @@ export function AltTextEditor({
 
   const getWCAGBadgeVariant = (level: string | null | undefined) => {
     switch (level) {
-      case "AAA": return "default";
-      case "AA": return "secondary";
-      case "A": return "outline";
-      default: return "destructive";
+      case "AAA":
+        return "default";
+      case "AA":
+        return "secondary";
+      case "A":
+        return "outline";
+      default:
+        return "destructive";
     }
   };
 
@@ -121,10 +131,14 @@ export function AltTextEditor({
           <span>Alt Text Editor</span>
           {quality && (
             <div className="flex items-center gap-2">
-              <Badge variant={quality.wcagCompliance ? "default" : "destructive"}>
+              <Badge
+                variant={quality.wcagCompliance ? "default" : "destructive"}
+              >
                 WCAG {quality.wcagCompliance ? "Compliant" : "Non-compliant"}
               </Badge>
-              <span className={`text-sm font-medium ${getQualityColor(quality.qualityScore || 0)}`}>
+              <span
+                className={`text-sm font-medium ${getQualityColor(quality.qualityScore || 0)}`}
+              >
                 Quality: {quality.qualityScore || 0}%
               </span>
             </div>
@@ -146,7 +160,9 @@ export function AltTextEditor({
         </div>
 
         {/* Alt text editor */}
-        <div className={`space-y-2 ${isDecorative ? "opacity-50 pointer-events-none" : ""}`}>
+        <div
+          className={`space-y-2 ${isDecorative ? "opacity-50 pointer-events-none" : ""}`}
+        >
           <Label htmlFor="alt-text">Alt Text</Label>
           <Textarea
             id="alt-text"
@@ -160,7 +176,7 @@ export function AltTextEditor({
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{altText.length} characters</span>
             <span className={altText.length > 125 ? "text-destructive" : ""}>
-              {altText.length > 125 && "⚠ "} 
+              {altText.length > 125 && "⚠ "}
               Recommended: 80-125 characters
             </span>
           </div>
@@ -170,7 +186,7 @@ export function AltTextEditor({
         {quality && !isDecorative && (
           <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
             <h4 className="text-sm font-semibold">Quality Metrics</h4>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span>Length Score</span>
@@ -197,7 +213,9 @@ export function AltTextEditor({
 
             {quality.issues && quality.issues.length > 0 && (
               <div className="mt-3 space-y-1">
-                <h5 className="text-sm font-medium text-destructive">Issues:</h5>
+                <h5 className="text-sm font-medium text-destructive">
+                  Issues:
+                </h5>
                 {quality.issues.map((issue, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-sm">
                     <AlertCircle className="w-3 h-3 mt-0.5 text-destructive" />
@@ -214,28 +232,30 @@ export function AltTextEditor({
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Suggestions</Label>
             <div className="space-y-2">
-              {suggestionsQuery.data.suggestions.map((suggestion: string, idx: number) => (
-                <div 
-                  key={idx}
-                  className="p-3 bg-muted/30 rounded-lg hover-elevate cursor-pointer"
-                  onClick={() => handleApplySuggestion(suggestion)}
-                  data-testid={`suggestion-${idx}`}
-                >
-                  <p className="text-sm">{suggestion}</p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="mt-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleApplySuggestion(suggestion);
-                    }}
+              {suggestionsQuery.data.suggestions.map(
+                (suggestion: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-3 bg-muted/30 rounded-lg hover-elevate cursor-pointer"
+                    onClick={() => handleApplySuggestion(suggestion)}
+                    data-testid={`suggestion-${idx}`}
                   >
-                    <Wand2 className="w-3 h-3 mr-1" />
-                    Apply
-                  </Button>
-                </div>
-              ))}
+                    <p className="text-sm">{suggestion}</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApplySuggestion(suggestion);
+                      }}
+                    >
+                      <Wand2 className="w-3 h-3 mr-1" />
+                      Apply
+                    </Button>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -256,7 +276,7 @@ export function AltTextEditor({
               </>
             )}
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={() => regenerateMutation.mutate()}

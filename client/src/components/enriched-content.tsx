@@ -29,10 +29,10 @@ interface EnrichedContentProps {
 
 /**
  * EnrichedContent Component
- * 
+ *
  * Displays text with automatically detected and highlighted cooking terms.
  * Terms are interactive with tooltips showing definitions.
- * 
+ *
  * Features:
  * - Automatic term detection via API
  * - Interactive tooltips with definitions
@@ -47,7 +47,7 @@ export const EnrichedContent = memo(function EnrichedContent({
   excludeCategories = [],
   maxTerms = 50,
   usePopover = false,
-  highlightClassName = ""
+  highlightClassName = "",
 }: EnrichedContentProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -57,31 +57,48 @@ export const EnrichedContent = memo(function EnrichedContent({
   }, []);
 
   // Fetch detected terms from API
-  const { data: detectedTerms, isLoading, error } = useQuery<{ matches: DetectedTerm[] }>({
-    queryKey: ["/api/cooking-terms/detect-enhanced", text, excludeCategories, maxTerms],
+  const {
+    data: detectedTerms,
+    isLoading,
+    error,
+  } = useQuery<{ matches: DetectedTerm[] }>({
+    queryKey: [
+      "/api/cooking-terms/detect-enhanced",
+      text,
+      excludeCategories,
+      maxTerms,
+    ],
     queryFn: async () => {
       if (!text || text.length < 10) {
         return { matches: [] };
       }
-      
-      const response = await apiRequest("/api/cooking-terms/detect-enhanced", "POST", {
-        text,
-        excludeCategories,
-        maxMatches: maxTerms,
-        contextAware: true
-      });
-      
+
+      const response = await apiRequest(
+        "/api/cooking-terms/detect-enhanced",
+        "POST",
+        {
+          text,
+          excludeCategories,
+          maxMatches: maxTerms,
+          contextAware: true,
+        },
+      );
+
       return await response.json();
     },
     enabled: enableDetection && text.length >= 10,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes
-    retry: 1
+    retry: 1,
   });
 
   // Generate enriched content with highlighted terms
   const enrichedElements = useMemo(() => {
-    if (!isClient || !detectedTerms?.matches || detectedTerms.matches.length === 0) {
+    if (
+      !isClient ||
+      !detectedTerms?.matches ||
+      detectedTerms.matches.length === 0
+    ) {
       return <span className={className}>{text}</span>;
     }
 
@@ -96,27 +113,23 @@ export const EnrichedContent = memo(function EnrichedContent({
       // Add text before the term
       if (term.start > lastIndex) {
         const beforeText = text.substring(lastIndex, term.start);
-        elements.push(
-          <span key={`text-before-${index}`}>
-            {beforeText}
-          </span>
-        );
+        elements.push(<span key={`text-before-${index}`}>{beforeText}</span>);
       }
 
       // Add the term with tooltip
       const termText = text.substring(term.start, term.end);
-      const termClass = `cooking-term-highlight ${highlightClassName} cooking-term--${term.category.replace(/_/g, '-')}`;
-      
+      const termClass = `cooking-term-highlight ${highlightClassName} cooking-term--${term.category.replace(/_/g, "-")}`;
+
       elements.push(
         <CookingTermTooltip
           key={`term-${index}-${term.termId}`}
           term={term.originalTerm}
           usePopover={usePopover}
           className={termClass}
-          data-testid={`term-${term.originalTerm.toLowerCase().replace(/\s+/g, '-')}`}
+          data-testid={`term-${term.originalTerm.toLowerCase().replace(/\s+/g, "-")}`}
         >
           {termText}
-        </CookingTermTooltip>
+        </CookingTermTooltip>,
       );
 
       lastIndex = term.end;
@@ -126,9 +139,7 @@ export const EnrichedContent = memo(function EnrichedContent({
     if (lastIndex < text.length) {
       const remainingText = text.substring(lastIndex);
       elements.push(
-        <span key={`text-after-${sortedTerms.length}`}>
-          {remainingText}
-        </span>
+        <span key={`text-after-${sortedTerms.length}`}>{remainingText}</span>,
       );
     }
 
@@ -153,7 +164,10 @@ export const EnrichedContent = memo(function EnrichedContent({
   }
 
   return (
-    <span className={`enriched-content ${className}`} data-testid="enriched-content">
+    <span
+      className={`enriched-content ${className}`}
+      data-testid="enriched-content"
+    >
       {enrichedElements}
     </span>
   );
@@ -161,7 +175,7 @@ export const EnrichedContent = memo(function EnrichedContent({
 
 /**
  * EnrichedParagraph Component
- * 
+ *
  * Wrapper for paragraph-level content with term enrichment.
  * Handles multiple lines and maintains paragraph formatting.
  */
@@ -179,14 +193,14 @@ export const EnrichedParagraph = memo(function EnrichedParagraph({
 
 /**
  * EnrichedHTML Component
- * 
+ *
  * Displays pre-enriched HTML content from the server.
  * Used when the server has already processed and marked up terms.
  */
 export function EnrichedHTML({
   html,
   className = "",
-  onClick
+  onClick,
 }: {
   html: string;
   className?: string;
@@ -204,11 +218,14 @@ export function EnrichedHTML({
 
     const handleTermClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.classList.contains("cooking-term") || target.closest(".cooking-term")) {
-        const termElement = target.classList.contains("cooking-term") 
-          ? target 
-          : target.closest(".cooking-term") as HTMLElement;
-        
+      if (
+        target.classList.contains("cooking-term") ||
+        target.closest(".cooking-term")
+      ) {
+        const termElement = target.classList.contains("cooking-term")
+          ? target
+          : (target.closest(".cooking-term") as HTMLElement);
+
         const termId = termElement?.dataset.termId;
         if (termId) {
           e.preventDefault();
@@ -226,7 +243,7 @@ export function EnrichedHTML({
   }
 
   return (
-    <div 
+    <div
       className={`enriched-html ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
       data-testid="enriched-html"
@@ -237,27 +254,30 @@ export function EnrichedHTML({
 /**
  * Hook to fetch enriched HTML from server
  */
-export function useEnrichedText(text: string, options?: {
-  excludeCategories?: string[];
-  linkToGlossary?: boolean;
-  includeTooltip?: boolean;
-}) {
+export function useEnrichedText(
+  text: string,
+  options?: {
+    excludeCategories?: string[];
+    linkToGlossary?: boolean;
+    includeTooltip?: boolean;
+  },
+) {
   return useQuery<{ text: string }>({
     queryKey: ["/api/cooking-terms/enrich", text, options],
     queryFn: async () => {
       if (!text || text.length < 10) {
         return { text };
       }
-      
+
       const response = await apiRequest("/api/cooking-terms/enrich", "POST", {
         text,
-        ...options
+        ...options,
       });
-      
+
       return await response.json();
     },
     enabled: !!text && text.length >= 10,
     staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 10
+    gcTime: 1000 * 60 * 10,
   });
 }

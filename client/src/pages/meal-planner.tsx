@@ -103,7 +103,9 @@ export default function MealPlanner() {
       return await apiRequest(API_ENDPOINTS.mealPlans.delete(id), "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.mealPlans.list] });
+      queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.mealPlans.list],
+      });
       toast({
         title: "Meal removed",
         description: "Meal plan removed from calendar",
@@ -114,65 +116,69 @@ export default function MealPlanner() {
   // Generate shopping list from meal plans
   const generateShoppingList = async () => {
     if (generatingShoppingList) return;
-    
+
     setGeneratingShoppingList(true);
-    
+
     // Calculate the date range to use
     const rangeStartDate = weekDates[0].toLocaleDateString("en-CA");
     const rangeEndDate = weekDates[6].toLocaleDateString("en-CA");
-    
+
     // Show initial toast
     const { dismiss } = toast({
       title: "Generating Shopping List",
       description: "Starting to process meal plans...",
       duration: Infinity, // Keep it open
     });
-    
+
     try {
-      const response = await fetch(API_ENDPOINTS.shoppingList.generateFromMealPlans, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          startDate: rangeStartDate, 
-          endDate: rangeEndDate 
-        }),
-      });
-      
+      const response = await fetch(
+        API_ENDPOINTS.shoppingList.generateFromMealPlans,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            startDate: rangeStartDate,
+            endDate: rangeEndDate,
+          }),
+        },
+      );
+
       if (!response.ok) {
         throw new Error("Failed to generate shopping list");
       }
-      
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (!reader) {
         throw new Error("Response body is not readable");
       }
-      
+
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
-        
+
         const chunk = decoder.decode(value);
         const lines = chunk.split("\n");
-        
+
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               if (data.error) {
                 dismiss();
                 toast({
                   title: "Error",
-                  description: data.message || "Failed to generate shopping list",
+                  description:
+                    data.message || "Failed to generate shopping list",
                   variant: "destructive",
                 });
                 setGeneratingShoppingList(false);
                 return;
               }
-              
+
               // Update progress toast
               dismiss();
               const progressToast = toast({
@@ -180,13 +186,13 @@ export default function MealPlanner() {
                 description: data.message,
                 duration: data.progress === 100 ? 5000 : Infinity,
               });
-              
+
               if (data.progress === 100) {
                 // Complete - invalidate queries and navigate
-                await queryClient.invalidateQueries({ 
-                  queryKey: ["/api/shopping-list/items"] 
+                await queryClient.invalidateQueries({
+                  queryKey: ["/api/shopping-list/items"],
                 });
-                
+
                 // Show completion toast
                 setTimeout(() => {
                   progressToast.dismiss();
@@ -196,7 +202,7 @@ export default function MealPlanner() {
                     duration: 5000,
                   });
                 }, 1000);
-                
+
                 // Navigate to shopping list after a short delay
                 setTimeout(() => {
                   window.location.href = "/shopping-list";
@@ -325,26 +331,32 @@ export default function MealPlanner() {
     touchEndX.current = e.touches[0].clientX;
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const swipeThreshold = 50;
-    // Use changedTouches for touchEnd, fallback to touchEndX or touchStartX
-    const finalX = e.changedTouches[0]?.clientX ?? touchEndX.current ?? touchStartX.current;
-    const swipeDistance = touchStartX.current - finalX;
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const swipeThreshold = 50;
+      // Use changedTouches for touchEnd, fallback to touchEndX or touchStartX
+      const finalX =
+        e.changedTouches[0]?.clientX ??
+        touchEndX.current ??
+        touchStartX.current;
+      const swipeDistance = touchStartX.current - finalX;
 
-    if (Math.abs(swipeDistance) > swipeThreshold) {
-      if (swipeDistance > 0) {
-        // Swiped left - go to next day
-        goToNextDay();
-      } else {
-        // Swiped right - go to previous day
-        goToPreviousDay();
+      if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0) {
+          // Swiped left - go to next day
+          goToNextDay();
+        } else {
+          // Swiped right - go to previous day
+          goToPreviousDay();
+        }
       }
-    }
 
-    // Reset touch refs
-    touchStartX.current = 0;
-    touchEndX.current = 0;
-  }, [goToNextDay, goToPreviousDay]);
+      // Reset touch refs
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+    },
+    [goToNextDay, goToPreviousDay],
+  );
 
   return (
     <div className="h-full overflow-y-auto bg-muted">
@@ -361,7 +373,8 @@ export default function MealPlanner() {
                   Meal Planner
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Plan your meals {viewMode === "day" ? "for the day" : "for the week"}
+                  Plan your meals{" "}
+                  {viewMode === "day" ? "for the day" : "for the week"}
                 </p>
               </div>
             </div>
@@ -406,8 +419,12 @@ export default function MealPlanner() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={viewMode === "day" ? goToPreviousDay : goToPreviousWeek}
-                data-testid={viewMode === "day" ? "button-prev-day" : "button-prev-week"}
+                onClick={
+                  viewMode === "day" ? goToPreviousDay : goToPreviousWeek
+                }
+                data-testid={
+                  viewMode === "day" ? "button-prev-day" : "button-prev-week"
+                }
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -421,7 +438,9 @@ export default function MealPlanner() {
                 variant="outline"
                 size="icon"
                 onClick={viewMode === "day" ? goToNextDay : goToNextWeek}
-                data-testid={viewMode === "day" ? "button-next-day" : "button-next-week"}
+                data-testid={
+                  viewMode === "day" ? "button-next-day" : "button-next-week"
+                }
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -477,7 +496,9 @@ export default function MealPlanner() {
                             <CardContent className="pt-0">
                               <div className="text-sm text-muted-foreground mb-2">
                                 {mealPlan.servings}{" "}
-                                {mealPlan.servings === 1 ? "serving" : "servings"}
+                                {mealPlan.servings === 1
+                                  ? "serving"
+                                  : "servings"}
                               </div>
                               <ProgressiveSection
                                 id={`meal-serving-${mealPlan.id}`}
@@ -491,7 +512,10 @@ export default function MealPlanner() {
                               >
                                 <div className="space-y-2 mt-2">
                                   <div className="flex items-center gap-2">
-                                    <Label htmlFor={`servings-${mealPlan.id}`} className="text-xs">
+                                    <Label
+                                      htmlFor={`servings-${mealPlan.id}`}
+                                      className="text-xs"
+                                    >
                                       Servings:
                                     </Label>
                                     <Input
@@ -510,7 +534,8 @@ export default function MealPlanner() {
                                         e.stopPropagation();
                                         toast({
                                           title: "Coming soon",
-                                          description: "Serving adjustment will be implemented soon",
+                                          description:
+                                            "Serving adjustment will be implemented soon",
                                         });
                                       }}
                                       data-testid={`button-update-servings-${mealPlan.id}`}
@@ -686,7 +711,7 @@ export default function MealPlanner() {
                 )}
               </Button>
             </div>
-            
+
             <ProgressiveSection
               id="meal-planner-bulk-actions"
               title="Bulk Actions"
@@ -701,7 +726,8 @@ export default function MealPlanner() {
                   onClick={() => {
                     toast({
                       title: "Coming soon",
-                      description: "Batch meal duplication feature will be added",
+                      description:
+                        "Batch meal duplication feature will be added",
                     });
                   }}
                   data-testid="button-duplicate-week"
@@ -743,7 +769,8 @@ export default function MealPlanner() {
                   onClick={() => {
                     toast({
                       title: "Coming soon",
-                      description: "Auto-generate meal plan based on preferences",
+                      description:
+                        "Auto-generate meal plan based on preferences",
                     });
                   }}
                   data-testid="button-auto-plan"

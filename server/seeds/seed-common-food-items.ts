@@ -1,6 +1,6 @@
 /**
  * Seed Common Food Items
- * 
+ *
  * This file was used for seeding onboarding inventory items.
  * The functionality has been moved to the main application flow.
  */
@@ -16,6 +16,6 @@ export async function seedCommonFoodItems(_forceUpdate = false) {
     successCount: 0,
     errorCount: 0,
     elapsedTime: 0,
-    errors: []
+    errors: [],
   };
 }

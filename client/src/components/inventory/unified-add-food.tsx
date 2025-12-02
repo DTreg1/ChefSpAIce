@@ -78,7 +78,12 @@ const FOOD_CATEGORIES = [
   { id: "meat", label: "Meat", icon: Beef, query: "meat beef chicken pork" },
   { id: "seafood", label: "Seafood", icon: Fish, query: "fish seafood" },
   { id: "snacks", label: "Snacks", icon: Candy, query: "snacks chips" },
-  { id: "beverages", label: "Beverages", icon: Coffee, query: "beverages drinks" },
+  {
+    id: "beverages",
+    label: "Beverages",
+    icon: Coffee,
+    query: "beverages drinks",
+  },
   { id: "prepared", label: "Prepared", icon: Pizza, query: "prepared meals" },
 ];
 
@@ -91,20 +96,40 @@ function isBarcode(input: string): boolean {
 // Helper to suggest shelf life based on food category
 function getSuggestedShelfLife(category?: string, dataType?: string): number {
   if (!category) return 7; // Default 7 days
-  
+
   const cat = category.toLowerCase();
-  
-  if (cat.includes("fruit") || cat.includes("vegetable") || cat.includes("produce")) {
+
+  if (
+    cat.includes("fruit") ||
+    cat.includes("vegetable") ||
+    cat.includes("produce")
+  ) {
     return 7;
   }
-  if (cat.includes("dairy") || cat.includes("milk") || cat.includes("cheese") || cat.includes("yogurt")) {
+  if (
+    cat.includes("dairy") ||
+    cat.includes("milk") ||
+    cat.includes("cheese") ||
+    cat.includes("yogurt")
+  ) {
     return 10;
   }
-  if (cat.includes("meat") || cat.includes("poultry") || cat.includes("beef") || 
-      cat.includes("pork") || cat.includes("chicken") || cat.includes("fish") || cat.includes("seafood")) {
+  if (
+    cat.includes("meat") ||
+    cat.includes("poultry") ||
+    cat.includes("beef") ||
+    cat.includes("pork") ||
+    cat.includes("chicken") ||
+    cat.includes("fish") ||
+    cat.includes("seafood")
+  ) {
     return 3;
   }
-  if (cat.includes("bread") || cat.includes("bakery") || cat.includes("baked")) {
+  if (
+    cat.includes("bread") ||
+    cat.includes("bakery") ||
+    cat.includes("baked")
+  ) {
     return 5;
   }
   if (cat.includes("egg")) {
@@ -113,11 +138,16 @@ function getSuggestedShelfLife(category?: string, dataType?: string): number {
   if (cat.includes("frozen")) {
     return 90; // 3 months
   }
-  if (cat.includes("canned") || cat.includes("packaged") || cat.includes("snack") || 
-      cat.includes("cereal") || cat.includes("grain")) {
+  if (
+    cat.includes("canned") ||
+    cat.includes("packaged") ||
+    cat.includes("snack") ||
+    cat.includes("cereal") ||
+    cat.includes("grain")
+  ) {
     return 180; // 6 months
   }
-  
+
   return 7;
 }
 
@@ -134,60 +164,66 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   const [searchResults, setSearchResults] = useState<USDAFoodItem[]>([]);
   const [recentItems, setRecentItems] = useState<FoodItemType[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<"search" | "scan" | "browse">("search");
-  
+  const [activeTab, setActiveTab] = useState<"search" | "scan" | "browse">(
+    "search",
+  );
+
   const { toast } = useToast();
   const { data: storageLocations } = useStorageLocations();
-  
+
   // Get default storage location
   const getDefaultLocation = useCallback(() => {
     if (!storageLocations || storageLocations.length === 0) return "";
-    
-    const fridge = storageLocations.find(loc => 
-      loc.name.toLowerCase().includes('fridge') || loc.name.toLowerCase().includes('refrigerator')
+
+    const fridge = storageLocations.find(
+      (loc) =>
+        loc.name.toLowerCase().includes("fridge") ||
+        loc.name.toLowerCase().includes("refrigerator"),
     );
-    
+
     if (fridge) return fridge.id;
     return storageLocations[0]?.id || "";
   }, [storageLocations]);
-  
+
   // Set default location when locations load
   useEffect(() => {
     if (storageLocations && !selectedLocation) {
       setSelectedLocation(getDefaultLocation());
     }
   }, [storageLocations, selectedLocation, getDefaultLocation]);
-  
+
   // Fetch recent items
   const { data: inventoryData } = useQuery({
-    queryKey: ['/api/food-items'],
+    queryKey: ["/api/food-items"],
     enabled: open,
   });
-  
+
   useEffect(() => {
     if (inventoryData && Array.isArray(inventoryData)) {
       const sorted = [...inventoryData]
-        .sort((a: FoodItemType, b: FoodItemType) => 
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        .sort(
+          (a: FoodItemType, b: FoodItemType) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime(),
         )
         .slice(0, 5);
       setRecentItems(sorted);
     }
   }, [inventoryData]);
-  
+
   // Search function (handles both text and barcode)
   const performSearch = useDebouncedCallback(async (query: string) => {
     if (!query || query.length < 2) {
       setSearchResults([]);
       return;
     }
-    
+
     setIsSearching(true);
-    
+
     try {
       let endpoint: string;
       let params: URLSearchParams;
-      
+
       if (isBarcode(query)) {
         // Barcode search
         endpoint = `/api/food/barcode/${query}`;
@@ -197,21 +233,21 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
         endpoint = `/api/usda/search`;
         params = new URLSearchParams({
           query,
-          pageSize: '20',
-          dataType: 'Branded',
+          pageSize: "20",
+          dataType: "Branded",
         });
       }
-      
+
       const response = await fetch(`${endpoint}?${params}`, {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`Search failed: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (isBarcode(query)) {
         // Handle barcode response
         if (data.usda) {
@@ -220,7 +256,8 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
           setSearchResults([]);
           toast({
             title: "Product not found",
-            description: "No product found with this barcode. Try searching by name instead.",
+            description:
+              "No product found with this barcode. Try searching by name instead.",
             variant: "default",
           });
         }
@@ -232,7 +269,10 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       console.error("Search error:", error);
       toast({
         title: "Search failed",
-        description: error instanceof Error ? error.message : "Failed to search. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to search. Please try again.",
         variant: "destructive",
       });
       setSearchResults([]);
@@ -240,43 +280,49 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       setIsSearching(false);
     }
   }, 300);
-  
+
   // Handle search input change
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     void performSearch(value);
   };
-  
+
   // Handle category click
   const handleCategoryClick = (query: string) => {
     setActiveTab("search");
     setSearchQuery(query);
     void performSearch(query);
   };
-  
+
   // Barcode scanner handlers
-  const handleScan = useCallback(async (barcode: string) => {
-    // console.log("Scanned barcode:", barcode);
-    setShowScanner(false);
-    setActiveTab("search");
-    setSearchQuery(barcode);
-    void performSearch(barcode);
-  }, [performSearch]);
-  
-  const handleScanError = useCallback((error: string) => {
-    setScannerError(error);
-    toast({
-      title: "Scanner error",
-      description: error,
-      variant: "destructive",
-    });
-  }, [toast]);
-  
+  const handleScan = useCallback(
+    async (barcode: string) => {
+      // console.log("Scanned barcode:", barcode);
+      setShowScanner(false);
+      setActiveTab("search");
+      setSearchQuery(barcode);
+      void performSearch(barcode);
+    },
+    [performSearch],
+  );
+
+  const handleScanError = useCallback(
+    (error: string) => {
+      setScannerError(error);
+      toast({
+        title: "Scanner error",
+        description: error,
+        variant: "destructive",
+      });
+    },
+    [toast],
+  );
+
   const { startScanning, stopScanning } = useBarcodeScanner({
     onScan: handleScan,
     onError: handleScanError,
   });
-  
+
   // Start/stop scanner based on state
   useEffect(() => {
     if (showScanner && activeTab === "scan") {
@@ -284,37 +330,39 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     } else {
       void stopScanning();
     }
-    
+
     return () => {
       void stopScanning();
     };
   }, [showScanner, activeTab, startScanning, stopScanning]);
-  
+
   // Handle food selection
   const handleSelectFood = (food: USDAFoodItem) => {
     setSelectedFood(food);
-    
+
     // Auto-set expiration date based on category
     const shelfLife = getSuggestedShelfLife(food.foodCategory, food.dataType);
     const suggestedDate = format(addDays(new Date(), shelfLife), "yyyy-MM-dd");
     setExpirationDate(suggestedDate);
   };
-  
+
   // Add food mutation
   const addFoodMutation = useMutation({
     mutationFn: async (data: unknown) => {
       return await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
+      void queryClient.invalidateQueries({
+        queryKey: [API_ENDPOINTS.inventory.foodItems],
+      });
       setShowSuccess(true);
-      
+
       setTimeout(() => {
         setShowSuccess(false);
         resetForm();
         onOpenChange(false);
       }, 1500);
-      
+
       toast({
         title: "Food added",
         description: `${selectedFood?.description} has been added to your inventory.`,
@@ -323,12 +371,15 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     onError: (error: Error | unknown) => {
       toast({
         title: "Failed to add food",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Handle form submission
   const handleSubmit = () => {
     if (!selectedFood || !selectedLocation) {
@@ -339,20 +390,21 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       });
       return;
     }
-    
+
     const foodItem = {
       name: selectedFood.description,
       quantity: quantity,
       unit,
       storageLocationId: selectedLocation,
-      expirationDate: expirationDate || format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      expirationDate:
+        expirationDate || format(addDays(new Date(), 7), "yyyy-MM-dd"),
       usdaData: selectedFood,
       foodCategory: selectedFood.foodCategory || null,
     };
-    
+
     addFoodMutation.mutate(foodItem);
   };
-  
+
   // Reset form
   const resetForm = () => {
     setSearchQuery("");
@@ -365,7 +417,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     setScannerError(null);
     setActiveTab("search");
   };
-  
+
   // Handle dialog close
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -374,17 +426,18 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     }
     onOpenChange(newOpen);
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-muted">
         <DialogHeader>
           <DialogTitle>Add Food to Inventory</DialogTitle>
           <DialogDescription>
-            Search by name, scan a barcode, or browse categories to add food items
+            Search by name, scan a barcode, or browse categories to add food
+            items
           </DialogDescription>
         </DialogHeader>
-        
+
         {showSuccess ? (
           <div className="flex-1 flex items-center justify-center py-8">
             <SuccessAnimation />
@@ -397,16 +450,25 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold">{selectedFood.description}</h3>
+                      <h3 className="font-semibold">
+                        {selectedFood.description}
+                      </h3>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {selectedFood.brandOwner && (
-                          <span className="text-sm text-muted-foreground">{selectedFood.brandOwner}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {selectedFood.brandOwner}
+                          </span>
                         )}
                         {selectedFood.foodCategory && (
-                          <Badge variant="secondary">{selectedFood.foodCategory}</Badge>
+                          <Badge variant="secondary">
+                            {selectedFood.foodCategory}
+                          </Badge>
                         )}
                         {selectedFood.gtinUpc && (
-                          <Badge variant="outline" className="font-mono text-xs">
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-xs"
+                          >
                             {selectedFood.gtinUpc}
                           </Badge>
                         )}
@@ -424,12 +486,13 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                 </div>
               </CardContent>
             </Card>
-            
-            
-            
+
             <div className="space-y-2">
               <Label htmlFor="location">Storage Location</Label>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <Select
+                value={selectedLocation}
+                onValueChange={setSelectedLocation}
+              >
                 <SelectTrigger id="location" data-testid="select-location">
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
@@ -445,7 +508,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="expiration">Expiration Date</Label>
               <div className="flex items-center gap-2">
@@ -463,7 +526,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                 Auto-suggested based on food type. Verify with package label.
               </p>
             </div>
-            
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
@@ -496,7 +559,13 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
         ) : (
           // Search interface
           <div className="flex-1 overflow-hidden flex flex-col">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "search" | "scan" | "browse")} className="flex-1 flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) =>
+                setActiveTab(v as "search" | "scan" | "browse")
+              }
+              className="flex-1 flex flex-col"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="search">
                   <Search className="h-4 w-4 mr-2" />
@@ -507,8 +576,11 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                   Scan
                 </TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="search" className="flex-1 overflow-hidden flex flex-col mt-4">
+
+              <TabsContent
+                value="search"
+                className="flex-1 overflow-hidden flex flex-col mt-4"
+              >
                 <div className="space-y-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -534,7 +606,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                       </Button>
                     )}
                   </div>
-                  
+
                   {isBarcode(searchQuery) && (
                     <Alert>
                       <ScanLine className="h-4 w-4" />
@@ -544,7 +616,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                     </Alert>
                   )}
                 </div>
-                
+
                 <ScrollArea className="flex-1 mt-4">
                   <div className="space-y-4 pr-4">
                     {isSearching && (
@@ -554,10 +626,12 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         <Skeleton className="h-20 w-full" />
                       </div>
                     )}
-                    
+
                     {!isSearching && searchResults.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-muted-foreground">Search Results</h3>
+                        <h3 className="text-sm font-medium text-muted-foreground">
+                          Search Results
+                        </h3>
                         {searchResults.map((food) => (
                           <Card
                             key={food.fdcId}
@@ -568,7 +642,9 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                             <CardContent className="p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">{food.description}</p>
+                                  <p className="font-medium text-sm truncate">
+                                    {food.description}
+                                  </p>
                                   <div className="flex flex-wrap items-center gap-2 mt-1">
                                     {food.brandOwner && (
                                       <span className="text-xs text-muted-foreground truncate">
@@ -576,7 +652,10 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                                       </span>
                                     )}
                                     {food.foodCategory && (
-                                      <Badge variant="secondary" className="text-xs">
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
                                         {food.foodCategory}
                                       </Badge>
                                     )}
@@ -589,21 +668,23 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         ))}
                       </div>
                     )}
-                    
-                    {!isSearching && searchQuery && searchResults.length === 0 && (
-                      <Card>
-                        <CardContent className="py-8 text-center">
-                          <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">
-                            No results found for &quot;{searchQuery}&quot;
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Try a different search term or scan a barcode
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )}
-                    
+
+                    {!isSearching &&
+                      searchQuery &&
+                      searchResults.length === 0 && (
+                        <Card>
+                          <CardContent className="py-8 text-center">
+                            <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                              No results found for &quot;{searchQuery}&quot;
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Try a different search term or scan a barcode
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
                     {!searchQuery && recentItems.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -624,7 +705,9 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                             <CardContent className="p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">{item.name}</p>
+                                  <p className="font-medium text-sm truncate">
+                                    {item.name}
+                                  </p>
                                   <p className="text-xs text-muted-foreground">
                                     {item.quantity} {item.unit}
                                   </p>
@@ -636,7 +719,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         ))}
                       </div>
                     )}
-                    
+
                     {!searchQuery && recentItems.length === 0 && (
                       <div className="text-center py-8">
                         <Search className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
@@ -651,8 +734,11 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                   </div>
                 </ScrollArea>
               </TabsContent>
-              
-              <TabsContent value="scan" className="flex-1 overflow-hidden flex flex-col mt-4">
+
+              <TabsContent
+                value="scan"
+                className="flex-1 overflow-hidden flex flex-col mt-4"
+              >
                 <div className="flex-1 flex flex-col items-center justify-center">
                   {!showScanner ? (
                     <div className="text-center space-y-4">
@@ -660,7 +746,8 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                       <div className="space-y-2">
                         <h3 className="font-semibold">Scan Barcode</h3>
                         <p className="text-sm text-muted-foreground max-w-sm">
-                          Use your camera to scan product barcodes for quick addition
+                          Use your camera to scan product barcodes for quick
+                          addition
                         </p>
                       </div>
                       <Button
@@ -679,14 +766,14 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         className="w-full bg-black rounded-lg overflow-hidden"
                         style={{ minHeight: "300px" }}
                       />
-                      
+
                       {scannerError && (
                         <Alert variant="destructive">
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription>{scannerError}</AlertDescription>
                         </Alert>
                       )}
-                      
+
                       <div className="text-center space-y-2">
                         <p className="text-sm text-muted-foreground">
                           Position barcode within the frame
@@ -707,8 +794,11 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                   )}
                 </div>
               </TabsContent>
-              
-              <TabsContent value="browse" className="flex-1 overflow-hidden flex flex-col mt-4">
+
+              <TabsContent
+                value="browse"
+                className="flex-1 overflow-hidden flex flex-col mt-4"
+              >
                 <ScrollArea className="flex-1">
                   <div className="grid grid-cols-3 gap-3 pr-4">
                     {FOOD_CATEGORIES.map((category) => {
@@ -722,25 +812,38 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         >
                           <CardContent className="p-4 text-center">
                             <Icon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                            <p className="text-sm font-medium">{category.label}</p>
+                            <p className="text-sm font-medium">
+                              {category.label}
+                            </p>
                           </CardContent>
                         </Card>
                       );
                     })}
                   </div>
-                  
+
                   <div className="mt-6 space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <TrendingUp className="h-4 w-4" />
                       Popular Searches
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {["Milk", "Bread", "Eggs", "Chicken", "Rice", "Pasta", "Tomatoes", "Cheese"].map((term) => (
+                      {[
+                        "Milk",
+                        "Bread",
+                        "Eggs",
+                        "Chicken",
+                        "Rice",
+                        "Pasta",
+                        "Tomatoes",
+                        "Cheese",
+                      ].map((term) => (
                         <Badge
                           key={term}
                           variant="secondary"
                           className="cursor-pointer hover-elevate"
-                          onClick={() => handleCategoryClick(term.toLowerCase())}
+                          onClick={() =>
+                            handleCategoryClick(term.toLowerCase())
+                          }
                           data-testid={`badge-popular-${term.toLowerCase()}`}
                         >
                           {term}

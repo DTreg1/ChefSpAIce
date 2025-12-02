@@ -71,9 +71,7 @@ import type {
   InsertSummary,
 } from "@shared/schema/ai-ml";
 
-import type {
-  InsertTranscription,
-} from "@shared/schema/transcription";
+import type { InsertTranscription } from "@shared/schema/transcription";
 
 import type {
   InsertActivityLog,
@@ -100,9 +98,7 @@ import type {
   MeetingEvents,
 } from "@shared/schema/scheduling";
 
-import type {
-  InsertNotificationHistory,
-} from "@shared/schema/notifications";
+import type { InsertNotificationHistory } from "@shared/schema/notifications";
 
 /**
  * StorageRoot class that composes all three storage tiers
@@ -144,17 +140,20 @@ export class StorageRoot {
     return this.user.user.deleteUser(id);
   }
 
-  async updateUserPreferences(userId: string, preferences: {
-    dietaryRestrictions?: string[];
-    allergens?: string[];
-    foodsToAvoid?: string[];
-    favoriteCategories?: string[];
-    householdSize?: number;
-    cookingSkillLevel?: string;
-    preferredUnits?: string;
-    expirationAlertDays?: number;
-    storageAreasEnabled?: string[];
-  }) {
+  async updateUserPreferences(
+    userId: string,
+    preferences: {
+      dietaryRestrictions?: string[];
+      allergens?: string[];
+      foodsToAvoid?: string[];
+      favoriteCategories?: string[];
+      householdSize?: number;
+      cookingSkillLevel?: string;
+      preferredUnits?: string;
+      expirationAlertDays?: number;
+      storageAreasEnabled?: string[];
+    },
+  ) {
     return this.user.user.updateUserPreferences(userId, preferences);
   }
 
@@ -167,7 +166,11 @@ export class StorageRoot {
   }
 
   // ==================== Session Management ====================
-  async createSession(sessionId: string, sessionData: SessionData, sessionExpire: Date) {
+  async createSession(
+    sessionId: string,
+    sessionData: SessionData,
+    sessionExpire: Date,
+  ) {
     return this.user.user.createSession(sessionId, sessionData, sessionExpire);
   }
 
@@ -175,7 +178,11 @@ export class StorageRoot {
     return this.user.user.getSession(sessionId);
   }
 
-  async updateSession(sessionId: string, sessionData: SessionData, sessionExpire: Date) {
+  async updateSession(
+    sessionId: string,
+    sessionData: SessionData,
+    sessionExpire: Date,
+  ) {
     return this.user.user.updateSession(sessionId, sessionData, sessionExpire);
   }
 
@@ -188,7 +195,11 @@ export class StorageRoot {
   }
 
   // ==================== Auth Providers ====================
-  async linkOAuthProvider(userId: string, provider: string, providerId: string) {
+  async linkOAuthProvider(
+    userId: string,
+    provider: string,
+    providerId: string,
+  ) {
     return this.user.user.linkOAuthProvider(userId, provider, providerId);
   }
 
@@ -217,19 +228,39 @@ export class StorageRoot {
     return this.user.inventory.getFoodItems(userId, filter);
   }
 
-  async getFoodItemsPaginated(userId: string, limit: number = 30, offset: number = 0, filter?: "all" | "expiring" | "expired") {
-    return this.user.inventory.getFoodItemsPaginated(userId, limit, offset, filter);
+  async getFoodItemsPaginated(
+    userId: string,
+    limit: number = 30,
+    offset: number = 0,
+    filter?: "all" | "expiring" | "expired",
+  ) {
+    return this.user.inventory.getFoodItemsPaginated(
+      userId,
+      limit,
+      offset,
+      filter,
+    );
   }
 
   async getFoodItem(userId: string, id: string) {
     return this.user.inventory.getFoodItem(userId, id);
   }
 
-  async createFoodItem(userId: string, data: Omit<InsertUserInventory, 'userId'>) {
-    return this.user.inventory.createFoodItem(userId, { ...data, userId } as InsertUserInventory);
+  async createFoodItem(
+    userId: string,
+    data: Omit<InsertUserInventory, "userId">,
+  ) {
+    return this.user.inventory.createFoodItem(userId, {
+      ...data,
+      userId,
+    } as InsertUserInventory);
   }
 
-  async updateFoodItem(userId: string, id: string, data: Partial<UserInventory>) {
+  async updateFoodItem(
+    userId: string,
+    id: string,
+    data: Partial<UserInventory>,
+  ) {
     return this.user.inventory.updateFoodItem(userId, id, data);
   }
 
@@ -249,11 +280,18 @@ export class StorageRoot {
     return this.user.inventory.getStorageLocation(userId, id);
   }
 
-  async createStorageLocation(userId: string, data: Omit<InsertUserStorage, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
+  async createStorageLocation(
+    userId: string,
+    data: Omit<InsertUserStorage, "id" | "userId" | "createdAt" | "updatedAt">,
+  ) {
     return this.user.inventory.createStorageLocation(userId, data);
   }
 
-  async updateStorageLocation(userId: string, id: string, data: Partial<UserStorageType>) {
+  async updateStorageLocation(
+    userId: string,
+    id: string,
+    data: Partial<UserStorageType>,
+  ) {
     return this.user.inventory.updateStorageLocation(userId, id, data);
   }
 
@@ -274,7 +312,11 @@ export class StorageRoot {
     return this.user.inventory.createShoppingItem(data);
   }
 
-  async updateShoppingItem(userId: string, id: string, data: Partial<ShoppingItem>) {
+  async updateShoppingItem(
+    userId: string,
+    id: string,
+    data: Partial<ShoppingItem>,
+  ) {
     return this.user.inventory.updateShoppingItem(userId, id, data);
   }
 
@@ -291,7 +333,11 @@ export class StorageRoot {
     return this.user.recipes.getRecipes(userId);
   }
 
-  async getRecipesPaginated(userId: string, page: number = 1, limit: number = 20) {
+  async getRecipesPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+  ) {
     return this.user.recipes.getRecipesPaginated(userId, page, limit);
   }
 
@@ -303,8 +349,11 @@ export class StorageRoot {
     return this.user.recipes.searchRecipes(userId, query);
   }
 
-  async createRecipe(userId: string, data: Omit<InsertRecipe, 'userId'>) {
-    return this.user.recipes.createRecipe(userId, { ...data, userId } as InsertRecipe);
+  async createRecipe(userId: string, data: Omit<InsertRecipe, "userId">) {
+    return this.user.recipes.createRecipe(userId, {
+      ...data,
+      userId,
+    } as InsertRecipe);
   }
 
   async updateRecipe(userId: string, id: string, data: Partial<Recipe>) {
@@ -328,11 +377,18 @@ export class StorageRoot {
     return this.user.chat.getChatMessages(userId, limit);
   }
 
-  async getChatMessagesPaginated(userId: string, page: number = 1, limit: number = 50) {
+  async getChatMessagesPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 50,
+  ) {
     return this.user.chat.getChatMessagesPaginated(userId, page, limit);
   }
 
-  async createChatMessage(userId: string, data: Omit<InsertChatMessage, 'userId'>) {
+  async createChatMessage(
+    userId: string,
+    data: Omit<InsertChatMessage, "userId">,
+  ) {
     return this.user.chat.createChatMessage(userId, data);
   }
 
@@ -341,7 +397,11 @@ export class StorageRoot {
   }
 
   // ==================== Notifications ====================
-  async savePushToken(userId: string, token: string, platform: 'web' | 'ios' | 'android') {
+  async savePushToken(
+    userId: string,
+    token: string,
+    platform: "web" | "ios" | "android",
+  ) {
     return this.user.notifications.savePushToken(userId, token, platform);
   }
 
@@ -353,7 +413,7 @@ export class StorageRoot {
     return this.user.notifications.deletePushToken(tokenId);
   }
 
-  async createNotification(data: Omit<InsertNotificationHistory, 'id'>) {
+  async createNotification(data: Omit<InsertNotificationHistory, "id">) {
     return this.user.notifications.createNotification(data);
   }
 
@@ -381,20 +441,39 @@ export class StorageRoot {
     return this.user.notifications.getNotificationPreferences(userId);
   }
 
-  async upsertNotificationPreferences(userId: string, preferences: Record<string, boolean>) {
-    type NotificationType = "expiring-food" | "recipe-suggestion" | "meal-reminder" | "test" | "system" | "promotion" | "feature-update";
-    const validTypes: NotificationType[] = ["expiring-food", "recipe-suggestion", "meal-reminder", "test", "system", "promotion", "feature-update"];
+  async upsertNotificationPreferences(
+    userId: string,
+    preferences: Record<string, boolean>,
+  ) {
+    type NotificationType =
+      | "expiring-food"
+      | "recipe-suggestion"
+      | "meal-reminder"
+      | "test"
+      | "system"
+      | "promotion"
+      | "feature-update";
+    const validTypes: NotificationType[] = [
+      "expiring-food",
+      "recipe-suggestion",
+      "meal-reminder",
+      "test",
+      "system",
+      "promotion",
+      "feature-update",
+    ];
     const results = [];
     for (const [key, enabled] of Object.entries(preferences)) {
       if (validTypes.includes(key as NotificationType)) {
-        const result = await this.user.notifications.upsertNotificationPreferences({
-          userId,
-          notificationType: key as NotificationType,
-          enabled,
-          channels: ['push', 'email'],
-          minImportance: 3,
-          frequency: 'immediate'
-        });
+        const result =
+          await this.user.notifications.upsertNotificationPreferences({
+            userId,
+            notificationType: key as NotificationType,
+            enabled,
+            channels: ["push", "email"],
+            minImportance: 3,
+            frequency: "immediate",
+          });
         results.push(result);
       }
     }
@@ -418,11 +497,16 @@ export class StorageRoot {
   }
 
   // ==================== Billing ====================
-  async createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>) {
+  async createDonation(
+    donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">,
+  ) {
     return this.admin.billing.createDonation(donation);
   }
 
-  async updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>) {
+  async updateDonation(
+    stripePaymentIntentId: string,
+    updates: Partial<Donation>,
+  ) {
     return this.admin.billing.updateDonation(stripePaymentIntentId, updates);
   }
 
@@ -463,7 +547,12 @@ export class StorageRoot {
   }
 
   // ==================== Support Tickets ====================
-  async getTickets(filters?: { status?: string; priority?: string; userId?: string; limit?: number }) {
+  async getTickets(filters?: {
+    status?: string;
+    priority?: string;
+    userId?: string;
+    limit?: number;
+  }) {
     return this.admin.support.getTickets(filters);
   }
 
@@ -471,7 +560,7 @@ export class StorageRoot {
     return this.admin.support.getTicket(ticketId);
   }
 
-  async createTicket(ticket: Omit<InsertTicket, 'id'>) {
+  async createTicket(ticket: Omit<InsertTicket, "id">) {
     return this.admin.support.createTicket(ticket);
   }
 
@@ -488,18 +577,39 @@ export class StorageRoot {
   }
 
   async escalateTicket(ticketId: string, _reason: string): Promise<Ticket> {
-    return this.admin.support.updateTicket(ticketId, { priority: 'urgent' });
+    return this.admin.support.updateTicket(ticketId, { priority: "urgent" });
   }
 
-  async resolveTicket(ticketId: string, resolution: string, timeToResolution: number = 0) {
-    return this.admin.support.resolveTicket(ticketId, resolution, timeToResolution);
+  async resolveTicket(
+    ticketId: string,
+    resolution: string,
+    timeToResolution: number = 0,
+  ) {
+    return this.admin.support.resolveTicket(
+      ticketId,
+      resolution,
+      timeToResolution,
+    );
   }
 
-  async addTicketResponse(response: { ticketId: string; content: string; authorId: string }): Promise<{ id: string; ticketId: string; content: string; authorId: string }> {
+  async addTicketResponse(response: {
+    ticketId: string;
+    content: string;
+    authorId: string;
+  }): Promise<{
+    id: string;
+    ticketId: string;
+    content: string;
+    authorId: string;
+  }> {
     return { id: `response_${Date.now()}`, ...response };
   }
 
-  async getTicketResponses(_ticketId: string): Promise<Array<{ id: string; ticketId: string; content: string; authorId: string }>> {
+  async getTicketResponses(
+    _ticketId: string,
+  ): Promise<
+    Array<{ id: string; ticketId: string; content: string; authorId: string }>
+  > {
     return [];
   }
 
@@ -508,11 +618,15 @@ export class StorageRoot {
   }
 
   // ==================== Security ====================
-  async createModerationLog(log: Omit<InsertModerationLog, 'id'>) {
+  async createModerationLog(log: Omit<InsertModerationLog, "id">) {
     return this.admin.security.createModerationLog(log);
   }
 
-  async getModerationLogs(_filters?: { userId?: string; status?: string; limit?: number }): Promise<ModerationLog[]> {
+  async getModerationLogs(_filters?: {
+    userId?: string;
+    status?: string;
+    limit?: number;
+  }): Promise<ModerationLog[]> {
     return [];
   }
 
@@ -532,7 +646,7 @@ export class StorageRoot {
     return this.admin.security.getModerationStats(dateRange);
   }
 
-  async createFraudScore(score: Omit<InsertFraudScore, 'id'>) {
+  async createFraudScore(score: Omit<InsertFraudScore, "id">) {
     return this.admin.security.createFraudScore(score);
   }
 
@@ -545,9 +659,14 @@ export class StorageRoot {
       networkScore: 0,
       deviceScore: 0,
       geoScore: 0,
-      details: {}
+      details: {},
     };
-    return this.admin.security.createFraudScore({ userId, score, factors, modelVersion: '1.0' });
+    return this.admin.security.createFraudScore({
+      userId,
+      score,
+      factors,
+      modelVersion: "1.0",
+    });
   }
 
   async getUserFraudScore(userId: string) {
@@ -563,7 +682,7 @@ export class StorageRoot {
     return this.admin.security.getHighRiskUsers(threshold, limit);
   }
 
-  async recordFraudAttempt(activity: Omit<InsertSuspiciousActivity, 'id'>) {
+  async recordFraudAttempt(activity: Omit<InsertSuspiciousActivity, "id">) {
     return this.admin.security.createSuspiciousActivity(activity);
   }
 
@@ -575,19 +694,43 @@ export class StorageRoot {
     return this.admin.security.getPrivacySettings(userId);
   }
 
-  async updatePrivacySettings(userId: string, settings: Omit<PrivacySettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
+  async updatePrivacySettings(
+    userId: string,
+    settings: Omit<
+      PrivacySettings,
+      "id" | "userId" | "createdAt" | "updatedAt"
+    >,
+  ) {
     return this.admin.security.upsertPrivacySettings(userId, settings);
   }
 
-  async logPrivacyRequest(request: { userId: string; type: string; reason?: string }): Promise<{ id: string; userId: string; type: string; reason?: string }> {
+  async logPrivacyRequest(request: {
+    userId: string;
+    type: string;
+    reason?: string;
+  }): Promise<{ id: string; userId: string; type: string; reason?: string }> {
     return { id: `privacy_${Date.now()}`, ...request };
   }
 
-  async getPrivacyRequests(_userId?: string, _status?: string): Promise<Array<{ id: string; userId: string; type: string; status: string }>> {
+  async getPrivacyRequests(
+    _userId?: string,
+    _status?: string,
+  ): Promise<
+    Array<{ id: string; userId: string; type: string; status: string }>
+  > {
     return [];
   }
 
-  async processPrivacyRequest(requestId: string, status: string, processedBy: string): Promise<{ id: string; status: string; processedBy: string; processedAt: Date }> {
+  async processPrivacyRequest(
+    requestId: string,
+    status: string,
+    processedBy: string,
+  ): Promise<{
+    id: string;
+    status: string;
+    processedBy: string;
+    processedAt: Date;
+  }> {
     return { id: requestId, status, processedBy, processedAt: new Date() };
   }
 
@@ -600,7 +743,7 @@ export class StorageRoot {
     return this.admin.pricing.getPricingRule(id);
   }
 
-  async createPricingRule(rule: Omit<InsertPricingRules, 'id'>) {
+  async createPricingRule(rule: Omit<InsertPricingRules, "id">) {
     return this.admin.pricing.createPricingRule(rule);
   }
 
@@ -616,19 +759,27 @@ export class StorageRoot {
     return this.admin.pricing.getPricingRuleByProduct(productId);
   }
 
-  async recordPriceChange(history: Omit<InsertPriceHistory, 'id'>) {
+  async recordPriceChange(history: Omit<InsertPriceHistory, "id">) {
     return this.admin.pricing.recordPriceChange(history);
   }
 
-  async getPriceHistory(productId: string, options?: { startDate?: Date; endDate?: Date; limit?: number }) {
+  async getPriceHistory(
+    productId: string,
+    options?: { startDate?: Date; endDate?: Date; limit?: number },
+  ) {
     return this.admin.pricing.getPriceHistory(productId, options);
   }
 
-  async recordPricingPerformance(performance: Omit<InsertPricingPerformance, 'id'>) {
+  async recordPricingPerformance(
+    performance: Omit<InsertPricingPerformance, "id">,
+  ) {
     return this.admin.pricing.recordPricingPerformance(performance);
   }
 
-  async getPricingPerformance(productId: string, options?: { startDate?: Date; endDate?: Date }) {
+  async getPricingPerformance(
+    productId: string,
+    options?: { startDate?: Date; endDate?: Date },
+  ) {
     return this.admin.pricing.getPricingPerformance(productId, options);
   }
 
@@ -637,7 +788,7 @@ export class StorageRoot {
   }
 
   // ==================== Experiments ====================
-  async createAbTest(test: Omit<InsertAbTest, 'id'>) {
+  async createAbTest(test: Omit<InsertAbTest, "id">) {
     return this.admin.experiments.createAbTest(test);
   }
 
@@ -645,7 +796,11 @@ export class StorageRoot {
     return this.admin.experiments.getAbTest(testId);
   }
 
-  async getAbTests(filters?: { status?: string; createdBy?: string; limit?: number }) {
+  async getAbTests(filters?: {
+    status?: string;
+    createdBy?: string;
+    limit?: number;
+  }) {
     return this.admin.experiments.getAbTests(filters);
   }
 
@@ -657,7 +812,7 @@ export class StorageRoot {
     return this.admin.experiments.deleteAbTest(testId);
   }
 
-  async upsertAbTestResult(result: Omit<InsertAbTestResult, 'id'>) {
+  async upsertAbTestResult(result: Omit<InsertAbTestResult, "id">) {
     return this.admin.experiments.upsertAbTestResult(result);
   }
 
@@ -665,7 +820,16 @@ export class StorageRoot {
     return this.admin.experiments.getAbTestResults(testId, variant);
   }
 
-  async createAbTestInsight(insight: { testId: string; variant: string; insight: string }): Promise<{ id: string; testId: string; variant: string; insight: string }> {
+  async createAbTestInsight(insight: {
+    testId: string;
+    variant: string;
+    insight: string;
+  }): Promise<{
+    id: string;
+    testId: string;
+    variant: string;
+    insight: string;
+  }> {
     return { id: `insight_${Date.now()}`, ...insight };
   }
 
@@ -673,7 +837,7 @@ export class StorageRoot {
     return this.admin.experiments.getAbTestInsights(testId);
   }
 
-  async createCohort(cohort: Omit<InsertCohort, 'id'>) {
+  async createCohort(cohort: Omit<InsertCohort, "id">) {
     return this.admin.experiments.createCohort(cohort);
   }
 
@@ -694,15 +858,29 @@ export class StorageRoot {
   }
 
   // ==================== Analytics ====================
-  async logApiUsage(userId: string, endpoint: string, method: string, statusCode: number, responseTime: number, metadata?: ApiUsageMetadata) {
-    return this.platform.analytics.logApiUsage(userId, endpoint, method, statusCode, responseTime, metadata);
+  async logApiUsage(
+    userId: string,
+    endpoint: string,
+    method: string,
+    statusCode: number,
+    responseTime: number,
+    metadata?: ApiUsageMetadata,
+  ) {
+    return this.platform.analytics.logApiUsage(
+      userId,
+      endpoint,
+      method,
+      statusCode,
+      responseTime,
+      metadata,
+    );
   }
 
   async getApiUsageLogs(userId?: string, startDate?: Date, endDate?: Date) {
     return this.platform.analytics.getApiUsageLogs(userId, startDate, endDate);
   }
 
-  async recordWebVital(vital: Omit<InsertWebVital, 'id'>) {
+  async recordWebVital(vital: Omit<InsertWebVital, "id">) {
     return this.platform.analytics.recordWebVital(vital);
   }
 
@@ -710,11 +888,14 @@ export class StorageRoot {
     return this.platform.analytics.getWebVitals(userId, limit);
   }
 
-  async createUserSession(session: Omit<InsertUserSession, 'id'>) {
+  async createUserSession(session: Omit<InsertUserSession, "id">) {
     return this.platform.analytics.createUserSession(session);
   }
 
-  async updateUserSession(sessionId: string, updates: Partial<InsertUserSession>) {
+  async updateUserSession(
+    sessionId: string,
+    updates: Partial<InsertUserSession>,
+  ) {
     return this.platform.analytics.updateUserSession(sessionId, updates);
   }
 
@@ -722,20 +903,34 @@ export class StorageRoot {
     return this.platform.analytics.getUserSessions(userId, limit);
   }
 
-  async recordAnalyticsEvent(event: Omit<InsertAnalyticsEvent, 'id'>) {
+  async recordAnalyticsEvent(event: Omit<InsertAnalyticsEvent, "id">) {
     return this.platform.analytics.recordAnalyticsEvent(event);
   }
 
-  async getAnalyticsEvents(userId?: string, eventType?: string, startDate?: Date, endDate?: Date) {
-    return this.platform.analytics.getAnalyticsEvents(userId, eventType, startDate, endDate);
+  async getAnalyticsEvents(
+    userId?: string,
+    eventType?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    return this.platform.analytics.getAnalyticsEvents(
+      userId,
+      eventType,
+      startDate,
+      endDate,
+    );
   }
 
-  async getAnalyticsStats(type: 'sessions' | 'events' | 'usage', userId?: string, period?: 'day' | 'week' | 'month') {
+  async getAnalyticsStats(
+    type: "sessions" | "events" | "usage",
+    userId?: string,
+    period?: "day" | "week" | "month",
+  ) {
     return this.platform.analytics.getAnalyticsStats(type, userId, period);
   }
 
   // ==================== AI/ML ====================
-  async createVoiceCommand(command: Omit<InsertVoiceCommand, 'id'>) {
+  async createVoiceCommand(command: Omit<InsertVoiceCommand, "id">) {
     return this.platform.ai.createVoiceCommand(command);
   }
 
@@ -759,7 +954,7 @@ export class StorageRoot {
     return this.platform.ai.getDraftTemplate(id);
   }
 
-  async createDraftTemplate(template: Omit<InsertDraftTemplate, 'id'>) {
+  async createDraftTemplate(template: Omit<InsertDraftTemplate, "id">) {
     return this.platform.ai.createDraftTemplate(template);
   }
 
@@ -771,7 +966,10 @@ export class StorageRoot {
     return this.platform.ai.deleteDraftTemplate(id);
   }
 
-  async createGeneratedDraft(userId: string, draft: Omit<InsertGeneratedDraft, 'id' | 'userId'>) {
+  async createGeneratedDraft(
+    userId: string,
+    draft: Omit<InsertGeneratedDraft, "id" | "userId">,
+  ) {
     return this.platform.ai.createGeneratedDraft(userId, draft);
   }
 
@@ -783,7 +981,11 @@ export class StorageRoot {
     return this.platform.ai.getGeneratedDraft(userId, id);
   }
 
-  async updateGeneratedDraft(userId: string, id: string, updates: Partial<InsertGeneratedDraft>) {
+  async updateGeneratedDraft(
+    userId: string,
+    id: string,
+    updates: Partial<InsertGeneratedDraft>,
+  ) {
     return this.platform.ai.updateGeneratedDraft(userId, id, updates);
   }
 
@@ -791,7 +993,10 @@ export class StorageRoot {
     return this.platform.ai.deleteGeneratedDraft(userId, id);
   }
 
-  async createSummary(userId: string, summary: Omit<InsertSummary, 'id' | 'userId'>) {
+  async createSummary(
+    userId: string,
+    summary: Omit<InsertSummary, "id" | "userId">,
+  ) {
     return this.platform.ai.createSummary(userId, summary);
   }
 
@@ -803,7 +1008,11 @@ export class StorageRoot {
     return this.platform.ai.getSummary(userId, id);
   }
 
-  async updateSummary(userId: string, id: string, updates: Partial<InsertSummary>) {
+  async updateSummary(
+    userId: string,
+    id: string,
+    updates: Partial<InsertSummary>,
+  ) {
     return this.platform.ai.updateSummary(userId, id, updates);
   }
 
@@ -811,23 +1020,46 @@ export class StorageRoot {
     return this.platform.ai.deleteSummary(userId, id);
   }
 
-  async createTranslation(userId: string, translation: { originalText: string; translatedText: string; sourceLanguage: string; targetLanguage: string }) {
+  async createTranslation(
+    userId: string,
+    translation: {
+      originalText: string;
+      translatedText: string;
+      sourceLanguage: string;
+      targetLanguage: string;
+    },
+  ) {
     return this.platform.ai.translateContent(userId, translation);
   }
 
-  async getTranslations(userId: string, sourceLanguage?: string, targetLanguage?: string) {
-    return this.platform.ai.getTranslations(userId, sourceLanguage, targetLanguage);
+  async getTranslations(
+    userId: string,
+    sourceLanguage?: string,
+    targetLanguage?: string,
+  ) {
+    return this.platform.ai.getTranslations(
+      userId,
+      sourceLanguage,
+      targetLanguage,
+    );
   }
 
   async getTranslation(userId: string, id: string) {
     return this.platform.ai.getTranslation(userId, id);
   }
 
-  async createTranscription(userId: string, transcription: Omit<InsertTranscription, 'id' | 'userId'>) {
+  async createTranscription(
+    userId: string,
+    transcription: Omit<InsertTranscription, "id" | "userId">,
+  ) {
     return this.platform.ai.createTranscription(userId, transcription);
   }
 
-  async getTranscriptions(userId: string, status?: 'processing' | 'completed' | 'failed', limit?: number) {
+  async getTranscriptions(
+    userId: string,
+    status?: "processing" | "completed" | "failed",
+    limit?: number,
+  ) {
     return this.platform.ai.getTranscriptions(userId, status, limit);
   }
 
@@ -835,7 +1067,11 @@ export class StorageRoot {
     return this.platform.ai.getTranscription(userId, id);
   }
 
-  async updateTranscription(userId: string, id: string, updates: Partial<InsertTranscription>) {
+  async updateTranscription(
+    userId: string,
+    id: string,
+    updates: Partial<InsertTranscription>,
+  ) {
     return this.platform.ai.updateTranscription(userId, id, updates);
   }
 
@@ -844,11 +1080,33 @@ export class StorageRoot {
   }
 
   // ==================== System ====================
-  async logSystemApiUsage(userId: string, log: { apiName: "barcode" | "openai" | "stripe" | "usda" | "twilio" | "sendgrid" | "aws" | "google"; endpoint: string; method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; requestCount?: number; tokensUsed?: number; cost?: number }) {
+  async logSystemApiUsage(
+    userId: string,
+    log: {
+      apiName:
+        | "barcode"
+        | "openai"
+        | "stripe"
+        | "usda"
+        | "twilio"
+        | "sendgrid"
+        | "aws"
+        | "google";
+      endpoint: string;
+      method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+      requestCount?: number;
+      tokensUsed?: number;
+      cost?: number;
+    },
+  ) {
     return this.platform.system.logApiUsage(userId, log);
   }
 
-  async getSystemApiUsageLogs(userId: string, apiName?: string, limit?: number) {
+  async getSystemApiUsageLogs(
+    userId: string,
+    apiName?: string,
+    limit?: number,
+  ) {
     return this.platform.system.getApiUsageLogs(userId, apiName, limit);
   }
 
@@ -856,15 +1114,23 @@ export class StorageRoot {
     return this.platform.system.getApiUsageStats(userId, apiName, days);
   }
 
-  async createActivityLog(log: Omit<InsertActivityLog, 'id'>) {
+  async createActivityLog(log: Omit<InsertActivityLog, "id">) {
     return this.platform.system.createActivityLog(log);
   }
 
-  async getActivityLogs(userId?: string | null, filters?: { activityType?: string | string[]; resourceType?: string; action?: string | string[]; limit?: number }) {
+  async getActivityLogs(
+    userId?: string | null,
+    filters?: {
+      activityType?: string | string[];
+      resourceType?: string;
+      action?: string | string[];
+      limit?: number;
+    },
+  ) {
     return this.platform.system.getActivityLogs(userId, filters);
   }
 
-  async recordSystemMetric(metric: Omit<InsertSystemMetric, 'id'>) {
+  async recordSystemMetric(metric: Omit<InsertSystemMetric, "id">) {
     return this.platform.system.recordSystemMetric(metric);
   }
 
@@ -872,7 +1138,9 @@ export class StorageRoot {
     return this.platform.system.getSystemMetrics(metricType, limit);
   }
 
-  async createMaintenancePrediction(prediction: Omit<InsertMaintenancePrediction, 'id'>) {
+  async createMaintenancePrediction(
+    prediction: Omit<InsertMaintenancePrediction, "id">,
+  ) {
     return this.platform.system.createMaintenancePrediction(prediction);
   }
 
@@ -880,7 +1148,9 @@ export class StorageRoot {
     return this.platform.system.getMaintenancePredictions(componentType);
   }
 
-  async recordMaintenanceHistory(history: Omit<InsertMaintenanceHistory, 'id'>) {
+  async recordMaintenanceHistory(
+    history: Omit<InsertMaintenanceHistory, "id">,
+  ) {
     return this.platform.system.recordMaintenanceHistory(history);
   }
 
@@ -921,7 +1191,12 @@ export class StorageRoot {
     return this.platform.content.getCategoryHierarchy();
   }
 
-  async assignContentCategory(assignment: { contentId: string; contentType: "recipe" | "document" | "article" | "product" | "media"; categoryId: number; isPrimary?: boolean }) {
+  async assignContentCategory(assignment: {
+    contentId: string;
+    contentType: "recipe" | "document" | "article" | "product" | "media";
+    categoryId: number;
+    isPrimary?: boolean;
+  }) {
     return this.platform.content.assignContentCategory(assignment);
   }
 
@@ -948,7 +1223,11 @@ export class StorageRoot {
     return this.platform.content.getAllTags();
   }
 
-  async assignContentTag(assignment: { contentId: string; contentType: "recipe" | "document" | "article" | "product" | "media"; tagId: number }) {
+  async assignContentTag(assignment: {
+    contentId: string;
+    contentType: "recipe" | "document" | "article" | "product" | "media";
+    tagId: number;
+  }) {
     return this.platform.content.assignContentTag(assignment);
   }
 
@@ -961,7 +1240,7 @@ export class StorageRoot {
   }
 
   // ==================== Feedback ====================
-  async createFeedback(feedbackData: Omit<InsertUserFeedback, 'id'>) {
+  async createFeedback(feedbackData: Omit<InsertUserFeedback, "id">) {
     return this.platform.feedback.createFeedback(feedbackData);
   }
 
@@ -993,7 +1272,11 @@ export class StorageRoot {
     return this.platform.feedback.getFeedbackByContext(context);
   }
 
-  async addFeedbackResponse(responseData: { feedbackId: string; response: string; respondedBy: string }) {
+  async addFeedbackResponse(responseData: {
+    feedbackId: string;
+    response: string;
+    respondedBy: string;
+  }) {
     return this.platform.feedback.addFeedbackResponse(responseData);
   }
 
@@ -1055,22 +1338,32 @@ export class StorageRoot {
     return null;
   }
 
-  async createMeetingSchedule(data: Omit<MeetingEvents, 'id'>): Promise<MeetingEvents> {
+  async createMeetingSchedule(
+    data: Omit<MeetingEvents, "id">,
+  ): Promise<MeetingEvents> {
     return { id: `meeting_${Date.now()}`, ...data } as MeetingEvents;
   }
 
-  async updateMeetingSchedule(id: string, data: Partial<MeetingEvents>): Promise<MeetingEvents> {
+  async updateMeetingSchedule(
+    id: string,
+    data: Partial<MeetingEvents>,
+  ): Promise<MeetingEvents> {
     return { id, ...data } as MeetingEvents;
   }
 
-  async deleteMeetingSchedule(_id: string): Promise<void> {
-  }
+  async deleteMeetingSchedule(_id: string): Promise<void> {}
 
   async getUpcomingMeetings(userId: string, _limit?: number) {
-    return this.user.scheduling.getMeetingEvents(userId, { startTime: new Date() });
+    return this.user.scheduling.getMeetingEvents(userId, {
+      startTime: new Date(),
+    });
   }
 
-  async getMeetingsByDateRange(_userId: string, _startDate: Date, _endDate: Date): Promise<MeetingEvents[]> {
+  async getMeetingsByDateRange(
+    _userId: string,
+    _startDate: Date,
+    _endDate: Date,
+  ): Promise<MeetingEvents[]> {
     return [];
   }
 
@@ -1078,15 +1371,31 @@ export class StorageRoot {
     return this.user.scheduling.getSchedulingPreferences(userId);
   }
 
-  async upsertMeetingPreferences(userId: string, preferences: Omit<InsertSchedulingPreferences, 'userId'>) {
-    return this.user.scheduling.upsertSchedulingPreferences(userId, preferences);
+  async upsertMeetingPreferences(
+    userId: string,
+    preferences: Omit<InsertSchedulingPreferences, "userId">,
+  ) {
+    return this.user.scheduling.upsertSchedulingPreferences(
+      userId,
+      preferences,
+    );
   }
 
-  async checkConflicts(_userId: string, _startTime: Date, _endTime: Date): Promise<boolean> {
+  async checkConflicts(
+    _userId: string,
+    _startTime: Date,
+    _endTime: Date,
+  ): Promise<boolean> {
     return false;
   }
 
-  async getAvailableSlots(_userId: string, _date: Date, _duration: number, _startHour?: number, _endHour?: number): Promise<Array<{ start: Date; end: Date }>> {
+  async getAvailableSlots(
+    _userId: string,
+    _date: Date,
+    _duration: number,
+    _startHour?: number,
+    _endHour?: number,
+  ): Promise<Array<{ start: Date; end: Date }>> {
     return [];
   }
 
@@ -1107,7 +1416,7 @@ export class StorageRoot {
     return this.user.food.getCookingTermsByCategory(category);
   }
 
-  async createCookingTerm(data: Omit<InsertCookingTerm, 'id'>) {
+  async createCookingTerm(data: Omit<InsertCookingTerm, "id">) {
     return this.user.food.createCookingTerm(data);
   }
 
@@ -1127,27 +1436,55 @@ export class StorageRoot {
   // Note: These are placeholder methods for future image processing features.
   // Parameters use underscore prefix to indicate they are intentionally unused.
 
-  async createImageProcessingJob(_data: { userId: string; imageUrl: string; operation: string }): Promise<{ id: string; status: string; userId?: string; imageUrl?: string; operation?: string }> {
-    return { id: `job_${Date.now()}`, status: 'pending', ...(_data || {}) };
+  async createImageProcessingJob(_data: {
+    userId: string;
+    imageUrl: string;
+    operation: string;
+  }): Promise<{
+    id: string;
+    status: string;
+    userId?: string;
+    imageUrl?: string;
+    operation?: string;
+  }> {
+    return { id: `job_${Date.now()}`, status: "pending", ...(_data || {}) };
   }
 
-  async updateImageProcessingJob(_jobId: string, _data: { status?: string; result?: string }): Promise<{ id: string; status?: string; result?: string }> {
+  async updateImageProcessingJob(
+    _jobId: string,
+    _data: { status?: string; result?: string },
+  ): Promise<{ id: string; status?: string; result?: string }> {
     return { id: _jobId, ...(_data || {}) };
   }
 
-  async getImageProcessingJob(_jobId: string): Promise<{ id: string; status: string } | null> {
+  async getImageProcessingJob(
+    _jobId: string,
+  ): Promise<{ id: string; status: string } | null> {
     return null;
   }
 
-  async getImageProcessingJobs(_userId: string, _status?: string): Promise<Array<{ id: string; status: string }>> {
+  async getImageProcessingJobs(
+    _userId: string,
+    _status?: string,
+  ): Promise<Array<{ id: string; status: string }>> {
     return [];
   }
 
-  async getImagePresets(_userId?: string, _category?: string): Promise<Array<{ id: string; name: string; settings: Record<string, unknown> }>> {
+  async getImagePresets(
+    _userId?: string,
+    _category?: string,
+  ): Promise<
+    Array<{ id: string; name: string; settings: Record<string, unknown> }>
+  > {
     return [];
   }
 
-  async createImagePreset(_data: { name: string; settings: Record<string, unknown>; userId?: string; category?: string }): Promise<{ id: string; name: string; settings: Record<string, unknown> }> {
+  async createImagePreset(_data: {
+    name: string;
+    settings: Record<string, unknown>;
+    userId?: string;
+    category?: string;
+  }): Promise<{ id: string; name: string; settings: Record<string, unknown> }> {
     return { id: `preset_${Date.now()}`, ...(_data || {}) };
   }
 }

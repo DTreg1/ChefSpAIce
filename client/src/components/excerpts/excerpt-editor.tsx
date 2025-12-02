@@ -1,18 +1,31 @@
 /**
  * ExcerptEditor Component
- * 
+ *
  * Provides an editor interface for creating and editing excerpts with
  * real-time preview and character counting.
- * 
+ *
  * @module client/src/components/excerpt-editor
  */
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
@@ -74,8 +87,10 @@ export function ExcerptEditor({
 }: ExcerptEditorProps) {
   const [excerptText, setExcerptText] = useState(initialExcerpt?.excerpt || "");
   const [targetPlatform, setTargetPlatform] = useState("generic");
-  const [excerptType, setExcerptType] = useState(initialExcerpt?.category || "social");
-  
+  const [excerptType, setExcerptType] = useState(
+    initialExcerpt?.category || "social",
+  );
+
   // Generation options
   const [tone, setTone] = useState("informative");
   const [style, setStyle] = useState("summary");
@@ -87,8 +102,11 @@ export function ExcerptEditor({
   const [variantCount, setVariantCount] = useState([5]); // Changed default to 5
 
   const characterCount = excerptText.length;
-  const wordCount = excerptText.split(/\s+/).filter((word: string) => word.length > 0).length;
-  const maxCharacters = PLATFORM_LIMITS[targetPlatform as keyof typeof PLATFORM_LIMITS] || 300;
+  const wordCount = excerptText
+    .split(/\s+/)
+    .filter((word: string) => word.length > 0).length;
+  const maxCharacters =
+    PLATFORM_LIMITS[targetPlatform as keyof typeof PLATFORM_LIMITS] || 300;
   const isOverLimit = characterCount > maxCharacters;
 
   const handleGenerate = () => {
@@ -133,9 +151,9 @@ export function ExcerptEditor({
 
   // Mock excerpt for preview
   const previewExcerpt: any = {
-    id: 'preview',
-    userId: 'preview',
-    contentId: 'preview',
+    id: "preview",
+    userId: "preview",
+    contentId: "preview",
     excerptText,
     excerptType,
     targetPlatform,
@@ -143,7 +161,7 @@ export function ExcerptEditor({
     wordCount,
     clickThroughRate: 0,
     isActive: false,
-    variant: 'Preview',
+    variant: "Preview",
     createdAt: new Date(),
     updatedAt: new Date(),
     originalContent: initialContent,
@@ -179,12 +197,12 @@ export function ExcerptEditor({
               data-testid="textarea-excerpt"
             />
             <div className="flex items-center justify-between text-sm">
-              <span className={`${isOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
+              <span
+                className={`${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}
+              >
                 {characterCount} / {maxCharacters} characters
               </span>
-              <span className="text-muted-foreground">
-                {wordCount} words
-              </span>
+              <span className="text-muted-foreground">{wordCount} words</span>
             </div>
             {isOverLimit && (
               <Alert variant="destructive">
@@ -234,7 +252,7 @@ export function ExcerptEditor({
             <>
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-3">AI Generation Options</h4>
-                
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="tone">Tone</Label>
@@ -243,7 +261,9 @@ export function ExcerptEditor({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="professional">
+                          Professional
+                        </SelectItem>
                         <SelectItem value="casual">Casual</SelectItem>
                         <SelectItem value="formal">Formal</SelectItem>
                         <SelectItem value="friendly">Friendly</SelectItem>
@@ -261,8 +281,12 @@ export function ExcerptEditor({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="descriptive">Descriptive</SelectItem>
-                        <SelectItem value="action-oriented">Action-oriented</SelectItem>
-                        <SelectItem value="question-based">Question-based</SelectItem>
+                        <SelectItem value="action-oriented">
+                          Action-oriented
+                        </SelectItem>
+                        <SelectItem value="question-based">
+                          Question-based
+                        </SelectItem>
                         <SelectItem value="teaser">Teaser</SelectItem>
                         <SelectItem value="summary">Summary</SelectItem>
                       </SelectContent>
@@ -293,7 +317,7 @@ export function ExcerptEditor({
                       data-testid="switch-cta"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label htmlFor="hashtags">Include Hashtags</Label>
                     <Switch
@@ -303,7 +327,7 @@ export function ExcerptEditor({
                       data-testid="switch-hashtags"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label htmlFor="emojis">Include Emojis</Label>
                     <Switch
@@ -319,7 +343,9 @@ export function ExcerptEditor({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label>Creativity (Temperature)</Label>
-                      <span className="text-sm text-muted-foreground">{temperature[0]}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {temperature[0]}
+                      </span>
                     </div>
                     <Slider
                       value={temperature}
@@ -334,7 +360,9 @@ export function ExcerptEditor({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label>Variant Count</Label>
-                      <span className="text-sm text-muted-foreground">{variantCount[0]}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {variantCount[0]}
+                      </span>
                     </div>
                     <Slider
                       value={variantCount}
@@ -353,25 +381,31 @@ export function ExcerptEditor({
         <CardFooter className="flex justify-between">
           <div className="flex gap-2">
             {onCancel && (
-              <Button variant="outline" onClick={onCancel} data-testid="button-cancel">
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                data-testid="button-cancel"
+              >
                 <X className="h-4 w-4 mr-1" />
                 Cancel
               </Button>
             )}
             {onGenerate && (
-              <Button 
-                onClick={handleGenerate} 
+              <Button
+                onClick={handleGenerate}
                 disabled={isGenerating || !initialContent}
                 data-testid="button-generate"
               >
                 <Sparkles className="h-4 w-4 mr-1" />
-                {isGenerating ? "Generating..." : `Generate ${variantCount[0]} Variant${variantCount[0] > 1 ? 's' : ''}`}
+                {isGenerating
+                  ? "Generating..."
+                  : `Generate ${variantCount[0]} Variant${variantCount[0] > 1 ? "s" : ""}`}
               </Button>
             )}
           </div>
           {onSave && (
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={isOverLimit || !excerptText}
               data-testid="button-save"
             >
@@ -389,15 +423,10 @@ export function ExcerptEditor({
               <Eye className="h-4 w-4 mr-1" />
               Preview
             </TabsTrigger>
-            <TabsTrigger value="social">
-              Social Preview
-            </TabsTrigger>
+            <TabsTrigger value="social">Social Preview</TabsTrigger>
           </TabsList>
           <TabsContent value="preview" className="mt-4">
-            <ExcerptPreview
-              excerpt={previewExcerpt}
-              showControls={false}
-            />
+            <ExcerptPreview excerpt={previewExcerpt} showControls={false} />
           </TabsContent>
           <TabsContent value="social" className="mt-4">
             <SocialPreview

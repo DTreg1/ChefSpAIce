@@ -3,116 +3,119 @@
  * Script to eliminate ALL 'as any' type assertions in client-side code
  */
 
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
+const fs = require("fs");
+const path = require("path");
+const glob = require("glob");
 
-const PROJECT_ROOT = path.join(__dirname, '..');
+const PROJECT_ROOT = path.join(__dirname, "..");
 
 // Client-specific replacement patterns
 const REPLACEMENTS = [
   // Cast patterns
   {
     pattern: /\(([^)]+)\s+as\s+any\)/g,
-    replacement: '($1)'
+    replacement: "($1)",
   },
   // Property access patterns
   {
-    pattern: /\(window\s+as\s+any\)\.(SpeechRecognition|webkitSpeechRecognition)/g,
-    replacement: '(window as any).$1' // Keep this one as it's accessing browser API
+    pattern:
+      /\(window\s+as\s+any\)\.(SpeechRecognition|webkitSpeechRecognition)/g,
+    replacement: "(window as any).$1", // Keep this one as it's accessing browser API
   },
   // setValue patterns
   {
     pattern: /setValue\(([^,]+)\s+as\s+any,\s*([^)]+)\s+as\s+any\)/g,
-    replacement: 'setValue($1, $2)'
+    replacement: "setValue($1, $2)",
   },
   {
     pattern: /setValue\s+as\s+any/g,
-    replacement: 'setValue'
+    replacement: "setValue",
   },
   {
     pattern: /onValueChange\s+as\s+any/g,
-    replacement: 'onValueChange'
+    replacement: "onValueChange",
   },
   // Metadata patterns
   {
     pattern: /\.metadata\s+as\s+any/g,
-    replacement: '.metadata'
+    replacement: ".metadata",
   },
   // Factors patterns
   {
     pattern: /\.factors\s+as\s+any/g,
-    replacement: '.factors'
+    replacement: ".factors",
   },
   // Data patterns
   {
     pattern: /\(item\s+as\s+any\)\./g,
-    replacement: 'item.'
+    replacement: "item.",
   },
   {
     pattern: /\(conversationData\s+as\s+any\)\./g,
-    replacement: 'conversationData.'
+    replacement: "conversationData.",
   },
   {
     pattern: /\(error\s+as\s+any\)\./g,
-    replacement: 'error.'
+    replacement: "error.",
   },
   {
     pattern: /\(statsData\s+as\s+any\)\./g,
-    replacement: 'statsData.'
+    replacement: "statsData.",
   },
   {
     pattern: /\(prediction\s+as\s+any\)\./g,
-    replacement: 'prediction.'
+    replacement: "prediction.",
   },
   {
     pattern: /\(transcription\s+as\s+any\)\./g,
-    replacement: 'transcription.'
+    replacement: "transcription.",
   },
   {
     pattern: /\(t\s+as\s+any\)\./g,
-    replacement: 't.'
+    replacement: "t.",
   },
   // Object literal patterns
   {
     pattern: /\}\s+as\s+any\s*:/g,
-    replacement: '}:'
+    replacement: "}:",
   },
   {
     pattern: /\}\s+as\s+any(?![a-zA-Z])/g,
-    replacement: '}'
+    replacement: "}",
   },
   // Variant patterns
   {
     pattern: /variant=\{([^}]+)\s+as\s+any\}/g,
-    replacement: 'variant={$1}'
+    replacement: "variant={$1}",
   },
   // Array patterns
   {
     pattern: /\[\]\s+as\s+any\[\]/g,
-    replacement: '[]'
+    replacement: "[]",
   },
   // Response patterns
   {
     pattern: /userEquipmentResponse\s+as\s+any/g,
-    replacement: 'userEquipmentResponse'
+    replacement: "userEquipmentResponse",
   },
   // Generic cleanup
   {
     pattern: /\s+as\s+any(?![a-zA-Z])/g,
-    replacement: ''
-  }
+    replacement: "",
+  },
 ];
 
 function processFile(filePath) {
-  let content = fs.readFileSync(filePath, 'utf8');
+  let content = fs.readFileSync(filePath, "utf8");
   let modified = false;
 
   // Skip certain files
-  if (filePath.includes('.d.ts') || 
-      filePath.includes('node_modules') ||
-      filePath.includes('.test.') ||
-      filePath.includes('.spec.')) {
+  if (
+    filePath.includes(".d.ts") ||
+    filePath.includes("node_modules") ||
+    filePath.includes(".test.") ||
+    filePath.includes(".spec.")
+  ) {
     return false;
   }
 
@@ -129,11 +132,11 @@ function processFile(filePath) {
   // because it's accessing a browser API that TypeScript doesn't know about
   content = content.replace(
     /\(window\)\.(SpeechRecognition|webkitSpeechRecognition)/g,
-    '(window as any).$1'
+    "(window as any).$1",
   );
 
   if (modified) {
-    fs.writeFileSync(filePath, content, 'utf8');
+    fs.writeFileSync(filePath, content, "utf8");
     console.log(`✅ Fixed: ${path.relative(PROJECT_ROOT, filePath)}`);
     return true;
   }
@@ -144,38 +147,47 @@ function processFile(filePath) {
 function main() {
   console.log('🚀 Eliminating "as any" from client-side code...\n');
 
-  const files = glob.sync(path.join(PROJECT_ROOT, 'client/**/*.{ts,tsx}'));
-  
+  const files = glob.sync(path.join(PROJECT_ROOT, "client/**/*.{ts,tsx}"));
+
   let totalFiles = 0;
   let fixedFiles = 0;
 
-  files.forEach(file => {
+  files.forEach((file) => {
     totalFiles++;
     if (processFile(file)) {
       fixedFiles++;
     }
   });
 
-  console.log(`\n✨ Complete! Processed ${totalFiles} files, fixed ${fixedFiles} files.`);
-  
+  console.log(
+    `\n✨ Complete! Processed ${totalFiles} files, fixed ${fixedFiles} files.`,
+  );
+
   // Final verification
-  console.log('\n🔍 Running final verification...');
-  const { execSync } = require('child_process');
-  
+  console.log("\n🔍 Running final verification...");
+  const { execSync } = require("child_process");
+
   try {
-    const result = execSync('grep -r "as any" client/src --include="*.ts" --include="*.tsx" | grep -v "window as any" | wc -l', {
-      cwd: PROJECT_ROOT,
-      encoding: 'utf8'
-    });
+    const result = execSync(
+      'grep -r "as any" client/src --include="*.ts" --include="*.tsx" | grep -v "window as any" | wc -l',
+      {
+        cwd: PROJECT_ROOT,
+        encoding: "utf8",
+      },
+    );
     const remaining = parseInt(result.trim());
-    
+
     if (remaining === 0) {
-      console.log('✅ SUCCESS! Zero "as any" assertions in client code (except window.SpeechRecognition)!');
+      console.log(
+        '✅ SUCCESS! Zero "as any" assertions in client code (except window.SpeechRecognition)!',
+      );
     } else {
-      console.log(`⚠️  ${remaining} "as any" patterns still detected. Manual review required.`);
+      console.log(
+        `⚠️  ${remaining} "as any" patterns still detected. Manual review required.`,
+      );
     }
   } catch (error) {
-    console.log('Could not verify remaining count.');
+    console.log("Could not verify remaining count.");
   }
 }
 

@@ -20,7 +20,7 @@ interface TermPattern {
 
 /**
  * Enhanced Cooking Term Detector
- * 
+ *
  * Provides intelligent detection of cooking terms with:
  * - Pattern matching with variations (plurals, verb forms)
  * - Context awareness to avoid false positives
@@ -34,9 +34,12 @@ export class TermDetector {
   private initialized: boolean = false;
   private lastInitialized: number = 0;
   private readonly CACHE_DURATION = 1000 * 60 * 60; // 1 hour
-  
+
   // Performance optimization: LRU cache for detection results
-  private detectionCache: Map<string, { result: TermMatch[]; timestamp: number }> = new Map();
+  private detectionCache: Map<
+    string,
+    { result: TermMatch[]; timestamp: number }
+  > = new Map();
   private readonly MAX_CACHE_SIZE = 100;
   private readonly CACHE_TTL = 1000 * 60 * 10; // 10 minutes
 
@@ -45,16 +48,20 @@ export class TermDetector {
    */
   async initialize(force: boolean = false) {
     const now = Date.now();
-    
+
     // Skip if recently initialized and not forcing
-    if (!force && this.initialized && (now - this.lastInitialized) < this.CACHE_DURATION) {
+    if (
+      !force &&
+      this.initialized &&
+      now - this.lastInitialized < this.CACHE_DURATION
+    ) {
       return;
     }
 
     try {
       // Load all cooking terms
       const allTerms = await db.select().from(cookingTerms);
-      
+
       // Clear existing data
       this.terms.clear();
       this.patterns = [];
@@ -63,7 +70,7 @@ export class TermDetector {
       for (const term of allTerms) {
         // Store main term
         this.terms.set(term.term.toLowerCase(), term);
-        
+
         // Store related terms as variations (if available)
         if (term.relatedTerms && term.relatedTerms.length > 0) {
           for (const relatedTerm of term.relatedTerms) {
@@ -86,7 +93,7 @@ export class TermDetector {
 
       this.initialized = true;
       this.lastInitialized = now;
-      
+
       // console.log(`✓ Term detector initialized with ${allTerms.length} terms and ${this.patterns.length} patterns`);
     } catch (error) {
       console.error("Error initializing term detector:", error);
@@ -100,73 +107,93 @@ export class TermDetector {
   private createPattern(term: CookingTerm): TermPattern | null {
     try {
       const variations: string[] = [term.term];
-      
+
       // Add related terms as variations
       if (term.relatedTerms && term.relatedTerms.length > 0) {
         variations.push(...term.relatedTerms);
       }
 
       // Generate verb variations for cooking methods
-      if (term.category === 'cooking_methods' || term.category === 'prep_techniques') {
-        variations.forEach(v => {
+      if (
+        term.category === "cooking_methods" ||
+        term.category === "prep_techniques"
+      ) {
+        variations.forEach((v) => {
           const baseVerb = v.toLowerCase();
-          
+
           // Common verb endings
-          if (!variations.some(var_ => var_.toLowerCase() === baseVerb + 'd')) {
-            variations.push(baseVerb + 'd'); // past tense (sautéd)
+          if (
+            !variations.some((var_) => var_.toLowerCase() === baseVerb + "d")
+          ) {
+            variations.push(baseVerb + "d"); // past tense (sautéd)
           }
-          if (!variations.some(var_ => var_.toLowerCase() === baseVerb + 'ed')) {
-            variations.push(baseVerb + 'ed'); // past tense (diced)
+          if (
+            !variations.some((var_) => var_.toLowerCase() === baseVerb + "ed")
+          ) {
+            variations.push(baseVerb + "ed"); // past tense (diced)
           }
-          if (!variations.some(var_ => var_.toLowerCase() === baseVerb + 'ing')) {
-            variations.push(baseVerb + 'ing'); // present participle (sautéing)
+          if (
+            !variations.some((var_) => var_.toLowerCase() === baseVerb + "ing")
+          ) {
+            variations.push(baseVerb + "ing"); // present participle (sautéing)
           }
-          
+
           // Handle special cases
-          if (baseVerb.endsWith('y') && !baseVerb.endsWith('ay') && !baseVerb.endsWith('ey') && !baseVerb.endsWith('oy')) {
-            variations.push(baseVerb.slice(0, -1) + 'ied'); // fry → fried
-            variations.push(baseVerb.slice(0, -1) + 'ies'); // fry → fries
+          if (
+            baseVerb.endsWith("y") &&
+            !baseVerb.endsWith("ay") &&
+            !baseVerb.endsWith("ey") &&
+            !baseVerb.endsWith("oy")
+          ) {
+            variations.push(baseVerb.slice(0, -1) + "ied"); // fry → fried
+            variations.push(baseVerb.slice(0, -1) + "ies"); // fry → fries
           }
-          if (baseVerb.endsWith('e')) {
-            variations.push(baseVerb.slice(0, -1) + 'ing'); // dice → dicing
+          if (baseVerb.endsWith("e")) {
+            variations.push(baseVerb.slice(0, -1) + "ing"); // dice → dicing
           }
         });
       }
 
       // Generate plural variations for knife skills and tools
-      if (term.category === 'knife_skills' || term.category === 'kitchen_tools') {
-        variations.forEach(v => {
+      if (
+        term.category === "knife_skills" ||
+        term.category === "kitchen_tools"
+      ) {
+        variations.forEach((v) => {
           const base = v.toLowerCase();
-          if (!variations.some(var_ => var_.toLowerCase() === base + 's')) {
-            variations.push(base + 's'); // plural
+          if (!variations.some((var_) => var_.toLowerCase() === base + "s")) {
+            variations.push(base + "s"); // plural
           }
         });
       }
 
       // Remove duplicates and empty strings
-      const uniqueVariations = Array.from(new Set(variations.filter(v => v && v.trim())));
+      const uniqueVariations = Array.from(
+        new Set(variations.filter((v) => v && v.trim())),
+      );
 
       // Escape special regex characters and create pattern
-      const escapedVariations = uniqueVariations.map(v => 
-        v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const escapedVariations = uniqueVariations.map((v) =>
+        v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
       );
 
       // Create pattern with word boundaries to avoid partial matches
       // Use lookahead and lookbehind to ensure word boundaries
       const pattern = new RegExp(
-        `\\b(${escapedVariations.join('|')})\\b`,
-        'gi'
+        `\\b(${escapedVariations.join("|")})\\b`,
+        "gi",
       );
 
       // Calculate priority (longer, more specific terms get higher priority)
-      const priority = term.term.length * 10 + 
-                      (term.category === 'cooking_methods' ? 5 : 0) +
-                      (term.relatedTerms ? term.relatedTerms.length : 0);
+      const priority =
+        term.term.length * 10 +
+        (term.category === "cooking_methods" ? 5 : 0) +
+        (term.relatedTerms ? term.relatedTerms.length : 0);
 
       return {
         pattern,
         term,
-        priority
+        priority,
       };
     } catch (error) {
       console.error(`Error creating pattern for term "${term.term}":`, error);
@@ -180,21 +207,25 @@ export class TermDetector {
   private cleanCache() {
     const now = Date.now();
     const keysToDelete: string[] = [];
-    
+
     Array.from(this.detectionCache.entries()).forEach(([key, value]) => {
       if (now - value.timestamp > this.CACHE_TTL) {
         keysToDelete.push(key);
       }
     });
-    
-    keysToDelete.forEach(key => this.detectionCache.delete(key));
-    
+
+    keysToDelete.forEach((key) => this.detectionCache.delete(key));
+
     // Implement LRU eviction if cache is too large
     if (this.detectionCache.size > this.MAX_CACHE_SIZE) {
-      const sortedEntries = Array.from(this.detectionCache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp);
-      
-      const toRemove = sortedEntries.slice(0, sortedEntries.length - this.MAX_CACHE_SIZE);
+      const sortedEntries = Array.from(this.detectionCache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp,
+      );
+
+      const toRemove = sortedEntries.slice(
+        0,
+        sortedEntries.length - this.MAX_CACHE_SIZE,
+      );
       toRemove.forEach(([key]) => this.detectionCache.delete(key));
     }
   }
@@ -205,9 +236,10 @@ export class TermDetector {
   private getCacheKey(text: string, options: any): string {
     const optionsKey = JSON.stringify(options);
     // Use first 100 chars of text + hash of full text for shorter keys
-    const textKey = text.length > 100 
-      ? text.substring(0, 100) + ':' + this.hashString(text)
-      : text;
+    const textKey =
+      text.length > 100
+        ? text.substring(0, 100) + ":" + this.hashString(text)
+        : text;
     return `${textKey}:${optionsKey}`;
   }
 
@@ -218,7 +250,7 @@ export class TermDetector {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString(36);
@@ -227,27 +259,31 @@ export class TermDetector {
   /**
    * Detect cooking terms in text
    */
-  async detectTerms(text: string, options: {
-    excludeCategories?: string[];
-    maxMatches?: number;
-    contextAware?: boolean;
-  } = {}): Promise<TermMatch[]> {
-    const { 
-      excludeCategories = [], 
+  async detectTerms(
+    text: string,
+    options: {
+      excludeCategories?: string[];
+      maxMatches?: number;
+      contextAware?: boolean;
+    } = {},
+  ): Promise<TermMatch[]> {
+    const {
+      excludeCategories = [],
       maxMatches = 100,
-      contextAware = true 
+      contextAware = true,
     } = options;
 
     // Check cache first
     const cacheKey = this.getCacheKey(text, options);
     const cached = this.detectionCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       return cached.result;
     }
-    
+
     // Clean cache periodically
-    if (Math.random() < 0.1) { // 10% chance on each call
+    if (Math.random() < 0.1) {
+      // 10% chance on each call
       this.cleanCache();
     }
 
@@ -282,29 +318,39 @@ export class TermDetector {
         const end = start + match[0].length;
 
         // Check for overlapping matches
-        const overlaps = usedRanges.some(([s, e]) =>
-          (start >= s && start < e) || (end > s && end <= e) ||
-          (start < s && end > e)
+        const overlaps = usedRanges.some(
+          ([s, e]) =>
+            (start >= s && start < e) ||
+            (end > s && end <= e) ||
+            (start < s && end > e),
         );
 
         if (!overlaps) {
           // Context-aware filtering
           if (contextAware) {
             // Skip if inside a URL or code block
-            const beforeChar = start > 0 ? text[start - 1] : ' ';
-            const afterChar = end < text.length ? text[end] : ' ';
-            
+            const beforeChar = start > 0 ? text[start - 1] : " ";
+            const afterChar = end < text.length ? text[end] : " ";
+
             // Check for URL context
-            if (beforeChar === '/' || afterChar === '/' || 
-                beforeChar === '.' || afterChar === '.' ||
-                beforeChar === '@' || afterChar === '@') {
+            if (
+              beforeChar === "/" ||
+              afterChar === "/" ||
+              beforeChar === "." ||
+              afterChar === "." ||
+              beforeChar === "@" ||
+              afterChar === "@"
+            ) {
               continue;
             }
 
             // Check for code context (inside backticks)
             const textBefore = text.substring(Math.max(0, start - 10), start);
-            const textAfter = text.substring(end, Math.min(text.length, end + 10));
-            if (textBefore.includes('`') || textAfter.includes('`')) {
+            const textAfter = text.substring(
+              end,
+              Math.min(text.length, end + 10),
+            );
+            if (textBefore.includes("`") || textAfter.includes("`")) {
               continue;
             }
           }
@@ -317,7 +363,7 @@ export class TermDetector {
             end,
             shortDefinition: term.shortDefinition,
             category: term.category,
-            difficulty: term.difficulty
+            difficulty: term.difficulty,
           });
 
           usedRanges.push([start, end]);
@@ -337,36 +383,36 @@ export class TermDetector {
 
     // Sort by position in text
     const sortedMatches = matches.sort((a, b) => a.start - b.start);
-    
+
     // Store in cache
     this.detectionCache.set(cacheKey, {
       result: sortedMatches,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     return sortedMatches;
   }
 
   /**
    * Enrich text with HTML markup for detected terms
    */
-  async enrichText(text: string, options: {
-    excludeCategories?: string[];
-    linkToGlossary?: boolean;
-    includeTooltip?: boolean;
-  } = {}): Promise<string> {
-    const { 
-      linkToGlossary = false,
-      includeTooltip = true
-    } = options;
+  async enrichText(
+    text: string,
+    options: {
+      excludeCategories?: string[];
+      linkToGlossary?: boolean;
+      includeTooltip?: boolean;
+    } = {},
+  ): Promise<string> {
+    const { linkToGlossary = false, includeTooltip = true } = options;
 
     const matches = await this.detectTerms(text, options);
-    
+
     if (matches.length === 0) {
       return text;
     }
 
-    let result = '';
+    let result = "";
     let lastIndex = 0;
 
     for (const match of matches) {
@@ -374,11 +420,13 @@ export class TermDetector {
       result += text.slice(lastIndex, match.start);
 
       // Build the enriched term markup
-      const termClass = `cooking-term cooking-term--${match.category.replace(/_/g, '-')}`;
-      const difficultyClass = match.difficulty ? ` cooking-term--${match.difficulty}` : '';
-      
-      let enrichedTerm = '';
-      
+      const termClass = `cooking-term cooking-term--${match.category.replace(/_/g, "-")}`;
+      const difficultyClass = match.difficulty
+        ? ` cooking-term--${match.difficulty}`
+        : "";
+
+      let enrichedTerm = "";
+
       if (linkToGlossary) {
         enrichedTerm = `<a href="/glossary#${match.termId}" class="${termClass}${difficultyClass}" data-term-id="${match.termId}"`;
       } else {
@@ -388,16 +436,16 @@ export class TermDetector {
       if (includeTooltip) {
         // Escape HTML in definition for title attribute
         const escapedDefinition = match.shortDefinition
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;');
-        
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
         enrichedTerm += ` title="${escapedDefinition}" data-term="${match.originalTerm}"`;
       }
 
       enrichedTerm += `>${match.term}`;
-      enrichedTerm += linkToGlossary ? '</a>' : '</span>';
+      enrichedTerm += linkToGlossary ? "</a>" : "</span>";
 
       result += enrichedTerm;
       lastIndex = match.end;
@@ -419,18 +467,19 @@ export class TermDetector {
     byDifficulty: Record<string, number>;
   }> {
     const matches = await this.detectTerms(text);
-    
-    const uniqueTerms = new Set(matches.map(m => m.termId));
+
+    const uniqueTerms = new Set(matches.map((m) => m.termId));
     const byCategory: Record<string, number> = {};
     const byDifficulty: Record<string, number> = {};
 
     for (const match of matches) {
       // Count by category
       byCategory[match.category] = (byCategory[match.category] || 0) + 1;
-      
+
       // Count by difficulty
       if (match.difficulty) {
-        byDifficulty[match.difficulty] = (byDifficulty[match.difficulty] || 0) + 1;
+        byDifficulty[match.difficulty] =
+          (byDifficulty[match.difficulty] || 0) + 1;
       }
     }
 
@@ -438,7 +487,7 @@ export class TermDetector {
       totalTerms: matches.length,
       uniqueTerms: uniqueTerms.size,
       byCategory,
-      byDifficulty
+      byDifficulty,
     };
   }
 

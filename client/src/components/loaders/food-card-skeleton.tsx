@@ -7,7 +7,7 @@ export function FoodCardSkeleton() {
       <CardContent className="p-4">
         <div className="flex gap-3">
           <Skeleton className="w-16 h-16 rounded-lg flex-shrink-0" />
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
               <Skeleton className="h-6 w-3/4" />

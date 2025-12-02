@@ -1,7 +1,7 @@
 // Type definitions for Express extensions
-import 'express-session';
+import "express-session";
 
-declare module 'express-session' {
+declare module "express-session" {
   interface SessionData {
     returnTo?: string;
     linkingProvider?: string;
@@ -35,9 +35,9 @@ declare global {
         email?: string;
         name?: string;
         [key: string]: any;
-      };  // OAuth claims from ID tokens
+      }; // OAuth claims from ID tokens
     }
-    
+
     interface Request {
       user?: User;
     }

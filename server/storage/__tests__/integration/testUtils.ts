@@ -1,6 +1,6 @@
 /**
  * Integration Test Utilities
- * 
+ *
  * Provides utilities for integration testing the storage layer:
  * - Unique ID generation for test isolation
  * - Test data factories with cleanup tracking
@@ -9,10 +9,10 @@
  */
 
 import { db } from "../../../db";
-import { 
-  users, 
-  userRecipes, 
-  mealPlans, 
+import {
+  users,
+  userRecipes,
+  mealPlans,
   userInventory,
   sessions,
   userStorage as userStorageTable,
@@ -27,7 +27,7 @@ const TEST_PREFIX = "test_";
  */
 export function generateTestId(): string {
   const timestamp = Date.now().toString(36);
-  const random = randomBytes(4).toString('hex');
+  const random = randomBytes(4).toString("hex");
   return `${TEST_PREFIX}${timestamp}_${random}`;
 }
 
@@ -83,7 +83,10 @@ export class TestContext {
     try {
       if (this.mealPlanIds.length > 0) {
         for (const id of this.mealPlanIds) {
-          await db.delete(mealPlans).where(eq(mealPlans.id, id)).catch(e => errors.push(e));
+          await db
+            .delete(mealPlans)
+            .where(eq(mealPlans.id, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -93,7 +96,10 @@ export class TestContext {
     try {
       if (this.recipeIds.length > 0) {
         for (const id of this.recipeIds) {
-          await db.delete(userRecipes).where(eq(userRecipes.id, id)).catch(e => errors.push(e));
+          await db
+            .delete(userRecipes)
+            .where(eq(userRecipes.id, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -103,7 +109,10 @@ export class TestContext {
     try {
       if (this.inventoryIds.length > 0) {
         for (const id of this.inventoryIds) {
-          await db.delete(userInventory).where(eq(userInventory.id, id)).catch(e => errors.push(e));
+          await db
+            .delete(userInventory)
+            .where(eq(userInventory.id, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -113,7 +122,10 @@ export class TestContext {
     try {
       if (this.storageIds.length > 0) {
         for (const id of this.storageIds) {
-          await db.delete(userStorageTable).where(eq(userStorageTable.id, id)).catch(e => errors.push(e));
+          await db
+            .delete(userStorageTable)
+            .where(eq(userStorageTable.id, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -123,7 +135,10 @@ export class TestContext {
     try {
       if (this.sessionIds.length > 0) {
         for (const id of this.sessionIds) {
-          await db.delete(sessions).where(eq(sessions.sid, id)).catch(e => errors.push(e));
+          await db
+            .delete(sessions)
+            .where(eq(sessions.sid, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -133,7 +148,10 @@ export class TestContext {
     try {
       if (this.userIds.length > 0) {
         for (const id of this.userIds) {
-          await db.delete(users).where(eq(users.id, id)).catch(e => errors.push(e));
+          await db
+            .delete(users)
+            .where(eq(users.id, id))
+            .catch((e) => errors.push(e));
         }
       }
     } catch (e) {
@@ -141,7 +159,10 @@ export class TestContext {
     }
 
     if (errors.length > 0) {
-      console.warn(`Cleanup encountered ${errors.length} errors:`, errors.map(e => e.message));
+      console.warn(
+        `Cleanup encountered ${errors.length} errors:`,
+        errors.map((e) => e.message),
+      );
     }
   }
 }
@@ -193,10 +214,14 @@ export const testFactories = {
     ...overrides,
   }),
 
-  mealPlan: (userId: string, recipeId: string | null, overrides: Record<string, unknown> = {}) => ({
+  mealPlan: (
+    userId: string,
+    recipeId: string | null,
+    overrides: Record<string, unknown> = {},
+  ) => ({
     userId,
     recipeId,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split("T")[0],
     mealType: "dinner",
     servings: 4,
     isCompleted: false,
@@ -211,8 +236,10 @@ export const testFactories = {
     quantity: 2,
     unit: "pieces",
     storageLocation: "Fridge",
-    expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    purchaseDate: new Date().toISOString().split('T')[0],
+    expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    purchaseDate: new Date().toISOString().split("T")[0],
     notes: null,
     ...overrides,
   }),
@@ -249,7 +276,9 @@ export async function cleanupOrphanedTestData(): Promise<void> {
   try {
     await db.delete(mealPlans).where(like(mealPlans.id, `${TEST_PREFIX}%`));
     await db.delete(userRecipes).where(like(userRecipes.id, `${TEST_PREFIX}%`));
-    await db.delete(userInventory).where(like(userInventory.id, `${TEST_PREFIX}%`));
+    await db
+      .delete(userInventory)
+      .where(like(userInventory.id, `${TEST_PREFIX}%`));
     await db.delete(sessions).where(like(sessions.sid, `${TEST_PREFIX}%`));
     await db.delete(users).where(like(users.email, `${TEST_PREFIX}%`));
   } catch (error) {
@@ -261,7 +290,7 @@ export async function cleanupOrphanedTestData(): Promise<void> {
  * Waits for async operations to complete
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -269,18 +298,18 @@ export function delay(ms: number): Promise<void> {
  */
 export const assertions = {
   isValidId(id: unknown): boolean {
-    return typeof id === 'string' && id.length > 0;
+    return typeof id === "string" && id.length > 0;
   },
 
   isValidDate(date: unknown): boolean {
     if (date instanceof Date) return !isNaN(date.getTime());
-    if (typeof date === 'string') return !isNaN(Date.parse(date));
+    if (typeof date === "string") return !isNaN(Date.parse(date));
     return false;
   },
 
   hasRequiredFields(obj: Record<string, unknown>, fields: string[]): boolean {
-    return fields.every(field => field in obj && obj[field] !== undefined);
+    return fields.every((field) => field in obj && obj[field] !== undefined);
   },
 };
 
-console.log('Integration test utilities loaded successfully');
+console.log("Integration test utilities loaded successfully");

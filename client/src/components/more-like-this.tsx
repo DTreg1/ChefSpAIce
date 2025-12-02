@@ -3,7 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContentCard } from "@/components/cards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, ChevronDown, ChevronUp, Filter, TrendingUp } from "lucide-react";
+import {
+  Sparkles,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -42,11 +49,13 @@ export const MoreLikeThis = ({
   initialLimit = 6,
   maxLimit = 20,
   onItemClick,
-  className = ""
+  className = "",
 }: MoreLikeThisProps) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [sortBy, setSortBy] = useState<"relevance" | "recent" | "popular">("relevance");
+  const [sortBy, setSortBy] = useState<"relevance" | "recent" | "popular">(
+    "relevance",
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const displayLimit = isExpanded ? maxLimit : initialLimit;
@@ -56,7 +65,7 @@ export const MoreLikeThis = ({
     queryKey: ["/api/content", contentId, "related", displayLimit],
     queryFn: async () => {
       const response = await fetch(
-        `/api/content/${contentId}/related?type=${contentType}&limit=${displayLimit}`
+        `/api/content/${contentId}/related?type=${contentType}&limit=${displayLimit}`,
       );
       if (!response.ok) throw new Error("Failed to fetch related content");
       return response.json();
@@ -69,7 +78,10 @@ export const MoreLikeThis = ({
     setIsRefreshing(true);
     try {
       // Clear cache first
-      await apiRequest(`/api/content/${contentId}/cache?type=${contentType}`, "DELETE");
+      await apiRequest(
+        `/api/content/${contentId}/cache?type=${contentType}`,
+        "DELETE",
+      );
       // Then refetch
       await refetch();
       toast({
@@ -89,9 +101,9 @@ export const MoreLikeThis = ({
 
   const sortedItems = () => {
     if (!data?.related) return [];
-    
+
     let items = [...data.related];
-    
+
     switch (sortBy) {
       case "relevance":
         return items.sort((a, b) => b.score - a.score);
@@ -121,9 +133,7 @@ export const MoreLikeThis = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-semibold">
-            More like "{contentTitle}"
-          </h2>
+          <h2 className="text-2xl font-semibold">More like "{contentTitle}"</h2>
         </div>
         <div className="flex items-center gap-2">
           <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
@@ -149,7 +159,9 @@ export const MoreLikeThis = ({
             disabled={isRefreshing || isLoading}
             data-testid="button-refresh-more"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
       </div>
@@ -212,20 +224,28 @@ export const MoreLikeThis = ({
                     Found {items.length} related items
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Average relevance: {(
-                      items.reduce((acc, item) => acc + item.score, 0) / items.length * 100
-                    ).toFixed(0)}%
+                    Average relevance:{" "}
+                    {(
+                      (items.reduce((acc, item) => acc + item.score, 0) /
+                        items.length) *
+                      100
+                    ).toFixed(0)}
+                    %
                   </p>
                 </div>
                 <div className="flex gap-2">
                   {/* Category distribution */}
                   {Array.from(
-                    new Set(items.map(i => i.metadata?.category).filter(Boolean))
-                  ).slice(0, 3).map(category => (
-                    <Badge key={category} variant="secondary">
-                      {category}
-                    </Badge>
-                  ))}
+                    new Set(
+                      items.map((i) => i.metadata?.category).filter(Boolean),
+                    ),
+                  )
+                    .slice(0, 3)
+                    .map((category) => (
+                      <Badge key={category} variant="secondary">
+                        {category}
+                      </Badge>
+                    ))}
                 </div>
               </div>
             </CardContent>

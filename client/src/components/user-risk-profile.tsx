@@ -16,28 +16,23 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  History
+  History,
 } from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,22 +57,30 @@ interface RiskHistoryItem {
   details: any;
 }
 
-export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileProps) {
+export function UserRiskProfile({
+  userId,
+  className,
+  onClose,
+}: UserRiskProfileProps) {
   const { toast } = useToast();
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [selectedAction, setSelectedAction] = useState<'ban' | 'restrict' | 'monitor' | 'clear' | null>(null);
+  const [selectedAction, setSelectedAction] = useState<
+    "ban" | "restrict" | "monitor" | "clear" | null
+  >(null);
   const [actionNotes, setActionNotes] = useState("");
 
   // Fetch user data
-  const { data: userData = { 
-    createdAt: null, 
-    status: null
-  } } = useQuery<{
+  const {
+    data: userData = {
+      createdAt: null,
+      status: null,
+    },
+  } = useQuery<{
     createdAt?: string | null;
     status?: string | null;
   }>({
     queryKey: ["/api/users", userId],
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   // Fetch fraud alerts for this user
@@ -94,18 +97,20 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
     locationHistory?: any[];
   }>({
     queryKey: ["/api/fraud/alerts", userId],
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   // Fetch fraud report for this user
-  const { data: reportData = {
-    loginFrequency: null,
-    transactionPattern: null,
-    contentQuality: null,
-    networkRisk: null,
-    knownDevices: [],
-    locationHistory: []
-  } } = useQuery<{
+  const {
+    data: reportData = {
+      loginFrequency: null,
+      transactionPattern: null,
+      contentQuality: null,
+      networkRisk: null,
+      knownDevices: [],
+      locationHistory: [],
+    },
+  } = useQuery<{
     loginFrequency?: string | null;
     transactionPattern?: string | null;
     contentQuality?: string | null;
@@ -114,33 +119,39 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
     locationHistory?: any[];
   }>({
     queryKey: ["/api/fraud/report", "week", userId],
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   // Mutation to take action on user
   const actionMutation = useMutation({
-    mutationFn: async ({ decision, notes }: { decision: string; notes: string }) => {
+    mutationFn: async ({
+      decision,
+      notes,
+    }: {
+      decision: string;
+      notes: string;
+    }) => {
       // Create a mock suspicious activity for the user action
       const response = await apiRequest("/api/fraud/analyze", "POST", {
         userId,
         type: "admin_action",
         metadata: {
           adminAction: decision,
-          adminNotes: notes
-        }
+          adminNotes: notes,
+        },
       });
 
       // Then submit the review
       return apiRequest("/api/fraud/review", "POST", {
         activityId: response.activityId || `admin-${Date.now()}`,
         decision,
-        notes
+        notes,
       });
     },
     onSuccess: () => {
       toast({
         title: "Action completed",
-        description: `User has been ${selectedAction === 'ban' ? 'banned' : selectedAction === 'restrict' ? 'restricted' : selectedAction === 'monitor' ? 'placed under monitoring' : 'cleared'}.`
+        description: `User has been ${selectedAction === "ban" ? "banned" : selectedAction === "restrict" ? "restricted" : selectedAction === "monitor" ? "placed under monitoring" : "cleared"}.`,
       });
       setActionDialogOpen(false);
       setSelectedAction(null);
@@ -151,33 +162,41 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
       toast({
         title: "Action failed",
         description: "Failed to complete action. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleAction = () => {
     if (selectedAction) {
-      let decision = selectedAction === 'ban' ? 'banned' : 
-                     selectedAction === 'restrict' ? 'restricted' :
-                     selectedAction === 'monitor' ? 'monitor' : 'cleared';
+      let decision =
+        selectedAction === "ban"
+          ? "banned"
+          : selectedAction === "restrict"
+            ? "restricted"
+            : selectedAction === "monitor"
+              ? "monitor"
+              : "cleared";
       actionMutation.mutate({
         decision,
-        notes: actionNotes
+        notes: actionNotes,
       });
     }
   };
 
   // Calculate risk trend
   const calculateTrend = () => {
-    if (!alertData?.recentScores || alertData.recentScores.length < 2) return 'stable';
+    if (!alertData?.recentScores || alertData.recentScores.length < 2)
+      return "stable";
     const recent = alertData.recentScores.slice(0, 5);
-    const avgRecent = recent.slice(0, 2).reduce((a: number, b: any) => a + b.score, 0) / 2;
-    const avgOlder = recent.slice(2, 4).reduce((a: number, b: any) => a + b.score, 0) / 2;
-    
-    if (avgRecent > avgOlder * 1.1) return 'increasing';
-    if (avgRecent < avgOlder * 0.9) return 'decreasing';
-    return 'stable';
+    const avgRecent =
+      recent.slice(0, 2).reduce((a: number, b: any) => a + b.score, 0) / 2;
+    const avgOlder =
+      recent.slice(2, 4).reduce((a: number, b: any) => a + b.score, 0) / 2;
+
+    if (avgRecent > avgOlder * 1.1) return "increasing";
+    if (avgRecent < avgOlder * 0.9) return "decreasing";
+    return "stable";
   };
 
   const trend = calculateTrend();
@@ -207,27 +226,33 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-4">
             <FraudRiskIndicator userId={userId} showDetails={true} />
-            
+
             {/* Risk Trend */}
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <span className="text-sm font-medium">Risk Trend</span>
               <div className="flex items-center gap-2">
-                {trend === 'increasing' && (
+                {trend === "increasing" && (
                   <>
                     <TrendingUp className="h-4 w-4 text-red-500" />
-                    <span className="text-sm text-red-600 dark:text-red-400">Increasing</span>
+                    <span className="text-sm text-red-600 dark:text-red-400">
+                      Increasing
+                    </span>
                   </>
                 )}
-                {trend === 'decreasing' && (
+                {trend === "decreasing" && (
                   <>
                     <TrendingDown className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-600 dark:text-green-400">Decreasing</span>
+                    <span className="text-sm text-green-600 dark:text-green-400">
+                      Decreasing
+                    </span>
                   </>
                 )}
-                {trend === 'stable' && (
+                {trend === "stable" && (
                   <>
                     <Activity className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm text-yellow-600 dark:text-yellow-400">Stable</span>
+                    <span className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Stable
+                    </span>
                   </>
                 )}
               </div>
@@ -249,12 +274,20 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created:</span>
-                  <span>{userData?.createdAt ? format(new Date(userData.createdAt), "MMM d, yyyy") : "N/A"}</span>
+                  <span>
+                    {userData?.createdAt
+                      ? format(new Date(userData.createdAt), "MMM d, yyyy")
+                      : "N/A"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge variant={userData?.status === 'active' ? 'default' : 'destructive'}>
-                    {userData?.status || 'Active'}
+                  <Badge
+                    variant={
+                      userData?.status === "active" ? "default" : "destructive"
+                    }
+                  >
+                    {userData?.status || "Active"}
                   </Badge>
                 </div>
               </div>
@@ -267,7 +300,7 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 size="sm"
                 className="flex-1"
                 onClick={() => {
-                  setSelectedAction('monitor');
+                  setSelectedAction("monitor");
                   setActionDialogOpen(true);
                 }}
                 data-testid="button-monitor-user"
@@ -280,7 +313,7 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 size="sm"
                 className="flex-1"
                 onClick={() => {
-                  setSelectedAction('restrict');
+                  setSelectedAction("restrict");
                   setActionDialogOpen(true);
                 }}
                 data-testid="button-restrict-user"
@@ -293,7 +326,7 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 size="sm"
                 className="flex-1"
                 onClick={() => {
-                  setSelectedAction('ban');
+                  setSelectedAction("ban");
                   setActionDialogOpen(true);
                 }}
                 data-testid="button-ban-user"
@@ -316,7 +349,9 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
 
           <TabsContent value="activities" className="space-y-3">
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Recent Suspicious Activities</h4>
+              <h4 className="text-sm font-medium">
+                Recent Suspicious Activities
+              </h4>
               {suspiciousActivities.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
                   No suspicious activities detected
@@ -325,23 +360,41 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 <ScrollArea className="h-48 border rounded-lg p-3">
                   <div className="space-y-2">
                     {suspiciousActivities.map((activity: any) => (
-                      <div key={activity.id} className="space-y-1 pb-2 border-b last:border-0">
+                      <div
+                        key={activity.id}
+                        className="space-y-1 pb-2 border-b last:border-0"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{activity.type}</span>
-                          <Badge className={cn(
-                            "text-xs",
-                            activity.severity === 'critical' && "bg-red-100 text-red-800",
-                            activity.severity === 'high' && "bg-orange-100 text-orange-800",
-                            activity.severity === 'medium' && "bg-yellow-100 text-yellow-800",
-                            activity.severity === 'low' && "bg-blue-100 text-blue-800"
-                          )}>
+                          <span className="text-sm font-medium">
+                            {activity.type}
+                          </span>
+                          <Badge
+                            className={cn(
+                              "text-xs",
+                              activity.severity === "critical" &&
+                                "bg-red-100 text-red-800",
+                              activity.severity === "high" &&
+                                "bg-orange-100 text-orange-800",
+                              activity.severity === "medium" &&
+                                "bg-yellow-100 text-yellow-800",
+                              activity.severity === "low" &&
+                                "bg-blue-100 text-blue-800",
+                            )}
+                          >
                             {activity.severity}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{activity.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.description}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          <span>{format(new Date(activity.timestamp), "MMM d, HH:mm")}</span>
+                          <span>
+                            {format(
+                              new Date(activity.timestamp),
+                              "MMM d, HH:mm",
+                            )}
+                          </span>
                           {activity.autoBlocked && (
                             <Badge variant="destructive" className="text-xs">
                               Auto-blocked
@@ -362,38 +415,46 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Login Frequency</span>
+                    <span className="text-xs text-muted-foreground">
+                      Login Frequency
+                    </span>
                     <Activity className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="text-lg font-semibold">
-                    {reportData?.loginFrequency || 'Normal'}
+                    {reportData?.loginFrequency || "Normal"}
                   </div>
                 </div>
                 <div className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Transaction Pattern</span>
+                    <span className="text-xs text-muted-foreground">
+                      Transaction Pattern
+                    </span>
                     <TrendingUp className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="text-lg font-semibold">
-                    {reportData?.transactionPattern || 'Regular'}
+                    {reportData?.transactionPattern || "Regular"}
                   </div>
                 </div>
                 <div className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Content Quality</span>
+                    <span className="text-xs text-muted-foreground">
+                      Content Quality
+                    </span>
                     <Shield className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="text-lg font-semibold">
-                    {reportData?.contentQuality || 'Good'}
+                    {reportData?.contentQuality || "Good"}
                   </div>
                 </div>
                 <div className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Network Risk</span>
+                    <span className="text-xs text-muted-foreground">
+                      Network Risk
+                    </span>
                     <AlertTriangle className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="text-lg font-semibold">
-                    {reportData?.networkRisk || 'Low'}
+                    {reportData?.networkRisk || "Low"}
                   </div>
                 </div>
               </div>
@@ -402,7 +463,9 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
 
           <TabsContent value="devices" className="space-y-3">
             <div className="space-y-3">
-              <h4 className="text-sm font-medium">Device & Location Information</h4>
+              <h4 className="text-sm font-medium">
+                Device & Location Information
+              </h4>
               <div className="space-y-2">
                 <div className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
@@ -416,7 +479,9 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 <div className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Location History</span>
+                    <span className="text-sm font-medium">
+                      Location History
+                    </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {reportData?.locationHistory?.length || 0} unique locations
@@ -436,27 +501,35 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
               ) : (
                 <ScrollArea className="h-48 border rounded-lg p-3">
                   <div className="space-y-2">
-                    {alertData?.recentScores?.map((score: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between pb-2 border-b last:border-0">
-                        <div className="space-y-1">
+                    {alertData?.recentScores?.map(
+                      (score: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between pb-2 border-b last:border-0"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <History className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">
+                                {format(
+                                  new Date(score.timestamp),
+                                  "MMM d, HH:mm",
+                                )}
+                              </span>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2">
-                            <History className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">
-                              {format(new Date(score.timestamp), "MMM d, HH:mm")}
+                            <Progress
+                              value={score.score * 100}
+                              className="w-20 h-2"
+                            />
+                            <span className="text-sm font-mono">
+                              {(score.score * 100).toFixed(0)}%
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Progress 
-                            value={score.score * 100} 
-                            className="w-20 h-2"
-                          />
-                          <span className="text-sm font-mono">
-                            {(score.score * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 </ScrollArea>
               )}
@@ -469,16 +542,20 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {selectedAction === 'ban' && 'Ban User'}
-                {selectedAction === 'restrict' && 'Restrict User'}
-                {selectedAction === 'monitor' && 'Monitor User'}
-                {selectedAction === 'clear' && 'Clear User'}
+                {selectedAction === "ban" && "Ban User"}
+                {selectedAction === "restrict" && "Restrict User"}
+                {selectedAction === "monitor" && "Monitor User"}
+                {selectedAction === "clear" && "Clear User"}
               </DialogTitle>
               <DialogDescription>
-                {selectedAction === 'ban' && 'This will permanently ban the user from the platform.'}
-                {selectedAction === 'restrict' && 'This will limit the user\'s access and capabilities.'}
-                {selectedAction === 'monitor' && 'This will place the user under enhanced monitoring.'}
-                {selectedAction === 'clear' && 'This will clear the user\'s fraud status.'}
+                {selectedAction === "ban" &&
+                  "This will permanently ban the user from the platform."}
+                {selectedAction === "restrict" &&
+                  "This will limit the user's access and capabilities."}
+                {selectedAction === "monitor" &&
+                  "This will place the user under enhanced monitoring."}
+                {selectedAction === "clear" &&
+                  "This will clear the user's fraud status."}
               </DialogDescription>
             </DialogHeader>
 
@@ -505,12 +582,14 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
                 Cancel
               </Button>
               <Button
-                variant={selectedAction === 'ban' ? 'destructive' : 'default'}
+                variant={selectedAction === "ban" ? "destructive" : "default"}
                 onClick={handleAction}
                 disabled={actionMutation.isPending || !actionNotes.trim()}
                 data-testid={`button-confirm-${selectedAction}`}
               >
-                {actionMutation.isPending ? 'Processing...' : `Confirm ${selectedAction === 'ban' ? 'Ban' : selectedAction === 'restrict' ? 'Restriction' : selectedAction === 'monitor' ? 'Monitoring' : 'Clear'}`}
+                {actionMutation.isPending
+                  ? "Processing..."
+                  : `Confirm ${selectedAction === "ban" ? "Ban" : selectedAction === "restrict" ? "Restriction" : selectedAction === "monitor" ? "Monitoring" : "Clear"}`}
               </Button>
             </DialogFooter>
           </DialogContent>

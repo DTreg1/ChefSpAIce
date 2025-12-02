@@ -1,5 +1,9 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import {
+  getAuthenticatedUserId,
+  sendError,
+  sendSuccess,
+} from "../../types/request-helpers";
 import { storage } from "../../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../../middleware/oauth.middleware";
@@ -21,50 +25,70 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = getAuthenticatedUserId(req);
-    if (!userId) return sendError(res, 401, "Unauthorized");
+      if (!userId) return sendError(res, 401, "Unauthorized");
       const { days } = daysQuerySchema.parse(req.query);
-      
+
       // Get food items for the user
       const items = await storage.user.inventory.getFoodItems(userId);
-      
+
       // Calculate nutrition stats based on items
       const stats = {
         totalItems: items.length,
-        itemsWithNutrition: items.filter((item: UserInventory) => item.usdaData).length,
+        itemsWithNutrition: items.filter((item: UserInventory) => item.usdaData)
+          .length,
         averageCalories: 0,
         averageProtein: 0,
         averageCarbs: 0,
         averageFat: 0,
         daysAnalyzed: days,
       };
-      
+
       // Calculate averages if there are items with nutrition data
-      const itemsWithNutrition = items.filter((item: UserInventory) => item.usdaData);
+      const itemsWithNutrition = items.filter(
+        (item: UserInventory) => item.usdaData,
+      );
       if (itemsWithNutrition.length > 0) {
-        const totals = itemsWithNutrition.reduce((acc: {calories: number; protein: number; carbs: number; fat: number}, item: UserInventory) => {
-          const nutrition = extractNutrition(item.usdaData);
-          if (!nutrition) return acc;
-          
-          return {
-            calories: acc.calories + (nutrition.calories || 0),
-            protein: acc.protein + (nutrition.protein || 0),
-            carbs: acc.carbs + (nutrition.carbohydrates || 0),
-            fat: acc.fat + (nutrition.fat || 0),
-          };
-        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-        
-        stats.averageCalories = Math.round(totals.calories / itemsWithNutrition.length);
-        stats.averageProtein = Math.round(totals.protein / itemsWithNutrition.length);
-        stats.averageCarbs = Math.round(totals.carbs / itemsWithNutrition.length);
+        const totals = itemsWithNutrition.reduce(
+          (
+            acc: {
+              calories: number;
+              protein: number;
+              carbs: number;
+              fat: number;
+            },
+            item: UserInventory,
+          ) => {
+            const nutrition = extractNutrition(item.usdaData);
+            if (!nutrition) return acc;
+
+            return {
+              calories: acc.calories + (nutrition.calories || 0),
+              protein: acc.protein + (nutrition.protein || 0),
+              carbs: acc.carbs + (nutrition.carbohydrates || 0),
+              fat: acc.fat + (nutrition.fat || 0),
+            };
+          },
+          { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        );
+
+        stats.averageCalories = Math.round(
+          totals.calories / itemsWithNutrition.length,
+        );
+        stats.averageProtein = Math.round(
+          totals.protein / itemsWithNutrition.length,
+        );
+        stats.averageCarbs = Math.round(
+          totals.carbs / itemsWithNutrition.length,
+        );
         stats.averageFat = Math.round(totals.fat / itemsWithNutrition.length);
       }
-      
+
       res.json(stats);
     } catch (error) {
       console.error("Error fetching nutrition stats:", error);
       res.status(500).json({ error: "Failed to fetch nutrition stats" });
     }
-  }
+  },
 );
 
 // Get nutrition items (food items with nutrition data)
@@ -74,31 +98,33 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = getAuthenticatedUserId(req);
-    if (!userId) return sendError(res, 401, "Unauthorized");
+      if (!userId) return sendError(res, 401, "Unauthorized");
       const { category, minCalories, maxCalories, sortBy = "name" } = req.query;
-      
+
       // Get food items with nutrition data
       let items = await storage.user.inventory.getFoodItems(userId);
       items = items.filter((item: UserInventory) => item.usdaData);
-      
+
       // Apply filters
       if (category) {
-        items = items.filter((item: UserInventory) => item.foodCategory === category);
+        items = items.filter(
+          (item: UserInventory) => item.foodCategory === category,
+        );
       }
-      
+
       if (minCalories || maxCalories) {
         items = items.filter((item: UserInventory) => {
           const nutrition = extractNutrition(item.usdaData);
           if (!nutrition) return false;
-          
+
           const calories = nutrition.calories || 0;
-          
+
           if (minCalories && calories < Number(minCalories)) return false;
           if (maxCalories && calories > Number(maxCalories)) return false;
           return true;
         });
       }
-      
+
       // Sort items
       if (sortBy === "calories") {
         items.sort((a: UserInventory, b: UserInventory) => {
@@ -113,32 +139,36 @@ router.get(
           return (bNutrition?.protein || 0) - (aNutrition?.protein || 0);
         });
       } else {
-        items.sort((a: UserInventory, b: UserInventory) => a.name.localeCompare(b.name));
+        items.sort((a: UserInventory, b: UserInventory) =>
+          a.name.localeCompare(b.name),
+        );
       }
-      
+
       // Add nutrition summary to each item
       const itemsWithNutrition = items.map((item: UserInventory) => {
         const nutrition = extractNutrition(item.usdaData);
         return {
           ...item,
-          nutritionSummary: nutrition ? {
-            calories: nutrition.calories,
-            protein: nutrition.protein,
-            carbohydrates: nutrition.carbohydrates,
-            fat: nutrition.fat,
-            fiber: nutrition.fiber,
-            sugar: nutrition.sugar,
-            sodium: nutrition.sodium,
-          } : null,
+          nutritionSummary: nutrition
+            ? {
+                calories: nutrition.calories,
+                protein: nutrition.protein,
+                carbohydrates: nutrition.carbohydrates,
+                fat: nutrition.fat,
+                fiber: nutrition.fiber,
+                sugar: nutrition.sugar,
+                sodium: nutrition.sodium,
+              }
+            : null,
         };
       });
-      
+
       res.json(itemsWithNutrition);
     } catch (error) {
       console.error("Error fetching nutrition items:", error);
       res.status(500).json({ error: "Failed to fetch nutrition items" });
     }
-  }
+  },
 );
 
 // Calculate daily nutrition intake
@@ -148,19 +178,19 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = getAuthenticatedUserId(req);
-    if (!userId) return sendError(res, 401, "Unauthorized");
+      if (!userId) return sendError(res, 401, "Unauthorized");
       const { date = new Date().toISOString().split("T")[0] } = req.query;
-      
+
       // Get meal plans for the date
       const mealPlans = await storage.user.recipes.getMealPlans(userId);
       const todaysMeals = mealPlans.filter((plan) => plan.date === date);
-      
+
       // Get recipes for those meal plans
       const recipes = await storage.user.recipes.getRecipes(userId);
       const todaysRecipes = recipes.filter((recipe) =>
-        todaysMeals.some((plan) => plan.recipeId === recipe.id)
+        todaysMeals.some((plan) => plan.recipeId === recipe.id),
       );
-      
+
       // Calculate total nutrition for the day
       const dailyNutrition = {
         date,
@@ -182,20 +212,25 @@ router.get(
           };
         }>,
       };
-      
+
       // Add nutrition from each meal
       todaysMeals.forEach((plan) => {
         const recipe = todaysRecipes.find((r) => r.id === plan.recipeId);
         if (recipe && recipe.nutrition) {
           const nutrition = recipe.nutrition;
           const servingMultiplier = plan.servings || 1;
-          
-          dailyNutrition.totalCalories += Number(nutrition.calories || 0) * servingMultiplier;
-          dailyNutrition.totalProtein += Number(nutrition.protein || 0) * servingMultiplier;
-          dailyNutrition.totalCarbs += Number(nutrition.carbohydrates || 0) * servingMultiplier;
-          dailyNutrition.totalFat += Number(nutrition.fat || 0) * servingMultiplier;
-          dailyNutrition.totalFiber += Number(nutrition.fiber || 0) * servingMultiplier;
-          
+
+          dailyNutrition.totalCalories +=
+            Number(nutrition.calories || 0) * servingMultiplier;
+          dailyNutrition.totalProtein +=
+            Number(nutrition.protein || 0) * servingMultiplier;
+          dailyNutrition.totalCarbs +=
+            Number(nutrition.carbohydrates || 0) * servingMultiplier;
+          dailyNutrition.totalFat +=
+            Number(nutrition.fat || 0) * servingMultiplier;
+          dailyNutrition.totalFiber +=
+            Number(nutrition.fiber || 0) * servingMultiplier;
+
           dailyNutrition.mealBreakdown.push({
             mealType: plan.mealType,
             recipeName: recipe.title,
@@ -209,13 +244,13 @@ router.get(
           });
         }
       });
-      
+
       res.json(dailyNutrition);
     } catch (error) {
       console.error("Error calculating daily nutrition:", error);
       res.status(500).json({ error: "Failed to calculate daily nutrition" });
     }
-  }
+  },
 );
 
 export default router;

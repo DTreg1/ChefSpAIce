@@ -1,19 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Target, 
-  TrendingUp, 
-  Users, 
-  FileText, 
+import {
+  Target,
+  TrendingUp,
+  Users,
+  FileText,
   Settings,
   Zap,
   ChevronRight,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import type { UserPrediction } from "@shared/schema";
 
@@ -38,18 +44,23 @@ const ACTION_DESCRIPTIONS: Record<string, string> = {
   invite_users: "User likely to invite team members or friends",
 };
 
-export function PredictedActions({ userId, onActionClick }: PredictedActionsProps) {
-  const { data, isLoading, error, refetch } = useQuery<{ predictions: UserPrediction[] }>({
-    queryKey: ['/api/predict/user', userId],
+export function PredictedActions({
+  userId,
+  onActionClick,
+}: PredictedActionsProps) {
+  const { data, isLoading, error, refetch } = useQuery<{
+    predictions: UserPrediction[];
+  }>({
+    queryKey: ["/api/predict/user", userId],
     queryFn: async () => {
       if (!userId) return null;
       const response = await fetch(`/api/predict/user/${userId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch predictions');
+        throw new Error(errorData.message || "Failed to fetch predictions");
       }
       return response.json();
     },
@@ -78,7 +89,8 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
   }
 
   if (error) {
-    const errorMessage = (error as Error).message || "Failed to load predictions";
+    const errorMessage =
+      (error as Error).message || "Failed to load predictions";
     return (
       <Card>
         <CardHeader>
@@ -86,14 +98,14 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
             <Target className="h-5 w-5" />
             Predicted User Actions
           </CardTitle>
-          <CardDescription>Unable to load behavioral predictions</CardDescription>
+          <CardDescription>
+            Unable to load behavioral predictions
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {errorMessage}
-            </AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
           <Button onClick={() => refetch()} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -104,13 +116,15 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
     );
   }
 
-  const actionPredictions = data?.predictions?.filter(p => 
-    p.predictionType === 'next_action' || 
-    p.predictionType === 'feature_adoption'
-  ) || [];
+  const actionPredictions =
+    data?.predictions?.filter(
+      (p) =>
+        p.predictionType === "next_action" ||
+        p.predictionType === "feature_adoption",
+    ) || [];
 
-  const engagementPrediction = data?.predictions?.find(p => 
-    p.predictionType === 'engagement_drop'
+  const engagementPrediction = data?.predictions?.find(
+    (p) => p.predictionType === "engagement_drop",
   );
 
   return (
@@ -139,16 +153,23 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="p-3 bg-muted rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Engagement Status</span>
-              <Badge variant={engagementPrediction.confidence > 0.5 ? "destructive" : "default"}>
+              <Badge
+                variant={
+                  engagementPrediction.confidence > 0.5
+                    ? "destructive"
+                    : "default"
+                }
+              >
                 {engagementPrediction.confidence > 0.5 ? "Declining" : "Stable"}
               </Badge>
             </div>
-            <Progress 
-              value={100 - Math.round(engagementPrediction.confidence * 100)} 
+            <Progress
+              value={100 - Math.round(engagementPrediction.confidence * 100)}
               className="h-2"
             />
             <p className="text-xs text-muted-foreground">
-              Current engagement level: {100 - Math.round(engagementPrediction.confidence * 100)}%
+              Current engagement level:{" "}
+              {100 - Math.round(engagementPrediction.confidence * 100)}%
             </p>
           </div>
         )}
@@ -157,10 +178,11 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Likely Next Actions</h4>
             {actionPredictions.map((prediction) => {
-              const action = (prediction.metadata as any)?.predictedAction || 'unknown';
+              const action =
+                (prediction.metadata as any)?.predictedAction || "unknown";
               const Icon = ACTION_ICONS[action] || Zap;
               const confidence = Math.round((prediction.confidence || 0) * 100);
-              
+
               return (
                 <div
                   key={prediction.id}
@@ -174,10 +196,12 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        {action.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                        {action
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {ACTION_DESCRIPTIONS[action] || 'User action predicted'}
+                        {ACTION_DESCRIPTIONS[action] || "User action predicted"}
                       </p>
                     </div>
                   </div>
@@ -195,7 +219,9 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="text-center py-6 text-muted-foreground">
             <Target className="h-12 w-12 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No action predictions available</p>
-            <p className="text-xs mt-1">Predictions will appear as user data is collected</p>
+            <p className="text-xs mt-1">
+              Predictions will appear as user data is collected
+            </p>
           </div>
         )}
 

@@ -1,13 +1,19 @@
 /**
  * Image Enhancement Page
- * 
+ *
  * Main page for AI-powered image enhancement system.
  */
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +24,7 @@ import { BeforeAfter } from "@/components/images/before-after";
 import { PresetSelector } from "@/components/images/preset-selector";
 import { BatchUploader } from "@/components/images/batch-uploader";
 import { QualitySettings } from "@/components/images/quality-settings";
-import { 
+import {
   Image as ImageIcon,
   Wand2,
   Layers,
@@ -26,7 +32,7 @@ import {
   BarChart3,
   Info,
   Key,
-  CheckCircle
+  CheckCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,30 +51,34 @@ export default function ImageEnhancement() {
 
   // Fetch usage statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.media.images.enhance, 'stats'],
+    queryKey: [API_ENDPOINTS.ai.media.images.enhance, "stats"],
     queryFn: async () => {
       try {
-        const response = await fetch(`${API_ENDPOINTS.ai.media.images.enhance}/stats`);
+        const response = await fetch(
+          `${API_ENDPOINTS.ai.media.images.enhance}/stats`,
+        );
         if (!response.ok) return null;
         return response.json();
       } catch {
         return null;
       }
-    }
+    },
   });
 
   // Check Remove.bg API key status
   const { data: apiKeyStatus } = useQuery({
-    queryKey: [API_ENDPOINTS.ai.media.images.enhance, 'check-api-key'],
+    queryKey: [API_ENDPOINTS.ai.media.images.enhance, "check-api-key"],
     queryFn: async () => {
       try {
-        const response = await fetch(`${API_ENDPOINTS.ai.media.images.enhance}/check-api-key`);
+        const response = await fetch(
+          `${API_ENDPOINTS.ai.media.images.enhance}/check-api-key`,
+        );
         if (!response.ok) return { hasKey: false };
         return response.json();
       } catch {
         return { hasKey: false };
       }
-    }
+    },
   });
 
   // Handle image processing complete
@@ -78,12 +88,12 @@ export default function ImageEnhancement() {
       processedUrl: url,
       originalSize: selectedFile?.size || 0,
       processedSize: 0, // Would come from API
-      processingTime: 1250 // Would come from API
+      processingTime: 1250, // Would come from API
     });
 
     toast({
       title: "Image processed successfully",
-      description: "Your enhanced image is ready for download"
+      description: "Your enhanced image is ready for download",
     });
   };
 
@@ -92,7 +102,7 @@ export default function ImageEnhancement() {
     setSelectedPreset(preset);
     toast({
       title: "Preset applied",
-      description: `Using "${preset.name}" enhancement preset`
+      description: `Using "${preset.name}" enhancement preset`,
     });
   };
 
@@ -100,7 +110,7 @@ export default function ImageEnhancement() {
   const handleBatchComplete = (files: any[]) => {
     toast({
       title: "Batch processing complete",
-      description: `Successfully processed ${files.length} images`
+      description: `Successfully processed ${files.length} images`,
     });
   };
 
@@ -109,24 +119,29 @@ export default function ImageEnhancement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Image Enhancement</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Image Enhancement
+          </h1>
           <p className="text-muted-foreground">
-            AI-powered image processing with background removal, smart cropping, and quality enhancement
+            AI-powered image processing with background removal, smart cropping,
+            and quality enhancement
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {statsLoading ? (
             <Skeleton className="h-10 w-32" />
-          ) : stats && (
-            <div className="flex gap-2">
-              <Badge variant="outline">
-                {stats.totalProcessed || 0} images
-              </Badge>
-              <Badge variant="outline">
-                {((stats.totalSaved || 0) / 1024 / 1024).toFixed(1)} MB saved
-              </Badge>
-            </div>
+          ) : (
+            stats && (
+              <div className="flex gap-2">
+                <Badge variant="outline">
+                  {stats.totalProcessed || 0} images
+                </Badge>
+                <Badge variant="outline">
+                  {((stats.totalSaved || 0) / 1024 / 1024).toFixed(1)} MB saved
+                </Badge>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -139,7 +154,12 @@ export default function ImageEnhancement() {
             <div className="flex items-center justify-between">
               <span>
                 Background removal requires a Remove.bg API key. Get one free at{" "}
-                <a href="https://remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">
+                <a
+                  href="https://remove.bg/api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
                   remove.bg/api
                 </a>
               </span>
@@ -183,7 +203,7 @@ export default function ImageEnhancement() {
             onFileChange={setSelectedFile}
             onSave={handleImageProcessed}
           />
-          
+
           {processedImage && (
             <BeforeAfter
               originalUrl={processedImage.originalUrl}
@@ -213,7 +233,7 @@ export default function ImageEnhancement() {
                 selectedId={selectedPreset?.id}
               />
             </div>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Selected Preset</CardTitle>
@@ -230,7 +250,7 @@ export default function ImageEnhancement() {
                         {selectedPreset.description}
                       </p>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-1">
                       {selectedPreset.operations?.backgroundRemoval && (
                         <Badge variant="outline" className="text-xs">
@@ -248,7 +268,7 @@ export default function ImageEnhancement() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <Button className="w-full" size="sm">
                       Apply to Current Image
                     </Button>
@@ -271,7 +291,7 @@ export default function ImageEnhancement() {
             onSavePreset={(name, config) => {
               toast({
                 title: "Preset saved",
-                description: `"${name}" has been saved to your presets`
+                description: `"${name}" has been saved to your presets`,
               });
             }}
           />
@@ -282,19 +302,25 @@ export default function ImageEnhancement() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Images</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Images
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{stats?.totalProcessed || 0}</p>
+                <p className="text-2xl font-bold">
+                  {stats?.totalProcessed || 0}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   Processed all time
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Space Saved</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Space Saved
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
@@ -305,24 +331,26 @@ export default function ImageEnhancement() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Avg Processing</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Avg Processing
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
                   {stats?.avgProcessingTime || "1.2"}s
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Per image
-                </p>
+                <p className="text-xs text-muted-foreground">Per image</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Success Rate
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
@@ -350,12 +378,14 @@ export default function ImageEnhancement() {
                   { name: "Auto Crop", count: 892, percentage: 32 },
                   { name: "Quality Enhancement", count: 756, percentage: 27 },
                   { name: "Resize", count: 543, percentage: 20 },
-                  { name: "Format Conversion", count: 421, percentage: 15 }
+                  { name: "Format Conversion", count: 421, percentage: 15 },
                 ].map((op) => (
                   <div key={op.name} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span>{op.name}</span>
-                      <span className="text-muted-foreground">{op.count} uses</span>
+                      <span className="text-muted-foreground">
+                        {op.count} uses
+                      </span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
@@ -390,7 +420,7 @@ export default function ImageEnhancement() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
               <div>
@@ -400,7 +430,7 @@ export default function ImageEnhancement() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
               <div>

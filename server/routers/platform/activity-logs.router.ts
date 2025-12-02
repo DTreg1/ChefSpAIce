@@ -1,13 +1,17 @@
 /**
  * Activity Logs Router
- * 
+ *
  * Provides API endpoints for retrieving and managing activity logs.
  * Includes user timelines, admin views, statistics, and data export.
  */
 
 import { Router, Request, Response } from "express";
 import { storage } from "../../storage/index";
-import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  adminOnly,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
 import { ApiError } from "../../utils/apiError";
 
@@ -15,9 +19,9 @@ const router = Router();
 
 /**
  * GET /api/activity-logs (or root when mounted at /activity-logs)
- * 
+ *
  * Get current user's activity logs
- * 
+ *
  * Query params:
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 50)
@@ -37,12 +41,12 @@ router.get(
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    
+
     const filters: any = {};
     if (req.query.action) {
-      filters.action = Array.isArray(req.query.action) 
-        ? req.query.action 
-        : (req.query.action as string).split(',');
+      filters.action = Array.isArray(req.query.action)
+        ? req.query.action
+        : (req.query.action as string).split(",");
     }
     if (req.query.entity) {
       filters.entity = req.query.entity;
@@ -58,18 +62,18 @@ router.get(
       userId,
       page,
       limit,
-      filters
+      filters,
     );
 
     res.json(result);
-  })
+  }),
 );
 
 /**
  * GET /api/activity-logs/timeline
- * 
+ *
  * Get user's activity timeline (simplified view)
- * 
+ *
  * Query params:
  * - limit: Number of recent activities (default: 50, max: 100)
  */
@@ -83,21 +87,24 @@ router.get(
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    
-    const timeline = await storage.platform.system.getUserActivityTimeline(userId, limit);
-    
+
+    const timeline = await storage.platform.system.getUserActivityTimeline(
+      userId,
+      limit,
+    );
+
     res.json({
       data: timeline,
-      total: timeline.length
+      total: timeline.length,
     });
-  })
+  }),
 );
 
 /**
  * GET /api/activity-logs/stats
- * 
+ *
  * Get activity statistics for current user
- * 
+ *
  * Query params:
  * - startDate: Start date for statistics
  * - endDate: End date for statistics
@@ -111,22 +118,26 @@ router.get(
       throw new ApiError("User not authenticated", 401);
     }
 
-    const startDate = req.query.startDate 
-      ? new Date(req.query.startDate as string) 
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate as string)
       : undefined;
-    const endDate = req.query.endDate 
-      ? new Date(req.query.endDate as string) 
+    const endDate = req.query.endDate
+      ? new Date(req.query.endDate as string)
       : undefined;
-    
-    const stats = await storage.platform.system.getActivityStats(userId, startDate, endDate);
-    
+
+    const stats = await storage.platform.system.getActivityStats(
+      userId,
+      startDate,
+      endDate,
+    );
+
     res.json(stats);
-  })
+  }),
 );
 
 /**
  * GET /api/activity-logs/export
- * 
+ *
  * Export user's activity logs (GDPR compliance)
  * Returns all user's activity logs in JSON format
  */
@@ -140,31 +151,33 @@ router.get(
     }
 
     // Use getActivityLogs for export functionality
-    const logs = await storage.platform.system.getActivityLogs(userId, { limit: 10000 });
-    
+    const logs = await storage.platform.system.getActivityLogs(userId, {
+      limit: 10000,
+    });
+
     // Set headers for file download
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     res.setHeader(
-      'Content-Disposition', 
-      `attachment; filename="activity-logs-${userId}-${Date.now()}.json"`
+      "Content-Disposition",
+      `attachment; filename="activity-logs-${userId}-${Date.now()}.json"`,
     );
-    
+
     res.json({
       exportDate: new Date().toISOString(),
       userId,
       totalLogs: logs.length,
-      logs
+      logs,
     });
-  })
+  }),
 );
 
 // ==================== Admin Endpoints ====================
 
 /**
  * GET /api/admin/activity-logs
- * 
+ *
  * Get all activity logs (admin only)
- * 
+ *
  * Query params:
  * - userId: Filter by specific user
  * - page: Page number (default: 1)
@@ -182,12 +195,12 @@ router.get(
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const userId = req.query.userId as string | undefined;
-    
+
     const filters: any = {};
     if (req.query.action) {
-      filters.action = Array.isArray(req.query.action) 
-        ? req.query.action 
-        : (req.query.action as string).split(',');
+      filters.action = Array.isArray(req.query.action)
+        ? req.query.action
+        : (req.query.action as string).split(",");
     }
     if (req.query.entity) {
       filters.entity = req.query.entity;
@@ -203,18 +216,18 @@ router.get(
       userId || undefined,
       page,
       limit,
-      filters
+      filters,
     );
 
     res.json(result);
-  })
+  }),
 );
 
 /**
  * GET /api/admin/activity-logs/system
- * 
+ *
  * Get system events (activities with no user)
- * 
+ *
  * Query params:
  * - action: Filter by action type(s)
  * - startDate: Filter by start date
@@ -227,11 +240,11 @@ router.get(
   adminOnly,
   asyncHandler(async (req, res) => {
     const filters: any = {};
-    
+
     if (req.query.action) {
-      filters.action = Array.isArray(req.query.action) 
-        ? req.query.action 
-        : (req.query.action as string).split(',');
+      filters.action = Array.isArray(req.query.action)
+        ? req.query.action
+        : (req.query.action as string).split(",");
     }
     if (req.query.startDate) {
       filters.startDate = new Date(req.query.startDate as string);
@@ -242,19 +255,19 @@ router.get(
     filters.limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
     const events = await storage.platform.system.getSystemActivityLogs(filters);
-    
+
     res.json({
       data: events,
-      total: events.length
+      total: events.length,
     });
-  })
+  }),
 );
 
 /**
  * GET /api/admin/activity-logs/stats
- * 
+ *
  * Get global activity statistics (admin only)
- * 
+ *
  * Query params:
  * - userId: Filter by specific user (optional)
  * - startDate: Start date for statistics
@@ -266,28 +279,28 @@ router.get(
   adminOnly,
   asyncHandler(async (req, res) => {
     const userId = req.query.userId as string | undefined;
-    const startDate = req.query.startDate 
-      ? new Date(req.query.startDate as string) 
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate as string)
       : undefined;
-    const endDate = req.query.endDate 
-      ? new Date(req.query.endDate as string) 
+    const endDate = req.query.endDate
+      ? new Date(req.query.endDate as string)
       : undefined;
-    
+
     const stats = await storage.platform.system.getActivityStats(
       userId || undefined,
       startDate,
-      endDate
+      endDate,
     );
-    
+
     res.json(stats);
-  })
+  }),
 );
 
 /**
  * POST /api/admin/activity-logs/cleanup
- * 
+ *
  * Trigger cleanup of old activity logs (admin only)
- * 
+ *
  * Body:
  * - retentionDays: Days to retain logs (default: 90)
  * - excludeActions: Array of action types to exclude from cleanup
@@ -297,8 +310,8 @@ router.post(
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
-    const { retentionDays = 90, excludeActions = []  } = req.body || {};
-    
+    const { retentionDays = 90, excludeActions = [] } = req.body || {};
+
     // Validate retention days
     if (retentionDays < 7) {
       throw new ApiError("Retention period must be at least 7 days", 400);
@@ -306,30 +319,30 @@ router.post(
     if (retentionDays > 365) {
       throw new ApiError("Retention period cannot exceed 365 days", 400);
     }
-    
+
     const deletedCount = await storage.platform.system.cleanupOldActivityLogs(
       retentionDays,
-      excludeActions
+      excludeActions,
     );
-    
+
     res.json({
       success: true,
       message: `Successfully cleaned up ${deletedCount} old activity logs`,
       retentionDays,
       excludeActions,
-      deletedCount
+      deletedCount,
     });
-  })
+  }),
 );
 
 /**
  * GET /api/admin/activity-logs/user/:userId
- * 
+ *
  * Get specific user's activity logs (admin only)
- * 
+ *
  * Params:
  * - userId: User ID to fetch logs for
- * 
+ *
  * Query params:
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 50)
@@ -342,20 +355,20 @@ router.get(
     const { userId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    
+
     const result = await storage.platform.system.getActivityLogsPaginated(
       userId,
       page,
-      limit
+      limit,
     );
-    
+
     res.json(result);
-  })
+  }),
 );
 
 /**
  * DELETE /api/activity-logs
- * 
+ *
  * Delete current user's activity logs (GDPR compliance)
  * This is for user privacy - allows users to delete their own logs
  */
@@ -370,21 +383,26 @@ router.delete(
 
     // Require explicit confirmation
     if (req.body.confirm !== true) {
-      throw new ApiError("Please confirm deletion by setting confirm: true", 400);
+      throw new ApiError(
+        "Please confirm deletion by setting confirm: true",
+        400,
+      );
     }
-    
+
     // Delete user activity logs by using cleanupOldActivityLogs with 0 retention for this user
-    const userLogs = await storage.platform.system.getActivityLogs(userId, { limit: 1000 });
+    const userLogs = await storage.platform.system.getActivityLogs(userId, {
+      limit: 1000,
+    });
     const deletedCount = userLogs.length;
     // For now, we don't actually delete - this would need a dedicated method
     // In a real implementation, add deleteUserActivityLogs to ISystemStorage
-    
+
     res.json({
       success: true,
       message: `Successfully deleted ${deletedCount} activity logs`,
-      deletedCount
+      deletedCount,
     });
-  })
+  }),
 );
 
 export default router;

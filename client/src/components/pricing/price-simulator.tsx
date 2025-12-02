@@ -1,12 +1,18 @@
 /**
  * Price Simulator Component
- * 
+ *
  * What-if analysis tool for testing different pricing scenarios.
  * Allows simulation of various market conditions.
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +20,20 @@ import { Slider } from "@/components/ui/slider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from "recharts";
 import { Calculator, TrendingUp, AlertTriangle, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,28 +68,39 @@ export function PriceSimulator({
   productName,
   basePrice,
   minPrice,
-  maxPrice
+  maxPrice,
 }: PriceSimulatorProps) {
   const [scenarios, setScenarios] = useState<SimulationScenario[]>([
     { price: basePrice * 0.9, demandLevel: 50, inventoryLevel: 50 },
     { price: basePrice, demandLevel: 50, inventoryLevel: 50 },
-    { price: basePrice * 1.1, demandLevel: 50, inventoryLevel: 50 }
+    { price: basePrice * 1.1, demandLevel: 50, inventoryLevel: 50 },
   ]);
   const [results, setResults] = useState<SimulationResult[] | null>(null);
   const [selectedScenario, setSelectedScenario] = useState(0);
 
   // Simulation mutation
   const simulationMutation = useMutation({
-    mutationFn: async (data: { productId: string; scenarios: SimulationScenario[] }) => {
-      return apiRequest(`${API_ENDPOINTS.admin.pricing.rules}/simulate`, 'POST', data);
+    mutationFn: async (data: {
+      productId: string;
+      scenarios: SimulationScenario[];
+    }) => {
+      return apiRequest(
+        `${API_ENDPOINTS.admin.pricing.rules}/simulate`,
+        "POST",
+        data,
+      );
     },
     onSuccess: (data: any) => {
       setResults(data.scenarios);
-    }
+    },
   });
 
   // Update scenario
-  const updateScenario = (index: number, field: keyof SimulationScenario, value: number) => {
+  const updateScenario = (
+    index: number,
+    field: keyof SimulationScenario,
+    value: number,
+  ) => {
     const newScenarios = [...scenarios];
     newScenarios[index] = { ...newScenarios[index], [field]: value };
     setScenarios(newScenarios);
@@ -79,11 +109,14 @@ export function PriceSimulator({
   // Add scenario
   const addScenario = () => {
     if (scenarios.length < 5) {
-      setScenarios([...scenarios, { 
-        price: basePrice, 
-        demandLevel: 50, 
-        inventoryLevel: 50 
-      }]);
+      setScenarios([
+        ...scenarios,
+        {
+          price: basePrice,
+          demandLevel: 50,
+          inventoryLevel: 50,
+        },
+      ]);
     }
   };
 
@@ -103,13 +136,15 @@ export function PriceSimulator({
   };
 
   // Prepare radar chart data
-  const radarData = results ? results.map((result, idx) => ({
-    metric: `Scenario ${idx + 1}`,
-    demand: parseFloat(result.predictedDemand),
-    revenue: parseFloat(result.estimatedRevenue) / 100,
-    margin: parseFloat(result.profitMargin),
-    units: result.estimatedUnits / 10
-  })) : [];
+  const radarData = results
+    ? results.map((result, idx) => ({
+        metric: `Scenario ${idx + 1}`,
+        demand: parseFloat(result.predictedDemand),
+        revenue: parseFloat(result.estimatedRevenue) / 100,
+        margin: parseFloat(result.profitMargin),
+        units: result.estimatedUnits / 10,
+      }))
+    : [];
 
   return (
     <div className="space-y-6" data-testid="price-simulator">
@@ -124,8 +159,12 @@ export function PriceSimulator({
           <Tabs defaultValue="scenarios" className="space-y-4">
             <TabsList>
               <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
-              <TabsTrigger value="results" disabled={!results}>Results</TabsTrigger>
-              <TabsTrigger value="comparison" disabled={!results}>Comparison</TabsTrigger>
+              <TabsTrigger value="results" disabled={!results}>
+                Results
+              </TabsTrigger>
+              <TabsTrigger value="comparison" disabled={!results}>
+                Comparison
+              </TabsTrigger>
             </TabsList>
 
             {/* Scenarios Tab */}
@@ -151,7 +190,9 @@ export function PriceSimulator({
                       <Label>Price: ${scenario.price.toFixed(2)}</Label>
                       <Slider
                         value={[scenario.price]}
-                        onValueChange={([value]) => updateScenario(idx, 'price', value)}
+                        onValueChange={([value]) =>
+                          updateScenario(idx, "price", value)
+                        }
                         min={minPrice}
                         max={maxPrice}
                         step={0.01}
@@ -169,7 +210,9 @@ export function PriceSimulator({
                       <Label>Expected Demand: {scenario.demandLevel}%</Label>
                       <Slider
                         value={[scenario.demandLevel || 50]}
-                        onValueChange={([value]) => updateScenario(idx, 'demandLevel', value)}
+                        onValueChange={([value]) =>
+                          updateScenario(idx, "demandLevel", value)
+                        }
                         min={0}
                         max={100}
                         step={5}
@@ -182,7 +225,9 @@ export function PriceSimulator({
                       <Label>Inventory Level: {scenario.inventoryLevel}%</Label>
                       <Slider
                         value={[scenario.inventoryLevel || 50]}
-                        onValueChange={([value]) => updateScenario(idx, 'inventoryLevel', value)}
+                        onValueChange={([value]) =>
+                          updateScenario(idx, "inventoryLevel", value)
+                        }
                         min={0}
                         max={100}
                         step={5}
@@ -196,8 +241,14 @@ export function PriceSimulator({
                       <Input
                         type="number"
                         step="0.01"
-                        value={scenario.competitorPrice || ''}
-                        onChange={(e) => updateScenario(idx, 'competitorPrice', parseFloat(e.target.value) || 0)}
+                        value={scenario.competitorPrice || ""}
+                        onChange={(e) =>
+                          updateScenario(
+                            idx,
+                            "competitorPrice",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
                         placeholder={`Default: $${basePrice.toFixed(2)}`}
                       />
                     </div>
@@ -247,7 +298,11 @@ export function PriceSimulator({
                             Scenario {idx + 1}: ${result.price.toFixed(2)}
                           </h4>
                           <Badge
-                            variant={parseFloat(result.revenueChange) > 0 ? "default" : "destructive"}
+                            variant={
+                              parseFloat(result.revenueChange) > 0
+                                ? "default"
+                                : "destructive"
+                            }
                           >
                             {result.revenueChange} revenue
                           </Badge>
@@ -255,20 +310,36 @@ export function PriceSimulator({
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm text-muted-foreground">Predicted Demand</p>
-                            <p className="text-lg font-medium">{result.predictedDemand}%</p>
+                            <p className="text-sm text-muted-foreground">
+                              Predicted Demand
+                            </p>
+                            <p className="text-lg font-medium">
+                              {result.predictedDemand}%
+                            </p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Estimated Units</p>
-                            <p className="text-lg font-medium">{result.estimatedUnits}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Estimated Units
+                            </p>
+                            <p className="text-lg font-medium">
+                              {result.estimatedUnits}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Estimated Revenue</p>
-                            <p className="text-lg font-medium">${result.estimatedRevenue}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Estimated Revenue
+                            </p>
+                            <p className="text-lg font-medium">
+                              ${result.estimatedRevenue}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Profit Margin</p>
-                            <p className="text-lg font-medium">{result.profitMargin}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Profit Margin
+                            </p>
+                            <p className="text-lg font-medium">
+                              {result.profitMargin}
+                            </p>
                           </div>
                         </div>
 
@@ -303,18 +374,31 @@ export function PriceSimulator({
                   <Card className="p-4">
                     <h4 className="font-medium mb-4">Revenue Comparison</h4>
                     <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={results.map((r, idx) => ({
-                        scenario: `S${idx + 1}`,
-                        revenue: parseFloat(r.estimatedRevenue),
-                        units: r.estimatedUnits,
-                        margin: parseFloat(r.profitMargin)
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <BarChart
+                        data={results.map((r, idx) => ({
+                          scenario: `S${idx + 1}`,
+                          revenue: parseFloat(r.estimatedRevenue),
+                          units: r.estimatedUnits,
+                          margin: parseFloat(r.profitMargin),
+                        }))}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          className="stroke-muted"
+                        />
                         <XAxis dataKey="scenario" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="revenue" fill="hsl(var(--chart-1))" name="Revenue ($)" />
-                        <Bar dataKey="units" fill="hsl(var(--chart-2))" name="Units" />
+                        <Bar
+                          dataKey="revenue"
+                          fill="hsl(var(--chart-1))"
+                          name="Revenue ($)"
+                        />
+                        <Bar
+                          dataKey="units"
+                          fill="hsl(var(--chart-2))"
+                          name="Units"
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </Card>

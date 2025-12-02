@@ -1,28 +1,40 @@
 /**
  * Quality Settings Component
- * 
+ *
  * Advanced quality and output configuration options.
  */
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
+import {
   Settings2,
   Zap,
   HardDrive,
   Sparkles,
   Info,
   Save,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 
 interface QualityConfig {
@@ -67,10 +79,10 @@ interface QualitySettingsProps {
   onSavePreset?: (name: string, config: QualityConfig) => void;
 }
 
-export function QualitySettings({ 
-  config: initialConfig, 
+export function QualitySettings({
+  config: initialConfig,
   onChange,
-  onSavePreset 
+  onSavePreset,
 }: QualitySettingsProps) {
   const [config, setConfig] = useState<QualityConfig>({
     outputFormat: "jpeg",
@@ -103,7 +115,7 @@ export function QualitySettings({
       autoContrast: false,
       autoExposure: false,
     },
-    ...initialConfig
+    ...initialConfig,
   });
 
   const [presetName, setPresetName] = useState("");
@@ -117,15 +129,15 @@ export function QualitySettings({
 
   // Update specific config property
   const updateConfig = (path: string, value: any) => {
-    setConfig(prev => {
+    setConfig((prev) => {
       const newConfig = { ...prev };
       const keys = path.split(".");
       let current: any = newConfig;
-      
+
       for (let i = 0; i < keys.length - 1; i++) {
         current = current[keys[i]];
       }
-      
+
       current[keys[keys.length - 1]] = value;
       return newConfig;
     });
@@ -135,7 +147,7 @@ export function QualitySettings({
   const estimateFileSize = () => {
     const baseSize = 1000; // 1MB base
     let multiplier = 1;
-    
+
     switch (config.outputFormat) {
       case "png":
         multiplier = 1.5;
@@ -147,12 +159,12 @@ export function QualitySettings({
         multiplier = 0.5;
         break;
     }
-    
-    multiplier *= (config.quality / 100);
-    
+
+    multiplier *= config.quality / 100;
+
     if (config.optimization.lossless) multiplier *= 2;
     if (config.bitDepth === 16) multiplier *= 1.5;
-    
+
     return (baseSize * multiplier).toFixed(0);
   };
 
@@ -188,7 +200,7 @@ export function QualitySettings({
         autoColor: false,
         autoContrast: false,
         autoExposure: false,
-      }
+      },
     });
   };
 
@@ -210,12 +222,10 @@ export function QualitySettings({
               Advanced output and processing configuration
             </CardDescription>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
-              ~{estimateFileSize()} KB
-            </Badge>
-            
+            <Badge variant="secondary">~{estimateFileSize()} KB</Badge>
+
             <Button
               size="sm"
               variant="outline"
@@ -268,14 +278,17 @@ export function QualitySettings({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="color-space">Color Space</Label>
                 <Select
                   value={config.colorSpace}
                   onValueChange={(value) => updateConfig("colorSpace", value)}
                 >
-                  <SelectTrigger id="color-space" data-testid="select-color-space">
+                  <SelectTrigger
+                    id="color-space"
+                    data-testid="select-color-space"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -286,7 +299,7 @@ export function QualitySettings({
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Quality: {config.quality}%</Label>
               <Slider
@@ -298,49 +311,49 @@ export function QualitySettings({
                 data-testid="slider-output-quality"
               />
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="preserve-exif">Preserve EXIF Data</Label>
                 <Switch
                   id="preserve-exif"
                   checked={config.metadata.preserveExif}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("metadata.preserveExif", checked)
                   }
                   data-testid="switch-preserve-exif"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="preserve-icc">Preserve Color Profile</Label>
                 <Switch
                   id="preserve-icc"
                   checked={config.metadata.preserveICC}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("metadata.preserveICC", checked)
                   }
                   data-testid="switch-preserve-icc"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="watermark">Add Watermark</Label>
                 <Switch
                   id="watermark"
                   checked={config.metadata.addWatermark}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("metadata.addWatermark", checked)
                   }
                   data-testid="switch-watermark"
                 />
               </div>
-              
+
               {config.metadata.addWatermark && (
                 <Input
                   placeholder="Watermark text"
                   value={config.metadata.watermarkText || ""}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     updateConfig("metadata.watermarkText", e.target.value)
                   }
                   data-testid="input-watermark-text"
@@ -356,13 +369,13 @@ export function QualitySettings({
               <Switch
                 id="resize"
                 checked={config.dimensions.resize}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   updateConfig("dimensions.resize", checked)
                 }
                 data-testid="switch-resize"
               />
             </div>
-            
+
             {config.dimensions.resize && (
               <>
                 <div className="grid grid-cols-2 gap-4">
@@ -372,57 +385,66 @@ export function QualitySettings({
                       id="width"
                       type="number"
                       value={config.dimensions.width || ""}
-                      onChange={(e) => 
-                        updateConfig("dimensions.width", parseInt(e.target.value))
+                      onChange={(e) =>
+                        updateConfig(
+                          "dimensions.width",
+                          parseInt(e.target.value),
+                        )
                       }
                       data-testid="input-width"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="height">Height (px)</Label>
                     <Input
                       id="height"
                       type="number"
                       value={config.dimensions.height || ""}
-                      onChange={(e) => 
-                        updateConfig("dimensions.height", parseInt(e.target.value))
+                      onChange={(e) =>
+                        updateConfig(
+                          "dimensions.height",
+                          parseInt(e.target.value),
+                        )
                       }
                       data-testid="input-height"
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="maintain-aspect">Maintain Aspect Ratio</Label>
+                    <Label htmlFor="maintain-aspect">
+                      Maintain Aspect Ratio
+                    </Label>
                     <Switch
                       id="maintain-aspect"
                       checked={config.dimensions.maintainAspect}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         updateConfig("dimensions.maintainAspect", checked)
                       }
                       data-testid="switch-aspect"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label htmlFor="upscale">Allow Upscaling</Label>
                     <Switch
                       id="upscale"
                       checked={config.dimensions.upscale}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         updateConfig("dimensions.upscale", checked)
                       }
                       data-testid="switch-upscale"
                     />
                   </div>
                 </div>
-                
+
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    Leave width or height empty to auto-calculate based on aspect ratio
+                    Leave width or height empty to auto-calculate based on
+                    aspect ratio
                   </AlertDescription>
                 </Alert>
               </>
@@ -442,13 +464,13 @@ export function QualitySettings({
                 <Switch
                   id="progressive"
                   checked={config.optimization.progressive}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("optimization.progressive", checked)
                   }
                   data-testid="switch-progressive"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="lossless">Lossless Compression</Label>
@@ -459,13 +481,13 @@ export function QualitySettings({
                 <Switch
                   id="lossless"
                   checked={config.optimization.lossless}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("optimization.lossless", checked)
                   }
                   data-testid="switch-lossless"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="chroma">Chroma Subsampling</Label>
@@ -476,13 +498,13 @@ export function QualitySettings({
                 <Switch
                   id="chroma"
                   checked={config.optimization.chromaSubsampling}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("optimization.chromaSubsampling", checked)
                   }
                   data-testid="switch-chroma"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="strip-alpha">Strip Alpha Channel</Label>
@@ -493,14 +515,14 @@ export function QualitySettings({
                 <Switch
                   id="strip-alpha"
                   checked={config.optimization.stripAlpha}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("optimization.stripAlpha", checked)
                   }
                   data-testid="switch-strip-alpha"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Compression Level</Label>
               <Select
@@ -529,19 +551,21 @@ export function QualitySettings({
                 <Switch
                   id="denoise"
                   checked={config.enhancement.denoise}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("enhancement.denoise", checked)
                   }
                   data-testid="switch-denoise"
                 />
               </div>
-              
+
               {config.enhancement.denoise && (
                 <div className="space-y-2">
-                  <Label>Denoise Level: {config.enhancement.denoiseLevel}%</Label>
+                  <Label>
+                    Denoise Level: {config.enhancement.denoiseLevel}%
+                  </Label>
                   <Slider
                     value={[config.enhancement.denoiseLevel]}
-                    onValueChange={([value]) => 
+                    onValueChange={([value]) =>
                       updateConfig("enhancement.denoiseLevel", value)
                     }
                     min={0}
@@ -551,25 +575,27 @@ export function QualitySettings({
                   />
                 </div>
               )}
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="sharpen">Sharpening</Label>
                 <Switch
                   id="sharpen"
                   checked={config.enhancement.sharpen}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("enhancement.sharpen", checked)
                   }
                   data-testid="switch-sharpen"
                 />
               </div>
-              
+
               {config.enhancement.sharpen && (
                 <div className="space-y-2">
-                  <Label>Sharpen Amount: {config.enhancement.sharpenAmount}%</Label>
+                  <Label>
+                    Sharpen Amount: {config.enhancement.sharpenAmount}%
+                  </Label>
                   <Slider
                     value={[config.enhancement.sharpenAmount]}
-                    onValueChange={([value]) => 
+                    onValueChange={([value]) =>
                       updateConfig("enhancement.sharpenAmount", value)
                     }
                     min={0}
@@ -579,44 +605,44 @@ export function QualitySettings({
                   />
                 </div>
               )}
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-color">Auto Color Correction</Label>
                 <Switch
                   id="auto-color"
                   checked={config.enhancement.autoColor}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("enhancement.autoColor", checked)
                   }
                   data-testid="switch-auto-color"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-contrast">Auto Contrast</Label>
                 <Switch
                   id="auto-contrast"
                   checked={config.enhancement.autoContrast}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("enhancement.autoContrast", checked)
                   }
                   data-testid="switch-auto-contrast"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-exposure">Auto Exposure</Label>
                 <Switch
                   id="auto-exposure"
                   checked={config.enhancement.autoExposure}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateConfig("enhancement.autoExposure", checked)
                   }
                   data-testid="switch-auto-exposure"
                 />
               </div>
             </div>
-            
+
             <Alert>
               <Sparkles className="h-4 w-4" />
               <AlertDescription>

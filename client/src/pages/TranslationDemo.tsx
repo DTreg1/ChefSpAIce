@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -10,7 +16,9 @@ import { TranslationQuality } from "@/components/translation-quality";
 import { Globe, Settings, FileText, MessageSquare } from "lucide-react";
 
 export default function TranslationDemo() {
-  const [demoContent, setDemoContent] = useState(`Welcome to our real-time translation system! This platform automatically translates content into multiple languages while preserving formatting and context. Our AI-powered translations ensure that the meaning and tone of your message remain intact across all languages.`);
+  const [demoContent, setDemoContent] = useState(
+    `Welcome to our real-time translation system! This platform automatically translates content into multiple languages while preserving formatting and context. Our AI-powered translations ensure that the meaning and tone of your message remain intact across all languages.`,
+  );
   const [contentId] = useState(`demo_${Date.now()}`);
 
   const recipeExample = `Classic Italian Pasta Carbonara
@@ -45,9 +53,10 @@ Chef's tip: The heat from the pasta cooks the eggs - never add eggs over direct 
           </div>
           <TranslationToggle />
         </div>
-        
+
         <p className="text-muted-foreground">
-          Experience context-aware translations that preserve formatting and meaning across multiple languages
+          Experience context-aware translations that preserve formatting and
+          meaning across multiple languages
         </p>
       </div>
 
