@@ -24,15 +24,23 @@ import {
   Check,
   Plus,
   X,
+  CookingPot,
+  Cake,
+  Wrench,
+  Plug,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { ApplianceLibrary, UserAppliance } from "@shared/schema";
 
 const CATEGORIES = [
-  { value: "cooking", label: "Cooking Appliances", icon: Home },
-  { value: "refrigeration", label: "Refrigeration", icon: Package2 },
-  { value: "prep", label: "Prep Equipment", icon: Utensils },
+  { value: "cooking", label: "Cooking", icon: Home },
+  { value: "cookware", label: "Cookware", icon: CookingPot },
+  { value: "bakeware", label: "Bakeware", icon: Cake },
+  { value: "utensil", label: "Utensils", icon: Utensils },
+  { value: "prep", label: "Prep Equipment", icon: Wrench },
   { value: "small", label: "Small Appliances", icon: ChefHat },
+  { value: "refrigeration", label: "Refrigeration", icon: Package2 },
+  { value: "appliance", label: "Other Appliances", icon: Plug },
 ];
 
 export default function Equipment() {
