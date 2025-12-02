@@ -595,38 +595,44 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/analytics-dashboard"}
-                  >
-                    <Link
-                      href="/analytics-dashboard"
-                      data-testid="link-analytics-dashboard"
-                      onClick={handleLinkClick}
-                    >
-                      <Activity className="w-4 h-4" />
-                      <span className="flex-1">Analytics</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/ab-testing"}
-                  >
-                    <Link
-                      href="/ab-testing"
-                      data-testid="link-ab-testing"
-                      onClick={handleLinkClick}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      <span className="flex-1">A/B Testing</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
                 {user?.isAdmin && (
                   <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/analytics-dashboard"}
+                      >
+                        <Link
+                          href="/analytics-dashboard"
+                          data-testid="link-analytics-dashboard"
+                          onClick={handleLinkClick}
+                        >
+                          <Activity className="w-4 h-4" />
+                          <span className="flex-1">Analytics</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            Admin
+                          </Badge>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/ab-testing"}
+                      >
+                        <Link
+                          href="/ab-testing"
+                          data-testid="link-ab-testing"
+                          onClick={handleLinkClick}
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                          <span className="flex-1">A/B Testing</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            Admin
+                          </Badge>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
