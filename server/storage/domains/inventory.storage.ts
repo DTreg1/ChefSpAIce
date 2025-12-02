@@ -420,7 +420,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     const context = createContext("createStorageLocation", undefined, "StorageLocation");
     context.additionalInfo = { userId, name: location.name };
     try {
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      const [user] = await db.select().from(users).where(eq(users.email, userId));
       if (!user) {
         throw new StorageNotFoundError(
           `User with ID ${userId} not found`,

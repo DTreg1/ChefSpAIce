@@ -133,7 +133,7 @@ export class TestContext {
     try {
       if (this.userIds.length > 0) {
         for (const id of this.userIds) {
-          await db.delete(users).where(eq(users.id, id)).catch(e => errors.push(e));
+          await db.delete(users).where(eq(users.email, id)).catch(e => errors.push(e));
         }
       }
     } catch (e) {

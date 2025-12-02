@@ -298,7 +298,7 @@ export const preferredUnitsSchema = z.enum(['imperial', 'metric']);
 export const insertUserSchema = createInsertSchema(users)
   .extend({
     // Add stricter validation for user fields
-    email: z.string().email().optional(),
+    email: z.string().email(),
     householdSize: z.number().min(1).max(20).default(2),
     cookingSkillLevel: cookingSkillLevelSchema.default('beginner'),
     preferredUnits: preferredUnitsSchema.default('imperial'),
