@@ -25,6 +25,31 @@ import {
   FileSearch,
   DollarSign,
   Image,
+  Pen,
+  FileText,
+  ScanLine,
+  Mic,
+  Sparkles,
+  Languages,
+  Camera,
+  ImagePlus,
+  Bell,
+  Package,
+  FileEdit,
+  AlertTriangle,
+  Smile,
+  Users,
+  TrendingUp,
+  PieChart,
+  Server,
+  Calendar,
+  Headphones,
+  Search,
+  Beaker,
+  Tag,
+  FormInput,
+  CheckCircle,
+  Video,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -342,6 +367,134 @@ export function AppSidebar() {
 
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              AI Tools
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/writing-assistant"}>
+                    <Link
+                      href="/writing-assistant"
+                      data-testid="link-writing-assistant"
+                      onClick={handleLinkClick}
+                    >
+                      <Pen className="w-4 h-4" />
+                      <span className="flex-1">Writing Assistant</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/summarization"}>
+                    <Link
+                      href="/summarization"
+                      data-testid="link-summarization"
+                      onClick={handleLinkClick}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="flex-1">Summarization</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/ocr"}>
+                    <Link
+                      href="/ocr"
+                      data-testid="link-ocr"
+                      onClick={handleLinkClick}
+                    >
+                      <ScanLine className="w-4 h-4" />
+                      <span className="flex-1">OCR</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/transcriptions"}>
+                    <Link
+                      href="/transcriptions"
+                      data-testid="link-transcriptions"
+                      onClick={handleLinkClick}
+                    >
+                      <Mic className="w-4 h-4" />
+                      <span className="flex-1">Transcriptions</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/recommendations-demo"}>
+                    <Link
+                      href="/recommendations-demo"
+                      data-testid="link-recommendations"
+                      onClick={handleLinkClick}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="flex-1">Recommendations</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/translation-demo"}>
+                    <Link
+                      href="/translation-demo"
+                      data-testid="link-translation"
+                      onClick={handleLinkClick}
+                    >
+                      <Languages className="w-4 h-4" />
+                      <span className="flex-1">Translation</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/excerpt-generator"}>
+                    <Link
+                      href="/excerpt-generator"
+                      data-testid="link-excerpt-generator"
+                      onClick={handleLinkClick}
+                    >
+                      <FileEdit className="w-4 h-4" />
+                      <span className="flex-1">Excerpt Generator</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Media
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/face-detection"}>
+                    <Link
+                      href="/face-detection"
+                      data-testid="link-face-detection"
+                      onClick={handleLinkClick}
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span className="flex-1">Face Detection</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/alt-text"}>
+                    <Link
+                      href="/alt-text"
+                      data-testid="link-alt-text"
+                      onClick={handleLinkClick}
+                    >
+                      <ImagePlus className="w-4 h-4" />
+                      <span className="flex-1">Alt Text Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Inventory
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -527,6 +680,42 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/notifications"}>
+                    <Link
+                      href="/notifications"
+                      data-testid="link-notifications"
+                      onClick={handleLinkClick}
+                    >
+                      <Bell className="w-4 h-4" />
+                      <span className="flex-1">Notifications</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/orders"}>
+                    <Link
+                      href="/orders"
+                      data-testid="link-orders"
+                      onClick={handleLinkClick}
+                    >
+                      <Package className="w-4 h-4" />
+                      <span className="flex-1">Orders</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/drafts"}>
+                    <Link
+                      href="/drafts"
+                      data-testid="link-drafts"
+                      onClick={handleLinkClick}
+                    >
+                      <FileEdit className="w-4 h-4" />
+                      <span className="flex-1">Drafts</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     isActive={location === "/feedback"}
@@ -568,82 +757,400 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {user?.isAdmin && (
-                  <>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/analytics-dashboard"}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {user?.isAdmin && (
+            <SidebarGroup className="mt-4">
+              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Admin
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/admin-dashboard"}
+                    >
+                      <Link
+                        href="/admin-dashboard"
+                        data-testid="link-admin-dashboard"
+                        onClick={handleLinkClick}
                       >
-                        <Link
-                          href="/analytics-dashboard"
-                          data-testid="link-analytics-dashboard"
-                          onClick={handleLinkClick}
-                        >
-                          <Activity className="w-4 h-4" />
-                          <span className="flex-1">Analytics</span>
-                          <Badge variant="secondary" className="ml-auto">
-                            Admin
-                          </Badge>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/ab-testing"}
+                        <Shield className="w-4 h-4" />
+                        <span className="flex-1">Admin Dashboard</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/analytics-dashboard"}
+                    >
+                      <Link
+                        href="/analytics-dashboard"
+                        data-testid="link-analytics-dashboard"
+                        onClick={handleLinkClick}
                       >
-                        <Link
-                          href="/ab-testing"
-                          data-testid="link-ab-testing"
-                          onClick={handleLinkClick}
-                        >
-                          <BarChart3 className="w-4 h-4" />
-                          <span className="flex-1">A/B Testing</span>
-                          <Badge variant="secondary" className="ml-auto">
-                            Admin
-                          </Badge>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/admin-dashboard"}
+                        <Activity className="w-4 h-4" />
+                        <span className="flex-1">Analytics</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/ab-testing"}
+                    >
+                      <Link
+                        href="/ab-testing"
+                        data-testid="link-ab-testing"
+                        onClick={handleLinkClick}
                       >
-                        <Link
-                          href="/admin-dashboard"
-                          data-testid="link-admin-dashboard"
-                          onClick={handleLinkClick}
-                        >
-                          <Shield className="w-4 h-4" />
-                          <span className="flex-1">Admin Dashboard</span>
-                          <Badge variant="default" className="ml-auto">
-                            Admin
-                          </Badge>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === "/fraud-dashboard"}
+                        <Beaker className="w-4 h-4" />
+                        <span className="flex-1">A/B Testing</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/fraud-dashboard"}
+                    >
+                      <Link
+                        href="/fraud-dashboard"
+                        data-testid="link-fraud-dashboard"
+                        onClick={handleLinkClick}
                       >
-                        <Link
-                          href="/fraud-dashboard"
-                          data-testid="link-fraud-dashboard"
-                          onClick={handleLinkClick}
-                        >
-                          <Shield className="w-4 h-4" />
-                          <span className="flex-1">Fraud Detection</span>
-                          <Badge variant="destructive" className="ml-auto">
-                            Security
-                          </Badge>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
+                        <AlertTriangle className="w-4 h-4" />
+                        <span className="flex-1">Fraud Detection</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/moderation"}
+                    >
+                      <Link
+                        href="/moderation"
+                        data-testid="link-moderation"
+                        onClick={handleLinkClick}
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span className="flex-1">Moderation</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/sentiment-dashboard"}
+                    >
+                      <Link
+                        href="/sentiment-dashboard"
+                        data-testid="link-sentiment-dashboard"
+                        onClick={handleLinkClick}
+                      >
+                        <Smile className="w-4 h-4" />
+                        <span className="flex-1">Sentiment</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/retention-dashboard"}
+                    >
+                      <Link
+                        href="/retention-dashboard"
+                        data-testid="link-retention-dashboard"
+                        onClick={handleLinkClick}
+                      >
+                        <Users className="w-4 h-4" />
+                        <span className="flex-1">Retention</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/trends-dashboard"}
+                    >
+                      <Link
+                        href="/trends-dashboard"
+                        data-testid="link-trends-dashboard"
+                        onClick={handleLinkClick}
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="flex-1">Trends</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/cohort-analysis"}
+                    >
+                      <Link
+                        href="/cohort-analysis"
+                        data-testid="link-cohort-analysis"
+                        onClick={handleLinkClick}
+                      >
+                        <PieChart className="w-4 h-4" />
+                        <span className="flex-1">Cohort Analysis</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/system-health"}
+                    >
+                      <Link
+                        href="/system-health"
+                        data-testid="link-system-health"
+                        onClick={handleLinkClick}
+                      >
+                        <Server className="w-4 h-4" />
+                        <span className="flex-1">System Health</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/scheduling"}
+                    >
+                      <Link
+                        href="/scheduling"
+                        data-testid="link-scheduling"
+                        onClick={handleLinkClick}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span className="flex-1">Scheduling</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/ticket-routing"}
+                    >
+                      <Link
+                        href="/ticket-routing"
+                        data-testid="link-ticket-routing"
+                        onClick={handleLinkClick}
+                      >
+                        <Headphones className="w-4 h-4" />
+                        <span className="flex-1">Ticket Routing</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/cooking-terms-admin"}
+                    >
+                      <Link
+                        href="/cooking-terms-admin"
+                        data-testid="link-cooking-terms-admin"
+                        onClick={handleLinkClick}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span className="flex-1">Cooking Terms</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/feedback-analytics"}
+                    >
+                      <Link
+                        href="/feedback-analytics"
+                        data-testid="link-feedback-analytics"
+                        onClick={handleLinkClick}
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        <span className="flex-1">Feedback Analytics</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/query-builder"}
+                    >
+                      <Link
+                        href="/query-builder"
+                        data-testid="link-query-builder"
+                        onClick={handleLinkClick}
+                      >
+                        <Search className="w-4 h-4" />
+                        <span className="flex-1">Query Builder</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/semantic-search"}
+                    >
+                      <Link
+                        href="/semantic-search"
+                        data-testid="link-semantic-search"
+                        onClick={handleLinkClick}
+                      >
+                        <Brain className="w-4 h-4" />
+                        <span className="flex-1">Semantic Search</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
+
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Demos
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/ai-features"}>
+                    <Link
+                      href="/ai-features"
+                      data-testid="link-ai-features"
+                      onClick={handleLinkClick}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="flex-1">AI Features</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/summarization-demo"}>
+                    <Link
+                      href="/summarization-demo"
+                      data-testid="link-summarization-demo"
+                      onClick={handleLinkClick}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="flex-1">Summarization Demo</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/tag-demo"}>
+                    <Link
+                      href="/tag-demo"
+                      data-testid="link-tag-demo"
+                      onClick={handleLinkClick}
+                    >
+                      <Tag className="w-4 h-4" />
+                      <span className="flex-1">Tag Demo</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/form-completion-demo"}>
+                    <Link
+                      href="/form-completion-demo"
+                      data-testid="link-form-completion-demo"
+                      onClick={handleLinkClick}
+                    >
+                      <FormInput className="w-4 h-4" />
+                      <span className="flex-1">Form Completion Demo</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/validation-demo"}>
+                    <Link
+                      href="/validation-demo"
+                      data-testid="link-validation-demo"
+                      onClick={handleLinkClick}
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="flex-1">Validation Demo</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/moderation-test"}>
+                    <Link
+                      href="/moderation-test"
+                      data-testid="link-moderation-test"
+                      onClick={handleLinkClick}
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span className="flex-1">Moderation Test</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/camera-test"}>
+                    <Link
+                      href="/camera-test"
+                      data-testid="link-camera-test"
+                      onClick={handleLinkClick}
+                    >
+                      <Video className="w-4 h-4" />
+                      <span className="flex-1">Camera Test</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
