@@ -1,3 +1,4 @@
 export { ChatInput } from "./chat-input";
-export { ChatMessage } from "./chat-message";
 export { ChatWidget } from "./chat-widget";
+export { AIChatAssistant as ChatMessage } from "./chat-assistant";
+//export { ChatMessage } from "./chat-message";
