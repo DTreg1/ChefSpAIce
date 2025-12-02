@@ -354,7 +354,7 @@ router.get(
       res.json({ duplicates });
     } catch (error) {
       console.error("Error fetching duplicates:", error);
-      throw new ApiError("Failed to fetch duplicates", 500, { cause: error });
+      throw new ApiError("Failed to fetch duplicates", 500);
     }
   })
 );
@@ -379,7 +379,7 @@ router.post(
       });
     } catch (error) {
       console.error("Error scanning for duplicates:", error);
-      throw new ApiError("Failed to scan for duplicates", 500, { cause: error });
+      throw new ApiError("Failed to scan for duplicates", 500);
     }
   })
 );
