@@ -56,7 +56,7 @@ export class UserAuthDomainStorage implements IUserStorage {
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.email, id));
+        .where(eq(users.id, id));
       return user;
     } catch (error) {
       console.error(`[${DOMAIN}] Error getting user by ID ${id}:`, error);
@@ -181,7 +181,7 @@ export class UserAuthDomainStorage implements IUserStorage {
           ...safeUpdates,
           updatedAt: new Date(),
         })
-        .where(eq(users.email, id))
+        .where(eq(users.id, id))
         .returning();
       
       return updatedUser;
@@ -194,7 +194,7 @@ export class UserAuthDomainStorage implements IUserStorage {
   async deleteUser(id: string): Promise<void> {
     const context = createContext("deleteUser", id);
     try {
-      await db.delete(users).where(eq(users.email, id));
+      await db.delete(users).where(eq(users.id, id));
     } catch (error) {
       console.error(`[${DOMAIN}] Error deleting user ${id}:`, error);
       throw wrapDatabaseError(error, context);
@@ -427,10 +427,10 @@ export class UserAuthDomainStorage implements IUserStorage {
       if (!user) return undefined;
       
       return {
-        id: user.email,
+        id: user.id,
         provider: provider as AuthProviderInfo['provider'],
         providerId,
-        userId: user.email,
+        userId: user.id,
         displayName: user.firstName || user.email || '',
         email: user.email
       };
@@ -459,10 +459,10 @@ export class UserAuthDomainStorage implements IUserStorage {
       }
       
       return {
-        id: user.email,
+        id: user.id,
         provider: provider as AuthProviderInfo['provider'],
         providerId: user.primaryProviderId,
-        userId: user.email,
+        userId: user.id,
         displayName: user.firstName || user.email || '',
         email: user.email
       };
@@ -488,10 +488,10 @@ export class UserAuthDomainStorage implements IUserStorage {
         const updates: Partial<User> = {};
         (updates as Record<string, unknown>)[providerField] = provider.providerId;
         
-        await this.updateUser(user.email, updates);
+        await this.updateUser(user.id, updates);
         return { 
-          id: user.email,
-          userId: user.email,
+          id: user.id,
+          userId: user.id,
           provider: provider.provider,
           providerId: provider.providerId,
           displayName: provider.displayName,
@@ -509,8 +509,8 @@ export class UserAuthDomainStorage implements IUserStorage {
         
         const newUser = await this.createUser(userToCreate);
         return { 
-          id: newUser.email,
-          userId: newUser.email,
+          id: newUser.id,
+          userId: newUser.id,
           provider: provider.provider,
           providerId: provider.providerId,
           displayName: provider.displayName,
@@ -579,7 +579,7 @@ export class UserAuthDomainStorage implements IUserStorage {
       const [updated] = await db
         .update(users)
         .set({ isAdmin })
-        .where(eq(users.email, userId))
+        .where(eq(users.id, userId))
         .returning();
       return updated;
     } catch (error) {
