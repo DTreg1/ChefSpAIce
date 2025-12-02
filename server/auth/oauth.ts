@@ -63,8 +63,16 @@ async function findOrCreateUser(
   refreshToken?: string
 ): Promise<SessionUser> {
   const email = profile.emails?.[0]?.value || `${provider}_${profile.id}@oauth.local`;
-  const firstName = profile.name?.givenName || profile.displayName?.split(" ")[0] || "";
-  const lastName = profile.name?.familyName || profile.displayName?.split(" ").slice(1).join(" ") || "";
+  
+  // Extract name parts with sensible fallbacks for OAuth providers that don't provide names
+  // Apple, for example, only provides name on first authorization
+  const rawFirstName = profile.name?.givenName || profile.displayName?.split(" ")[0] || "";
+  const rawLastName = profile.name?.familyName || profile.displayName?.split(" ").slice(1).join(" ") || "";
+  
+  // Provide fallbacks if names are empty - derive from email or use placeholder
+  const emailUsername = email.split("@")[0] || "User";
+  const firstName = rawFirstName || emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
+  const lastName = rawLastName || "User";
   const profileImageUrl = profile.photos?.[0]?.value || "";
 
   // Check if auth provider already exists
@@ -717,11 +725,11 @@ export async function registerEmailUser(
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
   
-  // Create user
+  // Create user with fallbacks for required fields
   const newUser: UpsertUser = {
     email,
-    firstName,
-    lastName,
+    firstName: firstName || email.split("@")[0] || "User",
+    lastName: lastName || "User",
     primaryProvider: "email",
     primaryProviderId: email,
   };
