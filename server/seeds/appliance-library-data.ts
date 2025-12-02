@@ -1,0 +1,647 @@
+// Comprehensive library of appliances, cookware, bakeware, and utensils
+
+export type ApplianceLibraryItem = {
+  name: string;
+  category: 'appliance' | 'cookware' | 'bakeware' | 'utensil';
+  subcategory?: string;
+  description?: string;
+  capabilities?: string[];
+  sizeOrCapacity?: string;
+  material?: string;
+  isCommon: boolean;
+  searchTerms?: string[];
+};
+
+export const applianceLibraryData: ApplianceLibraryItem[] = [
+  // === APPLIANCES ===
+  {
+    name: "Oven",
+    category: "appliance",
+    subcategory: "major",
+    description: "Standard kitchen oven for baking and roasting",
+    capabilities: ["bake", "roast", "broil"],
+    isCommon: true,
+    searchTerms: ["stove oven", "range oven"]
+  },
+  {
+    name: "Stovetop",
+    category: "appliance",
+    subcategory: "major",
+    description: "Cooktop with burners for stovetop cooking",
+    capabilities: ["boil", "simmer", "sauté", "fry"],
+    isCommon: true,
+    searchTerms: ["cooktop", "range", "burners", "hob"]
+  },
+  {
+    name: "Microwave",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Microwave oven for reheating and quick cooking",
+    capabilities: ["reheat", "defrost", "steam"],
+    isCommon: true,
+    searchTerms: ["microwave oven"]
+  },
+  {
+    name: "Toaster",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric toaster for bread",
+    capabilities: ["toast", "warm"],
+    isCommon: true,
+    searchTerms: ["bread toaster", "pop-up toaster"]
+  },
+  {
+    name: "Toaster Oven",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Small countertop oven",
+    capabilities: ["toast", "bake", "broil", "reheat"],
+    isCommon: false,
+    searchTerms: ["convection oven", "countertop oven"]
+  },
+  {
+    name: "Air Fryer",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Convection cooking appliance",
+    capabilities: ["air fry", "bake", "roast", "reheat"],
+    isCommon: false,
+    searchTerms: ["airfryer"]
+  },
+  {
+    name: "Instant Pot",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Multi-function pressure cooker",
+    capabilities: ["pressure cook", "slow cook", "sauté", "steam", "rice"],
+    isCommon: false,
+    searchTerms: ["pressure cooker", "multi-cooker"]
+  },
+  {
+    name: "Slow Cooker",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric slow cooking pot",
+    capabilities: ["slow cook", "keep warm"],
+    isCommon: false,
+    searchTerms: ["crock pot", "crockpot"]
+  },
+  {
+    name: "Rice Cooker",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Automatic rice cooking appliance",
+    capabilities: ["cook rice", "steam", "keep warm"],
+    isCommon: false,
+    searchTerms: ["rice maker"]
+  },
+  {
+    name: "Stand Mixer",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Heavy-duty electric mixer with bowl",
+    capabilities: ["mix", "knead", "whip", "beat"],
+    isCommon: false,
+    searchTerms: ["kitchen aid", "kitchenaid", "mixer"]
+  },
+  {
+    name: "Hand Mixer",
+    category: "appliance",
+    subcategory: "handheld",
+    description: "Portable electric mixer",
+    capabilities: ["mix", "whip", "beat"],
+    isCommon: true,
+    searchTerms: ["electric mixer", "beater"]
+  },
+  {
+    name: "Blender",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric blending appliance",
+    capabilities: ["blend", "puree", "crush ice"],
+    isCommon: true,
+    searchTerms: ["mixer", "vitamix", "ninja"]
+  },
+  {
+    name: "Immersion Blender",
+    category: "appliance",
+    subcategory: "handheld",
+    description: "Handheld stick blender",
+    capabilities: ["blend", "puree"],
+    isCommon: false,
+    searchTerms: ["stick blender", "hand blender"]
+  },
+  {
+    name: "Food Processor",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Multi-purpose food preparation appliance",
+    capabilities: ["chop", "slice", "shred", "puree", "knead"],
+    isCommon: false,
+    searchTerms: ["cuisinart", "processor"]
+  },
+  {
+    name: "Coffee Maker",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Drip coffee brewing machine",
+    capabilities: ["brew coffee"],
+    isCommon: true,
+    searchTerms: ["coffee machine", "drip coffee"]
+  },
+  {
+    name: "Electric Kettle",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric water boiler",
+    capabilities: ["boil water"],
+    isCommon: false,
+    searchTerms: ["water kettle", "tea kettle"]
+  },
+  {
+    name: "Waffle Maker",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric waffle iron",
+    capabilities: ["make waffles"],
+    isCommon: false,
+    searchTerms: ["waffle iron"]
+  },
+  {
+    name: "Grill",
+    category: "appliance",
+    subcategory: "outdoor",
+    description: "Outdoor cooking grill",
+    capabilities: ["grill", "barbecue"],
+    isCommon: false,
+    searchTerms: ["barbecue", "bbq", "gas grill", "charcoal grill"]
+  },
+  {
+    name: "Indoor Grill",
+    category: "appliance",
+    subcategory: "countertop",
+    description: "Electric indoor grilling appliance",
+    capabilities: ["grill", "sear"],
+    isCommon: false,
+    searchTerms: ["george foreman", "panini press", "electric grill"]
+  },
+
+  // === COOKWARE ===
+  {
+    name: "Frying Pan",
+    category: "cookware",
+    subcategory: "pans",
+    description: "Shallow pan for frying",
+    sizeOrCapacity: "8-12 inch",
+    material: "various",
+    isCommon: true,
+    searchTerms: ["skillet", "fry pan", "saute pan"]
+  },
+  {
+    name: "Saucepan",
+    category: "cookware",
+    subcategory: "pots",
+    description: "Deep pan with lid for sauces and liquids",
+    sizeOrCapacity: "1-4 qt",
+    material: "various",
+    isCommon: true,
+    searchTerms: ["sauce pot", "small pot"]
+  },
+  {
+    name: "Stock Pot",
+    category: "cookware",
+    subcategory: "pots",
+    description: "Large pot for soups and stocks",
+    sizeOrCapacity: "6-12 qt",
+    material: "various",
+    isCommon: true,
+    searchTerms: ["soup pot", "large pot"]
+  },
+  {
+    name: "Dutch Oven",
+    category: "cookware",
+    subcategory: "pots",
+    description: "Heavy pot with lid for braising",
+    sizeOrCapacity: "4-7 qt",
+    material: "cast iron or enameled",
+    isCommon: false,
+    searchTerms: ["braiser", "casserole"]
+  },
+  {
+    name: "Cast Iron Skillet",
+    category: "cookware",
+    subcategory: "pans",
+    description: "Heavy iron pan for high heat cooking",
+    sizeOrCapacity: "10-12 inch",
+    material: "cast iron",
+    isCommon: false,
+    searchTerms: ["cast iron pan"]
+  },
+  {
+    name: "Wok",
+    category: "cookware",
+    subcategory: "pans",
+    description: "Round-bottomed pan for stir-frying",
+    sizeOrCapacity: "12-14 inch",
+    material: "carbon steel or cast iron",
+    isCommon: false,
+    searchTerms: ["stir fry pan"]
+  },
+  {
+    name: "Grill Pan",
+    category: "cookware",
+    subcategory: "pans",
+    description: "Ridged pan for indoor grilling",
+    sizeOrCapacity: "10-12 inch",
+    material: "cast iron or non-stick",
+    isCommon: false,
+    searchTerms: ["griddle pan"]
+  },
+  {
+    name: "Steamer Basket",
+    category: "cookware",
+    subcategory: "steamers",
+    description: "Insert or basket for steaming",
+    isCommon: false,
+    searchTerms: ["steam basket", "bamboo steamer"]
+  },
+  {
+    name: "Double Boiler",
+    category: "cookware",
+    subcategory: "specialty",
+    description: "Two-part pot for gentle heating",
+    isCommon: false,
+    searchTerms: ["bain marie"]
+  },
+
+  // === BAKEWARE ===
+  {
+    name: "Baking Sheet",
+    category: "bakeware",
+    subcategory: "sheets",
+    description: "Flat metal sheet for baking",
+    sizeOrCapacity: "half or full sheet",
+    material: "aluminum or steel",
+    isCommon: true,
+    searchTerms: ["cookie sheet", "sheet pan"]
+  },
+  {
+    name: "Cake Pan",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Round or square pan for cakes",
+    sizeOrCapacity: "8-9 inch",
+    material: "aluminum or non-stick",
+    isCommon: true,
+    searchTerms: ["round pan", "square pan"]
+  },
+  {
+    name: "Loaf Pan",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Rectangular pan for bread and loaves",
+    sizeOrCapacity: "9x5 inch",
+    material: "aluminum or glass",
+    isCommon: true,
+    searchTerms: ["bread pan"]
+  },
+  {
+    name: "Muffin Tin",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Pan with cups for muffins/cupcakes",
+    sizeOrCapacity: "12 cups",
+    material: "aluminum or non-stick",
+    isCommon: true,
+    searchTerms: ["cupcake pan", "muffin pan"]
+  },
+  {
+    name: "Pie Pan",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Shallow round pan for pies",
+    sizeOrCapacity: "9 inch",
+    material: "glass or ceramic",
+    isCommon: false,
+    searchTerms: ["pie plate", "pie dish"]
+  },
+  {
+    name: "Casserole Dish",
+    category: "bakeware",
+    subcategory: "dishes",
+    description: "Deep baking dish with lid",
+    sizeOrCapacity: "9x13 inch",
+    material: "glass or ceramic",
+    isCommon: true,
+    searchTerms: ["baking dish", "lasagna pan"]
+  },
+  {
+    name: "Springform Pan",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Pan with removable sides",
+    sizeOrCapacity: "9 inch",
+    material: "aluminum",
+    isCommon: false,
+    searchTerms: ["cheesecake pan"]
+  },
+  {
+    name: "Bundt Pan",
+    category: "bakeware",
+    subcategory: "pans",
+    description: "Decorative ring-shaped cake pan",
+    sizeOrCapacity: "10-12 cup",
+    material: "aluminum or non-stick",
+    isCommon: false,
+    searchTerms: ["ring pan", "tube pan"]
+  },
+  {
+    name: "Cooling Rack",
+    category: "bakeware",
+    subcategory: "accessories",
+    description: "Wire rack for cooling baked goods",
+    isCommon: false,
+    searchTerms: ["wire rack"]
+  },
+  {
+    name: "Pizza Stone",
+    category: "bakeware",
+    subcategory: "specialty",
+    description: "Stone or ceramic for pizza baking",
+    material: "stone or ceramic",
+    isCommon: false,
+    searchTerms: ["baking stone", "pizza steel"]
+  },
+  {
+    name: "Ramekins",
+    category: "bakeware",
+    subcategory: "dishes",
+    description: "Small individual baking dishes",
+    sizeOrCapacity: "4-6 oz",
+    material: "ceramic",
+    isCommon: false,
+    searchTerms: ["souffle cups"]
+  },
+
+  // === ESSENTIAL UTENSILS ===
+  {
+    name: "Chef's Knife",
+    category: "utensil",
+    subcategory: "knives",
+    description: "Large multipurpose kitchen knife",
+    sizeOrCapacity: "8-10 inch",
+    isCommon: true,
+    searchTerms: ["kitchen knife", "cook's knife"]
+  },
+  {
+    name: "Paring Knife",
+    category: "utensil",
+    subcategory: "knives",
+    description: "Small knife for detail work",
+    sizeOrCapacity: "3-4 inch",
+    isCommon: true,
+    searchTerms: ["small knife"]
+  },
+  {
+    name: "Cutting Board",
+    category: "utensil",
+    subcategory: "prep",
+    description: "Surface for cutting and chopping",
+    material: "wood or plastic",
+    isCommon: true,
+    searchTerms: ["chopping board"]
+  },
+  {
+    name: "Mixing Bowls",
+    category: "utensil",
+    subcategory: "bowls",
+    description: "Set of bowls for mixing ingredients",
+    material: "stainless steel or glass",
+    isCommon: true,
+    searchTerms: ["prep bowls"]
+  },
+  {
+    name: "Measuring Cups",
+    category: "utensil",
+    subcategory: "measuring",
+    description: "Cups for measuring dry ingredients",
+    isCommon: true,
+    searchTerms: ["dry measuring cups"]
+  },
+  {
+    name: "Measuring Spoons",
+    category: "utensil",
+    subcategory: "measuring",
+    description: "Spoons for measuring small amounts",
+    isCommon: true,
+    searchTerms: ["measuring set"]
+  },
+  {
+    name: "Liquid Measuring Cup",
+    category: "utensil",
+    subcategory: "measuring",
+    description: "Cup with spout for liquids",
+    sizeOrCapacity: "1-4 cups",
+    material: "glass or plastic",
+    isCommon: true,
+    searchTerms: ["pyrex cup"]
+  },
+  {
+    name: "Wooden Spoon",
+    category: "utensil",
+    subcategory: "spoons",
+    description: "Spoon for stirring and mixing",
+    material: "wood",
+    isCommon: true,
+    searchTerms: ["mixing spoon"]
+  },
+  {
+    name: "Spatula",
+    category: "utensil",
+    subcategory: "spatulas",
+    description: "Tool for flipping and turning",
+    material: "silicone or metal",
+    isCommon: true,
+    searchTerms: ["turner", "flipper"]
+  },
+  {
+    name: "Rubber Spatula",
+    category: "utensil",
+    subcategory: "spatulas",
+    description: "Flexible scraper for mixing",
+    material: "silicone",
+    isCommon: true,
+    searchTerms: ["scraper", "silicone spatula"]
+  },
+  {
+    name: "Whisk",
+    category: "utensil",
+    subcategory: "whisks",
+    description: "Wire tool for whipping and mixing",
+    isCommon: true,
+    searchTerms: ["wire whisk", "balloon whisk"]
+  },
+  {
+    name: "Tongs",
+    category: "utensil",
+    subcategory: "grippers",
+    description: "Tool for gripping and turning food",
+    material: "stainless steel or silicone",
+    isCommon: true,
+    searchTerms: ["kitchen tongs"]
+  },
+  {
+    name: "Ladle",
+    category: "utensil",
+    subcategory: "spoons",
+    description: "Large spoon for serving liquids",
+    isCommon: true,
+    searchTerms: ["soup ladle"]
+  },
+  {
+    name: "Can Opener",
+    category: "utensil",
+    subcategory: "openers",
+    description: "Tool for opening cans",
+    isCommon: true,
+    searchTerms: ["tin opener"]
+  },
+  {
+    name: "Vegetable Peeler",
+    category: "utensil",
+    subcategory: "peelers",
+    description: "Tool for peeling vegetables",
+    isCommon: true,
+    searchTerms: ["potato peeler", "peeler"]
+  },
+  {
+    name: "Grater",
+    category: "utensil",
+    subcategory: "graters",
+    description: "Tool for grating cheese and vegetables",
+    isCommon: true,
+    searchTerms: ["box grater", "cheese grater"]
+  },
+  {
+    name: "Colander",
+    category: "utensil",
+    subcategory: "strainers",
+    description: "Bowl with holes for draining",
+    isCommon: true,
+    searchTerms: ["strainer", "pasta strainer"]
+  },
+  {
+    name: "Fine Mesh Strainer",
+    category: "utensil",
+    subcategory: "strainers",
+    description: "Fine strainer for sifting",
+    isCommon: false,
+    searchTerms: ["sieve", "sifter"]
+  },
+  {
+    name: "Rolling Pin",
+    category: "utensil",
+    subcategory: "baking tools",
+    description: "Tool for rolling dough",
+    material: "wood or marble",
+    isCommon: false,
+    searchTerms: ["dough roller"]
+  },
+  {
+    name: "Pastry Brush",
+    category: "utensil",
+    subcategory: "brushes",
+    description: "Brush for applying glazes",
+    isCommon: false,
+    searchTerms: ["basting brush"]
+  },
+  {
+    name: "Kitchen Shears",
+    category: "utensil",
+    subcategory: "scissors",
+    description: "Scissors for kitchen use",
+    isCommon: false,
+    searchTerms: ["kitchen scissors"]
+  },
+  {
+    name: "Meat Thermometer",
+    category: "utensil",
+    subcategory: "thermometers",
+    description: "Thermometer for checking meat temperature",
+    isCommon: false,
+    searchTerms: ["instant-read thermometer", "probe thermometer"]
+  },
+  {
+    name: "Kitchen Scale",
+    category: "utensil",
+    subcategory: "measuring",
+    description: "Scale for weighing ingredients",
+    isCommon: false,
+    searchTerms: ["food scale", "digital scale"]
+  },
+  {
+    name: "Mandoline",
+    category: "utensil",
+    subcategory: "slicers",
+    description: "Tool for uniform slicing",
+    isCommon: false,
+    searchTerms: ["mandolin slicer"]
+  },
+  {
+    name: "Mortar and Pestle",
+    category: "utensil",
+    subcategory: "grinders",
+    description: "Tool for grinding spices",
+    material: "stone or marble",
+    isCommon: false,
+    searchTerms: ["spice grinder"]
+  },
+  {
+    name: "Potato Masher",
+    category: "utensil",
+    subcategory: "mashers",
+    description: "Tool for mashing potatoes",
+    isCommon: false,
+    searchTerms: ["masher"]
+  },
+  {
+    name: "Garlic Press",
+    category: "utensil",
+    subcategory: "presses",
+    description: "Tool for crushing garlic",
+    isCommon: false,
+    searchTerms: ["garlic crusher"]
+  },
+  {
+    name: "Zester",
+    category: "utensil",
+    subcategory: "graters",
+    description: "Tool for zesting citrus",
+    isCommon: false,
+    searchTerms: ["microplane", "citrus zester"]
+  },
+  {
+    name: "Pizza Cutter",
+    category: "utensil",
+    subcategory: "cutters",
+    description: "Wheel for cutting pizza",
+    isCommon: false,
+    searchTerms: ["pizza wheel"]
+  },
+  {
+    name: "Ice Cream Scoop",
+    category: "utensil",
+    subcategory: "scoops",
+    description: "Scoop for serving ice cream",
+    isCommon: false,
+    searchTerms: ["cookie scoop"]
+  },
+  {
+    name: "Baster",
+    category: "utensil",
+    subcategory: "basters",
+    description: "Tool for basting meats",
+    isCommon: false,
+    searchTerms: ["turkey baster"]
+  }
+];
