@@ -349,21 +349,6 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={location === "/appliances"}
-                  >
-                    <Link
-                      href="/appliances"
-                      data-testid="link-appliances"
-                      onClick={handleLinkClick}
-                    >
-                      <UtensilsCrossed className="w-4 h-4" />
-                      <span className="flex-1">My Appliances</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
                     isActive={location === "/equipment"}
                   >
                     <Link
