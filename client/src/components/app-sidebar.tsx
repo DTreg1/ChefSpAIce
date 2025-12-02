@@ -357,7 +357,7 @@ export function AppSidebar() {
                       onClick={handleLinkClick}
                     >
                       <ChefHat className="w-4 h-4" />
-                      <span className="flex-1">Kitchen Equipment</span>
+                      <span className="flex-1">Kitchen Appliances</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
