@@ -186,6 +186,53 @@ export function setupApiVersionRedirects(app: Application) {
     },
   );
 
+  // === Kitchen Equipment Redirects ===
+
+  // Appliance library - handles /api/appliance-library
+  app.use(
+    "/api/appliance-library",
+    (req: Request, res: Response, next: NextFunction) => {
+      if (req.accepts(["json", "html"]) === "json" || req.xhr) {
+        const newUrl = `/api/v1/appliances/appliance-library${req.url === "/" ? "" : req.url}`;
+        console.log(
+          `[REDIRECT] ${req.method} /api/appliance-library${req.url} → ${newUrl}`,
+        );
+        return res.redirect(301, newUrl);
+      }
+      next();
+    },
+  );
+
+  // User appliances - handles /api/user-appliances
+  app.use(
+    "/api/user-appliances",
+    (req: Request, res: Response, next: NextFunction) => {
+      if (req.accepts(["json", "html"]) === "json" || req.xhr) {
+        const newUrl = `/api/v1/appliances/user-appliances${req.url === "/" ? "" : req.url}`;
+        console.log(
+          `[REDIRECT] ${req.method} /api/user-appliances${req.url} → ${newUrl}`,
+        );
+        return res.redirect(301, newUrl);
+      }
+      next();
+    },
+  );
+
+  // Appliances - handles /api/appliances
+  app.use(
+    "/api/appliances",
+    (req: Request, res: Response, next: NextFunction) => {
+      if (req.accepts(["json", "html"]) === "json" || req.xhr) {
+        const newUrl = `/api/v1/appliances${req.url === "/" ? "" : req.url}`;
+        console.log(
+          `[REDIRECT] ${req.method} /api/appliances${req.url} → ${newUrl}`,
+        );
+        return res.redirect(301, newUrl);
+      }
+      next();
+    },
+  );
+
   // === Special Endpoints Redirects ===
 
   // Health check

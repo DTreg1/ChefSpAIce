@@ -341,8 +341,8 @@ export const cookingTerms = pgTable(
 /**
  * Appliance Library Table
  *
- * Master catalog of known kitchen appliances.
- * Categories: 'cooking', 'refrigeration', 'prep', 'small'
+ * Master catalog of known kitchen appliances and equipment.
+ * Categories: 'cooking', 'cookware', 'bakeware', 'utensil', 'prep', 'small', 'refrigeration', 'appliance'
  */
 export const applianceLibrary = pgTable(
   "appliance_library",
@@ -351,7 +351,7 @@ export const applianceLibrary = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     name: text("name").notNull(),
-    category: text("category").notNull(), // 'cooking', 'refrigeration', 'prep', 'small'
+    category: text("category").notNull(), // 'cooking', 'cookware', 'bakeware', 'utensil', 'prep', 'small', 'refrigeration', 'appliance'
     description: text("description"),
     imageUrl: text("image_url"),
     defaultSettings: jsonb("default_settings").$type<Record<string, unknown>>(),
@@ -366,7 +366,7 @@ export const applianceLibrary = pgTable(
 /**
  * User Appliances Table
  *
- * Kitchen appliances owned by each user.
+ * Kitchen appliances and equipment owned by each user.
  * Can link to appliance_library or be custom (customName).
  */
 export const userAppliances = pgTable(
@@ -382,7 +382,7 @@ export const userAppliances = pgTable(
       onDelete: "set null",
     }), // nullable for custom appliances
     customName: text("custom_name"), // for custom appliances not in library
-    category: text("category").notNull(), // 'cooking', 'refrigeration', 'prep', 'small'
+    category: text("category").notNull(), // 'cooking', 'cookware', 'bakeware', 'utensil', 'prep', 'small', 'refrigeration', 'appliance'
     brand: text("brand"),
     model: text("model"),
     settings: jsonb("settings").$type<Record<string, unknown>>(),
@@ -499,9 +499,13 @@ export type ShoppingItem = typeof userShopping.$inferSelect;
 
 export const applianceCategorySchema = z.enum([
   "cooking",
-  "refrigeration",
+  "cookware",
+  "bakeware",
+  "utensil",
   "prep",
   "small",
+  "refrigeration",
+  "appliance",
 ]);
 
 export const insertUserApplianceSchema = createInsertSchema(userAppliances, {

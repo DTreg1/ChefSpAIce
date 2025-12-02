@@ -327,9 +327,13 @@ router.post(
           applianceId: validation.data.applianceLibraryId,
           category: libraryItem.category as
             | "cooking"
-            | "refrigeration"
+            | "cookware"
+            | "bakeware"
+            | "utensil"
             | "prep"
-            | "small",
+            | "small"
+            | "refrigeration"
+            | "appliance",
           customName: validation.data.nickname,
           notes: validation.data.notes,
         },
@@ -443,9 +447,13 @@ router.post(
                 applianceId: applianceLibraryId,
                 category: libraryItem.category as
                   | "cooking"
-                  | "refrigeration"
+                  | "cookware"
+                  | "bakeware"
+                  | "utensil"
                   | "prep"
-                  | "small",
+                  | "small"
+                  | "refrigeration"
+                  | "appliance",
               });
               results.added.push(added);
             }
