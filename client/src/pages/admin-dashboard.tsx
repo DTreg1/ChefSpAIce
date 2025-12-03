@@ -45,7 +45,7 @@ export default function AdminDashboard() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-bold flex items-center gap-3" data-testid="text-admin-title">
               <Shield className="h-8 w-8" />
               Admin Dashboard
             </h1>
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
               System monitoring and administration tools
             </p>
           </div>
-          <Badge variant="default" className="px-3 py-1">
+          <Badge variant="default" className="px-3 py-1" data-testid="badge-admin-access">
             Admin Access
           </Badge>
         </div>
@@ -61,27 +61,27 @@ export default function AdminDashboard() {
 
       <Tabs defaultValue="activity" className="space-y-6">
         <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="activity" className="flex items-center gap-2">
+          <TabsTrigger value="activity" className="flex items-center gap-2" data-testid="tab-activity">
             <Activity className="h-4 w-4" />
             Activity
           </TabsTrigger>
-          <TabsTrigger value="moderation" className="flex items-center gap-2">
+          <TabsTrigger value="moderation" className="flex items-center gap-2" data-testid="tab-moderation">
             <MessageSquareWarning className="h-4 w-4" />
             Moderation
           </TabsTrigger>
-          <TabsTrigger value="duplicates" className="flex items-center gap-2">
+          <TabsTrigger value="duplicates" className="flex items-center gap-2" data-testid="tab-duplicates">
             <Copy className="h-4 w-4" />
             Duplicates
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
             <Users className="h-4 w-4" />
             Users
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
             <BarChart3 className="h-4 w-4" />
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className="flex items-center gap-2" data-testid="tab-settings">
             <Settings className="h-4 w-4" />
             Settings
           </TabsTrigger>
