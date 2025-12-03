@@ -326,6 +326,9 @@ export function setupRouters(app: Application): void {
   app.use("/api/fdc", inventoryRouter);
   app.use("/api/activity-logs", activityLogsRouter);
 
+  // A/B Testing (legacy path - frontend uses /api/ab)
+  app.use("/api/ab", abTestingRouter);
+
   // Also mount at versioned path
   app.use(`${API_PREFIX}/ml`, mlRouter);
 

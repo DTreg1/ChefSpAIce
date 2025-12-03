@@ -294,6 +294,8 @@ export const insertAbTestSchema = createInsertSchema(abTests).extend({
   targetSampleSize: z.number().positive().optional(),
   currentSampleSize: z.number().nonnegative().default(0),
   configuration: z.custom<TestConfiguration>(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
 });
 
 export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
