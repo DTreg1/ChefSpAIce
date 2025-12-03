@@ -155,7 +155,11 @@ export function InsightDigest({ insights, date }: InsightDigestProps) {
                           insight.recommendations.length > 0 && (
                             <div className="mt-1">
                               <span className="text-xs text-muted-foreground">
-                                💡 {insight.recommendations[0]}
+                                💡 {typeof insight.recommendations[0] === 'string' 
+                                  ? insight.recommendations[0] 
+                                  : typeof insight.recommendations[0] === 'object' && insight.recommendations[0] !== null
+                                    ? (insight.recommendations[0] as { action?: string; reason?: string }).action || JSON.stringify(insight.recommendations[0])
+                                    : String(insight.recommendations[0])}
                               </span>
                             </div>
                           )}

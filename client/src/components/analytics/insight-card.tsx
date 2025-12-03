@@ -242,19 +242,26 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                   <h4 className="text-sm font-medium">Recommendations</h4>
                   <ul className="space-y-1">
                     {insight.recommendations.map(
-                      (recommendation: string, idx: number) => (
-                        <li
-                          key={idx}
-                          className="text-sm text-muted-foreground flex items-start gap-2"
-                        >
-                          <span className="text-primary mt-0.5">•</span>
-                          <span
-                            data-testid={`text-recommendation-${insight.id}-${idx}`}
+                      (recommendation: string | { action?: string; reason?: string }, idx: number) => {
+                        const displayText = typeof recommendation === 'string'
+                          ? recommendation
+                          : typeof recommendation === 'object' && recommendation !== null
+                            ? recommendation.action || JSON.stringify(recommendation)
+                            : String(recommendation);
+                        return (
+                          <li
+                            key={idx}
+                            className="text-sm text-muted-foreground flex items-start gap-2"
                           >
-                            {recommendation}
-                          </span>
-                        </li>
-                      ),
+                            <span className="text-primary mt-0.5">•</span>
+                            <span
+                              data-testid={`text-recommendation-${insight.id}-${idx}`}
+                            >
+                              {displayText}
+                            </span>
+                          </li>
+                        );
+                      },
                     )}
                   </ul>
                 </div>
