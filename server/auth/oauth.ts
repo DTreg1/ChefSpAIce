@@ -769,6 +769,13 @@ export async function configureReplitOIDCStrategy(hostname: string) {
               tokens.access_token,
               tokens.refresh_token,
             );
+
+            // Honor isAdmin claim from OIDC (used by Playwright test agent)
+            // This allows the test framework to set admin status via claims
+            if (claims.isAdmin === true) {
+              await storage.updateUserAdminStatus(user.id, true);
+            }
+
             verified(null, user);
           } catch (error) {
             console.error("[Replit OAuth] Error in verify callback:", error);
