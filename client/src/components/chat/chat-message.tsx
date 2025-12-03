@@ -9,6 +9,10 @@ interface ChatMessageProps {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp?: string;
+  children?: React.ReactNode;
+  userProfileImageUrl?: string;
+  userInitials?: string;
+  autoPlayVoice?: boolean;
 }
 
 export function ChatMessage({
