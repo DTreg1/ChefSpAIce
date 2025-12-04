@@ -329,6 +329,9 @@ export function setupRouters(app: Application): void {
   // A/B Testing (legacy path - frontend uses /api/ab)
   app.use("/api/ab", abTestingRouter);
 
+  // Fraud detection (legacy path - frontend uses /api/fraud)
+  app.use("/api/fraud", fraudRouter);
+
   // Also mount at versioned path
   app.use(`${API_PREFIX}/ml`, mlRouter);
 
