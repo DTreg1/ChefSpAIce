@@ -147,12 +147,12 @@ router.post(
         .json({ error: "At least two cohort IDs are required" });
     }
 
-    const comparison = await storage.admin.experiments.compareCohorts(
+    const result = await storage.admin.experiments.compareCohorts(
       cohortIds,
       metrics,
     );
 
-    res.json({ success: true, comparison });
+    res.json({ success: true, comparison: result.comparison });
   }),
 );
 
