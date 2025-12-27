@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { StyleSheet, View, useColorScheme } from "react-native";
+import { StyleSheet, View, useColorScheme, Platform } from "react-native";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -27,6 +27,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
+import LandingScreen from "@/screens/LandingScreen";
 
 const BASE_COLORS = {
   light: "#f0f2f5",
@@ -54,8 +55,10 @@ function AppContent() {
 
   const showChat = !isCheckingOnboarding && isOnboardingComplete;
 
-  // Keep a single NavigationContainer to preserve navigation state
-  // when showChat changes or app regains focus after WebBrowser
+  if (Platform.OS === "web") {
+    return <LandingScreen />;
+  }
+
   return (
     <FloatingChatProvider>
       <NavigationContainer theme={navigationTheme}>
