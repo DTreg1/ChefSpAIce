@@ -20,6 +20,7 @@ import voiceRouter from "./routers/platform/voice.router";
 import imageAnalysisRouter from "./routers/platform/ai/image-analysis.router";
 import ingredientsRouter from "./routers/user/ingredients.router";
 import authRouter from "./routers/auth.router";
+import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 
@@ -266,6 +267,7 @@ function mapFoodCategory(usdaCategory: string): string {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Mount routers
   app.use("/api/auth", authRouter);
+  app.use("/api/auth/social", socialAuthRouter);
   app.use("/api/suggestions", suggestionsRouter);
   app.use("/api/recipes", recipesRouter);
   app.use("/api/nutrition", nutritionRouter);

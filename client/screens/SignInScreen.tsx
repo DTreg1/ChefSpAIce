@@ -6,11 +6,10 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -23,13 +22,14 @@ export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { signIn, signUp, continueAsGuest } = useAuth();
+  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState<"apple" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -77,6 +77,40 @@ export default function SignInScreen() {
   const handleContinueAsGuest = () => {
     continueAsGuest();
     navigation.goBack();
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setIsSocialLoading("apple");
+    try {
+      const result = await signInWithApple();
+      if (result.success) {
+        navigation.goBack();
+      } else {
+        setError(result.error || "Apple sign in failed");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsSocialLoading(null);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setIsSocialLoading("google");
+    try {
+      const result = await signInWithGoogle();
+      if (result.success) {
+        navigation.goBack();
+      } else {
+        setError(result.error || "Google sign in failed");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsSocialLoading(null);
+    }
   };
 
   return (
@@ -220,6 +254,62 @@ export default function SignInScreen() {
       <View style={styles.dividerContainer}>
         <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
         <ThemedText type="caption" style={styles.dividerText}>
+          or continue with
+        </ThemedText>
+        <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+      </View>
+
+      <View style={styles.socialButtonsContainer}>
+        {Platform.OS === "ios" && isAppleAuthAvailable ? (
+          <Pressable
+            style={[
+              styles.socialButton,
+              { backgroundColor: theme.text },
+              (isLoading || isSocialLoading) && styles.submitButtonDisabled,
+            ]}
+            onPress={handleAppleSignIn}
+            disabled={isLoading || !!isSocialLoading}
+            data-testid="button-apple-signin"
+          >
+            {isSocialLoading === "apple" ? (
+              <ActivityIndicator color={theme.backgroundRoot} size="small" />
+            ) : (
+              <>
+                <FontAwesome name="apple" size={20} color={theme.backgroundRoot} />
+                <ThemedText type="body" style={[styles.socialButtonText, { color: theme.backgroundRoot }]}>
+                  Continue with Apple
+                </ThemedText>
+              </>
+            )}
+          </Pressable>
+        ) : null}
+
+        <Pressable
+          style={[
+            styles.socialButton,
+            { backgroundColor: "#4285F4" },
+            (isLoading || isSocialLoading) && styles.submitButtonDisabled,
+          ]}
+          onPress={handleGoogleSignIn}
+          disabled={isLoading || !!isSocialLoading}
+          data-testid="button-google-signin"
+        >
+          {isSocialLoading === "google" ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <>
+              <FontAwesome name="google" size={18} color="#FFFFFF" />
+              <ThemedText type="body" style={[styles.socialButtonText, { color: "#FFFFFF" }]}>
+                Continue with Google
+              </ThemedText>
+            </>
+          )}
+        </Pressable>
+      </View>
+
+      <View style={styles.dividerContainer}>
+        <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+        <ThemedText type="caption" style={styles.dividerText}>
           or
         </ThemedText>
         <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
@@ -335,6 +425,21 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: Spacing.md,
     opacity: 0.6,
+  },
+  socialButtonsContainer: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  socialButton: {
+    height: 48,
+    borderRadius: BorderRadius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  socialButtonText: {
+    fontWeight: "600",
   },
   guestCard: {
     flexDirection: "row",

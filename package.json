@@ -38,6 +38,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/react-test-renderer": "^19.1.0",
     "@types/supertest": "^6.0.3",
+    "apple-signin-auth": "^2.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.39.3",
