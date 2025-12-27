@@ -9,6 +9,7 @@ import {
   index,
   boolean,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -17,15 +18,30 @@ export const users = pgTable("users", {
   id: varchar("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password"),
-  displayName: text("display_name"),
-  email: text("email"),
-  emailVerified: boolean("email_verified").default(false),
-  avatarUrl: text("avatar_url"),
-  authProvider: text("auth_provider").default("password"),
+  email: varchar("email"),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  dietaryRestrictions: text("dietary_restrictions").array(),
+  allergens: text("allergens").array(),
+  favoriteCategories: text("favorite_categories").array(),
+  expirationAlertDays: integer("expiration_alert_days").notNull().default(3),
+  storageAreasEnabled: text("storage_areas_enabled").array(),
+  householdSize: integer("household_size").notNull().default(2),
+  cookingSkillLevel: text("cooking_skill_level").notNull().default("beginner"),
+  preferredUnits: text("preferred_units").notNull().default("imperial"),
+  foodsToAvoid: text("foods_to_avoid").array(),
+  hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(false),
+  notifyExpiringFood: boolean("notify_expiring_food").notNull().default(true),
+  notifyRecipeSuggestions: boolean("notify_recipe_suggestions").notNull().default(false),
+  notifyMealReminders: boolean("notify_meal_reminders").notNull().default(true),
+  notificationTime: text("notification_time").default("09:00"),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  primaryProvider: varchar("primary_provider"),
+  primaryProviderId: varchar("primary_provider_id"),
 });
 
 export const authProviders = pgTable(
@@ -44,7 +60,7 @@ export const authProviders = pgTable(
     refreshToken: text("refresh_token"),
     tokenExpiry: timestamp("token_expiry"),
     isPrimary: boolean("is_primary").default(false),
-    metadata: text("metadata"),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -126,9 +142,10 @@ export const cookingTerms = pgTable(
   ],
 );
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
@@ -201,7 +218,6 @@ export const insertSessionSchema = createInsertSchema(userSessions).omit({
 });
 
 export const insertSyncDataSchema = createInsertSchema(userSyncData).omit({
-  id: true,
   lastSyncedAt: true,
   updatedAt: true,
 });
@@ -356,7 +372,6 @@ export const nutritionCorrections = pgTable(
 export const insertNutritionCorrectionSchema = createInsertSchema(
   nutritionCorrections,
 ).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
   reviewedAt: true,
