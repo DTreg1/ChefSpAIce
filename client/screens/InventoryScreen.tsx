@@ -469,6 +469,8 @@ export default function InventoryScreen() {
     };
 
     const panGesture = Gesture.Pan()
+      .activeOffsetX([-20, 20])
+      .failOffsetY([-15, 15])
       .onStart(() => {
         startX.value = translateX.value;
       })
