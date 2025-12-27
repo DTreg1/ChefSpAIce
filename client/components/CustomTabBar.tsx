@@ -23,6 +23,7 @@ import Animated, {
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
 import { AddMenu } from "./AddMenu";
+import { useFloatingChat } from "@/contexts/FloatingChatContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -56,6 +57,7 @@ interface TabLayout {
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const { hideFloatingChat, showFloatingChat } = useFloatingChat();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
   const addButtonScale = useSharedValue(1);
@@ -144,6 +146,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       transform: [{ rotate: `${rotate}deg` }],
     };
   });
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      hideFloatingChat();
+    } else {
+      showFloatingChat();
+    }
+  }, [isMenuOpen, hideFloatingChat, showFloatingChat]);
 
   const handleAddPress = () => {
     const newState = !isMenuOpen;
