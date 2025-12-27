@@ -279,7 +279,19 @@ export function AddMenu({
   const renderOverlayBackground = () => {
     if (useLiquidGlass) {
       return (
-        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
+        <>
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? "rgba(0, 0, 0, 0.5)"
+                  : "rgba(0, 0, 0, 0.4)",
+              },
+            ]}
+          />
+          <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
+        </>
       );
     }
 
