@@ -130,7 +130,12 @@ function DonationSection({ colors, isWide }: DonationSectionProps) {
     setError(null);
     
     try {
-      const response = await fetch("/api/donations/create-checkout-session", {
+      // In development, web is served from port 80 but API is on port 5000
+      // In production, both are on the same port so relative URL works
+      const isDev = window.location.port === "" || window.location.port === "80";
+      const apiBase = isDev ? `${window.location.protocol}//${window.location.hostname}:5000` : "";
+      
+      const response = await fetch(`${apiBase}/api/donations/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
