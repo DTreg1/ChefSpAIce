@@ -116,7 +116,7 @@ export function FloatingChatButton() {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    zIndex: 1000,
+    zIndex: 900,
   },
   buttonWrapper: {
     alignItems: "center",
