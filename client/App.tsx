@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { StyleSheet, View, useColorScheme, Platform } from "react-native";
+import React, { useMemo } from "react";
+import { StyleSheet, useColorScheme } from "react-native";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -27,42 +27,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
-import LandingScreen from "@/screens/LandingScreen";
-import AboutPage from "@/screens/About";
-import PrivacyPolicyPage from "@/screens/Privacy";
-import TermsOfServicePage from "@/screens/Terms";
-import AttributionsPage from "@/screens/Attributions";
-import { WebThemeProvider } from "@/contexts/WebThemeContext";
-
-const BASE_COLORS = {
-  light: "#f0f2f5",
-  dark: "#0a0a0a",
-};
-
-function WebApp() {
-  const path = typeof window !== "undefined" ? window.location.pathname : "/";
-  
-  const getPage = () => {
-    switch (path) {
-      case "/about":
-        return <AboutPage />;
-      case "/privacy":
-        return <PrivacyPolicyPage />;
-      case "/terms":
-        return <TermsOfServicePage />;
-      case "/attributions":
-        return <AttributionsPage />;
-      default:
-        return <LandingScreen />;
-    }
-  };
-
-  return (
-    <WebThemeProvider>
-      {getPage()}
-    </WebThemeProvider>
-  );
-}
 
 function MobileAppContent() {
   const colorScheme = useColorScheme();
@@ -104,10 +68,6 @@ function MobileAppContent() {
 }
 
 export default function App() {
-  if (Platform.OS === "web") {
-    return <WebApp />;
-  }
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
