@@ -1,0 +1,40 @@
+import React from "react";
+import { Platform, StyleSheet } from "react-native";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+
+import MainTabNavigator from "@/navigation/MainTabNavigator";
+import { DrawerContent } from "@/components/DrawerContent";
+import { useTheme } from "@/hooks/useTheme";
+
+export type DrawerParamList = {
+  Tabs: undefined;
+};
+
+const Drawer = createDrawerNavigator<DrawerParamList>();
+
+export default function DrawerNavigator() {
+  const { theme } = useTheme();
+
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <DrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: "front",
+        drawerStyle: {
+          width: 280,
+          backgroundColor:
+            Platform.OS === "ios" ? "transparent" : theme.backgroundDefault,
+        },
+        overlayColor: "rgba(0, 0, 0, 0.5)",
+        swipeEnabled: true,
+        swipeEdgeWidth: 50,
+        sceneStyle: {
+          backgroundColor: theme.backgroundRoot,
+        },
+      }}
+    >
+      <Drawer.Screen name="Tabs" component={MainTabNavigator} />
+    </Drawer.Navigator>
+  );
+}

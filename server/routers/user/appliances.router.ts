@@ -1,489 +1,868 @@
-import { Router, Request, Response } from "express";
-import { z } from "zod";
-import { storage } from "../../storage/index";
+import { Router, type Request, type Response } from "express";
+import { db } from "../../db";
 import {
+  appliances,
+  userAppliances,
+  type Appliance,
   type UserAppliance,
-  type UserAppliance as Appliance,
-  insertUserApplianceSchema as insertApplianceSchema,
-  type ApplianceLibrary,
 } from "@shared/schema";
-// Use OAuth authentication middleware
-import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { eq, and, inArray } from "drizzle-orm";
 
-const router = Router();
+export const appliancesRouter = Router();
+export const userAppliancesRouter = Router();
 
-// Appliances CRUD - Get user's appliances
-router.get(
-  "/appliances",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const category = req.query.category as string | undefined;
+type FallbackAppliance = Omit<
+  Appliance,
+  "createdAt" | "updatedAt" | "imageUrl"
+> & {
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  imageUrl?: string | null;
+};
 
-      let userAppliances;
-      if (category) {
-        // Filter by category if provided
-        userAppliances = await storage.user.food.getUserAppliancesByCategory(
-          userId,
-          category,
-        );
-      } else {
-        userAppliances = await storage.user.food.getUserAppliances(userId);
-      }
-
-      res.json(userAppliances);
-    } catch (error) {
-      console.error("Error fetching appliances:", error);
-      res.status(500).json({ error: "Failed to fetch appliances" });
-    }
+const FALLBACK_APPLIANCES: FallbackAppliance[] = [
+  {
+    id: 1,
+    name: "Stovetop/Range",
+    category: "essential",
+    description: "A cooking appliance with burners for heating pots and pans",
+    icon: "thermometer",
+    isCommon: true,
+    alternatives: null,
   },
-);
+  {
+    id: 2,
+    name: "Oven",
+    category: "essential",
+    description: "An enclosed compartment for baking and roasting food",
+    icon: "square",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 3,
+    name: "Refrigerator",
+    category: "essential",
+    description: "An appliance for keeping food cold and fresh",
+    icon: "box",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 4,
+    name: "Freezer",
+    category: "essential",
+    description: "An appliance for freezing and storing food long-term",
+    icon: "box",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 5,
+    name: "Microwave",
+    category: "essential",
+    description: "An appliance that heats food using electromagnetic radiation",
+    icon: "zap",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 6,
+    name: "Sink",
+    category: "essential",
+    description: "A basin with running water for washing food and dishes",
+    icon: "droplet",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 7,
+    name: "Frying Pan/Skillet",
+    category: "cooking",
+    description:
+      "A flat-bottomed pan used for frying, searing, and browning foods",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 8,
+    name: "Saucepan (small, medium, large)",
+    category: "cooking",
+    description:
+      "Deep pans with a handle used for cooking sauces, boiling, and more",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 9,
+    name: "Stock Pot",
+    category: "cooking",
+    description:
+      "A large, deep pot for making stocks, soups, and boiling pasta",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 10,
+    name: "Dutch Oven",
+    category: "cooking",
+    description: "A heavy pot with a tight lid for braising and slow cooking",
+    icon: "circle",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 11,
+    name: "Wok",
+    category: "cooking",
+    description: "A round-bottomed pan used for stir-frying and Asian cooking",
+    icon: "circle",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 12,
+    name: "Grill Pan",
+    category: "cooking",
+    description: "A pan with ridges that creates grill marks on food",
+    icon: "grid",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 13,
+    name: "Roasting Pan",
+    category: "cooking",
+    description: "A large pan for roasting meats and vegetables in the oven",
+    icon: "square",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 14,
+    name: "Baking Sheet",
+    category: "bakeware",
+    description: "A flat metal pan for baking cookies and roasting vegetables",
+    icon: "square",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 15,
+    name: "Cake Pan",
+    category: "bakeware",
+    description: "A round or square pan for baking cakes",
+    icon: "circle",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 16,
+    name: "Muffin Tin",
+    category: "bakeware",
+    description: "A pan with cups for baking muffins and cupcakes",
+    icon: "grid",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 17,
+    name: "Loaf Pan",
+    category: "bakeware",
+    description: "A rectangular pan for baking bread and meatloaf",
+    icon: "square",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 18,
+    name: "Pie Dish",
+    category: "bakeware",
+    description: "A shallow dish with sloped sides for baking pies",
+    icon: "circle",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 19,
+    name: "Casserole Dish",
+    category: "bakeware",
+    description: "A deep dish for baking casseroles and gratins",
+    icon: "square",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 20,
+    name: "Cooling Rack",
+    category: "bakeware",
+    description: "A wire rack for cooling baked goods",
+    icon: "grid",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 21,
+    name: "Blender",
+    category: "small appliances",
+    description:
+      "An electric appliance for blending, pureeing, and making smoothies",
+    icon: "zap",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 22,
+    name: "Food Processor",
+    category: "small appliances",
+    description:
+      "An electric appliance for chopping, slicing, and mixing ingredients",
+    icon: "zap",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 23,
+    name: "Stand Mixer",
+    category: "small appliances",
+    description: "A countertop mixer for baking with various attachments",
+    icon: "zap",
+    isCommon: false,
+    alternatives: ["Hand Mixer"],
+  },
+  {
+    id: 24,
+    name: "Hand Mixer",
+    category: "small appliances",
+    description: "A handheld electric mixer for beating and whipping",
+    icon: "zap",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 25,
+    name: "Toaster",
+    category: "small appliances",
+    description: "An appliance for toasting bread and bagels",
+    icon: "square",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 26,
+    name: "Coffee Maker",
+    category: "small appliances",
+    description: "An appliance for brewing coffee",
+    icon: "coffee",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 27,
+    name: "Kettle",
+    category: "small appliances",
+    description: "An appliance for boiling water quickly",
+    icon: "droplet",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 28,
+    name: "Rice Cooker",
+    category: "small appliances",
+    description: "An appliance designed for cooking rice perfectly",
+    icon: "zap",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 29,
+    name: "Slow Cooker/Crock Pot",
+    category: "small appliances",
+    description: "An appliance for slow-cooking meals over several hours",
+    icon: "clock",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 30,
+    name: "Instant Pot/Pressure Cooker",
+    category: "small appliances",
+    description:
+      "A multi-function cooker that uses pressure to cook food quickly",
+    icon: "zap",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 31,
+    name: "Air Fryer",
+    category: "small appliances",
+    description:
+      "An appliance that uses hot air circulation to cook crispy food",
+    icon: "wind",
+    isCommon: false,
+    alternatives: ["Oven", "Convection Oven"],
+  },
+  {
+    id: 32,
+    name: "Immersion Blender",
+    category: "small appliances",
+    description:
+      "A handheld blender for pureeing soups and sauces directly in the pot",
+    icon: "zap",
+    isCommon: false,
+    alternatives: ["Blender", "Food Processor"],
+  },
+  {
+    id: 33,
+    name: "Cutting Board",
+    category: "prep tools",
+    description: "A board for cutting and preparing ingredients",
+    icon: "square",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 34,
+    name: "Chef's Knife",
+    category: "prep tools",
+    description: "A versatile knife for chopping, slicing, and dicing",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 35,
+    name: "Paring Knife",
+    category: "prep tools",
+    description: "A small knife for peeling and detailed cutting work",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 36,
+    name: "Bread Knife",
+    category: "prep tools",
+    description: "A serrated knife for slicing bread and soft foods",
+    icon: "minus",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 37,
+    name: "Kitchen Shears",
+    category: "prep tools",
+    description: "Scissors designed for cutting food items",
+    icon: "scissors",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 38,
+    name: "Measuring Cups",
+    category: "prep tools",
+    description: "Cups for measuring dry and liquid ingredients",
+    icon: "droplet",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 39,
+    name: "Measuring Spoons",
+    category: "prep tools",
+    description: "Spoons for measuring small quantities of ingredients",
+    icon: "droplet",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 40,
+    name: "Mixing Bowls",
+    category: "prep tools",
+    description: "Bowls of various sizes for mixing ingredients",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 41,
+    name: "Colander",
+    category: "prep tools",
+    description: "A bowl with holes for draining pasta and washing vegetables",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 42,
+    name: "Grater",
+    category: "prep tools",
+    description: "A tool for shredding cheese, vegetables, and other foods",
+    icon: "grid",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 43,
+    name: "Peeler",
+    category: "prep tools",
+    description: "A tool for removing the skin from fruits and vegetables",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 44,
+    name: "Can Opener",
+    category: "prep tools",
+    description: "A tool for opening canned foods",
+    icon: "circle",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 45,
+    name: "Whisk",
+    category: "prep tools",
+    description: "A tool for beating eggs and mixing batters",
+    icon: "activity",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 46,
+    name: "Spatula",
+    category: "prep tools",
+    description: "A flat tool for flipping and lifting foods",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 47,
+    name: "Wooden Spoon",
+    category: "prep tools",
+    description: "A heat-resistant spoon for stirring and cooking",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 48,
+    name: "Tongs",
+    category: "prep tools",
+    description: "A tool for gripping and turning food",
+    icon: "minus",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 49,
+    name: "Ladle",
+    category: "prep tools",
+    description: "A deep-bowled spoon for serving soups and stews",
+    icon: "droplet",
+    isCommon: true,
+    alternatives: null,
+  },
+  {
+    id: 50,
+    name: "Sous Vide",
+    category: "specialty",
+    description:
+      "A precision cooking device that circulates water at exact temperatures",
+    icon: "thermometer",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 51,
+    name: "Waffle Maker",
+    category: "specialty",
+    description: "An appliance for making waffles",
+    icon: "grid",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 52,
+    name: "Panini Press",
+    category: "specialty",
+    description: "A heated press for making grilled sandwiches",
+    icon: "square",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 53,
+    name: "Ice Cream Maker",
+    category: "specialty",
+    description: "An appliance for making homemade ice cream",
+    icon: "circle",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 54,
+    name: "Dehydrator",
+    category: "specialty",
+    description: "An appliance for drying fruits, vegetables, and meats",
+    icon: "sun",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 55,
+    name: "Bread Machine",
+    category: "specialty",
+    description: "An appliance for automatically making bread",
+    icon: "square",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 56,
+    name: "Pasta Machine",
+    category: "specialty",
+    description: "A manual or electric device for making fresh pasta",
+    icon: "minus",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 57,
+    name: "KitchenAid Attachments",
+    category: "specialty",
+    description: "Various attachments for KitchenAid stand mixers",
+    icon: "tool",
+    isCommon: false,
+    alternatives: null,
+  },
+  {
+    id: 58,
+    name: "Thermomix",
+    category: "specialty",
+    description:
+      "An all-in-one cooking appliance that weighs, chops, and cooks",
+    icon: "zap",
+    isCommon: false,
+    alternatives: null,
+  },
+];
 
-router.post(
-  "/appliances",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertApplianceSchema.safeParse(req.body);
+interface CacheEntry {
+  data: FallbackAppliance[];
+  timestamp: number;
+}
 
-      if (!validation.success) {
-        return res.status(400).json({
-          error: "Validation error",
-          details: validation.error.errors,
-        });
-      }
+let appliancesCache: CacheEntry | null = null;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-      // Add user appliance - pass userId and the rest of the data
-      const appliance = await storage.user.food.addUserAppliance(
-        userId,
-        validation.data,
+async function getCachedAppliances(): Promise<FallbackAppliance[]> {
+  if (
+    appliancesCache &&
+    Date.now() - appliancesCache.timestamp < CACHE_TTL_MS
+  ) {
+    return appliancesCache.data;
+  }
+
+  try {
+    const allAppliances = await db.select().from(appliances);
+    if (allAppliances.length > 0) {
+      appliancesCache = {
+        data: allAppliances,
+        timestamp: Date.now(),
+      };
+      return allAppliances;
+    }
+  } catch (error) {
+    console.log("Database not available, using fallback appliances");
+  }
+
+  appliancesCache = {
+    data: FALLBACK_APPLIANCES,
+    timestamp: Date.now(),
+  };
+  return FALLBACK_APPLIANCES;
+}
+
+export function invalidateAppliancesCache(): void {
+  appliancesCache = null;
+}
+
+function formatApplianceResponse(appliance: FallbackAppliance) {
+  return {
+    id: appliance.id,
+    name: appliance.name,
+    category: appliance.category,
+    description: appliance.description || undefined,
+    icon: appliance.icon || "tool",
+    isCommon: appliance.isCommon || false,
+    alternatives: appliance.alternatives || [],
+    imageUrl: appliance.imageUrl || undefined,
+  };
+}
+
+function formatUserApplianceResponse(
+  userAppliance: UserAppliance & { appliance: FallbackAppliance },
+) {
+  return {
+    id: userAppliance.id,
+    applianceId: userAppliance.applianceId,
+    notes: userAppliance.notes || undefined,
+    brand: userAppliance.brand || undefined,
+    createdAt: userAppliance.createdAt,
+    appliance: formatApplianceResponse(userAppliance.appliance),
+  };
+}
+
+appliancesRouter.get("/", async (req: Request, res: Response) => {
+  try {
+    const { category } = req.query;
+
+    let allAppliances = await getCachedAppliances();
+
+    if (category && typeof category === "string" && category !== "all") {
+      allAppliances = allAppliances.filter(
+        (a) => a.category.toLowerCase() === category.toLowerCase(),
+      );
+    }
+
+    allAppliances.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json(allAppliances.map(formatApplianceResponse));
+  } catch (error) {
+    console.error("Error fetching appliances:", error);
+    res.status(500).json({ error: "Failed to fetch appliances" });
+  }
+});
+
+appliancesRouter.get("/common", async (req: Request, res: Response) => {
+  try {
+    let allAppliances = await getCachedAppliances();
+
+    const commonAppliances = allAppliances.filter((a) => a.isCommon === true);
+    commonAppliances.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json(commonAppliances.map(formatApplianceResponse));
+  } catch (error) {
+    console.error("Error fetching common appliances:", error);
+    res.status(500).json({ error: "Failed to fetch common appliances" });
+  }
+});
+
+userAppliancesRouter.get("/", async (req: Request, res: Response) => {
+  try {
+    const userId = req.headers["x-user-id"] as string;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User ID is required" });
+    }
+
+    const userAppliancesList = await db
+      .select()
+      .from(userAppliances)
+      .where(eq(userAppliances.userId, userId));
+
+    if (userAppliancesList.length === 0) {
+      return res.json([]);
+    }
+
+    const allAppliances = await getCachedAppliances();
+    const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
+
+    const result = userAppliancesList
+      .map((ua) => {
+        const appliance = applianceMap.get(ua.applianceId);
+        if (!appliance) return null;
+        return formatUserApplianceResponse({ ...ua, appliance });
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching user appliances:", error);
+    res.status(500).json({ error: "Failed to fetch user appliances" });
+  }
+});
+
+userAppliancesRouter.post("/", async (req: Request, res: Response) => {
+  try {
+    const userId = req.headers["x-user-id"] as string;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User ID is required" });
+    }
+
+    const { applianceId, notes, brand } = req.body;
+
+    if (!applianceId || typeof applianceId !== "number") {
+      return res.status(400).json({ error: "Appliance ID is required" });
+    }
+
+    const allAppliances = await getCachedAppliances();
+    const appliance = allAppliances.find((a) => a.id === applianceId);
+
+    if (!appliance) {
+      return res.status(404).json({ error: "Appliance not found" });
+    }
+
+    const existing = await db
+      .select()
+      .from(userAppliances)
+      .where(
+        and(
+          eq(userAppliances.userId, userId),
+          eq(userAppliances.applianceId, applianceId),
+        ),
       );
 
-      res.json(appliance);
-    } catch (error) {
-      console.error("Error creating appliance:", error);
-      res.status(500).json({ error: "Failed to create appliance" });
+    if (existing.length > 0) {
+      return res
+        .status(409)
+        .json({ error: "Appliance already added to kitchen" });
     }
-  },
-);
 
-// Get user's appliance categories with counts
-router.get(
-  "/appliances/categories",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const categories = await storage.user.food.getApplianceCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching appliance categories:", error);
-      res.status(500).json({ error: "Failed to fetch appliance categories" });
-    }
-  },
-);
-
-router.get(
-  "/appliances/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const applianceId = req.params.id;
-
-      const userAppliances = await storage.user.food.getUserAppliances(userId);
-      const appliance = userAppliances.find((a) => a.id === applianceId);
-
-      if (!appliance) {
-        return res.status(404).json({ error: "Appliance not found" });
-      }
-
-      res.json(appliance);
-    } catch (error) {
-      console.error("Error fetching appliance:", error);
-      res.status(500).json({ error: "Failed to fetch appliance" });
-    }
-  },
-);
-
-router.put(
-  "/appliances/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const applianceId = req.params.id;
-
-      // Verify appliance belongs to user
-      const userAppliances = await storage.user.food.getUserAppliances(userId);
-      const existing = userAppliances.find((a) => a.id === applianceId);
-
-      if (!existing) {
-        return res.status(404).json({ error: "Appliance not found" });
-      }
-
-      const updated = await storage.user.food.updateUserAppliance(
+    const [created] = await db
+      .insert(userAppliances)
+      .values({
         userId,
         applianceId,
-        req.body,
-      );
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating appliance:", error);
-      res.status(500).json({ error: "Failed to update appliance" });
-    }
-  },
-);
+        notes: notes || null,
+        brand: brand || null,
+      })
+      .returning();
 
-router.delete(
-  "/appliances/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const applianceId = req.params.id;
-
-      // Verify appliance belongs to user
-      const userAppliances = await storage.user.food.getUserAppliances(userId);
-      const existing = userAppliances.find((a) => a.id === applianceId);
-
-      if (!existing) {
-        return res.status(404).json({ error: "Appliance not found" });
-      }
-
-      await storage.user.food.deleteUserAppliance(userId, applianceId);
-      res.json({ message: "Appliance deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting appliance:", error);
-      res.status(500).json({ error: "Failed to delete appliance" });
-    }
-  },
-);
-
-// Appliance categories - get unique categories from appliance library
-router.get("/appliance-categories", async (_req: Request, res: Response) => {
-  try {
-    const library = await storage.user.food.getApplianceLibrary();
-    // Extract unique categories from the appliance library
-    const categoriesMap = new Map<string, { name: string; count: number }>();
-
-    library.forEach((item) => {
-      if (item.category) {
-        const existing = categoriesMap.get(item.category);
-        if (existing) {
-          existing.count++;
-        } else {
-          categoriesMap.set(item.category, { name: item.category, count: 1 });
-        }
-      }
-    });
-
-    // Convert to array and sort by name
-    const categories = Array.from(categoriesMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-    res.json(categories);
+    res
+      .status(201)
+      .json(formatUserApplianceResponse({ ...created, appliance }));
   } catch (error) {
-    console.error("Error fetching appliance categories:", error);
-    res.status(500).json({ error: "Failed to fetch appliance categories" });
+    console.error("Error adding user appliance:", error);
+    res.status(500).json({ error: "Failed to add appliance to kitchen" });
   }
 });
 
-// ===== NEW APPLIANCE LIBRARY ENDPOINTS =====
-
-// Get all items from appliance library
-router.get("/appliance-library", async (req: Request, res: Response) => {
-  try {
-    const category = req.query.category as string | undefined;
-    const search = req.query.search as string | undefined;
-
-    let appliances: ApplianceLibrary[];
-    if (search) {
-      appliances = await storage.user.food.searchApplianceLibrary(search);
-    } else if (category) {
-      appliances =
-        await storage.user.food.getApplianceLibraryByCategory(category);
-    } else {
-      appliances = await storage.user.food.getApplianceLibrary();
-    }
-
-    res.json(appliances);
-  } catch (error) {
-    console.error("Error fetching appliance library:", error);
-    res.status(500).json({ error: "Failed to fetch appliance library" });
-  }
-});
-
-// Get common appliances (for onboarding) - returns first 20 from library
-router.get(
-  "/appliance-library/common",
-  async (_req: Request, res: Response) => {
-    try {
-      // Get all appliances and return a subset as "common"
-      const allAppliances = await storage.user.food.getApplianceLibrary();
-      // Return first 20 as common appliances
-      const commonAppliances = allAppliances.slice(0, 20);
-      res.json(commonAppliances);
-    } catch (error) {
-      console.error("Error fetching common appliances:", error);
-      res.status(500).json({ error: "Failed to fetch common appliances" });
-    }
-  },
-);
-
-// Get user's appliances from the new system
-router.get(
-  "/user-appliances",
-  isAuthenticated,
+userAppliancesRouter.delete(
+  "/:applianceId",
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const category = req.query.category as string | undefined;
+      const userId = req.headers["x-user-id"] as string;
 
-      let userAppliances;
-      if (category) {
-        userAppliances = await storage.user.food.getUserAppliancesByCategory(
-          userId,
-          category,
-        );
-      } else {
-        userAppliances = await storage.user.food.getUserAppliances(userId);
+      if (!userId) {
+        return res.status(401).json({ error: "User ID is required" });
       }
 
-      res.json(userAppliances);
-    } catch (error) {
-      console.error("Error fetching user appliances:", error);
-      res.status(500).json({ error: "Failed to fetch user appliances" });
-    }
-  },
-);
+      const applianceId = parseInt(req.params.applianceId, 10);
 
-// Get user's appliance categories with counts
-router.get(
-  "/user-appliances/categories",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const categories = await storage.user.food.getApplianceCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching user appliance categories:", error);
-      res
-        .status(500)
-        .json({ error: "Failed to fetch user appliance categories" });
-    }
-  },
-);
-
-// Add appliance to user's collection
-router.post(
-  "/user-appliances",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-      const bodySchema = z.object({
-        applianceLibraryId: z.string(),
-        nickname: z.string().optional(),
-        notes: z.string().optional(),
-      });
-
-      const validation = bodySchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({
-          error: "Validation error",
-          details: validation.error.errors,
-        });
+      if (isNaN(applianceId)) {
+        return res.status(400).json({ error: "Invalid appliance ID" });
       }
 
-      // Look up the library item to get its category
-      const libraryItems = await storage.user.food.getApplianceLibrary();
-      const libraryItem = libraryItems.find(
-        (item) => item.id === validation.data.applianceLibraryId,
-      );
+      const result = await db
+        .delete(userAppliances)
+        .where(
+          and(
+            eq(userAppliances.userId, userId),
+            eq(userAppliances.applianceId, applianceId),
+          ),
+        )
+        .returning();
 
-      if (!libraryItem) {
+      if (result.length === 0) {
         return res
           .status(404)
-          .json({ error: "Appliance not found in library" });
+          .json({ error: "Appliance not found in user's kitchen" });
       }
 
-      const newUserAppliance = await storage.user.food.addUserAppliance(
-        userId,
-        {
-          applianceId: validation.data.applianceLibraryId,
-          category: libraryItem.category as
-            | "cooking"
-            | "cookware"
-            | "bakeware"
-            | "utensil"
-            | "prep"
-            | "small"
-            | "refrigeration"
-            | "appliance",
-          customName: validation.data.nickname,
-          notes: validation.data.notes,
-        },
+      res.json({ success: true, message: "Appliance removed from kitchen" });
+    } catch (error) {
+      console.error("Error removing user appliance:", error);
+      res
+        .status(500)
+        .json({ error: "Failed to remove appliance from kitchen" });
+    }
+  },
+);
+
+userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
+  try {
+    const userId = req.headers["x-user-id"] as string;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User ID is required" });
+    }
+
+    const { applianceIds } = req.body;
+
+    if (!Array.isArray(applianceIds) || applianceIds.length === 0) {
+      return res.status(400).json({ error: "Appliance IDs array is required" });
+    }
+
+    const validIds = applianceIds.filter(
+      (id): id is number => typeof id === "number" && !isNaN(id),
+    );
+
+    if (validIds.length === 0) {
+      return res.status(400).json({ error: "No valid appliance IDs provided" });
+    }
+
+    const allAppliances = await getCachedAppliances();
+    const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
+
+    const existingIds = validIds.filter((id) => applianceMap.has(id));
+
+    if (existingIds.length === 0) {
+      return res.status(404).json({ error: "No valid appliances found" });
+    }
+
+    const existingUserAppliances = await db
+      .select()
+      .from(userAppliances)
+      .where(
+        and(
+          eq(userAppliances.userId, userId),
+          inArray(userAppliances.applianceId, existingIds),
+        ),
       );
 
-      res.json(newUserAppliance);
-    } catch (error) {
-      console.error("Error adding user appliance:", error);
-      res.status(500).json({ error: "Failed to add user appliance" });
-    }
-  },
-);
+    const existingApplianceIds = new Set(
+      existingUserAppliances.map((ua) => ua.applianceId),
+    );
+    const newApplianceIds = existingIds.filter(
+      (id) => !existingApplianceIds.has(id),
+    );
 
-// Update user's appliance details
-router.patch(
-  "/user-appliances/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const { id } = req.params;
-
-      const updateSchema = z.object({
-        nickname: z.string().optional(),
-        notes: z.string().optional(),
-        purchaseDate: z.string().optional(),
-        warrantyEndDate: z.string().optional(),
-        isActive: z.boolean().optional(),
+    if (newApplianceIds.length === 0) {
+      return res.json({
+        added: 0,
+        skipped: existingIds.length,
+        message: "All appliances already in kitchen",
       });
-
-      const validation = updateSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({
-          error: "Validation error",
-          details: validation.error.errors,
-        });
-      }
-
-      const updatedAppliance = await storage.user.food.updateUserAppliance(
-        userId,
-        id,
-        validation.data,
-      );
-
-      res.json(updatedAppliance);
-    } catch (error) {
-      console.error("Error updating user appliance:", error);
-      res.status(500).json({ error: "Failed to update user appliance" });
     }
-  },
-);
 
-// Remove appliance from user's collection
-router.delete(
-  "/user-appliances/:id",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const { id } = req.params;
+    const valuesToInsert = newApplianceIds.map((applianceId) => ({
+      userId,
+      applianceId,
+      notes: null,
+      brand: null,
+    }));
 
-      await storage.user.food.deleteUserAppliance(userId, id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting user appliance:", error);
-      res.status(500).json({ error: "Failed to delete user appliance" });
-    }
-  },
-);
+    await db.insert(userAppliances).values(valuesToInsert);
 
-// Batch add/remove appliances (for onboarding or bulk updates)
-router.post(
-  "/user-appliances/batch",
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-      const batchSchema = z.object({
-        add: z.array(z.string()).optional(),
-        remove: z.array(z.string()).optional(),
-      });
-
-      const validation = batchSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({
-          error: "Validation error",
-          details: validation.error.errors,
-        });
-      }
-
-      const results = {
-        added: [] as UserAppliance[],
-        removed: [] as string[],
-      };
-
-      // Add appliances - need to look up library items for categories
-      if (validation.data.add && validation.data.add.length > 0) {
-        const libraryItems = await storage.user.food.getApplianceLibrary();
-
-        for (const applianceLibraryId of validation.data.add) {
-          try {
-            const libraryItem = libraryItems.find(
-              (item) => item.id === applianceLibraryId,
-            );
-            if (libraryItem) {
-              const added = await storage.user.food.addUserAppliance(userId, {
-                applianceId: applianceLibraryId,
-                category: libraryItem.category as
-                  | "cooking"
-                  | "cookware"
-                  | "bakeware"
-                  | "utensil"
-                  | "prep"
-                  | "small"
-                  | "refrigeration"
-                  | "appliance",
-              });
-              results.added.push(added);
-            }
-          } catch (error) {
-            console.error(
-              `Failed to add appliance ${applianceLibraryId}:`,
-              error,
-            );
-          }
-        }
-      }
-
-      // Remove appliances
-      if (validation.data.remove && validation.data.remove.length > 0) {
-        for (const id of validation.data.remove) {
-          try {
-            await storage.user.food.deleteUserAppliance(userId, id);
-            results.removed.push(id);
-          } catch (error) {
-            console.error(`Failed to remove appliance ${id}:`, error);
-          }
-        }
-      }
-
-      res.json(results);
-    } catch (error) {
-      console.error("Error batch updating appliances:", error);
-      res.status(500).json({ error: "Failed to batch update appliances" });
-    }
-  },
-);
-
-export default router;
+    res.status(201).json({
+      added: newApplianceIds.length,
+      skipped: existingIds.length - newApplianceIds.length,
+      message: `Added ${newApplianceIds.length} appliances to kitchen`,
+    });
+  } catch (error) {
+    console.error("Error bulk adding user appliances:", error);
+    res.status(500).json({ error: "Failed to bulk add appliances" });
+  }
+});

@@ -1,411 +1,1078 @@
-import { Router, Request, Response } from "express";
+import { Router, type Request, type Response } from "express";
+import OpenAI from "openai";
+import { z } from "zod";
 import {
-  getAuthenticatedUserId,
-  sendError,
-  sendSuccess,
-} from "../../types/request-helpers";
-import { storage } from "../../storage/index";
-// Import centralized authentication and middleware
-import { isAuthenticated } from "../../middleware/auth.middleware";
-import { openai } from "../../integrations/openai";
-import { batchedApiLogger } from "../../utils/batchedApiLogger";
-import { rateLimiters } from "../../middleware/rate-limit.middleware";
+  formatInventoryForPrompt,
+  UNIT_CONVERSION_PROMPT_ADDITION,
+  normalizeUnit,
+} from "../../lib/unit-conversion";
 import {
-  circuitBreakers,
-  executeWithBreaker,
-} from "../../middleware/circuit-breaker.middleware";
-import {
-  AIError,
-  handleOpenAIError,
-  retryWithBackoff,
-  createErrorResponse,
-  formatErrorForLogging,
-} from "../../utils/ai-error-handler";
+  compareQuantities,
+  AvailabilityStatus,
+} from "../../integrations/usda";
 
 const router = Router();
 
-// Use centralized circuit breakers
-const recipeCircuitBreaker = circuitBreakers.openaiRecipe;
+const openai = new OpenAI({
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+});
 
-/**
- * POST /generate
- *
- * AI-powered recipe generation endpoint using OpenAI GPT-4.
- * Creates personalized recipes based on user's inventory, dietary needs, and preferences.
- *
- * Request Body:
- * - prompt: String (optional) - Free-form recipe request
- * - useInventory: Boolean (optional) - Generate recipe using available ingredients
- * - dietaryRestrictions: String[] (optional) - List of dietary restrictions (vegetarian, vegan, gluten-free, etc.)
- * - cuisine: String (optional) - Cuisine type (Italian, Mexican, Asian, etc.)
- * - mealType: String (optional) - Meal type (breakfast, lunch, dinner, snack)
- * - difficulty: String (optional) - Cooking difficulty (beginner, medium, advanced, default: "medium")
- * - maxCookTime: Number (optional) - Maximum cooking time in minutes
- *
- * Smart Features:
- * - Equipment Awareness: Only suggests recipes that match user's available kitchen equipment
- * - Inventory Integration: Identifies which ingredients user has vs. needs to buy
- * - Cooking Term Detection: Automatically detects and links cooking terminology
- * - Personalization: Respects dietary restrictions and preferences
- *
- * AI Model: GPT-4 Turbo with JSON response format for structured recipe data
- * Rate Limiting: Protected to prevent abuse and manage API costs
- *
- * Returns: Complete recipe object with:
- * - title, description, ingredients, instructions
- * - prepTime, cookTime, servings
- * - usedIngredients (from user's inventory)
- * - missingIngredients (needs to purchase)
- * - neededEquipment (kitchen tools required)
- * - detectedCookingTerms (culinary terms with definitions)
- */
-router.post(
-  "/generate",
-  isAuthenticated,
-  rateLimiters.openai.middleware(),
-  async (req: Request, res: Response) => {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+const generateRecipeSchema = z.object({
+  prioritizeExpiring: z.boolean().default(false),
+  quickRecipe: z.boolean().default(false),
+  ingredients: z.array(z.number()).optional(),
+  servings: z.number().min(1).max(20).default(4),
+  maxTime: z.number().min(5).max(480).default(60),
+  dietaryRestrictions: z.string().optional(),
+  cuisine: z.string().optional(),
+  mealType: z
+    .enum(["breakfast", "lunch", "dinner", "snack", "late night snack"])
+    .optional(),
+  inventory: z
+    .array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        quantity: z.number().optional(),
+        unit: z.string().optional(),
+        expiryDate: z.string().nullable().optional(),
+      }),
+    )
+    .optional(),
+  equipment: z
+    .array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        alternatives: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
+  macroTargets: z
+    .object({
+      protein: z.number().min(5).max(80).default(50),
+      carbs: z.number().min(5).max(80).default(35),
+      fat: z.number().min(5).max(80).default(15),
+    })
+    .optional(),
+  previousRecipeTitles: z.array(z.string()).optional(),
+});
 
-    try {
-      const {
-        prompt,
-        useInventory,
-        dietaryRestrictions = [],
-        cuisine,
-        mealType,
-        difficulty = "medium",
-        maxCookTime,
-      } = req.body || {};
+export interface InventoryItem {
+  id: number;
+  name: string;
+  quantity?: number;
+  unit?: string;
+  expiryDate?: string | null;
+  daysUntilExpiry?: number;
+}
 
-      if (!openai) {
-        const error = new AIError(
-          "OpenAI API not configured",
-          "CONFIG_ERROR",
-          500,
-          false,
-          "AI service is not configured. Please contact support.",
-        );
-        return res.status(500).json(createErrorResponse(error));
-      }
+export interface ExpiringItem extends InventoryItem {
+  daysUntilExpiry: number;
+}
 
-      // Build comprehensive context for AI recipe generation
-      let context =
-        "Generate a detailed recipe with the following requirements:\n";
+export interface EquipmentItem {
+  id: number;
+  name: string;
+  alternatives?: string[];
+}
 
-      if (prompt) {
-        context += `\nUser request: ${prompt}\n`;
-      }
+interface GeneratedRecipe {
+  title: string;
+  description: string;
+  ingredients: Array<{
+    name: string;
+    quantity: number | string;
+    unit: string;
+    fromInventory?: boolean;
+  }>;
+  instructions: string[];
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+  usedExpiringItems?: string[];
+  usedExpiringCount?: number;
+  requiredEquipment?: string[];
+  optionalEquipment?: string[];
+}
 
-      // Include user's available ingredients for personalized recipes
-      if (useInventory) {
-        const items = await storage.user.inventory.getFoodItems(userId);
+export function calculateDaysUntilExpiry(
+  expiryDate: string | null | undefined,
+): number | null {
+  if (!expiryDate) return null;
+  const expiry = new Date(expiryDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  expiry.setHours(0, 0, 0, 0);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
 
-        if (items.length > 0) {
-          context += `\nAvailable ingredients:\n${items
-            .map((item: any) => `- ${item.name} (${item.quantity} available)`)
-            .join("\n")}\n`;
-        }
-      }
+export function organizeInventory(
+  items: InventoryItem[],
+  selectedIds?: number[],
+): {
+  expiringItems: ExpiringItem[];
+  otherItems: InventoryItem[];
+} {
+  const EXPIRING_THRESHOLD_DAYS = 5;
 
-      // Ensure recipe matches user's available kitchen equipment
-      // Prevents suggesting recipes requiring tools the user doesn't own
-      // TODO: Implement getUserAppliances and getApplianceLibrary methods
-      // const userAppliances = await storage.getUserAppliances(userId);
-      // if (userAppliances && userAppliances.length > 0) {
-      //   // Map user's appliance IDs to actual equipment names
-      //   const applianceLibrary = await storage.getApplianceLibrary();
-      //   const userEquipmentDetails = userAppliances.map(ua => {
-      //     const libItem = applianceLibrary.find((al: any) => al.id === ua.applianceLibraryId);
-      //     return libItem ? libItem.name : null;
-      //   }).filter(Boolean);
-      const userEquipmentDetails: string[] = [];
-      // }
+  const filteredItems =
+    selectedIds && selectedIds.length > 0
+      ? items.filter((item) => selectedIds.includes(item.id))
+      : items;
 
-      if (userEquipmentDetails.length > 0) {
-        context += `\nAvailable kitchen equipment:\n${userEquipmentDetails.join(
-          ", ",
-        )}\n`;
-        context += `\nPlease only suggest recipes that can be made with this equipment. If special equipment is needed, make sure it's from the available list.\n`;
-      }
+  const itemsWithExpiry = filteredItems.map((item) => ({
+    ...item,
+    daysUntilExpiry: calculateDaysUntilExpiry(item.expiryDate),
+  }));
 
-      // Apply user's dietary restrictions and preferences
-      if (dietaryRestrictions.length > 0) {
-        context += `\nDietary restrictions: ${dietaryRestrictions.join(", ")}\n`;
-      }
+  const expiringItems: ExpiringItem[] = itemsWithExpiry
+    .filter(
+      (item) =>
+        item.daysUntilExpiry !== null &&
+        item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS,
+    )
+    .map((item) => ({
+      ...item,
+      daysUntilExpiry: item.daysUntilExpiry as number,
+    }))
+    .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
 
-      if (cuisine) context += `\nCuisine type: ${cuisine}\n`;
-      if (mealType) context += `\nMeal type: ${mealType}\n`;
-      if (difficulty) context += `\nDifficulty level: ${difficulty}\n`;
-      if (maxCookTime)
-        context += `\nMaximum cooking time: ${maxCookTime} minutes\n`;
+  const otherItems: InventoryItem[] = itemsWithExpiry
+    .filter(
+      (item) =>
+        item.daysUntilExpiry === null ||
+        item.daysUntilExpiry > EXPIRING_THRESHOLD_DAYS,
+    )
+    .map((item) => ({
+      ...item,
+      daysUntilExpiry: item.daysUntilExpiry ?? undefined,
+    }));
 
-      context += `
-Return a JSON object with the following structure:
-{
-  "title": "Recipe name",
-  "description": "Brief description",
-  "ingredients": ["ingredient 1", "ingredient 2", ...],
-  "instructions": ["step 1", "step 2", ...],
-  "prepTime": "X minutes",
-  "cookTime": "Y minutes",
-  "servings": number,
-  "usedIngredients": ["ingredients from user inventory"],
-  "missingIngredients": ["ingredients user needs to buy"],
-  "neededEquipment": ["equipment name 1", "equipment name 2", ...]
-}`;
+  return { expiringItems, otherItems };
+}
 
-      // Execute through circuit breaker with retry logic
-      const completion = await recipeCircuitBreaker.execute(async () => {
-        return await retryWithBackoff(
-          async () => {
-            return await openai.chat.completions.create({
-              model: "gpt-4o",
-              messages: [{ role: "user", content: context }],
-              temperature: 0.8,
-              max_tokens: 1000,
-              response_format: { type: "json_object" },
-            });
-          },
-          {
-            maxRetries: 2, // Fewer retries for expensive operations
-            initialDelay: 2000,
-            maxDelay: 15000,
-          },
-        );
+export function buildSmartPrompt(params: {
+  expiringItems: ExpiringItem[];
+  otherItems: InventoryItem[];
+  prioritizeExpiring: boolean;
+  quickRecipe: boolean;
+  servings: number;
+  maxTime: number;
+  dietaryRestrictions?: string;
+  cuisine?: string;
+  mealType?: string;
+  equipment?: EquipmentItem[];
+  macroTargets?: { protein: number; carbs: number; fat: number };
+  previousRecipeTitles?: string[];
+}): string {
+  const {
+    expiringItems,
+    otherItems,
+    prioritizeExpiring,
+    quickRecipe,
+    servings,
+    maxTime,
+    dietaryRestrictions,
+    cuisine,
+    mealType,
+    equipment,
+    macroTargets = { protein: 50, carbs: 35, fat: 15 },
+    previousRecipeTitles = [],
+  } = params;
+
+  let prompt = `You are a creative home chef helping reduce food waste.\n\n`;
+
+  prompt += `=== CRITICAL RULE #1 ===\n\n`;
+
+  prompt += `INVENTORY-ONLY RECIPES: Every single ingredient in the recipe MUST come from the user's inventory below. This includes:\n`;
+  prompt += `- Main ingredients (proteins, vegetables, grains)\n`;
+  prompt += `- Cooking fats (oil, butter, lard) - if not in inventory, use a dry cooking method or skip\n`;
+  prompt += `- Seasonings (salt, pepper, spices) - if not in inventory, omit or note "season to taste if available"\n`;
+  prompt += `- Liquids (broth, wine, vinegar) - if not in inventory, use water or omit\n\n`;
+
+  prompt += `ONLY EXCEPTION: Water and ice are always available and can be used freely.\n\n`;
+
+  prompt += `NO OTHER EXCEPTIONS. Do NOT add ANY ingredient that is not explicitly listed in the inventory.\n\n`;
+
+  prompt += `=== INGREDIENT SELECTION ===\n\n`;
+
+  prompt += `When selecting ingredients from the inventory, understand that similar items are the same:\n`;
+  prompt += `- "apples" and "green apples" are both apples\n`;
+  prompt += `- "chicken breast" and "chicken thighs" are both chicken\n`;
+  prompt += `- "extra virgin olive oil" and "olive oil" are both olive oil\n`;
+  prompt += `However, in your output, you MUST use the EXACT name as it appears in the inventory list below.\n\n`;
+
+  prompt += `SUBSTITUTIONS: You MAY suggest substitutes, but ONLY if the substitute is also in the user's inventory.\n\n`;
+
+  prompt += `LESS IS MORE: Prefer simpler recipes with fewer ingredients. A focused dish with 4-6 well-chosen ingredients is better than using everything available. Quality over quantity.\n\n`;
+
+  prompt += UNIT_CONVERSION_PROMPT_ADDITION + `\n`;
+
+  if (previousRecipeTitles.length > 0) {
+    prompt += `=== VARIETY REQUIREMENT ===\n`;
+    prompt += `The user has recently generated these recipes. Create something SIGNIFICANTLY DIFFERENT:\n`;
+    previousRecipeTitles.forEach((title) => {
+      prompt += `- ${title}\n`;
+    });
+    prompt += `Choose a different cooking style, cuisine influence, or main ingredient focus.\n\n`;
+  }
+
+  if (mealType) {
+    prompt += `MEAL TYPE: ${mealType.toUpperCase()}\n`;
+    if (mealType === "breakfast") {
+      prompt += `- Create a breakfast-appropriate dish (eggs, pancakes, toast, smoothies, oatmeal, etc.)\n`;
+      prompt += `- Focus on morning-friendly flavors and quick preparation\n`;
+    } else if (mealType === "lunch") {
+      prompt += `- Create a satisfying lunch dish (salads, sandwiches, wraps, soups, light mains)\n`;
+      prompt += `- Balance nutrition and convenience\n`;
+    } else if (mealType === "dinner") {
+      prompt += `- Create a hearty dinner dish (mains, pastas, stir-fries, casseroles)\n`;
+      prompt += `- Focus on satisfying, complete meals\n`;
+    } else if (mealType === "snack" || mealType === "late night snack") {
+      prompt += `- Create a quick, light snack\n`;
+      prompt += `- Keep portions smaller and preparation simple\n`;
+    }
+    prompt += `\n`;
+  }
+
+  if (quickRecipe) {
+    prompt += `IMPORTANT TIME CONSTRAINT: This recipe MUST be completable in under 20 minutes total (prep + cook time combined).\n`;
+    prompt += `- Prioritize quick-cooking methods (stir-fry, sautéing, no-cook, microwave)\n`;
+    prompt += `- Minimize prep work (use pre-cut, canned, or quick-prep ingredients)\n`;
+    prompt += `- One-pan or simple techniques preferred\n`;
+    prompt += `- No marinating, slow cooking, or extended baking required\n\n`;
+  }
+
+  prompt += `=== USER'S KITCHEN INVENTORY ===\n\n`;
+
+  if (expiringItems.length > 0) {
+    prompt += `EXPIRING SOON (preferred to use first, but not required):\n`;
+    const formattedExpiring = formatInventoryForPrompt(expiringItems);
+    expiringItems.forEach((item, index) => {
+      const urgency =
+        item.daysUntilExpiry <= 1
+          ? "EXPIRES TODAY/TOMORROW"
+          : `expires in ${item.daysUntilExpiry} days`;
+      prompt += `- ${formattedExpiring[index]} - ${urgency}\n`;
+    });
+    prompt += `\n`;
+  }
+
+  if (otherItems.length > 0) {
+    prompt += `ALSO AVAILABLE:\n`;
+    const formattedOther = formatInventoryForPrompt(otherItems);
+    formattedOther.forEach((formatted) => {
+      prompt += `- ${formatted}\n`;
+    });
+    prompt += `\n`;
+  }
+
+  if (equipment && equipment.length > 0) {
+    prompt += `=== EQUIPMENT AVAILABLE ===\n`;
+    equipment.forEach((item) => {
+      prompt += `- ${item.name}\n`;
+    });
+    prompt += `Only use equipment from this list.\n\n`;
+  } else {
+    prompt += `=== EQUIPMENT ===\n`;
+    prompt += `Assume basic equipment: Pot, Pan, Knife, Cutting board, Mixing bowl, Spoon, Fork\n`;
+    prompt += `Do NOT require specialty equipment like blenders, food processors, stand mixers.\n\n`;
+  }
+
+  prompt += `=== USER PREFERENCES ===\n`;
+  prompt += `- Servings: ${servings}\n`;
+  if (quickRecipe) {
+    prompt += `- Max TOTAL time: 20 minutes (prep + cook combined)\n`;
+  } else {
+    prompt += `- Max time: ${maxTime} minutes\n`;
+  }
+  if (dietaryRestrictions) {
+    prompt += `- Diet: ${dietaryRestrictions}\n`;
+  }
+  if (cuisine) {
+    prompt += `- Cuisine style: ${cuisine}\n`;
+  }
+  prompt += `\n`;
+
+  prompt += `=== NUTRITION TARGETS ===\n`;
+  prompt += `Target macro ratio by calories:\n`;
+  prompt += `- Protein: ~${macroTargets.protein}%\n`;
+  prompt += `- Carbohydrates: ~${macroTargets.carbs}%\n`;
+  prompt += `- Fat: ~${macroTargets.fat}%\n`;
+  prompt += `Prioritize lean proteins and whole food carb sources when possible.\n\n`;
+
+  prompt += `=== MEAL COMPOSITION GUIDELINES ===\n`;
+  prompt += `- Use only ONE primary protein source per dish (e.g., chicken OR beef, not both)\n`;
+  prompt += `- Pick the protein that best fits the cuisine/dish style or is expiring soonest\n`;
+  prompt += `- Focus on complementary ingredients that enhance the main protein\n`;
+  prompt += `- Create cohesive dishes that make culinary sense, not just ingredient dumps\n`;
+  prompt += `- Less is more: a well-balanced 4-6 ingredient dish beats a cluttered one\n\n`;
+
+  const examplePrepTime = quickRecipe ? 5 : 15;
+  const exampleCookTime = quickRecipe ? 10 : 30;
+
+  const hasEquipment = equipment && equipment.length > 0;
+
+  prompt += `=== NAMING GUIDELINES ===\n`;
+  prompt += `The inventory items may have verbose database-style names like "chicken, broilers or fryers, breast, meat only, raw".\n`;
+  prompt += `TITLE & DESCRIPTION: Use simple, natural names that sound appetizing:\n`;
+  prompt += `- Say "chicken breast" not "chicken, broilers or fryers, breast, meat only, raw"\n`;
+  prompt += `- Say "eggs" not "egg, whole, raw, fresh"\n`;
+  prompt += `- Say "tomatoes" not "tomatoes, red, ripe, raw, year round average"\n`;
+  prompt += `- Say "white bread" not "bread, white, commercially prepared"\n`;
+  prompt += `INGREDIENTS ARRAY: Keep the original inventory name so the app can match it.\n`;
+  prompt += `Example: If inventory has "chicken, broilers or fryers, breast, meat only, raw", use that exact name in ingredients array.\n\n`;
+
+  prompt += `=== REQUIRED OUTPUT FORMAT ===\n`;
+  prompt += `Return ONLY this JSON structure:\n`;
+  prompt += `{
+  "title": "Descriptive recipe name",
+  "description": "2-3 sentence appetizing description. Use natural ingredient names (e.g., 'chicken breast' not 'chicken, broilers or fryers, breast, meat only, raw'). Make it sound delicious.",
+  "ingredients": [
+    {"name": "exact name from inventory list", "quantity": 1, "unit": "cup", "fromInventory": true},
+    {"name": "exact name from inventory list", "quantity": 2, "unit": "tbsp", "fromInventory": true}
+  ],
+  "instructions": ["Step 1: Specific action...", "Step 2: ..."],
+  "prepTime": ${examplePrepTime},
+  "cookTime": ${exampleCookTime},
+  "servings": ${servings},
+  "nutrition": {"calories": 400, "protein": ${Math.round((400 * macroTargets.protein) / 100 / 4)}, "carbs": ${Math.round((400 * macroTargets.carbs) / 100 / 4)}, "fat": ${Math.round((400 * macroTargets.fat) / 100 / 9)}},
+  "usedExpiringItems": ["item1", "item2"]${
+    hasEquipment
+      ? `,
+  "requiredEquipment": ["Pan"],
+  "optionalEquipment": []`
+      : ""
+  }
+}\n\n`;
+
+  prompt += `=== FINAL CHECKLIST ===\n`;
+  prompt += `Before responding, verify:\n`;
+  prompt += `- EVERY ingredient comes from the user's inventory (no exceptions for oil, salt, etc.)\n`;
+  prompt += `- Ingredient names in the JSON array match the inventory names exactly for proper matching\n`;
+  prompt += `- All ingredients marked fromInventory: true\n`;
+  prompt += `- Title and description use natural, appetizing language (simplified ingredient names)\n`;
+  prompt += `- Recipe is different from previous generations if any were listed\n`;
+  prompt += `- Total time (prepTime + cookTime) ≤ ${quickRecipe ? 20 : maxTime} minutes\n`;
+  prompt += `- Nutrition roughly matches target macros: ${macroTargets.protein}% protein, ${macroTargets.carbs}% carbs, ${macroTargets.fat}% fat\n`;
+
+  return prompt;
+}
+
+router.post("/generate", async (req: Request, res: Response) => {
+  try {
+    const parseResult = generateRecipeSchema.safeParse(req.body);
+
+    if (!parseResult.success) {
+      const errorMessages = parseResult.error.errors
+        .map((e) => e.message)
+        .join(", ");
+      return res.status(400).json({
+        error: "Invalid input",
+        details: errorMessages,
       });
+    }
 
-      const recipeContent = completion.choices[0].message?.content;
-      if (!recipeContent) {
-        throw new AIError(
-          "Empty recipe response from AI",
-          "INVALID_RESPONSE",
-          502,
-          true,
-          "AI failed to generate a recipe. Please try again.",
-        );
+    const {
+      prioritizeExpiring,
+      quickRecipe,
+      ingredients: selectedIngredientIds,
+      servings,
+      maxTime,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      inventory,
+      equipment,
+      macroTargets,
+      previousRecipeTitles,
+    } = parseResult.data;
+
+    if (!inventory || inventory.length === 0) {
+      if (selectedIngredientIds && selectedIngredientIds.length === 0) {
+        return res.status(400).json({
+          error: "No ingredients available",
+          details: "Please add items to your inventory or select ingredients",
+        });
       }
+    }
 
-      let recipeData;
-      try {
-        recipeData = JSON.parse(recipeContent);
-      } catch {
-        throw new AIError(
-          "Invalid JSON in recipe response",
-          "INVALID_RESPONSE",
-          502,
-          true,
-          "AI returned invalid recipe format. Please try again.",
-        );
-      }
+    const { expiringItems, otherItems } = organizeInventory(
+      inventory || [],
+      selectedIngredientIds,
+    );
 
-      // Skip cooking term detection for now - service not available
-      // TODO: Implement cooking terms service
-      const enrichedRecipeData = recipeData;
+    if (expiringItems.length === 0 && otherItems.length === 0) {
+      return res.status(400).json({
+        error: "No ingredients to use",
+        details: "Please add items to your inventory",
+      });
+    }
 
-      // Persist generated recipe to user's cookbook
-      const saved = await storage.user.recipes.createRecipe(
-        userId,
-        enrichedRecipeData,
+    const effectiveMaxTime = quickRecipe ? 20 : maxTime;
+
+    const prompt = buildSmartPrompt({
+      expiringItems,
+      otherItems,
+      prioritizeExpiring,
+      quickRecipe,
+      servings,
+      maxTime: effectiveMaxTime,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      equipment,
+      macroTargets,
+      previousRecipeTitles,
+    });
+
+    console.log(
+      "Smart recipe generation prompt:",
+      prompt.substring(0, 500) + "...",
+    );
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a precision culinary assistant that creates recipes EXCLUSIVELY from user-provided ingredients.
+
+ABSOLUTE RULES:
+1. NEVER add ingredients not in the user's inventory - this includes oils, butter, salt, pepper, and spices
+2. If an ingredient isn't listed, assume the user doesn't have it
+3. Water and ice are the ONLY exceptions (always available)
+4. Use fuzzy matching: "chicken" matches "chicken breast", "apple" matches "green apples"
+5. Create simple, focused dishes with 4-6 ingredients rather than using everything available
+6. Always respond with valid JSON matching the exact schema provided`,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2048,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("No response from AI");
+    }
+
+    let recipe: GeneratedRecipe = JSON.parse(content);
+
+    // Universal cooking utilities that are acceptable even when not in inventory
+    // These are basic necessities that most kitchens have and don't require tracking
+    const ALLOWED_UTILITIES = new Set([
+      "water",
+      "tap water",
+      "cold water",
+      "hot water",
+      "warm water",
+      "ice water",
+      "ice",
+      "ice cubes",
+    ]);
+
+    // Enhanced fuzzy match helper - handles plurals, variations, descriptors
+    const fuzzyMatch = (
+      recipeIngredient: string,
+      inventoryItem: string,
+    ): boolean => {
+      // Normalize function: lowercase, remove common descriptors, handle plurals
+      const normalize = (s: string) => {
+        let normalized = s
+          .toLowerCase()
+          .trim()
+          // Remove punctuation (commas, parentheses, etc.)
+          .replace(/[,()]/g, " ")
+          // Remove common descriptors that shouldn't affect matching
+          .replace(
+            /\b(fresh|organic|raw|cooked|frozen|canned|dried|whole|sliced|diced|chopped|minced|ground|crushed|shredded|grated|peeled|boneless|skinless|lean|extra\s*virgin|light|heavy|low[\s-]?fat|fat[\s-]?free|unsalted|salted|sweetened|unsweetened|plain|greek|regular|large|medium|small|ripe|overripe|unripe|commercially\s*prepared|store[\s-]?bought|homemade|white|wheat|multigrain|enriched)\b/g,
+            "",
+          )
+          // Remove "X of" packaging patterns like "loaf of", "slices of" (keeps the main ingredient)
+          .replace(/\b(loaf|loaves|slice|slices|bag|package|can|jar|bottle|box|bunch|head)\s+of\s+/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        // Handle plurals more comprehensively
+        // Only apply ves->f for specific known words (knife, loaf, leaf, etc.)
+        const vesWordsToF: Record<string, string> = {
+          knives: "knife",
+          loaves: "loaf",
+          leaves: "leaf",
+          halves: "half",
+          calves: "calf",
+          shelves: "shelf",
+          wolves: "wolf",
+          selves: "self",
+        };
+
+        // Check for specific ves->f transformations
+        for (const [plural, singular] of Object.entries(vesWordsToF)) {
+          if (normalized.endsWith(plural)) {
+            normalized = normalized.slice(0, -plural.length) + singular;
+            break;
+          }
+        }
+
+        // Handle other plurals (avoiding ves words that shouldn't change)
+        if (!normalized.endsWith("f") && !normalized.endsWith("fe")) {
+          // Words that naturally end in 's' and should NOT be de-pluralized
+          const singularWordsEndingInS = new Set([
+            "couscous",
+            "hummus",
+            "molasses",
+            "asparagus",
+            "citrus",
+            "hibiscus",
+            "cactus",
+            "octopus",
+            "surplus",
+            "bonus",
+            "mucus",
+            "radius",
+            "focus",
+            "bass",
+            "moss",
+            "grass",
+            "class",
+            "glass",
+            "mass",
+            "pass",
+            "brass",
+            "swiss",
+            "stress",
+            "dress",
+            "press",
+            "chess",
+            "less",
+            "mess",
+            "brussels",
+            "sprouts",
+            "oats",
+            "grits",
+            "nuts",
+            "greens",
+            "beans",
+          ]);
+
+          // Skip de-pluralization for words in the exception list
+          const skipDepluralization = singularWordsEndingInS.has(normalized);
+
+          if (!skipDepluralization) {
+            // Apply plural rules in specific order
+            if (normalized.endsWith("ies")) {
+              // berries -> berry, cherries -> cherry
+              normalized = normalized.slice(0, -3) + "y";
+            } else if (normalized.endsWith("oes")) {
+              // tomatoes -> tomato, potatoes -> potato
+              normalized = normalized.slice(0, -2);
+            } else if (normalized.match(/(sh|ch|x|z|ss)es$/)) {
+              // dishes -> dish, boxes -> box, lunches -> lunch
+              normalized = normalized.slice(0, -2);
+            } else if (normalized.endsWith("s") && normalized.length > 3) {
+              // apples -> apple, olives -> olive, carrots -> carrot
+              // Only remove 's' if word is long enough
+              normalized = normalized.slice(0, -1);
+            }
+          }
+        }
+
+        // Normalize separators
+        normalized = normalized.replace(/[-_]/g, " ");
+
+        return normalized;
+      };
+
+      const normRecipe = normalize(recipeIngredient);
+      const normInventory = normalize(inventoryItem);
+
+      // Exact match after normalization
+      if (normRecipe === normInventory) return true;
+
+      // Partial/contains match (handles "chicken" matching "chicken breast")
+      if (
+        normRecipe.includes(normInventory) ||
+        normInventory.includes(normRecipe)
+      )
+        return true;
+
+      // Word-level matching for compound ingredients
+      const wordsRecipe = normRecipe.split(/\s+/).filter((w) => w.length > 1);
+      const wordsInventory = normInventory
+        .split(/\s+/)
+        .filter((w) => w.length > 1);
+
+      // Check if the core/main word matches (usually the last word is the main ingredient)
+      const coreRecipe = wordsRecipe[wordsRecipe.length - 1] || normRecipe;
+      const coreInventory =
+        wordsInventory[wordsInventory.length - 1] || normInventory;
+      if (coreRecipe === coreInventory) return true;
+
+      // Check for significant word overlap
+      const matchingWords = wordsRecipe.filter((wr) =>
+        wordsInventory.some(
+          (wi) =>
+            wr === wi ||
+            (wr.length > 3 &&
+              wi.length > 3 &&
+              (wr.includes(wi) || wi.includes(wr))),
+        ),
       );
 
-      // Log API usage
-      await batchedApiLogger.logApiUsage(userId, {
-        apiName: "openai",
-        endpoint: "recipes/generate",
-        method: "POST" as const,
-        statusCode: 200,
-      });
+      // If at least one significant word matches, consider it a match
+      if (
+        matchingWords.length > 0 &&
+        matchingWords.length >=
+          Math.max(1, Math.min(wordsRecipe.length, wordsInventory.length) * 0.4)
+      ) {
+        return true;
+      }
 
-      res.json(saved);
-    } catch (error: Error | unknown) {
-      // Log the error details
-      console.error("Error generating recipe:", formatErrorForLogging(error));
+      return false;
+    };
 
-      // Log failed API usage
-      const aiError =
-        error instanceof AIError ? error : handleOpenAIError(error);
-      await batchedApiLogger
-        .logApiUsage(userId, {
-          apiName: "openai",
-          endpoint: "recipes/generate",
-          method: "POST" as const,
-          statusCode: aiError.statusCode,
-        })
-        .catch((logError) => {
-          console.error("Failed to log API error:", logError);
-        });
+    // Check if ingredient is an allowed utility (water, ice, etc.)
+    const isAllowedUtility = (ingredientName: string): boolean => {
+      const normalized = ingredientName.toLowerCase().trim();
+      return ALLOWED_UTILITIES.has(normalized);
+    };
 
-      // Send error response
-      const errorResponse = createErrorResponse(error);
-      res.status(aiError.statusCode).json(errorResponse);
-    }
-  },
-);
+    // Validate and filter ingredients - ALL must come from inventory (with utility exceptions)
+    const inventoryItems = [...expiringItems, ...otherItems];
 
-/**
- * POST /
- *
- * Creates a new recipe for the authenticated user.
- *
- * Request Body:
- * - title: String (required) - Recipe name
- * - description: String (optional) - Brief description
- * - ingredients: Array (required) - List of ingredients
- * - instructions: Array (required) - Step-by-step instructions
- * - prepTime: String (optional) - Preparation time
- * - cookTime: String (optional) - Cooking time
- * - servings: Number (optional) - Number of servings
- * - cuisine: String (optional) - Cuisine type
- * - difficulty: String (optional) - Difficulty level
- * - source: String (optional) - Recipe source
- *
- * Returns: Created recipe object with ID
- */
-router.post("/", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const recipeData = req.body;
+    const originalIngredientCount = recipe.ingredients?.length || 0;
+    recipe.ingredients = (recipe.ingredients || [])
+      .map((ing) => {
+        // Check if ingredient fuzzy-matches any inventory item and get the matched item
+        const matchedInventoryItem = inventoryItems.find((invItem) =>
+          fuzzyMatch(ing.name, invItem.name),
+        );
+        
+        if (matchedInventoryItem) {
+          // Calculate quantity availability using USDA conversion
+          const recipeQty = typeof ing.quantity === 'number' ? ing.quantity : parseFloat(String(ing.quantity)) || 1;
+          const recipeUnit = ing.unit || '';
+          const inventoryQty = matchedInventoryItem.quantity || 1;
+          const inventoryUnit = matchedInventoryItem.unit || null;
+          
+          // Compare quantities - this uses USDA portion data when available
+          const comparison = compareQuantities(
+            inventoryQty,
+            inventoryUnit,
+            recipeQty,
+            recipeUnit,
+          );
+          
+          return {
+            ...ing,
+            fromInventory: true,
+            availabilityStatus: comparison.status,
+            percentAvailable: comparison.percentAvailable ?? 100,
+          };
+        }
 
-    // Convert query params to proper booleans
-    const checkDuplicate = req.query.checkDuplicate !== "false";
-    const forceSave = req.query.forceSave === "true";
+        // Allow universal utilities like water even if not in inventory
+        if (isAllowedUtility(ing.name)) {
+          console.log(`Allowing utility ingredient: ${ing.name}`);
+          return { 
+            ...ing, 
+            fromInventory: false,
+            availabilityStatus: 'available' as AvailabilityStatus,
+            percentAvailable: 100,
+          };
+        }
 
-    let similarityHash: string | undefined;
-    let duplicateWarning: any = null;
+        // Ingredient doesn't match inventory - remove it (no exceptions for oil, salt, etc.)
+        console.log(`Removing ingredient not in inventory: ${ing.name}`);
+        return null;
+      })
+      .filter((ing): ing is NonNullable<typeof ing> => ing !== null);
 
-    // Skip duplicate detection for now - service not available
-    // TODO: Implement duplicate detection service
-
-    // Add similarity hash to recipe data if generated
-    if (similarityHash) {
-      recipeData.similarityHash = similarityHash;
-    }
-
-    // Create the recipe
-    const saved = await storage.user.recipes.createRecipe(userId, recipeData);
-
-    // Skip embedding update - duplicate detection service not available
-    // TODO: Implement duplicate detection service
-
-    // Include duplicate warning in response if applicable
-    const response: any = saved;
-    if (duplicateWarning) {
-      response.duplicateWarning = duplicateWarning;
-    }
-
-    res.json(response);
-  } catch (error) {
-    console.error("Error creating recipe:", error);
-    res.status(500).json({ error: "Failed to create recipe" });
-  }
-});
-
-/**
- * GET /
- *
- * Retrieves user's recipe collection with optional filtering.
- * All filtering is performed at the database level for optimal performance.
- *
- * Query Parameters:
- * - saved: Boolean ("true"/"false") - Filter for favorited recipes only
- * - cuisine: String - Filter by cuisine type
- * - difficulty: String - Filter by difficulty level (beginner, medium, advanced)
- * - maxCookTime: Number - Filter recipes with cook time <= this value (in minutes)
- * - search: String - Full-text search across recipe title and description
- *
- * Performance Optimization:
- * - Uses database-level filtering to minimize data transfer
- * - Supports complex queries without loading all recipes into memory
- *
- * Returns: Array of recipe objects matching the filters
- */
-router.get("/", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const { saved, cuisine, difficulty, maxCookTime, search } = req.query;
-
-    // Build filters object for database-level filtering
-    // This approach allows storage layer to optimize query execution
-    const filters: any = {};
-
-    if (saved === "true") {
-      filters.isFavorite = true;
-    }
-
-    if (search) {
-      filters.search = search.toString();
-    }
-
-    if (cuisine) {
-      filters.cuisine = cuisine.toString();
-    }
-
-    if (difficulty) {
-      filters.difficulty = difficulty.toString();
-    }
-
-    if (maxCookTime) {
-      filters.maxCookTime = parseInt(maxCookTime.toString());
-    }
-
-    // Delegate to storage layer for optimized database query
-    const userRecipes = await storage.user.recipes.getRecipes(userId, filters);
-
-    res.json(userRecipes);
-  } catch (error) {
-    console.error("Error fetching recipes:", error);
-    res.status(500).json({ error: "Failed to fetch recipes" });
-  }
-});
-
-router.patch("/:id", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const recipeId = req.params.id;
-
-    // Verify recipe belongs to user - optimized to fetch only the specific recipe
-    const existing = await storage.user.recipes.getRecipe(userId, recipeId);
-
-    if (!existing) {
-      return res.status(404).json({ error: "Recipe not found" });
-    }
-
-    const updated = await storage.user.recipes.updateRecipe(
-      recipeId,
-      userId,
-      req.body,
+    // Ensure we have at least 2 inventory ingredients
+    // This prevents meaningless single-ingredient or empty recipes
+    const inventoryIngredients = recipe.ingredients.filter(
+      (ing) => ing.fromInventory === true,
     );
-    res.json(updated);
+    if (inventoryIngredients.length < 2) {
+      console.error(
+        `Recipe has only ${inventoryIngredients.length} valid inventory ingredients after filtering`,
+      );
+      return res.status(400).json({
+        error: "Could not generate a valid recipe",
+        details:
+          "Not enough matching ingredients were found. Please try again or add more items to your inventory.",
+      });
+    }
+
+    // Build list of valid ingredient terms for validation
+    const validIngredientTerms = recipe.ingredients.flatMap((ing) => {
+      const name = ing.name.toLowerCase();
+      // Extract individual words and the full name
+      const words = name.split(/\s+/).filter((w) => w.length > 2);
+      return [name, ...words];
+    });
+
+    // Helper to check if text mentions ingredients not in our list
+    const findUnmatchedIngredients = (text: string): string[] => {
+      const textLower = text.toLowerCase();
+      // Comprehensive list of food items that could be phantom ingredients
+      const foodTerms = [
+        // Proteins
+        "chicken",
+        "beef",
+        "pork",
+        "fish",
+        "salmon",
+        "tuna",
+        "shrimp",
+        "lamb",
+        "bacon",
+        "ham",
+        "turkey",
+        "sausage",
+        "steak",
+        "ground meat",
+        "meatball",
+        "tofu",
+        "tempeh",
+        "seitan",
+        "duck",
+        "veal",
+        "crab",
+        "lobster",
+        "scallop",
+        // Vegetables
+        "tomato",
+        "tomatoes",
+        "onion",
+        "onions",
+        "garlic",
+        "mushroom",
+        "mushrooms",
+        "carrot",
+        "carrots",
+        "potato",
+        "potatoes",
+        "broccoli",
+        "spinach",
+        "lettuce",
+        "cucumber",
+        "zucchini",
+        "squash",
+        "eggplant",
+        "bell pepper",
+        "jalapeño",
+        "celery",
+        "cabbage",
+        "kale",
+        "asparagus",
+        "cauliflower",
+        "green beans",
+        "artichoke",
+        "beet",
+        "radish",
+        "turnip",
+        "leek",
+        "shallot",
+        "scallion",
+        // Fruits
+        "apple",
+        "banana",
+        "orange",
+        "lemon",
+        "lime",
+        "avocado",
+        "mango",
+        "pineapple",
+        "strawberry",
+        "blueberry",
+        "raspberry",
+        "grape",
+        "peach",
+        "pear",
+        "melon",
+        "watermelon",
+        "cherry",
+        "kiwi",
+        "coconut",
+        "pomegranate",
+        "fig",
+        "date",
+        // Dairy
+        "cheese",
+        "cheddar",
+        "mozzarella",
+        "parmesan",
+        "feta",
+        "cream cheese",
+        "cream",
+        "milk",
+        "yogurt",
+        "sour cream",
+        "butter",
+        "ghee",
+        "ricotta",
+        // Grains & Starches
+        "rice",
+        "pasta",
+        "noodle",
+        "bread",
+        "tortilla",
+        "quinoa",
+        "couscous",
+        "oat",
+        "barley",
+        "farro",
+        "bulgur",
+        "flour",
+        "cornmeal",
+        "polenta",
+        // Eggs
+        "egg",
+        "eggs",
+        // Condiments & Sauces
+        "mayo",
+        "mayonnaise",
+        "ketchup",
+        "mustard",
+        "soy sauce",
+        "vinegar",
+        "hot sauce",
+        "sriracha",
+        "worcestershire",
+        "tahini",
+        "pesto",
+        // Legumes
+        "beans",
+        "lentil",
+        "chickpea",
+        "black beans",
+        "kidney beans",
+        "pinto beans",
+        // Herbs & Aromatics
+        "cilantro",
+        "basil",
+        "parsley",
+        "thyme",
+        "rosemary",
+        "oregano",
+        "dill",
+        "mint",
+        "sage",
+        "chive",
+        "ginger",
+        // Others
+        "corn",
+        "peas",
+        "olive",
+        "caper",
+        "pickle",
+        "honey",
+        "maple syrup",
+        "almond",
+        "walnut",
+        "cashew",
+        "peanut",
+        "pecan",
+        "pistachio",
+      ];
+
+      return foodTerms.filter((term) => {
+        if (!textLower.includes(term)) return false;
+        // Allowed utilities like water should not be flagged
+        if (ALLOWED_UTILITIES.has(term)) return false;
+        // Check if this term matches any valid ingredient
+        return !validIngredientTerms.some(
+          (valid) => valid.includes(term) || term.includes(valid),
+        );
+      });
+    };
+
+    // Check description for phantom ingredients
+    const descPhantoms = findUnmatchedIngredients(recipe.description || "");
+    if (descPhantoms.length > 0) {
+      console.log(
+        `Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`,
+      );
+      const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
+      recipe.description = `A delicious dish featuring ${ingredientList}.`;
+    }
+
+    // Check instructions for phantom ingredients and rewrite problematic steps
+    const instructionsText = (recipe.instructions || []).join(" ");
+    const instrPhantoms = findUnmatchedIngredients(instructionsText);
+    if (instrPhantoms.length > 0) {
+      console.log(
+        `Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`,
+      );
+      // Rewrite instructions to use generic terms instead of specific phantom ingredients
+      recipe.instructions = (recipe.instructions || []).map((step) => {
+        let cleanStep = step;
+        instrPhantoms.forEach((phantom) => {
+          const regex = new RegExp(`\\b${phantom}s?\\b`, "gi");
+          cleanStep = cleanStep.replace(regex, "ingredients");
+        });
+        return cleanStep;
+      });
+    }
+
+    // Normalize units in recipe ingredients for consistent display
+    recipe.ingredients = recipe.ingredients.map((ing) => ({
+      ...ing,
+      unit: normalizeUnit(ing.unit) || ing.unit,
+    }));
+
+    const filteredCount = originalIngredientCount - recipe.ingredients.length;
+    if (filteredCount > 0) {
+      console.log(`Filtered out ${filteredCount} ingredients not in inventory`);
+    }
+
+    if (quickRecipe) {
+      const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+      if (totalTime > 20) {
+        console.log(
+          `Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`,
+        );
+        const ratio = 20 / totalTime;
+        recipe.prepTime = Math.max(
+          5,
+          Math.floor((recipe.prepTime || 10) * ratio),
+        );
+        recipe.cookTime = Math.max(5, 20 - recipe.prepTime);
+      }
+    }
+
+    const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
+    recipe.usedExpiringCount = usedExpiringCount;
+
+    console.log(
+      `Smart recipe generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`,
+    );
+
+    return res.json({
+      ...recipe,
+      totalExpiringItems: expiringItems.length,
+      prioritizedExpiring: prioritizeExpiring,
+    });
   } catch (error) {
-    console.error("Error updating recipe:", error);
-    res.status(500).json({ error: "Failed to update recipe" });
+    console.error("Smart recipe generation error:", error);
+    return res.status(500).json({ error: "Failed to generate recipe" });
   }
 });
 
-router.delete("/:id", isAuthenticated, async (req: Request, res: Response) => {
+// Generate recipe image endpoint
+const generateImageSchema = z.object({
+  title: z.string().min(1, "Recipe title is required").max(100),
+  description: z.string().max(1000).optional(),
+  cuisine: z.string().max(50).optional(),
+});
+
+// Sanitize text input for safe prompt construction
+function sanitizeForPrompt(text: string, maxLength: number): string {
+  return text
+    .replace(/[^\w\s,.-]/g, "") // Remove special characters except basic punctuation
+    .trim()
+    .slice(0, maxLength);
+}
+
+// Allowed cuisines to prevent prompt injection
+const ALLOWED_CUISINES = [
+  "italian",
+  "mexican",
+  "chinese",
+  "japanese",
+  "indian",
+  "thai",
+  "french",
+  "mediterranean",
+  "american",
+  "korean",
+  "vietnamese",
+  "greek",
+  "spanish",
+  "middle eastern",
+  "caribbean",
+  "african",
+];
+
+router.post("/generate-image", async (req: Request, res: Response) => {
   try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const recipeId = req.params.id;
+    const body = generateImageSchema.parse(req.body);
+    const { title, description, cuisine } = body;
 
-    // Verify recipe belongs to user - optimized to fetch only the specific recipe
-    const existing = await storage.user.recipes.getRecipe(userId, recipeId);
+    // Sanitize inputs to prevent prompt injection
+    const safeTitle = sanitizeForPrompt(title, 80);
+    const safeDescription = description
+      ? sanitizeForPrompt(description, 150)
+      : "";
+    const safeCuisine =
+      cuisine && ALLOWED_CUISINES.includes(cuisine.toLowerCase())
+        ? cuisine.toLowerCase()
+        : "";
 
-    if (!existing) {
-      return res.status(404).json({ error: "Recipe not found" });
+    // Build a constrained prompt for food photography
+    let imagePrompt = `Professional food photography of a dish called ${safeTitle}`;
+
+    if (safeDescription) {
+      imagePrompt += `. The dish features ${safeDescription}`;
     }
 
-    // Delete the recipe (cascading deletes will handle related meal plans)
-    await storage.user.recipes.deleteRecipe(userId, recipeId);
+    if (safeCuisine) {
+      imagePrompt += `, ${safeCuisine} cuisine style`;
+    }
 
-    res.status(204).send();
+    // Fixed suffix that cannot be overridden by user input
+    imagePrompt += `. Beautifully plated on a ceramic dish, natural lighting, shallow depth of field, appetizing colors, restaurant quality presentation, overhead shot, clean background, high resolution, photorealistic. No text or words in the image.`;
+
+    console.log(`Generating recipe image for: "${safeTitle}"`);
+
+    const response = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "low",
+    });
+
+    const imageData = response.data?.[0];
+
+    if (!imageData) {
+      throw new Error("No image data returned");
+    }
+
+    // gpt-image-1 returns b64_json
+    if (imageData.b64_json) {
+      return res.json({
+        success: true,
+        imageBase64: imageData.b64_json,
+      });
+    } else if (imageData.url) {
+      return res.json({
+        success: true,
+        imageUrl: imageData.url,
+      });
+    } else {
+      throw new Error("No image URL or data returned");
+    }
   } catch (error) {
-    console.error("Error deleting recipe:", error);
-    res.status(500).json({ error: "Failed to delete recipe" });
+    console.error("Recipe image generation error:", error);
+    return res.status(500).json({
+      error: "Failed to generate image",
+      success: false,
+    });
   }
 });
 

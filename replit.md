@@ -1,270 +1,39 @@
-# ChefSpAIce - Smart Kitchen Assistant
+# ChefSpAIce
 
 ## Overview
-
-ChefSpAIce is an AI-powered kitchen management application designed to help users manage food inventory, reduce waste, and discover personalized recipes. It integrates real-time inventory tracking with AI-driven recipe generation, nutrition analysis, and meal planning. The project provides a comprehensive solution for modern kitchen management, offering a seamless experience across web and mobile platforms.
+ChefSpAIce is a mobile application designed to help users manage their kitchen and reduce food waste. It enables tracking of food inventory across various storage locations, provides AI-powered recipe generation based on available ingredients, facilitates meal planning, and manages shopping lists. Key features include barcode scanning for item entry, nutrition tracking, waste reduction analytics, and an AI kitchen assistant. The application aims to provide a comprehensive solution for efficient food management, promoting sustainability and healthy eating habits.
 
 ## User Preferences
-
-- Preferred communication style: Simple, everyday language
-- UI style: Utility-focused chat application following ChatGPT's conversational patterns
-- Design approach: Clean, accessible interface with olive green primary color (#6b8e23)
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
-
 ### Frontend
-
-Built with React 18, TypeScript, Vite, and TailwindCSS with shadcn/ui components. Key technologies:
-
-- **State Management**: TanStack Query for server state, React Context API for global UI state
-- **Routing**: Wouter for client-side routing
-- **Forms**: React Hook Form with Zod validation
-- **Mobile**: Capacitor for cross-platform iOS/Android deployment with native camera, push notifications, and sharing
-- **PWA**: Progressive Web App with offline support via Service Worker
+The application is built with **React Native (0.81.5) and Expo (54.0.23)** for cross-platform compatibility. It uses **React Navigation 7** for navigation, **React Native Reanimated 4** for animations, and **TanStack React Query** for data fetching. The UI/UX features an **iOS 26 Liquid Glass Design** aesthetic with light/dark mode support, defined by a centralized design system using custom hooks and reusable components. Data is managed with a local-first approach using **AsyncStorage** for offline persistence and React Query for server state.
 
 ### Backend
+The backend utilizes **Express.js** and **Node.js**. Data storage uses **Drizzle ORM (0.39.3)** with **PostgreSQL** for authenticated users, while guest users primarily rely on in-memory storage and client-side AsyncStorage. A custom authentication system handles user registration, login, and session management. A robust **Real-Time Sync Manager** ensures data consistency between local storage and the cloud with optimistic updates, background syncing, and conflict resolution. AI integration leverages **OpenAI API (GPT-4o-mini)** for recipe generation, which is equipment-aware and can strictly generate recipes using only available inventory ingredients, with enhanced fuzzy matching for ingredients. Shelf life suggestions are provided based on food name and storage location, with an AI fallback.
 
-Express.js RESTful API with modular router architecture:
-
-**Router Categories:**
-
-- `user/` - User features (inventory, recipes, chat, profile, meal planning)
-- `admin/` - Administrative functions (A/B testing, cohorts, moderation, maintenance)
-- `platform/` - Platform-wide services (analytics, notifications, scheduling, fraud detection)
-- `platform/ai/` - AI/ML endpoints (analysis, content generation, media processing)
-
-**Key Features:**
-
-- Server-Sent Events (SSE) for streaming AI responses and real-time chat
-- Session-based authentication with PostgreSQL store
-- Multi-provider OAuth (Google, GitHub, Twitter/X, Apple, Replit) + email/password
-
-### Data Storage
-
-PostgreSQL accessed via Drizzle ORM with a domain-driven architecture:
-
-**Schema Organization:** 18 domain modules containing 104 tables total
-
-- Core: auth (3), food (10), notifications (5), chat (4), billing (1)
-- Analytics: analytics (11), system (5), experiments (6)
-- AI/ML: ai-ml (14), images (7), sentiment (5), transcription (2), extraction (2)
-- Content: content (7), forms (7), scheduling (4), pricing (3)
-- Security: security (8), support (5)
-
-**Storage Layer Architecture:**
-
-- `storage/interfaces/` - TypeScript interface contracts (17 interfaces)
-- `storage/domains/` - Domain implementations (17 storage modules)
-- `storage/facades/` - Three-tier facade system:
-  - `UserStorage` - User-specific data operations
-  - `AdminStorage` - Administrative functions
-  - `PlatformStorage` - Platform-wide operations
-
-### Key Services (34 services)
-
-Located in `server/services/`:
-
-- **AI Services**: OpenAI query, embeddings, sentiment analysis, summarization, moderation
-- **ML Services**: Prediction, trend analysis, duplicate detection, ML notification scheduler
-- **Notification Services**: FCM, APNS, web push, push scheduling
-- **Analytics Services**: Activity logging, fraud detection, retention campaigns
-- **Content Services**: Alt-text generation, face detection, term detection, excerpt generation
+### Key Features and Technical Implementations
+- **Navigation:** Root stack navigator for modals, five-tab bottom navigation with individual stack navigators per tab (Inventory, Recipes, Meal Plan, Profile).
+- **Design System:** iOS 26 Liquid Glass Design with blur effects, theme support, and reusable components like GlassCard.
+- **State Management:** AsyncStorage for local data, React Query for server state, component-level React hooks.
+- **Authentication:** Custom username/password, SHA-256 hashing, 30-day session tokens, guest mode by default.
+- **Cloud Sync:** Authenticated users sync all data to PostgreSQL as JSON, managed by a real-time sync manager with retry logic and conflict resolution.
+- **Storage Preferences:** Learns user storage choices per item and category, providing smart suggestions based on user history and predefined shelf-life data, with a confidence-based suggestion system.
+- **AI Integration:** OpenAI GPT-4o-mini for recipe generation, kitchen assistant chat, and shelf-life suggestions, integrated via Replit AI.
+- **Equipment-Aware Recipes:** Recipes consider user's owned equipment, suggesting alternatives and filtering options.
+- **Inventory-Only Recipes:** Generates recipes strictly from user's inventory, with advanced fuzzy matching and post-generation validation to remove phantom ingredients.
+- **Smart Shelf Life:** Automatic expiration date suggestions based on food name, storage location, and an AI fallback for unknown items.
+- **Equipment Library:** Manages user's kitchen equipment locally, with common items pre-selected for first-time setup.
+- **Push Notifications:** Local notifications for expiring food items via expo-notifications. Sends alerts X days before expiration (configurable 1-7 days, default 3). Notifications scheduled at 9 AM. Toggle and configure in Settings screen.
+- **Offline Mode Indicator:** Animated banner at the top of the screen that appears when offline or when changes are pending sync. Shows network status and pending change count. Uses react-native-reanimated for smooth slide animations.
+- **Stripe Donations:** Support donations feature accessible from Profile > Support Us. Uses Stripe Checkout for secure payments with preset amounts ($5-$100) or custom amounts. Tracks donation stats and recent supporters.
 
 ## External Dependencies
-
-### AI & Machine Learning
-
-- **OpenAI API**: GPT-4/GPT-4o for recipe generation, chat, content moderation, vision analysis
-- **Streaming**: Server-Sent Events for real-time AI responses
-- **ML Features**: Semantic search (embeddings), auto-categorization, duplicate detection, NLP tagging
-
-### Food & Nutrition Data
-
-- **USDA FoodData Central API**: Authoritative nutrition data with local caching
-- **Barcode Lookup API**: Product information from UPC/EAN codes
-- **Open Food Facts**: Fallback for barcode data
-
-### Cloud Storage
-
-- **Google Cloud Storage**: Image uploads and asset storage
-
-### Push Notifications
-
-- **Web Push**: Browser-based notifications via VAPID (requires VAPID key configuration)
-- **Firebase Cloud Messaging (FCM)**: Android push notifications (requires FCM credentials)
-- **Apple Push Notification Service (APNS)**: iOS push notifications (requires APNs credentials)
-
-### Authentication Providers
-
-- Google OAuth 2.0
-- GitHub OAuth
-- Twitter/X OAuth 2.0 with PKCE
-- Apple Sign In
-- Replit Auth (OIDC)
-- Email/Password (bcrypt hashing)
-
-### Mobile Platform
-
-- **Capacitor**: Cross-platform framework for iOS and Android
-- Native plugins: Camera, Push Notifications, Share, Device
-
-### Infrastructure
-
-- **PostgreSQL Database**: Primary data store (Neon serverless)
-- **Express Session**: PostgreSQL-backed session storage
-
-## Project Structure
-
-```
-├── client/                 # Frontend React application
-│   └── src/
-│       ├── components/     # Reusable UI components
-│       ├── contexts/       # React context providers
-│       ├── hooks/          # Custom React hooks
-│       ├── lib/            # Utility libraries
-│       ├── pages/          # Route page components (60+ pages)
-│       └── utils/          # Helper functions
-├── server/                 # Backend Express server
-│   ├── auth/               # Authentication & OAuth
-│   ├── config/             # Server configuration
-│   ├── data/               # Static data files
-│   ├── integrations/       # External API clients
-│   ├── middleware/         # Express middleware
-│   ├── notifications/      # Push notification handlers
-│   ├── routers/            # API route handlers
-│   │   ├── user/           # User domain routes
-│   │   ├── admin/          # Admin domain routes
-│   │   └── platform/       # Platform domain routes
-│   ├── services/           # Business logic (34 services)
-│   ├── storage/            # Database access layer
-│   │   ├── domains/        # Domain implementations (17)
-│   │   ├── facades/        # Storage facades (3)
-│   │   └── interfaces/     # TypeScript interfaces (17)
-│   └── utils/              # Server utilities
-├── shared/                 # Shared code
-│   └── schema/             # Database schema (18 domains, 104 tables)
-├── docs/                   # Documentation
-├── ios/                    # iOS Capacitor project
-└── migrations/             # Database migrations
-```
-
-## Key Features
-
-### Inventory Management
-
-- Food item tracking with expiration dates
-- Storage location organization (fridge, freezer, pantry, counter)
-- Barcode scanning for quick item addition
-- USDA nutrition data integration
-
-### Recipe System
-
-- AI-powered recipe generation based on inventory
-- Recipe saving and favoriting
-- Ingredient matching with inventory
-- Nutrition analysis per recipe
-
-### Meal Planning
-
-- Weekly meal plan generation
-- Shopping list automation
-- Nutrition goal tracking
-- Calendar integration
-
-### AI Chat Assistant
-
-- Natural language food queries
-- Recipe suggestions based on available ingredients
-- Cooking technique explanations
-- Real-time streaming responses
-
-### Analytics & Insights
-
-- Food waste tracking
-- Nutrition trends
-- Usage patterns
-- Predictive expiration alerts
-
-### Admin Features
-
-- A/B testing framework
-- User cohort management
-- Content moderation
-- System health monitoring
-- Fraud detection
-
-## Development
-
-### Running the Project
-
-```bash
-npm run dev          # Start development server (port 5000)
-npm run build        # Build for production
-npm run db:push      # Push schema changes to database
-npm run db:generate  # Generate migration files
-```
-
-### Code Quality
-
-```bash
-npm run check        # TypeScript type checking
-npm run lint         # ESLint checking
-npm run lint:fix     # Auto-fix linting issues
-```
-
-### Mobile Development
-
-```bash
-npx cap sync ios     # Sync iOS project
-npx cap open ios     # Open in Xcode
-```
-
-## Documentation
-
-- `docs/API.md` - Complete API endpoint documentation
-- `docs/AUTH_CONFIG.md` - Authentication configuration guide
-- `docs/SETUP_GUIDE.md` - Service setup instructions
-- `docs/PUSH_NOTIFICATIONS_SETUP.md` - Push notification setup
-- `docs/IOS_SETUP_GUIDE.md` - iOS app store preparation
-- `docs/design_guidelines.md` - UI/UX design system
-- `server/README.md` - Backend architecture details
-- `shared/README.md` - Schema documentation
-
-## Recent Updates
-
-### User Identification System (December 2025)
-
-- **Primary Key**: Users table uses UUID-based `id` column as the primary key
-- **Foreign Keys**: All 16+ schema files reference `users.id` for foreign key relationships
-- **Auth Flow**: SessionUser objects use `user.id` for user identification
-- **Storage Layer**: All storage methods query by `users.id` instead of `users.email`
-- **Note**: `users.email` is only used for email-based lookups (getUserByEmail)
-
-### Current Sprint
-
-- 17 storage domain modules (16 fully operational, 1 with stub methods)
-- 33 backend services active
-- 60+ frontend pages implemented
-- Multi-provider OAuth authentication complete
-- Real-time AI chat with SSE streaming
-- Push notification system for web, iOS, and Android (requires credential configuration)
-- Comprehensive analytics and insights system
-- A/B testing and experimentation framework
-- Role-based access control (RBAC) with admin-protected routes under `/api/v1/admin/*`
-
-### Storage Layer Status
-
-- **17/17 domains** fully aligned with interfaces
-- **375 fully implemented methods**
-- **0 critical alignment issues**
-- All facades (UserStorage, AdminStorage, PlatformStorage) operational
-
-### AI-ML Storage Features (Fully Implemented)
-
-- OCR Results: Create and retrieve optical character recognition results
-- Face Detection: Store face detection data from TensorFlow.js BlazeFace
-- Privacy Settings: User privacy preferences for face recognition and data retention
-- Image Metadata: Store and retrieve image metadata with analysis results
-- Alt-Text Quality: Track and update accessibility quality scores for images
-
-_Last Updated: December 2025_
+- **OpenAI API**: For AI-powered recipe generation and conversational kitchen assistance, accessed via Replit AI Integrations (gpt-4o-mini model).
+- **USDA FoodData Central API**: Provides comprehensive nutrition data lookup for food items, requiring an API key.
+- **OpenFoodFacts API**: A free, open-source database for product information including nutrition, brand, and categories, accessed without an API key.
+- **PostgreSQL**: The primary relational database for authenticated user data, connected via `DATABASE_URL` and managed with Drizzle ORM.
+- **expo-camera**: Used for barcode scanning functionality.
+- **date-fns**: For date manipulation in expiration tracking and meal planning.
+- **@react-native-async-storage/async-storage**: Persistent local storage solution.

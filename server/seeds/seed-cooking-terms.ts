@@ -1,337 +1,504 @@
-// Seed data for cooking terms knowledge bank
-import { InsertCookingTerm } from "@shared/schema/food";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import { cookingTerms } from "@shared/schema";
 
-export const initialCookingTerms: InsertCookingTerm[] = [
-  // Knife Skills
-  {
-    term: "julienne",
-    category: "knife_skills",
-    shortDefinition: "Cut into thin, matchstick-sized strips",
-    longDefinition:
-      "Julienne is a knife cut that produces thin, uniform strips typically 1/8 inch × 1/8 inch × 2 inches. Start by cutting vegetables into 2-inch lengths, then slice them thinly, stack the slices, and cut into thin strips. This cut is perfect for stir-fries, salads, and garnishes.",
-    difficulty: "intermediate",
-    tips: [
-      "Perfect for carrots in Vietnamese spring rolls",
-      "Great for bell peppers in fajitas",
-      "Stack slices evenly for uniform strips",
-    ],
-    tools: ["Chef's knife", "Cutting board"],
-  },
-  {
-    term: "brunoise",
-    category: "knife_skills",
-    shortDefinition: "Dice into tiny 1/8-inch cubes",
-    longDefinition:
-      "Brunoise is a fine dice that produces uniform 1/8-inch cubes. Start with julienned vegetables, then gather them together and cut crosswise into tiny cubes. This precise cut ensures even cooking and professional presentation. Often used for aromatic vegetables in sauces.",
-    difficulty: "advanced",
-    tips: [
-      "Perfect for mirepoix in consommé",
-      "Practice with carrots first",
-      "Keep fingers curled for safety",
-    ],
-    tools: ["Sharp chef's knife", "Cutting board"],
-    relatedTerms: ["julienne", "dice"],
-  },
-  {
-    term: "chiffonade",
-    category: "knife_skills",
-    shortDefinition: "Roll and slice leafy herbs into thin ribbons",
-    longDefinition:
-      "Chiffonade is a technique for cutting leafy herbs and vegetables into thin ribbons. Stack the leaves, roll them tightly like a cigar, then slice thinly perpendicular to the roll. This technique prevents bruising and releases maximum flavor from herbs.",
-    difficulty: "beginner",
-    tips: [
-      "Perfect for basil in Caprese salad",
-      "Great for garnishing soups",
-      "Use a sharp knife to prevent bruising",
-    ],
-    tools: ["Chef's knife", "Cutting board"],
-  },
-  {
-    term: "dice",
-    category: "knife_skills",
-    shortDefinition: "Cut into uniform cube shapes",
-    longDefinition:
-      "Dicing creates uniform cubes in three sizes: large (3/4 inch), medium (1/2 inch), or small (1/4 inch). Start by cutting planks, then sticks, and finally cubes. Uniform dicing ensures even cooking and professional appearance in dishes.",
-    difficulty: "beginner",
-    tips: [
-      "Essential for onions in salsa",
-      "Keep sizes consistent for even cooking",
-      "Use the claw grip for safety",
-    ],
-    tools: ["Chef's knife", "Cutting board"],
-  },
-  {
-    term: "mince",
-    category: "knife_skills",
-    shortDefinition: "Chop into very fine pieces",
-    longDefinition:
-      "Mincing produces the finest cut possible with a knife, creating pieces smaller than 1/8 inch. Use a rocking motion with your chef's knife, gathering ingredients repeatedly. Perfect for releasing maximum flavor from aromatics like garlic and ginger.",
-    difficulty: "beginner",
-    tips: [
-      "Rock the knife for garlic",
-      "Add salt to help break down herbs",
-      "Gather and chop repeatedly",
-    ],
-    tools: ["Chef's knife", "Cutting board"],
-  },
-
-  // Cooking Methods
+const COOKING_TERMS_DATA = [
+  // Techniques
   {
     term: "sauté",
-    category: "cooking_methods",
-    shortDefinition: "Quick cook in hot pan with small amount of fat",
-    longDefinition:
-      "Sautéing involves cooking food quickly in a hot pan with a small amount of oil or butter. Keep food moving in the pan by tossing or stirring. The high heat creates browning and caramelization while maintaining texture. Perfect for vegetables, proteins, and aromatics.",
+    definition:
+      "Cook food quickly in a small amount of fat over relatively high heat while stirring or tossing frequently.",
+    category: "technique",
     difficulty: "beginner",
-    timeEstimate: "5-10 minutes",
-    tips: [
-      "Heat pan before adding oil",
-      "Don't overcrowd the pan",
-      "Keep food moving for even cooking",
-    ],
-    tools: ["Sauté pan or skillet", "Wooden spoon or spatula"],
+    pronunciation: "soh-TAY",
+    relatedTerms: ["pan-fry", "stir-fry"],
   },
   {
     term: "braise",
-    category: "cooking_methods",
-    shortDefinition: "Slow cook in liquid after browning",
-    longDefinition:
-      "Braising combines dry and moist heat cooking. First, sear the food to develop flavor, then partially cover with liquid and cook slowly at low temperature. This technique breaks down tough fibers and creates rich, complex flavors. Ideal for tougher cuts of meat.",
+    definition:
+      "A cooking method that uses both wet and dry heat. Food is first seared at high temperature, then finished in a covered pot with liquid at low heat.",
+    category: "technique",
     difficulty: "intermediate",
-    timeEstimate: "2-4 hours",
-    tips: [
-      "Brown meat well first",
-      "Keep liquid at gentle simmer",
-      "Cover partially to concentrate flavors",
-    ],
-    tools: ["Dutch oven or braising pan", "Tongs", "Tight-fitting lid"],
-    relatedTerms: ["sear", "simmer"],
+    relatedTerms: ["stew", "simmer"],
   },
   {
     term: "blanch",
-    category: "cooking_methods",
-    shortDefinition: "Briefly boil then shock in ice water",
-    longDefinition:
-      "Blanching involves briefly boiling vegetables or fruits, then immediately transferring to an ice bath to stop cooking. This technique preserves color, removes raw taste, and partially cooks food for later use. Essential for freezing vegetables and preparing certain ingredients.",
+    definition:
+      "Briefly cook food in boiling water, then immediately plunge into ice water to stop the cooking process.",
+    category: "technique",
     difficulty: "beginner",
-    timeEstimate: "2-5 minutes",
-    tips: [
-      "Prepare ice bath before boiling",
-      "Salt the boiling water",
-      "Time precisely for best results",
-    ],
-    tools: ["Large pot", "Bowl for ice bath", "Slotted spoon or spider"],
+    relatedTerms: ["shock", "parboil"],
   },
   {
     term: "deglaze",
-    category: "cooking_methods",
-    shortDefinition: "Add liquid to hot pan to loosen browned bits",
-    longDefinition:
-      "Deglazing involves adding liquid (wine, stock, or vinegar) to a hot pan after searing to dissolve the caramelized bits (fond) stuck to the bottom. These flavorful bits form the base of pan sauces. Scrape with a wooden spoon while the liquid simmers.",
-    difficulty: "intermediate",
-    timeEstimate: "2-3 minutes",
-    tips: [
-      "Use cold liquid for best effect",
-      "Scrape up all the fond",
-      "Reduce to concentrate flavors",
-    ],
-    tools: ["Pan used for cooking", "Wooden spoon", "Liquid for deglazing"],
-  },
-  {
-    term: "poach",
-    category: "cooking_methods",
-    shortDefinition: "Gently cook in simmering liquid",
-    longDefinition:
-      "Poaching involves cooking food gently in liquid at 160-180°F (71-82°C), just below simmering. The liquid should barely move. This delicate method preserves moisture and texture, perfect for delicate foods. Can use water, stock, wine, or flavored liquids.",
-    difficulty: "intermediate",
-    timeEstimate: "10-20 minutes",
-    tips: [
-      "Keep temperature steady",
-      "Use thermometer for precision",
-      "Flavor the poaching liquid",
-    ],
-    tools: ["Wide pan", "Thermometer", "Slotted spoon"],
-  },
-  {
-    term: "roast",
-    category: "cooking_methods",
-    shortDefinition: "Cook with dry heat in oven",
-    longDefinition:
-      "Roasting uses dry heat in an oven, typically at 300°F or higher, to cook food evenly while developing a browned, flavorful exterior. Air circulates around the food, creating caramelization. Perfect for larger cuts of meat, whole poultry, and vegetables.",
+    definition:
+      "Add liquid to a hot pan to loosen and dissolve the browned bits (fond) stuck to the bottom after cooking meat or vegetables.",
+    category: "technique",
     difficulty: "beginner",
-    timeEstimate: "30 minutes to several hours",
-    tips: [
-      "Preheat oven fully",
-      "Use meat thermometer",
-      "Let meat rest after roasting",
-    ],
-    tools: ["Roasting pan", "Meat thermometer", "Oven"],
+    relatedTerms: ["fond", "reduce"],
   },
-  {
-    term: "simmer",
-    category: "cooking_methods",
-    shortDefinition: "Cook in liquid just below boiling point",
-    longDefinition:
-      "Simmering maintains liquid at 185-205°F (85-96°C), with small bubbles gently breaking the surface. Lower and gentler than boiling, it prevents food from breaking apart while extracting flavors. Essential for stocks, soups, and sauces.",
-    difficulty: "beginner",
-    timeEstimate: "Varies",
-    tips: [
-      "Adjust heat to maintain gentle bubbles",
-      "Skim foam as needed",
-      "Partially cover to control evaporation",
-    ],
-    tools: ["Pot or saucepan", "Lid", "Ladle for skimming"],
-  },
-
-  // Prep Techniques
   {
     term: "fold",
-    category: "prep_techniques",
-    shortDefinition: "Gently combine ingredients to preserve air",
-    longDefinition:
-      "Folding is a gentle mixing technique that preserves air bubbles in delicate mixtures. Use a rubber spatula to cut down through the center, sweep across the bottom, and up the side, rotating the bowl. Essential for maintaining volume in whipped ingredients.",
-    difficulty: "intermediate",
-    tips: [
-      "Use gentle motions",
-      "Rotate bowl as you fold",
-      "Stop when just combined",
-    ],
-    tools: ["Rubber spatula", "Large bowl"],
-    relatedTerms: ["whip", "beat"],
-  },
-  {
-    term: "emulsify",
-    category: "prep_techniques",
-    shortDefinition: "Combine two liquids that normally don't mix",
-    longDefinition:
-      "Emulsification combines two immiscible liquids (like oil and water) into a stable mixture. Add one liquid slowly to the other while whisking vigorously or blending. An emulsifier like egg yolk or mustard helps stabilize the mixture.",
-    difficulty: "intermediate",
-    tips: [
-      "Add oil very slowly at first",
-      "Room temperature ingredients work better",
-      "Mustard helps stabilize vinaigrettes",
-    ],
-    tools: ["Whisk or blender", "Bowl", "Measuring cups"],
-  },
-  {
-    term: "temper",
-    category: "prep_techniques",
-    shortDefinition: "Gradually adjust temperature to prevent curdling",
-    longDefinition:
-      "Tempering gradually brings ingredients to similar temperatures to prevent shocking or curdling. Add hot liquid slowly to cold ingredients while whisking, or vice versa. Critical for custards, chocolate work, and adding eggs to hot mixtures.",
-    difficulty: "advanced",
-    tips: [
-      "Go slowly with hot liquid",
-      "Whisk constantly",
-      "Use ladle for control",
-    ],
-    tools: ["Whisk", "Ladle", "Bowls"],
-  },
-  {
-    term: "macerate",
-    category: "prep_techniques",
-    shortDefinition: "Soften fruit in liquid, sugar, or alcohol",
-    longDefinition:
-      "Macerating involves soaking fruits in liquid, sugar, alcohol, or acid to soften them and infuse flavors. The process draws out juices while adding complementary flavors. Time varies from 30 minutes to several hours depending on the fruit and desired result.",
+    definition:
+      "Gently combine a light mixture with a heavier one using a lifting and turning motion to preserve air and volume.",
+    category: "technique",
     difficulty: "beginner",
-    timeEstimate: "30 minutes to 4 hours",
-    tips: [
-      "Use just enough liquid to coat",
-      "Add sugar to draw out juices",
-      "Refrigerate if macerating longer than 1 hour",
-    ],
-    tools: ["Bowl", "Spoon for mixing"],
-  },
-  {
-    term: "marinate",
-    category: "prep_techniques",
-    shortDefinition: "Soak food in seasoned liquid for flavor",
-    longDefinition:
-      "Marinating involves soaking food in a seasoned liquid to add flavor and sometimes tenderize. Acids (vinegar, citrus), oils, and aromatics work together. Time varies: 30 minutes for fish, 2-24 hours for meat. Always marinate in the refrigerator.",
-    difficulty: "beginner",
-    timeEstimate: "30 minutes to 24 hours",
-    tips: [
-      "Use non-reactive container",
-      "Don't over-marinate fish",
-      "Reserve some marinade for sauce before adding meat",
-    ],
-    tools: ["Container or zip-lock bag", "Refrigerator"],
-  },
-  {
-    term: "proof",
-    category: "prep_techniques",
-    shortDefinition: "Allow yeast dough to rise",
-    longDefinition:
-      "Proofing is the final rise of shaped yeast dough before baking. During this time, yeast produces gas that creates the bread's structure. Proper proofing temperature (75-80°F) and humidity are crucial. Dough typically doubles in size.",
-    difficulty: "intermediate",
-    timeEstimate: "1-2 hours",
-    tips: [
-      "Cover dough to prevent drying",
-      "Poke test to check readiness",
-      "Warm spot speeds proofing",
-    ],
-    tools: ["Bowl", "Damp towel or plastic wrap", "Warm location"],
-    relatedTerms: ["knead", "rest"],
-  },
-  {
-    term: "rest",
-    category: "prep_techniques",
-    shortDefinition: "Let meat stand after cooking to redistribute juices",
-    longDefinition:
-      "Resting allows meat's internal juices to redistribute evenly throughout after cooking. During cooking, juices move to the center; resting lets them flow back outward. Rest for 5-10 minutes for steaks, 15-20 for roasts. Tent loosely with foil to keep warm.",
-    difficulty: "beginner",
-    timeEstimate: "5-20 minutes",
-    tips: [
-      "Rest on warm plate",
-      "Tent loosely with foil",
-      "Larger cuts need longer rest",
-    ],
-    tools: ["Plate", "Aluminum foil"],
-  },
-  {
-    term: "bloom",
-    category: "prep_techniques",
-    shortDefinition: "Hydrate gelatin or wake up spices in liquid",
-    longDefinition:
-      "Blooming has two meanings: For gelatin, sprinkle powder over cold liquid and let it absorb for 5 minutes before heating. For spices, briefly cook in oil to release essential oils and intensify flavors. Both techniques maximize ingredient potential.",
-    difficulty: "beginner",
-    timeEstimate: "5 minutes",
-    tips: [
-      "Sprinkle gelatin, don't dump",
-      "Bloom spices in oil before adding liquid",
-      "Don't let spices burn",
-    ],
-    tools: ["Small bowl for gelatin", "Pan for spices"],
-  },
-  {
-    term: "clarify",
-    category: "prep_techniques",
-    shortDefinition: "Remove impurities from butter or stock",
-    longDefinition:
-      "Clarifying removes solids and impurities. For butter, melt slowly and skim foam, leaving pure butterfat. For stocks, use egg whites to trap particles (consommé). Clarified butter has a higher smoke point; clarified stock is crystal clear.",
-    difficulty: "advanced",
-    timeEstimate: "20-30 minutes",
-    tips: [
-      "Low heat for butter",
-      "Don't stir while clarifying",
-      "Save milk solids for other uses",
-    ],
-    tools: ["Saucepan", "Ladle or spoon for skimming", "Fine mesh strainer"],
+    relatedTerms: ["whip", "incorporate"],
   },
   {
     term: "reduce",
-    category: "cooking_methods",
-    shortDefinition: "Simmer liquid to concentrate flavors",
-    longDefinition:
-      "Reduction involves simmering or boiling liquid to evaporate water, concentrating flavors and thickening consistency. The process intensifies taste and creates sauces. Watch carefully to prevent burning. Typically reduce by half or more for sauces.",
+    definition:
+      "Simmer a liquid to evaporate water and concentrate its flavors, resulting in a thicker consistency.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["simmer", "concentrate"],
+  },
+  {
+    term: "sear",
+    definition:
+      "Brown the surface of meat quickly over very high heat to create a flavorful crust.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["brown", "caramelize"],
+  },
+  {
+    term: "poach",
+    definition:
+      "Cook food gently in liquid that is just below the boiling point, typically between 160-180°F (71-82°C).",
+    category: "technique",
     difficulty: "intermediate",
-    timeEstimate: "10-30 minutes",
-    tips: [
-      "Use wide pan for faster reduction",
-      "Stir occasionally to prevent sticking",
-      "Taste as you reduce",
-    ],
-    tools: ["Wide pan or saucepan", "Wooden spoon"],
-    relatedTerms: ["simmer", "deglaze"],
+    relatedTerms: ["simmer", "sous vide"],
+  },
+  {
+    term: "baste",
+    definition:
+      "Pour liquid (such as pan drippings, melted butter, or marinade) over food while cooking to keep it moist and add flavor.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["drizzle", "brush"],
+  },
+  {
+    term: "caramelize",
+    definition:
+      "Heat sugar until it melts and turns brown, or cook foods with natural sugars until they brown and develop a sweet, nutty flavor.",
+    category: "technique",
+    difficulty: "intermediate",
+    relatedTerms: ["brown", "sear"],
+  },
+  {
+    term: "emulsify",
+    definition:
+      "Combine two liquids that normally don't mix (like oil and water) into a smooth, stable mixture.",
+    category: "technique",
+    difficulty: "intermediate",
+    relatedTerms: ["blend", "whisk"],
+  },
+  {
+    term: "flambé",
+    definition:
+      "Add alcohol to a hot pan and ignite it to burn off the alcohol while adding flavor.",
+    category: "technique",
+    difficulty: "advanced",
+    pronunciation: "flahm-BAY",
+    relatedTerms: ["deglaze", "reduce"],
+  },
+  {
+    term: "marinate",
+    definition:
+      "Soak food in a seasoned liquid to add flavor and sometimes tenderize it.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["brine", "tenderize"],
+  },
+  {
+    term: "pan-fry",
+    definition:
+      "Cook food in a moderate amount of fat in an uncovered pan over medium to high heat.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["sauté", "deep-fry"],
+  },
+  {
+    term: "roast",
+    definition:
+      "Cook food uncovered in an oven using dry heat, typically at higher temperatures for browning and caramelization.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["bake", "broil"],
+  },
+  {
+    term: "stir-fry",
+    definition:
+      "Cook small pieces of food quickly over very high heat in a wok or large pan while constantly stirring.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["sauté", "wok"],
+  },
+  {
+    term: "steam",
+    definition:
+      "Cook food over boiling water using the steam's heat, preserving nutrients and moisture.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["blanch", "poach"],
+  },
+  {
+    term: "sweat",
+    definition:
+      "Cook vegetables slowly in a small amount of fat over low heat until soft but not browned.",
+    category: "technique",
+    difficulty: "beginner",
+    relatedTerms: ["sauté", "soften"],
+  },
+  {
+    term: "temper",
+    definition:
+      "Gradually raise the temperature of a cold ingredient by slowly adding a hot liquid to prevent curdling or separation.",
+    category: "technique",
+    difficulty: "intermediate",
+    relatedTerms: ["emulsify", "fold"],
+  },
+  {
+    term: "brine",
+    definition:
+      "Soak food in a solution of salt and water (often with sugar and spices) to enhance moisture and flavor.",
+    category: "technique",
+    difficulty: "intermediate",
+    relatedTerms: ["marinate", "cure"],
+  },
+
+  // Cuts
+  {
+    term: "julienne",
+    definition:
+      "Cut vegetables or other foods into thin, matchstick-sized strips, typically 1/8 inch by 1/8 inch by 2 inches.",
+    category: "cut",
+    difficulty: "intermediate",
+    pronunciation: "joo-lee-EN",
+    relatedTerms: ["chiffonade", "batonnet"],
+  },
+  {
+    term: "dice",
+    definition:
+      "Cut food into small cubes of uniform size, typically 1/4 to 1/2 inch.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["cube", "mince"],
+  },
+  {
+    term: "mince",
+    definition: "Cut food into very small, fine pieces, smaller than a dice.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["dice", "chop"],
+  },
+  {
+    term: "chiffonade",
+    definition:
+      "Stack leafy vegetables or herbs, roll them tightly, and slice into thin ribbons.",
+    category: "cut",
+    difficulty: "intermediate",
+    pronunciation: "shif-oh-NAHD",
+    relatedTerms: ["julienne", "shred"],
+  },
+  {
+    term: "brunoise",
+    definition:
+      "Cut food into tiny, uniform cubes about 1/8 inch on each side, smaller than a dice.",
+    category: "cut",
+    difficulty: "advanced",
+    pronunciation: "broo-NWAHZ",
+    relatedTerms: ["dice", "mince"],
+  },
+  {
+    term: "batonnet",
+    definition:
+      "Cut vegetables into stick shapes about 1/4 inch by 1/4 inch by 2-3 inches.",
+    category: "cut",
+    difficulty: "intermediate",
+    pronunciation: "bah-toh-NAY",
+    relatedTerms: ["julienne", "french fry cut"],
+  },
+  {
+    term: "chop",
+    definition: "Cut food into irregular pieces of roughly the same size.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["dice", "mince"],
+  },
+  {
+    term: "cube",
+    definition:
+      "Cut food into uniform square pieces, typically 1/2 inch or larger.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["dice", "chop"],
+  },
+  {
+    term: "slice",
+    definition: "Cut food into flat, thin pieces of uniform thickness.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["julienne", "chop"],
+  },
+  {
+    term: "score",
+    definition:
+      "Make shallow cuts in a crosshatch pattern on the surface of food to help it cook evenly or absorb marinades.",
+    category: "cut",
+    difficulty: "beginner",
+    relatedTerms: ["slash", "mark"],
+  },
+
+  // Equipment
+  {
+    term: "mandoline",
+    definition:
+      "A kitchen tool with an adjustable blade for slicing vegetables and fruits into uniform, thin slices.",
+    category: "equipment",
+    difficulty: "intermediate",
+    pronunciation: "MAN-doh-lin",
+    relatedTerms: ["slicer", "grater"],
+  },
+  {
+    term: "bain-marie",
+    definition:
+      "A water bath used for gentle cooking or keeping food warm, where a container is placed inside a larger pan of simmering water.",
+    category: "equipment",
+    difficulty: "intermediate",
+    pronunciation: "ban-mah-REE",
+    relatedTerms: ["double boiler", "water bath"],
+  },
+  {
+    term: "ramekin",
+    definition:
+      "A small ceramic or glass dish used for baking and serving individual portions.",
+    category: "equipment",
+    difficulty: "beginner",
+    pronunciation: "RAM-ih-kin",
+    relatedTerms: ["soufflé dish", "custard cup"],
+  },
+  {
+    term: "chinois",
+    definition:
+      "A fine-mesh conical strainer used to strain sauces, soups, and custards for a smooth texture.",
+    category: "equipment",
+    difficulty: "intermediate",
+    pronunciation: "shin-WAH",
+    relatedTerms: ["strainer", "sieve"],
+  },
+  {
+    term: "dutch oven",
+    definition:
+      "A heavy, thick-walled cooking pot with a tight-fitting lid, ideal for braising and slow cooking.",
+    category: "equipment",
+    difficulty: "beginner",
+    relatedTerms: ["casserole", "braiser"],
+  },
+  {
+    term: "wok",
+    definition:
+      "A round-bottomed cooking pan originating from China, used especially for stir-frying.",
+    category: "equipment",
+    difficulty: "beginner",
+    relatedTerms: ["skillet", "frying pan"],
+  },
+  {
+    term: "immersion blender",
+    definition:
+      "A handheld blender that can be immersed directly into a pot or container to blend soups and sauces.",
+    category: "equipment",
+    difficulty: "beginner",
+    relatedTerms: ["blender", "food processor"],
+  },
+  {
+    term: "kitchen scale",
+    definition:
+      "A device used to measure the weight of ingredients for precise cooking and baking.",
+    category: "equipment",
+    difficulty: "beginner",
+    relatedTerms: ["measuring cups", "measuring spoons"],
+  },
+
+  // Temperatures
+  {
+    term: "room temperature",
+    definition:
+      "Food brought to approximately 68-72°F (20-22°C) before cooking, often required for even cooking or proper emulsification.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["temper", "rest"],
+  },
+  {
+    term: "simmer",
+    definition:
+      "Heat liquid to 185-205°F (85-96°C) where small bubbles rise gently to the surface.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["boil", "poach"],
+  },
+  {
+    term: "rolling boil",
+    definition:
+      "Vigorous boiling at 212°F (100°C) with large, rapidly breaking bubbles that cannot be disrupted by stirring.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["boil", "simmer"],
+  },
+  {
+    term: "low heat",
+    definition:
+      "Cooking at temperatures around 200-300°F (93-149°C), ideal for gentle cooking and simmering.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["simmer", "warm"],
+  },
+  {
+    term: "medium heat",
+    definition:
+      "Cooking at temperatures around 300-400°F (149-204°C), suitable for most sautéing and pan-frying.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["sauté", "pan-fry"],
+  },
+  {
+    term: "high heat",
+    definition:
+      "Cooking at temperatures above 400°F (204°C), used for searing and stir-frying.",
+    category: "temperature",
+    difficulty: "beginner",
+    relatedTerms: ["sear", "stir-fry"],
+  },
+  {
+    term: "carry-over cooking",
+    definition:
+      "The continued cooking that occurs after food is removed from the heat source, as residual heat continues to raise the internal temperature.",
+    category: "temperature",
+    difficulty: "intermediate",
+    relatedTerms: ["rest", "internal temperature"],
+  },
+
+  // Ingredients
+  {
+    term: "fond",
+    definition:
+      "The caramelized bits of food that stick to the bottom of a pan after cooking, used to add flavor to sauces.",
+    category: "ingredient",
+    difficulty: "intermediate",
+    pronunciation: "FAHN",
+    relatedTerms: ["deglaze", "pan sauce"],
+  },
+  {
+    term: "zest",
+    definition:
+      "The colorful outer layer of citrus peel, containing flavorful oils, grated or cut into thin strips.",
+    category: "ingredient",
+    difficulty: "beginner",
+    relatedTerms: ["citrus", "peel"],
+  },
+  {
+    term: "bouquet garni",
+    definition:
+      "A bundle of herbs (typically thyme, parsley, and bay leaf) tied together or in cheesecloth, used to flavor soups and stews.",
+    category: "ingredient",
+    difficulty: "intermediate",
+    pronunciation: "boo-KAY gar-NEE",
+    relatedTerms: ["herbs", "sachet"],
+  },
+  {
+    term: "mirepoix",
+    definition:
+      "A mixture of diced onions, carrots, and celery used as a flavor base for stocks, soups, and sauces.",
+    category: "ingredient",
+    difficulty: "intermediate",
+    pronunciation: "meer-PWAH",
+    relatedTerms: ["soffritto", "trinity"],
+  },
+  {
+    term: "roux",
+    definition:
+      "A mixture of equal parts fat and flour cooked together, used to thicken sauces and soups.",
+    category: "ingredient",
+    difficulty: "intermediate",
+    pronunciation: "ROO",
+    relatedTerms: ["béchamel", "gravy"],
+  },
+  {
+    term: "al dente",
+    definition:
+      "Pasta or vegetables cooked until just firm when bitten, with a slight resistance to the tooth.",
+    category: "ingredient",
+    difficulty: "beginner",
+    pronunciation: "al-DEN-tay",
+    relatedTerms: ["pasta", "tender"],
+  },
+
+  // Measurements
+  {
+    term: "pinch",
+    definition:
+      "A small amount of a dry ingredient that can be held between the thumb and forefinger, roughly 1/16 teaspoon.",
+    category: "measurement",
+    difficulty: "beginner",
+    relatedTerms: ["dash", "sprinkle"],
+  },
+  {
+    term: "dash",
+    definition:
+      "A small amount of liquid, typically 1/8 teaspoon or a few drops.",
+    category: "measurement",
+    difficulty: "beginner",
+    relatedTerms: ["pinch", "splash"],
+  },
+  {
+    term: "splash",
+    definition:
+      "A small but visible amount of liquid added quickly, roughly 1-2 tablespoons.",
+    category: "measurement",
+    difficulty: "beginner",
+    relatedTerms: ["dash", "drizzle"],
+  },
+  {
+    term: "drizzle",
+    definition:
+      "A thin stream of liquid poured slowly over food, typically oil, sauce, or dressing.",
+    category: "measurement",
+    difficulty: "beginner",
+    relatedTerms: ["splash", "pour"],
   },
 ];
+
+async function seedCookingTerms() {
+  const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+  });
+
+  const db = drizzle(pool);
+
+  console.log("Seeding cooking terms...");
+
+  try {
+    for (const term of COOKING_TERMS_DATA) {
+      await db.insert(cookingTerms).values(term).onConflictDoNothing();
+    }
+
+    console.log(
+      `Successfully seeded ${COOKING_TERMS_DATA.length} cooking terms!`,
+    );
+  } catch (error) {
+    console.error("Error seeding cooking terms:", error);
+    throw error;
+  } finally {
+    await pool.end();
+  }
+}
+
+seedCookingTerms()
+  .then(() => {
+    console.log("Seed complete!");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("Seed failed:", error);
+    process.exit(1);
+  });

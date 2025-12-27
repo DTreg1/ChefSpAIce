@@ -1,193 +1,166 @@
-import { Router, Request, Response } from "express";
+import { Router, type Request, type Response } from "express";
 import { db } from "../../db";
-import { cookingTerms } from "@shared/schema";
-import CookingTermsService from "../../services/cooking-terms.service";
-import { asyncHandler } from "../../middleware/error.middleware";
-import { termDetector } from "../../services/term-detector.service";
+import { cookingTerms, type CookingTerm } from "@shared/schema";
+import { eq, ilike, or, sql } from "drizzle-orm";
 
 const router = Router();
 
-// Get all cooking terms
-router.get(
-  "/",
-  asyncHandler(async (req, res) => {
+interface CacheEntry {
+  data: CookingTerm[];
+  timestamp: number;
+}
+
+let termsCache: CacheEntry | null = null;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function getCachedTerms(): Promise<CookingTerm[]> {
+  if (termsCache && Date.now() - termsCache.timestamp < CACHE_TTL_MS) {
+    return termsCache.data;
+  }
+
+  const terms = await db.select().from(cookingTerms);
+  termsCache = {
+    data: terms,
+    timestamp: Date.now(),
+  };
+  return terms;
+}
+
+export function invalidateTermsCache(): void {
+  termsCache = null;
+}
+
+function formatTermResponse(term: CookingTerm) {
+  return {
+    id: term.id,
+    term: term.term,
+    definition: term.definition,
+    category: term.category,
+    difficulty: term.difficulty || "beginner",
+    pronunciation: term.pronunciation || undefined,
+    videoUrl: term.videoUrl || undefined,
+    relatedTerms: term.relatedTerms || [],
+  };
+}
+
+router.get("/", async (req: Request, res: Response) => {
+  try {
     const { category, search } = req.query;
 
-    let terms;
+    let terms = await getCachedTerms();
 
-    if (category && typeof category === "string") {
-      terms = await CookingTermsService.getTermsByCategory(category);
-    } else if (search && typeof search === "string") {
-      terms = await CookingTermsService.searchTerms(search);
+    if (category && typeof category === "string" && category !== "all") {
+      terms = terms.filter(
+        (t) => t.category.toLowerCase() === category.toLowerCase(),
+      );
+    }
+
+    if (search && typeof search === "string") {
+      const searchLower = search.toLowerCase();
+      terms = terms.filter(
+        (t) =>
+          t.term.toLowerCase().includes(searchLower) ||
+          t.definition.toLowerCase().includes(searchLower),
+      );
+
+      terms.sort((a, b) => {
+        const aTermMatch = a.term.toLowerCase().startsWith(searchLower) ? 0 : 1;
+        const bTermMatch = b.term.toLowerCase().startsWith(searchLower) ? 0 : 1;
+        if (aTermMatch !== bTermMatch) return aTermMatch - bTermMatch;
+
+        const aExactTerm = a.term.toLowerCase() === searchLower ? 0 : 1;
+        const bExactTerm = b.term.toLowerCase() === searchLower ? 0 : 1;
+        if (aExactTerm !== bExactTerm) return aExactTerm - bExactTerm;
+
+        return a.term.localeCompare(b.term);
+      });
     } else {
-      const allTerms = await db.select().from(cookingTerms).limit(100);
-      terms = allTerms;
+      terms.sort((a, b) => a.term.localeCompare(b.term));
     }
 
-    res.json(terms);
-  }),
-);
+    res.json(terms.map(formatTermResponse));
+  } catch (error) {
+    console.error("Error fetching cooking terms:", error);
+    res.status(500).json({ error: "Failed to fetch cooking terms" });
+  }
+});
 
-// Get cooking term categories
-router.get(
-  "/categories",
-  asyncHandler(async (req, res) => {
-    const categories = await CookingTermsService.getCategories();
-    res.json(categories);
-  }),
-);
-
-// Search cooking terms
-router.get(
-  "/search/:query",
-  asyncHandler(async (req, res) => {
-    const { query } = req.params;
-
-    if (!query || query.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "Search query must be at least 2 characters" });
-    }
-
-    const results = await CookingTermsService.searchTerms(query);
-    res.json(results);
-  }),
-);
-
-// Get a single cooking term
-router.get(
-  "/:term",
-  asyncHandler(async (req, res) => {
-    const { term } = req.params;
-
-    const termData = await CookingTermsService.getTerm(term);
-
-    if (!termData) {
-      return res.status(404).json({ error: "Term not found" });
-    }
-
-    res.json(termData);
-  }),
-);
-
-// Get related terms
-router.get(
-  "/:term/related",
-  asyncHandler(async (req, res) => {
-    const { term } = req.params;
-
-    const relatedTerms = await CookingTermsService.getRelatedTerms(term);
-    res.json(relatedTerms);
-  }),
-);
-
-// Detect cooking terms in text
-router.post(
-  "/detect",
-  asyncHandler(async (req, res) => {
-    const { text } = req.body || {};
+router.get("/detect", async (req: Request, res: Response) => {
+  try {
+    const { text } = req.query;
 
     if (!text || typeof text !== "string") {
-      return res.status(400).json({ error: "Text is required" });
+      return res.status(400).json({ error: "Text parameter is required" });
     }
 
-    const detectedTerms = await CookingTermsService.detectTermsInText(text);
-    res.json(detectedTerms);
-  }),
-);
+    const allTerms = await getCachedTerms();
 
-// Format recipe instructions with cooking terms
-router.post(
-  "/format",
-  asyncHandler(async (req, res) => {
-    const { instructions } = req.body || {};
+    const sortedTerms = [...allTerms].sort(
+      (a, b) => b.term.length - a.term.length,
+    );
 
-    if (!instructions || typeof instructions !== "string") {
-      return res.status(400).json({ error: "Instructions are required" });
+    const foundTerms: CookingTerm[] = [];
+    const textLower = text.toLowerCase();
+
+    for (const term of sortedTerms) {
+      const termLower = term.term.toLowerCase();
+      const escapedTerm = termLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`\\b${escapedTerm}\\b`, "i");
+
+      if (regex.test(text)) {
+        const alreadyFound = foundTerms.some(
+          (f) =>
+            f.term.toLowerCase().includes(termLower) ||
+            termLower.includes(f.term.toLowerCase()),
+        );
+
+        if (!alreadyFound) {
+          foundTerms.push(term);
+        }
+      }
     }
 
-    const formattedInstructions =
-      await CookingTermsService.formatInstructionsWithTerms(instructions);
-    res.json({ formatted: formattedInstructions });
-  }),
-);
+    res.json(foundTerms.map(formatTermResponse));
+  } catch (error) {
+    console.error("Error detecting cooking terms:", error);
+    res.status(500).json({ error: "Failed to detect cooking terms" });
+  }
+});
 
-// Enhanced term detection - detect terms with variations
-router.post(
-  "/detect-enhanced",
-  asyncHandler(async (req, res) => {
-    const { text, excludeCategories, maxMatches, contextAware } =
-      req.body || {};
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const termId = parseInt(id, 10);
 
-    if (!text || typeof text !== "string") {
-      return res.status(400).json({ error: "Text is required" });
+    if (isNaN(termId)) {
+      return res.status(400).json({ error: "Invalid term ID" });
     }
 
-    if (text.length > 10000) {
-      return res
-        .status(400)
-        .json({ error: "Text too long. Maximum 10,000 characters allowed" });
+    const allTerms = await getCachedTerms();
+    const term = allTerms.find((t) => t.id === termId);
+
+    if (!term) {
+      return res.status(404).json({ error: "Cooking term not found" });
     }
 
-    const matches = await termDetector.detectTerms(text, {
-      excludeCategories,
-      maxMatches: maxMatches || 100,
-      contextAware: contextAware !== false,
-    });
+    const response = formatTermResponse(term);
 
-    res.json({ matches });
-  }),
-);
+    if (term.relatedTerms && term.relatedTerms.length > 0) {
+      const relatedDetails = allTerms
+        .filter((t) => term.relatedTerms?.includes(t.term))
+        .map(formatTermResponse);
 
-// Enrich text with HTML markup for terms
-router.post(
-  "/enrich",
-  asyncHandler(async (req, res) => {
-    const { text, excludeCategories, linkToGlossary, includeTooltip } =
-      req.body || {};
-
-    if (!text || typeof text !== "string") {
-      return res.status(400).json({ error: "Text is required" });
+      return res.json({
+        ...response,
+        relatedTermDetails: relatedDetails,
+      });
     }
 
-    if (text.length > 10000) {
-      return res
-        .status(400)
-        .json({ error: "Text too long. Maximum 10,000 characters allowed" });
-    }
-
-    const enrichedText = await termDetector.enrichText(text, {
-      excludeCategories,
-      linkToGlossary: linkToGlossary || false,
-      includeTooltip: includeTooltip !== false,
-    });
-
-    res.json({ text: enrichedText });
-  }),
-);
-
-// Get detection statistics for text
-router.post(
-  "/stats",
-  asyncHandler(async (req, res) => {
-    const { text } = req.body || {};
-
-    if (!text || typeof text !== "string") {
-      return res.status(400).json({ error: "Text is required" });
-    }
-
-    const stats = await termDetector.getDetectionStats(text);
-    res.json(stats);
-  }),
-);
-
-// Initialize/refresh term detector
-router.post(
-  "/refresh",
-  asyncHandler(async (req, res) => {
-    await termDetector.refresh();
-    res.json({ message: "Term detector refreshed successfully" });
-  }),
-);
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching cooking term:", error);
+    res.status(500).json({ error: "Failed to fetch cooking term" });
+  }
+});
 
 export default router;

@@ -1,0 +1,727 @@
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Dimensions,
+  useWindowDimensions,
+} from "react-native";
+import { GlassView } from "expo-glass-effect";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
+
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
+import { useFloatingChat } from "@/contexts/FloatingChatContext";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import {
+  storage,
+  ChatMessage,
+  generateId,
+  FoodItem,
+  getDaysUntilExpiration,
+} from "@/lib/storage";
+import { getApiUrl, apiRequest } from "@/lib/query-client";
+
+const TAB_BAR_HEIGHT = 54;
+const FAB_SIZE = 56;
+const CHAT_WIDTH = 340;
+const CHAT_MAX_HEIGHT_RATIO = 0.55;
+
+interface WasteTip {
+  text: string;
+  category: "recipe" | "storage" | "freeze" | "preserve" | "general";
+}
+
+const TIP_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  recipe: "book-open",
+  storage: "box",
+  freeze: "thermometer",
+  preserve: "archive",
+  general: "zap",
+};
+
+const TIP_COLORS: Record<string, string> = {
+  recipe: AppColors.primary,
+  storage: AppColors.secondary,
+  freeze: "#4FC3F7",
+  preserve: AppColors.accent,
+  general: AppColors.warning,
+};
+
+export function ChatModal() {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { theme, colorScheme, isDark } = useTheme();
+  const { isChatOpen, closeChat } = useFloatingChat();
+  const flatListRef = useRef<FlatList>(null);
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [inventory, setInventory] = useState<FoodItem[]>([]);
+  const [currentTip, setCurrentTip] = useState<WasteTip | null>(null);
+  const [expiringCount, setExpiringCount] = useState(0);
+  const [tipLoading, setTipLoading] = useState(false);
+
+  const animationProgress = useSharedValue(0);
+
+  const chatWidth = Math.min(CHAT_WIDTH, screenWidth * 0.85);
+  const chatHeight = Math.min(screenHeight * CHAT_MAX_HEIGHT_RATIO, 450);
+  const bottomPadding = Math.max(insets.bottom, 10);
+  const bottomPosition = TAB_BAR_HEIGHT + bottomPadding + FAB_SIZE + Spacing.xl;
+
+  const getExpiringItems = useCallback((items: FoodItem[]) => {
+    const today = new Date();
+    const fiveDaysFromNow = new Date(today);
+    fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+
+    return items
+      .filter((item) => {
+        const expiryDate = new Date(item.expirationDate);
+        return expiryDate >= today && expiryDate <= fiveDaysFromNow;
+      })
+      .map((item) => ({
+        id: typeof item.id === "string" ? parseInt(item.id, 10) || 0 : item.id,
+        name: item.name,
+        daysUntilExpiry: getDaysUntilExpiration(item.expirationDate),
+        quantity: item.quantity,
+      }))
+      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+  }, []);
+
+  const loadTip = useCallback(
+    async (items: FoodItem[]) => {
+      const expiringItems = getExpiringItems(items);
+      setExpiringCount(expiringItems.length);
+
+      if (expiringItems.length === 0) {
+        setCurrentTip(null);
+        return;
+      }
+
+      setTipLoading(true);
+      try {
+        const response = await apiRequest(
+          "POST",
+          "/api/suggestions/waste-reduction",
+          { expiringItems },
+        );
+        const data = await response.json();
+
+        if (data.suggestions && data.suggestions.length > 0) {
+          const randomIndex = Math.floor(
+            Math.random() * data.suggestions.length,
+          );
+          setCurrentTip(data.suggestions[randomIndex]);
+        }
+      } catch (error) {
+        console.error("Failed to load tip:", error);
+        setCurrentTip(null);
+      } finally {
+        setTipLoading(false);
+      }
+    },
+    [getExpiringItems],
+  );
+
+  const loadData = useCallback(async () => {
+    const [chatHistory, items] = await Promise.all([
+      storage.getChatHistory(),
+      storage.getInventory(),
+    ]);
+    setMessages(chatHistory);
+    setInventory(items);
+    loadTip(items);
+  }, [loadTip]);
+
+  useEffect(() => {
+    if (isChatOpen) {
+      animationProgress.value = isChatOpen ? 1 : 0;
+      loadData();
+    }
+  }, [isChatOpen, loadData]);
+
+  const handleClearChat = async () => {
+    await storage.clearChatHistory();
+    setMessages([]);
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim() || sending) return;
+
+    const userMessage: ChatMessage = {
+      id: generateId(),
+      role: "user",
+      content: inputText.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setInputText("");
+    setSending(true);
+    scrollToBottom();
+
+    try {
+      const inventoryContext =
+        inventory.length > 0
+          ? `Available ingredients: ${inventory.map((i) => i.name).join(", ")}`
+          : "No ingredients in inventory";
+
+      const baseUrl = getApiUrl();
+      const response = await fetch(new URL("/api/chat", baseUrl).href, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage.content,
+          context: inventoryContext,
+          history: updatedMessages.slice(-10).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      const assistantMessage: ChatMessage = {
+        id: generateId(),
+        role: "assistant",
+        content:
+          data.reply ||
+          "I'm sorry, I couldn't process that request. Please try again.",
+        timestamp: new Date().toISOString(),
+      };
+
+      const finalMessages = [...updatedMessages, assistantMessage];
+      setMessages(finalMessages);
+      await storage.setChatHistory(finalMessages);
+    } catch (error) {
+      console.error("Chat error:", error);
+
+      const errorMessage: ChatMessage = {
+        id: generateId(),
+        role: "assistant",
+        content:
+          "I'm having trouble connecting right now. Here are some quick tips: Make sure to use your oldest ingredients first, and check out the Recipes tab to generate meal ideas based on what you have!",
+        timestamp: new Date().toISOString(),
+      };
+
+      const finalMessages = [...updatedMessages, errorMessage];
+      setMessages(finalMessages);
+      await storage.setChatHistory(finalMessages);
+    } finally {
+      setSending(false);
+      scrollToBottom();
+    }
+  };
+
+  const containerStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [0.8, 1],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
+    const translateY = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [20, 0],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      transform: [{ scale }, { translateY }],
+      opacity,
+    };
+  });
+
+  const renderAssistantBubble = (content: string) => {
+    return (
+      <GlassView
+        style={[
+          styles.assistantBubble,
+          {
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.1)"
+              : "rgba(0,0,0,0.05)",
+          },
+        ]}
+      >
+        <ThemedText type="small" style={{ color: theme.text }}>
+          {content}
+        </ThemedText>
+      </GlassView>
+    );
+  };
+
+  const renderMessage = ({ item }: { item: ChatMessage }) => {
+    const isUser = item.role === "user";
+
+    if (!isUser) {
+      return (
+        <GlassView style={styles.assistantBubbleContainer}>
+          {renderAssistantBubble(item.content)}
+        </GlassView>
+      );
+    }
+
+    return (
+      <GlassView
+        style={[
+          styles.messageBubble,
+          styles.userBubble,
+          { backgroundColor: AppColors.primary },
+        ]}
+      >
+        <ThemedText type="small" style={{ color: "#FFFFFF" }}>
+          {item.content}
+        </ThemedText>
+      </GlassView>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <GlassView style={styles.emptyState}>
+      <MaterialCommunityIcons
+        name="chef-hat"
+        size={32}
+        color={theme.textSecondary}
+      />
+      <ThemedText type="caption" style={styles.emptyTitle}>
+        Ask me anything!
+      </ThemedText>
+      <View style={styles.suggestions}>
+        {["What can I cook?", "Food storage tips", "Waste reduction tips"].map(
+          (suggestion, index) => (
+            <Pressable
+              key={index}
+              style={[
+                styles.suggestionChip,
+                {
+                  borderWidth: 1,
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.2)"
+                    : "rgba(0,0,0,0.12)",
+                },
+              ]}
+              onPress={() => setInputText(suggestion)}
+            >
+              <ThemedText type="caption" style={{ fontSize: 11 }}>
+                {suggestion}
+              </ThemedText>
+            </Pressable>
+          ),
+        )}
+      </View>
+    </GlassView>
+  );
+
+  if (!isChatOpen) {
+    return null;
+  }
+
+  const chatContent = (
+    <>
+      <GlassView style={styles.header}>
+        <GlassView style={styles.headerLeft}>
+          <MaterialCommunityIcons
+            name="chef-hat"
+            size={18}
+            color={AppColors.primary}
+          />
+          <ThemedText type="caption" style={styles.headerTitle}>
+            Kitchen Chef
+          </ThemedText>
+        </GlassView>
+        <GlassView style={styles.headerRight}>
+          <Pressable onPress={handleClearChat} style={styles.headerButton}>
+            <Feather name="trash-2" size={14} color={theme.textSecondary} />
+          </Pressable>
+          <Pressable onPress={closeChat} style={styles.headerButton}>
+            <Feather name="x" size={16} color={theme.text} />
+          </Pressable>
+        </GlassView>
+      </GlassView>
+
+      {currentTip || tipLoading || expiringCount > 0 ? (
+        <Pressable
+          style={[
+            styles.tipBanner,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.05)",
+            },
+          ]}
+          onPress={() => loadTip(inventory)}
+        >
+          {tipLoading ? (
+            <ActivityIndicator size="small" color={AppColors.primary} />
+          ) : currentTip ? (
+            <>
+              <View
+                style={[
+                  styles.tipIcon,
+                  {
+                    backgroundColor: `${TIP_COLORS[currentTip.category] || TIP_COLORS.general}20`,
+                  },
+                ]}
+              >
+                <Feather
+                  name={TIP_ICONS[currentTip.category] || TIP_ICONS.general}
+                  size={12}
+                  color={TIP_COLORS[currentTip.category] || TIP_COLORS.general}
+                />
+              </View>
+              <ThemedText
+                type="caption"
+                style={styles.tipText}
+                numberOfLines={2}
+              >
+                {currentTip.text}
+              </ThemedText>
+              {expiringCount > 0 ? (
+                <View
+                  style={[
+                    styles.expiringBadge,
+                    { backgroundColor: AppColors.warning },
+                  ]}
+                >
+                  <ThemedText type="caption" style={styles.expiringBadgeText}>
+                    {expiringCount}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </>
+          ) : expiringCount > 0 ? (
+            <>
+              <Feather
+                name="alert-circle"
+                size={14}
+                color={AppColors.warning}
+              />
+              <ThemedText type="caption" style={styles.tipText}>
+                {expiringCount} item{expiringCount > 1 ? "s" : ""} expiring soon
+              </ThemedText>
+            </>
+          ) : null}
+        </Pressable>
+      ) : null}
+
+      <FlatList
+        ref={flatListRef}
+        style={styles.messageList}
+        contentContainerStyle={styles.messageListContent}
+        data={messages}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMessage}
+        ListEmptyComponent={renderEmptyState}
+        onContentSizeChange={scrollToBottom}
+        keyboardShouldPersistTaps="handled"
+      />
+
+      <GlassView
+        style={[
+          styles.inputContainer,
+          {
+            borderTopColor: theme.glass.border,
+          },
+        ]}
+      >
+        <TextInput
+          style={[
+            styles.input,
+            {
+              color: theme.text,
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.05)",
+            },
+          ]}
+          placeholder="Type a message..."
+          placeholderTextColor={theme.textSecondary}
+          value={inputText}
+          onChangeText={setInputText}
+          multiline
+          maxLength={500}
+          editable={!sending}
+        />
+        <Pressable
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor:
+                inputText.trim() && !sending
+                  ? AppColors.primary
+                  : theme.backgroundSecondary,
+            },
+          ]}
+          onPress={handleSend}
+          disabled={!inputText.trim() || sending}
+        >
+          {sending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Feather
+              name="send"
+              size={14}
+              color={inputText.trim() ? "#FFFFFF" : theme.textSecondary}
+            />
+          )}
+        </Pressable>
+      </GlassView>
+    </>
+  );
+
+  return (
+    <>
+      <Animated.View
+        style={[
+          {
+            ...styles.backdrop,
+            backgroundColor: AppColors.background,
+          },
+          { opacity: 0.3 },
+          { pointerEvents: isChatOpen ? "auto" : "none" },
+        ]}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeChat} />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.chatContainer,
+          {
+            width: chatWidth,
+            height: chatHeight,
+            bottom: bottomPosition,
+            right: Spacing.lg,
+            borderRadius: BorderRadius.xl,
+          },
+          containerStyle,
+        ]}
+      >
+        <GlassView
+          style={[
+            styles.chatContent,
+            {
+              borderColor: theme.glass.border,
+              backgroundColor:
+                Platform.OS === "web"
+                  ? isDark
+                    ? "rgba(30, 30, 30, 0.92)"
+                    : "rgba(255, 255, 255, 0.92)"
+                  : undefined,
+            },
+          ]}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+            keyboardVerticalOffset={0}
+          >
+            {chatContent}
+          </KeyboardAvoidingView>
+        </GlassView>
+      </Animated.View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#000",
+    zIndex: 1050,
+  },
+  chatContainer: {
+    position: "absolute",
+    zIndex: 1150,
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 8px 8px rgba(0, 0, 0, 0.2)",
+      },
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 16,
+      },
+    }),
+  },
+  chatContent: {
+    flex: 1,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  headerButton: {
+    padding: Spacing.xs,
+  },
+  messageList: {
+    flex: 1,
+  },
+  messageListContent: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    flexGrow: 1,
+  },
+  messageBubble: {
+    maxWidth: "85%",
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.xs,
+  },
+  userBubble: {
+    alignSelf: "flex-end",
+    borderBottomRightRadius: 4,
+  },
+  assistantBubbleContainer: {
+    alignSelf: "flex-start",
+    maxWidth: "85%",
+    marginBottom: Spacing.xs,
+  },
+  assistantBubble: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderBottomLeftRadius: 4,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    gap: Spacing.xs,
+  },
+  input: {
+    flex: 1,
+    fontSize: 13,
+    minHeight: 44,
+    maxHeight: 80,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    textAlignVertical: "top",
+  },
+  sendButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.md,
+  },
+  emptyTitle: {
+    textAlign: "center",
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+    opacity: 0.7,
+  },
+  suggestions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+    justifyContent: "center",
+  },
+  suggestionChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+  },
+  tipBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+    minHeight: 44,
+  },
+  tipIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 12,
+  },
+  expiringBadge: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.pill,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  expiringBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+});

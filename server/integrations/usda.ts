@@ -1,716 +1,673 @@
-/**
- * USDA FoodData Central API Integration
- *
- * Provides nutrition data lookup and food search functionality using USDA's FoodData Central API.
- * Integrates standardized nutrition information for food items in the pantry management system.
- *
- * API Details:
- * - Base URL: https://api.nal.usda.gov/fdc/v1
- * - Authentication: API key required (USDA_FDC_API_KEY environment variable)
- * - Documentation: https://fdc.nal.usda.gov/api-guide.html
- *
- * Endpoints Used:
- * - GET /foods/search - Search foods by name with filtering options
- * - GET /food/{fdcId} - Get detailed nutrition data for specific food
- *
- * Data Types (dataType field):
- * - Foundation: Lab-analyzed reference foods (most accurate, scientifically validated)
- * - SR Legacy: USDA Standard Reference legacy data (comprehensive, reliable)
- * - Survey Foods: FNDDS survey foods (what Americans actually eat)
- * - Branded: Commercial products (variable quality, brand-specific)
- *
- * Nutrition Data Sources:
- * - labelNutrients: Branded foods (from nutrition labels)
- * - foodNutrients: Foundation/SR Legacy foods (from lab analysis)
- * - Nutrient IDs: Standard USDA nutrient numbers (208=calories, 203=protein, etc.)
- *
- * Rate Limits:
- * - No official limit documented, but best practice: cache responses
- * - Failed requests return appropriate HTTP status codes (401, 429, 500, etc.)
- *
- * Caching Strategy:
- * - Responses should be cached in fdcCache table via storage layer
- * - Nutrition data rarely changes, safe to cache long-term
- * - Cache key: fdcId (unique food identifier)
- *
- * Error Handling:
- * - All API errors wrapped in ApiError with descriptive messages
- * - Network failures logged and rethrown
- * - Invalid/missing nutrition data returns undefined or null
- * - Validation ensures data quality (rejects all-zero macros, suspicious values)
- *
- * Data Validation:
- * - Rejects foods where all macronutrients are zero
- * - Validates food-specific expectations (oils should have fat, meat should have protein)
- * - Warns on suspicious data patterns via console.warn
- *
- * @module server/usda
- */
+const USDA_API_KEY = process.env.USDA_API_KEY;
+const USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
 
-import type {
-  USDAFoodItem,
-  USDASearchResponse,
-  NutritionInfo,
-} from "@shared/schema";
-import { ApiError } from "../utils/apiError";
-import {
-  ensureRequiredFields,
-  assessDataQuality,
-} from "../data/foodCategoryDefaults";
-import { fallbackSearch, getFallbackFoodById } from "./fallbackNutrition";
-
-/** USDA FoodData Central API base URL */
-const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
-
-/** API key from environment (required for all requests) */
-const API_KEY = process.env.USDA_FDC_API_KEY;
-
-export interface FDCLabelNutrients {
-  fat: { value: number };
-  saturatedFat?: { value: number };
-  transFat?: { value: number };
-  cholesterol?: { value: number };
-  sodium?: { value: number };
-  carbohydrates: { value: number };
-  fiber?: { value: number };
-  sugars?: { value: number };
-  protein: { value: number };
-  calcium?: { value: number };
-  iron?: { value: number };
-  calories: { value: number };
-}
-
-export interface FDCFood {
+export interface USDASearchResult {
   fdcId: number;
   description: string;
   dataType: string;
-  brandOwner: string;
-  gtinUpc: string;
-  ingredients: string;
-  foodCategory: string | { description: string };
-  brandedFoodCategory?: string;
-  servingSize: number;
-  servingSizeUnit: string;
-  householdServingFullText?: string;
-  labelNutrients: FDCLabelNutrients;
+  brandOwner?: string;
+  brandName?: string;
+  ingredients?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
+  foodNutrients: USDANutrient[];
 }
 
-interface FDCSearchResult {
-  totalHits: number;
-  currentPage: number;
-  totalPages: number;
-  foods: FDCFood[];
+export interface USDANutrient {
+  nutrientId: number;
+  nutrientName: string;
+  nutrientNumber: string;
+  unitName: string;
+  value: number;
 }
 
-/**
- * Validate nutrition data quality
- *
- * Ensures nutrition data is valid and not suspiciously incomplete.
- * Catches common data quality issues from USDA API responses.
- *
- * Validation Rules:
- * - Rejects if all major macronutrients are zero (likely incomplete data)
- * - Validates food-type specific expectations:
- *   - Oils/butter/fats must have fat content > 0
- *   - Meat/chicken/fish/eggs must have protein > 0 (if calories > 0)
- *
- * @param nutrition - Extracted nutrition information to validate
- * @param foodDescription - Food name/description for context in warnings
- * @returns true if data appears valid, false if suspicious
- *
- * Side Effects:
- * - Logs warnings to console when suspicious data detected
- *
- * @example
- * const nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
- * isNutritionDataValid(nutrition, "apple"); // false - all zeros
- *
- * @example
- * const nutrition = { calories: 120, protein: 0, carbs: 0, fat: 14 };
- * isNutritionDataValid(nutrition, "olive oil"); // true - fat content present
- */
-export function isNutritionDataValid(
-  nutrition: NutritionInfo,
-  foodDescription: string,
-): boolean {
-  // Check if all major macronutrients are zero (suspicious)
-  const allMacrosZero =
-    nutrition.calories === 0 &&
-    nutrition.protein === 0 &&
-    nutrition.carbohydrates === 0 &&
-    nutrition.fat === 0;
-
-  if (allMacrosZero) {
-    const descLower = foodDescription.toLowerCase();
-    // Only allow zero macros for water, tea, coffee, and certain seasonings
-    const allowedZeroMacros = [
-      "water",
-      "tea",
-      "coffee",
-      "salt",
-      "pepper",
-      "herb",
-      "spice",
-    ];
-    const isAllowed = allowedZeroMacros.some((term) =>
-      descLower.includes(term),
-    );
-
-    if (!isAllowed) {
-      // Silently reject - this is common with USDA data
-      return false;
-    }
-    // Silently accept water/seasoning with zero macros
-    return true;
-  }
-
-  // Reject if calories present but all macros are zero (physically impossible)
-  if (
-    nutrition.calories &&
-    nutrition.calories > 10 &&
-    nutrition.protein === 0 &&
-    nutrition.carbohydrates === 0 &&
-    nutrition.fat === 0
-  ) {
-    // Silently reject invalid data
-    return false;
-  }
-
-  // Check for specific food types that should have certain nutrients
-  const descLower = foodDescription.toLowerCase();
-
-  // Oils and fats should have significant fat content
-  // Only flag as invalid if they have calories but no fat (truly suspicious)
-  if (
-    (descLower.includes("oil") ||
-      descLower.includes("butter") ||
-      descLower.includes("lard")) &&
-    nutrition.fat === 0 &&
-    nutrition.calories &&
-    nutrition.calories > 50
-  ) {
-    // Silently reject invalid oil/fat data
-    return false;
-  }
-
-  // Protein-rich foods should have protein
-  // Only flag as invalid if they have significant calories but no protein (likely bad data)
-  // Exception: allow through if calories are very low (could be broth, stock, etc.)
-  if (
-    (descLower.includes("meat") ||
-      descLower.includes("chicken") ||
-      descLower.includes("beef") ||
-      descLower.includes("pork") ||
-      descLower.includes("fish") ||
-      descLower.includes("egg")) &&
-    nutrition.protein === 0 &&
-    nutrition.calories &&
-    nutrition.calories > 100
-  ) {
-    // Silently reject invalid protein food data
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Extract nutrition information from FDC food data
- *
- * Handles multiple nutrition data formats from USDA API:
- * 1. labelNutrients (Branded Foods) - from nutrition labels
- * 2. foodNutrients (Foundation/SR Legacy) - from lab analysis
- *
- * Nutrient Number Mapping (USDA Standard):
- * - 208: Energy (calories)
- * - 203: Protein (g)
- * - 205: Carbohydrates (g)
- * - 204: Total lipid/fat (g)
- * - 291: Fiber (g)
- * - 269: Sugars (g)
- * - 307: Sodium (mg)
- *
- * @param food - FDC food object from API response
- * @returns Standardized nutrition info or undefined if invalid/missing
- *
- * Data Quality:
- * - Validates extracted data using isNutritionDataValid()
- * - Returns undefined for invalid or incomplete data
- * - Handles both 'value' and 'amount' field names (API inconsistency)
- */
-export function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
-  // First try labelNutrients (Branded Foods)
-  if (food.labelNutrients) {
-    const label = food.labelNutrients;
-
-    // Determine appropriate serving size defaults based on food type
-    let defaultServingSize = "100";
-    let defaultServingUnit = "g";
-
-    // Use householdServingFullText as a fallback for serving info
-    if (!food.servingSize && food.householdServingFullText) {
-      // Try to parse serving text like "1 cup (240g)" or "2 tbsp (30ml)"
-      const servingMatch = food.householdServingFullText.match(
-        /(\d+(?:\.\d+)?)\s*(\w+)/,
-      );
-      if (servingMatch) {
-        defaultServingSize = servingMatch[1];
-        defaultServingUnit = servingMatch[2];
-      }
-    }
-
-    const nutrition: NutritionInfo = {
-      calories: label.calories.value,
-      protein: label.protein.value,
-      carbohydrates: label.carbohydrates.value,
-      fat: label.fat?.value,
-      fiber: label.fiber?.value,
-      sugar: label.sugars?.value,
-      sodium: label.sodium?.value,
-      servingSize: food.servingSize?.toString() || defaultServingSize,
-      servingUnit: food.servingSizeUnit || defaultServingUnit,
-    };
-
-    // Validate the nutrition data
-    if (!isNutritionDataValid(nutrition, food.description)) {
-      return undefined;
-    }
-
-    return nutrition;
-  }
-
-  return undefined;
-}
-
-/**
- * Map FDC API response to application's USDAFoodItem format
- *
- * Transforms USDA API response structure into consistent internal format.
- * Handles multiple foodCategory formats (string vs object).
- *
- * @param food - Raw food data from USDA FDC API
- * @returns Standardized USDAFoodItem for storage/display
- *
- * Field Mapping:
- * - fdcId: Unique USDA food identifier
- * - description: Food name/description
- * - dataType: Food data type (Foundation, SR Legacy, Branded, etc.)
- * - foodCategory: Extracted from object or string format
- * - foodNutrients: Mapped from extracted nutrition info (if valid)
- *
- * Nutrition Data:
- * - Only included if extractNutritionInfo() returns valid data
- * - Formatted as array of nutrient objects with standard IDs
- * - Includes calories, protein, carbs, fat, and optional fiber/sugar/sodium
- *
- * @private
- */
-function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
-  // Extract foodCategory - handle both string and object formats
-  let foodCategory: string | undefined;
-  if (typeof food.foodCategory === "object" && food.foodCategory !== null) {
-    foodCategory = food.foodCategory.description;
-  } else if (typeof food.foodCategory === "string") {
-    foodCategory = food.foodCategory;
-  } else {
-    foodCategory = food.brandedFoodCategory;
-  }
-
-  // Extract nutrition info if available
-  const nutritionInfo = extractNutritionInfo(food);
-
-  // Create base item with known fields
-  const baseItem = {
-    fdcId: food.fdcId,
-    description: food.description,
-    dataType: food.dataType,
-    brandOwner: food.brandOwner,
-    gtinUpc: food.gtinUpc,
-    ingredients: food.ingredients,
-    foodCategory: foodCategory,
-    servingSize: food.servingSize,
-    servingSizeUnit: food.servingSizeUnit,
-    // Add foodNutrients if we have nutrition data
-    ...(nutritionInfo && {
-      foodNutrients: [
-        {
-          nutrientId: 1008,
-          nutrientName: "Energy",
-          unitName: "kcal",
-          value: nutritionInfo.calories || 0,
-        },
-        {
-          nutrientId: 1003,
-          nutrientName: "Protein",
-          unitName: "g",
-          value: nutritionInfo.protein || 0,
-        },
-        {
-          nutrientId: 1005,
-          nutrientName: "Carbohydrates",
-          unitName: "g",
-          value: nutritionInfo.carbohydrates || 0,
-        },
-        {
-          nutrientId: 1004,
-          nutrientName: "Total lipid (fat)",
-          unitName: "g",
-          value: nutritionInfo.fat || 0,
-        },
-        ...(nutritionInfo.fiber !== undefined
-          ? [
-              {
-                nutrientId: 1079,
-                nutrientName: "Fiber",
-                unitName: "g",
-                value: nutritionInfo.fiber,
-              },
-            ]
-          : []),
-        ...(nutritionInfo.sugar !== undefined
-          ? [
-              {
-                nutrientId: 2000,
-                nutrientName: "Sugars",
-                unitName: "g",
-                value: nutritionInfo.sugar,
-              },
-            ]
-          : []),
-        ...(nutritionInfo.sodium !== undefined
-          ? [
-              {
-                nutrientId: 1093,
-                nutrientName: "Sodium",
-                unitName: "mg",
-                value: nutritionInfo.sodium,
-              },
-            ]
-          : []),
-      ],
-    }),
+export interface USDAFoodPortion {
+  id: number;
+  amount: number;
+  gramWeight: number;
+  modifier?: string;
+  portionDescription?: string;
+  measureUnit?: {
+    id: number;
+    name: string;
+    abbreviation?: string;
   };
-
-  // Ensure all required fields are populated with defaults if missing
-  const enrichedItem = ensureRequiredFields(
-    baseItem,
-    foodCategory,
-    food.description,
-  );
-
-  // Add data quality assessment
-  const dataQuality = assessDataQuality(enrichedItem);
-  if (dataQuality.level === "poor") {
-    console.warn(
-      `Poor data quality for "${food.description}": ${dataQuality.message}. Missing: ${dataQuality.missingFields.join(", ")}`,
-    );
-  }
-
-  return enrichedItem;
 }
 
-/**
- * Search options for USDA FoodData Central API
- */
-export interface USDASearchOptions {
-  query: string; // Search query (food name/description)
-  pageSize?: number; // Results per page (default: 20, max: 50)
-  pageNumber?: number; // Page number (1-indexed, default: 1)
-  dataType?: string[]; // Filter by data types (Foundation, SR Legacy, etc.)
-  sortBy?:
-    | "dataType.keyword"
-    | "lowercaseDescription.keyword"
-    | "fdcId"
-    | "publishedDate";
-  sortOrder?: "asc" | "desc"; // Sort direction
-  brandOwner?: string[]; // Filter by brand (for Branded foods)
+export interface USDAFoodDetail {
+  fdcId: number;
+  description: string;
+  dataType: string;
+  publicationDate?: string;
+  brandOwner?: string;
+  brandName?: string;
+  ingredients?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
+  foodNutrients: USDANutrient[];
+  foodPortions?: USDAFoodPortion[];
+  foodCategory?: {
+    description: string;
+  };
 }
 
-/**
- * Search USDA FoodData Central database
- *
- * Queries USDA API for foods matching search criteria with flexible filtering options.
- * Results are ranked by USDA's relevance algorithm.
- *
- * @param options - Search parameters (object or string for backward compatibility)
- * @returns Search results with pagination metadata
- *
- * Search Behavior:
- * - Fuzzy matching: Partial word matches supported
- * - Ranking: USDA's relevance algorithm (not customizable)
- * - Pagination: Default 20 results per page, max 50
- * - Filtering: Can restrict by dataType, brandOwner
- *
- * Data Type Recommendations:
- * - Generic items: ['Foundation', 'SR Legacy'] - most accurate
- * - Branded products: ['Branded'] - specific to brands
- * - All data: omit dataType filter
- *
- * Error Handling:
- * - 401/403: API key invalid or missing
- * - 400: Invalid search parameters
- * - 429: Rate limit exceeded (retry after delay)
- * - 500+: USDA service unavailable
- * - Network errors: Logged and rethrown as ApiError
- *
- * @throws {ApiError} On API authentication, validation, or network failures
- *
- * @example
- * // Simple search (backward compatible)
- * const results = await searchUSDAFoods("apple");
- *
- * @example
- * // Advanced search with filters
- * const results = await searchUSDAFoods({
- *   query: "chicken breast",
- *   dataType: ['Foundation', 'SR Legacy'],
- *   pageSize: 10,
- *   sortBy: 'lowercaseDescription.keyword'
- * });
- */
-export async function searchUSDAFoods(
-  options: USDASearchOptions | string,
-): Promise<USDASearchResponse> {
-  if (!API_KEY) {
-    throw new Error("USDA_FDC_API_KEY is not configured");
+export interface MappedFoodItem {
+  name: string;
+  category: string;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+    servingSize?: string;
+  };
+  source: "usda";
+  sourceId: number;
+  brandOwner?: string;
+  ingredients?: string;
+}
+
+const searchCache = new Map<
+  string,
+  { data: USDASearchResult[]; timestamp: number }
+>();
+const foodCache = new Map<
+  number,
+  { data: USDAFoodDetail | null; timestamp: number }
+>();
+
+const SEARCH_CACHE_TTL = 60 * 60 * 1000;
+const FOOD_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function isSearchCacheValid(timestamp: number): boolean {
+  return Date.now() - timestamp < SEARCH_CACHE_TTL;
+}
+
+function isFoodCacheValid(timestamp: number): boolean {
+  return Date.now() - timestamp < FOOD_CACHE_TTL;
+}
+
+export async function searchUSDA(
+  query: string,
+  pageSize: number = 25,
+): Promise<USDASearchResult[]> {
+  if (!USDA_API_KEY) {
+    console.error("USDA_API_KEY is not configured");
+    return [];
   }
 
-  // Handle backward compatibility - if just a string is passed, treat it as query
-  let searchOptions: USDASearchOptions;
-  if (typeof options === "string") {
-    searchOptions = { query: options, pageSize: 20, pageNumber: 1 };
-  } else {
-    searchOptions = {
-      pageSize: 20,
-      pageNumber: 1,
-      ...options,
-    };
+  const cacheKey = `${query}-${pageSize}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached && isSearchCacheValid(cached.timestamp)) {
+    return cached.data;
   }
-
-  const {
-    query,
-    pageSize,
-    pageNumber,
-    dataType,
-    sortBy,
-    sortOrder,
-    brandOwner,
-  } = searchOptions;
 
   try {
-    const url = new URL(`${USDA_API_BASE}/foods/search`);
-    url.searchParams.append("api_key", API_KEY);
-    url.searchParams.append("query", query);
-    url.searchParams.append("pageSize", (pageSize || 20).toString());
-    url.searchParams.append("pageNumber", (pageNumber || 1).toString());
+    const params = new URLSearchParams({
+      api_key: USDA_API_KEY,
+      query,
+      pageSize: pageSize.toString(),
+    });
 
-    // Add each dataType as a separate parameter for FDC API array handling
-    if (dataType && dataType.length > 0) {
-      dataType.forEach((type) => {
-        url.searchParams.append("dataType", type);
-      });
+    const response = await fetch(`${USDA_BASE_URL}/foods/search?${params}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 429) {
+      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      return [];
     }
-
-    if (sortBy) {
-      url.searchParams.append("sortBy", sortBy);
-    }
-
-    if (sortOrder) {
-      url.searchParams.append("sortOrder", sortOrder);
-    }
-
-    // Add each brandOwner as a separate parameter for FDC API array handling
-    if (brandOwner && brandOwner.length > 0) {
-      brandOwner.forEach((brand) => {
-        url.searchParams.append("brandOwner", brand);
-      });
-    }
-
-    const response = await fetch(url);
 
     if (!response.ok) {
-      console.error("USDA API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        query,
-        pageSize,
-        pageNumber,
-      });
-
-      // Use fallback data when USDA API is unavailable
-      console.log("USDA API unavailable, using fallback nutrition data");
-      const fallbackResult = fallbackSearch(query, pageSize || 20);
-      console.log(
-        `Returning ${fallbackResult.foods.length} fallback food items for query: "${query}"`,
-      );
-      return fallbackResult;
-    }
-
-    // Check if response is JSON (not HTML)
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      console.error("USDA API returned non-JSON response, using fallback data");
-      const fallbackResult = fallbackSearch(query, pageSize || 20);
-      return fallbackResult;
-    }
-
-    let data: FDCSearchResult;
-    try {
-      data = await response.json();
-    } catch (error) {
       console.error(
-        "Failed to parse USDA API response as JSON, using fallback data",
+        `USDA API error: ${response.status} ${response.statusText}`,
       );
-      const fallbackResult = fallbackSearch(query, pageSize || 20);
-      return fallbackResult;
+      return [];
     }
 
-    return {
-      foods: data.foods.map(mapFDCFoodToUSDAItem),
-      totalHits: data.totalHits,
-      currentPage: data.currentPage,
-      totalPages: data.totalPages,
-    };
-  } catch (error: Error | unknown) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    console.error("USDA API error:", error);
-    throw new ApiError("Failed to search USDA database", 500);
+    const data = await response.json();
+    const results: USDASearchResult[] = data.foods || [];
+
+    searchCache.set(cacheKey, { data: results, timestamp: Date.now() });
+
+    return results;
+  } catch (error) {
+    console.error("Error searching USDA API:", error);
+    return [];
   }
 }
 
-/**
- * Get detailed food information by FDC ID
- *
- * Fetches complete nutrition data for a specific food using its unique FDC identifier.
- * More detailed than search results, includes full nutrient breakdown.
- *
- * @param fdcId - USDA FoodData Central ID (unique food identifier)
- * @returns Complete food data with nutrition info, or null if not found
- *
- * Use Cases:
- * - Fetching details after search (user selected a result)
- * - Retrieving cached food data by fdcId
- * - Validating/updating existing food records
- *
- * Response Data:
- * - More detailed than search results
- * - Includes full nutrient breakdown
- * - Contains serving size information
- * - May include brand owner, ingredients list
- *
- * Error Handling:
- * - 404: Food not found (returns null, not error)
- * - 401/403: API key invalid
- * - 429: Rate limit exceeded
- * - 500+: Service unavailable
- * - Network errors logged, returns null
- *
- * @throws {ApiError} On API authentication or rate limit failures
- *
- * @example
- * const food = await getFoodByFdcId(123456);
- * if (food) {
- *   // console.log(food.description, food.foodNutrients);
- * }
- */
-export async function getFoodByFdcId(
-  fdcId: number | string,
-): Promise<USDAFoodItem | null> {
-  if (!API_KEY) {
-    // Use fallback if no API key
-    console.log("USDA API key not configured, using fallback data");
-    return getFallbackFoodById(String(fdcId));
+export async function getUSDAFood(
+  fdcId: number,
+): Promise<USDAFoodDetail | null> {
+  if (!USDA_API_KEY) {
+    console.error("USDA_API_KEY is not configured");
+    return null;
+  }
+
+  const cached = foodCache.get(fdcId);
+  if (cached && isFoodCacheValid(cached.timestamp)) {
+    return cached.data;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      api_key: USDA_API_KEY,
+    });
+
+    const response = await fetch(`${USDA_BASE_URL}/food/${fdcId}?${params}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 404) {
+      foodCache.set(fdcId, { data: null, timestamp: Date.now() });
+      return null;
+    }
+
+    if (response.status === 429) {
+      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      return null;
+    }
+
+    if (!response.ok) {
+      console.error(
+        `USDA API error: ${response.status} ${response.statusText}`,
+      );
+      return null;
+    }
+
+    const data: USDAFoodDetail = await response.json();
+
+    foodCache.set(fdcId, { data, timestamp: Date.now() });
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching USDA food:", error);
+    return null;
+  }
+}
+
+const NUTRIENT_IDS = {
+  ENERGY: 1008,
+  PROTEIN: 1003,
+  CARBOHYDRATES: 1005,
+  FAT: 1004,
+  FIBER: 1079,
+  SUGARS: 2000,
+  SODIUM: 1093,
+};
+
+function findNutrientValue(
+  nutrients: USDANutrient[],
+  nutrientId: number,
+): number | undefined {
+  const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
+  return nutrient?.value;
+}
+
+export function mapUSDAToFoodItem(
+  usdaFood: USDASearchResult | USDAFoodDetail,
+): MappedFoodItem {
+  const nutrients = usdaFood.foodNutrients || [];
+
+  const calories = findNutrientValue(nutrients, NUTRIENT_IDS.ENERGY) ?? 0;
+  const protein = findNutrientValue(nutrients, NUTRIENT_IDS.PROTEIN) ?? 0;
+  const carbs = findNutrientValue(nutrients, NUTRIENT_IDS.CARBOHYDRATES) ?? 0;
+  const fat = findNutrientValue(nutrients, NUTRIENT_IDS.FAT) ?? 0;
+  const fiber = findNutrientValue(nutrients, NUTRIENT_IDS.FIBER);
+  const sugar = findNutrientValue(nutrients, NUTRIENT_IDS.SUGARS);
+  const sodium = findNutrientValue(nutrients, NUTRIENT_IDS.SODIUM);
+
+  let category = "Other";
+  if ("foodCategory" in usdaFood && usdaFood.foodCategory?.description) {
+    category = usdaFood.foodCategory.description;
+  }
+
+  let servingSize: string | undefined;
+  if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
+    servingSize = `${usdaFood.servingSize} ${usdaFood.servingSizeUnit}`;
+  }
+
+  return {
+    name: usdaFood.description,
+    category,
+    nutrition: {
+      calories: Math.round(calories),
+      protein: Math.round(protein * 10) / 10,
+      carbs: Math.round(carbs * 10) / 10,
+      fat: Math.round(fat * 10) / 10,
+      fiber: fiber !== undefined ? Math.round(fiber * 10) / 10 : undefined,
+      sugar: sugar !== undefined ? Math.round(sugar * 10) / 10 : undefined,
+      sodium: sodium !== undefined ? Math.round(sodium) : undefined,
+      servingSize,
+    },
+    source: "usda",
+    sourceId: usdaFood.fdcId,
+    brandOwner: "brandOwner" in usdaFood ? usdaFood.brandOwner : undefined,
+    ingredients: usdaFood.ingredients,
+  };
+}
+
+export interface USDABrandedFood extends USDASearchResult {
+  gtinUpc?: string;
+}
+
+const barcodeCache = new Map<
+  string,
+  { data: USDABrandedFood | null; timestamp: number }
+>();
+
+export async function lookupUSDABarcode(
+  barcode: string,
+): Promise<USDABrandedFood | null> {
+  if (!USDA_API_KEY) {
+    console.error("USDA_API_KEY is not configured");
+    return null;
+  }
+
+  const cleanBarcode = barcode.replace(/\D/g, "");
+
+  const cached = barcodeCache.get(cleanBarcode);
+  if (cached && isSearchCacheValid(cached.timestamp)) {
+    return cached.data;
   }
 
   try {
     const response = await fetch(
-      `${USDA_API_BASE}/food/${fdcId}?api_key=${API_KEY}`,
+      `${USDA_BASE_URL}/foods/search?api_key=${USDA_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: cleanBarcode,
+          dataType: ["Branded"],
+          pageSize: 25,
+        }),
+      },
     );
 
+    if (response.status === 429) {
+      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      return null;
+    }
+
     if (!response.ok) {
-      console.error("USDA API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        fdcId,
-      });
-
-      // Use fallback for any error
-      console.log("USDA API unavailable, using fallback nutrition data");
-      return getFallbackFoodById(String(fdcId));
-    }
-
-    // Check if response is JSON (not HTML)
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      console.error("USDA API returned non-JSON response, using fallback data");
-      return getFallbackFoodById(String(fdcId));
-    }
-
-    try {
-      const food: FDCFood = await response.json();
-      return mapFDCFoodToUSDAItem(food);
-    } catch (error) {
       console.error(
-        "Failed to parse USDA API response as JSON, using fallback data",
+        `USDA API error: ${response.status} ${response.statusText}`,
       );
-      return getFallbackFoodById(String(fdcId));
+      return null;
     }
-  } catch (error: Error | unknown) {
-    console.error("USDA API error:", error);
-    // Return fallback data instead of throwing
-    return getFallbackFoodById(String(fdcId));
+
+    const data = await response.json();
+    const foods: USDABrandedFood[] = data.foods || [];
+
+    const exactMatch = foods.find((food) => {
+      if (food.gtinUpc) {
+        const foodUpc = food.gtinUpc.replace(/\D/g, "");
+        return (
+          foodUpc === cleanBarcode ||
+          foodUpc.endsWith(cleanBarcode) ||
+          cleanBarcode.endsWith(foodUpc)
+        );
+      }
+      return false;
+    });
+
+    if (exactMatch) {
+      barcodeCache.set(cleanBarcode, {
+        data: exactMatch,
+        timestamp: Date.now(),
+      });
+      return exactMatch;
+    }
+
+    if (foods.length > 0) {
+      barcodeCache.set(cleanBarcode, { data: foods[0], timestamp: Date.now() });
+      return foods[0];
+    }
+
+    barcodeCache.set(cleanBarcode, { data: null, timestamp: Date.now() });
+    return null;
+  } catch (error) {
+    console.error("Error looking up USDA barcode:", error);
+    return null;
   }
 }
 
-/**
- * Get enriched nutrition data for onboarding inventory items
- *
- * Searches USDA database for a common food item and returns the best match.
- * Used during onboarding to populate default inventory with nutrition data.
- *
- * @param itemName - Common food name (e.g., "milk", "eggs", "bread")
- * @returns First/best matching food item with nutrition data, or null if not found
- *
- * Search Strategy:
- * - Queries top-quality data types only (Foundation, SR Legacy, Branded)
- * - Returns single best match (pageSize: 1)
- * - USDA's ranking determines "best" (typically most accurate/complete)
- *
- * Use Case:
- * - Enriching onboardingInventory table with USDA nutrition data
- * - Pre-populating new user inventory with common items
- * - Quick lookup for standard/common foods
- *
- * Error Handling:
- * - API failures logged, returns null (graceful degradation)
- * - Empty results return null
- * - Does not throw errors (onboarding should not fail on nutrition data)
- *
- * @example
- * const milk = await getEnrichedOnboardingItem("whole milk");
- * if (milk) {
- *   // Use milk.foodNutrients for nutrition info
- * }
- */
-export async function getEnrichedOnboardingItem(
-  itemName: string,
-): Promise<USDAFoodItem | null> {
-  try {
-    const searchResult = await searchUSDAFoods({
-      query: itemName,
-      pageSize: 1,
-      dataType: ["Foundation", "SR Legacy", "Branded"],
-    });
+export function clearUSDACache(): void {
+  searchCache.clear();
+  foodCache.clear();
+  barcodeCache.clear();
+}
 
-    if (searchResult.foods && searchResult.foods.length > 0) {
-      return searchResult.foods[0];
-    }
+// ============================================================================
+// FOOD PORTION CONVERSION SERVICE
+// Converts food-specific units (slices, loaves, etc.) to grams using USDA data
+// ============================================================================
 
-    return null;
-  } catch (error) {
-    console.error(`Failed to get enriched data for "${itemName}":`, error);
+export interface PortionConversion {
+  unitName: string;
+  unitAbbreviation?: string;
+  gramWeight: number;
+  amount: number;
+  gramsPerUnit: number;
+}
+
+export interface FoodPortionData {
+  fdcId: number;
+  foodName: string;
+  portions: PortionConversion[];
+}
+
+const portionCache = new Map<number, { data: FoodPortionData | null; timestamp: number }>();
+const PORTION_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function isPortionCacheValid(timestamp: number): boolean {
+  return Date.now() - timestamp < PORTION_CACHE_TTL;
+}
+
+export async function getFoodPortions(fdcId: number): Promise<FoodPortionData | null> {
+  const cached = portionCache.get(fdcId);
+  if (cached && isPortionCacheValid(cached.timestamp)) {
+    return cached.data;
+  }
+
+  const foodDetail = await getUSDAFood(fdcId);
+  if (!foodDetail) {
+    portionCache.set(fdcId, { data: null, timestamp: Date.now() });
     return null;
   }
+
+  const portions: PortionConversion[] = [];
+
+  if (foodDetail.foodPortions && foodDetail.foodPortions.length > 0) {
+    for (const portion of foodDetail.foodPortions) {
+      const unitName = portion.measureUnit?.name || portion.modifier || portion.portionDescription || "serving";
+      const unitAbbr = portion.measureUnit?.abbreviation;
+      const amount = portion.amount || 1;
+      const gramWeight = portion.gramWeight;
+
+      if (gramWeight > 0) {
+        portions.push({
+          unitName: unitName.toLowerCase(),
+          unitAbbreviation: unitAbbr?.toLowerCase(),
+          gramWeight,
+          amount,
+          gramsPerUnit: gramWeight / amount,
+        });
+      }
+    }
+  }
+
+  const result: FoodPortionData = {
+    fdcId,
+    foodName: foodDetail.description,
+    portions,
+  };
+
+  portionCache.set(fdcId, { data: result, timestamp: Date.now() });
+  return result;
+}
+
+// Common unit aliases for matching
+const UNIT_ALIASES: Record<string, string[]> = {
+  slice: ["slice", "slices", "sl"],
+  loaf: ["loaf", "loaves"],
+  cup: ["cup", "cups", "c"],
+  tablespoon: ["tablespoon", "tablespoons", "tbsp", "tbs", "tb"],
+  teaspoon: ["teaspoon", "teaspoons", "tsp", "ts"],
+  ounce: ["ounce", "ounces", "oz"],
+  pound: ["pound", "pounds", "lb", "lbs"],
+  gram: ["gram", "grams", "g"],
+  kilogram: ["kilogram", "kilograms", "kg"],
+  piece: ["piece", "pieces", "pc", "pcs", "each", "ea", "whole"],
+  serving: ["serving", "servings", "srv"],
+  can: ["can", "cans"],
+  bottle: ["bottle", "bottles"],
+  package: ["package", "packages", "pkg", "pkgs"],
+  head: ["head", "heads"],
+  clove: ["clove", "cloves"],
+  bunch: ["bunch", "bunches"],
+  stalk: ["stalk", "stalks"],
+  sprig: ["sprig", "sprigs"],
+  large: ["large", "lg"],
+  medium: ["medium", "med", "md"],
+  small: ["small", "sm"],
+};
+
+function normalizeUnitName(unit: string): string {
+  const lower = unit.toLowerCase().trim();
+  
+  for (const [canonical, aliases] of Object.entries(UNIT_ALIASES)) {
+    if (aliases.includes(lower)) {
+      return canonical;
+    }
+  }
+  
+  return lower;
+}
+
+function unitMatches(portionUnit: string, searchUnit: string): boolean {
+  const normPortion = normalizeUnitName(portionUnit);
+  const normSearch = normalizeUnitName(searchUnit);
+  
+  if (normPortion === normSearch) return true;
+  
+  // Check if one contains the other (e.g., "large slice" contains "slice")
+  if (normPortion.includes(normSearch) || normSearch.includes(normPortion)) {
+    return true;
+  }
+  
+  return false;
+}
+
+export function findPortionConversion(
+  portions: PortionConversion[],
+  unit: string
+): PortionConversion | null {
+  const searchUnit = normalizeUnitName(unit);
+  
+  // First try exact match
+  for (const portion of portions) {
+    if (normalizeUnitName(portion.unitName) === searchUnit) {
+      return portion;
+    }
+    if (portion.unitAbbreviation && normalizeUnitName(portion.unitAbbreviation) === searchUnit) {
+      return portion;
+    }
+  }
+  
+  // Then try partial match
+  for (const portion of portions) {
+    if (unitMatches(portion.unitName, unit)) {
+      return portion;
+    }
+  }
+  
+  return null;
+}
+
+export interface QuantityInGrams {
+  grams: number;
+  conversionUsed: string;
+  isApproximate: boolean;
+}
+
+// Standard weight conversions (when USDA portion data not available)
+const STANDARD_WEIGHT_TO_GRAMS: Record<string, number> = {
+  g: 1,
+  gram: 1,
+  grams: 1,
+  kg: 1000,
+  kilogram: 1000,
+  kilograms: 1000,
+  oz: 28.3495,
+  ounce: 28.3495,
+  ounces: 28.3495,
+  lb: 453.592,
+  lbs: 453.592,
+  pound: 453.592,
+  pounds: 453.592,
+  mg: 0.001,
+  milligram: 0.001,
+  milligrams: 0.001,
+};
+
+// Standard volume to grams (approximate, for water-based liquids)
+const STANDARD_VOLUME_TO_GRAMS: Record<string, number> = {
+  ml: 1,
+  milliliter: 1,
+  milliliters: 1,
+  l: 1000,
+  liter: 1000,
+  liters: 1000,
+  litre: 1000,
+  litres: 1000,
+  cup: 240,
+  cups: 240,
+  tbsp: 15,
+  tablespoon: 15,
+  tablespoons: 15,
+  tsp: 5,
+  teaspoon: 5,
+  teaspoons: 5,
+  "fl oz": 30,
+  "fluid ounce": 30,
+  "fluid ounces": 30,
+};
+
+export function convertToGrams(
+  quantity: number,
+  unit: string,
+  portions?: PortionConversion[]
+): QuantityInGrams | null {
+  const normalizedUnit = unit.toLowerCase().trim();
+  
+  // First check if we have USDA portion data for this unit
+  if (portions && portions.length > 0) {
+    const portionMatch = findPortionConversion(portions, unit);
+    if (portionMatch) {
+      return {
+        grams: quantity * portionMatch.gramsPerUnit,
+        conversionUsed: `${portionMatch.amount} ${portionMatch.unitName} = ${portionMatch.gramWeight}g (USDA)`,
+        isApproximate: false,
+      };
+    }
+  }
+  
+  // Fall back to standard weight conversions
+  if (STANDARD_WEIGHT_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_WEIGHT_TO_GRAMS[normalizedUnit],
+      conversionUsed: `standard weight conversion`,
+      isApproximate: false,
+    };
+  }
+  
+  // Fall back to standard volume conversions (approximate)
+  if (STANDARD_VOLUME_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_VOLUME_TO_GRAMS[normalizedUnit],
+      conversionUsed: `volume approximation (density varies)`,
+      isApproximate: true,
+    };
+  }
+  
+  // Cannot convert
+  return null;
+}
+
+export type AvailabilityStatus = "available" | "partial" | "unavailable";
+
+export interface QuantityComparisonResult {
+  status: AvailabilityStatus;
+  inventoryGrams: number | null;
+  requiredGrams: number | null;
+  percentAvailable: number | null;
+  conversionNote?: string;
+}
+
+export function compareQuantities(
+  inventoryQty: number,
+  inventoryUnit: string | null | undefined,
+  requiredQty: number,
+  requiredUnit: string,
+  portions?: PortionConversion[]
+): QuantityComparisonResult {
+  // If no inventory unit, assume it's a simple count and matches
+  if (!inventoryUnit) {
+    if (inventoryQty >= requiredQty) {
+      return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+    }
+    const pct = Math.round((inventoryQty / requiredQty) * 100);
+    return {
+      status: pct >= 50 ? "partial" : "unavailable",
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: pct,
+    };
+  }
+  
+  // Convert both to grams
+  const inventoryInGrams = convertToGrams(inventoryQty, inventoryUnit, portions);
+  const requiredInGrams = convertToGrams(requiredQty, requiredUnit, portions);
+  
+  // If we can't convert both, fall back to simple comparison if units match
+  if (!inventoryInGrams || !requiredInGrams) {
+    const normInv = normalizeUnitName(inventoryUnit);
+    const normReq = normalizeUnitName(requiredUnit);
+    
+    if (normInv === normReq || unitMatches(inventoryUnit, requiredUnit)) {
+      if (inventoryQty >= requiredQty) {
+        return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+      }
+      const pct = Math.round((inventoryQty / requiredQty) * 100);
+      return {
+        status: pct >= 50 ? "partial" : "unavailable",
+        inventoryGrams: null,
+        requiredGrams: null,
+        percentAvailable: pct,
+        conversionNote: `Same unit comparison: ${inventoryQty}/${requiredQty} ${inventoryUnit}`,
+      };
+    }
+    
+    // Cannot compare different unit types
+    return {
+      status: "available", // Assume available if we can't verify
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: null,
+      conversionNote: `Cannot convert between ${inventoryUnit} and ${requiredUnit}`,
+    };
+  }
+  
+  const pct = Math.round((inventoryInGrams.grams / requiredInGrams.grams) * 100);
+  
+  let status: AvailabilityStatus;
+  if (pct >= 100) {
+    status = "available";
+  } else if (pct >= 50) {
+    status = "partial";
+  } else {
+    status = "unavailable";
+  }
+  
+  return {
+    status,
+    inventoryGrams: inventoryInGrams.grams,
+    requiredGrams: requiredInGrams.grams,
+    percentAvailable: Math.min(pct, 100),
+    conversionNote: `${inventoryQty} ${inventoryUnit} = ${Math.round(inventoryInGrams.grams)}g, need ${Math.round(requiredInGrams.grams)}g`,
+  };
 }

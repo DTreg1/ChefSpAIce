@@ -1,188 +1,376 @@
-// MUST be imported first to suppress TensorFlow logs before any TF imports
-import "./suppress-logs";
-
-import express, { type Request, Response, NextFunction } from "express";
-import compression from "compression";
-import { createServer } from "http";
-// Use centralized router setup
-import { setupRouters } from "./routers";
-import { setupOAuth } from "./auth/init-oauth";
-import { setupVite, serveStatic, log } from "./vite";
-import { logRetentionService } from "./services/log-retention.service";
-import PushStatusService from "./services/push-status.service";
-import { preloadCommonSearches } from "./utils/usdaCache";
-import { termDetector } from "./services/term-detector.service";
-import { notificationScheduler } from "./services/ml-notification-scheduler.service";
-import { initializeEnvironment } from "./config/env-validator";
-
-/**
- * Sanitizes response data for logging by removing sensitive information
- * @param data Response data to sanitize
- * @param depth Current recursion depth (to prevent infinite loops)
- * @returns Sanitized data safe for logging
- */
-function sanitizeResponseForLogging(data: any, depth: number = 0): any {
-  // Prevent infinite recursion
-  if (depth > 10) {
-    return "[DEPTH_LIMIT]";
-  }
-
-  if (!data || typeof data !== "object") {
-    return data;
-  }
-
-  // More specific sensitive patterns to avoid over-redaction
-  const sensitivePatterns = [
-    /^password$/i,
-    /^(api[_\-]?)?key$/i,
-    /^(auth|access|refresh)[_\-]?token$/i,
-    /^secret$/i,
-    /^authorization$/i,
-    /^cookie$/i,
-    /^session[_\-]?(id|token)?$/i,
-    /^credit[_\-]?card/i,
-    /^ssn$/i,
-    /^stripe[_\-]?(token|key)/i,
-    /^private[_\-]?key$/i,
-    /^client[_\-]?secret$/i,
-  ];
-
-  // Clone the object to avoid mutation
-  const sanitized: any = Array.isArray(data) ? [] : {};
-
-  for (const key in data) {
-    if (!data.hasOwnProperty(key)) continue;
-
-    // Check if key matches sensitive patterns
-    const isSensitive = sensitivePatterns.some((pattern) => pattern.test(key));
-
-    if (isSensitive) {
-      sanitized[key] = "[REDACTED]";
-    } else if (typeof data[key] === "object" && data[key] !== null) {
-      // Recursively sanitize nested objects and arrays
-      sanitized[key] = sanitizeResponseForLogging(data[key], depth + 1);
-    } else if (typeof data[key] === "string" && data[key].length > 500) {
-      // Truncate very long strings
-      sanitized[key] = data[key].substring(0, 100) + "...[truncated]";
-    } else {
-      sanitized[key] = data[key];
-    }
-  }
-
-  return sanitized;
-}
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
+import fileUpload from "express-fileupload";
+import { registerRoutes } from "./routes";
+import * as fs from "fs";
+import * as path from "path";
+import { Client } from "pg";
+import { runMigrations } from "stripe-replit-sync";
+import { getStripeSync } from "./stripe/stripeClient";
+import { WebhookHandlers } from "./stripe/webhookHandlers";
+import donationsRouter from "./stripe/donationsRouter";
 
 const app = express();
+const log = console.log;
 
-// Enable gzip compression for better performance
-app.use(
-  compression({
-    level: 6, // Balanced compression level
-    threshold: 1024, // Only compress responses larger than 1KB
-    filter: (req, res) => {
-      // Don't compress SSE (Server-Sent Events) or streaming responses
-      const contentType = res.getHeader("Content-Type") as string;
-      if (
-        contentType &&
-        (contentType.includes("text/event-stream") ||
-          contentType.includes("stream"))
-      ) {
-        return false;
-      }
-      // Use default compression filter for other responses
-      return compression.filter(req, res);
-    },
-  }),
-);
+declare module "http" {
+  interface IncomingMessage {
+    rawBody: unknown;
+  }
+}
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+function setupCors(app: express.Application) {
+  app.use((req, res, next) => {
+    const origins = new Set<string>();
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+    if (process.env.REPLIT_DEV_DOMAIN) {
+      origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+    }
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+    if (process.env.REPLIT_DOMAINS) {
+      process.env.REPLIT_DOMAINS.split(",").forEach((d: string) => {
+        origins.add(`https://${d.trim()}`);
+      });
+    }
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    // Allow localhost origins for development
+    origins.add("http://localhost:8081");
+    origins.add("http://127.0.0.1:8081");
+    origins.add("http://localhost:5000");
+    origins.add("http://127.0.0.1:5000");
+
+    const origin = req.header("origin");
+
+    if (origin && origins.has(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS",
+      );
+      res.header("Access-Control-Allow-Headers", "Content-Type");
+      res.header("Access-Control-Allow-Credentials", "true");
+    }
+
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+
+    next();
+  });
+}
+
+function setupBodyParsing(app: express.Application) {
+  app.use(
+    express.json({
+      verify: (req, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  app.use(express.urlencoded({ extended: false }));
+
+  app.use(
+    fileUpload({
+      limits: { fileSize: 10 * 1024 * 1024 },
+      abortOnLimit: true,
+    }),
+  );
+}
+
+function setupRequestLogging(app: express.Application) {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const path = req.path;
+    let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
+
+    const originalResJson = res.json;
+    res.json = function (bodyJson, ...args) {
+      capturedJsonResponse = bodyJson;
+      return originalResJson.apply(res, [bodyJson, ...args]);
+    };
+
+    res.on("finish", () => {
+      if (!path.startsWith("/api")) return;
+
+      const duration = Date.now() - start;
+
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-
-      // Only log response body in development mode and sanitize sensitive data
-      if (app.get("env") === "development" && capturedJsonResponse) {
-        // Create a sanitized copy of the response
-        const sanitized = sanitizeResponseForLogging(capturedJsonResponse);
-        if (sanitized) {
-          logLine += ` :: ${JSON.stringify(sanitized)}`;
-        }
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
-      if (logLine.length > 200) {
-        logLine = logLine.slice(0, 199) + "…";
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
       }
 
       log(logLine);
-    }
+    });
+
+    next();
   });
+}
 
-  next();
-});
+function getAppName(): string {
+  try {
+    const appJsonPath = path.resolve(process.cwd(), "app.json");
+    const appJsonContent = fs.readFileSync(appJsonPath, "utf-8");
+    const appJson = JSON.parse(appJsonContent);
+    return appJson.expo?.name || "App Landing Page";
+  } catch {
+    return "App Landing Page";
+  }
+}
 
-(async () => {
-  // Initialize and validate environment variables
-  initializeEnvironment();
+function serveExpoManifest(platform: string, res: Response) {
+  const manifestPath = path.resolve(
+    process.cwd(),
+    "static-build",
+    platform,
+    "manifest.json",
+  );
 
-  // Setup OAuth authentication (session, passport, strategies)
-  // Must be called before setupRouters so session middleware is available
-  await setupOAuth(app);
-
-  // Setup all API routes with proper versioning and organization
-  setupRouters(app);
-
-  // Create HTTP server
-  const server = createServer(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    // Log the error for debugging
-    console.error(`Error [${status}]: ${message}`);
-    if (err.stack && app.get("env") === "development") {
-      console.error(err.stack);
-    }
-
-    // Send error response to client
-    if (!res.headersSent) {
-      res.status(status).json({
-        message,
-        // Include details in development mode for easier debugging
-        ...(app.get("env") === "development" && err.details
-          ? { details: err.details }
-          : {}),
-      });
-    }
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+  if (!fs.existsSync(manifestPath)) {
+    return res
+      .status(404)
+      .json({ error: `Manifest not found for platform: ${platform}` });
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  res.setHeader("expo-protocol-version", "1");
+  res.setHeader("expo-sfv-version", "0");
+  res.setHeader("content-type", "application/json");
+
+  const manifest = fs.readFileSync(manifestPath, "utf-8");
+  res.send(manifest);
+}
+
+function serveLandingPage({
+  req,
+  res,
+  landingPageTemplate,
+  appName,
+}: {
+  req: Request;
+  res: Response;
+  landingPageTemplate: string;
+  appName: string;
+}) {
+  const forwardedProto = req.header("x-forwarded-proto");
+  const protocol = forwardedProto || req.protocol || "https";
+  const forwardedHost = req.header("x-forwarded-host");
+  const host = forwardedHost || req.get("host");
+  const baseUrl = `${protocol}://${host}`;
+  const expsUrl = `${host}`;
+
+  log(`baseUrl`, baseUrl);
+  log(`expsUrl`, expsUrl);
+
+  const html = landingPageTemplate
+    .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
+    .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
+    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).send(html);
+}
+
+function configureExpoRouting(app: express.Application) {
+  const templatePath = path.resolve(
+    process.cwd(),
+    "server",
+    "templates",
+    "landing-page.html",
+  );
+  const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
+  const appName = getAppName();
+
+  log("Serving static Expo files with dynamic manifest routing");
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+
+    if (req.path !== "/" && req.path !== "/manifest") {
+      return next();
+    }
+
+    const platform = req.header("expo-platform");
+    if (platform && (platform === "ios" || platform === "android")) {
+      return serveExpoManifest(platform, res);
+    }
+
+    if (req.path === "/") {
+      return serveLandingPage({
+        req,
+        res,
+        landingPageTemplate,
+        appName,
+      });
+    }
+
+    next();
+  });
+
+  log("Expo routing: Checking expo-platform header on / and /manifest");
+}
+
+function configureStaticFiles(app: express.Application) {
+  app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  app.use(express.static(path.resolve(process.cwd(), "static-build")));
+}
+
+function setupErrorHandler(app: express.Application) {
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const error = err as {
+      status?: number;
+      statusCode?: number;
+      message?: string;
+    };
+
+    const status = error.status || error.statusCode || 500;
+    const message = error.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+
+    throw err;
+  });
+}
+
+async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): Promise<boolean> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const client = new Client({
+      connectionString: databaseUrl,
+      connectionTimeoutMillis: 5000,
+    });
+    
+    try {
+      log(`Warming up database connection... (attempt ${attempt}/${retries})`);
+      await client.connect();
+      await client.query('SELECT 1');
+      await client.end();
+      log("Database connection ready");
+      return true;
+    } catch (error) {
+      try {
+        await client.end();
+      } catch {}
+      
+      if (attempt === retries) {
+        console.error("Failed to connect to database after retries:", error);
+        return false;
+      }
+      log(`Database warmup attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  return false;
+}
+
+async function initStripe(retries = 3, delay = 2000) {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    log("DATABASE_URL not found, skipping Stripe initialization");
+    return;
+  }
+
+  const dbReady = await warmupDatabase(databaseUrl);
+  if (!dbReady) {
+    log("Database not available, skipping Stripe initialization");
+    return;
+  }
+
+  try {
+    log("Initializing Stripe schema...");
+    await runMigrations({
+      databaseUrl,
+    });
+    log("Stripe schema ready");
+  } catch (migrationError) {
+    console.error("Failed to initialize Stripe schema:", migrationError);
+    return;
+  }
+
+  try {
+
+    const stripeSync = await getStripeSync();
+
+    log("Setting up managed webhook...");
+    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
+    const { webhook, uuid } = await stripeSync.findOrCreateManagedWebhook(
+      `${webhookBaseUrl}/api/stripe/webhook`,
+      {
+        enabled_events: ["*"],
+        description: "Managed webhook for Stripe sync",
+      },
+    );
+    log(`Webhook configured: ${webhook.url} (UUID: ${uuid})`);
+
+    // Skip full backfill sync for faster startup - webhook handles new events
+    // Only sync checkout_sessions which we need for donations
+    stripeSync
+      .syncBackfill({
+        include: ["checkout_sessions"],
+      })
+      .then(() => {
+        log("Stripe checkout sessions synced");
+      })
+      .catch((err: Error) => {
+        console.error("Error syncing Stripe data:", err);
+      });
+  } catch (error) {
+    console.error("Failed to initialize Stripe:", error);
+  }
+}
+
+(async () => {
+  setupCors(app);
+
+  // Register webhook route before body parsing (needs raw body)
+  app.post(
+    "/api/stripe/webhook/:uuid",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      const signature = req.headers["stripe-signature"];
+
+      if (!signature) {
+        return res.status(400).json({ error: "Missing stripe-signature" });
+      }
+
+      try {
+        const sig = Array.isArray(signature) ? signature[0] : signature;
+
+        if (!Buffer.isBuffer(req.body)) {
+          console.error("STRIPE WEBHOOK ERROR: req.body is not a Buffer");
+          return res.status(500).json({ error: "Webhook processing error" });
+        }
+
+        const { uuid } = req.params;
+        await WebhookHandlers.processWebhook(req.body as Buffer, sig, uuid);
+
+        res.status(200).json({ received: true });
+      } catch (error: any) {
+        console.error("Webhook error:", error.message);
+        res.status(400).json({ error: "Webhook processing error" });
+      }
+    },
+  );
+
+  setupBodyParsing(app);
+  setupRequestLogging(app);
+
+  // Register donations router after body parsing (needs parsed JSON body)
+  app.use("/api/donations", donationsRouter);
+
+  configureExpoRouting(app);
+
+  const server = await registerRoutes(app);
+
+  configureStaticFiles(app);
+
+  setupErrorHandler(app);
+
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(
     {
@@ -191,26 +379,12 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      log(`🚀 Server running on port ${port}`);
+      log(`express server serving on port ${port}`);
 
-      // Initialize background services silently
-      PushStatusService.validateOnStartup();
-      logRetentionService.start();
-
-      // Warm up USDA cache with common searches (non-blocking)
-      if (process.env.CACHE_ENABLED !== "false") {
-        preloadCommonSearches().catch(() => {
-          // Silently handle preload failures
-        });
-      }
-
-      // Initialize the cooking term detector
-      termDetector.initialize().catch((error) => {
-        console.error("[Term Detector] Failed to initialize:", error);
+      // Initialize Stripe in background after server starts
+      initStripe().catch((err) => {
+        console.error("Background Stripe init failed:", err);
       });
-
-      // Start the intelligent notification scheduler
-      notificationScheduler.start();
     },
   );
 })();

@@ -1,0 +1,585 @@
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  RefreshControl,
+  Dimensions,
+} from "react-native";
+import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
+
+import { ThemedText } from "@/components/ThemedText";
+import { GlassCard } from "@/components/GlassCard";
+import { RecipeGridSkeleton } from "@/components/Skeleton";
+import { useTheme } from "@/hooks/useTheme";
+import {
+  Spacing,
+  BorderRadius,
+  AppColors,
+  Shadows,
+  GlassEffect,
+} from "@/constants/theme";
+import { storage, Recipe, FoodItem } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
+import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+
+const { width } = Dimensions.get("window");
+const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
+
+export default function RecipesScreen() {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const { theme, isDark } = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [inventory, setInventory] = useState<FoodItem[]>([]);
+  const [userCookware, setUserCookware] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [filterByCookware, setFilterByCookware] = useState(false);
+  const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
+
+  const loadData = useCallback(async (showSkeleton = false) => {
+    if (showSkeleton) setLoading(true);
+    try {
+      const [loadedRecipes, loadedInventory, cookwareIds] = await Promise.all([
+        storage.getRecipes(),
+        storage.getInventory(),
+        storage.getCookware(),
+      ]);
+      setRecipes(loadedRecipes);
+      setInventory(loadedInventory);
+
+      if (cookwareIds.length > 0) {
+        try {
+          const baseUrl = getApiUrl();
+          const url = new URL("/api/appliances", baseUrl);
+          const response = await fetch(url, { credentials: "include" });
+          if (response.ok) {
+            const allAppliances = await response.json();
+            const cookwareNames = allAppliances
+              .filter((a: any) => cookwareIds.includes(a.id))
+              .map((a: any) => a.name.toLowerCase());
+            setUserCookware(cookwareNames);
+          }
+        } catch (err) {
+          console.error("Error loading cookware:", err);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData(recipes.length === 0);
+    }, [loadData]),
+  );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const getMatchPercentage = (recipe: Recipe): number => {
+    if (recipe.ingredients.length === 0) return 0;
+    const inventoryNames = inventory.map((i) => i.name.toLowerCase());
+    const matchedCount = recipe.ingredients.filter((ing) =>
+      inventoryNames.some(
+        (name) =>
+          name.includes(ing.name.toLowerCase()) ||
+          ing.name.toLowerCase().includes(name),
+      ),
+    ).length;
+    return Math.round((matchedCount / recipe.ingredients.length) * 100);
+  };
+
+  const canMakeWithCookware = (recipe: Recipe): boolean => {
+    if (!recipe.requiredCookware || recipe.requiredCookware.length === 0) {
+      return true;
+    }
+    if (userCookware.length === 0) {
+      return true;
+    }
+    return recipe.requiredCookware.every((eq) =>
+      userCookware.includes(eq.toLowerCase()),
+    );
+  };
+
+  const filteredRecipes = recipes.filter((recipe) => {
+    const matchesSearch =
+      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFavorite = showFavoritesOnly ? recipe.isFavorite : true;
+    const matchesCookware = filterByCookware
+      ? canMakeWithCookware(recipe)
+      : true;
+    return matchesSearch && matchesFavorite && matchesCookware;
+  });
+
+  const handleToggleFavorite = async (recipe: Recipe) => {
+    await storage.toggleRecipeFavorite(recipe.id);
+    loadData();
+  };
+
+  const renderRecipeCard = ({
+    item: recipe,
+    index,
+  }: {
+    item: Recipe;
+    index: number;
+  }) => {
+    const matchPercentage = getMatchPercentage(recipe);
+    const hasCookware = canMakeWithCookware(recipe);
+    const hasCookwareData =
+      recipe.requiredCookware && recipe.requiredCookware.length > 0;
+
+    return (
+      <Animated.View
+        entering={FadeIn.delay(index * 50)}
+        style={styles.cardWrapper}
+      >
+        <GlassCard
+          style={styles.recipeCard}
+          onPress={() =>
+            navigation.navigate("RecipeDetail", { recipeId: recipe.id })
+          }
+        >
+          {recipe.imageUri ? (
+            <View style={styles.recipeImageContainer}>
+              <Image
+                source={{ uri: recipe.imageUri }}
+                style={styles.recipeImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+              {hasCookwareData && !hasCookware ? (
+                <View style={styles.cookwareWarning}>
+                  <Feather
+                    name="alert-circle"
+                    size={14}
+                    color={AppColors.warning}
+                  />
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.recipePlaceholder,
+                {
+                  backgroundColor: theme.glass.background,
+                  borderWidth: 1,
+                  borderColor: theme.glass.borderSubtle,
+                },
+              ]}
+            >
+              <Feather name="book-open" size={32} color={theme.textSecondary} />
+              {hasCookwareData && !hasCookware ? (
+                <View style={styles.cookwareWarning}>
+                  <Feather
+                    name="alert-circle"
+                    size={14}
+                    color={AppColors.warning}
+                  />
+                </View>
+              ) : null}
+            </View>
+          )}
+          <View style={styles.recipeContent}>
+            <ThemedText
+              type="small"
+              numberOfLines={2}
+              style={styles.recipeTitle}
+            >
+              {recipe.title}
+            </ThemedText>
+            <View style={styles.recipeFooter}>
+              <View
+                style={[
+                  styles.matchBadge,
+                  {
+                    backgroundColor:
+                      matchPercentage >= 80
+                        ? AppColors.success
+                        : matchPercentage >= 50
+                          ? AppColors.warning
+                          : AppColors.secondary,
+                  },
+                ]}
+              >
+                <ThemedText type="caption" style={styles.matchText}>
+                  {matchPercentage}% match
+                </ThemedText>
+              </View>
+              <View style={styles.cardIcons}>
+                {hasCookwareData ? (
+                  <Feather
+                    name="tool"
+                    size={14}
+                    color={hasCookware ? AppColors.success : AppColors.warning}
+                    style={{ marginRight: Spacing.xs }}
+                  />
+                ) : null}
+                <Pressable
+                  onPress={() => handleToggleFavorite(recipe)}
+                  hitSlop={8}
+                >
+                  <Feather
+                    name={recipe.isFavorite ? "heart" : "heart"}
+                    size={18}
+                    color={
+                      recipe.isFavorite ? AppColors.error : theme.textSecondary
+                    }
+                    style={{ opacity: recipe.isFavorite ? 1 : 0.5 }}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+      </Animated.View>
+    );
+  };
+
+  const renderEmptyState = () => {
+    if (loading) {
+      return <RecipeGridSkeleton count={4} />;
+    }
+    
+    return (
+      <View style={styles.emptyState}>
+        <View
+          style={[
+            styles.emptyIconContainer,
+            {
+              backgroundColor: theme.glass.background,
+              borderColor: theme.glass.border,
+            },
+          ]}
+        >
+          <Feather name="book-open" size={48} color={theme.textSecondary} />
+        </View>
+        <ThemedText type="h3" style={styles.emptyTitle}>
+          No recipes yet
+        </ThemedText>
+        <ThemedText type="body" style={styles.emptySubtitle}>
+          Generate your first recipe based on what's in your kitchen
+        </ThemedText>
+        <Pressable
+          style={[
+            styles.generateButton,
+            { backgroundColor: AppColors.primary },
+          ]}
+          onPress={() => navigation.navigate("GenerateRecipe")}
+        >
+          <Feather name="zap" size={18} color="#FFFFFF" />
+          <ThemedText type="button" style={styles.generateButtonText}>
+            Generate Recipe
+          </ThemedText>
+        </Pressable>
+      </View>
+    );
+  };
+
+  const renderSearchSection = () => (
+    <BlurView
+      intensity={15}
+      tint={isDark ? "dark" : "light"}
+      style={[styles.searchSection, styles.searchContainer]}
+      onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
+    >
+      <View
+        style={[
+          styles.searchInputContainer,
+          {
+            backgroundColor: theme.glass.backgroundSubtle,
+            borderColor: theme.glass.border,
+          },
+        ]}
+      >
+        <Feather name="search" size={20} color={theme.textSecondary} />
+        <TextInput
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholder="Search recipes..."
+          placeholderTextColor={theme.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 ? (
+          <Pressable onPress={() => setSearchQuery("")}>
+            <Feather name="x" size={20} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[
+            styles.filterChip,
+            {
+              backgroundColor: showFavoritesOnly
+                ? AppColors.primary + "E6"
+                : theme.glass.background,
+              borderColor: showFavoritesOnly
+                ? "transparent"
+                : theme.glass.border,
+              borderWidth: 1,
+            },
+          ]}
+          onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
+        >
+          <Feather
+            name="heart"
+            size={16}
+            color={showFavoritesOnly ? "#FFFFFF" : theme.text}
+          />
+          <ThemedText
+            type="small"
+            style={{
+              color: showFavoritesOnly ? "#FFFFFF" : theme.text,
+              marginLeft: Spacing.xs,
+            }}
+          >
+            Favorites
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.filterChip,
+            {
+              backgroundColor: filterByCookware
+                ? AppColors.primary + "E6"
+                : theme.glass.background,
+              borderColor: filterByCookware
+                ? "transparent"
+                : theme.glass.border,
+              borderWidth: 1,
+            },
+          ]}
+          onPress={() => setFilterByCookware(!filterByCookware)}
+        >
+          <Feather
+            name="tool"
+            size={16}
+            color={filterByCookware ? "#FFFFFF" : theme.text}
+          />
+          <ThemedText
+            type="small"
+            style={{
+              color: filterByCookware ? "#FFFFFF" : theme.text,
+              marginLeft: Spacing.xs,
+            }}
+          >
+            My Cookware
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.filterChip,
+            {
+              backgroundColor: theme.glass.background,
+              borderColor: theme.glass.border,
+              borderWidth: 1,
+            },
+          ]}
+          onPress={() => navigation.navigate("Chat")}
+        >
+          <Feather name="message-circle" size={16} color={theme.text} />
+          <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
+            Ask Chef
+          </ThemedText>
+        </Pressable>
+      </View>
+    </BlurView>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      {renderSearchSection()}
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={[
+          styles.listContent,
+          {
+            paddingTop: filterHeaderHeight + Spacing.md,
+            paddingBottom: tabBarHeight + 80,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+        data={filteredRecipes}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        renderItem={renderRecipeCard}
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={AppColors.primary}
+          />
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  searchSection: {
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  searchContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    height: 44,
+    borderRadius: GlassEffect.borderRadius.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    marginLeft: Spacing.sm,
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: GlassEffect.borderRadius.pill,
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: Spacing.lg,
+  },
+  cardWrapper: {
+    width: CARD_WIDTH,
+    marginRight: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  recipeCard: {
+    padding: 0,
+    overflow: "hidden",
+  },
+  recipePlaceholder: {
+    height: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  recipeImageContainer: {
+    height: 100,
+    position: "relative",
+    overflow: "hidden",
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
+  },
+  recipeImage: {
+    width: "100%",
+    height: "100%",
+  },
+  cookwareWarning: {
+    position: "absolute",
+    top: Spacing.xs,
+    right: Spacing.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: BorderRadius.full,
+    padding: 2,
+  },
+  cardIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  recipeContent: {
+    padding: Spacing.md,
+  },
+  recipeTitle: {
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+  },
+  recipeFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  matchBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  matchText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["4xl"],
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  emptyTitle: {
+    marginTop: Spacing.lg,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    marginTop: Spacing.sm,
+    textAlign: "center",
+  },
+  generateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  generateButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+});
