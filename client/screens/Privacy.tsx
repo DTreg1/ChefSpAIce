@@ -149,7 +149,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-white">Contact Us</h2>
               <p className="text-gray-400">
-                If you have any questions or concerns about our Privacy Policy or our data practices, please contact us at privacy@chefspice.app.
+                If you have any questions or concerns about our Privacy Policy or our data practices, please contact us at privacy@chefspaice.com.
               </p>
             </section>
           </div>

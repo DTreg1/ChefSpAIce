@@ -143,7 +143,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-white">Contact Us</h2>
               <p className="text-gray-400">
-                If you have any questions about these Terms, please contact us at terms@chefspice.app.
+                If you have any questions about these Terms, please contact us at terms@chefspaice.com.
               </p>
             </section>
           </div>
