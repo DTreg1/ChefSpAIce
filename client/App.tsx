@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { StyleSheet, View, useColorScheme, Platform } from "react-native";
 import {
   NavigationContainer,
@@ -28,13 +28,34 @@ import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import LandingScreen from "@/screens/LandingScreen";
+import AboutPage from "@/screens/About";
+import PrivacyPolicyPage from "@/screens/Privacy";
+import TermsOfServicePage from "@/screens/Terms";
+import AttributionsPage from "@/screens/Attributions";
 
 const BASE_COLORS = {
   light: "#f0f2f5",
   dark: "#0a0a0a",
 };
 
-function AppContent() {
+function WebApp() {
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  
+  switch (path) {
+    case "/about":
+      return <AboutPage />;
+    case "/privacy":
+      return <PrivacyPolicyPage />;
+    case "/terms":
+      return <TermsOfServicePage />;
+    case "/attributions":
+      return <AttributionsPage />;
+    default:
+      return <LandingScreen />;
+  }
+}
+
+function MobileAppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
@@ -55,10 +76,6 @@ function AppContent() {
 
   const showChat = !isCheckingOnboarding && isOnboardingComplete;
 
-  if (Platform.OS === "web") {
-    return <LandingScreen />;
-  }
-
   return (
     <FloatingChatProvider>
       <NavigationContainer theme={navigationTheme}>
@@ -78,6 +95,10 @@ function AppContent() {
 }
 
 export default function App() {
+  if (Platform.OS === "web") {
+    return <WebApp />;
+  }
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -86,7 +107,7 @@ export default function App() {
             <KeyboardProvider>
               <AuthProvider>
                 <OnboardingProvider>
-                  <AppContent />
+                  <MobileAppContent />
                 </OnboardingProvider>
               </AuthProvider>
             </KeyboardProvider>

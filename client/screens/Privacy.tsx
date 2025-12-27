@@ -1,14 +1,12 @@
-import { Link } from "wouter";
-
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-[#0F1419]" data-testid="page-privacy">
       <header className="bg-[#1A1F25] border-b border-white/10">
         <div className="container mx-auto py-4 px-4">
           <nav className="flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold text-[#27AE60]" data-testid="link-home">
+            <a href="/" className="text-2xl font-bold text-[#27AE60]" data-testid="link-home">
               ChefSpAIce
-            </Link>
+            </a>
           </nav>
         </div>
       </header>
@@ -155,7 +153,7 @@ export default function PrivacyPolicyPage() {
           </div>
           
           <div className="border-t border-white/10 pt-6 mt-8">
-            <Link href="/" className="text-[#27AE60] hover:underline" data-testid="link-back-home">&larr; Back to Home</Link>
+            <a href="/" className="text-[#27AE60] hover:underline" data-testid="link-back-home">&larr; Back to Home</a>
           </div>
         </div>
       </main>

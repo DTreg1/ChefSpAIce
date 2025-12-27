@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Pressable, ScrollView, Linking, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, Pressable, ScrollView, Linking, useWindowDimensions, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 
@@ -84,6 +84,12 @@ function StoreBadge({ type }: { type: "apple" | "google" }) {
 export default function LandingScreen() {
   const { width } = useWindowDimensions();
   const isWide = width > 768;
+
+  const navigateTo = (path: string) => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.location.href = path;
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -221,19 +227,19 @@ export default function LandingScreen() {
             Helping you reduce food waste, one meal at a time.
           </Text>
           <View style={styles.footerLinks}>
-            <Pressable data-testid="link-privacy">
+            <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-privacy">
               <Text style={styles.footerLink}>Privacy Policy</Text>
             </Pressable>
             <Text style={styles.footerDivider}>•</Text>
-            <Pressable data-testid="link-terms">
+            <Pressable onPress={() => navigateTo("/terms")} data-testid="link-terms">
               <Text style={styles.footerLink}>Terms of Service</Text>
             </Pressable>
             <Text style={styles.footerDivider}>•</Text>
-            <Pressable data-testid="link-about">
+            <Pressable onPress={() => navigateTo("/about")} data-testid="link-about">
               <Text style={styles.footerLink}>About</Text>
             </Pressable>
             <Text style={styles.footerDivider}>•</Text>
-            <Pressable data-testid="link-attributions">
+            <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-attributions">
               <Text style={styles.footerLink}>Attributions</Text>
             </Pressable>
           </View>

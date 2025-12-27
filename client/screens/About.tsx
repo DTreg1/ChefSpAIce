@@ -1,4 +1,8 @@
-import { Link } from "wouter";
+const navigateTo = (path: string) => {
+  if (typeof window !== "undefined") {
+    window.location.href = path;
+  }
+};
 
 export default function AboutPage() {
   return (
@@ -6,9 +10,9 @@ export default function AboutPage() {
       <header className="bg-[#1A1F25] border-b border-white/10">
         <div className="container mx-auto py-4 px-4">
           <nav className="flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold text-[#27AE60]" data-testid="link-home">
+            <a href="/" className="text-2xl font-bold text-[#27AE60]" data-testid="link-home">
               ChefSpAIce
-            </Link>
+            </a>
           </nav>
         </div>
       </header>
@@ -174,7 +178,7 @@ export default function AboutPage() {
           </section>
           
           <div className="border-t border-white/10 pt-6">
-            <Link href="/" className="text-[#27AE60] hover:underline" data-testid="link-back-home">&larr; Back to Home</Link>
+            <a href="/" className="text-[#27AE60] hover:underline" data-testid="link-back-home">&larr; Back to Home</a>
           </div>
         </div>
       </main>
