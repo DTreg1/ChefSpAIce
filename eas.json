@@ -9,9 +9,6 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_APPLE_TEAM_ID": "${APPLE_TEAM_ID}"
       }
     },
     "preview": {
@@ -21,9 +18,6 @@
       },
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_APPLE_TEAM_ID": "${APPLE_TEAM_ID}"
       }
     },
     "production": {
@@ -33,16 +27,14 @@
       },
       "android": {
         "buildType": "app-bundle"
-      },
-      "env": {
-        "EXPO_APPLE_TEAM_ID": "${APPLE_TEAM_ID}"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6757112063"
+        "ascAppId": "6757112063",
+        "appleTeamId": "${APPLE_TEAM_ID}"
       },
       "android": {
         "serviceAccountKeyPath": "",
