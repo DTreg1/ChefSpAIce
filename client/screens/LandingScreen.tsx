@@ -233,8 +233,8 @@ export default function LandingScreen() {
               <Text style={styles.footerLink}>About</Text>
             </Pressable>
             <Text style={styles.footerDivider}>•</Text>
-            <Pressable data-testid="link-affirmations">
-              <Text style={styles.footerLink}>Affirmations</Text>
+            <Pressable data-testid="link-attributions">
+              <Text style={styles.footerLink}>Attributions</Text>
             </Pressable>
           </View>
           <Text style={styles.copyright} data-testid="text-copyright">
