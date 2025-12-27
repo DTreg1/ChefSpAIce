@@ -85,6 +85,22 @@ export function ImageAnalysisResult({
     setEditedItems((prev) => updateItemInArray(prev, index, updates));
   };
 
+  const addMissingItem = () => {
+    const newItem: IdentifiedFood = {
+      name: "",
+      category: "other",
+      quantity: 1,
+      quantityUnit: "pcs",
+      storageLocation: "fridge",
+      shelfLifeDays: 7,
+      confidence: 1.0,
+    };
+    const newIndex = editedItems.length;
+    setEditedItems((prev) => [...prev, newItem]);
+    setSelectedItems((prev) => new Set([...prev, newIndex]));
+    setExpandedItem(newIndex);
+  };
+
   const handleConfirm = (goToSingleItem?: boolean) => {
     const selectedFoods = getSelectedItems(editedItems, selectedItems);
     onConfirm(selectedFoods, goToSingleItem);
@@ -605,6 +621,26 @@ export function ImageAnalysisResult({
             </Animated.View>
           );
         })}
+
+        <Pressable
+          style={[
+            styles.addMissingButton,
+            { borderColor: theme.border },
+          ]}
+          onPress={addMissingItem}
+        >
+          <View style={[styles.addMissingIcon, { backgroundColor: AppColors.primary + "15" }]}>
+            <Feather name="plus" size={20} color={AppColors.primary} />
+          </View>
+          <View style={styles.addMissingText}>
+            <ThemedText type="body" style={{ color: AppColors.primary }}>
+              Add Missing Item
+            </ThemedText>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              Manually add items the AI didn't detect
+            </ThemedText>
+          </View>
+        </Pressable>
       </ScrollView>
 
       <View
@@ -893,5 +929,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  addMissingButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  addMissingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  addMissingText: {
+    flex: 1,
   },
 });
