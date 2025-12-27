@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chefspaice.chefspaice.app",
+      "bundleIdentifier": "com.chefspaice.chefspaice",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory.",
