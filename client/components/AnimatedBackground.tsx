@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, Dimensions, View, useColorScheme } from "react-native";
+import { StyleSheet, Dimensions, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

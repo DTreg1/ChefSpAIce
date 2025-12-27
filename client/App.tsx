@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { StyleSheet, useColorScheme } from "react-native";
+import { StyleSheet } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -67,20 +68,30 @@ function MobileAppContent() {
   );
 }
 
+function RootWrapper() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
+
+  return (
+    <GestureHandlerRootView style={[styles.root, { backgroundColor }]}>
+      <KeyboardProvider>
+        <AuthProvider>
+          <OnboardingProvider>
+            <MobileAppContent />
+          </OnboardingProvider>
+        </AuthProvider>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
+  );
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <GestureHandlerRootView>
-            <KeyboardProvider>
-              <AuthProvider>
-                <OnboardingProvider>
-                  <MobileAppContent />
-                </OnboardingProvider>
-              </AuthProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
+          <RootWrapper />
         </SafeAreaProvider>
       </QueryClientProvider>
     </ErrorBoundary>
