@@ -10,7 +10,24 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.freshpantry.app"
+      "bundleIdentifier": "com.chefspaice.chefspaice.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory.",
+        "NSPhotoLibraryUsageDescription": "ChefSpAIce needs photo library access to select images for your food items.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +38,14 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.freshpantry.app"
+      "package": "com.chefspaice.chefspaice.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "output": "single",
@@ -44,12 +68,30 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow ChefSpAIce to access your camera to scan barcodes"
+          "cameraPermission": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#27AE60"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ChefSpAIce needs photo library access to select images for your food items."
         }
       ]
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }
