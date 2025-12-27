@@ -9,6 +9,8 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import ScanHubScreen from "@/screens/ScanHubScreen";
+import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
@@ -25,8 +27,10 @@ export type RootStackParamList = {
       }
     | undefined;
   AddFoodBatch: { items: IdentifiedFood[] };
+  ScanHub: undefined;
   BarcodeScanner: undefined;
-  IngredientScanner: undefined;
+  IngredientScanner: { mode?: "nutrition" | "recipe" } | undefined;
+  RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
   FoodSearch: undefined;
 };
@@ -126,6 +130,22 @@ export default function RootStackNavigator() {
         options={{
           presentation: "modal",
           headerTitle: "Add Items",
+        }}
+      />
+      <Stack.Screen
+        name="ScanHub"
+        component={ScanHubScreen}
+        options={{
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="RecipeScanner"
+        component={RecipeScannerScreen}
+        options={{
+          presentation: "fullScreenModal",
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

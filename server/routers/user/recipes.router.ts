@@ -1076,4 +1076,160 @@ router.post("/generate-image", async (req: Request, res: Response) => {
   }
 });
 
+const recipeScanRequestSchema = z.object({
+  image: z.string().min(1, "Base64 image data is required"),
+});
+
+const RECIPE_SCAN_PROMPT = `Analyze this image of a recipe from a cookbook, magazine, or printed page.
+
+Extract the following information:
+1. Recipe title
+2. Description (if visible)
+3. All ingredients with their quantities
+4. Step-by-step cooking instructions
+5. Prep time (if visible)
+6. Cook time (if visible)
+7. Number of servings (if visible)
+8. Any notes or tips
+
+Return valid JSON in this exact format:
+{
+  "title": "Recipe Title",
+  "description": "Brief description of the dish",
+  "ingredients": [
+    "2 cups flour",
+    "1 tsp salt",
+    "3 large eggs"
+  ],
+  "instructions": [
+    "Preheat oven to 350°F",
+    "Mix dry ingredients in a bowl",
+    "Add wet ingredients and stir until combined"
+  ],
+  "prepTime": "15 minutes",
+  "cookTime": "30 minutes",
+  "servings": 4,
+  "notes": "Any additional tips or variations"
+}
+
+If the image doesn't show a readable recipe, return:
+{
+  "error": "Could not read recipe from this image",
+  "suggestion": "Please take a clearer photo of the recipe, making sure all text is visible"
+}`;
+
+function detectMimeType(base64: string): string {
+  if (base64.startsWith("/9j/")) return "image/jpeg";
+  if (base64.startsWith("iVBORw")) return "image/png";
+  if (base64.startsWith("R0lGOD")) return "image/gif";
+  if (base64.startsWith("UklGR")) return "image/webp";
+  return "image/jpeg";
+}
+
+router.post("/scan", async (req: Request, res: Response) => {
+  try {
+    const contentType = req.headers["content-type"] || "";
+
+    let base64Image: string;
+
+    if (contentType.includes("application/json")) {
+      const parseResult = recipeScanRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({
+          error: "Invalid request body",
+          details: parseResult.error.errors,
+        });
+      }
+      base64Image = parseResult.data.image.replace(
+        /^data:image\/\w+;base64,/,
+        "",
+      );
+    } else {
+      return res.status(400).json({
+        error: "Expected application/json content type",
+      });
+    }
+
+    const mimeType = detectMimeType(base64Image);
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+    console.log(
+      `Scanning recipe: ${(base64Image.length / 1024).toFixed(1)}KB`,
+    );
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert at reading and extracting recipes from images of cookbooks, magazines, and printed recipe cards. Extract information accurately and return valid JSON.",
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: RECIPE_SCAN_PROMPT,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: dataUrl,
+                detail: "high",
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 4096,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+
+    if (!content) {
+      return res.status(500).json({
+        error: "No response from AI service",
+      });
+    }
+
+    let result: any;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", content);
+      return res.status(500).json({
+        error: "Failed to parse recipe scan results",
+      });
+    }
+
+    if (result.error) {
+      return res.status(200).json({
+        error: result.error,
+        suggestion: result.suggestion,
+      });
+    }
+
+    console.log(`Recipe scan complete: "${result.title}"`);
+
+    return res.json({
+      title: result.title || "Untitled Recipe",
+      description: result.description || "",
+      ingredients: result.ingredients || [],
+      instructions: result.instructions || [],
+      prepTime: result.prepTime || "",
+      cookTime: result.cookTime || "",
+      servings: result.servings || 4,
+      notes: result.notes || "",
+    });
+  } catch (error) {
+    console.error("Recipe scan error:", error);
+    return res.status(500).json({
+      error: "Failed to scan recipe",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
 export default router;

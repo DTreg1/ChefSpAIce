@@ -19,9 +19,7 @@ import { getGenerateRecipeParams } from "@/components/GenerateRecipeButton";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,
-  scanBarcode: AppColors.accent,
-  aiScan: AppColors.warning,
-  ingredientScan: "#9B59B6",
+  scan: AppColors.accent,
   quickRecipe: AppColors.success,
 };
 
@@ -31,6 +29,7 @@ type MenuItemConfig = {
   id: string;
   icon: keyof typeof Feather.glyphMap;
   label: string;
+  sublabel?: string;
   color: string;
   onPress: () => void;
 };
@@ -53,30 +52,21 @@ const MENU_ITEMS: Omit<MenuItemConfig, "onPress">[] = [
     id: "add-item",
     icon: "plus-circle",
     label: "Add Item",
+    sublabel: "Manual entry",
     color: MENU_COLORS.addItem,
   },
   {
-    id: "scan-barcode",
-    icon: "maximize",
-    label: "Scan Barcode",
-    color: MENU_COLORS.scanBarcode,
-  },
-  {
-    id: "ai-scan",
+    id: "scan",
     icon: "camera",
-    label: "AI Bulk Scan",
-    color: MENU_COLORS.aiScan,
-  },
-  {
-    id: "ingredient-scan",
-    icon: "file-text",
-    label: "Scan Label",
-    color: MENU_COLORS.ingredientScan,
+    label: "Scan",
+    sublabel: "Barcode, label, recipe...",
+    color: MENU_COLORS.scan,
   },
   {
     id: "quick-recipe",
     icon: "zap",
     label: "Quick Recipe",
+    sublabel: "From your inventory",
     color: MENU_COLORS.quickRecipe,
   },
 ];
@@ -161,10 +151,18 @@ function MenuItem({
       {renderIconContainer()}
       <Text
         style={[styles.menuItemLabel, { color: textColor }]}
-        numberOfLines={2}
+        numberOfLines={1}
       >
         {item.label}
       </Text>
+      {item.sublabel ? (
+        <Text
+          style={[styles.menuItemSublabel, { color: textColor }]}
+          numberOfLines={2}
+        >
+          {item.sublabel}
+        </Text>
+      ) : null}
     </AnimatedPressable>
   );
 }
@@ -188,17 +186,13 @@ export function AddMenu({
   const p0 = useSharedValue(0);
   const p1 = useSharedValue(0);
   const p2 = useSharedValue(0);
-  const p3 = useSharedValue(0);
-  const p4 = useSharedValue(0);
   const s0 = useSharedValue(0.5);
   const s1 = useSharedValue(0.5);
   const s2 = useSharedValue(0.5);
-  const s3 = useSharedValue(0.5);
-  const s4 = useSharedValue(0.5);
 
   const animRefs = useRef<AnimationRefs>({
-    progress: [p0, p1, p2, p3, p4],
-    scale: [s0, s1, s2, s3, s4],
+    progress: [p0, p1, p2],
+    scale: [s0, s1, s2],
   });
 
   const glassColors = isDark ? GlassColors.dark : GlassColors.light;
@@ -247,14 +241,8 @@ export function AddMenu({
         case "add-item":
           onNavigate("AddItem");
           break;
-        case "scan-barcode":
-          onNavigate("BarcodeScanner");
-          break;
-        case "ai-scan":
-          onNavigate("FoodCamera");
-          break;
-        case "ingredient-scan":
-          onNavigate("IngredientScanner");
+        case "scan":
+          onNavigate("ScanHub");
           break;
         case "quick-recipe":
           const params = await getGenerateRecipeParams();
@@ -269,8 +257,7 @@ export function AddMenu({
     onPress: () => handleItemPress(item.id),
   }));
 
-  const topRow = menuItems.slice(0, 3);
-  const bottomRow = menuItems.slice(3, 5);
+  const allItems = menuItems;
 
   if (!shouldRender) {
     return null;
@@ -333,27 +320,13 @@ export function AddMenu({
 
       <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]}>
         <View style={styles.menuRow}>
-          {topRow.map((item, index) => (
+          {allItems.map((item, index) => (
             <MenuItem
               key={item.id}
               item={item}
               onPress={item.onPress}
               progress={animRefs.current.progress[index]}
               scale={animRefs.current.scale[index]}
-              isDark={isDark}
-              glassColors={glassColors}
-              textColor={textColor}
-            />
-          ))}
-        </View>
-        <View style={styles.menuRow}>
-          {bottomRow.map((item, index) => (
-            <MenuItem
-              key={item.id}
-              item={item}
-              onPress={item.onPress}
-              progress={animRefs.current.progress[index + 3]}
-              scale={animRefs.current.scale[index + 3]}
               isDark={isDark}
               glassColors={glassColors}
               textColor={textColor}
@@ -388,7 +361,7 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     alignItems: "center",
-    width: 80,
+    width: 100,
   },
   menuItemIconContainer: {
     width: 60,
@@ -415,9 +388,17 @@ const styles = StyleSheet.create({
     }),
   },
   menuItemLabel: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
     textAlign: "center",
     lineHeight: 16,
+  },
+  menuItemSublabel: {
+    fontSize: 10,
+    fontWeight: "400",
+    textAlign: "center",
+    lineHeight: 13,
+    opacity: 0.6,
+    marginTop: 2,
   },
 });

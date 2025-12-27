@@ -26,6 +26,7 @@ The backend utilizes **Express.js** and **Node.js**. Data storage uses **Drizzle
 - **Smart Shelf Life:** Automatic expiration date suggestions based on food name, storage location, and an AI fallback for unknown items.
 - **Equipment Library:** Manages user's kitchen equipment locally, with common items pre-selected for first-time setup.
 - **Push Notifications:** Local notifications for expiring food items via expo-notifications. Sends alerts X days before expiration (configurable 1-7 days, default 3). Notifications scheduled at 9 AM. Toggle and configure in Settings screen.
+- **Scan Hub:** Centralized scanning interface with 4 distinct options: Product Barcode (for packaged foods), Nutrition Label (for ingredient extraction), Recipe from Paper (for cookbook/printed recipes), and Food & Leftovers (AI food identification). Each option has dedicated UI and backend API integration using GPT-4o vision.
 - **Offline Mode Indicator:** Animated banner at the top of the screen that appears when offline or when changes are pending sync. Shows network status and pending change count. Uses react-native-reanimated for smooth slide animations.
 - **Stripe Donations:** Support donations feature accessible from Profile > Support Us. Uses Stripe Checkout for secure payments with preset amounts ($5-$100) or custom amounts. Tracks donation stats and recent supporters.
 
