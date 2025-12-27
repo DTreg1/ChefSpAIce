@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Platform, Alert } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -196,8 +196,34 @@ export default function FoodCameraScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Food analysis error:", error);
       setScreenState("preview");
+      
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      
+      Alert.alert(
+        "Analysis Failed",
+        error.message || "Unable to analyze the image. Please try again or use manual entry.",
+        [
+          { 
+            text: "Try Again", 
+            onPress: () => {
+              if (capturedImage) {
+                setScreenState("analyzing");
+                analyzeImageMutation.mutate(capturedImage);
+              }
+            }
+          },
+          { 
+            text: "Manual Entry", 
+            onPress: () => navigation.navigate("AddItem", {})
+          },
+          { text: "OK", style: "cancel" },
+        ]
+      );
     },
   });
 
