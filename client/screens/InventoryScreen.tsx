@@ -432,7 +432,7 @@ export default function InventoryScreen() {
   };
 
   const SWIPE_THRESHOLD = 20;
-  const ACTION_WIDTH = 50;
+  const ACTION_WIDTH = 80;
 
   const SwipeableItemCard = ({ item }: { item: FoodItem }) => {
     const translateX = useSharedValue(0);
