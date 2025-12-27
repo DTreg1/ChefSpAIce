@@ -18,13 +18,44 @@ export const users = pgTable("users", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   displayName: text("display_name"),
   email: text("email"),
+  emailVerified: boolean("email_verified").default(false),
   avatarUrl: text("avatar_url"),
+  authProvider: text("auth_provider").default("password"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const authProviders = pgTable(
+  "auth_providers",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    provider: varchar("provider").notNull(),
+    providerId: varchar("provider_id").notNull(),
+    providerEmail: varchar("provider_email"),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    tokenExpiry: timestamp("token_expiry"),
+    isPrimary: boolean("is_primary").default(false),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_auth_providers_provider_user").on(
+      table.provider,
+      table.providerId,
+    ),
+    index("idx_auth_providers_user").on(table.userId),
+  ],
+);
 
 export const userSessions = pgTable("user_sessions", {
   id: varchar("id")
