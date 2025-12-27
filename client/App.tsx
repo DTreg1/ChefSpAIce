@@ -32,6 +32,7 @@ import AboutPage from "@/screens/About";
 import PrivacyPolicyPage from "@/screens/Privacy";
 import TermsOfServicePage from "@/screens/Terms";
 import AttributionsPage from "@/screens/Attributions";
+import { WebThemeProvider } from "@/contexts/WebThemeContext";
 
 const BASE_COLORS = {
   light: "#f0f2f5",
@@ -41,18 +42,26 @@ const BASE_COLORS = {
 function WebApp() {
   const path = typeof window !== "undefined" ? window.location.pathname : "/";
   
-  switch (path) {
-    case "/about":
-      return <AboutPage />;
-    case "/privacy":
-      return <PrivacyPolicyPage />;
-    case "/terms":
-      return <TermsOfServicePage />;
-    case "/attributions":
-      return <AttributionsPage />;
-    default:
-      return <LandingScreen />;
-  }
+  const getPage = () => {
+    switch (path) {
+      case "/about":
+        return <AboutPage />;
+      case "/privacy":
+        return <PrivacyPolicyPage />;
+      case "/terms":
+        return <TermsOfServicePage />;
+      case "/attributions":
+        return <AttributionsPage />;
+      default:
+        return <LandingScreen />;
+    }
+  };
+
+  return (
+    <WebThemeProvider>
+      {getPage()}
+    </WebThemeProvider>
+  );
 }
 
 function MobileAppContent() {
