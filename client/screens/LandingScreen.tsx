@@ -495,8 +495,10 @@ const styles = StyleSheet.create({
   },
   footerLinks: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: 16,
+    justifyContent: "center",
+    gap: 8,
     marginBottom: 24,
   },
   footerLink: {
