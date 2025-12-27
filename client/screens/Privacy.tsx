@@ -1,173 +1,217 @@
+import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useWebTheme } from "@/contexts/WebThemeContext";
-import { WebHeader } from "@/components/WebHeader";
+
+function getThemeColors(isDark: boolean) {
+  return {
+    background: isDark ? "#0F1419" : "#F8FAFC",
+    textPrimary: isDark ? "#FFFFFF" : "#1A202C",
+    textSecondary: isDark ? "#A0AEC0" : "#4A5568",
+    textMuted: isDark ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.5)",
+    footerBg: isDark ? "#0A0D10" : "#F1F5F9",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    brandGreen: "#27AE60",
+  };
+}
 
 export default function PrivacyPolicyPage() {
-  const { isDark } = useWebTheme();
+  const { isDark, toggleTheme } = useWebTheme();
+  const colors = getThemeColors(isDark);
 
-  const bgMain = isDark ? "bg-[#0F1419]" : "bg-gray-50";
-  const textPrimary = isDark ? "text-white" : "text-gray-900";
-  const textSecondary = isDark ? "text-gray-400" : "text-gray-600";
-  const textMuted = isDark ? "text-gray-500" : "text-gray-500";
-  const borderColor = isDark ? "border-white/10" : "border-gray-200";
+  const navigateTo = (path: string) => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.location.href = path;
+    }
+  };
 
   return (
-    <div className={`min-h-screen ${bgMain}`} data-testid="page-privacy">
-      <WebHeader />
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigateTo("/")} style={styles.logoContainer}>
+          <Text style={[styles.logoText, { color: colors.brandGreen }]}>ChefSpAIce</Text>
+        </Pressable>
+        <Pressable
+          onPress={toggleTheme}
+          style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+        >
+          {isDark ? (
+            <Feather name="sun" size={20} color={colors.textPrimary} />
+          ) : (
+            <Feather name="moon" size={20} color={colors.textPrimary} />
+          )}
+        </Pressable>
+      </View>
 
-      <main className="container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className={`text-3xl font-bold mb-6 ${textPrimary}`} data-testid="text-page-title">Privacy Policy</h1>
-          <p className={`${textSecondary} mb-6`}>Last Updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-          
-          <div className="space-y-8">
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Introduction</h2>
-              <p className={`${textSecondary} mb-4`}>
-                At ChefSpAIce, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
-              </p>
-              <p className={textSecondary}>
-                Please read this Privacy Policy carefully. By accessing or using ChefSpAIce, you acknowledge that you have read, understood, and agree to be bound by all the terms of this Privacy Policy and our Terms of Service.
-              </p>
-            </section>
+      <View style={styles.main}>
+        <View style={styles.content}>
+          <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Privacy Policy</Text>
+          <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
+            Last Updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </Text>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Information We Collect</h2>
-              <p className={`${textSecondary} mb-4`}>We collect several types of information from and about users of our application:</p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Personal Information</h3>
-              <p className={`${textSecondary} mb-4`}>
-                When you register for an account, we collect your username and password. Your password is securely hashed and never stored in plain text.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Food Inventory Data</h3>
-              <p className={`${textSecondary} mb-4`}>
-                We collect information about the food items you add to your inventory, including product names, quantities, expiration dates, storage locations, and nutritional information.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Usage Information</h3>
-              <p className={`${textSecondary} mb-4`}>
-                We collect information about how you interact with our application, including recipes viewed, food items added, and features used.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Device Information</h3>
-              <p className={textSecondary}>
-                We may collect information about your device, including your device type, operating system, and app version.
-              </p>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Introduction</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              At ChefSpAIce, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>How We Use Your Information</h2>
-              <p className={`${textSecondary} mb-4`}>We use the information we collect about you for various purposes:</p>
-              
-              <ul className={`list-disc pl-6 space-y-2 ${textSecondary}`}>
-                <li>To provide, maintain, and improve our application</li>
-                <li>To process your account registration and provide you with access to certain features</li>
-                <li>To generate personalized recipe recommendations based on your inventory items</li>
-                <li>To send you expiration notifications for food items</li>
-                <li>To sync your data across devices when you're signed in</li>
-                <li>To monitor and analyze usage patterns and trends</li>
-                <li>To protect the security and integrity of our application</li>
-              </ul>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Information We Collect</Text>
+            
+            <Text style={[styles.subTitle, { color: colors.textPrimary }]}>Personal Information</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              When you register for an account, we collect your username and password. Your password is securely hashed and never stored in plain text.
+            </Text>
+            
+            <Text style={[styles.subTitle, { color: colors.textPrimary }]}>Food Inventory Data</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              We collect information about the food items you add to your inventory, including product names, quantities, expiration dates, storage locations, and nutritional information.
+            </Text>
+            
+            <Text style={[styles.subTitle, { color: colors.textPrimary }]}>Usage Information</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              We collect information about how you interact with our application, including recipes viewed, food items added, and features used.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Third-Party Services</h2>
-              <p className={`${textSecondary} mb-4`}>
-                Our application integrates with third-party services to provide certain features. These third parties may receive your information only for the purpose of providing these services to us:
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>OpenAI</h3>
-              <p className={`${textSecondary} mb-4`}>
-                We use OpenAI's services for generating recipe recommendations and providing kitchen assistance. When you request recipe suggestions, we send your inventory data to OpenAI's API. This data is used in accordance with <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#27AE60] hover:underline">OpenAI's Privacy Policy</a>.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Open Food Facts</h3>
-              <p className={`${textSecondary} mb-4`}>
-                We access the Open Food Facts database to retrieve product information when you scan barcodes. Your device sends the barcode information directly to the Open Food Facts API. This interaction is subject to the <a href="https://world.openfoodfacts.org/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-[#27AE60] hover:underline">Open Food Facts Terms of Use</a>.
-              </p>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>How We Use Your Information</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              We use the information we collect to provide, maintain, and improve our application; to process your account registration; to generate personalized recipe recommendations; to send expiration notifications; and to sync your data across devices.
+            </Text>
+          </View>
 
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>USDA FoodData Central</h3>
-              <p className={textSecondary}>
-                We use the USDA FoodData Central API to provide nutrition information for food items. This is a public domain service provided by the U.S. Department of Agriculture.
-              </p>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Third-Party Services</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              Our application integrates with third-party services including OpenAI (for recipe generation), Open Food Facts (for product information), and USDA FoodData Central (for nutrition data). Your use of these services is subject to their respective privacy policies.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Data Storage</h2>
-              <p className={`${textSecondary} mb-4`}>
-                ChefSpAIce uses a local-first approach to data storage:
-              </p>
-              <ul className={`list-disc pl-6 space-y-2 ${textSecondary}`}>
-                <li><span className={`${textPrimary} font-medium`}>Guest Users:</span> Your data is stored locally on your device and is not synced to our servers.</li>
-                <li><span className={`${textPrimary} font-medium`}>Registered Users:</span> Your data is stored both locally and synced to our cloud database for access across devices.</li>
-              </ul>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Data Storage</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              Guest users: Your data is stored locally on your device.{"\n"}
+              Registered users: Your data is stored both locally and synced to our cloud database for access across devices.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Data Security</h2>
-              <p className={`${textSecondary} mb-4`}>
-                We implement appropriate technical and organizational measures to protect the security of your personal information. However, please be aware that no method of transmission over the internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
-              </p>
-              <p className={textSecondary}>
-                Your account is protected by a password that is hashed using SHA-256. You are responsible for keeping your password confidential.
-              </p>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Data Security</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              We implement appropriate technical and organizational measures to protect the security of your personal information. Your account is protected by a password that is hashed using SHA-256.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Your Rights and Choices</h2>
-              <p className={`${textSecondary} mb-4`}>You have several rights regarding your personal information:</p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Account Information</h3>
-              <p className={`${textSecondary} mb-4`}>
-                You can review and update your account information in the app settings.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Data Deletion</h3>
-              <p className={`${textSecondary} mb-4`}>
-                You may request the deletion of your account and personal information by contacting us.
-              </p>
-              
-              <h3 className={`text-xl font-medium mb-2 ${textPrimary}`}>Notifications</h3>
-              <p className={textSecondary}>
-                You can control expiration notifications in the app settings.
-              </p>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Rights</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              You can review and update your account information in the app settings. You may request the deletion of your account and personal information by contacting us. You can control expiration notifications in the app settings.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Children's Privacy</h2>
-              <p className={textSecondary}>
-                Our application is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe that your child has provided us with personal information, please contact us so that we can delete the information.
-              </p>
-            </section>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Contact Us</Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              If you have any questions about our Privacy Policy, please contact us at privacy@chefspaice.com.
+            </Text>
+          </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Changes to Our Privacy Policy</h2>
-              <p className={textSecondary}>
-                We may update our Privacy Policy from time to time. If we make material changes, we will notify you through the application. Your continued use of the application after the effective date of the revised Privacy Policy constitutes your acceptance of the changes.
-              </p>
-            </section>
+          <View style={[styles.backLink, { borderTopColor: colors.borderColor }]}>
+            <Pressable onPress={() => navigateTo("/")}>
+              <Text style={[styles.link, { color: colors.brandGreen }]}>&larr; Back to Home</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
 
-            <section>
-              <h2 className={`text-2xl font-semibold mb-4 ${textPrimary}`}>Contact Us</h2>
-              <p className={textSecondary}>
-                If you have any questions or concerns about our Privacy Policy or our data practices, please contact us at privacy@chefspaice.com.
-              </p>
-            </section>
-          </div>
-          
-          <div className={`border-t ${borderColor} pt-6 mt-8`}>
-            <a href="/" className="text-[#27AE60] hover:underline" data-testid="link-back-home">&larr; Back to Home</a>
-          </div>
-        </div>
-      </main>
-
-      <footer className={`py-6 mt-auto border-t ${isDark ? "bg-[#1A1F25] border-white/10" : "bg-white border-gray-200"}`}>
-        <div className="container mx-auto px-4 text-center">
-          <p className={`text-sm ${textMuted}`} data-testid="text-copyright">
-            &copy; {new Date().getFullYear()} ChefSpAIce. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+      <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
+        <Text style={[styles.copyright, { color: colors.textMuted }]}>
+          © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    minHeight: "100%",
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  themeToggle: {
+    padding: 10,
+    borderRadius: 10,
+  },
+  main: {
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  content: {
+    maxWidth: 800,
+    alignSelf: "center",
+    width: "100%",
+  },
+  pageTitle: {
+    fontSize: 32,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  lastUpdated: {
+    fontSize: 14,
+    marginBottom: 32,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  paragraph: {
+    fontSize: 16,
+    lineHeight: 26,
+    marginBottom: 12,
+  },
+  link: {
+    fontSize: 16,
+  },
+  backLink: {
+    borderTopWidth: 1,
+    paddingTop: 24,
+    marginTop: 24,
+  },
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    alignItems: "center",
+  },
+  copyright: {
+    fontSize: 14,
+  },
+});
