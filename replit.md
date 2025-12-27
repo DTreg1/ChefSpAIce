@@ -29,6 +29,22 @@ The backend utilizes **Express.js** and **Node.js**. Data storage uses **Drizzle
 - **Offline Mode Indicator:** Animated banner at the top of the screen that appears when offline or when changes are pending sync. Shows network status and pending change count. Uses react-native-reanimated for smooth slide animations.
 - **Stripe Donations:** Support donations feature accessible from Profile > Support Us. Uses Stripe Checkout for secure payments with preset amounts ($5-$100) or custom amounts. Tracks donation stats and recent supporters.
 
+### Web Landing Page
+The project uses **platform-specific entry points** for optimized builds:
+- **App.web.tsx**: Web-only entry point for the landing page (used automatically for web builds)
+- **App.tsx**: Mobile-only entry point for the full app (used for iOS/Android)
+
+This separation reduces the web bundle from 4.26 MB to ~919 KB (78% smaller).
+
+**Web Routes:**
+- `/` - Landing page with hero, features, how-it-works, support/donate, and CTA sections
+- `/about` - About page
+- `/privacy` - Privacy Policy
+- `/terms` - Terms of Service
+- `/attributions` - Attributions and credits
+
+**Web Donation Section:** The landing page includes a donate section with preset amounts ($5, $10, $25, $50, $100) that redirects to Stripe Checkout. Uses the same `/api/donations/create-checkout-session` endpoint as the mobile app.
+
 ## External Dependencies
 - **OpenAI API**: For AI-powered recipe generation and conversational kitchen assistance, accessed via Replit AI Integrations (gpt-4o-mini model).
 - **USDA FoodData Central API**: Provides comprehensive nutrition data lookup for food items, requiring an API key.
