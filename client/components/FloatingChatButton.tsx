@@ -99,7 +99,7 @@ export function FloatingChatButton() {
 
     if (Platform.OS === "ios") {
       return (
-        <View style={styles.buttonInner}>
+        <View style={styles.buttonBlurContainer}>
           <BlurView
             intensity={80}
             tint={isDark ? "systemThickMaterialDark" : "systemThickMaterial"}
@@ -170,6 +170,22 @@ const styles = StyleSheet.create({
   buttonGlass: {
     backgroundColor: `${AppColors.primary}CC`,
     overflow: "hidden",
+  },
+  buttonBlurContainer: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: AppColors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+    }),
   },
   buttonOverlay: {
     backgroundColor: `${AppColors.primary}CC`,
