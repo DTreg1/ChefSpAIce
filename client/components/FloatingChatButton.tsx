@@ -3,6 +3,7 @@ import { StyleSheet, Pressable, Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,6 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
+import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing } from "@/constants/theme";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -25,6 +27,7 @@ const TAB_BAR_HEIGHT = 55;
 
 export function FloatingChatButton() {
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
   const scale = useSharedValue(1);
   const pulseScale = useSharedValue(1);
@@ -72,7 +75,7 @@ export function FloatingChatButton() {
     }
   };
 
-  const useLiquidGlass = isLiquidGlassAvailable();
+  const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
   const iconContent = (
     <MaterialCommunityIcons
@@ -82,16 +85,36 @@ export function FloatingChatButton() {
     />
   );
 
-  const innerContent = useLiquidGlass ? (
-    <GlassView
-      glassEffectStyle="regular"
-      style={[styles.buttonInner, styles.buttonGlass]}
-    >
-      {iconContent}
-    </GlassView>
-  ) : (
-    <View style={styles.buttonInner}>{iconContent}</View>
-  );
+  const renderInnerContent = () => {
+    if (useLiquidGlass) {
+      return (
+        <GlassView
+          glassEffectStyle="regular"
+          style={[styles.buttonInner, styles.buttonGlass]}
+        >
+          {iconContent}
+        </GlassView>
+      );
+    }
+
+    if (Platform.OS === "ios") {
+      return (
+        <View style={styles.buttonInner}>
+          <BlurView
+            intensity={80}
+            tint={isDark ? "systemThickMaterialDark" : "systemThickMaterial"}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.buttonOverlay]} />
+          {iconContent}
+        </View>
+      );
+    }
+
+    return <View style={styles.buttonInner}>{iconContent}</View>;
+  };
+
+  const innerContent = renderInnerContent();
 
   return (
     <Animated.View
@@ -147,5 +170,9 @@ const styles = StyleSheet.create({
   buttonGlass: {
     backgroundColor: `${AppColors.primary}CC`,
     overflow: "hidden",
+  },
+  buttonOverlay: {
+    backgroundColor: `${AppColors.primary}CC`,
+    borderRadius: BUTTON_SIZE / 2,
   },
 });
