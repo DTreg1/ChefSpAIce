@@ -12,13 +12,20 @@ import { getApiUrl } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 
 const isWeb = Platform.OS === "web";
+const isIOS = Platform.OS === "ios";
+const isAndroid = Platform.OS === "android";
 
 let AppleAuthentication: typeof import("expo-apple-authentication") | null = null;
 let Google: typeof import("expo-auth-session/providers/google") | null = null;
 let WebBrowser: typeof import("expo-web-browser") | null = null;
 
-if (!isWeb) {
+// Only load Apple auth on iOS
+if (isIOS) {
   AppleAuthentication = require("expo-apple-authentication");
+}
+
+// Only load Google auth on Android
+if (isAndroid) {
   Google = require("expo-auth-session/providers/google");
   WebBrowser = require("expo-web-browser");
   WebBrowser?.maybeCompleteAuthSession();
@@ -52,6 +59,7 @@ interface AuthContextType extends AuthState {
   continueAsGuest: () => void;
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
+  isGoogleAuthAvailable: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -61,6 +69,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAuthenticated: false,
   isAppleAuthAvailable: false,
+  isGoogleAuthAvailable: false,
   signIn: async () => ({ success: false }),
   signUp: async () => ({ success: false }),
   signInWithApple: async () => ({ success: false }),
@@ -77,13 +86,12 @@ interface StoredAuthData {
 }
 
 function useGoogleAuth() {
-  if (isWeb || !Google) {
+  // Only use Google auth on Android
+  if (!isAndroid || !Google) {
     return [null, null, null] as const;
   }
   return Google.useAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   });
 }
 
@@ -353,11 +361,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [promptGoogleAsync]);
 
+  // Google auth is available on Android when the auth request is ready
+  const isGoogleAuthAvailable = isAndroid && !!promptGoogleAsync;
+
   const value = useMemo(
     () => ({
       ...state,
       isAuthenticated: !!state.user && !!state.token,
       isAppleAuthAvailable,
+      isGoogleAuthAvailable,
       signIn,
       signUp,
       signInWithApple,
@@ -365,7 +377,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       continueAsGuest,
     }),
-    [state, isAppleAuthAvailable, signIn, signUp, signInWithApple, signInWithGoogle, signOut, continueAsGuest],
+    [state, isAppleAuthAvailable, isGoogleAuthAvailable, signIn, signUp, signInWithApple, signInWithGoogle, signOut, continueAsGuest],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -22,7 +22,7 @@ export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable } = useAuth();
+  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState("");
@@ -251,61 +251,67 @@ export default function SignInScreen() {
         </Pressable>
       </GlassCard>
 
-      <View style={styles.dividerContainer}>
-        <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
-        <ThemedText type="caption" style={styles.dividerText}>
-          or continue with
-        </ThemedText>
-        <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
-      </View>
+      {(isAppleAuthAvailable || isGoogleAuthAvailable) ? (
+        <>
+          <View style={styles.dividerContainer}>
+            <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+            <ThemedText type="caption" style={styles.dividerText}>
+              or continue with
+            </ThemedText>
+            <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+          </View>
 
-      <View style={styles.socialButtonsContainer}>
-        {Platform.OS === "ios" && isAppleAuthAvailable ? (
-          <Pressable
-            style={[
-              styles.socialButton,
-              { backgroundColor: theme.text },
-              (isLoading || isSocialLoading) && styles.submitButtonDisabled,
-            ]}
-            onPress={handleAppleSignIn}
-            disabled={isLoading || !!isSocialLoading}
-            data-testid="button-apple-signin"
-          >
-            {isSocialLoading === "apple" ? (
-              <ActivityIndicator color={theme.backgroundRoot} size="small" />
-            ) : (
-              <>
-                <FontAwesome name="apple" size={20} color={theme.backgroundRoot} />
-                <ThemedText type="body" style={[styles.socialButtonText, { color: theme.backgroundRoot }]}>
-                  Continue with Apple
-                </ThemedText>
-              </>
-            )}
-          </Pressable>
-        ) : null}
+          <View style={styles.socialButtonsContainer}>
+            {Platform.OS === "ios" && isAppleAuthAvailable ? (
+              <Pressable
+                style={[
+                  styles.socialButton,
+                  { backgroundColor: theme.text },
+                  (isLoading || isSocialLoading) && styles.submitButtonDisabled,
+                ]}
+                onPress={handleAppleSignIn}
+                disabled={isLoading || !!isSocialLoading}
+                data-testid="button-apple-signin"
+              >
+                {isSocialLoading === "apple" ? (
+                  <ActivityIndicator color={theme.backgroundRoot} size="small" />
+                ) : (
+                  <>
+                    <FontAwesome name="apple" size={20} color={theme.backgroundRoot} />
+                    <ThemedText type="body" style={[styles.socialButtonText, { color: theme.backgroundRoot }]}>
+                      Continue with Apple
+                    </ThemedText>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
 
-        <Pressable
-          style={[
-            styles.socialButton,
-            { backgroundColor: "#4285F4" },
-            (isLoading || isSocialLoading) && styles.submitButtonDisabled,
-          ]}
-          onPress={handleGoogleSignIn}
-          disabled={isLoading || !!isSocialLoading}
-          data-testid="button-google-signin"
-        >
-          {isSocialLoading === "google" ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <>
-              <FontAwesome name="google" size={18} color="#FFFFFF" />
-              <ThemedText type="body" style={[styles.socialButtonText, { color: "#FFFFFF" }]}>
-                Continue with Google
-              </ThemedText>
-            </>
-          )}
-        </Pressable>
-      </View>
+            {Platform.OS === "android" && isGoogleAuthAvailable ? (
+              <Pressable
+                style={[
+                  styles.socialButton,
+                  { backgroundColor: "#4285F4" },
+                  (isLoading || isSocialLoading) && styles.submitButtonDisabled,
+                ]}
+                onPress={handleGoogleSignIn}
+                disabled={isLoading || !!isSocialLoading}
+                data-testid="button-google-signin"
+              >
+                {isSocialLoading === "google" ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <FontAwesome name="google" size={18} color="#FFFFFF" />
+                    <ThemedText type="body" style={[styles.socialButtonText, { color: "#FFFFFF" }]}>
+                      Continue with Google
+                    </ThemedText>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+        </>
+      ) : null}
 
       <View style={styles.dividerContainer}>
         <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
