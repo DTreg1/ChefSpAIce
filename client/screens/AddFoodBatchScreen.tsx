@@ -31,6 +31,7 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId, DEFAULT_STORAGE_LOCATIONS } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
+import { useGuestLimits, GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
 
 const SWIPE_THRESHOLD = -80;
 
@@ -237,11 +238,13 @@ export default function AddFoodBatchScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
+  const { isGuest, inventoryRemaining, showUpgradePrompt, refreshCounts } = useGuestLimits();
 
+  const maxItems = isGuest ? inventoryRemaining : Infinity;
   const initialItems: BatchItem[] = (route.params?.items || []).map(
     (item: IdentifiedFood, idx: number) => ({
       ...item,
-      selected: true,
+      selected: idx < maxItems,
       id: generateId() + idx,
     }),
   );
@@ -251,12 +254,19 @@ export default function AddFoodBatchScreen() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const selectedCount = items.filter((item) => item.selected).length;
+  const canAddAll = !isGuest || selectedCount <= maxItems;
 
   const toggleItemSelection = useCallback((index: number) => {
     if (Platform.OS !== "web") {
       Haptics.selectionAsync();
     }
     setItems((prev) => {
+      const currentItem = prev[index];
+      const currentSelected = prev.filter((item) => item.selected).length;
+      if (!currentItem.selected && isGuest && currentSelected >= maxItems) {
+        showUpgradePrompt("inventory");
+        return prev;
+      }
       const newItems = [...prev];
       newItems[index] = {
         ...newItems[index],
@@ -264,14 +274,30 @@ export default function AddFoodBatchScreen() {
       };
       return newItems;
     });
-  }, []);
+  }, [isGuest, maxItems, showUpgradePrompt]);
 
   const selectAll = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setItems((prev) => prev.map((item) => ({ ...item, selected: true })));
-  }, []);
+    if (isGuest) {
+      setItems((prev) => {
+        let count = 0;
+        return prev.map((item) => {
+          if (count < maxItems) {
+            count++;
+            return { ...item, selected: true };
+          }
+          return { ...item, selected: false };
+        });
+      });
+      if (items.length > maxItems) {
+        showUpgradePrompt("inventory");
+      }
+    } else {
+      setItems((prev) => prev.map((item) => ({ ...item, selected: true })));
+    }
+  }, [isGuest, maxItems, items.length, showUpgradePrompt]);
 
   const deselectAll = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -326,6 +352,11 @@ export default function AddFoodBatchScreen() {
       return;
     }
 
+    if (isGuest && selectedItems.length > maxItems) {
+      showUpgradePrompt("inventory");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -348,6 +379,7 @@ export default function AddFoodBatchScreen() {
       }));
 
       const result = await storage.addInventoryItems(foodItems);
+      await refreshCounts();
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(

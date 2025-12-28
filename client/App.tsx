@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef } from "react";
 import { StyleSheet } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
@@ -7,6 +7,7 @@ import {
   DarkTheme,
   Theme,
   NavigationState,
+  NavigationContainerRef,
 } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -26,9 +27,11 @@ import {
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { GuestLimitsProvider } from "@/contexts/GuestLimitsContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const SCREENS_WITHOUT_CHAT = ["AddItem"];
 
@@ -46,6 +49,7 @@ function MobileAppContent() {
   const isDark = colorScheme === "dark";
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(undefined);
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useExpirationNotifications();
 
@@ -66,23 +70,29 @@ function MobileAppContent() {
     setCurrentRoute(routeName);
   }, []);
 
+  const navigateToSignUp = useCallback(() => {
+    navigationRef.current?.navigate("SignIn", { mode: "signup" });
+  }, []);
+
   const showChat = !isCheckingOnboarding && isOnboardingComplete && !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
 
   return (
-    <FloatingChatProvider>
-      <NavigationContainer theme={navigationTheme} onStateChange={onStateChange}>
-        <AnimatedBackground bubbleCount={20} />
-        <OfflineIndicator />
-        <RootStackNavigator />
-        {showChat ? (
-          <>
-            <FloatingChatButton />
-            <ChatModal />
-          </>
-        ) : null}
-      </NavigationContainer>
-      <StatusBar />
-    </FloatingChatProvider>
+    <GuestLimitsProvider onNavigateToSignUp={navigateToSignUp}>
+      <FloatingChatProvider>
+        <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onStateChange}>
+          <AnimatedBackground bubbleCount={20} />
+          <OfflineIndicator />
+          <RootStackNavigator />
+          {showChat ? (
+            <>
+              <FloatingChatButton />
+              <ChatModal />
+            </>
+          ) : null}
+        </NavigationContainer>
+        <StatusBar />
+      </FloatingChatProvider>
+    </GuestLimitsProvider>
   );
 }
 

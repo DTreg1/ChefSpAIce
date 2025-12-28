@@ -194,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+      await AsyncStorage.removeItem(GUEST_STORAGE_KEY);
       await storage.setAuthToken(data.token);
 
       setState({
@@ -202,6 +203,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isGuest: false,
         isLoading: false,
       });
+
+      await storage.syncFromCloud();
 
       return { success: true };
     } catch (error) {
@@ -234,6 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+        await AsyncStorage.removeItem(GUEST_STORAGE_KEY);
         await storage.setAuthToken(data.token);
 
         setState({
@@ -242,6 +246,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isGuest: false,
           isLoading: false,
         });
+
+        await storage.syncToCloud();
 
         return { success: true };
       } catch (error) {
@@ -337,6 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+      await AsyncStorage.removeItem(GUEST_STORAGE_KEY);
       await storage.setAuthToken(data.token);
 
       setState({
@@ -345,6 +352,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isGuest: false,
         isLoading: false,
       });
+
+      if (data.isNewUser) {
+        await storage.syncToCloud();
+      } else {
+        await storage.syncFromCloud();
+      }
 
       return { success: true };
     } catch (error: any) {
@@ -394,6 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+      await AsyncStorage.removeItem(GUEST_STORAGE_KEY);
       await storage.setAuthToken(data.token);
 
       setState({
@@ -402,6 +416,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isGuest: false,
         isLoading: false,
       });
+
+      if (data.isNewUser) {
+        await storage.syncToCloud();
+      } else {
+        await storage.syncFromCloud();
+      }
 
       return { success: true };
     } catch (error) {

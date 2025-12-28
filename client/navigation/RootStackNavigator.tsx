@@ -19,7 +19,7 @@ import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
-  SignIn: undefined;
+  SignIn: { mode?: "signin" | "signup" } | undefined;
   Main: undefined;
   Onboarding: undefined;
   AddItem:

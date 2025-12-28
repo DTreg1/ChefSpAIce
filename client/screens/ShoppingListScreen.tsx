@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem, InstacartSettings } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
+import { useGuestLimits } from "@/contexts/GuestLimitsContext";
 
 
 export default function ShoppingListScreen() {
@@ -21,6 +22,7 @@ export default function ShoppingListScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { isGuest, isInstacartEnabled, showUpgradePrompt } = useGuestLimits();
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +82,11 @@ export default function ShoppingListScreen() {
   };
 
   const handleSendToInstacart = async () => {
+    if (!isInstacartEnabled) {
+      showUpgradePrompt("instacart");
+      return;
+    }
+
     const uncheckedItems = items.filter((i) => !i.isChecked);
     if (uncheckedItems.length === 0) {
       Alert.alert("No Items", "Add items to your shopping list first.");
@@ -272,12 +279,12 @@ export default function ShoppingListScreen() {
             onPress={handleSendToInstacart}
             loading={sendingToInstacart}
             disabled={sendingToInstacart}
-            icon={<Feather name="shopping-bag" size={18} color="#FFFFFF" />}
-            style={[styles.instacartButton, { backgroundColor: "#43B02A" }]}
+            icon={<Feather name={isGuest ? "lock" : "shopping-bag"} size={18} color="#FFFFFF" />}
+            style={[styles.instacartButton, { backgroundColor: isGuest ? theme.textSecondary : "#43B02A" }]}
             data-testid="button-send-to-instacart"
           >
             <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
-              Send to Instacart
+              {isGuest ? "Create Account for Instacart" : "Send to Instacart"}
             </ThemedText>
           </Button>
         </View>
