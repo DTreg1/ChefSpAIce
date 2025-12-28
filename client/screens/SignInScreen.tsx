@@ -347,7 +347,9 @@ export default function SignInScreen() {
             </ThemedText>
           </View>
         </View>
-        <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        <View style={styles.guestChevron}>
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        </View>
       </GlassCard>
 
       <View style={styles.infoCard}>
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
   },
   guestCard: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "stretch",
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
@@ -480,6 +482,11 @@ const styles = StyleSheet.create({
   },
   guestText: {
     flex: 1,
+  },
+  guestChevron: {
+    alignSelf: "stretch",
+    justifyContent: "center",
+    paddingLeft: Spacing.sm,
   },
   infoCard: {
     flexDirection: "row",
