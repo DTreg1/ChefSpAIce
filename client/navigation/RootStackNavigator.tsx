@@ -19,7 +19,7 @@ import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
   Main: undefined;
-  Onboarding: undefined;
+  Onboarding: { upgradeFromGuest?: boolean } | undefined;
   AddItem:
     | {
         barcode?: string;

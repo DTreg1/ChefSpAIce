@@ -71,7 +71,7 @@ function MobileAppContent() {
   }, []);
 
   const navigateToSignUp = useCallback(() => {
-    navigationRef.current?.reset({ index: 0, routes: [{ name: "Onboarding" }] });
+    navigationRef.current?.reset({ index: 0, routes: [{ name: "Onboarding", params: { upgradeFromGuest: true } }] });
   }, []);
 
   const showChat = !isCheckingOnboarding && isOnboardingComplete && !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");

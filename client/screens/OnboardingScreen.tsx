@@ -24,7 +24,8 @@ import Animated, {
   SlideOutLeft,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation, useRoute, CommonActions, RouteProp } from "@react-navigation/native";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -758,8 +759,12 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
   const { markOnboardingComplete } = useOnboardingStatus();
   const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable, isGuest } = useAuth();
+  
+  // Check if this is an upgrade flow from guest mode
+  const isUpgradeFromGuest = route.params?.upgradeFromGuest === true;
 
   const [step, setStep] = useState<OnboardingStep>("welcome");
   const [categoryIndex, setCategoryIndex] = useState(0);
@@ -830,6 +835,16 @@ export default function OnboardingScreen() {
   };
 
   const proceedToNextStep = () => {
+    // If upgrading from guest mode, go directly to Main since onboarding is already complete
+    if (isUpgradeFromGuest) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Main" as never }],
+        }),
+      );
+      return;
+    }
     setStep("all-cookware");
   };
 
@@ -1200,6 +1215,15 @@ export default function OnboardingScreen() {
     { icon: "sun" as keyof typeof Feather.glyphMap, label: "Counter" },
   ];
 
+  const handleCancelUpgrade = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Main" as never }],
+      }),
+    );
+  };
+
   const renderWelcomeStep = () => (
     <Animated.View
       entering={FadeIn.duration(400)}
@@ -1211,6 +1235,21 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.welcomeScrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {isUpgradeFromGuest ? (
+          <View style={styles.upgradeHeader}>
+            <Pressable
+              onPress={handleCancelUpgrade}
+              style={styles.cancelButton}
+              data-testid="button-cancel-upgrade"
+            >
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+            <ThemedText style={styles.upgradeTitle}>Create Account</ThemedText>
+            <ThemedText style={[styles.upgradeSubtitle, { color: theme.textSecondary }]}>
+              Sign up to unlock unlimited features and sync your data
+            </ThemedText>
+          </View>
+        ) : null}
         <View style={styles.welcomeHeader}>
           <Animated.View
             entering={FadeIn.delay(100).duration(500)}
@@ -1436,32 +1475,36 @@ export default function OnboardingScreen() {
             </>
           ) : null}
 
-          <View style={styles.authDividerContainer}>
-            <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
-            <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
-              or
-            </ThemedText>
-            <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
-          </View>
+          {!isUpgradeFromGuest ? (
+            <>
+              <View style={styles.authDividerContainer}>
+                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+                <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
+                  or
+                </ThemedText>
+                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+              </View>
 
-          <GlassCard onPress={handleContinueAsGuest}>
-            <View style={styles.guestContent}>
-              <View style={[styles.guestIcon, { backgroundColor: theme.glass.background }]}>
-                <Feather name="user-x" size={20} color={theme.textSecondary} />
-              </View>
-              <View style={styles.guestText}>
-                <ThemedText style={{ fontWeight: "600" }}>
-                  Continue as Guest
-                </ThemedText>
-                <ThemedText style={{ color: theme.textSecondary, fontSize: 13 }}>
-                  Use the app without syncing. You can sign in later.
-                </ThemedText>
-              </View>
-              <View style={styles.guestChevron}>
-                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-              </View>
-            </View>
-          </GlassCard>
+              <GlassCard onPress={handleContinueAsGuest}>
+                <View style={styles.guestContent}>
+                  <View style={[styles.guestIcon, { backgroundColor: theme.glass.background }]}>
+                    <Feather name="user-x" size={20} color={theme.textSecondary} />
+                  </View>
+                  <View style={styles.guestText}>
+                    <ThemedText style={{ fontWeight: "600" }}>
+                      Continue as Guest
+                    </ThemedText>
+                    <ThemedText style={{ color: theme.textSecondary, fontSize: 13 }}>
+                      Use the app without syncing. You can sign in later.
+                    </ThemedText>
+                  </View>
+                  <View style={styles.guestChevron}>
+                    <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+                  </View>
+                </View>
+              </GlassCard>
+            </>
+          ) : null}
 
           <View style={styles.authInfoCard}>
             <Feather name="cloud" size={20} color={AppColors.primary} />
@@ -2269,6 +2312,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: Spacing.xl,
     marginBottom: Spacing.xl,
+  },
+  upgradeHeader: {
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  cancelButton: {
+    position: "absolute" as const,
+    top: 0,
+    right: 0,
+    padding: Spacing.sm,
+    zIndex: 1,
+  },
+  upgradeTitle: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    textAlign: "center" as const,
+    marginBottom: Spacing.xs,
+  },
+  upgradeSubtitle: {
+    fontSize: 15,
+    textAlign: "center" as const,
+    lineHeight: 22,
+    paddingHorizontal: Spacing.md,
   },
   welcomeIconContainer: {
     width: 96,
