@@ -774,7 +774,6 @@ export default function OnboardingScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<"apple" | "google" | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -840,7 +839,7 @@ export default function OnboardingScreen() {
 
     try {
       const result = isSignUp
-        ? await signUp(email.trim(), password, displayName.trim() || undefined)
+        ? await signUp(email.trim(), password)
         : await signIn(email.trim(), password);
 
       if (result.success) {
@@ -1190,31 +1189,6 @@ export default function OnboardingScreen() {
                 <ThemedText style={{ color: AppColors.error, marginLeft: Spacing.xs, flex: 1 }}>
                   {authError}
                 </ThemedText>
-              </View>
-            ) : null}
-
-            {isSignUp ? (
-              <View style={styles.authInputGroup}>
-                <ThemedText style={styles.authInputLabel}>
-                  Display Name (optional)
-                </ThemedText>
-                <TextInput
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  placeholder="How should we call you?"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[
-                    styles.authInput,
-                    {
-                      color: theme.text,
-                      backgroundColor: theme.glass.background,
-                      borderColor: theme.glass.border,
-                    },
-                  ]}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  data-testid="input-display-name"
-                />
               </View>
             ) : null}
 
