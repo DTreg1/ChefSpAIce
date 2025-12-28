@@ -1,8 +1,7 @@
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
-import { differenceInDays, parseISO, startOfDay, addDays, subDays } from "date-fns";
-import { storage, FoodItem, UserPreferences } from "./storage";
+import { differenceInDays, parseISO, startOfDay } from "date-fns";
+import { storage } from "./storage";
 
 // Check if running in Expo Go on Android (notifications not supported in SDK 53+)
 const isExpoGoOnAndroid = Platform.OS === "android" && Constants.appOwnership === "expo";
@@ -12,26 +11,37 @@ export function isNotificationsUnsupported(): boolean {
   return isExpoGoOnAndroid;
 }
 
-// Only set notification handler if not in Expo Go on Android
-if (!isExpoGoOnAndroid) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowInForeground: true,
-    }),
-  });
+// Lazy load notifications module only when supported
+let Notifications: typeof import("expo-notifications") | null = null;
+
+async function getNotificationsModule() {
+  if (isExpoGoOnAndroid) {
+    return null;
+  }
+  if (!Notifications) {
+    Notifications = await import("expo-notifications");
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowInForeground: true,
+      }),
+    });
+  }
+  return Notifications;
 }
 
 const NOTIFICATION_CHANNEL_ID = "expiration-alerts";
 
 async function setupNotificationChannel(): Promise<void> {
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+    const notif = await getNotificationsModule();
+    if (!notif) return;
+    await notif.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
       name: "Expiration Alerts",
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: notif.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#22C55E",
     });
@@ -39,18 +49,15 @@ async function setupNotificationChannel(): Promise<void> {
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  // Skip on Expo Go Android - notifications not supported
-  if (isExpoGoOnAndroid) {
-    return false;
-  }
+  const notif = await getNotificationsModule();
+  if (!notif) return false;
 
-  const { status: existingStatus } =
-    await Notifications.getPermissionsAsync();
+  const { status: existingStatus } = await notif.getPermissionsAsync();
 
   let finalStatus = existingStatus;
 
   if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await notif.requestPermissionsAsync();
     finalStatus = status;
   }
 
@@ -63,20 +70,22 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 }
 
 export async function getNotificationPermissionStatus(): Promise<string> {
-  const { status } = await Notifications.getPermissionsAsync();
+  const notif = await getNotificationsModule();
+  if (!notif) return "unavailable";
+  const { status } = await notif.getPermissionsAsync();
   return status;
 }
 
 export async function cancelAllExpirationNotifications(): Promise<void> {
-  const scheduledNotifications =
-    await Notifications.getAllScheduledNotificationsAsync();
+  const notif = await getNotificationsModule();
+  if (!notif) return;
+
+  const scheduledNotifications = await notif.getAllScheduledNotificationsAsync();
 
   for (const notification of scheduledNotifications) {
     const data = notification.content.data as { type?: string } | undefined;
     if (data?.type === "expiration-alert") {
-      await Notifications.cancelScheduledNotificationAsync(
-        notification.identifier,
-      );
+      await notif.cancelScheduledNotificationAsync(notification.identifier);
     }
   }
 }
@@ -104,6 +113,9 @@ function getExpirationMessage(
 }
 
 export async function scheduleExpirationNotifications(): Promise<number> {
+  const notif = await getNotificationsModule();
+  if (!notif) return 0;
+
   const preferences = await storage.getPreferences();
 
   if (!preferences.notificationsEnabled) {
@@ -129,8 +141,6 @@ export async function scheduleExpirationNotifications(): Promise<number> {
     const expirationDate = startOfDay(parseISO(item.expirationDate));
     const daysUntilExpiration = differenceInDays(expirationDate, today);
 
-    // Only schedule ONE notification: exactly alertDays before expiration
-    // If the item is already past that point, don't send any notification
     if (daysUntilExpiration === alertDays) {
       const { title, body } = getExpirationMessage(
         item.name,
@@ -141,12 +151,11 @@ export async function scheduleExpirationNotifications(): Promise<number> {
       let triggerDate = new Date(today);
       triggerDate.setHours(9, 0, 0, 0);
 
-      // If 9 AM today has passed, send immediately
       if (triggerDate <= now) {
         triggerDate = new Date(now.getTime() + 5000);
       }
 
-      await Notifications.scheduleNotificationAsync({
+      await notif.scheduleNotificationAsync({
         content: {
           title,
           body,
@@ -157,10 +166,10 @@ export async function scheduleExpirationNotifications(): Promise<number> {
             daysRemaining: daysUntilExpiration,
           },
           sound: true,
-          priority: Notifications.AndroidNotificationPriority.HIGH,
+          priority: notif.AndroidNotificationPriority.HIGH,
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          type: notif.SchedulableTriggerInputTypes.DATE,
           date: triggerDate,
           channelId: NOTIFICATION_CHANNEL_ID,
         },
@@ -189,7 +198,6 @@ export async function getExpiringItemsCount(alertDays?: number): Promise<number>
 }
 
 export async function initializeNotifications(): Promise<void> {
-  // Skip on Expo Go Android - notifications not supported
   if (isExpoGoOnAndroid) {
     return;
   }
@@ -208,13 +216,49 @@ export async function initializeNotifications(): Promise<void> {
 }
 
 export function addNotificationReceivedListener(
-  callback: (notification: Notifications.Notification) => void,
-): Notifications.EventSubscription {
-  return Notifications.addNotificationReceivedListener(callback);
+  callback: (notification: any) => void,
+): { remove: () => void } {
+  if (isExpoGoOnAndroid) {
+    return { remove: () => {} };
+  }
+  
+  let subscription: { remove: () => void } | null = null;
+  
+  getNotificationsModule().then((notif) => {
+    if (notif) {
+      subscription = notif.addNotificationReceivedListener(callback);
+    }
+  });
+  
+  return {
+    remove: () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    },
+  };
 }
 
 export function addNotificationResponseListener(
-  callback: (response: Notifications.NotificationResponse) => void,
-): Notifications.EventSubscription {
-  return Notifications.addNotificationResponseReceivedListener(callback);
+  callback: (response: any) => void,
+): { remove: () => void } {
+  if (isExpoGoOnAndroid) {
+    return { remove: () => {} };
+  }
+  
+  let subscription: { remove: () => void } | null = null;
+  
+  getNotificationsModule().then((notif) => {
+    if (notif) {
+      subscription = notif.addNotificationResponseReceivedListener(callback);
+    }
+  });
+  
+  return {
+    remove: () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    },
+  };
 }
