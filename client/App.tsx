@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useCallback, useRef } from "react";
-import { StyleSheet } from "react-native";
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   NavigationContainer,
@@ -13,6 +13,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as Font from "expo-font";
+import {
+  Feather,
+  MaterialIcons,
+  MaterialCommunityIcons,
+  FontAwesome,
+  Ionicons,
+} from "@expo/vector-icons";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -100,6 +108,34 @@ function RootWrapper() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          ...Feather.font,
+          ...MaterialIcons.font,
+          ...MaterialCommunityIcons.font,
+          ...FontAwesome.font,
+          ...Ionicons.font,
+        });
+      } catch (e) {
+        console.warn("Error loading fonts:", e);
+      } finally {
+        setFontsLoaded(true);
+      }
+    }
+    loadFonts();
+  }, []);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color="#22c55e" />
+      </View>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={[styles.root, { backgroundColor }]}>
@@ -133,5 +169,10 @@ const styles = StyleSheet.create({
   layoutRoot: {
     flex: 1,
     position: "relative",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
