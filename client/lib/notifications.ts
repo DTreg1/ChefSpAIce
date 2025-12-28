@@ -1,17 +1,29 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { differenceInDays, parseISO, startOfDay, addDays, subDays } from "date-fns";
 import { storage, FoodItem, UserPreferences } from "./storage";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowInForeground: true,
-  }),
-});
+// Check if running in Expo Go on Android (notifications not supported in SDK 53+)
+const isExpoGoOnAndroid = Platform.OS === "android" && Constants.appOwnership === "expo";
+
+// Export for UI to show appropriate message
+export function isNotificationsUnsupported(): boolean {
+  return isExpoGoOnAndroid;
+}
+
+// Only set notification handler if not in Expo Go on Android
+if (!isExpoGoOnAndroid) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowInForeground: true,
+    }),
+  });
+}
 
 const NOTIFICATION_CHANNEL_ID = "expiration-alerts";
 
@@ -27,6 +39,11 @@ async function setupNotificationChannel(): Promise<void> {
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
+  // Skip on Expo Go Android - notifications not supported
+  if (isExpoGoOnAndroid) {
+    return false;
+  }
+
   const { status: existingStatus } =
     await Notifications.getPermissionsAsync();
 
@@ -172,6 +189,11 @@ export async function getExpiringItemsCount(alertDays?: number): Promise<number>
 }
 
 export async function initializeNotifications(): Promise<void> {
+  // Skip on Expo Go Android - notifications not supported
+  if (isExpoGoOnAndroid) {
+    return;
+  }
+
   try {
     const preferences = await storage.getPreferences();
 
