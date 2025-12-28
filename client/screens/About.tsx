@@ -135,9 +135,31 @@ export default function AboutPage() {
       </View>
 
       <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
-        <Text style={[styles.copyright, { color: colors.textMuted }]}>
-          © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
-        </Text>
+        <View style={styles.footerContent}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+            Helping you reduce food waste, one meal at a time.
+          </Text>
+          <View style={styles.footerLinks}>
+            <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-privacy">
+              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Privacy Policy</Text>
+            </Pressable>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Pressable onPress={() => navigateTo("/terms")} data-testid="link-terms">
+              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Terms of Service</Text>
+            </Pressable>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Pressable onPress={() => navigateTo("/support")} data-testid="link-support">
+              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Support</Text>
+            </Pressable>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-attributions">
+              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Attributions</Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+            © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -225,11 +247,29 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footer: {
-    paddingVertical: 24,
+    paddingVertical: 48,
     paddingHorizontal: 24,
+  },
+  footerContent: {
     alignItems: "center",
   },
-  copyright: {
+  footerText: {
     fontSize: 14,
+    marginBottom: 24,
+  },
+  footerLinks: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 24,
+  },
+  footerLink: {
+    fontSize: 14,
+  },
+  footerDivider: {},
+  copyright: {
+    fontSize: 12,
   },
 });
