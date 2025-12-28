@@ -11,8 +11,10 @@ import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -27,6 +29,7 @@ import {
   UserPreferences,
   DEFAULT_MACRO_TARGETS,
   MacroTargets,
+  InstacartSettings,
 } from "@/lib/storage";
 import { MEAL_PLAN_PRESETS, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 
@@ -71,6 +74,7 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, isAuthenticated } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     dietaryRestrictions: [],
@@ -82,14 +86,22 @@ export default function SettingsScreen() {
   });
   const [learnedPrefsCount, setLearnedPrefsCount] = useState(0);
   const [deleteStep, setDeleteStep] = useState<DeleteConfirmationStep>("none");
+  const [instacartSettings, setInstacartSettings] = useState<InstacartSettings>({
+    isConnected: false,
+    preferredStores: [],
+    zipCode: undefined,
+    apiKeyConfigured: false,
+  });
 
   const loadData = useCallback(async () => {
-    const [prefs, prefsCount] = await Promise.all([
+    const [prefs, prefsCount, instacart] = await Promise.all([
       storage.getPreferences(),
       getLearnedPreferencesCount(),
+      storage.getInstacartSettings(),
     ]);
     setPreferences(prefs);
     setLearnedPrefsCount(prefsCount);
+    setInstacartSettings(instacart);
   }, []);
 
   useFocusEffect(
@@ -738,6 +750,35 @@ export default function SettingsScreen() {
 
       <GlassCard style={styles.section}>
         <ThemedText type="h4" style={styles.sectionTitle}>
+          Grocery Shopping
+        </ThemedText>
+        <Pressable
+          style={styles.integrationRow}
+          onPress={() => navigation.navigate("InstacartSettings")}
+          data-testid="button-instacart-settings"
+        >
+          <View style={styles.settingInfo}>
+            <Feather name="shopping-cart" size={20} color={theme.text} />
+            <View style={styles.settingText}>
+              <ThemedText type="body">Instacart</ThemedText>
+              <ThemedText type="caption">
+                {instacartSettings.isConnected
+                  ? `Connected${instacartSettings.preferredStores.length > 0 ? ` - ${instacartSettings.preferredStores.length} stores` : ""}`
+                  : "Connect to order groceries"}
+              </ThemedText>
+            </View>
+          </View>
+          <View style={styles.integrationStatus}>
+            {instacartSettings.isConnected && (
+              <View style={[styles.statusDot, { backgroundColor: AppColors.success }]} />
+            )}
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </View>
+        </Pressable>
+      </GlassCard>
+
+      <GlassCard style={styles.section}>
+        <ThemedText type="h4" style={styles.sectionTitle}>
           About
         </ThemedText>
 
@@ -1086,5 +1127,21 @@ const styles = StyleSheet.create({
   },
   daysText: {
     fontWeight: "600",
+  },
+  integrationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+  },
+  integrationStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

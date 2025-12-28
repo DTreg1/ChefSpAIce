@@ -29,6 +29,7 @@ The backend utilizes **Express.js** and **Node.js**. Data storage uses **Drizzle
 - **Scan Hub:** Centralized scanning interface with 4 distinct options: Product Barcode (for packaged foods), Nutrition Label (for ingredient extraction), Recipe from Paper (for cookbook/printed recipes), and Food & Leftovers (AI food identification). Each option has dedicated UI and backend API integration using GPT-4o vision.
 - **Offline Mode Indicator:** Animated banner at the top of the screen that appears when offline or when changes are pending sync. Shows network status and pending change count. Uses react-native-reanimated for smooth slide animations.
 - **Stripe Donations:** Support donations feature accessible from Profile > Support Us. Uses Stripe Checkout for secure payments with preset amounts ($5-$100) or custom amounts. Tracks donation stats and recent supporters.
+- **Instacart Integration:** Users can connect their Instacart account to send shopping list items directly to Instacart for ordering. Supports preferred store selection (H-E-B, Randall's, Kroger, Walmart, Target, Costco) and zip code configuration. Settings accessible from Profile > Settings > Grocery Shopping. Backend API at `/api/instacart/*` handles product search, cart creation, and retailer lookup (requires `INSTACART_API_KEY` environment variable).
 
 ### Web Landing Page
 The project uses **platform-specific entry points** for optimized builds:

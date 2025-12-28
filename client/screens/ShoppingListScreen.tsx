@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, FlatList, StyleSheet, Pressable, Alert } from "react-native";
+import { View, FlatList, StyleSheet, Pressable, Alert, Linking, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -12,7 +12,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { storage, ShoppingListItem } from "@/lib/storage";
+import { storage, ShoppingListItem, InstacartSettings } from "@/lib/storage";
+import { API_URL } from "@/lib/api";
 
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
@@ -22,10 +23,16 @@ export default function ShoppingListScreen() {
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [instacartSettings, setInstacartSettings] = useState<InstacartSettings | null>(null);
+  const [sendingToInstacart, setSendingToInstacart] = useState(false);
 
   const loadItems = useCallback(async () => {
-    const list = await storage.getShoppingList();
+    const [list, instacart] = await Promise.all([
+      storage.getShoppingList(),
+      storage.getInstacartSettings(),
+    ]);
     setItems(list);
+    setInstacartSettings(instacart);
     setLoading(false);
   }, []);
 
@@ -69,6 +76,77 @@ export default function ShoppingListScreen() {
         },
       ],
     );
+  };
+
+  const handleSendToInstacart = async () => {
+    const uncheckedItems = items.filter((i) => !i.isChecked);
+    if (uncheckedItems.length === 0) {
+      Alert.alert("No Items", "Add items to your shopping list first.");
+      return;
+    }
+
+    if (!instacartSettings?.isConnected) {
+      Alert.alert(
+        "Connect Instacart",
+        "Please connect to Instacart in Settings to send your shopping list.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Go to Settings", onPress: () => {} },
+        ]
+      );
+      return;
+    }
+
+    setSendingToInstacart(true);
+
+    try {
+      const response = await fetch(`${API_URL}/instacart/status`);
+      const status = await response.json();
+
+      if (!status.configured) {
+        Alert.alert(
+          "Instacart Not Available",
+          "Instacart integration is not yet configured. Please check back later."
+        );
+        setSendingToInstacart(false);
+        return;
+      }
+
+      const defaultStore = instacartSettings.preferredStores.find(s => s.isDefault);
+      const firstStore = instacartSettings.preferredStores[0];
+      const retailerId = defaultStore?.id || firstStore?.id || "heb";
+
+      const cartResponse = await fetch(`${API_URL}/instacart/create-cart`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: uncheckedItems.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+          })),
+          retailerId,
+          zipCode: instacartSettings.zipCode || "",
+        }),
+      });
+
+      const cartResult = await cartResponse.json();
+
+      if (cartResult.success && cartResult.cartUrl) {
+        if (Platform.OS === "web") {
+          window.open(cartResult.cartUrl, "_blank");
+        } else {
+          await Linking.openURL(cartResult.cartUrl);
+        }
+      } else {
+        Alert.alert("Error", cartResult.error || "Failed to create Instacart cart.");
+      }
+    } catch (error) {
+      console.error("Instacart error:", error);
+      Alert.alert("Error", "Failed to connect to Instacart. Please try again.");
+    } finally {
+      setSendingToInstacart(false);
+    }
   };
 
   const uncheckedItems = items.filter((i) => !i.isChecked);
@@ -186,6 +264,23 @@ export default function ShoppingListScreen() {
           </ThemedText>
         </View>
       ) : null}
+
+      {uncheckedItems.length > 0 ? (
+        <View style={[styles.instacartButtonContainer, { paddingBottom: insets.bottom + Spacing.md }]}>
+          <Button
+            onPress={handleSendToInstacart}
+            loading={sendingToInstacart}
+            disabled={sendingToInstacart}
+            icon={<Feather name="shopping-bag" size={18} color="#FFFFFF" />}
+            style={[styles.instacartButton, { backgroundColor: "#43B02A" }]}
+            data-testid="button-send-to-instacart"
+          >
+            <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
+              Send to Instacart
+            </ThemedText>
+          </Button>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -262,5 +357,13 @@ const styles = StyleSheet.create({
   completedText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  instacartButtonContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    backgroundColor: "transparent",
+  },
+  instacartButton: {
+    borderRadius: BorderRadius.md,
   },
 });

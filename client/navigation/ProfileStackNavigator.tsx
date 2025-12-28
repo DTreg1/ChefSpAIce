@@ -10,6 +10,7 @@ import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import DonationScreen from "@/screens/DonationScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SignInScreen from "@/screens/SignInScreen";
+import InstacartSettingsScreen from "@/screens/InstacartSettingsScreen";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
@@ -24,6 +25,7 @@ export type ProfileStackParamList = {
   Donation: undefined;
   StorageLocations: undefined;
   SignIn: undefined;
+  InstacartSettings: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -105,6 +107,13 @@ export default function ProfileStackNavigator() {
         options={{
           headerTitle: "Sign In",
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="InstacartSettings"
+        component={InstacartSettingsScreen}
+        options={{
+          headerTitle: "Instacart",
         }}
       />
     </Stack.Navigator>

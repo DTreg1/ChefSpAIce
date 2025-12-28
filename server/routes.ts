@@ -19,6 +19,7 @@ import {
 import voiceRouter from "./routers/platform/voice.router";
 import imageAnalysisRouter from "./routers/platform/ai/image-analysis.router";
 import ingredientsRouter from "./routers/user/ingredients.router";
+import instacartRouter from "./routers/platform/instacart.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
@@ -272,6 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/recipes", recipesRouter);
   app.use("/api/nutrition", nutritionRouter);
   app.use("/api/cooking-terms", cookingTermsRouter);
+  app.use("/api/instacart", instacartRouter);
   app.use("/api/appliances", appliancesRouter);
   app.use("/api/user/appliances", userAppliancesRouter);
   app.use("/api/voice", voiceRouter);
