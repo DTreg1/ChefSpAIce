@@ -26,7 +26,7 @@ export default function SignInScreen() {
   const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -47,13 +47,14 @@ export default function SignInScreen() {
   const handleSubmit = async () => {
     setError(null);
 
-    if (!username.trim()) {
+    if (!email.trim()) {
       setError("Please enter an email");
       return;
     }
 
-    if (username.trim().length < 3) {
-      setError("Email must be at least 3 characters");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -71,8 +72,8 @@ export default function SignInScreen() {
 
     try {
       const result = isSignUp
-        ? await signUp(username.trim(), password, displayName.trim() || undefined)
-        : await signIn(username.trim(), password);
+        ? await signUp(email.trim(), password, displayName.trim() || undefined)
+        : await signIn(email.trim(), password);
 
       if (result.success) {
         await navigateAfterAuth();
@@ -189,8 +190,8 @@ export default function SignInScreen() {
             Email
           </ThemedText>
           <TextInput
-            value={username}
-            onChangeText={setUsername}
+            value={email}
+            onChangeText={setEmail}
             placeholder="Enter email"
             placeholderTextColor={theme.textSecondary}
             style={[

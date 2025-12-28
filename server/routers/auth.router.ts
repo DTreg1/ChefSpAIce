@@ -22,14 +22,15 @@ function getExpiryDate(): Date {
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { username, password, displayName } = req.body;
+    const { email, password, displayName } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Username and password are required" });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
-    if (username.length < 3) {
-      return res.status(400).json({ error: "Username must be at least 3 characters" });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Please enter a valid email address" });
     }
 
     if (password.length < 6) {
@@ -39,11 +40,11 @@ router.post("/register", async (req: Request, res: Response) => {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.username, username.toLowerCase()))
+      .where(eq(users.email, email.toLowerCase()))
       .limit(1);
 
     if (existingUser.length > 0) {
-      return res.status(409).json({ error: "Username already exists" });
+      return res.status(409).json({ error: "An account with this email already exists" });
     }
 
     const hashedPassword = hashPassword(password);
@@ -51,9 +52,9 @@ router.post("/register", async (req: Request, res: Response) => {
     const [newUser] = await db
       .insert(users)
       .values({
-        username: username.toLowerCase(),
+        email: email.toLowerCase(),
         password: hashedPassword,
-        displayName: displayName || username,
+        displayName: displayName || email.split("@")[0],
       })
       .returning();
 
@@ -73,7 +74,7 @@ router.post("/register", async (req: Request, res: Response) => {
     res.status(201).json({
       user: {
         id: newUser.id,
-        username: newUser.username,
+        email: newUser.email,
         displayName: newUser.displayName,
         createdAt: newUser.createdAt?.toISOString() || new Date().toISOString(),
       },
@@ -87,25 +88,25 @@ router.post("/register", async (req: Request, res: Response) => {
 
 router.post("/login", async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Username and password are required" });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.username, username.toLowerCase()))
+      .where(eq(users.email, email.toLowerCase()))
       .limit(1);
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const hashedPassword = hashPassword(password);
     if (user.password !== hashedPassword) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const token = generateToken();
@@ -120,7 +121,7 @@ router.post("/login", async (req: Request, res: Response) => {
     res.json({
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
         displayName: user.displayName,
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
       },
@@ -181,7 +182,7 @@ router.get("/me", async (req: Request, res: Response) => {
     res.json({
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
         displayName: user.displayName,
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
       },

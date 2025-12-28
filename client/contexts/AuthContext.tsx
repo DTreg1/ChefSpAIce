@@ -36,9 +36,8 @@ const AUTH_STORAGE_KEY = "@chefspaice/auth";
 
 export interface AuthUser {
   id: string;
-  username?: string;
   displayName?: string;
-  email?: string;
+  email: string;
   avatarUrl?: string;
   provider?: "password" | "apple" | "google";
   createdAt: string;
@@ -52,8 +51,8 @@ export interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signIn: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (username: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   signInWithApple: () => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -164,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadStoredAuth();
   }, []);
 
-  const signIn = useCallback(async (username: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/login", baseUrl);
@@ -172,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -204,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (username: string, password: string, displayName?: string) => {
+    async (email: string, password: string, displayName?: string) => {
       try {
         const baseUrl = getApiUrl();
         const url = new URL("/api/auth/register", baseUrl);
@@ -212,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch(url.toString(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, displayName }),
+          body: JSON.stringify({ email, password, displayName }),
         });
 
         const data = await response.json();

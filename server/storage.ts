@@ -1,12 +1,9 @@
 import { type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 }
 
@@ -21,9 +18,9 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === email,
     );
   }
 
@@ -32,10 +29,9 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const user: User = {
       id,
-      username: insertUser.username ?? null,
       password: insertUser.password ?? null,
       displayName: insertUser.displayName ?? null,
-      email: insertUser.email ?? null,
+      email: insertUser.email,
       firstName: insertUser.firstName ?? null,
       lastName: insertUser.lastName ?? null,
       profileImageUrl: insertUser.profileImageUrl ?? null,

@@ -669,7 +669,7 @@ export default function ProfileScreen() {
                   Cloud Sync Active
                 </ThemedText>
                 <ThemedText type="caption">
-                  Signed in as @{user?.username}
+                  Signed in as {user?.email}
                 </ThemedText>
               </View>
               <View style={[styles.syncBadge, { backgroundColor: `${AppColors.success}15` }]}>

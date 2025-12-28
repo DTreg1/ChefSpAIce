@@ -425,7 +425,7 @@ export default function SettingsScreen() {
             <SyncStatusIndicator showLabel size="medium" />
           </View>
           <ThemedText type="caption" style={styles.dataInfo}>
-            Signed in as {user?.username}. Your data is synced across devices.
+            Signed in as {user?.email}. Your data is synced across devices.
           </ThemedText>
         </GlassCard>
       ) : null}

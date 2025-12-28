@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
             
             <Text style={[styles.subTitle, { color: colors.textPrimary }]}>Personal Information</Text>
             <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-              When you register for an account, we collect your username and password. Your password is securely hashed and never stored in plain text.
+              When you register for an account, we collect your email address and password. Your password is securely hashed and never stored in plain text.
             </Text>
             
             <Text style={[styles.subTitle, { color: colors.textPrimary }]}>Food Inventory Data</Text>
