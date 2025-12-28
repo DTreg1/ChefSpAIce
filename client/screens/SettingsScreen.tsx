@@ -836,31 +836,41 @@ export default function SettingsScreen() {
 
       <GlassCard style={styles.section}>
         <ThemedText type="h4" style={styles.sectionTitle}>
-          Account
+          Account & Data
         </ThemedText>
 
         {deleteStep === "none" ? (
           <>
-            <ThemedText type="caption" style={styles.dataInfo}>
-              Manage your account settings and data. Deleting your account is permanent and cannot be undone.
-            </ThemedText>
+            <Pressable
+              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
+              onPress={handleClearData}
+            >
+              <View style={styles.dangerMenuIcon}>
+                <Feather name="trash-2" size={18} color={AppColors.warning} />
+              </View>
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body">Clear All Data</ThemedText>
+                <ThemedText type="caption">
+                  Remove inventory, recipes, meal plans, and chat history
+                </ThemedText>
+              </View>
+            </Pressable>
 
             <Pressable
-              style={[styles.accountMenuItem, { backgroundColor: theme.backgroundSecondary }]}
+              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
               onPress={handleDeleteAccountStep1}
             >
-              <View style={styles.accountMenuContent}>
-                <Feather name="user-x" size={20} color={AppColors.error} />
-                <View style={styles.accountMenuText}>
-                  <ThemedText type="body" style={{ color: AppColors.error }}>
-                    Delete Account
-                  </ThemedText>
-                  <ThemedText type="caption">
-                    Permanently remove all your data
-                  </ThemedText>
-                </View>
+              <View style={styles.dangerMenuIcon}>
+                <Feather name="user-x" size={18} color={AppColors.error} />
               </View>
-              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body" style={{ color: AppColors.error }}>
+                  Delete Account
+                </ThemedText>
+                <ThemedText type="caption">
+                  Permanently remove your account and all data
+                </ThemedText>
+              </View>
             </Pressable>
           </>
         ) : (
@@ -873,7 +883,7 @@ export default function SettingsScreen() {
             </View>
 
             <ThemedText type="body" style={styles.deleteWarningText}>
-              You are about to permanently delete your account. This will remove all your data including inventory, recipes, meal plans, and preferences.
+              This will permanently delete your account and all data including inventory, recipes, meal plans, and preferences.
             </ThemedText>
 
             <View style={styles.deleteButtonRow}>
@@ -897,28 +907,6 @@ export default function SettingsScreen() {
             </View>
           </View>
         )}
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Data Management
-        </ThemedText>
-
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Your data is stored locally on this device. Clearing data will remove
-          all inventory items, recipes, meal plans, and chat history.
-        </ThemedText>
-
-        <Button
-          variant="outline"
-          onPress={handleClearData}
-          style={styles.clearButton}
-          icon={<Feather name="trash-2" size={18} color={AppColors.error} />}
-        >
-          <ThemedText style={{ color: AppColors.error }}>
-            Clear All Data
-          </ThemedText>
-        </Button>
       </GlassCard>
 
       <View style={styles.footer}>
@@ -1081,6 +1069,25 @@ const styles = StyleSheet.create({
   },
   accountMenuText: {
     gap: Spacing.xs,
+  },
+  dangerMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.md,
+  },
+  dangerMenuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dangerMenuText: {
+    flex: 1,
+    gap: 2,
   },
   deleteConfirmContainer: {
     gap: Spacing.md,
