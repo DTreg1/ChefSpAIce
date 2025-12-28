@@ -88,13 +88,16 @@ interface StoredAuthData {
   token: string;
 }
 
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+
 function useGoogleAuth() {
-  // Only use Google auth on Android
-  if (!isAndroid || !Google) {
+  // Only use Google auth on Android when client ID is configured
+  // Check for client ID before calling the hook to avoid "androidClientId must be defined" error
+  if (!isAndroid || !Google || !GOOGLE_ANDROID_CLIENT_ID) {
     return [null, null, null] as const;
   }
   return Google.useAuthRequest({
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
   });
 }
 
