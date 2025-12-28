@@ -112,29 +112,21 @@ export async function scheduleExpirationNotifications(): Promise<number> {
     const expirationDate = startOfDay(parseISO(item.expirationDate));
     const daysUntilExpiration = differenceInDays(expirationDate, today);
 
-    if (daysUntilExpiration <= alertDays && daysUntilExpiration >= 0) {
+    // Only schedule ONE notification: exactly alertDays before expiration
+    // If the item is already past that point, don't send any notification
+    if (daysUntilExpiration === alertDays) {
       const { title, body } = getExpirationMessage(
         item.name,
         daysUntilExpiration,
       );
 
       const now = new Date();
-      let triggerDate: Date;
+      let triggerDate = new Date(today);
+      triggerDate.setHours(9, 0, 0, 0);
 
-      if (daysUntilExpiration === 0) {
-        triggerDate = new Date(expirationDate);
-        triggerDate.setHours(9, 0, 0, 0);
-        if (triggerDate <= now) {
-          triggerDate = new Date(now.getTime() + 5000);
-        }
-      } else {
-        const alertDate = subDays(expirationDate, Math.min(daysUntilExpiration, alertDays));
-        triggerDate = new Date(alertDate);
-        triggerDate.setHours(9, 0, 0, 0);
-
-        if (triggerDate <= now) {
-          triggerDate = new Date(now.getTime() + 5000);
-        }
+      // If 9 AM today has passed, send immediately
+      if (triggerDate <= now) {
+        triggerDate = new Date(now.getTime() + 5000);
       }
 
       await Notifications.scheduleNotificationAsync({
