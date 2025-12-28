@@ -449,10 +449,8 @@ export default function ProfileScreen() {
 
       {expiringCount > 0 ? (
         <GlassCard
-          style={StyleSheet.flatten([
-            styles.alertCard,
-            { backgroundColor: `${AppColors.warning}15` },
-          ])}
+          style={{ backgroundColor: `${AppColors.warning}15` }}
+          contentStyle={styles.alertCard}
           onPress={() => navigation.navigate("Analytics")}
         >
           <Feather name="alert-triangle" size={24} color={AppColors.warning} />
@@ -471,10 +469,8 @@ export default function ProfileScreen() {
       {onboardingStatus?.cookwareSetupSkipped &&
       !onboardingStatus?.cookwareSetupCompleted ? (
         <GlassCard
-          style={StyleSheet.flatten([
-            styles.alertCard,
-            { backgroundColor: `${AppColors.primary}15` },
-          ])}
+          style={{ backgroundColor: `${AppColors.primary}15` }}
+          contentStyle={styles.alertCard}
           onPress={() => navigation.navigate("Cookware")}
         >
           <Feather name="tool" size={24} color={AppColors.primary} />

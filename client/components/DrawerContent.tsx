@@ -130,12 +130,6 @@ export function DrawerContent(props: DrawerContentComponentProps) {
       matchScreen: "ShoppingList",
     },
     {
-      label: "Chef Chat",
-      icon: "message-circle",
-      route: "ChatTab",
-      matchTab: "ChatTab",
-    },
-    {
       label: "Profile",
       icon: "user",
       route: "ProfileTab",
