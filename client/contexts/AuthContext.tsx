@@ -33,6 +33,7 @@ if (isAndroid) {
 }
 
 const AUTH_STORAGE_KEY = "@chefspaice/auth";
+const GUEST_STORAGE_KEY = "@chefspaice/guest";
 
 export interface AuthUser {
   id: string;
@@ -56,7 +57,7 @@ interface AuthContextType extends AuthState {
   signInWithApple: () => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  continueAsGuest: () => void;
+  continueAsGuest: () => Promise<void>;
   setSignOutCallback: (callback: () => void) => void;
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
@@ -66,7 +67,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  isGuest: true,
+  isGuest: false,
   isLoading: true,
   isAuthenticated: false,
   isAppleAuthAvailable: false,
@@ -76,7 +77,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithApple: async () => ({ success: false }),
   signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
-  continueAsGuest: () => {},
+  continueAsGuest: async () => {},
   setSignOutCallback: () => {},
 });
 
@@ -101,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     token: null,
-    isGuest: true,
+    isGuest: false,
     isLoading: true,
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
@@ -153,7 +154,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isLoading: false,
           });
         } else {
-          setState((prev) => ({ ...prev, isLoading: false }));
+          // Check if user was in guest mode
+          const guestMode = await AsyncStorage.getItem(GUEST_STORAGE_KEY);
+          setState({
+            user: null,
+            token: null,
+            isGuest: guestMode === "true",
+            isLoading: false,
+          });
         }
       } catch (error) {
         console.error("Error loading auth state:", error);
@@ -246,8 +254,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      // Clear stored auth data
+      // Clear stored auth data and guest mode
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+      await AsyncStorage.removeItem(GUEST_STORAGE_KEY);
       await storage.clearAuthToken();
       
       // Clear all cached query data for security
@@ -275,7 +284,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOutRef.current = signOut;
   }, [signOut]);
 
-  const continueAsGuest = useCallback(() => {
+  const continueAsGuest = useCallback(async () => {
+    await AsyncStorage.setItem(GUEST_STORAGE_KEY, "true");
     setState((prev) => ({
       ...prev,
       isGuest: true,
