@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useRef } from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
@@ -13,14 +13,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import * as Font from "expo-font";
-import {
-  Feather,
-  MaterialIcons,
-  MaterialCommunityIcons,
-  FontAwesome,
-  Ionicons,
-} from "@expo/vector-icons";
+import { useFonts } from "expo-font";
+import Feather from "@expo/vector-icons/Feather";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -108,26 +106,14 @@ function RootWrapper() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
-  const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  useEffect(() => {
-    async function loadFonts() {
-      try {
-        await Font.loadAsync({
-          ...Feather.font,
-          ...MaterialIcons.font,
-          ...MaterialCommunityIcons.font,
-          ...FontAwesome.font,
-          ...Ionicons.font,
-        });
-      } catch (e) {
-        console.warn("Error loading fonts:", e);
-      } finally {
-        setFontsLoaded(true);
-      }
-    }
-    loadFonts();
-  }, []);
+  const [fontsLoaded] = useFonts({
+    ...Feather.font,
+    ...MaterialIcons.font,
+    ...MaterialCommunityIcons.font,
+    ...FontAwesome.font,
+    ...Ionicons.font,
+  });
 
   if (!fontsLoaded) {
     return (
