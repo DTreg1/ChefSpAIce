@@ -9,13 +9,16 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import SignInScreen from "@/screens/SignInScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
+  SignIn: undefined;
   Main: undefined;
   Onboarding: undefined;
   AddItem:
@@ -47,6 +50,7 @@ function LoadingScreen() {
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
+  const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
@@ -65,15 +69,34 @@ export default function RootStackNavigator() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return <LoadingScreen />;
   }
+
+  // Determine initial route:
+  // 1. Not authenticated and not guest → SignIn
+  // 2. Authenticated/guest but needs onboarding → Onboarding
+  // 3. Otherwise → Main
+  const getInitialRoute = (): keyof RootStackParamList => {
+    if (!isAuthenticated && !isGuest) {
+      return "SignIn";
+    }
+    if (needsOnboarding) {
+      return "Onboarding";
+    }
+    return "Main";
+  };
 
   return (
     <Stack.Navigator
       screenOptions={screenOptions}
-      initialRouteName={needsOnboarding ? "Onboarding" : "Main"}
+      initialRouteName={getInitialRoute()}
     >
+      <Stack.Screen
+        name="SignIn"
+        component={SignInScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}

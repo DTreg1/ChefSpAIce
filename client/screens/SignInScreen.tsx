@@ -8,7 +8,8 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
+import { storage } from "@/lib/storage";
 import { Feather, FontAwesome } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -31,6 +32,17 @@ export default function SignInScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<"apple" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const navigateAfterAuth = async () => {
+    // Check if user needs onboarding
+    const needsOnboarding = await storage.needsOnboarding();
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: needsOnboarding ? "Onboarding" : "Main" }],
+      })
+    );
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -63,7 +75,7 @@ export default function SignInScreen() {
         : await signIn(username.trim(), password);
 
       if (result.success) {
-        navigation.goBack();
+        await navigateAfterAuth();
       } else {
         setError(result.error || "Authentication failed");
       }
@@ -74,9 +86,9 @@ export default function SignInScreen() {
     }
   };
 
-  const handleContinueAsGuest = () => {
+  const handleContinueAsGuest = async () => {
     continueAsGuest();
-    navigation.goBack();
+    await navigateAfterAuth();
   };
 
   const handleAppleSignIn = async () => {
@@ -85,7 +97,7 @@ export default function SignInScreen() {
     try {
       const result = await signInWithApple();
       if (result.success) {
-        navigation.goBack();
+        await navigateAfterAuth();
       } else {
         setError(result.error || "Apple sign in failed");
       }
@@ -102,7 +114,7 @@ export default function SignInScreen() {
     try {
       const result = await signInWithGoogle();
       if (result.success) {
-        navigation.goBack();
+        await navigateAfterAuth();
       } else {
         setError(result.error || "Google sign in failed");
       }
