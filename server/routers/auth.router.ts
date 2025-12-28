@@ -2,12 +2,18 @@ import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { users, userSessions, userSyncData } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
+import bcrypt from "bcrypt";
 
 const router = Router();
+const BCRYPT_ROUNDS = 12;
 
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 function generateToken(): string {
@@ -47,7 +53,7 @@ router.post("/register", async (req: Request, res: Response) => {
       return res.status(409).json({ error: "An account with this email already exists" });
     }
 
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
     const [newUser] = await db
       .insert(users)
@@ -100,12 +106,12 @@ router.post("/login", async (req: Request, res: Response) => {
       .where(eq(users.email, email.toLowerCase()))
       .limit(1);
 
-    if (!user) {
+    if (!user || !user.password) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const hashedPassword = hashPassword(password);
-    if (user.password !== hashedPassword) {
+    const isValidPassword = await verifyPassword(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 

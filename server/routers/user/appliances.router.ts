@@ -7,9 +7,13 @@ import {
   type UserAppliance,
 } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { optionalAuth } from "../../middleware/auth";
 
 export const appliancesRouter = Router();
 export const userAppliancesRouter = Router();
+
+// Apply auth middleware to all user appliances routes
+userAppliancesRouter.use(optionalAuth);
 
 type FallbackAppliance = Omit<
   Appliance,
@@ -660,11 +664,7 @@ appliancesRouter.get("/common", async (req: Request, res: Response) => {
 
 userAppliancesRouter.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req.headers["x-user-id"] as string;
-
-    if (!userId) {
-      return res.status(401).json({ error: "User ID is required" });
-    }
+    const userId = req.userId!;
 
     const userAppliancesList = await db
       .select()
@@ -695,11 +695,7 @@ userAppliancesRouter.get("/", async (req: Request, res: Response) => {
 
 userAppliancesRouter.post("/", async (req: Request, res: Response) => {
   try {
-    const userId = req.headers["x-user-id"] as string;
-
-    if (!userId) {
-      return res.status(401).json({ error: "User ID is required" });
-    }
+    const userId = req.userId!;
 
     const { applianceId, notes, brand } = req.body;
 
@@ -753,11 +749,7 @@ userAppliancesRouter.delete(
   "/:applianceId",
   async (req: Request, res: Response) => {
     try {
-      const userId = req.headers["x-user-id"] as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "User ID is required" });
-      }
+      const userId = req.userId!;
 
       const applianceId = parseInt(req.params.applianceId, 10);
 
@@ -793,11 +785,7 @@ userAppliancesRouter.delete(
 
 userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
   try {
-    const userId = req.headers["x-user-id"] as string;
-
-    if (!userId) {
-      return res.status(401).json({ error: "User ID is required" });
-    }
+    const userId = req.userId!;
 
     const { applianceIds } = req.body;
 
