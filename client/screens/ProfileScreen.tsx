@@ -696,7 +696,7 @@ export default function ProfileScreen() {
         </>
       ) : (
         <GlassCard
-          style={styles.signInCard}
+          contentStyle={styles.signInCard}
           onPress={() => navigation.navigate("SignIn")}
         >
           <View style={styles.signInContent}>
