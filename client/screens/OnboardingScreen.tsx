@@ -1031,7 +1031,7 @@ export default function OnboardingScreen() {
               />
             ) : Platform.OS !== "web" ? (
               <BlurView
-                intensity={15}
+                intensity={5}
                 tint="light"
                 style={styles.appIconGlassOverlay}
               />
@@ -2061,11 +2061,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   webGlassOverlay: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     ...Platform.select({
       web: {
-        backdropFilter: "blur(8px) saturate(120%)",
-        WebkitBackdropFilter: "blur(8px) saturate(120%)",
+        backdropFilter: "blur(2px) saturate(110%)",
+        WebkitBackdropFilter: "blur(2px) saturate(110%)",
       } as any,
     }),
   },
