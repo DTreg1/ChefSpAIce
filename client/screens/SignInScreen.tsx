@@ -335,7 +335,7 @@ export default function SignInScreen() {
         <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
       </View>
 
-      <GlassCard contentStyle={styles.guestCard} onPress={handleContinueAsGuest}>
+      <GlassCard onPress={handleContinueAsGuest}>
         <View style={styles.guestContent}>
           <View style={[styles.guestIcon, { backgroundColor: theme.glass.background }]}>
             <Feather name="user-x" size={20} color={theme.textSecondary} />
@@ -348,9 +348,9 @@ export default function SignInScreen() {
               Use the app without syncing. You can sign in later.
             </ThemedText>
           </View>
-        </View>
-        <View style={styles.guestChevron}>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <View style={styles.guestChevron}>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </View>
         </View>
       </GlassCard>
 

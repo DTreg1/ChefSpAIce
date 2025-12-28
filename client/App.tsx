@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { StyleSheet } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
@@ -6,6 +6,7 @@ import {
   DefaultTheme,
   DarkTheme,
   Theme,
+  NavigationState,
 } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -29,10 +30,22 @@ import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 
+const SCREENS_WITHOUT_CHAT = ["AddItem"];
+
+function getActiveRouteName(state: NavigationState | undefined): string | undefined {
+  if (!state) return undefined;
+  const route = state.routes[state.index];
+  if (route.state) {
+    return getActiveRouteName(route.state as NavigationState);
+  }
+  return route.name;
+}
+
 function MobileAppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
+  const [currentRoute, setCurrentRoute] = useState<string | undefined>(undefined);
 
   useExpirationNotifications();
 
@@ -48,11 +61,16 @@ function MobileAppContent() {
     };
   }, [isDark]);
 
-  const showChat = !isCheckingOnboarding && isOnboardingComplete;
+  const onStateChange = useCallback((state: NavigationState | undefined) => {
+    const routeName = getActiveRouteName(state);
+    setCurrentRoute(routeName);
+  }, []);
+
+  const showChat = !isCheckingOnboarding && isOnboardingComplete && !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
 
   return (
     <FloatingChatProvider>
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer theme={navigationTheme} onStateChange={onStateChange}>
         <AnimatedBackground bubbleCount={20} />
         <OfflineIndicator />
         <RootStackNavigator />
