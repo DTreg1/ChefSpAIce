@@ -707,6 +707,8 @@ export const storage = {
     if (appKeys.length > 0) {
       await AsyncStorage.multiRemove(appKeys);
     }
+    // Mark onboarding as complete so user goes to SignIn, not Onboarding
+    await this.setOnboardingCompleted();
   },
 
   async getAuthToken(): Promise<string | null> {
