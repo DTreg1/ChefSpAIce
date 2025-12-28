@@ -24,7 +24,9 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
       }
@@ -41,10 +43,11 @@
       "package": "com.chefspaice.chefspaice.app",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM"
+        "android.permission.CAMERA",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -90,8 +93,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "5b92d512-fd14-4e4f-b537-76dc95139451"
       }
-    }
+    },
+    "owner": "dtreg1"
   }
 }
