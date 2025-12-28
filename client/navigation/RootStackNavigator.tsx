@@ -82,21 +82,22 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not (and not guest), redirect to SignIn
+    // If user was authenticated but now is not (and not guest), redirect appropriately
     const wasAuthenticated = prevAuthState.current.isAuthenticated || prevAuthState.current.isGuest;
     const isNowUnauthenticated = !isAuthenticated && !isGuest;
 
     if (wasAuthenticated && isNowUnauthenticated) {
+      // If user has completed onboarding, go to SignIn; otherwise go to Onboarding
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "SignIn" }],
+          routes: [{ name: needsOnboarding ? "Onboarding" : "SignIn" }],
         })
       );
     }
 
     prevAuthState.current = { isAuthenticated, isGuest };
-  }, [isAuthenticated, isGuest, navigation]);
+  }, [isAuthenticated, isGuest, navigation, needsOnboarding]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -114,15 +115,15 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. Not authenticated and not guest → SignIn
-  // 2. Authenticated/guest but needs onboarding → Onboarding
+  // 1. If needs onboarding → Onboarding (includes sign-in UI)
+  // 2. Not authenticated and not guest (completed onboarding before) → SignIn
   // 3. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (!isAuthenticated && !isGuest) {
-      return "SignIn";
-    }
     if (needsOnboarding) {
       return "Onboarding";
+    }
+    if (!isAuthenticated && !isGuest) {
+      return "SignIn";
     }
     return "Main";
   };

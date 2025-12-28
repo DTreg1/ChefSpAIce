@@ -8,9 +8,10 @@ import {
   Dimensions,
   Platform,
   Image,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,6 +28,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/Button";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 const AppIcon = require("../../assets/images/icon.png");
 import { useTheme } from "@/hooks/useTheme";
@@ -35,6 +37,7 @@ import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
 import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Appliance {
   id: number;
@@ -754,6 +757,7 @@ export default function OnboardingScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { markOnboardingComplete } = useOnboardingStatus();
+  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
 
   const [step, setStep] = useState<OnboardingStep>("welcome");
   const [categoryIndex, setCategoryIndex] = useState(0);
@@ -766,6 +770,14 @@ export default function OnboardingScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState<"apple" | "google" | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAppliances();
@@ -793,6 +805,92 @@ export default function OnboardingScreen() {
       console.error("Error loading appliances:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const proceedToNextStep = () => {
+    setStep("all-cookware");
+  };
+
+  const handleAuthSubmit = async () => {
+    setAuthError(null);
+
+    if (!email.trim()) {
+      setAuthError("Please enter an email");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setAuthError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password.trim()) {
+      setAuthError("Please enter a password");
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsAuthLoading(true);
+
+    try {
+      const result = isSignUp
+        ? await signUp(email.trim(), password, displayName.trim() || undefined)
+        : await signIn(email.trim(), password);
+
+      if (result.success) {
+        proceedToNextStep();
+      } else {
+        setAuthError(result.error || "Authentication failed");
+      }
+    } catch (err) {
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleContinueAsGuest = async () => {
+    continueAsGuest();
+    proceedToNextStep();
+  };
+
+  const handleAppleSignIn = async () => {
+    setAuthError(null);
+    setIsSocialLoading("apple");
+    try {
+      const result = await signInWithApple();
+      if (result.success) {
+        proceedToNextStep();
+      } else {
+        setAuthError(result.error || "Apple sign in failed");
+      }
+    } catch (err) {
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setIsSocialLoading(null);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthError(null);
+    setIsSocialLoading("google");
+    try {
+      const result = await signInWithGoogle();
+      if (result.success) {
+        proceedToNextStep();
+      } else {
+        setAuthError(result.error || "Google sign in failed");
+      }
+    } catch (err) {
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setIsSocialLoading(null);
     }
   };
 
@@ -1007,7 +1105,7 @@ export default function OnboardingScreen() {
       exiting={FadeOut.duration(200)}
       style={styles.stepContainer}
     >
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         style={styles.welcomeScrollView}
         contentContainerStyle={styles.welcomeScrollContent}
         showsVerticalScrollIndicator={false}
@@ -1076,119 +1174,227 @@ export default function OnboardingScreen() {
           entering={FadeIn.delay(700).duration(400)}
           style={styles.welcomeFooter}
         >
-          <GlassCard style={styles.quickSetupCard}>
-            <View style={styles.quickSetupTop}>
-              <View style={styles.quickSetupHeader}>
-                <View
-                  style={[
-                    styles.quickSetupIconContainer,
-                    { backgroundColor: `${AppColors.primary}15` },
-                  ]}
-                >
-                  <Feather name="zap" size={16} color={AppColors.primary} />
-                </View>
-                <View>
-                  <ThemedText style={styles.quickSetupTitle}>
-                    Quick Setup
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.quickSetupSubtitle,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Ready in seconds
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
+          <GlassCard style={styles.authFormCard}>
+            <ThemedText style={styles.authFormTitle}>
+              {isSignUp ? "Create Account" : "Sign In"}
+            </ThemedText>
+            <ThemedText style={[styles.authFormSubtitle, { color: theme.textSecondary }]}>
+              {isSignUp
+                ? "Sign up to sync your data across devices"
+                : "Sign in to access your synced data"}
+            </ThemedText>
 
-            <View style={styles.quickSetupPreview}>
-              {PREVIEW_ITEMS.map((item, index) => (
-                <View
-                  key={item.label}
-                  style={[
-                    styles.previewItem,
-                    { backgroundColor: theme.backgroundSecondary },
-                  ]}
-                >
-                  <Feather
-                    name={item.icon}
-                    size={16}
-                    color={theme.textSecondary}
-                  />
-                  <ThemedText
-                    style={[
-                      styles.previewItemText,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {item.label}
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.quickSetupStats}>
-              <View style={styles.quickSetupStat}>
-                <ThemedText
-                  style={[styles.statNumber, { color: AppColors.primary }]}
-                >
-                  {equipmentSelectedCount}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.statLabel, { color: theme.textSecondary }]}
-                >
-                  Kitchen Tools
+            {authError ? (
+              <View style={[styles.authErrorContainer, { backgroundColor: `${AppColors.error}15` }]}>
+                <Feather name="alert-circle" size={16} color={AppColors.error} />
+                <ThemedText style={{ color: AppColors.error, marginLeft: Spacing.xs, flex: 1 }}>
+                  {authError}
                 </ThemedText>
               </View>
-              <View
+            ) : null}
+
+            {isSignUp ? (
+              <View style={styles.authInputGroup}>
+                <ThemedText style={styles.authInputLabel}>
+                  Display Name (optional)
+                </ThemedText>
+                <TextInput
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="How should we call you?"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.authInput,
+                    {
+                      color: theme.text,
+                      backgroundColor: theme.glass.background,
+                      borderColor: theme.glass.border,
+                    },
+                  ]}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  data-testid="input-display-name"
+                />
+              </View>
+            ) : null}
+
+            <View style={styles.authInputGroup}>
+              <ThemedText style={styles.authInputLabel}>Email</ThemedText>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter email"
+                placeholderTextColor={theme.textSecondary}
                 style={[
-                  styles.statDivider,
-                  { backgroundColor: theme.backgroundTertiary },
+                  styles.authInput,
+                  {
+                    color: theme.text,
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
                 ]}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                keyboardType="email-address"
+                data-testid="input-email"
               />
-              <View style={styles.quickSetupStat}>
-                <ThemedText
-                  style={[styles.statNumber, { color: AppColors.primary }]}
-                >
-                  {STARTER_FOODS.length}
+            </View>
+
+            <View style={styles.authInputGroup}>
+              <ThemedText style={styles.authInputLabel}>Password</ThemedText>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter password"
+                placeholderTextColor={theme.textSecondary}
+                style={[
+                  styles.authInput,
+                  {
+                    color: theme.text,
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+                secureTextEntry
+                autoComplete="password"
+                data-testid="input-password"
+              />
+            </View>
+
+            <Pressable
+              style={[
+                styles.authSubmitButton,
+                { backgroundColor: AppColors.primary },
+                isAuthLoading && styles.authButtonDisabled,
+              ]}
+              onPress={handleAuthSubmit}
+              disabled={isAuthLoading}
+              data-testid="button-auth-submit"
+            >
+              {isAuthLoading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <ThemedText style={styles.authSubmitButtonText}>
+                  {isSignUp ? "Create Account" : "Sign In"}
                 </ThemedText>
-                <ThemedText
-                  style={[styles.statLabel, { color: theme.textSecondary }]}
-                >
-                  Starter Foods
+              )}
+            </Pressable>
+
+            <Pressable
+              style={styles.authToggleButton}
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError(null);
+              }}
+              data-testid="button-toggle-auth-mode"
+            >
+              <ThemedText style={{ color: theme.textSecondary }}>
+                {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                <ThemedText style={{ color: AppColors.primary }}>
+                  {isSignUp ? "Sign In" : "Sign Up"}
                 </ThemedText>
+              </ThemedText>
+            </Pressable>
+          </GlassCard>
+
+          {(isAppleAuthAvailable || isGoogleAuthAvailable) ? (
+            <>
+              <View style={styles.authDividerContainer}>
+                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+                <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
+                  or continue with
+                </ThemedText>
+                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+              </View>
+
+              <View style={styles.socialButtonsContainer}>
+                {Platform.OS === "ios" && isAppleAuthAvailable ? (
+                  <Pressable
+                    style={[
+                      styles.socialButton,
+                      { backgroundColor: theme.text },
+                      (isAuthLoading || isSocialLoading) && styles.authButtonDisabled,
+                    ]}
+                    onPress={handleAppleSignIn}
+                    disabled={isAuthLoading || !!isSocialLoading}
+                    data-testid="button-apple-signin"
+                  >
+                    {isSocialLoading === "apple" ? (
+                      <ActivityIndicator color={theme.backgroundRoot} size="small" />
+                    ) : (
+                      <>
+                        <FontAwesome name="apple" size={20} color={theme.backgroundRoot} />
+                        <ThemedText style={[styles.socialButtonText, { color: theme.backgroundRoot }]}>
+                          Continue with Apple
+                        </ThemedText>
+                      </>
+                    )}
+                  </Pressable>
+                ) : null}
+
+                {Platform.OS === "android" && isGoogleAuthAvailable ? (
+                  <Pressable
+                    style={[
+                      styles.socialButton,
+                      { backgroundColor: "#4285F4" },
+                      (isAuthLoading || isSocialLoading) && styles.authButtonDisabled,
+                    ]}
+                    onPress={handleGoogleSignIn}
+                    disabled={isAuthLoading || !!isSocialLoading}
+                    data-testid="button-google-signin"
+                  >
+                    {isSocialLoading === "google" ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <FontAwesome name="google" size={18} color="#FFFFFF" />
+                        <ThemedText style={[styles.socialButtonText, { color: "#FFFFFF" }]}>
+                          Continue with Google
+                        </ThemedText>
+                      </>
+                    )}
+                  </Pressable>
+                ) : null}
+              </View>
+            </>
+          ) : null}
+
+          <View style={styles.authDividerContainer}>
+            <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+            <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
+              or
+            </ThemedText>
+            <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+          </View>
+
+          <GlassCard onPress={handleContinueAsGuest}>
+            <View style={styles.guestContent}>
+              <View style={[styles.guestIcon, { backgroundColor: theme.glass.background }]}>
+                <Feather name="user-x" size={20} color={theme.textSecondary} />
+              </View>
+              <View style={styles.guestText}>
+                <ThemedText style={{ fontWeight: "600" }}>
+                  Continue as Guest
+                </ThemedText>
+                <ThemedText style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Use the app without syncing. You can sign in later.
+                </ThemedText>
+              </View>
+              <View style={styles.guestChevron}>
+                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
               </View>
             </View>
           </GlassCard>
 
-          <View style={styles.welcomeActions}>
-            <Button
-              onPress={handleAcceptDefaults}
-              variant="primary"
-              style={styles.primaryButton}
-            >
-              Get Started
-            </Button>
-            <Pressable onPress={handleCustomize} style={styles.customizeLink}>
-              <ThemedText
-                style={[
-                  styles.customizeLinkText,
-                  { color: theme.textSecondary },
-                ]}
-              >
-                Or customize your kitchen setup
-              </ThemedText>
-              <Feather
-                name="chevron-right"
-                size={16}
-                color={theme.textSecondary}
-              />
-            </Pressable>
+          <View style={styles.authInfoCard}>
+            <Feather name="cloud" size={20} color={AppColors.primary} />
+            <ThemedText style={[styles.authInfoText, { color: theme.textSecondary }]}>
+              Signing in enables cloud backup and syncs your inventory, recipes, and meal plans across all your devices.
+            </ThemedText>
           </View>
         </Animated.View>
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
     </Animated.View>
   );
 
@@ -2561,5 +2767,125 @@ const styles = StyleSheet.create({
   },
   fullWidthButton: {
     width: "100%",
+  },
+  authFormCard: {
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  authFormTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: Spacing.xs,
+  },
+  authFormSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: Spacing.md,
+  },
+  authErrorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.md,
+  },
+  authInputGroup: {
+    marginBottom: Spacing.md,
+  },
+  authInputLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: Spacing.xs,
+  },
+  authInput: {
+    height: 48,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    fontSize: 16,
+  },
+  authSubmitButton: {
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Spacing.sm,
+  },
+  authButtonDisabled: {
+    opacity: 0.7,
+  },
+  authSubmitButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  authToggleButton: {
+    alignItems: "center",
+    marginTop: Spacing.md,
+    padding: Spacing.sm,
+  },
+  authDividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  authDivider: {
+    flex: 1,
+    height: 1,
+  },
+  authDividerText: {
+    marginHorizontal: Spacing.md,
+    fontSize: 13,
+  },
+  socialButtonsContainer: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  socialButton: {
+    height: 48,
+    borderRadius: BorderRadius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  socialButtonText: {
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  guestContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  guestIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.sm,
+  },
+  guestText: {
+    flex: 1,
+  },
+  guestChevron: {
+    alignSelf: "stretch",
+    justifyContent: "center",
+    paddingLeft: Spacing.sm,
+  },
+  authInfoCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: Spacing.md,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  authInfoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
