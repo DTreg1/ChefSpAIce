@@ -518,26 +518,6 @@ export default function ProfileScreen() {
         />
         <Pressable
           style={styles.menuItem}
-          onPress={() => navigation.navigate("Settings")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: theme.glass.background },
-            ]}
-          >
-            <Feather name="settings" size={20} color={theme.text} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Settings
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
           onPress={() => navigation.navigate("StorageLocations")}
         >
           <View

@@ -1,5 +1,9 @@
 import React from "react";
+import { Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
 import ProfileScreen from "@/screens/ProfileScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import AnalyticsScreen from "@/screens/AnalyticsScreen";
@@ -12,6 +16,7 @@ import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import InstacartSettingsScreen from "@/screens/InstacartSettingsScreen";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { useTheme } from "@/hooks/useTheme";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -28,6 +33,21 @@ export type ProfileStackParamList = {
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
+function SettingsButton() {
+  const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+  
+  return (
+    <Pressable
+      onPress={() => navigation.navigate("Settings")}
+      style={styles.headerButton}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Feather name="settings" size={22} color={theme.text} />
+    </Pressable>
+  );
+}
+
 export default function ProfileStackNavigator() {
   const screenOptions = useScreenOptions({ transparent: false });
 
@@ -39,6 +59,7 @@ export default function ProfileStackNavigator() {
         options={{
           headerTitle: "Profile",
           headerLeft: () => <HamburgerButton />,
+          headerRight: () => <SettingsButton />,
         }}
       />
       <Stack.Screen
@@ -109,3 +130,9 @@ export default function ProfileStackNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerButton: {
+    padding: 8,
+  },
+});
