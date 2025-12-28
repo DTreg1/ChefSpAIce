@@ -23,8 +23,6 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useNavigation, CommonActions } from "@react-navigation/native";
-import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -1024,20 +1022,6 @@ export default function OnboardingScreen() {
               style={styles.appIconImage}
               resizeMode="cover"
             />
-            {Platform.OS === "ios" && isLiquidGlassAvailable() ? (
-              <GlassView
-                glassEffectStyle="clear"
-                style={styles.appIconGlassOverlay}
-              />
-            ) : Platform.OS !== "web" ? (
-              <BlurView
-                intensity={5}
-                tint="light"
-                style={styles.appIconGlassOverlay}
-              />
-            ) : (
-              <View style={[styles.appIconGlassOverlay, styles.webGlassOverlay]} />
-            )}
           </Animated.View>
           <Animated.View entering={FadeIn.delay(200).duration(400)}>
             <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
@@ -2046,28 +2030,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: "hidden",
     marginBottom: Spacing.md,
-    position: "relative",
   },
   appIconImage: {
     width: "100%",
     height: "100%",
-  },
-  appIconGlassOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 22,
-  },
-  webGlassOverlay: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    ...Platform.select({
-      web: {
-        backdropFilter: "blur(2px) saturate(110%)",
-        WebkitBackdropFilter: "blur(2px) saturate(110%)",
-      } as any,
-    }),
   },
   appName: {
     fontSize: 32,
