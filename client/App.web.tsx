@@ -8,8 +8,17 @@ import SupportPage from "@/screens/Support";
 import { WebThemeProvider } from "@/contexts/WebThemeContext";
 import App from "./App";
 
-declare const process: { env: Record<string, string | undefined> };
-const SKIP_LANDING = process.env.SKIP_LANDING === "true";
+const getSkipLanding = (): boolean => {
+  try {
+    const meta = import.meta as { env?: Record<string, string> };
+    if (meta.env?.VITE_SKIP_LANDING === "true") return true;
+  } catch {}
+  try {
+    if ((globalThis as any).process?.env?.SKIP_LANDING === "true") return true;
+  } catch {}
+  return false;
+};
+const SKIP_LANDING = getSkipLanding();
 
 function WebApp() {
   const path = typeof window !== "undefined" ? window.location.pathname : "/";
