@@ -123,7 +123,7 @@ export function NutritionCorrectionModal({
       
       if (imageUri && Platform.OS !== "web") {
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: "base64",
         });
         imageUrlToStore = `data:image/jpeg;base64,${base64}`;
       } else if (imageUri) {
@@ -247,7 +247,7 @@ export function NutritionCorrectionModal({
                     <Feather
                       name="alert-circle"
                       size={16}
-                      color={AppColors.danger}
+                      color={AppColors.error}
                     />
                     <ThemedText type="small" style={styles.errorText}>
                       {errorMessage}
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    color: AppColors.danger,
+    color: AppColors.error,
   },
   imageButtons: {
     flexDirection: "row",
