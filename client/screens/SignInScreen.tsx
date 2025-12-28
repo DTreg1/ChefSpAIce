@@ -48,12 +48,12 @@ export default function SignInScreen() {
     setError(null);
 
     if (!username.trim()) {
-      setError("Please enter a username");
+      setError("Please enter an email");
       return;
     }
 
     if (username.trim().length < 3) {
-      setError("Username must be at least 3 characters");
+      setError("Email must be at least 3 characters");
       return;
     }
 
@@ -186,12 +186,12 @@ export default function SignInScreen() {
 
         <View style={styles.inputGroup}>
           <ThemedText type="caption" style={styles.label}>
-            Username
+            Email
           </ThemedText>
           <TextInput
             value={username}
             onChangeText={setUsername}
-            placeholder="Enter username"
+            placeholder="Enter email"
             placeholderTextColor={theme.textSecondary}
             style={[
               styles.input,
@@ -203,7 +203,8 @@ export default function SignInScreen() {
             ]}
             autoCapitalize="none"
             autoCorrect={false}
-            autoComplete="username"
+            autoComplete="email"
+            keyboardType="email-address"
           />
         </View>
 
