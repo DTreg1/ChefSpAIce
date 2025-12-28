@@ -464,13 +464,15 @@ const styles = StyleSheet.create({
   guestCard: {
     flexDirection: "row",
     alignItems: "stretch",
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 0,
     marginBottom: Spacing.lg,
   },
   guestContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: Spacing.md,
   },
   guestIcon: {
     width: 40,
