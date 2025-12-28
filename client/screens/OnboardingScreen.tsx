@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   TextInput,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, FontAwesome } from "@expo/vector-icons";
@@ -38,6 +39,7 @@ import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
 
 interface Appliance {
   id: number;
@@ -757,7 +759,7 @@ export default function OnboardingScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { markOnboardingComplete } = useOnboardingStatus();
-  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
+  const { signIn, signUp, signInWithApple, signInWithGoogle, continueAsGuest, isAppleAuthAvailable, isGoogleAuthAvailable, isGuest } = useAuth();
 
   const [step, setStep] = useState<OnboardingStep>("welcome");
   const [categoryIndex, setCategoryIndex] = useState(0);
@@ -781,6 +783,26 @@ export default function OnboardingScreen() {
   useEffect(() => {
     loadAppliances();
   }, []);
+
+  // When user becomes a guest, limit selections to guest limits
+  useEffect(() => {
+    if (isGuest) {
+      setSelectedEquipmentIds((prev) => {
+        if (prev.size > GUEST_LIMITS.MAX_EQUIPMENT_ITEMS) {
+          const limitedIds = Array.from(prev).slice(0, GUEST_LIMITS.MAX_EQUIPMENT_ITEMS);
+          return new Set(limitedIds);
+        }
+        return prev;
+      });
+      setSelectedFoodIds((prev) => {
+        if (prev.size > GUEST_LIMITS.MAX_INVENTORY_ITEMS) {
+          const limitedIds = Array.from(prev).slice(0, GUEST_LIMITS.MAX_INVENTORY_ITEMS);
+          return new Set(limitedIds);
+        }
+        return prev;
+      });
+    }
+  }, [isGuest]);
 
   const loadAppliances = async () => {
     try {
@@ -907,17 +929,35 @@ export default function OnboardingScreen() {
       .length;
   }, [categoryAppliances, selectedEquipmentIds]);
 
+  const showGuestLimitAlert = useCallback((feature: "equipment" | "inventory") => {
+    const limits = {
+      equipment: {
+        title: "Equipment Limit",
+        message: `Guest accounts can only select ${GUEST_LIMITS.MAX_EQUIPMENT_ITEMS} pieces of equipment. Create a free account to save all your kitchen equipment.`,
+      },
+      inventory: {
+        title: "Inventory Limit",
+        message: `Guest accounts can only track ${GUEST_LIMITS.MAX_INVENTORY_ITEMS} items. Create a free account for unlimited inventory tracking.`,
+      },
+    };
+    Alert.alert(limits[feature].title, limits[feature].message);
+  }, []);
+
   const toggleAppliance = useCallback((id: number) => {
     setSelectedEquipmentIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
       } else {
+        if (isGuest && newSet.size >= GUEST_LIMITS.MAX_EQUIPMENT_ITEMS) {
+          showGuestLimitAlert("equipment");
+          return prev;
+        }
         newSet.add(id);
       }
       return newSet;
     });
-  }, []);
+  }, [isGuest, showGuestLimitAlert]);
 
   const toggleFood = useCallback((id: string) => {
     setSelectedFoodIds((prev) => {
@@ -925,19 +965,42 @@ export default function OnboardingScreen() {
       if (newSet.has(id)) {
         newSet.delete(id);
       } else {
+        if (isGuest && newSet.size >= GUEST_LIMITS.MAX_INVENTORY_ITEMS) {
+          showGuestLimitAlert("inventory");
+          return prev;
+        }
         newSet.add(id);
       }
       return newSet;
     });
-  }, []);
+  }, [isGuest, showGuestLimitAlert]);
 
   const selectAllInCategory = useCallback(() => {
     setSelectedEquipmentIds((prev) => {
+      if (isGuest) {
+        const remaining = GUEST_LIMITS.MAX_EQUIPMENT_ITEMS - prev.size;
+        if (remaining <= 0) {
+          showGuestLimitAlert("equipment");
+          return prev;
+        }
+        const newSet = new Set(prev);
+        let added = 0;
+        for (const a of categoryAppliances) {
+          if (!newSet.has(a.id) && added < remaining) {
+            newSet.add(a.id);
+            added++;
+          }
+        }
+        if (added < categoryAppliances.filter(a => !prev.has(a.id)).length) {
+          showGuestLimitAlert("equipment");
+        }
+        return newSet;
+      }
       const newSet = new Set(prev);
       categoryAppliances.forEach((a) => newSet.add(a.id));
       return newSet;
     });
-  }, [categoryAppliances]);
+  }, [categoryAppliances, isGuest, showGuestLimitAlert]);
 
   const deselectAllInCategory = useCallback(() => {
     setSelectedEquipmentIds((prev) => {
@@ -948,8 +1011,16 @@ export default function OnboardingScreen() {
   }, [categoryAppliances]);
 
   const selectAllFoods = useCallback(() => {
-    setSelectedFoodIds(new Set(STARTER_FOODS.map((f) => f.id)));
-  }, []);
+    if (isGuest) {
+      const limitedFoods = STARTER_FOODS.slice(0, GUEST_LIMITS.MAX_INVENTORY_ITEMS);
+      setSelectedFoodIds(new Set(limitedFoods.map((f) => f.id)));
+      if (STARTER_FOODS.length > GUEST_LIMITS.MAX_INVENTORY_ITEMS) {
+        showGuestLimitAlert("inventory");
+      }
+    } else {
+      setSelectedFoodIds(new Set(STARTER_FOODS.map((f) => f.id)));
+    }
+  }, [isGuest, showGuestLimitAlert]);
 
   const deselectAllFoods = useCallback(() => {
     setSelectedFoodIds(new Set());
