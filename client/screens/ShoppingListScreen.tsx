@@ -13,7 +13,8 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem, InstacartSettings } from "@/lib/storage";
-import { API_URL } from "@/lib/api";
+import { getApiUrl } from "@/lib/query-client";
+
 
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
@@ -100,7 +101,7 @@ export default function ShoppingListScreen() {
     setSendingToInstacart(true);
 
     try {
-      const response = await fetch(`${API_URL}/instacart/status`);
+      const response = await fetch(`${getApiUrl()}api/instacart/status`);
       const status = await response.json();
 
       if (!status.configured) {
@@ -116,7 +117,7 @@ export default function ShoppingListScreen() {
       const firstStore = instacartSettings.preferredStores[0];
       const retailerId = defaultStore?.id || firstStore?.id || "heb";
 
-      const cartResponse = await fetch(`${API_URL}/instacart/create-cart`, {
+      const cartResponse = await fetch(`${getApiUrl()}api/instacart/create-cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

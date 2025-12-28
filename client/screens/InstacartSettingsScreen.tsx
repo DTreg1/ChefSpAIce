@@ -19,7 +19,8 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, InstacartSettings, InstacartStore } from "@/lib/storage";
-import { API_URL } from "@/lib/api";
+import { getApiUrl } from "@/lib/query-client";
+
 
 const COMMON_STORES = [
   { id: "heb", name: "H-E-B" },
@@ -51,7 +52,7 @@ export default function InstacartSettingsScreen() {
     const instacartSettings = await storage.getInstacartSettings();
     
     try {
-      const response = await fetch(`${API_URL}/instacart/status`);
+      const response = await fetch(`${getApiUrl()}api/instacart/status`);
       const status = await response.json();
       
       if (status.configured !== instacartSettings.apiKeyConfigured) {
