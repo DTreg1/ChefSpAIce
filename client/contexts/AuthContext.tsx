@@ -8,14 +8,21 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as AppleAuthentication from "expo-apple-authentication";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
 import { getApiUrl } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 
-WebBrowser.maybeCompleteAuthSession();
+const isWeb = Platform.OS === "web";
+
+let AppleAuthentication: typeof import("expo-apple-authentication") | null = null;
+let Google: typeof import("expo-auth-session/providers/google") | null = null;
+let WebBrowser: typeof import("expo-web-browser") | null = null;
+
+if (!isWeb) {
+  AppleAuthentication = require("expo-apple-authentication");
+  Google = require("expo-auth-session/providers/google");
+  WebBrowser = require("expo-web-browser");
+  WebBrowser?.maybeCompleteAuthSession();
+}
 
 const AUTH_STORAGE_KEY = "@chefspaice/auth";
 
@@ -69,6 +76,17 @@ interface StoredAuthData {
   token: string;
 }
 
+function useGoogleAuth() {
+  if (isWeb || !Google) {
+    return [null, null, null] as const;
+  }
+  return Google.useAuthRequest({
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -78,15 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
 
-  const [googleRequest, googleResponse, promptGoogleAsync] = Google.useAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  });
+  const [googleRequest, googleResponse, promptGoogleAsync] = useGoogleAuth();
 
   useEffect(() => {
     const checkAppleAuth = async () => {
-      if (Platform.OS === "ios") {
+      if (Platform.OS === "ios" && AppleAuthentication) {
         const available = await AppleAuthentication.isAvailableAsync();
         setIsAppleAuthAvailable(available);
       }
@@ -223,7 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithApple = useCallback(async () => {
-    if (Platform.OS !== "ios") {
+    if (Platform.OS !== "ios" || !AppleAuthentication) {
       return { success: false, error: "Apple Sign-In is only available on iOS" };
     }
 
