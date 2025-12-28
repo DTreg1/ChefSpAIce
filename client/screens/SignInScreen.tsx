@@ -336,7 +336,7 @@ export default function SignInScreen() {
       <GlassCard contentStyle={styles.guestCard} onPress={handleContinueAsGuest}>
         <View style={styles.guestContent}>
           <View style={[styles.guestIcon, { backgroundColor: theme.glass.background }]}>
-            <Feather name="user-x" size={24} color={theme.textSecondary} />
+            <Feather name="user-x" size={20} color={theme.textSecondary} />
           </View>
           <View style={styles.guestText}>
             <ThemedText type="body" style={{ fontWeight: "600" }}>
@@ -471,12 +471,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   guestIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: Spacing.md,
+    marginRight: Spacing.sm,
   },
   guestText: {
     flex: 1,
