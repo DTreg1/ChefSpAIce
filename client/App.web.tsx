@@ -9,7 +9,7 @@ import { WebThemeProvider } from "@/contexts/WebThemeContext";
 import App from "./App";
 
 declare const process: { env: Record<string, string | undefined> };
-const SKIP_LANDING = process.env.EXPO_PUBLIC_SKIP_LANDING === "true";
+const SKIP_LANDING = process.env.SKIP_LANDING === "true";
 
 function WebApp() {
   const path = typeof window !== "undefined" ? window.location.pathname : "/";
