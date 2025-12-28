@@ -255,7 +255,10 @@ export function buildSmartPrompt(params: {
   prompt += `=== USER'S KITCHEN INVENTORY ===\n\n`;
 
   if (expiringItems.length > 0) {
-    prompt += `EXPIRING SOON (preferred to use first, but not required):\n`;
+    prompt += `ITEMS EXPIRING SOON (${expiringItems.length} items):\n`;
+    prompt += `NOTE: These items are expiring soon. Consider using them IF they make sense for a delicious, cohesive ${mealType || 'meal'}. `;
+    prompt += `However, a GOOD MEAL is MORE IMPORTANT than using expiring items. `;
+    prompt += `Do NOT force expiring items into a recipe if they don't belong - it's better to skip them than create a bad dish.\n`;
     const formattedExpiring = formatInventoryForPrompt(expiringItems);
     expiringItems.forEach((item, index) => {
       const urgency =

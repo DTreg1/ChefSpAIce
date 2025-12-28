@@ -567,8 +567,8 @@ export default function GenerateRecipeScreen() {
               <View style={styles.progressExpiringNote}>
                 <Feather name="clock" size={16} color={AppColors.warning} />
                 <ThemedText type="caption" style={{ color: AppColors.warning }}>
-                  Prioritizing {expiringItems.length} expiring item
-                  {expiringItems.length !== 1 ? "s" : ""}
+                  Considering {expiringItems.length} item
+                  {expiringItems.length !== 1 ? "s" : ""} expiring soon
                 </ThemedText>
               </View>
             ) : null}
