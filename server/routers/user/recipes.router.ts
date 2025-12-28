@@ -122,7 +122,7 @@ export function organizeInventory(
   expiringItems: ExpiringItem[];
   otherItems: InventoryItem[];
 } {
-  const EXPIRING_THRESHOLD_DAYS = 5;
+  const EXPIRING_THRESHOLD_DAYS = 3;
 
   const filteredItems =
     selectedIds && selectedIds.length > 0

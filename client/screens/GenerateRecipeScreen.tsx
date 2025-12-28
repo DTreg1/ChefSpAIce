@@ -35,7 +35,7 @@ import { apiRequest, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 
-const EXPIRING_THRESHOLD_DAYS = 5;
+const EXPIRING_THRESHOLD_DAYS = 3;
 
 interface InventoryItemWithExpiry extends FoodItem {
   daysUntilExpiry: number | null;
