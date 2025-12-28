@@ -27,6 +27,8 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/Button";
+
+const AppIcon = require("../../assets/images/icon.png");
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
@@ -1013,17 +1015,13 @@ export default function OnboardingScreen() {
         <View style={styles.welcomeHeader}>
           <Animated.View
             entering={FadeIn.delay(100).duration(500)}
-            style={[
-              styles.appIconContainer,
-              { backgroundColor: AppColors.primary },
-            ]}
+            style={styles.appIconContainer}
           >
-            <View style={styles.appIconInner}>
-              <Feather name="coffee" size={32} color="#FFFFFF" />
-            </View>
-            <View style={styles.appIconBadge}>
-              <Feather name="cpu" size={14} color={AppColors.primary} />
-            </View>
+            <Image
+              source={AppIcon}
+              style={styles.appIconImage}
+              resizeMode="cover"
+            />
           </Animated.View>
           <Animated.View entering={FadeIn.delay(200).duration(400)}>
             <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
@@ -2030,27 +2028,12 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
+    overflow: "hidden",
     marginBottom: Spacing.md,
-    position: "relative",
   },
-  appIconInner: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  appIconBadge: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+  appIconImage: {
+    width: "100%",
+    height: "100%",
   },
   appName: {
     fontSize: 32,
