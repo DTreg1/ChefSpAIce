@@ -10,7 +10,6 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
-import SignInScreen from "@/screens/SignInScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -19,7 +18,6 @@ import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
-  SignIn: { mode?: "signin" | "signup" } | undefined;
   Main: undefined;
   Onboarding: undefined;
   AddItem:
@@ -62,13 +60,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, []);
 
-  // Set up sign out callback to navigate to SignIn
+  // Set up sign out callback to navigate to Onboarding
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "SignIn" }],
+          routes: [{ name: "Onboarding" }],
         })
       );
     });
@@ -87,11 +85,11 @@ function AuthGuardedNavigator() {
     const isNowUnauthenticated = !isAuthenticated && !isGuest;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // If user has completed onboarding, go to SignIn; otherwise go to Onboarding
+      // Redirect to Onboarding for authentication
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: needsOnboarding ? "Onboarding" : "SignIn" }],
+          routes: [{ name: "Onboarding" }],
         })
       );
     }
@@ -115,15 +113,11 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. If needs onboarding → Onboarding (includes sign-in UI)
-  // 2. Not authenticated and not guest (completed onboarding before) → SignIn
-  // 3. Otherwise → Main
+  // 1. Not authenticated and not guest → Onboarding (includes sign-in UI)
+  // 2. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (needsOnboarding) {
-      return "Onboarding";
-    }
     if (!isAuthenticated && !isGuest) {
-      return "SignIn";
+      return "Onboarding";
     }
     return "Main";
   };
@@ -133,11 +127,6 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
-      <Stack.Screen
-        name="SignIn"
-        component={SignInScreen}
-        options={{ headerShown: false }}
-      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}

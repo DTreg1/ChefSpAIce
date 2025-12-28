@@ -742,7 +742,7 @@ export default function ProfileScreen() {
             </View>
             <Pressable
               style={[styles.createAccountButton, { backgroundColor: AppColors.primary }]}
-              onPress={() => navigation.navigate("SignIn", { mode: "signup" })}
+              onPress={() => navigation.getParent()?.getParent()?.reset({ index: 0, routes: [{ name: "Onboarding" }] })}
             >
               <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
                 Create Free Account
@@ -770,7 +770,7 @@ export default function ProfileScreen() {
       ) : (
         <GlassCard
           contentStyle={styles.signInCard}
-          onPress={() => navigation.navigate("SignIn", { mode: "signup" })}
+          onPress={() => navigation.getParent()?.getParent()?.reset({ index: 0, routes: [{ name: "Onboarding" }] })}
         >
           <View style={styles.signInContent}>
             <View style={[styles.signInIcon, { backgroundColor: `${AppColors.primary}15` }]}>

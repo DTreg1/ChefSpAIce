@@ -9,7 +9,6 @@ import DevComponentsScreen from "@/screens/DevComponentsScreen";
 import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import DonationScreen from "@/screens/DonationScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
-import SignInScreen from "@/screens/SignInScreen";
 import InstacartSettingsScreen from "@/screens/InstacartSettingsScreen";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -24,7 +23,6 @@ export type ProfileStackParamList = {
   BarcodeTest: undefined;
   Donation: undefined;
   StorageLocations: undefined;
-  SignIn: undefined;
   InstacartSettings: undefined;
 };
 
@@ -99,14 +97,6 @@ export default function ProfileStackNavigator() {
         component={StorageLocationsScreen}
         options={{
           headerTitle: "Storage Locations",
-        }}
-      />
-      <Stack.Screen
-        name="SignIn"
-        component={SignInScreen}
-        options={{
-          headerTitle: "Sign In",
-          presentation: "modal",
         }}
       />
       <Stack.Screen
