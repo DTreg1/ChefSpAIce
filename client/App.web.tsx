@@ -4,6 +4,7 @@ import AboutPage from "@/screens/About";
 import PrivacyPolicyPage from "@/screens/Privacy";
 import TermsOfServicePage from "@/screens/Terms";
 import AttributionsPage from "@/screens/Attributions";
+import SupportPage from "@/screens/Support";
 import { WebThemeProvider } from "@/contexts/WebThemeContext";
 
 function WebApp() {
@@ -19,6 +20,8 @@ function WebApp() {
         return <TermsOfServicePage />;
       case "/attributions":
         return <AttributionsPage />;
+      case "/support":
+        return <SupportPage />;
       default:
         return <LandingScreen />;
     }

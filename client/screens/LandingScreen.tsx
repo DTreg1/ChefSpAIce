@@ -376,6 +376,10 @@ export default function LandingScreen() {
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>About</Text>
             </Pressable>
             <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Pressable onPress={() => navigateTo("/support")} data-testid="link-support">
+              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Support</Text>
+            </Pressable>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
             <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-attributions">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Attributions</Text>
             </Pressable>
