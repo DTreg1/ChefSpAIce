@@ -29,7 +29,37 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const now = new Date();
+    const user: User = {
+      id,
+      username: insertUser.username ?? null,
+      password: insertUser.password ?? null,
+      displayName: insertUser.displayName ?? null,
+      email: insertUser.email ?? null,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
+      profileImageUrl: insertUser.profileImageUrl ?? null,
+      dietaryRestrictions: insertUser.dietaryRestrictions ?? null,
+      allergens: insertUser.allergens ?? null,
+      favoriteCategories: insertUser.favoriteCategories ?? null,
+      expirationAlertDays: insertUser.expirationAlertDays ?? 3,
+      storageAreasEnabled: insertUser.storageAreasEnabled ?? null,
+      householdSize: insertUser.householdSize ?? 2,
+      cookingSkillLevel: insertUser.cookingSkillLevel ?? "beginner",
+      preferredUnits: insertUser.preferredUnits ?? "imperial",
+      foodsToAvoid: insertUser.foodsToAvoid ?? null,
+      hasCompletedOnboarding: insertUser.hasCompletedOnboarding ?? false,
+      notificationsEnabled: insertUser.notificationsEnabled ?? false,
+      notifyExpiringFood: insertUser.notifyExpiringFood ?? true,
+      notifyRecipeSuggestions: insertUser.notifyRecipeSuggestions ?? false,
+      notifyMealReminders: insertUser.notifyMealReminders ?? true,
+      notificationTime: insertUser.notificationTime ?? "09:00",
+      isAdmin: insertUser.isAdmin ?? false,
+      primaryProvider: insertUser.primaryProvider ?? null,
+      primaryProviderId: insertUser.primaryProviderId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
     this.users.set(id, user);
     return user;
   }
