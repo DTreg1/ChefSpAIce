@@ -606,24 +606,18 @@ router.get("/corrections", async (req: Request, res: Response) => {
     const limit = Math.min(parseInt((req.query.limit as string) || "50", 10), 100);
     const offset = parseInt((req.query.offset as string) || "0", 10);
 
-    let query = db
-      .select()
-      .from(nutritionCorrections)
-      .orderBy(desc(nutritionCorrections.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    if (status) {
-      query = db
-        .select()
-        .from(nutritionCorrections)
-        .where(eq(nutritionCorrections.status, status))
-        .orderBy(desc(nutritionCorrections.createdAt))
-        .limit(limit)
-        .offset(offset);
-    }
-
-    const corrections = await query;
+    const baseQuery = db.select().from(nutritionCorrections);
+    
+    const corrections = status
+      ? await baseQuery
+          .where(eq(nutritionCorrections.status, status))
+          .orderBy(desc(nutritionCorrections.createdAt))
+          .limit(limit)
+          .offset(offset)
+      : await baseQuery
+          .orderBy(desc(nutritionCorrections.createdAt))
+          .limit(limit)
+          .offset(offset);
 
     return res.json({
       corrections,
