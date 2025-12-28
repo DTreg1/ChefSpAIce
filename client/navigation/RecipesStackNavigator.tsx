@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import RecipesScreen from "@/screens/RecipesScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import GenerateRecipeScreen from "@/screens/GenerateRecipeScreen";
-import ChatScreen from "@/screens/ChatScreen";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import type { Recipe } from "@/lib/storage";
@@ -48,13 +47,6 @@ export default function RecipesStackNavigator() {
         options={{
           presentation: "modal",
           headerTitle: "Generate Recipe",
-        }}
-      />
-      <Stack.Screen
-        name="Chat"
-        component={ChatScreen}
-        options={{
-          headerTitle: "Kitchen Assistant",
         }}
       />
     </Stack.Navigator>
