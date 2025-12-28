@@ -16,6 +16,24 @@ export function getApiUrl(): string {
   return url.href;
 }
 
+// Auth error callback - set by AuthContext to handle 401 errors
+let authErrorCallback: (() => void) | null = null;
+
+export function setAuthErrorCallback(callback: () => void) {
+  authErrorCallback = callback;
+}
+
+export function clearAuthErrorCallback() {
+  authErrorCallback = null;
+}
+
+// Handle auth errors by calling the registered callback
+function handleAuthError() {
+  if (authErrorCallback) {
+    authErrorCallback();
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -38,6 +56,11 @@ export async function apiRequest(
     credentials: "include",
   });
 
+  // Handle 401 errors by triggering auth error callback
+  if (res.status === 401) {
+    handleAuthError();
+  }
+
   await throwIfResNotOk(res);
   return res;
 }
@@ -55,8 +78,13 @@ export const getQueryFn: <T>(options: {
       credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (res.status === 401) {
+      // Always trigger auth error callback on 401
+      handleAuthError();
+      
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
     }
 
     await throwIfResNotOk(res);

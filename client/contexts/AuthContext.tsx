@@ -5,10 +5,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiUrl } from "@/lib/query-client";
+import { getApiUrl, queryClient, setAuthErrorCallback, clearAuthErrorCallback } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 
 const isWeb = Platform.OS === "web";
@@ -57,6 +58,7 @@ interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
+  setSignOutCallback: (callback: () => void) => void;
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
   isGoogleAuthAvailable: boolean;
@@ -76,6 +78,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
   continueAsGuest: () => {},
+  setSignOutCallback: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -103,6 +106,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const signOutCallbackRef = useRef<(() => void) | null>(null);
+  const signOutRef = useRef<(() => Promise<void>) | null>(null);
+
+  const setSignOutCallback = useCallback((callback: () => void) => {
+    signOutCallbackRef.current = callback;
+  }, []);
+
+  // Register auth error callback to handle 401 errors from API
+  // Uses a ref to always access the latest signOut function
+  useEffect(() => {
+    setAuthErrorCallback(() => {
+      // When a 401 error occurs, sign out the user
+      if (signOutRef.current) {
+        signOutRef.current();
+      }
+    });
+    
+    return () => {
+      clearAuthErrorCallback();
+    };
+  }, []);
 
   const [googleRequest, googleResponse, promptGoogleAsync] = useGoogleAuth();
 
@@ -223,18 +247,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
+      // Clear stored auth data
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
+      
+      // Clear all cached query data for security
+      queryClient.clear();
+      
+      // Reset auth state
       setState({
         user: null,
         token: null,
-        isGuest: true,
+        isGuest: false, // Not guest - fully signed out
         isLoading: false,
       });
+      
+      // Call navigation callback to redirect to SignIn
+      if (signOutCallbackRef.current) {
+        signOutCallbackRef.current();
+      }
     } catch (error) {
       console.error("Sign out error:", error);
     }
   }, []);
+
+  // Keep signOutRef updated with the latest signOut function
+  useEffect(() => {
+    signOutRef.current = signOut;
+  }, [signOut]);
 
   const continueAsGuest = useCallback(() => {
     setState((prev) => ({
@@ -376,8 +416,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOut,
       continueAsGuest,
+      setSignOutCallback,
     }),
-    [state, isAppleAuthAvailable, isGoogleAuthAvailable, signIn, signUp, signInWithApple, signInWithGoogle, signOut, continueAsGuest],
+    [state, isAppleAuthAvailable, isGoogleAuthAvailable, signIn, signUp, signInWithApple, signInWithGoogle, signOut, continueAsGuest, setSignOutCallback],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

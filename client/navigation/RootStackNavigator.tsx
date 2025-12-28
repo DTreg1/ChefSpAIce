@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 import DrawerNavigator from "@/navigation/DrawerNavigator";
 import AddItemScreen from "@/screens/AddItemScreen";
 import AddFoodBatchScreen from "@/screens/AddFoodBatchScreen";
@@ -48,15 +49,54 @@ function LoadingScreen() {
   );
 }
 
-export default function RootStackNavigator() {
+function AuthGuardedNavigator() {
   const screenOptions = useScreenOptions();
-  const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
+  const navigation = useNavigation();
+  const { isAuthenticated, isGuest, isLoading: authLoading, setSignOutCallback } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const hasInitialized = useRef(false);
+  const prevAuthState = useRef({ isAuthenticated, isGuest });
 
   useEffect(() => {
     checkOnboardingStatus();
   }, []);
+
+  // Set up sign out callback to navigate to SignIn
+  useEffect(() => {
+    setSignOutCallback(() => {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "SignIn" }],
+        })
+      );
+    });
+  }, [navigation, setSignOutCallback]);
+
+  // Monitor auth state changes and redirect when user becomes unauthenticated
+  useEffect(() => {
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      prevAuthState.current = { isAuthenticated, isGuest };
+      return;
+    }
+
+    // If user was authenticated but now is not (and not guest), redirect to SignIn
+    const wasAuthenticated = prevAuthState.current.isAuthenticated || prevAuthState.current.isGuest;
+    const isNowUnauthenticated = !isAuthenticated && !isGuest;
+
+    if (wasAuthenticated && isNowUnauthenticated) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "SignIn" }],
+        })
+      );
+    }
+
+    prevAuthState.current = { isAuthenticated, isGuest };
+  }, [isAuthenticated, isGuest, navigation]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -173,6 +213,11 @@ export default function RootStackNavigator() {
       />
     </Stack.Navigator>
   );
+}
+
+// Export wrapper that renders the auth-guarded navigator
+export default function RootStackNavigator() {
+  return <AuthGuardedNavigator />;
 }
 
 const styles = StyleSheet.create({
