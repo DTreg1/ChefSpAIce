@@ -634,6 +634,22 @@ export const storage = {
     return !status.cookwareSetupCompleted && !status.cookwareSetupSkipped;
   },
 
+  async resetOnboarding(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+  },
+
+  async clearGuestData(): Promise<void> {
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.INVENTORY,
+      STORAGE_KEYS.COOKWARE,
+      STORAGE_KEYS.ONBOARDING,
+      STORAGE_KEYS.RECIPES,
+      STORAGE_KEYS.SHOPPING_LIST,
+      STORAGE_KEYS.MEAL_PLANS,
+      STORAGE_KEYS.CONSUMED_LOG,
+    ]);
+  },
+
   async getCustomStorageLocations(): Promise<CustomStorageLocation[]> {
     return (await getItem<CustomStorageLocation[]>(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS)) || [];
   },

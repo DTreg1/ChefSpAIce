@@ -26,6 +26,7 @@ import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestLimits, GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
+import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import {
   Spacing,
   BorderRadius,
@@ -51,6 +52,7 @@ export default function ProfileScreen() {
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, isGuest, signOut } = useAuth();
   const { currentCounts } = useGuestLimits();
+  const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -158,8 +160,13 @@ export default function ProfileScreen() {
   };
 
   const performLogout = async () => {
+    // Clear all guest data and reset onboarding when exiting guest mode
+    if (isGuest) {
+      await storage.clearGuestData();
+    }
     await signOut();
     await storage.logout();
+    resetOnboarding();
   };
 
   const displayName = isAuthenticated && user?.displayName 

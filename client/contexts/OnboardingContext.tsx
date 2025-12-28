@@ -12,12 +12,14 @@ interface OnboardingContextType {
   isOnboardingComplete: boolean;
   isCheckingOnboarding: boolean;
   markOnboardingComplete: () => void;
+  resetOnboarding: () => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType>({
   isOnboardingComplete: false,
   isCheckingOnboarding: true,
   markOnboardingComplete: () => {},
+  resetOnboarding: () => {},
 });
 
 export const useOnboardingStatus = () => useContext(OnboardingContext);
@@ -49,13 +51,18 @@ export function OnboardingProvider({
     setIsOnboardingComplete(true);
   }, []);
 
+  const resetOnboarding = useCallback(() => {
+    setIsOnboardingComplete(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       isOnboardingComplete,
       isCheckingOnboarding,
       markOnboardingComplete,
+      resetOnboarding,
     }),
-    [isOnboardingComplete, isCheckingOnboarding, markOnboardingComplete],
+    [isOnboardingComplete, isCheckingOnboarding, markOnboardingComplete, resetOnboarding],
   );
 
   return (

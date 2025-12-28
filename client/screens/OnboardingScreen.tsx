@@ -1086,26 +1086,57 @@ export default function OnboardingScreen() {
       );
       const today = new Date();
 
-      const foodItems: FoodItem[] = selectedFoods.map((food) => {
-        const expirationDate = new Date(today);
-        expirationDate.setDate(expirationDate.getDate() + food.shelfLifeDays);
+      // Get existing inventory to merge with (avoid duplicates)
+      const existingInventory = await storage.getInventory();
+      const existingByFdcId = new Map(
+        existingInventory.filter(item => item.fdcId).map(item => [item.fdcId, item])
+      );
+      const existingByName = new Map(
+        existingInventory.map(item => [item.name.toLowerCase(), item])
+      );
 
-        return {
-          id: generateId(),
-          name: food.name,
-          quantity: food.defaultQuantity,
-          unit: food.unit,
-          storageLocation: food.recommendedStorage,
-          purchaseDate: today.toISOString(),
-          expirationDate: expirationDate.toISOString(),
-          category: food.category,
-          fdcId: food.fdcId,
-          nutrition: food.nutrition,
-        };
-      });
+      const newItems: FoodItem[] = [];
+      const updatedItems: FoodItem[] = [];
 
-      if (foodItems.length > 0) {
-        await storage.addInventoryItems(foodItems);
+      for (const food of selectedFoods) {
+        const existingByFdc = existingByFdcId.get(food.fdcId);
+        const existingByNameItem = existingByName.get(food.name.toLowerCase());
+        const existing = existingByFdc || existingByNameItem;
+
+        if (existing) {
+          // Update existing item quantity
+          updatedItems.push({
+            ...existing,
+            quantity: existing.quantity + food.defaultQuantity,
+          });
+        } else {
+          // Create new item
+          const expirationDate = new Date(today);
+          expirationDate.setDate(expirationDate.getDate() + food.shelfLifeDays);
+
+          newItems.push({
+            id: generateId(),
+            name: food.name,
+            quantity: food.defaultQuantity,
+            unit: food.unit,
+            storageLocation: food.recommendedStorage,
+            purchaseDate: today.toISOString(),
+            expirationDate: expirationDate.toISOString(),
+            category: food.category,
+            fdcId: food.fdcId,
+            nutrition: food.nutrition,
+          });
+        }
+      }
+
+      // Update existing items
+      for (const item of updatedItems) {
+        await storage.updateInventoryItem(item);
+      }
+
+      // Add new items
+      if (newItems.length > 0) {
+        await storage.addInventoryItems(newItems);
       }
 
       await storage.setOnboardingCompleted();
@@ -1573,25 +1604,59 @@ export default function OnboardingScreen() {
       await storage.setCookware(Array.from(selectedEquipmentIds));
 
       const today = new Date();
-      const foodItems: FoodItem[] = STARTER_FOODS.map((food) => {
-        const expirationDate = new Date(today);
-        expirationDate.setDate(expirationDate.getDate() + food.shelfLifeDays);
-        return {
-          id: generateId(),
-          name: food.name,
-          quantity: food.defaultQuantity,
-          unit: food.unit,
-          storageLocation: food.recommendedStorage,
-          purchaseDate: today.toISOString(),
-          expirationDate: expirationDate.toISOString(),
-          category: food.category,
-          fdcId: food.fdcId,
-          nutrition: food.nutrition,
-        };
-      });
+      
+      // Get selected foods (respecting guest limits)
+      const selectedFoods = STARTER_FOODS.filter((f) =>
+        selectedFoodIds.has(f.id),
+      );
 
-      if (foodItems.length > 0) {
-        await storage.addInventoryItems(foodItems);
+      // Get existing inventory to merge with (avoid duplicates)
+      const existingInventory = await storage.getInventory();
+      const existingByFdcId = new Map(
+        existingInventory.filter(item => item.fdcId).map(item => [item.fdcId, item])
+      );
+      const existingByName = new Map(
+        existingInventory.map(item => [item.name.toLowerCase(), item])
+      );
+
+      const newItems: FoodItem[] = [];
+      const updatedItems: FoodItem[] = [];
+
+      for (const food of selectedFoods) {
+        const existingByFdc = existingByFdcId.get(food.fdcId);
+        const existingByNameItem = existingByName.get(food.name.toLowerCase());
+        const existing = existingByFdc || existingByNameItem;
+
+        if (existing) {
+          updatedItems.push({
+            ...existing,
+            quantity: existing.quantity + food.defaultQuantity,
+          });
+        } else {
+          const expirationDate = new Date(today);
+          expirationDate.setDate(expirationDate.getDate() + food.shelfLifeDays);
+
+          newItems.push({
+            id: generateId(),
+            name: food.name,
+            quantity: food.defaultQuantity,
+            unit: food.unit,
+            storageLocation: food.recommendedStorage,
+            purchaseDate: today.toISOString(),
+            expirationDate: expirationDate.toISOString(),
+            category: food.category,
+            fdcId: food.fdcId,
+            nutrition: food.nutrition,
+          });
+        }
+      }
+
+      for (const item of updatedItems) {
+        await storage.updateInventoryItem(item);
+      }
+
+      if (newItems.length > 0) {
+        await storage.addInventoryItems(newItems);
       }
 
       await storage.setOnboardingCompleted();
