@@ -34,7 +34,6 @@ import {
 } from "@/contexts/OnboardingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import { GuestLimitsProvider } from "@/contexts/GuestLimitsContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -78,30 +77,24 @@ function MobileAppContent() {
     setCurrentRoute(routeName);
   }, []);
 
-  const navigateToSignUp = useCallback(() => {
-    navigationRef.current?.reset({ index: 0, routes: [{ name: "Onboarding", params: { upgradeFromGuest: true } }] });
-  }, []);
-
   const showChat = !isCheckingOnboarding && isOnboardingComplete && !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
 
   return (
-    <GuestLimitsProvider onNavigateToSignUp={navigateToSignUp}>
-      <FloatingChatProvider>
-        <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onStateChange}>
-          <AnimatedBackground bubbleCount={20} />
-          <OfflineIndicator />
-          <SubscriptionBanner />
-          <RootStackNavigator />
-          {showChat ? (
-            <>
-              <FloatingChatButton />
-              <ChatModal />
-            </>
-          ) : null}
-        </NavigationContainer>
-        <StatusBar />
-      </FloatingChatProvider>
-    </GuestLimitsProvider>
+    <FloatingChatProvider>
+      <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onStateChange}>
+        <AnimatedBackground bubbleCount={20} />
+        <OfflineIndicator />
+        <SubscriptionBanner />
+        <RootStackNavigator />
+        {showChat ? (
+          <>
+            <FloatingChatButton />
+            <ChatModal />
+          </>
+        ) : null}
+      </NavigationContainer>
+      <StatusBar />
+    </FloatingChatProvider>
   );
 }
 

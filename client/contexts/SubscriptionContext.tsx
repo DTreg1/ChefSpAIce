@@ -60,12 +60,12 @@ export function SubscriptionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, token, isGuest } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSubscription = useCallback(async () => {
-    if (!isAuthenticated || !token || isGuest) {
+    if (!isAuthenticated || !token) {
       setSubscription(null);
       setIsLoading(false);
       return;
@@ -107,7 +107,7 @@ export function SubscriptionProvider({
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, token, isGuest]);
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     fetchSubscription();
