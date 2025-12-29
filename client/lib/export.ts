@@ -1,9 +1,19 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
-import { Platform } from "react-native";
+import { Platform, Alert } from "react-native";
 import { format } from "date-fns";
 import type { FoodItem, Recipe } from "@/lib/storage";
+
+const showFileSavedAlert = (filePath: string) => {
+  if (Platform.OS !== "web") {
+    Alert.alert(
+      "File Saved",
+      `Your file has been saved to:\n${filePath}`,
+      [{ text: "OK" }]
+    );
+  }
+};
 
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return "";
@@ -57,7 +67,10 @@ export async function exportInventoryToCSV(inventory: FoodItem[]): Promise<void>
   const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 
   const fileName = `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.csv`;
-  await shareFile(csvContent, fileName, "text/csv");
+  const result = await shareFile(csvContent, fileName, "text/csv");
+  if (!result.success && result.filePath) {
+    showFileSavedAlert(result.filePath);
+  }
 }
 
 export async function exportRecipesToCSV(recipes: Recipe[]): Promise<void> {
@@ -102,7 +115,10 @@ export async function exportRecipesToCSV(recipes: Recipe[]): Promise<void> {
   const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 
   const fileName = `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.csv`;
-  await shareFile(csvContent, fileName, "text/csv");
+  const result = await shareFile(csvContent, fileName, "text/csv");
+  if (!result.success && result.filePath) {
+    showFileSavedAlert(result.filePath);
+  }
 }
 
 export async function exportInventoryToPDF(inventory: FoodItem[]): Promise<void> {
@@ -219,7 +235,10 @@ export async function exportInventoryToPDF(inventory: FoodItem[]): Promise<void>
     </html>
   `;
 
-  await generateAndSharePDF(html, `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  const result = await generateAndSharePDF(html, `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  if (!result.success && result.filePath) {
+    showFileSavedAlert(result.filePath);
+  }
 }
 
 export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
@@ -374,7 +393,10 @@ export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
     </html>
   `;
 
-  await generateAndSharePDF(html, `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  const result = await generateAndSharePDF(html, `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  if (!result.success && result.filePath) {
+    showFileSavedAlert(result.filePath);
+  }
 }
 
 export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
@@ -623,7 +645,10 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
   `;
 
   const safeTitle = recipe.title.replace(/[^a-zA-Z0-9]/g, "_");
-  await generateAndSharePDF(html, `${safeTitle}.pdf`);
+  const result = await generateAndSharePDF(html, `${safeTitle}.pdf`);
+  if (!result.success && result.filePath) {
+    showFileSavedAlert(result.filePath);
+  }
 }
 
 function capitalizeFirst(str: string): string {
@@ -642,7 +667,7 @@ function getExpiryClass(expirationDate: string | undefined): string {
   return "";
 }
 
-async function shareFile(content: string, fileName: string, mimeType: string): Promise<void> {
+async function shareFile(content: string, fileName: string, mimeType: string): Promise<{ success: boolean; filePath?: string }> {
   if (Platform.OS === "web") {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -653,7 +678,7 @@ async function shareFile(content: string, fileName: string, mimeType: string): P
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    return;
+    return { success: true };
   }
 
   const fileUri = FileSystem.documentDirectory + fileName;
@@ -666,19 +691,33 @@ async function shareFile(content: string, fileName: string, mimeType: string): P
       mimeType,
       dialogTitle: `Share ${fileName}`,
     });
+    return { success: true };
   }
+  
+  return { success: false, filePath: fileUri };
 }
 
-async function generateAndSharePDF(html: string, fileName: string): Promise<void> {
+async function generateAndSharePDF(html: string, fileName: string): Promise<{ success: boolean; filePath?: string }> {
   if (Platform.OS === "web") {
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-    return;
+    return new Promise((resolve) => {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+          resolve({ success: true });
+        };
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+          resolve({ success: true });
+        }, 500);
+      } else {
+        resolve({ success: false });
+      }
+    });
   }
 
   const { uri } = await Print.printToFileAsync({ html });
@@ -694,7 +733,10 @@ async function generateAndSharePDF(html: string, fileName: string): Promise<void
       mimeType: "application/pdf",
       dialogTitle: `Share ${fileName}`,
     });
+    return { success: true };
   }
+  
+  return { success: false, filePath: newUri };
 }
 
 export type ExportFormat = "csv" | "pdf";
