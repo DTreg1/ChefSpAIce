@@ -49,6 +49,7 @@ This separation reduces the web bundle from 4.26 MB to ~919 KB (78% smaller).
 - `/terms` - Terms of Service
 - `/attributions` - Attributions and credits
 - `/support` - Donation/support page
+- `/pricing` - Subscription pricing page with Monthly ($4.99/mo) and Annual ($49.90/yr) plans, 7-day free trial, and Stripe integration
 
 **Server Routing:**
 The Express server (server/index.ts) intelligently routes requests based on user-agent and environment:

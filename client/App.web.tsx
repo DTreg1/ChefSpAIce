@@ -6,6 +6,7 @@ import PrivacyScreen from "@/screens/web/PrivacyScreen";
 import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
+import PricingScreen from "@/screens/web/PricingScreen";
 import Constants from "expo-constants";
 import MobileApp from "./NativeApp";
 
@@ -20,7 +21,8 @@ type WebRoute =
   | "/privacy"
   | "/terms"
   | "/attributions"
-  | "/support";
+  | "/support"
+  | "/pricing";
 
 function getRouteFromPath(pathname: string): WebRoute {
   const normalized = pathname.toLowerCase();
@@ -29,6 +31,7 @@ function getRouteFromPath(pathname: string): WebRoute {
   if (normalized === "/terms") return "/terms";
   if (normalized === "/attributions") return "/attributions";
   if (normalized === "/support") return "/support";
+  if (normalized === "/pricing") return "/pricing";
   return "/";
 }
 
@@ -77,6 +80,7 @@ function WebRouter() {
             "/terms",
             "/attributions",
             "/support",
+            "/pricing",
           ].includes(newRoute)
         ) {
           e.preventDefault();
@@ -105,6 +109,8 @@ function WebRouter() {
       return <AttributionsScreen />;
     case "/support":
       return <SupportScreen />;
+    case "/pricing":
+      return <PricingScreen />;
     default:
       return <LandingScreen />;
   }
