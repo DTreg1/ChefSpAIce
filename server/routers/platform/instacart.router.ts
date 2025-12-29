@@ -52,11 +52,19 @@ const INSTACART_BASE_URL = process.env.NODE_ENV === "production"
 
 const INSTACART_API_CONFIGURED = !!process.env.INSTACART_API_KEY;
 
+interface ItemFilters {
+  brand_filters?: string[];
+  health_filters?: string[];
+}
+
 interface LineItem {
   name: string;
   quantity?: number;
   unit?: string;
   display_text?: string;
+  product_ids?: number[];
+  upcs?: string[];
+  filters?: ItemFilters;
 }
 
 interface CreateShoppingListRequest {
@@ -72,6 +80,8 @@ interface CreateRecipeListRequest {
   instructions?: string[];
   imageUrl?: string;
   partnerLinkbackUrl?: string;
+  author?: string;
+  source_url?: string;
 }
 
 interface InstacartApiResponse {
@@ -120,7 +130,7 @@ router.post("/create-shopping-list", async (req: Request, res: Response) => {
 });
 
 router.post("/create-recipe", async (req: Request, res: Response) => {
-  const { title, ingredients, instructions, imageUrl, partnerLinkbackUrl } = req.body as CreateRecipeListRequest;
+  const { title, ingredients, instructions, imageUrl, partnerLinkbackUrl, author, source_url } = req.body as CreateRecipeListRequest;
 
   if (!INSTACART_API_CONFIGURED) {
     return res.status(503).json({
@@ -138,7 +148,15 @@ router.post("/create-recipe", async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await createInstacartRecipe(title, ingredients, instructions, imageUrl, partnerLinkbackUrl);
+    const result = await createInstacartRecipe(
+      title, 
+      ingredients, 
+      instructions, 
+      imageUrl, 
+      partnerLinkbackUrl,
+      author,
+      source_url
+    );
     res.json(result);
   } catch (error: any) {
     console.error("Instacart recipe creation error:", error);
@@ -182,20 +200,26 @@ async function createInstacartShoppingList(
   const lineItems = items.map(item => {
     const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
     
+    const baseItem: Record<string, any> = {
+      name: item.name,
+      ...(item.display_text && { display_text: item.display_text }),
+      ...(item.product_ids && item.product_ids.length > 0 && { product_ids: item.product_ids }),
+      ...(item.upcs && item.upcs.length > 0 && { upcs: item.upcs }),
+      ...(item.filters && { filters: item.filters }),
+    };
+    
     if (measurements.length > 0) {
       return {
-        name: item.name,
+        ...baseItem,
         line_item_measurements: measurements,
-        ...(item.display_text && { display_text: item.display_text }),
       };
     }
     
     const instacartUnit = normalizeUnitForInstacart(item.unit);
     return {
-      name: item.name,
+      ...baseItem,
       ...(item.quantity && { quantity: item.quantity }),
       ...(instacartUnit && { unit: instacartUnit }),
-      ...(item.display_text && { display_text: item.display_text }),
     };
   });
 
@@ -256,7 +280,9 @@ async function createInstacartRecipe(
   ingredients: LineItem[],
   instructions?: string[],
   imageUrl?: string,
-  partnerLinkbackUrl?: string
+  partnerLinkbackUrl?: string,
+  author?: string,
+  sourceUrl?: string
 ): Promise<{ recipeUrl: string; success: boolean }> {
   const apiKey = process.env.INSTACART_API_KEY;
   if (!apiKey) {
@@ -266,20 +292,26 @@ async function createInstacartRecipe(
   const lineItems = ingredients.map(item => {
     const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
     
+    const baseItem: Record<string, any> = {
+      name: item.name,
+      ...(item.display_text && { display_text: item.display_text }),
+      ...(item.product_ids && item.product_ids.length > 0 && { product_ids: item.product_ids }),
+      ...(item.upcs && item.upcs.length > 0 && { upcs: item.upcs }),
+      ...(item.filters && { filters: item.filters }),
+    };
+    
     if (measurements.length > 0) {
       return {
-        name: item.name,
+        ...baseItem,
         line_item_measurements: measurements,
-        ...(item.display_text && { display_text: item.display_text }),
       };
     }
     
     const instacartUnit = normalizeUnitForInstacart(item.unit);
     return {
-      name: item.name,
+      ...baseItem,
       ...(item.quantity && { quantity: item.quantity }),
       ...(instacartUnit && { unit: instacartUnit }),
-      ...(item.display_text && { display_text: item.display_text }),
     };
   });
 
@@ -300,10 +332,12 @@ async function createInstacartRecipe(
     requestBody.instructions = instructions;
   }
 
-  if (partnerLinkbackUrl) {
-    requestBody.landing_page_configuration = {
-      partner_linkback_url: partnerLinkbackUrl,
-    };
+  if (author) {
+    requestBody.author = author;
+  }
+
+  if (sourceUrl) {
+    requestBody.source_url = sourceUrl;
   }
 
   console.log(`[Instacart] Creating recipe: "${title}" with ${ingredients.length} ingredients`);
