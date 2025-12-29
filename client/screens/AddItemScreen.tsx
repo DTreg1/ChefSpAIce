@@ -56,7 +56,6 @@ import {
 } from "@/lib/storage";
 import { StorageLocation } from "@/lib/shelf-life-data";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { useGuestLimits } from "@/contexts/GuestLimitsContext";
 
 type FoodSource = "usda" | "openfoodfacts" | "local";
 
@@ -159,7 +158,6 @@ export default function AddItemScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AddItem">>();
-  const { checkInventoryLimit, refreshCounts, isGuest, inventoryRemaining } = useGuestLimits();
 
   const today = new Date().toISOString().split("T")[0];
   const defaultExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -575,10 +573,6 @@ export default function AddItemScreen() {
   };
 
   const saveItem = async () => {
-    if (!checkInventoryLimit()) {
-      return;
-    }
-
     setSaving(true);
 
     try {
@@ -607,7 +601,6 @@ export default function AddItemScreen() {
       await recordChoice(category, storageLocation, suggestedLoc, name);
 
       await storage.addInventoryItem(newItem);
-      await refreshCounts();
       navigation.goBack();
     } catch (error) {
       Alert.alert("Error", "Failed to save item");

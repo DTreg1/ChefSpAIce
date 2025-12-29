@@ -34,7 +34,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
-import { useGuestLimits, GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
 
 interface Appliance {
   id: number;
@@ -284,7 +283,6 @@ export default function CookwareScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const queryClient = useQueryClient();
-  const { isGuest, equipmentRemaining, showUpgradePrompt, refreshCounts } = useGuestLimits();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
@@ -351,11 +349,6 @@ export default function CookwareScreen() {
       if (togglingIds.has(applianceId)) return;
 
       const isCurrentlyOwned = ownedApplianceIds.has(applianceId);
-      
-      if (!isCurrentlyOwned && isGuest && ownedCookwareIds.length >= GUEST_LIMITS.MAX_EQUIPMENT_ITEMS) {
-        showUpgradePrompt("equipment");
-        return;
-      }
 
       setTogglingIds((prev) => new Set(prev).add(applianceId));
 
@@ -369,7 +362,6 @@ export default function CookwareScreen() {
           await storage.addCookware(applianceId);
           setOwnedCookwareIds((prev) => [...prev, applianceId]);
         }
-        await refreshCounts();
         if (Platform.OS !== "web") {
           Haptics.selectionAsync();
         }
@@ -383,27 +375,18 @@ export default function CookwareScreen() {
         });
       }
     },
-    [togglingIds, ownedApplianceIds, ownedCookwareIds.length, isGuest, showUpgradePrompt, refreshCounts],
+    [togglingIds, ownedApplianceIds],
   );
 
   const handleAddAllCommon = useCallback(async () => {
     if (savingCommon) return;
 
     const commonIds = commonAppliances.map((a) => a.id);
-    let newIds = commonIds.filter((id) => !ownedApplianceIds.has(id));
+    const newIds = commonIds.filter((id) => !ownedApplianceIds.has(id));
 
     if (newIds.length === 0) {
       setShowFirstTimeSetup(false);
       return;
-    }
-
-    if (isGuest) {
-      const remainingSlots = GUEST_LIMITS.MAX_EQUIPMENT_ITEMS - ownedCookwareIds.length;
-      if (remainingSlots <= 0) {
-        showUpgradePrompt("equipment");
-        return;
-      }
-      newIds = newIds.slice(0, remainingSlots);
     }
 
     setSavingCommon(true);
@@ -411,7 +394,6 @@ export default function CookwareScreen() {
       const updatedIds = [...ownedCookwareIds, ...newIds];
       await storage.setCookware(updatedIds);
       setOwnedCookwareIds(updatedIds);
-      await refreshCounts();
       setShowFirstTimeSetup(false);
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -421,7 +403,7 @@ export default function CookwareScreen() {
     } finally {
       setSavingCommon(false);
     }
-  }, [commonAppliances, ownedApplianceIds, ownedCookwareIds, savingCommon, isGuest, showUpgradePrompt, refreshCounts]);
+  }, [commonAppliances, ownedApplianceIds, ownedCookwareIds, savingCommon]);
 
   const handleRefresh = useCallback(async () => {
     setLoadingLocal(true);

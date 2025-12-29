@@ -10,11 +10,11 @@ import { getApiUrl } from "@/lib/query-client";
 
 export function SubscriptionBanner() {
   const { theme } = useTheme();
-  const { isAuthenticated, isGuest, token } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   const { isTrialing, isPastDue, trialDaysRemaining, isLoading, subscription } =
     useSubscription();
 
-  if (isLoading || isGuest || !isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return null;
   }
 

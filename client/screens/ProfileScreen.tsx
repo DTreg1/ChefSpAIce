@@ -26,7 +26,6 @@ import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useGuestLimits, GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import {
   Spacing,
@@ -52,9 +51,8 @@ export default function ProfileScreen() {
   const { theme, isDark, colorScheme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { user, isAuthenticated, isGuest, signOut, token } = useAuth();
+  const { user, isAuthenticated, signOut, token } = useAuth();
   const { subscription, isActive, isTrialing, trialDaysRemaining } = useSubscription();
-  const { currentCounts } = useGuestLimits();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -163,10 +161,6 @@ export default function ProfileScreen() {
   };
 
   const performLogout = async () => {
-    // Clear all guest data and reset onboarding when exiting guest mode
-    if (isGuest) {
-      await storage.clearGuestData();
-    }
     await signOut();
     await storage.logout();
     resetOnboarding();
@@ -746,77 +740,6 @@ export default function ProfileScreen() {
               </View>
               <ThemedText type="body" style={[styles.menuLabel, { color: AppColors.error }]}>
                 Sign Out
-              </ThemedText>
-            </Pressable>
-          </GlassCard>
-        </>
-      ) : isGuest ? (
-        <>
-          <GlassCard style={{ backgroundColor: `${AppColors.primary}10` }}>
-            <View style={styles.guestUpgradeHeader}>
-              <View style={[styles.guestUpgradeIcon, { backgroundColor: `${AppColors.primary}20` }]}>
-                <Feather name="user-plus" size={28} color={AppColors.primary} />
-              </View>
-              <View style={styles.guestUpgradeText}>
-                <ThemedText type="h4">Create Your Free Account</ThemedText>
-                <ThemedText type="caption">Unlock all features and keep your data safe</ThemedText>
-              </View>
-            </View>
-            <View style={styles.guestLimitInfo}>
-              <View style={styles.guestLimitRow}>
-                <Feather name="package" size={16} color={theme.textSecondary} />
-                <ThemedText type="caption">
-                  Inventory: {currentCounts.inventoryCount}/{GUEST_LIMITS.MAX_INVENTORY_ITEMS} items used
-                </ThemedText>
-              </View>
-              <View style={styles.guestLimitRow}>
-                <Feather name="tool" size={16} color={theme.textSecondary} />
-                <ThemedText type="caption">
-                  Equipment: {currentCounts.equipmentCount}/{GUEST_LIMITS.MAX_EQUIPMENT_ITEMS} items used
-                </ThemedText>
-              </View>
-            </View>
-            <View style={styles.guestBenefits}>
-              <View style={styles.benefitRow}>
-                <Feather name="check-circle" size={16} color={AppColors.success} />
-                <ThemedText type="caption">Unlimited inventory tracking</ThemedText>
-              </View>
-              <View style={styles.benefitRow}>
-                <Feather name="check-circle" size={16} color={AppColors.success} />
-                <ThemedText type="caption">All kitchen equipment</ThemedText>
-              </View>
-              <View style={styles.benefitRow}>
-                <Feather name="check-circle" size={16} color={AppColors.success} />
-                <ThemedText type="caption">Instacart shopping integration</ThemedText>
-              </View>
-              <View style={styles.benefitRow}>
-                <Feather name="check-circle" size={16} color={AppColors.success} />
-                <ThemedText type="caption">Cloud sync across devices</ThemedText>
-              </View>
-            </View>
-            <Pressable
-              style={[styles.createAccountButton, { backgroundColor: AppColors.primary }]}
-              onPress={() => navigation.getParent()?.getParent()?.reset({ index: 0, routes: [{ name: "Onboarding" }] })}
-            >
-              <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                Create Free Account
-              </ThemedText>
-              <Feather name="arrow-right" size={18} color="#FFFFFF" />
-            </Pressable>
-          </GlassCard>
-
-          <GlassCard style={styles.logoutCard}>
-            <Pressable style={styles.logoutButton} onPress={handleLogout}>
-              <View
-                style={[
-                  styles.menuIcon,
-                  { backgroundColor: `${theme.textSecondary}15` },
-                ]}
-              >
-                <Feather name="log-out" size={20} color={theme.textSecondary} />
-              </View>
-              <ThemedText type="body" style={[styles.menuLabel, { color: theme.textSecondary }]}>
-                Exit Guest Mode
               </ThemedText>
             </Pressable>
           </GlassCard>
