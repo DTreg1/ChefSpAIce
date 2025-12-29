@@ -34,12 +34,18 @@ function formatTermResponse(term: CookingTerm) {
   return {
     id: term.id,
     term: term.term,
-    definition: term.definition,
+    definition: term.shortDefinition || term.longDefinition || "",
+    shortDefinition: term.shortDefinition || undefined,
+    longDefinition: term.longDefinition || undefined,
     category: term.category,
     difficulty: term.difficulty || "beginner",
-    pronunciation: term.pronunciation || undefined,
+    timeEstimate: term.timeEstimate || undefined,
+    tools: term.tools || [],
+    tips: term.tips || [],
     videoUrl: term.videoUrl || undefined,
+    imageUrl: term.imageUrl || undefined,
     relatedTerms: term.relatedTerms || [],
+    example: term.example || undefined,
   };
 }
 
@@ -60,7 +66,8 @@ router.get("/", async (req: Request, res: Response) => {
       terms = terms.filter(
         (t) =>
           t.term.toLowerCase().includes(searchLower) ||
-          t.definition.toLowerCase().includes(searchLower),
+          (t.shortDefinition && t.shortDefinition.toLowerCase().includes(searchLower)) ||
+          (t.longDefinition && t.longDefinition.toLowerCase().includes(searchLower)),
       );
 
       terms.sort((a, b) => {
@@ -130,14 +137,13 @@ router.get("/detect", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const termId = parseInt(id, 10);
 
-    if (isNaN(termId)) {
+    if (!id || id.trim() === "") {
       return res.status(400).json({ error: "Invalid term ID" });
     }
 
     const allTerms = await getCachedTerms();
-    const term = allTerms.find((t) => t.id === termId);
+    const term = allTerms.find((t) => t.id === id);
 
     if (!term) {
       return res.status(404).json({ error: "Cooking term not found" });
