@@ -33,9 +33,11 @@ import {
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { GuestLimitsProvider } from "@/contexts/GuestLimitsContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -88,6 +90,7 @@ function MobileAppContent() {
         <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onStateChange}>
           <AnimatedBackground bubbleCount={20} />
           <OfflineIndicator />
+          <SubscriptionBanner />
           <RootStackNavigator />
           {showChat ? (
             <>
@@ -111,9 +114,11 @@ function RootWrapper() {
     <GestureHandlerRootView style={[styles.root, { backgroundColor }]}>
       <KeyboardProvider>
         <AuthProvider>
-          <OnboardingProvider>
-            <MobileAppContent />
-          </OnboardingProvider>
+          <SubscriptionProvider>
+            <OnboardingProvider>
+              <MobileAppContent />
+            </OnboardingProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

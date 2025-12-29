@@ -25,6 +25,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useGuestLimits, GUEST_LIMITS } from "@/contexts/GuestLimitsContext";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import {
@@ -42,6 +43,7 @@ import {
   UserPreferences,
 } from "@/lib/storage";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
+import { getApiUrl } from "@/lib/query-client";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -50,7 +52,8 @@ export default function ProfileScreen() {
   const { theme, isDark, colorScheme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { user, isAuthenticated, isGuest, signOut } = useAuth();
+  const { user, isAuthenticated, isGuest, signOut, token } = useAuth();
+  const { subscription, isActive, isTrialing, trialDaysRemaining } = useSubscription();
   const { currentCounts } = useGuestLimits();
   const { resetOnboarding } = useOnboardingStatus();
 
@@ -167,6 +170,36 @@ export default function ProfileScreen() {
     await signOut();
     await storage.logout();
     resetOnboarding();
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
+
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url) {
+          if (Platform.OS === "web") {
+            (window as Window).location.href = data.url;
+          } else {
+            const { Linking } = require("react-native");
+            Linking.openURL(data.url);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error opening subscription portal:", error);
+    }
   };
 
   const displayName = isAuthenticated && user?.displayName 
@@ -667,6 +700,40 @@ export default function ProfileScreen() {
             </View>
           </GlassCard>
 
+          <GlassCard style={styles.subscriptionCard}>
+            <View style={styles.subscriptionHeader}>
+              <View style={[styles.subscriptionIcon, { backgroundColor: `${AppColors.accent}15` }]}>
+                <Feather name="credit-card" size={24} color={AppColors.accent} />
+              </View>
+              <View style={styles.subscriptionInfo}>
+                <ThemedText type="body" style={{ fontWeight: "600" }}>
+                  {isActive
+                    ? isTrialing
+                      ? `Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
+                      : "Premium Subscription"
+                    : "No Active Subscription"}
+                </ThemedText>
+                <ThemedText type="caption">
+                  {isActive
+                    ? subscription?.planType === "annual"
+                      ? "Annual Plan"
+                      : "Monthly Plan"
+                    : "Upgrade for full access"}
+                </ThemedText>
+              </View>
+            </View>
+            <Pressable
+              style={styles.manageSubscriptionButton}
+              onPress={handleManageSubscription}
+              data-testid="button-manage-subscription"
+            >
+              <ThemedText type="body" style={{ color: AppColors.accent }}>
+                Manage Subscription
+              </ThemedText>
+              <Feather name="external-link" size={16} color={AppColors.accent} />
+            </Pressable>
+          </GlassCard>
+
           <GlassCard style={styles.logoutCard}>
             <Pressable style={styles.logoutButton} onPress={handleLogout}>
               <View
@@ -989,6 +1056,33 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+  },
+  subscriptionCard: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  subscriptionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  subscriptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  subscriptionInfo: {
+    flex: 1,
+  },
+  manageSubscriptionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
   },
   signInCard: {
     flexDirection: "row",
