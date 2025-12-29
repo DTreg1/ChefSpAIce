@@ -7,6 +7,7 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import PricingScreen from "@/screens/web/PricingScreen";
+import AdminSubscriptionsScreen from "@/screens/web/AdminSubscriptionsScreen";
 import SubscriptionSuccessScreen from "@/src/pages/subscription-success";
 import SubscriptionCanceledScreen from "@/src/pages/subscription-canceled";
 import Constants from "expo-constants";
@@ -25,6 +26,7 @@ type WebRoute =
   | "/attributions"
   | "/support"
   | "/pricing"
+  | "/admin/subscriptions"
   | "/subscription-success"
   | "/subscription-canceled";
 
@@ -36,6 +38,7 @@ function getRouteFromPath(pathname: string): WebRoute {
   if (normalized === "/attributions") return "/attributions";
   if (normalized === "/support") return "/support";
   if (normalized === "/pricing") return "/pricing";
+  if (normalized === "/admin/subscriptions") return "/admin/subscriptions";
   if (normalized === "/subscription-success") return "/subscription-success";
   if (normalized === "/subscription-canceled") return "/subscription-canceled";
   return "/";
@@ -87,6 +90,7 @@ function WebRouter() {
             "/attributions",
             "/support",
             "/pricing",
+            "/admin/subscriptions",
             "/subscription-success",
             "/subscription-canceled",
           ].includes(newRoute)
@@ -119,6 +123,8 @@ function WebRouter() {
       return <SupportScreen />;
     case "/pricing":
       return <PricingScreen />;
+    case "/admin/subscriptions":
+      return <AdminSubscriptionsScreen />;
     case "/subscription-success":
       return <SubscriptionSuccessScreen />;
     case "/subscription-canceled":

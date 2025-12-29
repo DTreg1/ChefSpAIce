@@ -26,12 +26,14 @@ import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import feedbackRouter from "./routers/feedback.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
+import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
 import { userSessions, appliances } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
+import { requireAdmin } from "./middleware/requireAdmin";
 import { inArray } from "drizzle-orm";
 
 const openai = new OpenAI({
@@ -282,6 +284,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/feedback", feedbackRouter);
   app.use("/api/cooking-terms", cookingTermsRouter);
   app.use("/api/appliances", appliancesRouter);
+
+  // Mount admin routers (require admin authentication)
+  app.use("/api/admin/subscriptions", requireAdmin, adminSubscriptionsRouter);
 
   // Mount protected routers (require auth + active subscription)
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
