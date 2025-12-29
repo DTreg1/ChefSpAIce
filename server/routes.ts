@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import OpenAI from "openai";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import {
   getShelfLife,
   getShelfLifeEntry,
@@ -25,6 +26,8 @@ import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { db } from "./db";
+import { userSessions } from "../shared/schema";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -285,31 +288,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register object storage routes
   registerObjectStorageRoutes(app);
 
-  // Chat endpoint
+  // Chat endpoint with function calling for authenticated users
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-      const { message, context, history } = req.body;
+      const { message, context, history, inventory, userId } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "Message is required" });
       }
 
-      const systemPrompt = `You are ChefSpAIce, a helpful kitchen assistant. You help users with:
-- Cooking tips and techniques
-- Recipe suggestions based on available ingredients
-- Food storage and preservation advice
-- Nutrition information
-- Reducing food waste
+      // Import chat action handlers
+      const { chatFunctionDefinitions, executeChatAction, getUserSyncData } = await import("./lib/chat-actions");
+
+      // Check if user is authenticated
+      const authHeader = req.headers.authorization;
+      let authenticatedUserId: string | null = null;
+      
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const sessions = await db
+          .select()
+          .from(userSessions)
+          .where(eq(userSessions.token, token));
+        
+        if (sessions.length > 0 && new Date(sessions[0].expiresAt) > new Date()) {
+          authenticatedUserId = sessions[0].userId;
+        }
+      }
+
+      // Build inventory context from passed data or fetch from database
+      let inventoryContext = context || "";
+      let fullInventory: unknown[] = [];
+      
+      if (authenticatedUserId) {
+        const userData = await getUserSyncData(authenticatedUserId);
+        fullInventory = userData.inventory;
+        if (fullInventory.length > 0) {
+          inventoryContext = `Available ingredients: ${fullInventory.map((i: any) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`;
+        }
+      } else if (inventory && Array.isArray(inventory)) {
+        fullInventory = inventory;
+        inventoryContext = `Available ingredients: ${inventory.map((i: any) => `${i.quantity || 1} ${i.unit || 'item'} ${i.name}`).join(", ")}`;
+      }
+
+      const systemPrompt = `You are ChefSpAIce, an intelligent kitchen assistant with the ability to take actions on behalf of users.
+
+CAPABILITIES:
+- Add items to the user's pantry inventory
+- Mark items as consumed when the user uses them
+- Log wasted items when food goes bad
+- Generate personalized recipes based on available ingredients
+- Create weekly meal plans
+- Add items to shopping lists
+- Provide cooking tips, nutrition info, and food storage advice
 
 ${
-  context
-    ? `IMPORTANT - User's current pantry inventory: ${context}
+  inventoryContext
+    ? `USER'S CURRENT INVENTORY:
+${inventoryContext}
 
-When the user asks what they can cook or for recipe ideas, you MUST base your suggestions ONLY on these specific ingredients they actually have. Do not suggest recipes requiring ingredients not in their inventory unless you clearly note what additional items they would need to buy.`
-    : "The user has not added any ingredients to their inventory yet. Encourage them to add items to get personalized recipe suggestions."
+When suggesting recipes, prioritize ingredients the user actually has. If asked to add, consume, or waste items, use the appropriate function.`
+    : "The user has not added any ingredients yet. Encourage them to add items to their pantry to get personalized suggestions."
 }
 
-Keep responses concise, friendly, and practical. Focus on being helpful for home cooks. When suggesting recipes, prioritize using ingredients the user actually has on hand.`;
+${
+  authenticatedUserId
+    ? `IMPORTANT: This user is authenticated. You CAN perform actions on their behalf like adding items, generating recipes, creating meal plans, etc. When the user asks you to do something actionable, USE THE AVAILABLE FUNCTIONS to actually perform the action.`
+    : `NOTE: This user is not logged in. You can provide advice and suggestions, but tell them to log in to enable features like saving recipes, meal planning, and shopping lists.`
+}
+
+BEHAVIOR GUIDELINES:
+- Be proactive: If a user says "I just bought milk", add it to their inventory
+- Be helpful: If a user says "I used all the eggs", mark them as consumed
+- Be practical: Keep responses concise and actionable
+- When asked to generate a recipe, always use the generate_recipe function
+- When asked for a meal plan, use create_meal_plan function
+- When asked to add to shopping list, use add_to_shopping_list function`;
 
       const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
@@ -325,14 +379,70 @@ Keep responses concise, friendly, and practical. Focus on being helpful for home
 
       messages.push({ role: "user", content: message });
 
-      const completion = await openai.chat.completions.create({
+      // Use function calling if user is authenticated
+      const completionOptions: OpenAI.Chat.ChatCompletionCreateParams = {
         model: "gpt-4o-mini",
         messages,
         max_completion_tokens: 1024,
-      });
+      };
 
+      if (authenticatedUserId) {
+        completionOptions.tools = chatFunctionDefinitions;
+        completionOptions.tool_choice = "auto";
+      }
+
+      const completion = await openai.chat.completions.create(completionOptions);
+      const responseMessage = completion.choices[0]?.message;
+
+      // Check if the AI wants to call a function
+      if (responseMessage?.tool_calls && responseMessage.tool_calls.length > 0 && authenticatedUserId) {
+        const toolCalls = responseMessage.tool_calls;
+        const actionResults: Array<{ name: string; result: unknown }> = [];
+        
+        // Execute all function calls
+        for (const toolCall of toolCalls) {
+          // Handle both standard and custom tool calls
+          const toolCallAny = toolCall as any;
+          if (!toolCallAny.function) continue;
+          const functionName = toolCallAny.function.name as string;
+          const args = JSON.parse(toolCallAny.function.arguments as string);
+          
+          console.log(`[Chat] Executing function: ${functionName}`, args);
+          const result = await executeChatAction(authenticatedUserId, functionName, args);
+          actionResults.push({ name: functionName, result });
+        }
+
+        // Build follow-up messages with function results
+        const followUpMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+          ...messages,
+          responseMessage as OpenAI.Chat.ChatCompletionMessageParam,
+          ...toolCalls.map((toolCall, index) => ({
+            role: "tool" as const,
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(actionResults[index]?.result || { success: false })
+          }))
+        ];
+
+        // Get final response after function execution
+        const finalCompletion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: followUpMessages,
+          max_completion_tokens: 1024,
+        });
+
+        const finalReply = finalCompletion.choices[0]?.message?.content || 
+          "I've completed the action for you.";
+
+        return res.json({ 
+          reply: finalReply,
+          actions: actionResults.map(ar => ar.result),
+          refreshData: true
+        });
+      }
+
+      // Regular response without function calls
       const reply =
-        completion.choices[0]?.message?.content ||
+        responseMessage?.content ||
         "I'm sorry, I couldn't process that request.";
       res.json({ reply });
     } catch (error) {

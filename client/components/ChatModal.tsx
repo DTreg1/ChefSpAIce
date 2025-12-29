@@ -187,16 +187,33 @@ export function ChatModal() {
     try {
       const inventoryContext =
         inventory.length > 0
-          ? `Available ingredients: ${inventory.map((i) => i.name).join(", ")}`
+          ? `Available ingredients: ${inventory.map((i) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`
           : "No ingredients in inventory";
 
       const baseUrl = getApiUrl();
+      
+      // Get auth token if user is logged in
+      const authToken = await storage.getAuthToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(new URL("/api/chat", baseUrl).href, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           message: userMessage.content,
           context: inventoryContext,
+          inventory: inventory.map(i => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            unit: i.unit,
+            expirationDate: i.expirationDate,
+            storageLocation: i.storageLocation,
+            category: i.category,
+          })),
           history: updatedMessages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,
@@ -218,6 +235,23 @@ export function ChatModal() {
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
       await storage.setChatHistory(finalMessages);
+
+      // If actions were performed, refresh local data from server
+      if (data.refreshData && authToken) {
+        console.log("[Chat] Actions performed, refreshing local data...");
+        try {
+          // Trigger a full sync to get updated data
+          const syncResult = await storage.syncFromCloud();
+          if (syncResult.success) {
+            // Reload inventory to reflect changes
+            const updatedInventory = await storage.getInventory();
+            setInventory(updatedInventory);
+            loadTip(updatedInventory);
+          }
+        } catch (syncError) {
+          console.error("Failed to sync after chat action:", syncError);
+        }
+      }
     } catch (error) {
       console.error("Chat error:", error);
 
