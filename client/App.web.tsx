@@ -112,11 +112,7 @@ function WebRouter() {
 
 export default function App() {
   if (SKIP_LANDING) {
-    return (
-      <WebThemeProvider>
-        <MobileApp />
-      </WebThemeProvider>
-    );
+    return <MobileApp />;
   }
 
   return (

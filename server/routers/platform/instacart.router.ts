@@ -2,37 +2,39 @@ import { Router, Request, Response } from "express";
 
 const router = Router();
 
-interface InstacartProductSearchRequest {
-  query: string;
-  zipCode?: string;
-  retailerId?: string;
-}
-
-interface InstacartProduct {
-  id: string;
-  name: string;
-  brand?: string;
-  price: number;
-  unit: string;
-  imageUrl?: string;
-  retailer: string;
-  available: boolean;
-}
-
-interface InstacartCartItem {
-  name: string;
-  quantity: number;
-  unit: string;
-  productId?: string;
-}
-
-interface InstacartCartRequest {
-  items: InstacartCartItem[];
-  retailerId: string;
-  zipCode: string;
-}
+const INSTACART_BASE_URL = process.env.NODE_ENV === "production" 
+  ? "https://connect.instacart.com"
+  : "https://connect.instacart.com";
 
 const INSTACART_API_CONFIGURED = !!process.env.INSTACART_API_KEY;
+
+interface LineItem {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  display_text?: string;
+}
+
+interface CreateShoppingListRequest {
+  title: string;
+  items: LineItem[];
+  imageUrl?: string;
+  partnerLinkbackUrl?: string;
+}
+
+interface CreateRecipeListRequest {
+  title: string;
+  ingredients: LineItem[];
+  instructions?: string[];
+  imageUrl?: string;
+  partnerLinkbackUrl?: string;
+}
+
+interface InstacartApiResponse {
+  products_link_url?: string;
+  recipe_link_url?: string;
+  error?: string;
+}
 
 router.get("/status", (_req: Request, res: Response) => {
   res.json({
@@ -43,181 +45,234 @@ router.get("/status", (_req: Request, res: Response) => {
   });
 });
 
-router.post("/search", async (req: Request, res: Response) => {
-  const { query, zipCode, retailerId } = req.body as InstacartProductSearchRequest;
+router.post("/create-shopping-list", async (req: Request, res: Response) => {
+  const { title, items, imageUrl, partnerLinkbackUrl } = req.body as CreateShoppingListRequest;
 
   if (!INSTACART_API_CONFIGURED) {
     return res.status(503).json({
       error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to use product search.",
+      message: "Please configure the Instacart API key to create shopping lists.",
     });
   }
 
-  if (!query) {
-    return res.status(400).json({ error: "Query is required" });
-  }
-
-  try {
-    const products = await searchInstacartProducts(query, zipCode, retailerId);
-    res.json({ products });
-  } catch (error) {
-    console.error("Instacart search error:", error);
-    res.status(500).json({ error: "Failed to search products" });
-  }
-});
-
-router.post("/create-cart", async (req: Request, res: Response) => {
-  const { items, retailerId, zipCode } = req.body as InstacartCartRequest;
-
-  if (!INSTACART_API_CONFIGURED) {
-    return res.status(503).json({
-      error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to create carts.",
-    });
+  if (!title) {
+    return res.status(400).json({ error: "Title is required" });
   }
 
   if (!items || items.length === 0) {
-    return res.status(400).json({ error: "Items are required" });
-  }
-
-  if (!retailerId || !zipCode) {
-    return res.status(400).json({ error: "Retailer ID and zip code are required" });
+    return res.status(400).json({ error: "At least one item is required" });
   }
 
   try {
-    const cartUrl = await createInstacartCart(items, retailerId, zipCode);
-    res.json({ cartUrl, success: true });
-  } catch (error) {
-    console.error("Instacart cart creation error:", error);
-    res.status(500).json({ error: "Failed to create cart" });
+    const result = await createInstacartShoppingList(title, items, imageUrl, partnerLinkbackUrl);
+    res.json(result);
+  } catch (error: any) {
+    console.error("Instacart shopping list creation error:", error);
+    res.status(500).json({ 
+      error: "Failed to create shopping list",
+      message: error.message || "Unknown error occurred"
+    });
   }
 });
 
-router.get("/retailers", async (req: Request, res: Response) => {
-  const { zipCode } = req.query;
+router.post("/create-recipe", async (req: Request, res: Response) => {
+  const { title, ingredients, instructions, imageUrl, partnerLinkbackUrl } = req.body as CreateRecipeListRequest;
 
   if (!INSTACART_API_CONFIGURED) {
     return res.status(503).json({
       error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to get retailers.",
+      message: "Please configure the Instacart API key to create recipe lists.",
     });
   }
 
-  try {
-    const retailers = await getInstacartRetailers(zipCode as string | undefined);
-    res.json({ retailers });
-  } catch (error) {
-    console.error("Instacart retailers error:", error);
-    res.status(500).json({ error: "Failed to get retailers" });
+  if (!title) {
+    return res.status(400).json({ error: "Title is required" });
   }
-});
 
-router.post("/match-items", async (req: Request, res: Response) => {
-  const { items, zipCode, retailerId } = req.body;
+  if (!ingredients || ingredients.length === 0) {
+    return res.status(400).json({ error: "At least one ingredient is required" });
+  }
 
-  if (!INSTACART_API_CONFIGURED) {
-    return res.status(503).json({
-      error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to match items.",
+  try {
+    const result = await createInstacartRecipe(title, ingredients, instructions, imageUrl, partnerLinkbackUrl);
+    res.json(result);
+  } catch (error: any) {
+    console.error("Instacart recipe creation error:", error);
+    res.status(500).json({ 
+      error: "Failed to create recipe list",
+      message: error.message || "Unknown error occurred"
     });
   }
-
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "Items array is required" });
-  }
-
-  try {
-    const matchedItems = await matchShoppingListItems(items, zipCode, retailerId);
-    res.json({ matchedItems });
-  } catch (error) {
-    console.error("Instacart match items error:", error);
-    res.status(500).json({ error: "Failed to match items" });
-  }
 });
 
-async function searchInstacartProducts(
-  query: string,
-  zipCode?: string,
-  retailerId?: string
-): Promise<InstacartProduct[]> {
-  const apiKey = process.env.INSTACART_API_KEY;
-  if (!apiKey) {
-    throw new Error("Instacart API key not configured");
-  }
-
-  console.log(`[Instacart] Searching for: ${query}, zip: ${zipCode}, retailer: ${retailerId}`);
-  return [];
-}
-
-async function createInstacartCart(
-  items: InstacartCartItem[],
-  retailerId: string,
-  zipCode: string
-): Promise<string> {
-  const apiKey = process.env.INSTACART_API_KEY;
-  if (!apiKey) {
-    throw new Error("Instacart API key not configured");
-  }
-
-  const itemNames = items.map(i => encodeURIComponent(i.name)).join(",");
-  console.log(`[Instacart] Creating cart with ${items.length} items for retailer ${retailerId}: ${items.map(i => i.name).join(", ")}`);
-  return `https://www.instacart.com/store/${retailerId}/storefront?search_term=${itemNames}`;
-}
-
-async function getInstacartRetailers(zipCode?: string): Promise<Array<{ id: string; name: string }>> {
-  const apiKey = process.env.INSTACART_API_KEY;
-  if (!apiKey) {
-    throw new Error("Instacart API key not configured");
-  }
-
-  console.log(`[Instacart] Getting retailers for zip: ${zipCode}`);
-  return [
-    { id: "heb", name: "H-E-B" },
-    { id: "randalls", name: "Randall's" },
-    { id: "kroger", name: "Kroger" },
-    { id: "walmart", name: "Walmart" },
-    { id: "target", name: "Target" },
-    { id: "costco", name: "Costco" },
+router.get("/retailers", async (_req: Request, res: Response) => {
+  const retailers = [
+    { id: "heb", name: "H-E-B", logo: "heb" },
+    { id: "randalls", name: "Randall's", logo: "randalls" },
+    { id: "kroger", name: "Kroger", logo: "kroger" },
+    { id: "walmart", name: "Walmart", logo: "walmart" },
+    { id: "target", name: "Target", logo: "target" },
+    { id: "costco", name: "Costco", logo: "costco" },
+    { id: "safeway", name: "Safeway", logo: "safeway" },
+    { id: "albertsons", name: "Albertsons", logo: "albertsons" },
+    { id: "publix", name: "Publix", logo: "publix" },
+    { id: "sprouts", name: "Sprouts", logo: "sprouts" },
+    { id: "whole-foods", name: "Whole Foods", logo: "whole-foods" },
+    { id: "aldi", name: "ALDI", logo: "aldi" },
   ];
-}
+  
+  res.json({ retailers });
+});
 
-interface ShoppingItem {
-  name: string;
-  quantity: number;
-  unit: string;
-}
+async function createInstacartShoppingList(
+  title: string,
+  items: LineItem[],
+  imageUrl?: string,
+  partnerLinkbackUrl?: string
+): Promise<{ shoppingListUrl: string; success: boolean }> {
+  const apiKey = process.env.INSTACART_API_KEY;
+  if (!apiKey) {
+    throw new Error("Instacart API key not configured");
+  }
 
-interface MatchedItem {
-  originalItem: ShoppingItem;
-  matchedProduct?: InstacartProduct;
-  confidence: "high" | "medium" | "low" | "no_match";
-}
+  const lineItems = items.map(item => ({
+    name: item.name,
+    ...(item.quantity && { quantity: item.quantity }),
+    ...(item.unit && { unit: item.unit }),
+    ...(item.display_text && { display_text: item.display_text }),
+  }));
 
-async function matchShoppingListItems(
-  items: ShoppingItem[],
-  zipCode?: string,
-  retailerId?: string
-): Promise<MatchedItem[]> {
-  const matchedItems: MatchedItem[] = [];
+  const requestBody: Record<string, any> = {
+    title,
+    line_items: lineItems,
+  };
 
-  for (const item of items) {
-    const products = await searchInstacartProducts(item.name, zipCode, retailerId);
+  if (imageUrl) {
+    requestBody.image_url = imageUrl;
+  }
+
+  if (partnerLinkbackUrl) {
+    requestBody.landing_page_configuration = {
+      partner_linkback_url: partnerLinkbackUrl,
+      enable_pantry_items: true,
+    };
+  }
+
+  console.log(`[Instacart] Creating shopping list: "${title}" with ${items.length} items`);
+
+  const response = await fetch(`${INSTACART_BASE_URL}/idp/v1/products/products_link`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Instacart] API error (${response.status}):`, errorText);
     
-    if (products.length > 0) {
-      matchedItems.push({
-        originalItem: item,
-        matchedProduct: products[0],
-        confidence: "high",
-      });
+    if (response.status === 401) {
+      throw new Error("Invalid Instacart API key");
+    } else if (response.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again later.");
     } else {
-      matchedItems.push({
-        originalItem: item,
-        confidence: "no_match",
-      });
+      throw new Error(`Instacart API error: ${response.status}`);
     }
   }
 
-  return matchedItems;
+  const data: InstacartApiResponse = await response.json();
+  
+  if (!data.products_link_url) {
+    throw new Error("No shopping list URL returned from Instacart");
+  }
+
+  console.log(`[Instacart] Shopping list created: ${data.products_link_url}`);
+
+  return {
+    shoppingListUrl: data.products_link_url,
+    success: true,
+  };
+}
+
+async function createInstacartRecipe(
+  title: string,
+  ingredients: LineItem[],
+  instructions?: string[],
+  imageUrl?: string,
+  partnerLinkbackUrl?: string
+): Promise<{ recipeUrl: string; success: boolean }> {
+  const apiKey = process.env.INSTACART_API_KEY;
+  if (!apiKey) {
+    throw new Error("Instacart API key not configured");
+  }
+
+  const lineItems = ingredients.map(item => ({
+    name: item.name,
+    ...(item.quantity && { quantity: item.quantity }),
+    ...(item.unit && { unit: item.unit }),
+    ...(item.display_text && { display_text: item.display_text }),
+  }));
+
+  const requestBody: Record<string, any> = {
+    title,
+    line_items: lineItems,
+  };
+
+  if (imageUrl) {
+    requestBody.image_url = imageUrl;
+  }
+
+  if (instructions && instructions.length > 0) {
+    requestBody.instructions = instructions;
+  }
+
+  if (partnerLinkbackUrl) {
+    requestBody.landing_page_configuration = {
+      partner_linkback_url: partnerLinkbackUrl,
+    };
+  }
+
+  console.log(`[Instacart] Creating recipe: "${title}" with ${ingredients.length} ingredients`);
+
+  const response = await fetch(`${INSTACART_BASE_URL}/idp/v1/products/recipe`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Instacart] API error (${response.status}):`, errorText);
+    
+    if (response.status === 401) {
+      throw new Error("Invalid Instacart API key");
+    } else if (response.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again later.");
+    } else {
+      throw new Error(`Instacart API error: ${response.status}`);
+    }
+  }
+
+  const data = await response.json();
+  
+  const recipeUrl = data.recipe_link_url || data.products_link_url;
+  if (!recipeUrl) {
+    throw new Error("No recipe URL returned from Instacart");
+  }
+
+  console.log(`[Instacart] Recipe created: ${recipeUrl}`);
+
+  return {
+    recipeUrl,
+    success: true,
+  };
 }
 
 export default router;

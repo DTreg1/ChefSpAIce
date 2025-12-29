@@ -7,6 +7,8 @@ import {
   Alert,
   Share,
   LayoutChangeEvent,
+  Linking,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -85,6 +87,7 @@ export default function RecipeDetailScreen() {
   const [selectedIngredient, setSelectedIngredient] =
     useState<RecipeIngredient | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [sendingToInstacart, setSendingToInstacart] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const stepPositions = useRef<Record<number, number>>({});
@@ -405,6 +408,78 @@ export default function RecipeDetailScreen() {
       Alert.alert("Export Error", "Failed to export the recipe. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleShopOnInstacart = async () => {
+    if (!recipe || sendingToInstacart) return;
+    setSendingToInstacart(true);
+
+    try {
+      const statusResponse = await fetch(`${getApiUrl()}api/instacart/status`);
+      const status = await statusResponse.json();
+
+      if (!status.configured) {
+        Alert.alert(
+          "Instacart Not Available",
+          "Instacart integration is not yet configured. Please check back later."
+        );
+        setSendingToInstacart(false);
+        return;
+      }
+
+      const baseServings = recipe.servings || 1;
+      const ingredients = recipe.ingredients.map((ing) => {
+        const numQuantity = typeof ing.quantity === "string" 
+          ? parseFloat(ing.quantity) 
+          : ing.quantity;
+        const scaledQty = isNaN(numQuantity) 
+          ? 1 
+          : (numQuantity * selectedServings) / baseServings;
+        const roundedQty = Math.round(scaledQty * 100) / 100;
+        
+        return {
+          name: ing.name,
+          quantity: roundedQty,
+          unit: ing.unit || undefined,
+          display_text: `${roundedQty}${ing.unit ? ` ${ing.unit}` : ""} ${ing.name}`,
+        };
+      });
+
+      let instructionsArray: string[] = [];
+      if (Array.isArray(recipe.instructions)) {
+        instructionsArray = recipe.instructions.map((s: any) => String(s));
+      } else if (typeof recipe.instructions === "string" && recipe.instructions.trim()) {
+        instructionsArray = recipe.instructions.split(/\n+/).filter((s: string) => s.trim());
+      }
+
+      const response = await fetch(`${getApiUrl()}api/instacart/create-recipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: recipe.title,
+          ingredients,
+          instructions: instructionsArray.length > 0 ? instructionsArray : undefined,
+          imageUrl: recipe.imageUri || undefined,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.recipeUrl) {
+        if (Platform.OS === "web") {
+          window.open(result.recipeUrl, "_blank");
+        } else {
+          await Linking.openURL(result.recipeUrl);
+        }
+      } else {
+        Alert.alert("Error", result.message || result.error || "Failed to create Instacart recipe.");
+      }
+    } catch (error) {
+      console.error("Instacart error:", error);
+      Alert.alert("Error", "Failed to connect to Instacart. Please try again.");
+    } finally {
+      setSendingToInstacart(false);
     }
   };
 
@@ -767,6 +842,17 @@ export default function RecipeDetailScreen() {
               Add Missing to List
             </Button>
           ) : null}
+
+          <Button
+            onPress={handleShopOnInstacart}
+            loading={sendingToInstacart}
+            disabled={sendingToInstacart}
+            style={styles.instacartButton}
+            icon={<Feather name="shopping-bag" size={18} color="#FFFFFF" />}
+            data-testid="button-shop-instacart"
+          >
+            Shop on Instacart
+          </Button>
         </GlassCard>
 
         <View
@@ -1025,6 +1111,10 @@ const styles = StyleSheet.create({
   },
   addMissingButton: {
     marginTop: Spacing.sm,
+  },
+  instacartButton: {
+    marginTop: Spacing.sm,
+    backgroundColor: "#43B02A",
   },
   instructionRow: {
     flexDirection: "row",

@@ -3,10 +3,9 @@ import {
   View,
   StyleSheet,
   Switch,
-  TextInput,
-  Pressable,
-  Alert,
   ScrollView,
+  Linking,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -18,21 +17,9 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { storage, InstacartSettings, InstacartStore } from "@/lib/storage";
+import { storage, InstacartSettings } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 
-
-const COMMON_STORES = [
-  { id: "heb", name: "H-E-B" },
-  { id: "randalls", name: "Randall's" },
-  { id: "kroger", name: "Kroger" },
-  { id: "walmart", name: "Walmart" },
-  { id: "target", name: "Target" },
-  { id: "costco", name: "Costco" },
-  { id: "cvs", name: "CVS" },
-  { id: "walgreens", name: "Walgreens" },
-  { id: "7eleven", name: "7-Eleven" },
-];
 
 export default function InstacartSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -45,12 +32,13 @@ export default function InstacartSettingsScreen() {
     zipCode: undefined,
     apiKeyConfigured: false,
   });
-  const [zipCode, setZipCode] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const loadSettings = useCallback(async () => {
     const instacartSettings = await storage.getInstacartSettings();
+    setSettings(instacartSettings);
     
+    setCheckingStatus(true);
     try {
       const response = await fetch(`${getApiUrl()}api/instacart/status`);
       const status = await response.json();
@@ -59,15 +47,12 @@ export default function InstacartSettingsScreen() {
         const updatedSettings = { ...instacartSettings, apiKeyConfigured: status.configured };
         await storage.setInstacartSettings(updatedSettings);
         setSettings(updatedSettings);
-        setZipCode(updatedSettings.zipCode || "");
-        return;
       }
     } catch (error) {
       console.log("Could not check Instacart API status:", error);
+    } finally {
+      setCheckingStatus(false);
     }
-    
-    setSettings(instacartSettings);
-    setZipCode(instacartSettings.zipCode || "");
   }, []);
 
   useFocusEffect(
@@ -78,11 +63,6 @@ export default function InstacartSettingsScreen() {
 
   const handleToggleConnection = async (value: boolean) => {
     if (value && !settings.apiKeyConfigured) {
-      Alert.alert(
-        "API Key Required",
-        "Instacart integration requires an API key. Please apply for access at instacart.com/company/business/developers and configure it in your server settings.",
-        [{ text: "OK" }]
-      );
       return;
     }
     const newSettings = { ...settings, isConnected: value };
@@ -90,47 +70,14 @@ export default function InstacartSettingsScreen() {
     await storage.setInstacartSettings(newSettings);
   };
 
-  const handleSaveZipCode = async () => {
-    if (zipCode.length !== 5 || !/^\d{5}$/.test(zipCode)) {
-      Alert.alert("Invalid Zip Code", "Please enter a valid 5-digit zip code.");
-      return;
-    }
-    await storage.updateInstacartZipCode(zipCode);
-    setIsEditing(false);
-    const newSettings = { ...settings, zipCode };
-    setSettings(newSettings);
-  };
-
-  const handleToggleStore = async (store: { id: string; name: string }) => {
-    const isSelected = settings.preferredStores.some(s => s.id === store.id);
-    if (isSelected) {
-      await storage.removeInstacartStore(store.id);
-      setSettings(prev => ({
-        ...prev,
-        preferredStores: prev.preferredStores.filter(s => s.id !== store.id),
-      }));
+  const handleOpenInstacart = async () => {
+    const url = "https://www.instacart.com";
+    if (Platform.OS === "web") {
+      window.open(url, "_blank");
     } else {
-      const newStore: InstacartStore = { id: store.id, name: store.name };
-      await storage.addInstacartStore(newStore);
-      setSettings(prev => ({
-        ...prev,
-        preferredStores: [...prev.preferredStores, newStore],
-      }));
+      await Linking.openURL(url);
     }
   };
-
-  const handleSetDefaultStore = async (storeId: string) => {
-    await storage.setDefaultInstacartStore(storeId);
-    setSettings(prev => ({
-      ...prev,
-      preferredStores: prev.preferredStores.map(s => ({
-        ...s,
-        isDefault: s.id === storeId,
-      })),
-    }));
-  };
-
-  const defaultStore = settings.preferredStores.find(s => s.isDefault);
 
   return (
     <ScrollView
@@ -142,29 +89,49 @@ export default function InstacartSettingsScreen() {
     >
       <GlassCard>
         <View style={styles.section}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
-            Instacart Connection
-          </ThemedText>
-          <ThemedText type="caption" style={styles.sectionDescription}>
-            Connect to Instacart to search products and add items to your cart
-          </ThemedText>
+          <View style={styles.headerRow}>
+            <View style={[styles.iconContainer, { backgroundColor: "#43B02A" }]}>
+              <Feather name="shopping-bag" size={24} color="#FFFFFF" />
+            </View>
+            <View style={styles.headerText}>
+              <ThemedText type="h4">Instacart Integration</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Shop groceries from your recipes
+              </ThemedText>
+            </View>
+          </View>
 
           <View style={styles.row}>
-            <ThemedText type="body">Enable Instacart</ThemedText>
+            <View>
+              <ThemedText type="body">Enable Instacart</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                {settings.apiKeyConfigured 
+                  ? "Send ingredients directly to Instacart" 
+                  : "API not configured"}
+              </ThemedText>
+            </View>
             <Switch
               value={settings.isConnected}
               onValueChange={handleToggleConnection}
-              trackColor={{ false: theme.border, true: AppColors.primary }}
+              trackColor={{ false: theme.border, true: "#43B02A" }}
               thumbColor="#FFFFFF"
+              disabled={!settings.apiKeyConfigured}
               data-testid="switch-instacart-connection"
             />
           </View>
 
-          {!settings.apiKeyConfigured && (
-            <View style={[styles.warningBanner, { backgroundColor: AppColors.warning + "20" }]}>
+          {settings.apiKeyConfigured ? (
+            <View style={[styles.statusBanner, { backgroundColor: AppColors.success + "20" }]}>
+              <Feather name="check-circle" size={16} color={AppColors.success} />
+              <ThemedText type="caption" style={{ color: AppColors.success, flex: 1 }}>
+                Instacart API is connected and ready
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={[styles.statusBanner, { backgroundColor: AppColors.warning + "20" }]}>
               <Feather name="alert-circle" size={16} color={AppColors.warning} />
-              <ThemedText type="caption" style={styles.warningText}>
-                API key not configured. Contact your admin to set up the Instacart API.
+              <ThemedText type="caption" style={{ color: AppColors.warning, flex: 1 }}>
+                Instacart API key not configured. Contact app admin.
               </ThemedText>
             </View>
           )}
@@ -174,151 +141,93 @@ export default function InstacartSettingsScreen() {
       <GlassCard>
         <View style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            Delivery Location
-          </ThemedText>
-
-          <View style={styles.zipCodeRow}>
-            <View style={styles.zipCodeInputContainer}>
-              <Feather name="map-pin" size={18} color={theme.textSecondary} />
-              <TextInput
-                style={[styles.zipCodeInput, { color: theme.text }]}
-                placeholder="Enter zip code"
-                placeholderTextColor={theme.textSecondary}
-                value={zipCode}
-                onChangeText={setZipCode}
-                keyboardType="number-pad"
-                maxLength={5}
-                editable={isEditing || !settings.zipCode}
-                data-testid="input-zip-code"
-              />
-            </View>
-            {settings.zipCode && !isEditing ? (
-              <Pressable onPress={() => setIsEditing(true)} data-testid="button-edit-zip">
-                <Feather name="edit-2" size={18} color={AppColors.primary} />
-              </Pressable>
-            ) : (
-              <Button
-                variant="primary"
-                onPress={handleSaveZipCode}
-                testID="button-save-zip"
-              >
-                Save
-              </Button>
-            )}
-          </View>
-        </View>
-      </GlassCard>
-
-      <GlassCard>
-        <View style={styles.section}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
-            Preferred Stores
-          </ThemedText>
-          <ThemedText type="caption" style={styles.sectionDescription}>
-            Select the stores you shop at. We'll check availability and prices at these locations.
-          </ThemedText>
-
-          <View style={styles.storeGrid}>
-            {COMMON_STORES.map(store => {
-              const isSelected = settings.preferredStores.some(s => s.id === store.id);
-              return (
-                <Pressable
-                  key={store.id}
-                  style={[
-                    styles.storeChip,
-                    {
-                      backgroundColor: isSelected ? AppColors.primary + "20" : "transparent",
-                      borderColor: isSelected ? AppColors.primary : theme.border,
-                    },
-                  ]}
-                  onPress={() => handleToggleStore(store)}
-                  data-testid={`button-store-${store.id}`}
-                >
-                  <ThemedText
-                    type="body"
-                    style={[styles.storeChipText, isSelected && { color: AppColors.primary }]}
-                  >
-                    {store.name}
-                  </ThemedText>
-                  {isSelected && (
-                    <Feather name="check" size={14} color={AppColors.primary} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      </GlassCard>
-
-      {settings.preferredStores.length > 0 && (
-        <GlassCard>
-          <View style={styles.section}>
-            <ThemedText type="h4" style={styles.sectionTitle}>
-              Default Store
-            </ThemedText>
-            <ThemedText type="caption" style={styles.sectionDescription}>
-              Choose your primary store for quick ordering
-            </ThemedText>
-
-            {settings.preferredStores.map(store => (
-              <Pressable
-                key={store.id}
-                style={[
-                  styles.defaultStoreRow,
-                  { borderColor: store.isDefault ? AppColors.primary : theme.border },
-                ]}
-                onPress={() => handleSetDefaultStore(store.id)}
-                data-testid={`button-default-store-${store.id}`}
-              >
-                <ThemedText type="body">{store.name}</ThemedText>
-                <View
-                  style={[
-                    styles.radioButton,
-                    {
-                      borderColor: store.isDefault ? AppColors.primary : theme.border,
-                      backgroundColor: store.isDefault ? AppColors.primary : "transparent",
-                    },
-                  ]}
-                >
-                  {store.isDefault && <Feather name="check" size={12} color="#FFFFFF" />}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </GlassCard>
-      )}
-
-      <GlassCard>
-        <View style={styles.section}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
             How It Works
           </ThemedText>
-          <View style={styles.infoRow}>
-            <View style={styles.infoBullet}>
-              <ThemedText type="body" style={styles.infoBulletNumber}>1</ThemedText>
+          
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+              <ThemedText style={styles.stepNumberText}>1</ThemedText>
             </View>
-            <ThemedText type="body" style={styles.infoText}>
-              Add items to your shopping list
-            </ThemedText>
+            <View style={styles.stepContent}>
+              <ThemedText type="body">Add to Shopping List</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Add missing recipe ingredients or items you need
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoBullet}>
-              <ThemedText type="body" style={styles.infoBulletNumber}>2</ThemedText>
+
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+              <ThemedText style={styles.stepNumberText}>2</ThemedText>
             </View>
-            <ThemedText type="body" style={styles.infoText}>
-              Tap "Send to Instacart" to match products
-            </ThemedText>
+            <View style={styles.stepContent}>
+              <ThemedText type="body">Send to Instacart</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Tap the button to create your Instacart shopping list
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoBullet}>
-              <ThemedText type="body" style={styles.infoBulletNumber}>3</ThemedText>
+
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+              <ThemedText style={styles.stepNumberText}>3</ThemedText>
             </View>
-            <ThemedText type="body" style={styles.infoText}>
-              Complete your order on Instacart
-            </ThemedText>
+            <View style={styles.stepContent}>
+              <ThemedText type="body">Complete Your Order</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Choose your store and schedule delivery on Instacart
+              </ThemedText>
+            </View>
           </View>
         </View>
       </GlassCard>
+
+      <GlassCard>
+        <View style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Features
+          </ThemedText>
+          
+          <View style={styles.featureRow}>
+            <Feather name="list" size={20} color="#43B02A" />
+            <View style={styles.featureContent}>
+              <ThemedText type="body">Shopping Lists</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Send your shopping list items to Instacart
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.featureRow}>
+            <Feather name="book-open" size={20} color="#43B02A" />
+            <View style={styles.featureContent}>
+              <ThemedText type="body">Recipe Ingredients</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Shop all ingredients for a recipe with one tap
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.featureRow}>
+            <Feather name="truck" size={20} color="#43B02A" />
+            <View style={styles.featureContent}>
+              <ThemedText type="body">Same-Day Delivery</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Get groceries delivered from 85,000+ stores
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+      </GlassCard>
+
+      <Button
+        variant="outline"
+        onPress={handleOpenInstacart}
+        icon={<Feather name="external-link" size={18} color={theme.text} />}
+        data-testid="button-open-instacart"
+      >
+        Open Instacart Website
+      </Button>
     </ScrollView>
   );
 }
@@ -332,14 +241,26 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   section: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerText: {
+    flex: 1,
+    gap: Spacing.xs,
   },
   sectionTitle: {
     marginBottom: Spacing.xs,
-  },
-  sectionDescription: {
-    opacity: 0.7,
-    marginBottom: Spacing.sm,
   },
   row: {
     flexDirection: "row",
@@ -347,92 +268,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: Spacing.sm,
   },
-  warningBanner: {
+  statusBanner: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.sm,
     borderRadius: BorderRadius.sm,
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
-  },
-  warningText: {
-    flex: 1,
-  },
-  zipCodeRow: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: Spacing.sm,
   },
-  zipCodeInputContainer: {
-    flex: 1,
+  stepRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  zipCodeInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  storeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-  },
-  storeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    gap: Spacing.xs,
-  },
-  storeChipText: {
-    fontSize: 14,
-  },
-  defaultStoreRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    marginBottom: Spacing.xs,
-  },
-  radioButton: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
     justifyContent: "center",
-    alignItems: "center",
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
-  },
-  infoBullet: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: AppColors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  infoBulletNumber: {
+  stepNumberText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
   },
-  infoText: {
+  stepContent: {
     flex: 1,
+    gap: Spacing.xs,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  featureContent: {
+    flex: 1,
+    gap: Spacing.xs,
   },
 });

@@ -93,18 +93,6 @@ export default function ShoppingListScreen() {
       return;
     }
 
-    if (!instacartSettings?.isConnected) {
-      Alert.alert(
-        "Connect Instacart",
-        "Please connect to Instacart in Settings to send your shopping list.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Go to Settings", onPress: () => {} },
-        ]
-      );
-      return;
-    }
-
     setSendingToInstacart(true);
 
     try {
@@ -120,34 +108,30 @@ export default function ShoppingListScreen() {
         return;
       }
 
-      const defaultStore = instacartSettings.preferredStores.find(s => s.isDefault);
-      const firstStore = instacartSettings.preferredStores[0];
-      const retailerId = defaultStore?.id || firstStore?.id || "heb";
-
-      const cartResponse = await fetch(`${getApiUrl()}api/instacart/create-cart`, {
+      const listResponse = await fetch(`${getApiUrl()}api/instacart/create-shopping-list`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          title: "ChefSpAIce Shopping List",
           items: uncheckedItems.map((item) => ({
             name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
+            quantity: item.quantity || 1,
+            unit: item.unit || undefined,
+            display_text: `${item.quantity || 1}${item.unit ? ` ${item.unit}` : ""} ${item.name}`,
           })),
-          retailerId,
-          zipCode: instacartSettings.zipCode || "",
         }),
       });
 
-      const cartResult = await cartResponse.json();
+      const result = await listResponse.json();
 
-      if (cartResult.success && cartResult.cartUrl) {
+      if (result.success && result.shoppingListUrl) {
         if (Platform.OS === "web") {
-          window.open(cartResult.cartUrl, "_blank");
+          window.open(result.shoppingListUrl, "_blank");
         } else {
-          await Linking.openURL(cartResult.cartUrl);
+          await Linking.openURL(result.shoppingListUrl);
         }
       } else {
-        Alert.alert("Error", cartResult.error || "Failed to create Instacart cart.");
+        Alert.alert("Error", result.message || result.error || "Failed to create Instacart shopping list.");
       }
     } catch (error) {
       console.error("Instacart error:", error);
