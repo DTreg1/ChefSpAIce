@@ -447,10 +447,11 @@ export default function RecipeDetailScreen() {
       });
 
       let instructionsArray: string[] = [];
-      if (Array.isArray(recipe.instructions)) {
-        instructionsArray = recipe.instructions.map((s: any) => String(s));
-      } else if (typeof recipe.instructions === "string" && recipe.instructions.trim()) {
-        instructionsArray = recipe.instructions.split(/\n+/).filter((s: string) => s.trim());
+      const rawInstructions = recipe.instructions as string[] | string | undefined;
+      if (Array.isArray(rawInstructions)) {
+        instructionsArray = rawInstructions.map((s) => String(s));
+      } else if (typeof rawInstructions === "string" && rawInstructions.trim()) {
+        instructionsArray = rawInstructions.split(/\n+/).filter((s) => s.trim());
       }
 
       const response = await fetch(`${getApiUrl()}api/instacart/create-recipe`, {
@@ -1114,7 +1115,7 @@ const styles = StyleSheet.create({
   },
   instacartButton: {
     marginTop: Spacing.sm,
-    backgroundColor: "#43B02A",
+    backgroundColor: "#003D29",
   },
   instructionRow: {
     flexDirection: "row",

@@ -90,7 +90,7 @@ export default function InstacartSettingsScreen() {
       <GlassCard>
         <View style={styles.section}>
           <View style={styles.headerRow}>
-            <View style={[styles.iconContainer, { backgroundColor: "#43B02A" }]}>
+            <View style={[styles.iconContainer, { backgroundColor: "#003D29" }]}>
               <Feather name="shopping-bag" size={24} color="#FFFFFF" />
             </View>
             <View style={styles.headerText}>
@@ -113,7 +113,7 @@ export default function InstacartSettingsScreen() {
             <Switch
               value={settings.isConnected}
               onValueChange={handleToggleConnection}
-              trackColor={{ false: theme.border, true: "#43B02A" }}
+              trackColor={{ false: theme.border, true: "#003D29" }}
               thumbColor="#FFFFFF"
               disabled={!settings.apiKeyConfigured}
               data-testid="switch-instacart-connection"
@@ -145,7 +145,7 @@ export default function InstacartSettingsScreen() {
           </ThemedText>
           
           <View style={styles.stepRow}>
-            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+            <View style={[styles.stepNumber, { backgroundColor: "#003D29" }]}>
               <ThemedText style={styles.stepNumberText}>1</ThemedText>
             </View>
             <View style={styles.stepContent}>
@@ -157,7 +157,7 @@ export default function InstacartSettingsScreen() {
           </View>
 
           <View style={styles.stepRow}>
-            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+            <View style={[styles.stepNumber, { backgroundColor: "#003D29" }]}>
               <ThemedText style={styles.stepNumberText}>2</ThemedText>
             </View>
             <View style={styles.stepContent}>
@@ -169,7 +169,7 @@ export default function InstacartSettingsScreen() {
           </View>
 
           <View style={styles.stepRow}>
-            <View style={[styles.stepNumber, { backgroundColor: "#43B02A" }]}>
+            <View style={[styles.stepNumber, { backgroundColor: "#003D29" }]}>
               <ThemedText style={styles.stepNumberText}>3</ThemedText>
             </View>
             <View style={styles.stepContent}>
@@ -189,7 +189,7 @@ export default function InstacartSettingsScreen() {
           </ThemedText>
           
           <View style={styles.featureRow}>
-            <Feather name="list" size={20} color="#43B02A" />
+            <Feather name="list" size={20} color="#003D29" />
             <View style={styles.featureContent}>
               <ThemedText type="body">Shopping Lists</ThemedText>
               <ThemedText type="caption" style={{ color: theme.textSecondary }}>
@@ -199,7 +199,7 @@ export default function InstacartSettingsScreen() {
           </View>
 
           <View style={styles.featureRow}>
-            <Feather name="book-open" size={20} color="#43B02A" />
+            <Feather name="book-open" size={20} color="#003D29" />
             <View style={styles.featureContent}>
               <ThemedText type="body">Recipe Ingredients</ThemedText>
               <ThemedText type="caption" style={{ color: theme.textSecondary }}>
@@ -209,7 +209,7 @@ export default function InstacartSettingsScreen() {
           </View>
 
           <View style={styles.featureRow}>
-            <Feather name="truck" size={20} color="#43B02A" />
+            <Feather name="truck" size={20} color="#003D29" />
             <View style={styles.featureContent}>
               <ThemedText type="body">Same-Day Delivery</ThemedText>
               <ThemedText type="caption" style={{ color: theme.textSecondary }}>

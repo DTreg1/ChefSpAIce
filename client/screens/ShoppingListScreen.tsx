@@ -264,7 +264,7 @@ export default function ShoppingListScreen() {
             loading={sendingToInstacart}
             disabled={sendingToInstacart}
             icon={<Feather name={isGuest ? "lock" : "shopping-bag"} size={18} color="#FFFFFF" />}
-            style={[styles.instacartButton, { backgroundColor: isGuest ? theme.textSecondary : "#43B02A" }]}
+            style={[styles.instacartButton, { backgroundColor: isGuest ? theme.textSecondary : "#003D29" }]}
             data-testid="button-send-to-instacart"
           >
             <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
