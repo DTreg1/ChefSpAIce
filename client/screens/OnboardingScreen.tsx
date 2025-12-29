@@ -764,7 +764,7 @@ export default function OnboardingScreen() {
   const { signIn, signUp, signInWithApple, signInWithGoogle, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
   const { isActive: hasActiveSubscription } = useSubscription();
 
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  const [step, setStep] = useState<OnboardingStep>("all-cookware");
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(

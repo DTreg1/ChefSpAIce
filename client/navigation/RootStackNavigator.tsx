@@ -10,6 +10,7 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import SignInScreen from "@/screens/SignInScreen";
 import PricingScreen from "@/screens/PricingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
@@ -20,6 +21,7 @@ import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
+  SignIn: undefined;
   Main: undefined;
   Onboarding: undefined;
   Pricing: undefined;
@@ -65,13 +67,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, []);
 
-  // Set up sign out callback to navigate to Onboarding
+  // Set up sign out callback to navigate to SignIn
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Onboarding" }],
+          routes: [{ name: "SignIn" }],
         })
       );
     });
@@ -85,16 +87,16 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Onboarding
+    // If user was authenticated but now is not, redirect to SignIn
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to Onboarding for authentication
+      // Redirect to SignIn for authentication
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Onboarding" }],
+          routes: [{ name: "SignIn" }],
         })
       );
     }
@@ -159,11 +161,15 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. Not authenticated → Onboarding (includes sign-in UI)
-  // 2. Authenticated but no active subscription → Pricing
-  // 3. Otherwise → Main
+  // 1. Not authenticated → SignIn
+  // 2. Authenticated but needs onboarding → Onboarding
+  // 3. Authenticated but no active subscription → Pricing
+  // 4. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
     if (!isAuthenticated) {
+      return "SignIn";
+    }
+    if (needsOnboarding) {
       return "Onboarding";
     }
     if (!isActive) {
@@ -177,6 +183,11 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
+      <Stack.Screen
+        name="SignIn"
+        component={SignInScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}

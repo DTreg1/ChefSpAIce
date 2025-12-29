@@ -21,6 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/lib/storage";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
+const AppIcon = require("../../assets/images/icon.png");
+
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -170,7 +172,7 @@ export default function SignInScreen() {
       >
         <View style={styles.logoContainer}>
           <Image
-            source={require("@assets/icon.png")}
+            source={AppIcon}
             style={styles.logo}
             resizeMode="contain"
           />
