@@ -66,6 +66,8 @@ type FoodGroup =
   | "protein"
   | "dairy";
 type NutritionFilter = "all" | "lowCal" | "highProtein";
+type ExpirationFilter = "all" | "expired" | "expiring" | "fresh";
+type SortOption = "expiration" | "name" | "quantity" | "recent";
 
 interface StorageLocationOption {
   key: string;
@@ -80,6 +82,20 @@ const FOOD_GROUPS: { key: FoodGroup; label: string }[] = [
   { key: "fruits", label: "Fruits" },
   { key: "protein", label: "Protein" },
   { key: "dairy", label: "Dairy" },
+];
+
+const EXPIRATION_FILTERS: { key: ExpirationFilter; label: string; icon: string }[] = [
+  { key: "all", label: "All", icon: "clock" },
+  { key: "expired", label: "Expired", icon: "alert-circle" },
+  { key: "expiring", label: "Expiring Soon", icon: "alert-triangle" },
+  { key: "fresh", label: "Fresh", icon: "check-circle" },
+];
+
+const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
+  { key: "expiration", label: "Expiration Date", icon: "calendar" },
+  { key: "name", label: "Name A-Z", icon: "type" },
+  { key: "quantity", label: "Quantity", icon: "hash" },
+  { key: "recent", label: "Recently Added", icon: "clock" },
 ];
 
 const CATEGORY_TO_FOOD_GROUP: Record<string, FoodGroup> = {
@@ -189,6 +205,10 @@ export default function InventoryScreen() {
   const [foodGroupFilter, setFoodGroupFilter] = useState<FoodGroup>("all");
   const [nutritionFilter, setNutritionFilter] =
     useState<NutritionFilter>("all");
+  const [expirationFilter, setExpirationFilter] = useState<ExpirationFilter>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("expiration");
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(180);
@@ -269,6 +289,25 @@ export default function InventoryScreen() {
 
   const nutritionTotals = calculateNutritionTotals(filteredItems);
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery.trim()) count++;
+    if (foodGroupFilter !== "all") count++;
+    if (nutritionFilter !== "all") count++;
+    if (expirationFilter !== "all") count++;
+    if (locationFilter !== "all") count++;
+    return count;
+  }, [searchQuery, foodGroupFilter, nutritionFilter, expirationFilter, locationFilter]);
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery("");
+    setFoodGroupFilter("all");
+    setNutritionFilter("all");
+    setExpirationFilter("all");
+    setLocationFilter("all");
+    setSortOption("expiration");
+  }, []);
+
   const loadItems = useCallback(async () => {
     try {
       const inventoryItems = await storage.getInventory();
@@ -302,11 +341,13 @@ export default function InventoryScreen() {
   useEffect(() => {
     let filtered = items;
 
+    // Text search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((item) => {
         const matchesName = item.name.toLowerCase().includes(query);
         const matchesCategory = item.category.toLowerCase().includes(query);
+        const matchesLocation = (item.storageLocation || "").toLowerCase().includes(query);
         const matchesLowCal =
           (query.includes("low cal") || query.includes("lowcal")) &&
           isLowCal(item);
@@ -314,11 +355,12 @@ export default function InventoryScreen() {
           (query.includes("high protein") || query.includes("highprotein")) &&
           isHighProtein(item);
         return (
-          matchesName || matchesCategory || matchesLowCal || matchesHighProtein
+          matchesName || matchesCategory || matchesLocation || matchesLowCal || matchesHighProtein
         );
       });
     }
 
+    // Food group filter
     if (foodGroupFilter !== "all") {
       filtered = filtered.filter((item) => {
         const itemFoodGroup = getItemFoodGroup(item);
@@ -326,21 +368,58 @@ export default function InventoryScreen() {
       });
     }
 
+    // Nutrition filter
     if (nutritionFilter === "lowCal") {
       filtered = filtered.filter((item) => isLowCal(item));
     } else if (nutritionFilter === "highProtein") {
       filtered = filtered.filter((item) => isHighProtein(item));
     }
 
+    // Expiration status filter
+    if (expirationFilter !== "all") {
+      filtered = filtered.filter((item) => {
+        const status = getExpirationStatus(item.expirationDate);
+        return status === expirationFilter;
+      });
+    }
+
+    // Storage location filter
+    if (locationFilter !== "all") {
+      filtered = filtered.filter((item) => {
+        return (item.storageLocation || "pantry") === locationFilter;
+      });
+    }
+
+    // Apply sorting
     filtered.sort((a, b) => {
-      const statusOrder = { expired: 0, expiring: 1, fresh: 2 };
-      const statusA = getExpirationStatus(a.expirationDate);
-      const statusB = getExpirationStatus(b.expirationDate);
-      return statusOrder[statusA] - statusOrder[statusB];
+      switch (sortOption) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "quantity":
+          return b.quantity - a.quantity;
+        case "recent":
+          // Sort by addedDate if available, otherwise by id (newer items have later ids)
+          const dateA = a.addedDate ? new Date(a.addedDate).getTime() : 0;
+          const dateB = b.addedDate ? new Date(b.addedDate).getTime() : 0;
+          return dateB - dateA;
+        case "expiration":
+        default:
+          // Default: sort by expiration status (expired first, then expiring, then fresh)
+          const statusOrder = { expired: 0, expiring: 1, fresh: 2 };
+          const statusA = getExpirationStatus(a.expirationDate);
+          const statusB = getExpirationStatus(b.expirationDate);
+          if (statusA !== statusB) {
+            return statusOrder[statusA] - statusOrder[statusB];
+          }
+          // Within same status, sort by days until expiration
+          const daysA = getDaysUntilExpiration(a.expirationDate);
+          const daysB = getDaysUntilExpiration(b.expirationDate);
+          return daysA - daysB;
+      }
     });
 
     setFilteredItems(filtered);
-  }, [items, searchQuery, foodGroupFilter, nutritionFilter]);
+  }, [items, searchQuery, foodGroupFilter, nutritionFilter, expirationFilter, locationFilter, sortOption]);
 
   const groupedSections = useMemo(() => {
     const locationOrder = storageLocations
@@ -823,10 +902,114 @@ export default function InventoryScreen() {
           ) : null}
         </View>
 
-        <View style={styles.foodGroupFilters}>
+        {/* Filter Summary Row */}
+        {(activeFilterCount > 0 || filteredItems.length !== items.length) && (
+          <View style={styles.filterSummaryRow}>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {filteredItems.length} of {items.length} items
+              {activeFilterCount > 0 ? ` (${activeFilterCount} filter${activeFilterCount > 1 ? 's' : ''} active)` : ''}
+            </ThemedText>
+            {activeFilterCount > 0 && (
+              <Pressable
+                testID="button-clear-filters"
+                style={[
+                  styles.clearFiltersButton,
+                  { borderColor: theme.glass.border },
+                ]}
+                onPress={clearAllFilters}
+              >
+                <Feather name="x" size={12} color={theme.textSecondary} />
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.xs }}>
+                  Clear
+                </ThemedText>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* Expiration Status Filters */}
+        <View style={styles.filterRow}>
+          {EXPIRATION_FILTERS.map((filter) => {
+            const isActive = expirationFilter === filter.key;
+            const getFilterColor = () => {
+              if (!isActive) return theme.textSecondary;
+              switch (filter.key) {
+                case "expired": return AppColors.error;
+                case "expiring": return AppColors.warning;
+                case "fresh": return AppColors.success;
+                default: return AppColors.primary;
+              }
+            };
+            return (
+              <Pressable
+                key={filter.key}
+                testID={`filter-expiration-${filter.key}`}
+                style={[
+                  styles.foodGroupChip,
+                  {
+                    backgroundColor: isActive ? getFilterColor() + "20" : "transparent",
+                    borderColor: isActive ? getFilterColor() : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setExpirationFilter(filter.key)}
+              >
+                <Feather
+                  name={filter.icon as any}
+                  size={12}
+                  color={getFilterColor()}
+                  style={{ marginRight: Spacing.xs }}
+                />
+                <ThemedText
+                  type="caption"
+                  style={{ color: getFilterColor() }}
+                >
+                  {filter.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Storage Location Filters */}
+        <View style={styles.filterRow}>
+          {storageLocations.map((location) => {
+            const isActive = locationFilter === location.key;
+            return (
+              <Pressable
+                key={location.key}
+                testID={`filter-location-${location.key}`}
+                style={[
+                  styles.foodGroupChip,
+                  {
+                    backgroundColor: isActive ? AppColors.primary + "20" : "transparent",
+                    borderColor: isActive ? AppColors.primary : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setLocationFilter(location.key)}
+              >
+                <Feather
+                  name={location.icon as any}
+                  size={12}
+                  color={isActive ? AppColors.primary : theme.textSecondary}
+                  style={{ marginRight: Spacing.xs }}
+                />
+                <ThemedText
+                  type="caption"
+                  style={{ color: isActive ? AppColors.primary : theme.textSecondary }}
+                >
+                  {location.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Food Group + Sort + Export Row */}
+        <View style={styles.filterRow}>
           {FOOD_GROUPS.map((group) => (
             <Pressable
               key={group.key}
+              testID={`filter-foodgroup-${group.key}`}
               style={[
                 styles.foodGroupChip,
                 {
@@ -855,6 +1038,35 @@ export default function InventoryScreen() {
               </ThemedText>
             </Pressable>
           ))}
+          
+          {/* Sort Button */}
+          <Pressable
+            testID="button-sort-inventory"
+            style={[
+              styles.foodGroupChip,
+              {
+                backgroundColor: theme.glass.background,
+                borderColor: theme.glass.border,
+              },
+            ]}
+            onPress={() => {
+              const currentIndex = SORT_OPTIONS.findIndex(s => s.key === sortOption);
+              const nextIndex = (currentIndex + 1) % SORT_OPTIONS.length;
+              setSortOption(SORT_OPTIONS[nextIndex].key);
+            }}
+          >
+            <Feather
+              name={SORT_OPTIONS.find(s => s.key === sortOption)?.icon as any || "bar-chart-2"}
+              size={14}
+              color={theme.textSecondary}
+              style={{ marginRight: Spacing.xs }}
+            />
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {SORT_OPTIONS.find(s => s.key === sortOption)?.label || "Sort"}
+            </ThemedText>
+          </Pressable>
+
+          {/* Export Button */}
           <Pressable
             testID="button-export-inventory"
             style={[
@@ -874,7 +1086,7 @@ export default function InventoryScreen() {
               style={{ marginRight: Spacing.xs }}
             />
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {exporting ? "Exporting..." : "Export"}
+              {exporting ? "..." : "Export"}
             </ThemedText>
           </Pressable>
         </View>
@@ -1104,6 +1316,27 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Spacing.xs,
     marginTop: Spacing.sm,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  filterSummaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  clearFiltersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
   },
   foodGroupChip: {
     alignItems: "center",
