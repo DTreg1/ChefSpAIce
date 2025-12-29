@@ -55,5 +55,5 @@ ensurePreviewReachable = "/status"
 [userenv.shared]
 
 [objectStorage]
-defaultBucketID = "replit-objstore-bb45cfe2-fca6-405a-9fea-bd2b7a4474fb"
+defaultBucketID = "replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc"
 
