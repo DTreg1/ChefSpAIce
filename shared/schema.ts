@@ -409,6 +409,47 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
 
+// Subscriptions table for tracking user subscription status
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id)
+      .unique(),
+    stripeCustomerId: varchar("stripe_customer_id"),
+    stripeSubscriptionId: varchar("stripe_subscription_id"),
+    stripePriceId: varchar("stripe_price_id"),
+    status: varchar("status", { length: 20 }).notNull(), // 'trialing', 'active', 'past_due', 'canceled', 'expired', 'incomplete'
+    planType: varchar("plan_type", { length: 20 }).notNull(), // 'monthly' or 'annual'
+    currentPeriodStart: timestamp("current_period_start").notNull(),
+    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    trialStart: timestamp("trial_start"),
+    trialEnd: timestamp("trial_end"),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+    canceledAt: timestamp("canceled_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_subscriptions_stripe_customer").on(table.stripeCustomerId),
+    index("idx_subscriptions_stripe_subscription").on(table.stripeSubscriptionId),
+    index("idx_subscriptions_status").on(table.status),
+  ],
+);
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+
 export function mergeNutrition(items: NutritionFacts[]): NutritionFacts {
   if (items.length === 0) {
     return {
