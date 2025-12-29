@@ -144,68 +144,58 @@ export async function scheduleExpirationNotifications(): Promise<number> {
 
     if (daysUntilExpiration < 0) continue;
 
-    if (daysUntilExpiration <= alertDays) {
-      const { title, body } = getExpirationMessage(item.name, daysUntilExpiration);
+    let triggerDate: Date;
 
-      let triggerDate = new Date(today);
+    if (daysUntilExpiration <= alertDays) {
+      triggerDate = new Date(today);
       triggerDate.setHours(9, 0, 0, 0);
 
       if (triggerDate <= now) {
-        triggerDate = new Date(now.getTime() + 5000);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+
+        const tomorrowDay = startOfDay(tomorrow);
+        if (differenceInDays(expirationDate, tomorrowDay) >= 0) {
+          triggerDate = tomorrow;
+        } else {
+          continue;
+        }
       }
-
-      await notif.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: {
-            type: "expiration-alert",
-            itemId: item.id,
-            itemName: item.name,
-            daysRemaining: daysUntilExpiration,
-          },
-          sound: true,
-          priority: notif.AndroidNotificationPriority.HIGH,
-        },
-        trigger: {
-          type: notif.SchedulableTriggerInputTypes.DATE,
-          date: triggerDate,
-          channelId: NOTIFICATION_CHANNEL_ID,
-        },
-      });
-
-      scheduledCount++;
     } else {
-      const notificationDate = new Date(expirationDate);
-      notificationDate.setDate(notificationDate.getDate() - alertDays);
-      notificationDate.setHours(9, 0, 0, 0);
+      triggerDate = new Date(expirationDate);
+      triggerDate.setDate(triggerDate.getDate() - alertDays);
+      triggerDate.setHours(9, 0, 0, 0);
 
-      if (notificationDate > now) {
-        const { title, body } = getExpirationMessage(item.name, alertDays);
-
-        await notif.scheduleNotificationAsync({
-          content: {
-            title,
-            body,
-            data: {
-              type: "expiration-alert",
-              itemId: item.id,
-              itemName: item.name,
-              daysRemaining: alertDays,
-            },
-            sound: true,
-            priority: notif.AndroidNotificationPriority.HIGH,
-          },
-          trigger: {
-            type: notif.SchedulableTriggerInputTypes.DATE,
-            date: notificationDate,
-            channelId: NOTIFICATION_CHANNEL_ID,
-          },
-        });
-
-        scheduledCount++;
+      if (triggerDate <= now) {
+        continue;
       }
     }
+
+    const daysAtNotification = differenceInDays(expirationDate, startOfDay(triggerDate));
+    const { title, body } = getExpirationMessage(item.name, daysAtNotification);
+
+    await notif.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          type: "expiration-alert",
+          itemId: item.id,
+          itemName: item.name,
+          daysRemaining: daysAtNotification,
+        },
+        sound: true,
+        priority: notif.AndroidNotificationPriority.HIGH,
+      },
+      trigger: {
+        type: notif.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+        channelId: NOTIFICATION_CHANNEL_ID,
+      },
+    });
+
+    scheduledCount++;
   }
 
   return scheduledCount;
