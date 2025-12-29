@@ -27,7 +27,8 @@ import syncRouter from "./routers/sync.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
-import { userSessions } from "../shared/schema";
+import { userSessions, appliances } from "../shared/schema";
+import { inArray } from "drizzle-orm";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -291,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat endpoint with function calling for authenticated users
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-      const { message, context, history, inventory, userId } = req.body;
+      const { message, context, history, inventory, preferences, equipment, userId } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "Message is required" });
@@ -319,6 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Build inventory context from passed data or fetch from database
       let inventoryContext = context || "";
       let fullInventory: unknown[] = [];
+      let userPreferences = preferences || null;
+      let userEquipment = equipment || [];
       
       if (authenticatedUserId) {
         const userData = await getUserSyncData(authenticatedUserId);
@@ -326,9 +329,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (fullInventory.length > 0) {
           inventoryContext = `Available ingredients: ${fullInventory.map((i: any) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`;
         }
+        // Use server-side preferences/equipment if available
+        if (userData.preferences) {
+          userPreferences = userData.preferences;
+        }
+        if (userData.cookware && userData.cookware.length > 0) {
+          userEquipment = userData.cookware;
+        }
       } else if (inventory && Array.isArray(inventory)) {
         fullInventory = inventory;
         inventoryContext = `Available ingredients: ${inventory.map((i: any) => `${i.quantity || 1} ${i.unit || 'item'} ${i.name}`).join(", ")}`;
+      }
+
+      // Build preferences context
+      let preferencesContext = "";
+      if (userPreferences) {
+        const prefParts: string[] = [];
+        if (userPreferences.dietaryRestrictions?.length > 0) {
+          prefParts.push(`Dietary restrictions: ${userPreferences.dietaryRestrictions.join(", ")}`);
+        }
+        if (userPreferences.cuisinePreferences?.length > 0) {
+          prefParts.push(`Favorite cuisines: ${userPreferences.cuisinePreferences.join(", ")}`);
+        }
+        if (userPreferences.macroTargets) {
+          const mt = userPreferences.macroTargets;
+          prefParts.push(`Daily macro targets: ${mt.calories || "N/A"} cal, ${mt.protein || "N/A"}g protein, ${mt.carbs || "N/A"}g carbs, ${mt.fat || "N/A"}g fat`);
+        }
+        if (prefParts.length > 0) {
+          preferencesContext = `\nUSER'S PREFERENCES:\n${prefParts.join("\n")}`;
+        }
+      }
+
+      // Build equipment context - fetch actual appliance names from database
+      let equipmentContext = "";
+      if (userEquipment && userEquipment.length > 0) {
+        try {
+          // Normalize equipment to array of numeric IDs (handles both raw IDs and objects with id property)
+          const equipmentIds: number[] = userEquipment
+            .map((item: unknown) => {
+              if (typeof item === "number") return item;
+              if (typeof item === "object" && item !== null && "id" in item) {
+                return typeof (item as { id: unknown }).id === "number" 
+                  ? (item as { id: number }).id 
+                  : parseInt(String((item as { id: unknown }).id), 10);
+              }
+              if (typeof item === "string") return parseInt(item, 10);
+              return NaN;
+            })
+            .filter((id: number) => !isNaN(id));
+
+          if (equipmentIds.length > 0) {
+            const applianceRecords = await db
+              .select({ id: appliances.id, name: appliances.name })
+              .from(appliances)
+              .where(inArray(appliances.id, equipmentIds));
+            
+            if (applianceRecords.length > 0) {
+              const applianceNames = applianceRecords.map(a => a.name);
+              equipmentContext = `\nUSER'S KITCHEN EQUIPMENT: ${applianceNames.join(", ")}
+Note: Only suggest recipes that can be made with the equipment the user has. If they don't have specialty appliances, suggest alternatives.`;
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch appliance names:", error);
+        }
       }
 
       const systemPrompt = `You are ChefSpAIce, an intelligent kitchen assistant with the ability to take actions on behalf of users.
@@ -337,8 +401,8 @@ CAPABILITIES:
 - Add items to the user's pantry inventory
 - Mark items as consumed when the user uses them
 - Log wasted items when food goes bad
-- Generate personalized recipes based on available ingredients
-- Create weekly meal plans
+- Generate personalized recipes based on available ingredients and user preferences
+- Create weekly meal plans respecting dietary restrictions
 - Add items to shopping lists
 - Provide cooking tips, nutrition info, and food storage advice
 
@@ -349,7 +413,7 @@ ${inventoryContext}
 
 When suggesting recipes, prioritize ingredients the user actually has. If asked to add, consume, or waste items, use the appropriate function.`
     : "The user has not added any ingredients yet. Encourage them to add items to their pantry to get personalized suggestions."
-}
+}${preferencesContext}${equipmentContext}
 
 ${
   authenticatedUserId
@@ -361,6 +425,8 @@ BEHAVIOR GUIDELINES:
 - Be proactive: If a user says "I just bought milk", add it to their inventory
 - Be helpful: If a user says "I used all the eggs", mark them as consumed
 - Be practical: Keep responses concise and actionable
+- ALWAYS respect the user's dietary restrictions when suggesting or generating recipes
+- Consider the user's cuisine preferences when making suggestions
 - When asked to generate a recipe, always use the generate_recipe function
 - When asked for a meal plan, use create_meal_plan function
 - When asked to add to shopping list, use add_to_shopping_list function`;

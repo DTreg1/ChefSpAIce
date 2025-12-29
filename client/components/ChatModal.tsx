@@ -35,6 +35,7 @@ import {
   generateId,
   FoodItem,
   getDaysUntilExpiration,
+  UserPreferences,
 } from "@/lib/storage";
 import { getApiUrl, apiRequest } from "@/lib/query-client";
 
@@ -75,6 +76,8 @@ export function ChatModal() {
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [equipment, setEquipment] = useState<number[]>([]);
   const [currentTip, setCurrentTip] = useState<WasteTip | null>(null);
   const [expiringCount, setExpiringCount] = useState(0);
   const [tipLoading, setTipLoading] = useState(false);
@@ -141,12 +144,16 @@ export function ChatModal() {
   );
 
   const loadData = useCallback(async () => {
-    const [chatHistory, items] = await Promise.all([
+    const [chatHistory, items, userPrefs, cookware] = await Promise.all([
       storage.getChatHistory(),
       storage.getInventory(),
+      storage.getPreferences(),
+      storage.getCookware(),
     ]);
     setMessages(chatHistory);
     setInventory(items);
+    setPreferences(userPrefs);
+    setEquipment(cookware);
     loadTip(items);
   }, [loadTip]);
 
@@ -214,6 +221,12 @@ export function ChatModal() {
             storageLocation: i.storageLocation,
             category: i.category,
           })),
+          preferences: preferences ? {
+            dietaryRestrictions: preferences.dietaryRestrictions,
+            cuisinePreferences: preferences.cuisinePreferences,
+            macroTargets: preferences.macroTargets,
+          } : null,
+          equipment: equipment,
           history: updatedMessages.slice(-10).map((m) => ({
             role: m.role,
             content: m.content,

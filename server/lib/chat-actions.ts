@@ -322,7 +322,9 @@ export async function getUserSyncData(userId: string) {
       mealPlans: [],
       shoppingList: [],
       wasteLog: [],
-      consumedLog: []
+      consumedLog: [],
+      preferences: null,
+      cookware: []
     };
   }
 
@@ -333,7 +335,9 @@ export async function getUserSyncData(userId: string) {
     mealPlans: data.mealPlans ? JSON.parse(data.mealPlans) : [],
     shoppingList: data.shoppingList ? JSON.parse(data.shoppingList) : [],
     wasteLog: data.wasteLog ? JSON.parse(data.wasteLog) : [],
-    consumedLog: data.consumedLog ? JSON.parse(data.consumedLog) : []
+    consumedLog: data.consumedLog ? JSON.parse(data.consumedLog) : [],
+    preferences: data.preferences ? JSON.parse(data.preferences) : null,
+    cookware: data.cookware ? JSON.parse(data.cookware) : []
   };
 }
 
