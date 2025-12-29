@@ -30,6 +30,8 @@ import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
 import { userSessions, appliances } from "../shared/schema";
+import { requireAuth } from "./middleware/auth";
+import { requireSubscription } from "./middleware/requireSubscription";
 import { inArray } from "drizzle-orm";
 
 const openai = new OpenAI({
@@ -273,22 +275,24 @@ function mapFoodCategory(usdaCategory: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Mount routers
+  // Mount public routers (no subscription required)
   app.use("/api/auth", authRouter);
   app.use("/api/auth/social", socialAuthRouter);
-  app.use("/api/suggestions", suggestionsRouter);
-  app.use("/api/recipes", recipesRouter);
-  app.use("/api/nutrition", nutritionRouter);
-  app.use("/api/cooking-terms", cookingTermsRouter);
-  app.use("/api/instacart", instacartRouter);
-  app.use("/api/appliances", appliancesRouter);
-  app.use("/api/user/appliances", userAppliancesRouter);
-  app.use("/api/voice", voiceRouter);
-  app.use("/api/ai", imageAnalysisRouter);
-  app.use("/api/ingredients", ingredientsRouter);
-  app.use("/api/sync", syncRouter);
-  app.use("/api/feedback", feedbackRouter);
   app.use("/api/subscriptions", subscriptionRouter);
+  app.use("/api/feedback", feedbackRouter);
+  app.use("/api/cooking-terms", cookingTermsRouter);
+  app.use("/api/appliances", appliancesRouter);
+
+  // Mount protected routers (require auth + active subscription)
+  app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
+  app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);
+  app.use("/api/nutrition", requireAuth, requireSubscription, nutritionRouter);
+  app.use("/api/instacart", requireAuth, requireSubscription, instacartRouter);
+  app.use("/api/user/appliances", requireAuth, requireSubscription, userAppliancesRouter);
+  app.use("/api/voice", requireAuth, requireSubscription, voiceRouter);
+  app.use("/api/ai", requireAuth, requireSubscription, imageAnalysisRouter);
+  app.use("/api/ingredients", requireAuth, requireSubscription, ingredientsRouter);
+  app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
 
   // Register object storage routes
   registerObjectStorageRoutes(app);
