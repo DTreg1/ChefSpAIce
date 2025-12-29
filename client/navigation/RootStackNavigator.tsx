@@ -21,7 +21,7 @@ import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
   Main: undefined;
-  Onboarding: { upgradeFromGuest?: boolean } | undefined;
+  Onboarding: undefined;
   Pricing: undefined;
   AddItem:
     | {
@@ -53,12 +53,12 @@ function LoadingScreen() {
 function AuthGuardedNavigator() {
   const screenOptions = useScreenOptions();
   const navigation = useNavigation();
-  const { isAuthenticated, isGuest, isLoading: authLoading, setSignOutCallback } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, setSignOutCallback } = useAuth();
   const { isActive, isLoading: subscriptionLoading, refresh: refreshSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const hasInitialized = useRef(false);
-  const prevAuthState = useRef({ isAuthenticated, isGuest });
+  const prevAuthState = useRef({ isAuthenticated });
   const prevSubscriptionState = useRef({ isActive, subscriptionLoading });
 
   useEffect(() => {
@@ -81,13 +81,13 @@ function AuthGuardedNavigator() {
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      prevAuthState.current = { isAuthenticated, isGuest };
+      prevAuthState.current = { isAuthenticated };
       return;
     }
 
-    // If user was authenticated but now is not (and not guest), redirect appropriately
-    const wasAuthenticated = prevAuthState.current.isAuthenticated || prevAuthState.current.isGuest;
-    const isNowUnauthenticated = !isAuthenticated && !isGuest;
+    // If user was authenticated but now is not, redirect to Onboarding
+    const wasAuthenticated = prevAuthState.current.isAuthenticated;
+    const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
       // Redirect to Onboarding for authentication
@@ -99,8 +99,8 @@ function AuthGuardedNavigator() {
       );
     }
 
-    prevAuthState.current = { isAuthenticated, isGuest };
-  }, [isAuthenticated, isGuest, navigation, needsOnboarding]);
+    prevAuthState.current = { isAuthenticated };
+  }, [isAuthenticated, navigation, needsOnboarding]);
 
   // Monitor subscription state changes and enforce navigation
   useEffect(() => {
@@ -121,7 +121,7 @@ function AuthGuardedNavigator() {
     }
 
     // Authenticated user lost subscription - redirect to Pricing
-    if (isAuthenticated && !isGuest && wasActive && !isActive) {
+    if (isAuthenticated && wasActive && !isActive) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -131,7 +131,7 @@ function AuthGuardedNavigator() {
     }
 
     // Authenticated user gained subscription - redirect to Main
-    if (isAuthenticated && !isGuest && !wasActive && isActive) {
+    if (isAuthenticated && !wasActive && isActive) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -141,7 +141,7 @@ function AuthGuardedNavigator() {
     }
 
     prevSubscriptionState.current = { isActive, subscriptionLoading };
-  }, [isActive, subscriptionLoading, isAuthenticated, isGuest, navigation, authLoading, isLoading]);
+  }, [isActive, subscriptionLoading, isAuthenticated, navigation, authLoading, isLoading]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -159,15 +159,14 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. Not authenticated and not guest → Onboarding (includes sign-in UI)
+  // 1. Not authenticated → Onboarding (includes sign-in UI)
   // 2. Authenticated but no active subscription → Pricing
   // 3. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (!isAuthenticated && !isGuest) {
+    if (!isAuthenticated) {
       return "Onboarding";
     }
-    // Guests can use the app (with limits), authenticated users need subscription
-    if (isAuthenticated && !isActive) {
+    if (!isActive) {
       return "Pricing";
     }
     return "Main";
