@@ -62,6 +62,7 @@ The Express server (server/index.ts) intelligently routes requests based on user
 - **USDA FoodData Central API**: Provides comprehensive nutrition data lookup for food items, requiring an API key.
 - **OpenFoodFacts API**: A free, open-source database for product information including nutrition, brand, and categories, accessed without an API key.
 - **PostgreSQL**: The primary relational database for authenticated user data, connected via `DATABASE_URL` and managed with Drizzle ORM.
+- **Replit Object Storage**: Cloud file storage for user uploads and assets. Uses presigned URL upload flow with `@google-cloud/storage`. Server routes at `/api/uploads/request-url` for presigned URLs and `/objects/*` for serving files. Client components: `ObjectUploader.tsx` (Uppy-based modal) and `use-upload.ts` hook.
 - **expo-camera**: Used for barcode scanning functionality.
 - **date-fns**: For date manipulation in expiration tracking and meal planning.
 - **@react-native-async-storage/async-storage**: Persistent local storage solution.

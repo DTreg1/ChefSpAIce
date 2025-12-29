@@ -24,6 +24,7 @@ import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -280,6 +281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/ai", imageAnalysisRouter);
   app.use("/api/ingredients", ingredientsRouter);
   app.use("/api/sync", syncRouter);
+
+  // Register object storage routes
+  registerObjectStorageRoutes(app);
 
   // Chat endpoint
   app.post("/api/chat", async (req: Request, res: Response) => {

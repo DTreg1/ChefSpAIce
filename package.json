@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@google-cloud/storage": "^7.18.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -40,6 +41,10 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/react-test-renderer": "^19.1.0",
     "@types/supertest": "^6.0.3",
+    "@uppy/aws-s3": "^5.1.0",
+    "@uppy/core": "^5.2.0",
+    "@uppy/dashboard": "^5.1.0",
+    "@uppy/react": "^5.1.1",
     "apple-signin-auth": "^2.0.0",
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
