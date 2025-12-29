@@ -44,6 +44,14 @@ This separation reduces the web bundle from 4.26 MB to ~919 KB (78% smaller).
 - `/privacy` - Privacy Policy
 - `/terms` - Terms of Service
 - `/attributions` - Attributions and credits
+- `/support` - Donation/support page
+
+**Server Routing:**
+The Express server (server/index.ts) intelligently routes requests based on user-agent and environment:
+- Desktop browsers: Proxied to Metro bundler in development; served from static-build in production
+- Mobile browsers: Shown QR code page for Expo Go app installation
+- API routes (/api/*): Handled by Express
+- Expo client requests: Served appropriate manifest for iOS/Android
 
 **Web Donation Section:** The landing page includes a donate section with preset amounts ($5, $10, $25, $50, $100) that redirects to Stripe Checkout. Uses the same `/api/donations/create-checkout-session` endpoint as the mobile app.
 

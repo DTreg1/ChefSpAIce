@@ -1,6 +1,7 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import fileUpload from "express-fileupload";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
@@ -174,6 +175,18 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+function isMobileUserAgent(userAgent: string | undefined): boolean {
+  if (!userAgent) return false;
+  const mobilePatterns = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i;
+  return mobilePatterns.test(userAgent);
+}
+
+function isWebRoute(pathname: string): boolean {
+  const cleanPath = pathname.toLowerCase().split("?")[0];
+  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/support"];
+  return webRoutes.includes(cleanPath);
+}
+
 function configureExpoRouting(app: express.Application) {
   const templatePath = path.resolve(
     process.cwd(),
@@ -183,24 +196,48 @@ function configureExpoRouting(app: express.Application) {
   );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
+  const isDevelopment = process.env.NODE_ENV !== "production";
+  const staticBuildPath = path.resolve(process.cwd(), "static-build");
+  const hasStaticBuild = fs.existsSync(path.join(staticBuildPath, "index.html"));
 
   log("Serving static Expo files with dynamic manifest routing");
+  log(`Environment: ${isDevelopment ? "development" : "production"}, Static build: ${hasStaticBuild ? "available" : "not found"}`);
+
+  let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
+  
+  if (isDevelopment) {
+    metroProxy = createProxyMiddleware({
+      target: "http://localhost:8081",
+      changeOrigin: true,
+      ws: true,
+      on: {
+        error: (err: Error, req: any, res: any) => {
+          log(`Metro proxy error: ${err.message}`);
+          if (res && !res.headersSent && res.writeHead) {
+            res.writeHead(502, { "Content-Type": "text/html" });
+            res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
+          }
+        },
+      },
+    });
+  }
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {
       return next();
     }
 
-    if (req.path !== "/" && req.path !== "/manifest") {
-      return next();
-    }
-
     const platform = req.header("expo-platform");
     if (platform && (platform === "ios" || platform === "android")) {
-      return serveExpoManifest(platform, res);
+      if (req.path === "/" || req.path === "/manifest") {
+        return serveExpoManifest(platform, res);
+      }
     }
 
-    if (req.path === "/") {
+    const userAgent = req.header("user-agent");
+    const isMobile = isMobileUserAgent(userAgent);
+
+    if (req.path === "/" && isMobile && !platform) {
       return serveLandingPage({
         req,
         res,
@@ -209,10 +246,24 @@ function configureExpoRouting(app: express.Application) {
       });
     }
 
+    const isMetroAsset = req.path.startsWith("/_expo") || 
+                          req.path.startsWith("/node_modules") || 
+                          req.path.endsWith(".bundle") || 
+                          req.path.endsWith(".map");
+
+    if (isDevelopment && metroProxy) {
+      if (isWebRoute(req.path) || isMetroAsset) {
+        return metroProxy(req, res, next);
+      }
+    } else if (hasStaticBuild && isWebRoute(req.path)) {
+      const indexPath = path.join(staticBuildPath, "index.html");
+      return res.sendFile(indexPath);
+    }
+
     next();
   });
 
-  log("Expo routing: Checking expo-platform header on / and /manifest");
+  log(`Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving static build"}, mobile browsers get QR page`);
 }
 
 function configureStaticFiles(app: express.Application) {
