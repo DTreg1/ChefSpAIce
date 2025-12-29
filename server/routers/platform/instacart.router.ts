@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { normalizeUnitForInstacart } from "../../lib/unit-conversion";
 
 const router = Router();
 
@@ -135,12 +136,15 @@ async function createInstacartShoppingList(
     throw new Error("Instacart API key not configured");
   }
 
-  const lineItems = items.map(item => ({
-    name: item.name,
-    ...(item.quantity && { quantity: item.quantity }),
-    ...(item.unit && { unit: item.unit }),
-    ...(item.display_text && { display_text: item.display_text }),
-  }));
+  const lineItems = items.map(item => {
+    const instacartUnit = normalizeUnitForInstacart(item.unit);
+    return {
+      name: item.name,
+      ...(item.quantity && { quantity: item.quantity }),
+      ...(instacartUnit && { unit: instacartUnit }),
+      ...(item.display_text && { display_text: item.display_text }),
+    };
+  });
 
   const requestBody: Record<string, any> = {
     title,
@@ -209,12 +213,15 @@ async function createInstacartRecipe(
     throw new Error("Instacart API key not configured");
   }
 
-  const lineItems = ingredients.map(item => ({
-    name: item.name,
-    ...(item.quantity && { quantity: item.quantity }),
-    ...(item.unit && { unit: item.unit }),
-    ...(item.display_text && { display_text: item.display_text }),
-  }));
+  const lineItems = ingredients.map(item => {
+    const instacartUnit = normalizeUnitForInstacart(item.unit);
+    return {
+      name: item.name,
+      ...(item.quantity && { quantity: item.quantity }),
+      ...(instacartUnit && { unit: instacartUnit }),
+      ...(item.display_text && { display_text: item.display_text }),
+    };
+  });
 
   const requestBody: Record<string, any> = {
     title,

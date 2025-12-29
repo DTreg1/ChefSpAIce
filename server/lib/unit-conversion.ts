@@ -314,6 +314,117 @@ export function formatInventoryForPrompt(
   });
 }
 
+/**
+ * Maps units to Instacart-supported unit strings.
+ * Based on https://docs.instacart.com/developer_platform_api/api/units_of_measurement/
+ * 
+ * Instacart supported units:
+ * - Volume: tsp, tbsp, fl oz, cup, pt, qt, gal, ml, l
+ * - Weight: oz, lb, g, kg
+ * - Count: count, dozen, each, pack, bag, bottle, box, bunch, can, carton, 
+ *          clove, container, head, jar, loaf, package, piece, slice, sprig, stalk
+ */
+export function normalizeUnitForInstacart(unit: string | undefined | null): string | undefined {
+  if (!unit) return undefined;
+  
+  const normalized = unit.toLowerCase().trim();
+  
+  const instacartUnitMap: Record<string, string> = {
+    // Volume - Instacart format
+    ml: "ml",
+    milliliter: "ml",
+    milliliters: "ml",
+    l: "l",
+    liter: "l",
+    liters: "l",
+    litre: "l",
+    litres: "l",
+    tsp: "tsp",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    tbsp: "tbsp",
+    tablespoon: "tbsp",
+    tablespoons: "tbsp",
+    cup: "cup",
+    cups: "cup",
+    "fl oz": "fl oz",
+    "fluid ounce": "fl oz",
+    "fluid ounces": "fl oz",
+    pint: "pt",
+    pints: "pt",
+    pt: "pt",
+    quart: "qt",
+    quarts: "qt",
+    qt: "qt",
+    gallon: "gal",
+    gallons: "gal",
+    gal: "gal",
+    
+    // Weight - Instacart format
+    g: "g",
+    gram: "g",
+    grams: "g",
+    kg: "kg",
+    kilogram: "kg",
+    kilograms: "kg",
+    oz: "oz",
+    ounce: "oz",
+    ounces: "oz",
+    lb: "lb",
+    lbs: "lb",
+    pound: "lb",
+    pounds: "lb",
+    
+    // Count - Instacart format
+    piece: "piece",
+    pieces: "piece",
+    pcs: "piece",
+    pc: "piece",
+    item: "each",
+    items: "each",
+    unit: "each",
+    units: "each",
+    each: "each",
+    whole: "each",
+    count: "count",
+    dozen: "dozen",
+    slice: "slice",
+    slices: "slice",
+    clove: "clove",
+    cloves: "clove",
+    head: "head",
+    heads: "head",
+    bunch: "bunch",
+    bunches: "bunch",
+    stalk: "stalk",
+    stalks: "stalk",
+    sprig: "sprig",
+    sprigs: "sprig",
+    can: "can",
+    cans: "can",
+    bottle: "bottle",
+    bottles: "bottle",
+    jar: "jar",
+    jars: "jar",
+    package: "package",
+    packages: "package",
+    pack: "pack",
+    packs: "pack",
+    bag: "bag",
+    bags: "bag",
+    box: "box",
+    boxes: "box",
+    carton: "carton",
+    cartons: "carton",
+    container: "container",
+    containers: "container",
+    loaf: "loaf",
+    loaves: "loaf",
+  };
+  
+  return instacartUnitMap[normalized] || undefined;
+}
+
 export const UNIT_CONVERSION_PROMPT_ADDITION = `
 UNIT HANDLING INSTRUCTIONS:
 - The user's inventory may use different units than your recipe (e.g., grams vs cups, ml vs fl oz)
