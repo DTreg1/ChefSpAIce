@@ -35,10 +35,16 @@ export const users = pgTable("users", {
   cookingSkillLevel: text("cooking_skill_level").notNull().default("beginner"),
   preferredUnits: text("preferred_units").notNull().default("imperial"),
   foodsToAvoid: text("foods_to_avoid").array(),
-  hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
-  notificationsEnabled: boolean("notifications_enabled").notNull().default(false),
+  hasCompletedOnboarding: boolean("has_completed_onboarding")
+    .notNull()
+    .default(false),
+  notificationsEnabled: boolean("notifications_enabled")
+    .notNull()
+    .default(false),
   notifyExpiringFood: boolean("notify_expiring_food").notNull().default(true),
-  notifyRecipeSuggestions: boolean("notify_recipe_suggestions").notNull().default(false),
+  notifyRecipeSuggestions: boolean("notify_recipe_suggestions")
+    .notNull()
+    .default(false),
   notifyMealReminders: boolean("notify_meal_reminders").notNull().default(true),
   notificationTime: text("notification_time").default("09:00"),
   isAdmin: boolean("is_admin").notNull().default(false),
@@ -109,21 +115,6 @@ export const userSyncData = pgTable("user_sync_data", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const inventory = pgTable("inventory", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  userId: varchar("user_id")
-    .notNull()
-    .references(() => users.id),
-  name: text("name").notNull(),
-  quantity: integer("quantity").notNull().default(1),
-  unit: text("unit"),
-  category: text("category"),
-  expiryDate: date("expiry_date"),
-  storageLocation: text("storage_location").default("refrigerator"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const cookingTerms = pgTable(
   "cooking_terms",
   {
@@ -152,11 +143,6 @@ export const cookingTerms = pgTable(
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertInventorySchema = createInsertSchema(inventory).omit({
   createdAt: true,
   updatedAt: true,
 });
@@ -236,8 +222,6 @@ export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertSyncData = z.infer<typeof insertSyncDataSchema>;
 export type UserSyncData = typeof userSyncData.$inferSelect;
-export type InsertInventory = z.infer<typeof insertInventorySchema>;
-export type Inventory = typeof inventory.$inferSelect;
 export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
 export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
