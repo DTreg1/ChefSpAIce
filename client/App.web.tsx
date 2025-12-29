@@ -7,13 +7,20 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import Constants from "expo-constants";
-import MobileApp from "./App";
+import MobileApp from "./NativeApp";
 
-const SKIP_LANDING = Constants.expoConfig?.extra?.skipLanding === true || 
-                     process.env.EXPO_PUBLIC_SKIP_LANDING === "true" || 
-                     process.env.EXPO_PUBLIC_SKIP_LANDING === "1";
+const SKIP_LANDING =
+  Constants.expoConfig?.extra?.skipLanding === true ||
+  process.env.EXPO_PUBLIC_SKIP_LANDING === "true" ||
+  process.env.EXPO_PUBLIC_SKIP_LANDING === "1";
 
-type WebRoute = "/" | "/about" | "/privacy" | "/terms" | "/attributions" | "/support";
+type WebRoute =
+  | "/"
+  | "/about"
+  | "/privacy"
+  | "/terms"
+  | "/attributions"
+  | "/support";
 
 function getRouteFromPath(pathname: string): WebRoute {
   const normalized = pathname.toLowerCase();
@@ -26,8 +33,10 @@ function getRouteFromPath(pathname: string): WebRoute {
 }
 
 function WebRouter() {
-  const [route, setRoute] = useState<WebRoute>(() => 
-    getRouteFromPath(typeof window !== "undefined" ? window.location.pathname : "/")
+  const [route, setRoute] = useState<WebRoute>(() =>
+    getRouteFromPath(
+      typeof window !== "undefined" ? window.location.pathname : "/",
+    ),
   );
 
   useEffect(() => {
@@ -47,19 +56,29 @@ function WebRouter() {
 
       const target = e.target as HTMLElement;
       const anchor = target.closest("a");
-      
+
       if (!anchor || !anchor.href) return;
-      
+
       if (anchor.target && anchor.target !== "_self") return;
       if (anchor.hasAttribute("download")) return;
-      if (anchor.href.startsWith("mailto:") || anchor.href.startsWith("tel:")) return;
+      if (anchor.href.startsWith("mailto:") || anchor.href.startsWith("tel:"))
+        return;
 
       try {
         const url = new URL(anchor.href);
         if (url.origin !== window.location.origin) return;
-        
+
         const newRoute = getRouteFromPath(url.pathname);
-        if (["/", "/about", "/privacy", "/terms", "/attributions", "/support"].includes(newRoute)) {
+        if (
+          [
+            "/",
+            "/about",
+            "/privacy",
+            "/terms",
+            "/attributions",
+            "/support",
+          ].includes(newRoute)
+        ) {
           e.preventDefault();
           const fullPath = url.pathname + url.search + url.hash;
           window.history.pushState({}, "", fullPath);
@@ -95,7 +114,7 @@ export default function App() {
   if (SKIP_LANDING) {
     return <MobileApp />;
   }
-  
+
   return (
     <WebThemeProvider>
       <WebRouter />
