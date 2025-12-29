@@ -132,6 +132,7 @@ export async function scheduleExpirationNotifications(): Promise<number> {
   const inventory = await storage.getInventory();
   const alertDays = preferences.expirationAlertDays || 3;
   const today = startOfDay(new Date());
+  const now = new Date();
 
   let scheduledCount = 0;
 
@@ -141,13 +142,11 @@ export async function scheduleExpirationNotifications(): Promise<number> {
     const expirationDate = startOfDay(parseISO(item.expirationDate));
     const daysUntilExpiration = differenceInDays(expirationDate, today);
 
-    if (daysUntilExpiration === alertDays) {
-      const { title, body } = getExpirationMessage(
-        item.name,
-        daysUntilExpiration,
-      );
+    if (daysUntilExpiration < 0) continue;
 
-      const now = new Date();
+    if (daysUntilExpiration <= alertDays) {
+      const { title, body } = getExpirationMessage(item.name, daysUntilExpiration);
+
       let triggerDate = new Date(today);
       triggerDate.setHours(9, 0, 0, 0);
 
@@ -176,6 +175,36 @@ export async function scheduleExpirationNotifications(): Promise<number> {
       });
 
       scheduledCount++;
+    } else {
+      const notificationDate = new Date(expirationDate);
+      notificationDate.setDate(notificationDate.getDate() - alertDays);
+      notificationDate.setHours(9, 0, 0, 0);
+
+      if (notificationDate > now) {
+        const { title, body } = getExpirationMessage(item.name, alertDays);
+
+        await notif.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            data: {
+              type: "expiration-alert",
+              itemId: item.id,
+              itemName: item.name,
+              daysRemaining: alertDays,
+            },
+            sound: true,
+            priority: notif.AndroidNotificationPriority.HIGH,
+          },
+          trigger: {
+            type: notif.SchedulableTriggerInputTypes.DATE,
+            date: notificationDate,
+            channelId: NOTIFICATION_CHANNEL_ID,
+          },
+        });
+
+        scheduledCount++;
+      }
     }
   }
 

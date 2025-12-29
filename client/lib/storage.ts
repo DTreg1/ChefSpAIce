@@ -3,6 +3,20 @@ import { Platform } from "react-native";
 import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { syncManager } from "@/lib/sync-manager";
 
+let scheduleNotifications: (() => Promise<number>) | null = null;
+
+async function triggerNotificationReschedule() {
+  if (!scheduleNotifications) {
+    const { scheduleExpirationNotifications } = await import("@/lib/notifications");
+    scheduleNotifications = scheduleExpirationNotifications;
+  }
+  try {
+    await scheduleNotifications();
+  } catch (error) {
+    console.error("Failed to reschedule notifications:", error);
+  }
+}
+
 const STORAGE_KEYS = {
   AUTH_TOKEN: "@chefspaice/auth_token",
   INVENTORY: "@chefspaice/inventory",
@@ -268,6 +282,10 @@ export const storage = {
     if (token) {
       syncManager.queueChange("inventory", "create", item);
     }
+    
+    if (item.expirationDate) {
+      triggerNotificationReschedule();
+    }
   },
 
   async addInventoryItems(
@@ -295,6 +313,10 @@ export const storage = {
       }
     }
     
+    if (newItems.some(item => item.expirationDate)) {
+      triggerNotificationReschedule();
+    }
+    
     return { added, failed };
   },
 
@@ -302,6 +324,7 @@ export const storage = {
     const items = await this.getInventory();
     const index = items.findIndex((i) => i.id === item.id);
     if (index !== -1) {
+      const oldItem = items[index];
       items[index] = item;
       await this.setInventory(items);
       
@@ -309,16 +332,25 @@ export const storage = {
       if (token) {
         syncManager.queueChange("inventory", "update", item);
       }
+      
+      if (oldItem.expirationDate !== item.expirationDate || item.expirationDate) {
+        triggerNotificationReschedule();
+      }
     }
   },
 
   async deleteInventoryItem(id: string): Promise<void> {
     const items = await this.getInventory();
+    const deletedItem = items.find((i) => i.id === id);
     await this.setInventory(items.filter((i) => i.id !== id));
     
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("inventory", "delete", { id });
+    }
+    
+    if (deletedItem?.expirationDate) {
+      triggerNotificationReschedule();
     }
   },
 
