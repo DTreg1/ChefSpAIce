@@ -199,9 +199,13 @@ function configureExpoRouting(app: express.Application) {
   const isDevelopment = process.env.NODE_ENV !== "production";
   const staticBuildPath = path.resolve(process.cwd(), "static-build");
   const hasStaticBuild = fs.existsSync(path.join(staticBuildPath, "index.html"));
+  const skipLanding = process.env.SKIP_LANDING === "true" || process.env.SKIP_LANDING === "1";
 
   log("Serving static Expo files with dynamic manifest routing");
   log(`Environment: ${isDevelopment ? "development" : "production"}, Static build: ${hasStaticBuild ? "available" : "not found"}`);
+  if (skipLanding) {
+    log("SKIP_LANDING enabled: Desktop browsers will see mobile app instead of landing page");
+  }
 
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
   
@@ -237,7 +241,9 @@ function configureExpoRouting(app: express.Application) {
     const userAgent = req.header("user-agent");
     const isMobile = isMobileUserAgent(userAgent);
 
-    if (req.path === "/" && isMobile && !platform) {
+    // When SKIP_LANDING is enabled, show QR code page to all browsers (mobile and desktop)
+    // This allows developers to skip the web landing page and test the mobile app directly
+    if (req.path === "/" && (isMobile || skipLanding) && !platform) {
       return serveLandingPage({
         req,
         res,
@@ -251,13 +257,19 @@ function configureExpoRouting(app: express.Application) {
                           req.path.endsWith(".bundle") || 
                           req.path.endsWith(".map");
 
-    if (isDevelopment && metroProxy) {
-      if (isWebRoute(req.path) || isMetroAsset) {
-        return metroProxy(req, res, next);
+    // Only serve web landing page if SKIP_LANDING is not enabled
+    if (!skipLanding) {
+      if (isDevelopment && metroProxy) {
+        if (isWebRoute(req.path) || isMetroAsset) {
+          return metroProxy(req, res, next);
+        }
+      } else if (hasStaticBuild && isWebRoute(req.path)) {
+        const indexPath = path.join(staticBuildPath, "index.html");
+        return res.sendFile(indexPath);
       }
-    } else if (hasStaticBuild && isWebRoute(req.path)) {
-      const indexPath = path.join(staticBuildPath, "index.html");
-      return res.sendFile(indexPath);
+    } else if (isDevelopment && metroProxy && isMetroAsset) {
+      // Still proxy Metro assets even when skipping landing (needed for Expo Go)
+      return metroProxy(req, res, next);
     }
 
     next();
