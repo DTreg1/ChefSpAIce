@@ -389,6 +389,48 @@ export function ChatModal() {
           ),
         )}
       </View>
+      <View style={styles.feedbackSuggestions}>
+        {["Send Feedback", "Report Bug"].map((suggestion, index) => (
+          <Pressable
+            key={`feedback-${index}`}
+            style={[
+              styles.feedbackChip,
+              {
+                borderWidth: 1,
+                borderColor: suggestion === "Report Bug" 
+                  ? (isDark ? "rgba(255,100,100,0.4)" : "rgba(200,50,50,0.3)")
+                  : (isDark ? "rgba(100,200,255,0.4)" : "rgba(50,150,200,0.3)"),
+                backgroundColor: suggestion === "Report Bug"
+                  ? (isDark ? "rgba(255,100,100,0.1)" : "rgba(200,50,50,0.08)")
+                  : (isDark ? "rgba(100,200,255,0.1)" : "rgba(50,150,200,0.08)"),
+              },
+            ]}
+            onPress={() => setInputText(suggestion === "Send Feedback" 
+              ? "I'd like to send some feedback" 
+              : "I want to report a bug")}
+          >
+            <Feather 
+              name={suggestion === "Report Bug" ? "alert-circle" : "message-square"} 
+              size={10} 
+              color={suggestion === "Report Bug" 
+                ? (isDark ? "#ff8888" : "#cc4444") 
+                : (isDark ? "#88ccff" : "#4488cc")} 
+              style={{ marginRight: 4 }}
+            />
+            <ThemedText 
+              type="caption" 
+              style={{ 
+                fontSize: 10,
+                color: suggestion === "Report Bug" 
+                  ? (isDark ? "#ff8888" : "#cc4444") 
+                  : (isDark ? "#88ccff" : "#4488cc"),
+              }}
+            >
+              {suggestion}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
     </GlassView>
   );
 
@@ -734,6 +776,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   suggestionChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+  },
+  feedbackSuggestions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+    justifyContent: "center",
+    marginTop: Spacing.sm,
+  },
+  feedbackChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.md,
