@@ -25,6 +25,7 @@ import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
 import feedbackRouter from "./routers/feedback.router";
+import subscriptionRouter from "./stripe/subscriptionRouter";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
@@ -287,6 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/ingredients", ingredientsRouter);
   app.use("/api/sync", syncRouter);
   app.use("/api/feedback", feedbackRouter);
+  app.use("/api/subscriptions", subscriptionRouter);
 
   // Register object storage routes
   registerObjectStorageRoutes(app);
