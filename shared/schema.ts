@@ -374,6 +374,41 @@ export type InsertNutritionCorrection = z.infer<
 >;
 export type NutritionCorrection = typeof nutritionCorrections.$inferSelect;
 
+// Feedback table for user feedback and bug reports
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id").references(() => users.id),
+    type: varchar("type", { length: 20 }).notNull(), // 'feedback' or 'bug'
+    category: varchar("category", { length: 50 }), // 'suggestion', 'general', 'compliment', 'question' for feedback; 'crash', 'ui', 'data', 'performance' for bugs
+    message: text("message").notNull(),
+    userEmail: varchar("user_email", { length: 255 }),
+    deviceInfo: text("device_info"), // JSON string with device/browser info
+    screenContext: varchar("screen_context", { length: 100 }), // Which screen they were on
+    stepsToReproduce: text("steps_to_reproduce"), // For bug reports
+    severity: varchar("severity", { length: 20 }), // 'minor', 'major', 'critical' for bugs
+    status: varchar("status", { length: 20 }).default("new").notNull(), // 'new', 'reviewed', 'resolved', 'closed'
+    adminNotes: text("admin_notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_feedback_type").on(table.type),
+    index("idx_feedback_status").on(table.status),
+    index("idx_feedback_created").on(table.createdAt),
+  ],
+);
+
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type Feedback = typeof feedback.$inferSelect;
+
 export function mergeNutrition(items: NutritionFacts[]): NutritionFacts {
   if (items.length === 0) {
     return {
