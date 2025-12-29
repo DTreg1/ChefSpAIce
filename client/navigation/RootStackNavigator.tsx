@@ -10,16 +10,19 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import PricingScreen from "@/screens/PricingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 export type RootStackParamList = {
   Main: undefined;
   Onboarding: { upgradeFromGuest?: boolean } | undefined;
+  Pricing: undefined;
   AddItem:
     | {
         barcode?: string;
@@ -51,10 +54,12 @@ function AuthGuardedNavigator() {
   const screenOptions = useScreenOptions();
   const navigation = useNavigation();
   const { isAuthenticated, isGuest, isLoading: authLoading, setSignOutCallback } = useAuth();
+  const { isActive, isLoading: subscriptionLoading, refresh: refreshSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const hasInitialized = useRef(false);
   const prevAuthState = useRef({ isAuthenticated, isGuest });
+  const prevSubscriptionState = useRef({ isActive, subscriptionLoading });
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -97,6 +102,47 @@ function AuthGuardedNavigator() {
     prevAuthState.current = { isAuthenticated, isGuest };
   }, [isAuthenticated, isGuest, navigation, needsOnboarding]);
 
+  // Monitor subscription state changes and enforce navigation
+  useEffect(() => {
+    // Skip during loading
+    if (subscriptionLoading || authLoading || isLoading) {
+      prevSubscriptionState.current = { isActive, subscriptionLoading };
+      return;
+    }
+
+    const wasLoading = prevSubscriptionState.current.subscriptionLoading;
+    const wasActive = prevSubscriptionState.current.isActive;
+
+    // Only act on state changes after initial load completes
+    if (!wasLoading && subscriptionLoading) {
+      // Starting to load, skip
+      prevSubscriptionState.current = { isActive, subscriptionLoading };
+      return;
+    }
+
+    // Authenticated user lost subscription - redirect to Pricing
+    if (isAuthenticated && !isGuest && wasActive && !isActive) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Pricing" }],
+        })
+      );
+    }
+
+    // Authenticated user gained subscription - redirect to Main
+    if (isAuthenticated && !isGuest && !wasActive && isActive) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        })
+      );
+    }
+
+    prevSubscriptionState.current = { isActive, subscriptionLoading };
+  }, [isActive, subscriptionLoading, isAuthenticated, isGuest, navigation, authLoading, isLoading]);
+
   const checkOnboardingStatus = async () => {
     try {
       const needs = await storage.needsOnboarding();
@@ -108,16 +154,21 @@ function AuthGuardedNavigator() {
     }
   };
 
-  if (isLoading || authLoading) {
+  if (isLoading || authLoading || subscriptionLoading) {
     return <LoadingScreen />;
   }
 
   // Determine initial route:
   // 1. Not authenticated and not guest → Onboarding (includes sign-in UI)
-  // 2. Otherwise → Main
+  // 2. Authenticated but no active subscription → Pricing
+  // 3. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
     if (!isAuthenticated && !isGuest) {
       return "Onboarding";
+    }
+    // Guests can use the app (with limits), authenticated users need subscription
+    if (isAuthenticated && !isActive) {
+      return "Pricing";
     }
     return "Main";
   };
@@ -130,6 +181,11 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Pricing"
+        component={PricingScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

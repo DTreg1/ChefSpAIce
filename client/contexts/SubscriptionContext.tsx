@@ -71,6 +71,7 @@ export function SubscriptionProvider({
       return;
     }
 
+    setIsLoading(true);
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/subscriptions/status", baseUrl);
