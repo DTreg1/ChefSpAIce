@@ -1,11 +1,45 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData } from "@shared/schema";
+import { users, userSessions, userSyncData, subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 
 const router = Router();
+
+type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
+type PlanType = 'monthly' | 'annual' | null;
+
+interface SubscriptionInfo {
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionPlanType: PlanType;
+  trialEndsAt: string | null;
+  subscriptionEndsAt: string | null;
+}
+
+async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (!subscription) {
+    return {
+      subscriptionStatus: 'none',
+      subscriptionPlanType: null,
+      trialEndsAt: null,
+      subscriptionEndsAt: null,
+    };
+  }
+
+  return {
+    subscriptionStatus: subscription.status as SubscriptionStatus,
+    subscriptionPlanType: subscription.planType as PlanType,
+    trialEndsAt: subscription.trialEnd?.toISOString() || null,
+    subscriptionEndsAt: subscription.currentPeriodEnd?.toISOString() || null,
+  };
+}
 const BCRYPT_ROUNDS = 12;
 
 async function hashPassword(password: string): Promise<string> {
@@ -77,12 +111,15 @@ router.post("/register", async (req: Request, res: Response) => {
       userId: newUser.id,
     });
 
+    const subscriptionInfo = await getSubscriptionInfo(newUser.id);
+
     res.status(201).json({
       user: {
         id: newUser.id,
         email: newUser.email,
         displayName: newUser.displayName,
         createdAt: newUser.createdAt?.toISOString() || new Date().toISOString(),
+        ...subscriptionInfo,
       },
       token,
     });
@@ -124,12 +161,15 @@ router.post("/login", async (req: Request, res: Response) => {
       expiresAt,
     });
 
+    const subscriptionInfo = await getSubscriptionInfo(user.id);
+
     res.json({
       user: {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        ...subscriptionInfo,
       },
       token,
     });
@@ -185,12 +225,15 @@ router.get("/me", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "User not found" });
     }
 
+    const subscriptionInfo = await getSubscriptionInfo(user.id);
+
     res.json({
       user: {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        ...subscriptionInfo,
       },
     });
   } catch (error) {
