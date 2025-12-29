@@ -7,6 +7,8 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import PricingScreen from "@/screens/web/PricingScreen";
+import SubscriptionSuccessScreen from "@/src/pages/subscription-success";
+import SubscriptionCanceledScreen from "@/src/pages/subscription-canceled";
 import Constants from "expo-constants";
 import MobileApp from "./NativeApp";
 
@@ -22,7 +24,9 @@ type WebRoute =
   | "/terms"
   | "/attributions"
   | "/support"
-  | "/pricing";
+  | "/pricing"
+  | "/subscription-success"
+  | "/subscription-canceled";
 
 function getRouteFromPath(pathname: string): WebRoute {
   const normalized = pathname.toLowerCase();
@@ -32,6 +36,8 @@ function getRouteFromPath(pathname: string): WebRoute {
   if (normalized === "/attributions") return "/attributions";
   if (normalized === "/support") return "/support";
   if (normalized === "/pricing") return "/pricing";
+  if (normalized === "/subscription-success") return "/subscription-success";
+  if (normalized === "/subscription-canceled") return "/subscription-canceled";
   return "/";
 }
 
@@ -81,6 +87,8 @@ function WebRouter() {
             "/attributions",
             "/support",
             "/pricing",
+            "/subscription-success",
+            "/subscription-canceled",
           ].includes(newRoute)
         ) {
           e.preventDefault();
@@ -111,6 +119,10 @@ function WebRouter() {
       return <SupportScreen />;
     case "/pricing":
       return <PricingScreen />;
+    case "/subscription-success":
+      return <SubscriptionSuccessScreen />;
+    case "/subscription-canceled":
+      return <SubscriptionCanceledScreen />;
     default:
       return <LandingScreen />;
   }

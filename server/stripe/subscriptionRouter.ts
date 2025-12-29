@@ -273,4 +273,43 @@ router.get("/publishable-key", async (_req: Request, res: Response) => {
   }
 });
 
+router.get("/session/:sessionId", async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "Session ID is required" });
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    const subscription = session.subscription as {
+      id?: string;
+      trial_end?: number | null;
+      current_period_end?: number | null;
+      items?: { data?: Array<{ price?: { recurring?: { interval?: string } } }> };
+    } | null;
+
+    res.json({
+      customerEmail: session.customer_email || session.customer_details?.email || null,
+      subscriptionId: typeof session.subscription === "string" ? session.subscription : subscription?.id || null,
+      planType: subscription?.items?.data?.[0]?.price?.recurring?.interval === "year" ? "annual" : "monthly",
+      trialEnd: subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+      amount: session.amount_total,
+      currency: session.currency,
+    });
+  } catch (error) {
+    console.error("Error fetching session details:", error);
+    res.status(500).json({ error: "Failed to fetch session details" });
+  }
+});
+
 export default router;
