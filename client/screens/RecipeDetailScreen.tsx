@@ -43,6 +43,7 @@ import {
 } from "@/lib/storage";
 
 import { hasSwapsAvailable, IngredientSwap } from "@/lib/ingredient-swaps";
+import { exportSingleRecipeToPDF } from "@/lib/export";
 
 import { getApiUrl } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
@@ -83,6 +84,7 @@ export default function RecipeDetailScreen() {
   const [swapModalVisible, setSwapModalVisible] = useState(false);
   const [selectedIngredient, setSelectedIngredient] =
     useState<RecipeIngredient | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const stepPositions = useRef<Record<number, number>>({});
@@ -274,11 +276,27 @@ export default function RecipeDetailScreen() {
                 style={{ opacity: recipe.isFavorite ? 1 : 0.6 }}
               />
             </HeaderButton>
+            <HeaderButton onPress={handleShare}>
+              <Feather
+                name="share-2"
+                size={22}
+                color={theme.text}
+                style={{ opacity: 0.6 }}
+              />
+            </HeaderButton>
+            <HeaderButton onPress={handleExportPDF} disabled={exporting}>
+              <Feather
+                name="download"
+                size={22}
+                color={exporting ? theme.textSecondary : theme.text}
+                style={{ opacity: exporting ? 0.3 : 0.6 }}
+              />
+            </HeaderButton>
           </View>
         ),
       });
     }
-  }, [navigation, recipe, theme, showVoiceControls]);
+  }, [navigation, recipe, theme, showVoiceControls, exporting]);
 
   const handleToggleFavorite = async () => {
     if (!recipe) return;
@@ -374,6 +392,19 @@ export default function RecipeDetailScreen() {
       });
     } catch (error) {
       console.error("Error sharing recipe:", error);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!recipe || exporting) return;
+    setExporting(true);
+    try {
+      await exportSingleRecipeToPDF(recipe);
+    } catch (error) {
+      console.error("Error exporting recipe:", error);
+      Alert.alert("Export Error", "Failed to export the recipe. Please try again.");
+    } finally {
+      setExporting(false);
     }
   };
 

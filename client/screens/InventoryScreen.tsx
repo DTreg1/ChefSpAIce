@@ -55,6 +55,7 @@ import {
   WasteLogEntry,
   DEFAULT_STORAGE_LOCATIONS,
 } from "@/lib/storage";
+import { exportInventoryToCSV, exportInventoryToPDF } from "@/lib/export";
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 
 type FoodGroup =
@@ -198,6 +199,47 @@ export default function InventoryScreen() {
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map(loc => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(() => {
+    if (items.length === 0) {
+      Alert.alert("No Data", "There are no inventory items to export.");
+      return;
+    }
+    Alert.alert(
+      "Export Inventory",
+      "Choose export format:",
+      [
+        {
+          text: "CSV (Spreadsheet)",
+          onPress: async () => {
+            setExporting(true);
+            try {
+              await exportInventoryToCSV(items);
+            } catch (error) {
+              Alert.alert("Export Failed", "Unable to export inventory. Please try again.");
+            } finally {
+              setExporting(false);
+            }
+          },
+        },
+        {
+          text: "PDF (Document)",
+          onPress: async () => {
+            setExporting(true);
+            try {
+              await exportInventoryToPDF(items);
+            } catch (error) {
+              Alert.alert("Export Failed", "Unable to export inventory. Please try again.");
+            } finally {
+              setExporting(false);
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
+  }, [items]);
 
   const calculateNutritionTotals = useCallback((itemList: FoodItem[]) => {
     let totalCalories = 0;
@@ -813,6 +855,28 @@ export default function InventoryScreen() {
               </ThemedText>
             </Pressable>
           ))}
+          <Pressable
+            testID="button-export-inventory"
+            style={[
+              styles.foodGroupChip,
+              {
+                backgroundColor: theme.glass.background,
+                borderColor: theme.glass.border,
+              },
+            ]}
+            onPress={handleExport}
+            disabled={exporting}
+          >
+            <Feather
+              name="download"
+              size={14}
+              color={theme.textSecondary}
+              style={{ marginRight: Spacing.xs }}
+            />
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {exporting ? "Exporting..." : "Export"}
+            </ThemedText>
+          </Pressable>
         </View>
       </BlurView>
 

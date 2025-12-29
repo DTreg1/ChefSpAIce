@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +30,7 @@ import {
   GlassEffect,
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
+import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { getApiUrl } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 
@@ -51,6 +53,47 @@ export default function RecipesScreen() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [filterByCookware, setFilterByCookware] = useState(false);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(() => {
+    if (recipes.length === 0) {
+      Alert.alert("No Data", "There are no recipes to export.");
+      return;
+    }
+    Alert.alert(
+      "Export Recipes",
+      "Choose export format:",
+      [
+        {
+          text: "CSV (Spreadsheet)",
+          onPress: async () => {
+            setExporting(true);
+            try {
+              await exportRecipesToCSV(recipes);
+            } catch (error) {
+              Alert.alert("Export Failed", "Unable to export recipes. Please try again.");
+            } finally {
+              setExporting(false);
+            }
+          },
+        },
+        {
+          text: "PDF (Document)",
+          onPress: async () => {
+            setExporting(true);
+            try {
+              await exportRecipesToPDF(recipes);
+            } catch (error) {
+              Alert.alert("Export Failed", "Unable to export recipes. Please try again.");
+            } finally {
+              setExporting(false);
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
+  }, [recipes]);
 
   const loadData = useCallback(async (showSkeleton = false) => {
     if (showSkeleton) setLoading(true);
@@ -405,6 +448,25 @@ export default function RecipesScreen() {
           <Feather name="message-circle" size={16} color={theme.text} />
           <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
             Ask Chef
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          testID="button-export-recipes"
+          style={[
+            styles.filterChip,
+            {
+              backgroundColor: theme.glass.background,
+              borderColor: theme.glass.border,
+              borderWidth: 1,
+            },
+          ]}
+          onPress={handleExport}
+          disabled={exporting}
+        >
+          <Feather name="download" size={16} color={theme.text} />
+          <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
+            {exporting ? "..." : "Export"}
           </ThemedText>
         </Pressable>
       </View>
