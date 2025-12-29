@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { WebThemeProvider } from "@/contexts/WebThemeContext";
 import LandingScreen from "@/screens/LandingScreen";
 import AboutScreen from "@/screens/web/AboutScreen";
@@ -11,7 +11,9 @@ import AdminSubscriptionsScreen from "@/screens/web/AdminSubscriptionsScreen";
 import SubscriptionSuccessScreen from "@/src/pages/subscription-success";
 import SubscriptionCanceledScreen from "@/src/pages/subscription-canceled";
 import Constants from "expo-constants";
-import MobileApp from "./NativeApp";
+import { View, Text, ActivityIndicator } from "react-native";
+
+const MobileApp = lazy(() => import("./NativeApp"));
 
 const SKIP_LANDING =
   Constants.expoConfig?.extra?.skipLanding === true ||
@@ -136,7 +138,16 @@ function WebRouter() {
 
 export default function App() {
   if (SKIP_LANDING) {
-    return <MobileApp />;
+    return (
+      <Suspense fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F1419' }}>
+          <ActivityIndicator size="large" color="#27AE60" />
+          <Text style={{ color: '#FFFFFF', marginTop: 16 }}>Loading...</Text>
+        </View>
+      }>
+        <MobileApp />
+      </Suspense>
+    );
   }
 
   return (

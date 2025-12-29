@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -6,6 +6,14 @@ import { useWebTheme } from "@/contexts/WebThemeContext";
 
 const BRAND_GREEN = "#27AE60";
 const AUTH_TOKEN_KEY = "chefspaice-auth-token";
+
+// Global guard to prevent re-fetching (survives HMR/module reloads)
+declare global {
+  interface Window {
+    __pricingFetched?: boolean;
+    __pricingCache?: { monthly: PriceInfo | null; annual: PriceInfo | null } | null;
+  }
+}
 
 interface PriceInfo {
   id: string;
@@ -204,9 +212,14 @@ function SubscriptionStatusCard({ status, onManage, loading, colors }: Subscript
 export default function PricingScreen() {
   const { isDark, toggleTheme } = useWebTheme();
   const colors = getThemeColors(isDark);
-  const [prices, setPrices] = useState<{ monthly: PriceInfo | null; annual: PriceInfo | null } | null>(null);
+  
+  // Use global window variables that survive HMR and module reloads
+  const hasFetched = typeof window !== 'undefined' && window.__pricingFetched;
+  const cachedPrices = typeof window !== 'undefined' ? window.__pricingCache : null;
+  
+  const [prices, setPrices] = useState<{ monthly: PriceInfo | null; annual: PriceInfo | null } | null>(cachedPrices || null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
-  const [loadingPrices, setLoadingPrices] = useState(true);
+  const [loadingPrices, setLoadingPrices] = useState(!hasFetched);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -215,19 +228,32 @@ export default function PricingScreen() {
   const isLoggedIn = !!getAuthToken();
 
   useEffect(() => {
+    // Use global window guard to prevent re-fetching across HMR/module reloads
+    if (typeof window !== 'undefined' && window.__pricingFetched) {
+      setLoadingPrices(false);
+      setLoadingStatus(false);
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.__pricingFetched = true;
+    }
+    
     fetchPrices();
     if (isLoggedIn) {
       fetchSubscriptionStatus();
     } else {
       setLoadingStatus(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
   const fetchPrices = async () => {
     try {
       const response = await fetch(`${getApiBase()}/api/subscriptions/prices`);
       if (response.ok) {
         const data = await response.json();
+        if (typeof window !== 'undefined') {
+          window.__pricingCache = data;
+        }
         setPrices(data);
       }
     } catch (err) {

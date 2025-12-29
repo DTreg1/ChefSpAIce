@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -9,7 +9,6 @@ import {
   Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -66,12 +65,12 @@ export default function PricingScreen() {
     fetchPrices();
   }, []);
 
-  // Refresh subscription status when screen gains focus (e.g., returning from checkout)
-  useFocusEffect(
-    useCallback(() => {
-      refreshSubscription();
-    }, [refreshSubscription])
-  );
+  // Refresh subscription status only when screen mounts (not on every focus)
+  // This prevents constant re-fetching while still getting fresh data on navigation
+  useEffect(() => {
+    refreshSubscription();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchPrices = async () => {
     try {
