@@ -1,7 +1,50 @@
 import { Router, Request, Response } from "express";
-import { normalizeUnitForInstacart } from "../../lib/unit-conversion";
+import { normalizeUnitForInstacart, convert, getUnitType } from "../../lib/unit-conversion";
 
 const router = Router();
+
+interface Measurement {
+  quantity: number;
+  unit: string;
+}
+
+function getAlternateMeasurements(quantity: number, unit: string | undefined): Measurement[] {
+  if (!unit || !quantity) return [];
+  
+  const instacartUnit = normalizeUnitForInstacart(unit);
+  if (!instacartUnit) return [];
+  
+  const measurements: Measurement[] = [{ quantity, unit: instacartUnit }];
+  const unitType = getUnitType(unit);
+  
+  if (unitType === "weight") {
+    if (["oz", "lb"].includes(instacartUnit)) {
+      const grams = convert(quantity, unit, "g");
+      if (grams && grams >= 1) {
+        measurements.push({ quantity: Math.round(grams), unit: "g" });
+      }
+    } else if (["g", "kg"].includes(instacartUnit)) {
+      const oz = convert(quantity, unit, "oz");
+      if (oz && oz >= 0.1) {
+        measurements.push({ quantity: Math.round(oz * 10) / 10, unit: "oz" });
+      }
+    }
+  } else if (unitType === "volume") {
+    if (["fl oz", "cup", "tbsp", "tsp", "pt", "qt", "gal"].includes(instacartUnit)) {
+      const ml = convert(quantity, unit, "ml");
+      if (ml && ml >= 1) {
+        measurements.push({ quantity: Math.round(ml), unit: "ml" });
+      }
+    } else if (["ml", "l"].includes(instacartUnit)) {
+      const floz = convert(quantity, unit, "fl oz");
+      if (floz && floz >= 0.1) {
+        measurements.push({ quantity: Math.round(floz * 10) / 10, unit: "fl oz" });
+      }
+    }
+  }
+  
+  return measurements;
+}
 
 const INSTACART_BASE_URL = process.env.NODE_ENV === "production" 
   ? "https://connect.instacart.com"
@@ -137,6 +180,16 @@ async function createInstacartShoppingList(
   }
 
   const lineItems = items.map(item => {
+    const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
+    
+    if (measurements.length > 0) {
+      return {
+        name: item.name,
+        line_item_measurements: measurements,
+        ...(item.display_text && { display_text: item.display_text }),
+      };
+    }
+    
     const instacartUnit = normalizeUnitForInstacart(item.unit);
     return {
       name: item.name,
@@ -149,17 +202,14 @@ async function createInstacartShoppingList(
   const requestBody: Record<string, any> = {
     title,
     line_items: lineItems,
+    landing_page_configuration: {
+      enable_pantry_items: true,
+      ...(partnerLinkbackUrl && { partner_linkback_url: partnerLinkbackUrl }),
+    },
   };
 
   if (imageUrl) {
     requestBody.image_url = imageUrl;
-  }
-
-  if (partnerLinkbackUrl) {
-    requestBody.landing_page_configuration = {
-      partner_linkback_url: partnerLinkbackUrl,
-      enable_pantry_items: true,
-    };
   }
 
   console.log(`[Instacart] Creating shopping list: "${title}" with ${items.length} items`);
@@ -214,6 +264,16 @@ async function createInstacartRecipe(
   }
 
   const lineItems = ingredients.map(item => {
+    const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
+    
+    if (measurements.length > 0) {
+      return {
+        name: item.name,
+        line_item_measurements: measurements,
+        ...(item.display_text && { display_text: item.display_text }),
+      };
+    }
+    
     const instacartUnit = normalizeUnitForInstacart(item.unit);
     return {
       name: item.name,
@@ -226,6 +286,10 @@ async function createInstacartRecipe(
   const requestBody: Record<string, any> = {
     title,
     line_items: lineItems,
+    landing_page_configuration: {
+      enable_pantry_items: true,
+      ...(partnerLinkbackUrl && { partner_linkback_url: partnerLinkbackUrl }),
+    },
   };
 
   if (imageUrl) {
