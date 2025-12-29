@@ -1235,21 +1235,6 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.welcomeScrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {isUpgradeFromGuest ? (
-          <View style={styles.upgradeHeader}>
-            <Pressable
-              onPress={handleCancelUpgrade}
-              style={styles.cancelButton}
-              data-testid="button-cancel-upgrade"
-            >
-              <Feather name="x" size={24} color={theme.text} />
-            </Pressable>
-            <ThemedText style={styles.upgradeTitle}>Create Account</ThemedText>
-            <ThemedText style={[styles.upgradeSubtitle, { color: theme.textSecondary }]}>
-              Sign up to unlock unlimited features and sync your data
-            </ThemedText>
-          </View>
-        ) : null}
         <View style={styles.welcomeHeader}>
           <Animated.View
             entering={FadeIn.delay(100).duration(500)}

@@ -22,7 +22,7 @@ import { AppColors, Spacing } from "@/constants/theme";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const BUTTON_SIZE = 66;
+const BUTTON_SIZE = 55;
 const TAB_BAR_HEIGHT = 55;
 
 export function FloatingChatButton() {

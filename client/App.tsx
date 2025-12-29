@@ -107,22 +107,6 @@ function RootWrapper() {
   const isDark = colorScheme === "dark";
   const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
 
-  const [fontsLoaded] = useFonts({
-    ...Feather.font,
-    ...MaterialIcons.font,
-    ...MaterialCommunityIcons.font,
-    ...FontAwesome.font,
-    ...Ionicons.font,
-  });
-
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
-        <ActivityIndicator size="large" color="#22c55e" />
-      </View>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={[styles.root, { backgroundColor }]}>
       <KeyboardProvider>
