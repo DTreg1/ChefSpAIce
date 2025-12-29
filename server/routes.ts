@@ -24,6 +24,7 @@ import instacartRouter from "./routers/platform/instacart.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
+import feedbackRouter from "./routers/feedback.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
@@ -285,6 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/ai", imageAnalysisRouter);
   app.use("/api/ingredients", ingredientsRouter);
   app.use("/api/sync", syncRouter);
+  app.use("/api/feedback", feedbackRouter);
 
   // Register object storage routes
   registerObjectStorageRoutes(app);
@@ -405,6 +407,16 @@ CAPABILITIES:
 - Create weekly meal plans respecting dietary restrictions
 - Add items to shopping lists
 - Provide cooking tips, nutrition info, and food storage advice
+- Collect user feedback and bug reports through a conversational flow
+
+FEEDBACK COLLECTION:
+When a user wants to send feedback or report a bug, guide them conversationally:
+1. First, acknowledge their intent and ask what type of feedback (suggestion, compliment, question) or bug (UI issue, crash, data problem, performance issue)
+2. Ask them to describe their feedback or the bug in detail
+3. For bug reports, ask what they were doing when it happened
+4. Optionally ask if they'd like to provide an email for follow-up
+5. Once you have enough information, use the save_feedback function to record it
+6. Thank them warmly for their contribution to improving the app
 
 ${
   inventoryContext

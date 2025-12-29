@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { userSyncData, userSessions } from "../../shared/schema";
+import { userSyncData, userSessions, feedback } from "../../shared/schema";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -304,6 +304,46 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
           }
         },
         required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_feedback",
+      description: "Save user feedback or bug report. Use this when the user wants to send feedback, report a bug, make a suggestion, or report an issue with the app.",
+      parameters: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: ["feedback", "bug"],
+            description: "Whether this is general feedback or a bug report"
+          },
+          category: {
+            type: "string",
+            enum: ["suggestion", "general", "compliment", "question", "crash", "ui", "data", "performance"],
+            description: "The category of feedback. For feedback: suggestion, general, compliment, question. For bugs: crash, ui, data, performance."
+          },
+          message: {
+            type: "string",
+            description: "The main content of the feedback or bug description"
+          },
+          stepsToReproduce: {
+            type: "string",
+            description: "For bug reports: steps to reproduce the issue"
+          },
+          severity: {
+            type: "string",
+            enum: ["minor", "major", "critical"],
+            description: "For bug reports: how severe is the issue"
+          },
+          userEmail: {
+            type: "string",
+            description: "User's email for follow-up (optional)"
+          }
+        },
+        required: ["type", "message"]
       }
     }
   }
@@ -861,6 +901,54 @@ export async function executeGetInventorySummary(
   }
 }
 
+export async function executeSaveFeedback(
+  userId: string | null,
+  args: {
+    type: "feedback" | "bug";
+    category?: string;
+    message: string;
+    stepsToReproduce?: string;
+    severity?: "minor" | "major" | "critical";
+    userEmail?: string;
+  }
+): Promise<ActionResult> {
+  try {
+    const feedbackEntry = await db
+      .insert(feedback)
+      .values({
+        userId,
+        type: args.type,
+        category: args.category || null,
+        message: args.message,
+        userEmail: args.userEmail || null,
+        stepsToReproduce: args.stepsToReproduce || null,
+        severity: args.severity || null,
+        status: "new",
+      })
+      .returning();
+
+    console.log(`[Chat] Feedback saved:`, feedbackEntry[0].id);
+
+    const thankYouMessage = args.type === "bug"
+      ? "Thank you for reporting this issue! Our team will look into it and work on a fix."
+      : "Thank you for your feedback! We really appreciate you taking the time to share your thoughts.";
+
+    return {
+      success: true,
+      message: thankYouMessage,
+      data: { feedbackId: feedbackEntry[0].id },
+      actionType: "save_feedback"
+    };
+  } catch (error) {
+    console.error("Error saving feedback:", error);
+    return {
+      success: false,
+      message: "I'm sorry, there was an issue saving your feedback. Please try again later.",
+      actionType: "save_feedback"
+    };
+  }
+}
+
 export async function executeChatAction(
   userId: string,
   functionName: string,
@@ -881,6 +969,8 @@ export async function executeChatAction(
       return executeAddToShoppingList(userId, args as Parameters<typeof executeAddToShoppingList>[1]);
     case "get_inventory_summary":
       return executeGetInventorySummary(userId, args as Parameters<typeof executeGetInventorySummary>[1]);
+    case "save_feedback":
+      return executeSaveFeedback(userId, args as Parameters<typeof executeSaveFeedback>[1]);
     default:
       return {
         success: false,
