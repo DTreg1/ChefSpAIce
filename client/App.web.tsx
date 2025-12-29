@@ -7,7 +7,7 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import Constants from "expo-constants";
-import MobileApp from "./NativeApp";
+import MobileApp from "./App";
 
 const SKIP_LANDING = Constants.expoConfig?.extra?.skipLanding === true || 
                      process.env.EXPO_PUBLIC_SKIP_LANDING === "true" || 
