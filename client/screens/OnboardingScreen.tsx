@@ -1514,7 +1514,7 @@ export default function OnboardingScreen() {
 
       const today = new Date();
       
-      // Get selected foods (respecting guest limits)
+      // Get selected foods
       const selectedFoods = STARTER_FOODS.filter((f) =>
         selectedFoodIds.has(f.id),
       );
@@ -2896,28 +2896,6 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontWeight: "600",
     fontSize: 16,
-  },
-  guestContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Spacing.md,
-  },
-  guestIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.sm,
-  },
-  guestText: {
-    flex: 1,
-  },
-  guestChevron: {
-    alignSelf: "stretch",
-    justifyContent: "center",
-    paddingLeft: Spacing.sm,
   },
   authInfoCard: {
     flexDirection: "row",

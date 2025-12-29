@@ -92,8 +92,7 @@ export default function PrivacyPolicyPage() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Data Storage</Text>
             <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-              Guest users: Your data is stored locally on your device.{"\n"}
-              Registered users: Your data is stored both locally and synced to our cloud database for access across devices.
+              Your data is stored both locally on your device and synced to our cloud database for access across devices.
             </Text>
           </View>
 

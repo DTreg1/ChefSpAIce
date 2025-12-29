@@ -1028,49 +1028,4 @@ const styles = StyleSheet.create({
   signInText: {
     flex: 1,
   },
-  guestUpgradeHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.md,
-  },
-  guestUpgradeIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.md,
-  },
-  guestUpgradeText: {
-    flex: 1,
-  },
-  guestLimitInfo: {
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  guestLimitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  guestBenefits: {
-    marginBottom: Spacing.lg,
-    gap: Spacing.xs,
-  },
-  benefitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  createAccountButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-  },
 });

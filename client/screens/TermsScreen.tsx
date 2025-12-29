@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Account Registration</Text>
             <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-              ChefSpAIce can be used as a guest without registration. However, to sync your data across devices and access all features, you may register for an account. You are responsible for safeguarding your password and for all activities that occur under your account.
+              To use ChefSpAIce, you must register for an account and maintain an active subscription. You are responsible for safeguarding your password and for all activities that occur under your account.
             </Text>
           </View>
 
