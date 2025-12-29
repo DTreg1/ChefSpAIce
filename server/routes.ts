@@ -28,7 +28,6 @@ import feedbackRouter from "./routers/feedback.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { db } from "./db";
 import { userSessions, appliances } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
@@ -299,8 +298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/ingredients", requireAuth, requireSubscription, ingredientsRouter);
   app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
 
-  // Register object storage routes
-  registerObjectStorageRoutes(app);
 
   // Chat endpoint with function calling for authenticated users
   app.post("/api/chat", async (req: Request, res: Response) => {

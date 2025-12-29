@@ -53,8 +53,6 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.shared]
-STRIPE_MONTHLY_PRICE_ID = "prod_ThCQnplBUmb1FQ"
-STRIPE_ANNUAL_PRICE_ID = "prod_ThCRyg1RTQlpUG"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc"
