@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import crypto from "crypto";
 import { cookingTerms } from "@shared/schema";
 
 const COOKING_TERMS_DATA = [
@@ -479,7 +480,10 @@ async function seedCookingTerms() {
 
   try {
     for (const term of COOKING_TERMS_DATA) {
-      await db.insert(cookingTerms).values(term).onConflictDoNothing();
+      await db.insert(cookingTerms).values({
+        ...term,
+        id: crypto.randomUUID(),
+      }).onConflictDoNothing();
     }
 
     console.log(
