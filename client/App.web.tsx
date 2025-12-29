@@ -6,8 +6,67 @@ import PrivacyScreen from "@/screens/web/PrivacyScreen";
 import TermsScreen from "@/screens/web/TermsScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
+import Constants from "expo-constants";
+
+const SKIP_LANDING = Constants.expoConfig?.extra?.skipLanding === true || 
+                     process.env.EXPO_PUBLIC_SKIP_LANDING === "true" || 
+                     process.env.EXPO_PUBLIC_SKIP_LANDING === "1";
 
 type WebRoute = "/" | "/about" | "/privacy" | "/terms" | "/attributions" | "/support";
+
+function ExpoGoScreen() {
+  const domain = typeof window !== "undefined" ? window.location.host : "";
+  const expoUrl = `exp://${domain}`;
+  
+  return (
+    <div style={{
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      maxWidth: 500,
+      margin: "50px auto",
+      padding: 20,
+      textAlign: "center",
+    }}>
+      <h1 style={{ fontSize: 24, marginBottom: 10 }}>ChefSpAIce</h1>
+      <p style={{ color: "#666", marginBottom: 30 }}>
+        Open in Expo Go to view the mobile app
+      </p>
+      
+      <div style={{
+        background: "#f5f5f5",
+        padding: 20,
+        borderRadius: 8,
+        marginBottom: 20,
+      }}>
+        <p style={{ fontSize: 14, wordBreak: "break-all", margin: 0 }}>
+          <strong>Expo URL:</strong><br />
+          <a href={expoUrl} style={{ color: "#007AFF" }}>{expoUrl}</a>
+        </p>
+      </div>
+      
+      <div style={{ marginTop: 30 }}>
+        <a 
+          href="https://expo.dev/go"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            padding: "12px 24px",
+            background: "#000",
+            color: "#fff",
+            borderRadius: 8,
+            textDecoration: "none",
+          }}
+        >
+          Get Expo Go
+        </a>
+      </div>
+      
+      <p style={{ marginTop: 40, fontSize: 12, color: "#999" }}>
+        SKIP_LANDING is enabled. Set EXPO_PUBLIC_SKIP_LANDING to "false" to see the landing page.
+      </p>
+    </div>
+  );
+}
 
 function getRouteFromPath(pathname: string): WebRoute {
   const normalized = pathname.toLowerCase();
@@ -86,6 +145,10 @@ function WebRouter() {
 }
 
 export default function App() {
+  if (SKIP_LANDING) {
+    return <ExpoGoScreen />;
+  }
+  
   return (
     <WebThemeProvider>
       <WebRouter />

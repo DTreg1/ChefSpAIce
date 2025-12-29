@@ -199,12 +199,12 @@ function configureExpoRouting(app: express.Application) {
   const isDevelopment = process.env.NODE_ENV !== "production";
   const staticBuildPath = path.resolve(process.cwd(), "static-build");
   const hasStaticBuild = fs.existsSync(path.join(staticBuildPath, "index.html"));
-  const skipLanding = process.env.SKIP_LANDING === "true" || process.env.SKIP_LANDING === "1";
+  const getSkipLanding = () => process.env.SKIP_LANDING === "true" || process.env.SKIP_LANDING === "1";
 
   log("Serving static Expo files with dynamic manifest routing");
   log(`Environment: ${isDevelopment ? "development" : "production"}, Static build: ${hasStaticBuild ? "available" : "not found"}`);
-  if (skipLanding) {
-    log("SKIP_LANDING enabled: Desktop browsers will see mobile app instead of landing page");
+  if (getSkipLanding()) {
+    log("SKIP_LANDING enabled: Desktop browsers will see QR code page instead of landing page");
   }
 
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
@@ -241,6 +241,13 @@ function configureExpoRouting(app: express.Application) {
     const userAgent = req.header("user-agent");
     const isMobile = isMobileUserAgent(userAgent);
 
+    const skipLanding = getSkipLanding();
+    
+    // Debug logging for routing decisions
+    if (req.path === "/") {
+      log(`Route "/" - skipLanding: ${skipLanding}, isMobile: ${isMobile}, platform: ${platform || 'none'}`);
+    }
+    
     // When SKIP_LANDING is enabled, show QR code page to all browsers (mobile and desktop)
     // This allows developers to skip the web landing page and test the mobile app directly
     if (req.path === "/" && (isMobile || skipLanding) && !platform) {

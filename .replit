@@ -53,4 +53,5 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.shared]
+EXPO_PUBLIC_SKIP_LANDING = "true"
 
