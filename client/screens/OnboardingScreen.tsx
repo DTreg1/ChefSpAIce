@@ -1211,6 +1211,12 @@ export default function OnboardingScreen() {
       await storage.setOnboardingCompleted();
       markOnboardingComplete();
 
+      // Sync all data to cloud immediately after onboarding completes
+      const syncResult = await storage.syncToCloud();
+      if (!syncResult.success) {
+        console.warn("Initial cloud sync failed:", syncResult.error);
+      }
+
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }

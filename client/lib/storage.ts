@@ -888,6 +888,9 @@ export const storage = {
         return { success: false, error: "Failed to sync to cloud" };
       }
 
+      // Clear the individual sync queue since we've synced everything in bulk
+      await syncManager.clearQueue();
+
       return { success: true };
     } catch (error) {
       console.error("Cloud sync error:", error);
