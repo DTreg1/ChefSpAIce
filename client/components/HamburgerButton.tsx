@@ -12,6 +12,8 @@ export function HamburgerButton() {
   return (
     <HeaderButton
       onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      testID="button-open-drawer"
+      accessibilityLabel="Open menu"
     >
       <Feather name="menu" size={24} color={theme.text} />
     </HeaderButton>

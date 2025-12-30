@@ -282,6 +282,8 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             closeDrawer();
             signOut();
           }}
+          testID="button-drawer-sign-out"
+          accessibilityLabel="Sign Out"
         >
           <Feather
             name="log-out"

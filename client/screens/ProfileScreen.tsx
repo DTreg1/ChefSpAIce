@@ -709,7 +709,12 @@ export default function ProfileScreen() {
           </GlassCard>
 
           <GlassCard style={styles.logoutCard}>
-            <Pressable style={styles.logoutButton} onPress={handleLogout}>
+            <Pressable 
+              style={styles.logoutButton} 
+              onPress={handleLogout}
+              testID="button-sign-out"
+              accessibilityLabel="Sign Out"
+            >
               <View
                 style={[
                   styles.menuIcon,
