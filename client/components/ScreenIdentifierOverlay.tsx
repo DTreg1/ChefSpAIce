@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { storage } from "@/lib/storage";
+import { syncManager } from "@/lib/sync-manager";
+import { queryClient } from "@/lib/query-client";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -37,19 +39,38 @@ export function ScreenIdentifierOverlay({
   };
 
   const handleReset = async () => {
-    const confirmReset = () => {
+    const confirmReset = async () => {
       setResetting(true);
-      storage.resetAllStorage().then(() => {
-        setResetting(false);
+      try {
+        await storage.resetAllStorage();
+        await syncManager.clearQueue();
+        queryClient.clear();
+        const syncResult = await syncManager.fullSync();
+        
+        if (syncResult.success) {
+          queryClient.invalidateQueries();
+          if (Platform.OS === "web") {
+            console.log("[Storage] Reset complete, data synced from server");
+          } else {
+            Alert.alert("Storage Reset", "Data has been refreshed from the server.");
+          }
+        } else {
+          if (Platform.OS === "web") {
+            window.location.reload();
+          } else {
+            Alert.alert("Storage Reset", "Please restart the app to see changes.");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to reset storage:", err);
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
           Alert.alert("Storage Reset", "Please restart the app to see changes.");
         }
-      }).catch((err) => {
-        console.error("Failed to reset storage:", err);
+      } finally {
         setResetting(false);
-      });
+      }
     };
 
     if (Platform.OS === "web") {
