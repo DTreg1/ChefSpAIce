@@ -158,6 +158,9 @@ export interface UserPreferences {
   termHighlightingEnabled?: boolean;
   mealPlanPresetId?: string;
   macroTargets?: MacroTargets;
+  servingSize?: number;
+  dailyMeals?: number;
+  storageAreas?: string[];
 }
 
 export interface InstacartStore {

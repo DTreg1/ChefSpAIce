@@ -533,10 +533,63 @@ const springConfig: WithSpringConfig = {
 
 type OnboardingStep =
   | "welcome"
-  | "equipment-category"
-  | "all-cookware"
+  | "preferences"
+  | "storage"
   | "foods"
-  | "summary";
+  | "cookware"
+  | "complete";
+
+// Preference options
+const SERVING_SIZE_OPTIONS = [
+  { value: 1, label: "Just me" },
+  { value: 2, label: "2 people" },
+  { value: 3, label: "3 people" },
+  { value: 4, label: "4 people" },
+  { value: 5, label: "5 people" },
+  { value: 6, label: "6+ people" },
+];
+
+const DAILY_MEALS_OPTIONS = [
+  { value: 2, label: "2 meals" },
+  { value: 3, label: "3 meals" },
+  { value: 4, label: "4 meals" },
+  { value: 5, label: "5+ meals" },
+];
+
+const CUISINE_OPTIONS = [
+  { id: "american", label: "American", icon: "flag" as const },
+  { id: "italian", label: "Italian", icon: "coffee" as const },
+  { id: "mexican", label: "Mexican", icon: "sun" as const },
+  { id: "asian", label: "Asian", icon: "sunrise" as const },
+  { id: "mediterranean", label: "Mediterranean", icon: "droplet" as const },
+  { id: "indian", label: "Indian", icon: "zap" as const },
+  { id: "french", label: "French", icon: "feather" as const },
+  { id: "japanese", label: "Japanese", icon: "circle" as const },
+  { id: "chinese", label: "Chinese", icon: "star" as const },
+  { id: "thai", label: "Thai", icon: "heart" as const },
+  { id: "korean", label: "Korean", icon: "moon" as const },
+  { id: "greek", label: "Greek", icon: "compass" as const },
+];
+
+const DIETARY_PREFERENCE_OPTIONS = [
+  { id: "none", label: "No restrictions", icon: "check-circle" as const },
+  { id: "vegetarian", label: "Vegetarian", icon: "feather" as const },
+  { id: "vegan", label: "Vegan", icon: "sun" as const },
+  { id: "pescatarian", label: "Pescatarian", icon: "anchor" as const },
+  { id: "gluten-free", label: "Gluten-Free", icon: "slash" as const },
+  { id: "dairy-free", label: "Dairy-Free", icon: "x-circle" as const },
+  { id: "keto", label: "Keto", icon: "activity" as const },
+  { id: "paleo", label: "Paleo", icon: "target" as const },
+  { id: "halal", label: "Halal", icon: "moon" as const },
+  { id: "kosher", label: "Kosher", icon: "star" as const },
+];
+
+const DEFAULT_STORAGE_AREAS = [
+  { id: "fridge", label: "Refrigerator", icon: "thermometer" as const, description: "For perishable items" },
+  { id: "freezer", label: "Freezer", icon: "cloud-snow" as const, description: "For frozen goods" },
+  { id: "pantry", label: "Pantry", icon: "box" as const, description: "For dry goods & canned items" },
+  { id: "counter", label: "Counter", icon: "home" as const, description: "For fruits & daily items" },
+];
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -771,7 +824,6 @@ export default function OnboardingScreen() {
   } = useAuth();
 
   const [step, setStep] = useState<OnboardingStep>("welcome");
-  const [categoryIndex, setCategoryIndex] = useState(0);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(
     new Set(),
@@ -781,6 +833,19 @@ export default function OnboardingScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Preference states
+  const [servingSize, setServingSize] = useState(2);
+  const [dailyMeals, setDailyMeals] = useState(3);
+  const [selectedCuisines, setSelectedCuisines] = useState<Set<string>>(
+    new Set(["american", "italian", "mexican"])
+  );
+  const [dietaryPreferences, setDietaryPreferences] = useState<Set<string>>(
+    new Set(["none"])
+  );
+  const [selectedStorageAreas, setSelectedStorageAreas] = useState<Set<string>>(
+    new Set(["fridge", "freezer", "pantry", "counter"])
+  );
 
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
@@ -798,10 +863,10 @@ export default function OnboardingScreen() {
     loadAppliances();
   }, []);
 
-  // Auto-advance to equipment setup when user becomes authenticated
+  // Auto-advance to preferences setup when user becomes authenticated
   useEffect(() => {
     if (isAuthenticated && step === "welcome") {
-      setStep("equipment-category");
+      setStep("preferences");
     }
   }, [isAuthenticated, step]);
 
@@ -832,25 +897,64 @@ export default function OnboardingScreen() {
   };
 
 
-  const currentCategory = EQUIPMENT_CATEGORIES[categoryIndex];
-  const categoryAppliances = useMemo(() => {
-    return appliances.filter(
-      (a) => a.category.toLowerCase() === currentCategory?.id.toLowerCase(),
-    );
-  }, [appliances, currentCategory]);
-
   const equipmentSelectedCount = selectedEquipmentIds.size;
   const foodSelectedCount = selectedFoodIds.size;
-  const categorySelectedCount = useMemo(() => {
-    return categoryAppliances.filter((a) => selectedEquipmentIds.has(a.id))
-      .length;
-  }, [categoryAppliances, selectedEquipmentIds]);
 
   const toggleAppliance = useCallback((id: number) => {
     setSelectedEquipmentIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleCuisine = useCallback((id: string) => {
+    setSelectedCuisines((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleDietaryPreference = useCallback((id: string) => {
+    setDietaryPreferences((prev) => {
+      const newSet = new Set(prev);
+      if (id === "none") {
+        // If selecting "none", clear all others
+        return new Set(["none"]);
+      } else {
+        // Remove "none" if selecting something else
+        newSet.delete("none");
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        // If nothing selected, default to "none"
+        if (newSet.size === 0) {
+          return new Set(["none"]);
+        }
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleStorageArea = useCallback((id: string) => {
+    setSelectedStorageAreas((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        // Don't allow removing the last storage area
+        if (newSet.size > 1) {
+          newSet.delete(id);
+        }
       } else {
         newSet.add(id);
       }
@@ -869,22 +973,6 @@ export default function OnboardingScreen() {
       return newSet;
     });
   }, []);
-
-  const selectAllInCategory = useCallback(() => {
-    setSelectedEquipmentIds((prev) => {
-      const newSet = new Set(prev);
-      categoryAppliances.forEach((a) => newSet.add(a.id));
-      return newSet;
-    });
-  }, [categoryAppliances]);
-
-  const deselectAllInCategory = useCallback(() => {
-    setSelectedEquipmentIds((prev) => {
-      const newSet = new Set(prev);
-      categoryAppliances.forEach((a) => newSet.delete(a.id));
-      return newSet;
-    });
-  }, [categoryAppliances]);
 
   const deselectAllFoods = useCallback(() => {
     setSelectedFoodIds(new Set());
@@ -925,7 +1013,7 @@ export default function OnboardingScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      setStep("equipment-category");
+      setStep("preferences");
     } catch (err) {
       console.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
@@ -957,7 +1045,7 @@ export default function OnboardingScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      setStep("equipment-category");
+      setStep("preferences");
     } catch (err) {
       console.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");
@@ -966,52 +1054,76 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleAcceptDefaults = () => {
+  const handlePreferencesToStorage = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setStep("all-cookware");
+    setStep("storage");
   };
 
-  const handleNextCategory = () => {
+  const handleStorageToFoods = () => {
     if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    if (categoryIndex < EQUIPMENT_CATEGORIES.length - 1) {
-      setCategoryIndex(categoryIndex + 1);
-    } else {
-      setStep("foods");
-    }
+    setStep("foods");
   };
 
-  const handlePrevCategory = () => {
+  const handleFoodsToCookware = () => {
     if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    if (categoryIndex > 0) {
-      setCategoryIndex(categoryIndex - 1);
-    } else {
-      setStep("welcome");
+    setStep("cookware");
+  };
+
+  const handleCookwareToComplete = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    setStep("complete");
   };
 
   const handleFoodsToPrev = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setStep("welcome");
+    setStep("storage");
   };
 
-  const handleFoodsToSummary = () => {
+  const handleBackToPreferences = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setStep("summary");
+    setStep("preferences");
+  };
+
+  const handleBackToStorage = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setStep("storage");
+  };
+
+  const handleBackToFoods = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setStep("foods");
   };
 
   const handleComplete = async () => {
     setSaving(true);
     try {
+      // Save user preferences
+      const currentPrefs = await storage.getPreferences();
+      await storage.setPreferences({
+        ...currentPrefs,
+        servingSize,
+        dailyMeals,
+        cuisinePreferences: Array.from(selectedCuisines),
+        dietaryRestrictions: Array.from(dietaryPreferences).filter(d => d !== "none"),
+        storageAreas: Array.from(selectedStorageAreas),
+      });
+
       await storage.setCookware(Array.from(selectedEquipmentIds));
 
       const selectedFoods = STARTER_FOODS.filter((f) =>
@@ -1399,41 +1511,13 @@ export default function OnboardingScreen() {
     </Animated.View>
   );
 
-  const renderEquipmentCategoryStep = () => (
+  const renderPreferencesStep = () => (
     <Animated.View
       entering={SlideInRight.duration(300)}
       exiting={SlideOutLeft.duration(200)}
       style={styles.stepContainer}
-      key={`category-${categoryIndex}`}
     >
       <View style={styles.fixedHeader}>
-        <View style={styles.categoryHeader}>
-          <View style={styles.progressContainer}>
-            {EQUIPMENT_CATEGORIES.map((cat, idx) => (
-              <View
-                key={cat.id}
-                style={[
-                  styles.progressDot,
-                  {
-                    backgroundColor:
-                      idx < categoryIndex
-                        ? AppColors.primary
-                        : idx === categoryIndex
-                          ? AppColors.primary
-                          : theme.backgroundTertiary,
-                    opacity: idx === categoryIndex ? 1 : 0.5,
-                  },
-                ]}
-              />
-            ))}
-          </View>
-          <ThemedText
-            style={[styles.stepIndicator, { color: theme.textSecondary }]}
-          >
-            {categoryIndex + 1} of {EQUIPMENT_CATEGORIES.length}
-          </ThemedText>
-        </View>
-
         <View style={styles.categoryTitleContainer}>
           <View
             style={[
@@ -1441,43 +1525,13 @@ export default function OnboardingScreen() {
               { backgroundColor: `${AppColors.primary}15` },
             ]}
           >
-            <Feather
-              name={ICON_MAP[currentCategory.icon] || "box"}
-              size={28}
-              color={AppColors.primary}
-            />
+            <Feather name="sliders" size={28} color={AppColors.primary} />
           </View>
-          <ThemedText style={styles.categoryTitle}>
-            {currentCategory.label}
-          </ThemedText>
+          <ThemedText style={styles.categoryTitle}>Your Preferences</ThemedText>
           <ThemedText
             style={[styles.categoryDescription, { color: theme.textSecondary }]}
           >
-            {currentCategory.description}
-          </ThemedText>
-        </View>
-
-        <View style={styles.categoryActions}>
-          <Pressable
-            onPress={
-              categorySelectedCount === categoryAppliances.length
-                ? deselectAllInCategory
-                : selectAllInCategory
-            }
-            style={styles.selectAllButton}
-          >
-            <ThemedText
-              style={[styles.selectAllText, { color: AppColors.primary }]}
-            >
-              {categorySelectedCount === categoryAppliances.length
-                ? "Deselect All"
-                : "Select All"}
-            </ThemedText>
-          </Pressable>
-          <ThemedText
-            style={[styles.selectedCountText, { color: theme.textSecondary }]}
-          >
-            {categorySelectedCount} selected
+            Help us personalize your experience
           </ThemedText>
         </View>
       </View>
@@ -1487,120 +1541,318 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.equipmentListContent}
         showsVerticalScrollIndicator={true}
       >
-        {categoryAppliances.map((appliance) => (
-          <EquipmentItem
-            key={appliance.id}
-            appliance={appliance}
-            isSelected={selectedEquipmentIds.has(appliance.id)}
-            onToggle={() => toggleAppliance(appliance.id)}
-          />
-        ))}
+        <GlassCard style={styles.preferenceSection}>
+          <ThemedText style={styles.preferenceSectionTitle}>
+            Household Size
+          </ThemedText>
+          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+            How many people are you cooking for?
+          </ThemedText>
+          <View style={styles.preferenceOptionsGrid}>
+            {SERVING_SIZE_OPTIONS.map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => {
+                  setServingSize(option.value);
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                style={[
+                  styles.preferenceOption,
+                  {
+                    backgroundColor: servingSize === option.value
+                      ? `${AppColors.primary}20`
+                      : theme.backgroundSecondary,
+                    borderColor: servingSize === option.value
+                      ? AppColors.primary
+                      : theme.border,
+                  },
+                ]}
+              >
+                <ThemedText style={[
+                  styles.preferenceOptionText,
+                  { color: servingSize === option.value ? AppColors.primary : theme.text }
+                ]}>
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.preferenceSection}>
+          <ThemedText style={styles.preferenceSectionTitle}>
+            Daily Meals
+          </ThemedText>
+          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+            How many meals do you typically have per day?
+          </ThemedText>
+          <View style={styles.preferenceOptionsGrid}>
+            {DAILY_MEALS_OPTIONS.map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => {
+                  setDailyMeals(option.value);
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                style={[
+                  styles.preferenceOption,
+                  {
+                    backgroundColor: dailyMeals === option.value
+                      ? `${AppColors.primary}20`
+                      : theme.backgroundSecondary,
+                    borderColor: dailyMeals === option.value
+                      ? AppColors.primary
+                      : theme.border,
+                  },
+                ]}
+              >
+                <ThemedText style={[
+                  styles.preferenceOptionText,
+                  { color: dailyMeals === option.value ? AppColors.primary : theme.text }
+                ]}>
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.preferenceSection}>
+          <ThemedText style={styles.preferenceSectionTitle}>
+            Favorite Cuisines
+          </ThemedText>
+          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+            Select cuisines you enjoy cooking (select multiple)
+          </ThemedText>
+          <View style={styles.preferenceOptionsGrid}>
+            {CUISINE_OPTIONS.map((cuisine) => {
+              const isSelected = selectedCuisines.has(cuisine.id);
+              return (
+                <Pressable
+                  key={cuisine.id}
+                  onPress={() => toggleCuisine(cuisine.id)}
+                  style={[
+                    styles.preferenceOption,
+                    {
+                      backgroundColor: isSelected
+                        ? `${AppColors.primary}20`
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                >
+                  <Feather
+                    name={cuisine.icon}
+                    size={14}
+                    color={isSelected ? AppColors.primary : theme.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <ThemedText style={[
+                    styles.preferenceOptionText,
+                    { color: isSelected ? AppColors.primary : theme.text }
+                  ]}>
+                    {cuisine.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.preferenceSection}>
+          <ThemedText style={styles.preferenceSectionTitle}>
+            Dietary Preferences
+          </ThemedText>
+          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+            Any dietary restrictions or preferences?
+          </ThemedText>
+          <View style={styles.preferenceOptionsGrid}>
+            {DIETARY_PREFERENCE_OPTIONS.map((pref) => {
+              const isSelected = dietaryPreferences.has(pref.id);
+              return (
+                <Pressable
+                  key={pref.id}
+                  onPress={() => toggleDietaryPreference(pref.id)}
+                  style={[
+                    styles.preferenceOption,
+                    {
+                      backgroundColor: isSelected
+                        ? `${AppColors.primary}20`
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                >
+                  <Feather
+                    name={pref.icon}
+                    size={14}
+                    color={isSelected ? AppColors.primary : theme.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <ThemedText style={[
+                    styles.preferenceOptionText,
+                    { color: isSelected ? AppColors.primary : theme.text }
+                  ]}>
+                    {pref.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
       </ScrollView>
 
       <View style={styles.fixedFooter}>
         <View style={styles.navigationButtons}>
           <Button
-            onPress={handlePrevCategory}
+            onPress={() => setStep("welcome")}
             variant="secondary"
             style={styles.navButton}
           >
-            {categoryIndex === 0 ? "Back" : "Previous"}
+            Back
           </Button>
           <Button
-            onPress={handleNextCategory}
+            onPress={handlePreferencesToStorage}
             variant="primary"
             style={styles.navButton}
           >
-            {categoryIndex === EQUIPMENT_CATEGORIES.length - 1
-              ? "Next"
-              : "Next"}
+            Continue
           </Button>
         </View>
       </View>
     </Animated.View>
   );
 
-  const handleAllCookwareComplete = async () => {
-    if (Platform.OS !== "web") {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setSaving(true);
-    try {
-      await storage.setCookware(Array.from(selectedEquipmentIds));
+  const renderStorageStep = () => (
+    <Animated.View
+      entering={SlideInRight.duration(300)}
+      exiting={SlideOutLeft.duration(200)}
+      style={styles.stepContainer}
+    >
+      <View style={styles.fixedHeader}>
+        <View style={styles.categoryTitleContainer}>
+          <View
+            style={[
+              styles.categoryIcon,
+              { backgroundColor: `${AppColors.primary}15` },
+            ]}
+          >
+            <Feather name="box" size={28} color={AppColors.primary} />
+          </View>
+          <ThemedText style={styles.categoryTitle}>Storage Areas</ThemedText>
+          <ThemedText
+            style={[styles.categoryDescription, { color: theme.textSecondary }]}
+          >
+            Where do you store your food?
+          </ThemedText>
+        </View>
+      </View>
 
-      const today = new Date();
+      <ScrollView
+        style={styles.equipmentList}
+        contentContainerStyle={styles.equipmentListContent}
+        showsVerticalScrollIndicator={true}
+      >
+        <GlassCard style={styles.preferenceSection}>
+          <ThemedText style={styles.preferenceSectionTitle}>
+            Select Your Storage Areas
+          </ThemedText>
+          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+            Choose which storage areas you have in your kitchen
+          </ThemedText>
+          <View style={styles.storageAreasGrid}>
+            {DEFAULT_STORAGE_AREAS.map((area) => {
+              const isSelected = selectedStorageAreas.has(area.id);
+              return (
+                <Pressable
+                  key={area.id}
+                  onPress={() => toggleStorageArea(area.id)}
+                  style={[
+                    styles.storageAreaCard,
+                    {
+                      backgroundColor: isSelected
+                        ? `${AppColors.primary}15`
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.storageAreaIcon,
+                      {
+                        backgroundColor: isSelected
+                          ? AppColors.primary
+                          : theme.backgroundTertiary,
+                      },
+                    ]}
+                  >
+                    <Feather
+                      name={area.icon}
+                      size={24}
+                      color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                    />
+                  </View>
+                  <ThemedText style={styles.storageAreaLabel}>
+                    {area.label}
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.storageAreaDesc, { color: theme.textSecondary }]}
+                  >
+                    {area.description}
+                  </ThemedText>
+                  {isSelected && (
+                    <View style={[styles.storageCheckmark, { backgroundColor: AppColors.primary }]}>
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
 
-      // Get selected foods
-      const selectedFoods = STARTER_FOODS.filter((f) =>
-        selectedFoodIds.has(f.id),
-      );
+        <View style={styles.storageNote}>
+          <Feather name="info" size={16} color={theme.textSecondary} />
+          <ThemedText style={[styles.storageNoteText, { color: theme.textSecondary }]}>
+            You can add custom storage areas later in Settings
+          </ThemedText>
+        </View>
+      </ScrollView>
 
-      // Get existing inventory to merge with (avoid duplicates)
-      const existingInventory = await storage.getInventory();
-      const existingByFdcId = new Map(
-        existingInventory.filter(item => item.fdcId).map(item => [item.fdcId, item])
-      );
-      const existingByName = new Map(
-        existingInventory.map(item => [item.name.toLowerCase(), item])
-      );
+      <View style={styles.fixedFooter}>
+        <View style={styles.navigationButtons}>
+          <Button
+            onPress={handleBackToPreferences}
+            variant="secondary"
+            style={styles.navButton}
+          >
+            Back
+          </Button>
+          <Button
+            onPress={handleStorageToFoods}
+            variant="primary"
+            style={styles.navButton}
+            disabled={selectedStorageAreas.size === 0}
+          >
+            Continue
+          </Button>
+        </View>
+      </View>
+    </Animated.View>
+  );
 
-      const newItems: FoodItem[] = [];
-      const updatedItems: FoodItem[] = [];
-
-      for (const food of selectedFoods) {
-        const existingByFdc = existingByFdcId.get(food.fdcId);
-        const existingByNameItem = existingByName.get(food.name.toLowerCase());
-        const existing = existingByFdc || existingByNameItem;
-
-        if (existing) {
-          updatedItems.push({
-            ...existing,
-            quantity: existing.quantity + food.defaultQuantity,
-          });
-        } else {
-          const expirationDate = new Date(today);
-          expirationDate.setDate(expirationDate.getDate() + food.shelfLifeDays);
-
-          newItems.push({
-            id: generateId(),
-            name: food.name,
-            quantity: food.defaultQuantity,
-            unit: food.unit,
-            storageLocation: food.recommendedStorage,
-            purchaseDate: today.toISOString(),
-            expirationDate: expirationDate.toISOString(),
-            category: food.category,
-            fdcId: food.fdcId,
-            nutrition: food.nutrition,
-          });
-        }
-      }
-
-      for (const item of updatedItems) {
-        await storage.updateInventoryItem(item);
-      }
-
-      if (newItems.length > 0) {
-        await storage.addInventoryItems(newItems);
-      }
-
-      await storage.setOnboardingCompleted();
-      markOnboardingComplete();
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Main" as never }],
-        }),
-      );
-    } catch (err) {
-      console.error("Error completing onboarding:", err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const renderAllCookwareStep = () => {
+  const renderCookwareStep = () => {
     const groupedAppliances = EQUIPMENT_CATEGORIES.map((cat) => ({
       ...cat,
       appliances: appliances.filter(
@@ -1646,19 +1898,18 @@ export default function OnboardingScreen() {
           <View
             style={[
               styles.successIconContainer,
-              { backgroundColor: `${AppColors.success}15` },
+              { backgroundColor: `${AppColors.primary}15` },
             ]}
           >
-            <Feather name="check-circle" size={36} color={AppColors.success} />
+            <Feather name="tool" size={36} color={AppColors.primary} />
           </View>
           <ThemedText style={styles.allCookwareTitle}>
-            Kitchen Setup Complete!
+            Your Kitchen Equipment
           </ThemedText>
           <ThemedText
             style={[styles.allCookwareSubtitle, { color: theme.textSecondary }]}
           >
-            Review your cookware below. {STARTER_FOODS.length} starter foods
-            will be added to your inventory.
+            Select the cookware and appliances you have in your kitchen.
           </ThemedText>
         </View>
 
@@ -1784,14 +2035,22 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.fixedFooter}>
-          <Button
-            onPress={handleAllCookwareComplete}
-            variant="primary"
-            disabled={saving}
-            style={styles.fullWidthButton}
-          >
-            {saving ? "Saving..." : "Get Started"}
-          </Button>
+          <View style={styles.navigationButtons}>
+            <Button
+              onPress={handleBackToFoods}
+              variant="secondary"
+              style={styles.navButton}
+            >
+              Back
+            </Button>
+            <Button
+              onPress={handleCookwareToComplete}
+              variant="primary"
+              style={styles.navButton}
+            >
+              Complete Setup
+            </Button>
+          </View>
         </View>
       </Animated.View>
     );
@@ -1904,11 +2163,11 @@ export default function OnboardingScreen() {
               Back
             </Button>
             <Button
-              onPress={handleFoodsToSummary}
+              onPress={handleFoodsToCookware}
               variant="primary"
               style={styles.navButton}
             >
-              Review
+              Continue
             </Button>
           </View>
         </View>
@@ -1916,7 +2175,7 @@ export default function OnboardingScreen() {
     );
   };
 
-  const renderSummaryStep = () => {
+  const renderCompleteStep = () => {
     const selectedAppliances = appliances.filter((a) =>
       selectedEquipmentIds.has(a.id),
     );
@@ -2128,11 +2387,11 @@ export default function OnboardingScreen() {
 
         <View style={styles.summaryActions}>
           <Button
-            onPress={() => setStep("foods")}
+            onPress={() => setStep("cookware")}
             variant="secondary"
             style={styles.editButton}
           >
-            Edit
+            Back
           </Button>
           <Button
             onPress={handleComplete}
@@ -2140,7 +2399,7 @@ export default function OnboardingScreen() {
             disabled={saving}
             style={styles.completeButton}
           >
-            {saving ? "Saving..." : "Get Started"}
+            {saving ? "Saving..." : "Start Using App"}
           </Button>
         </View>
       </Animated.View>
@@ -2159,10 +2418,11 @@ export default function OnboardingScreen() {
       ]}
     >
       {step === "welcome" && renderWelcomeStep()}
-      {step === "equipment-category" && renderEquipmentCategoryStep()}
-      {step === "all-cookware" && renderAllCookwareStep()}
+      {step === "preferences" && renderPreferencesStep()}
+      {step === "storage" && renderStorageStep()}
       {step === "foods" && renderFoodsStep()}
-      {step === "summary" && renderSummaryStep()}
+      {step === "cookware" && renderCookwareStep()}
+      {step === "complete" && renderCompleteStep()}
     </View>
   );
 }
@@ -2937,5 +3197,89 @@ const styles = StyleSheet.create({
   authGoogleIcon: {
     width: 20,
     height: 20,
+  },
+  // Preference step styles
+  preferenceSection: {
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+  },
+  preferenceSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600" as const,
+    marginBottom: Spacing.xs,
+  },
+  preferenceSectionDesc: {
+    fontSize: 14,
+    marginBottom: Spacing.md,
+  },
+  preferenceOptionsGrid: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: Spacing.sm,
+  },
+  preferenceOption: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1.5,
+  },
+  preferenceOptionText: {
+    fontSize: 14,
+    fontWeight: "500" as const,
+  },
+  // Storage step styles
+  storageAreasGrid: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: Spacing.md,
+  },
+  storageAreaCard: {
+    width: "47%" as const,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    alignItems: "center" as const,
+    position: "relative" as const,
+  },
+  storageAreaIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    marginBottom: Spacing.sm,
+  },
+  storageAreaLabel: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    textAlign: "center" as const,
+    marginBottom: Spacing.xs,
+  },
+  storageAreaDesc: {
+    fontSize: 12,
+    textAlign: "center" as const,
+  },
+  storageCheckmark: {
+    position: "absolute" as const,
+    top: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  storageNote: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  storageNoteText: {
+    fontSize: 13,
+    flex: 1,
   },
 });
