@@ -1,6 +1,25 @@
 import request from "supertest";
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
+
+jest.mock("../middleware/auth", () => ({
+  requireAuth: jest.fn((req, res, next) => {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const token = authHeader.substring(7);
+    
+    if (!token || token === "invalid") {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    
+    req.userId = token;
+    next();
+  }),
+}));
+
 import {
   userAppliancesRouter,
   appliancesRouter,
@@ -9,37 +28,10 @@ import {
 
 const app = express();
 app.use(express.json());
+app.use("/api/appliances", appliancesRouter);
+app.use("/api/user/appliances", userAppliancesRouter);
 
 const TEST_USER_ID = "test-user-" + Date.now();
-
-const mockRequireAuth = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-
-  const token = authHeader.substring(7);
-  
-  if (!token || token === "invalid") {
-    return res.status(401).json({ error: "Invalid or expired session" });
-  }
-  
-  req.userId = token;
-  next();
-};
-
-app.use("/api/appliances", appliancesRouter);
-
-const mockUserAppliancesRouter = express.Router();
-mockUserAppliancesRouter.use(mockRequireAuth);
-
-import("../routers/user/appliances.router").then(() => {
-});
-
-app.use("/api/user/appliances", mockRequireAuth, (req, res, next) => {
-  userAppliancesRouter(req, res, next);
-});
 
 describe("User Appliances API", () => {
   let testApplianceId: number;
