@@ -798,6 +798,13 @@ export default function OnboardingScreen() {
     loadAppliances();
   }, []);
 
+  // Auto-advance to equipment setup when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && step === "welcome") {
+      setStep("equipment-category");
+    }
+  }, [isAuthenticated, step]);
+
 
   const loadAppliances = async () => {
     try {
@@ -964,13 +971,6 @@ export default function OnboardingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setStep("all-cookware");
-  };
-
-  const handleCustomize = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setStep("equipment-category");
   };
 
   const handleNextCategory = () => {
@@ -1213,23 +1213,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        {isAuthenticated ? (
-          <Animated.View
-            entering={FadeIn.delay(700).duration(400)}
-            style={styles.welcomeFooter}
-          >
-            <Button
-              onPress={handleCustomize}
-              style={styles.getStartedButton}
-              testID="button-get-started"
-            >
-              Get Started
-            </Button>
-            <ThemedText style={[styles.welcomeHint, { color: theme.textSecondary }]}>
-              Let's set up your kitchen in just a few steps
-            </ThemedText>
-          </Animated.View>
-        ) : (
+        {isAuthenticated ? null : (
           <Animated.View
             entering={FadeIn.delay(700).duration(400)}
             style={styles.authSection}
@@ -1363,16 +1347,6 @@ export default function OnboardingScreen() {
               </ThemedText>
             </Pressable>
 
-
-            <Button
-              onPress={handleCustomize}
-              style={styles.getStartedButton}
-              testID="button-get-started"
-            >
-              Get Started
-            </Button>
-
-            
             {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
               <>
                 <View style={styles.authDividerContainer}>
