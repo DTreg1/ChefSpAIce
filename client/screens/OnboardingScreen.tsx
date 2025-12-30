@@ -1102,7 +1102,8 @@ export default function OnboardingScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setStep("complete");
+    // Skip summary page and directly complete onboarding
+    handleComplete();
   };
 
   const handleFoodsToPrev = () => {
@@ -2164,8 +2165,9 @@ export default function OnboardingScreen() {
               onPress={handleCookwareToComplete}
               variant="primary"
               style={styles.navButton}
+              disabled={saving}
             >
-              Complete Setup
+              {saving ? "Saving..." : "Start Using App"}
             </Button>
           </View>
         </View>
