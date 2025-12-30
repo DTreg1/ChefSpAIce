@@ -16,7 +16,7 @@ import { BlurView } from "expo-blur";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -208,13 +208,13 @@ export default function SelectRecipeScreen() {
               : "Try a different search term."}
           </ThemedText>
           {recipes.length === 0 ? (
-            <Button
+            <GlassButton
               variant="primary"
               onPress={() => navigation.goBack()}
               style={{ marginTop: Spacing.lg }}
             >
               Go Back
-            </Button>
+            </GlassButton>
           ) : null}
         </View>
       ) : (

@@ -29,7 +29,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
@@ -44,7 +44,7 @@ interface Appliance {
   alternatives: string[];
 }
 
-interface EquipmentSelectorProps {
+interface CookwareSelectorProps {
   onComplete: (selectedIds: number[]) => void;
   preselected?: number[];
   mode: "setup" | "edit";
@@ -92,7 +92,7 @@ const springConfig: WithSpringConfig = {
   overshootClamping: true,
 };
 
-function EquipmentItem({
+function CookwareItem({
   appliance,
   isSelected,
   onToggle,
@@ -135,7 +135,7 @@ function EquipmentItem({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[
-          styles.equipmentItem,
+          styles.cookwareItem,
           {
             backgroundColor: isSelected
               ? `${AppColors.primary}15`
@@ -256,7 +256,7 @@ function CategorySection({
       </View>
       <View style={styles.categoryGrid}>
         {appliances.map((appliance) => (
-          <EquipmentItem
+          <CookwareItem
             key={appliance.id}
             appliance={appliance}
             isSelected={selectedIds.has(appliance.id)}
@@ -268,11 +268,11 @@ function CategorySection({
   );
 }
 
-export function EquipmentSelector({
+export function CookwareSelector({
   onComplete,
   preselected = [],
   mode,
-}: EquipmentSelectorProps) {
+}: CookwareSelectorProps) {
   const { theme } = useTheme();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(
     new Set(preselected),
@@ -386,7 +386,7 @@ export function EquipmentSelector({
       <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={AppColors.primary} />
         <ThemedText type="body" style={styles.loadingText}>
-          Loading equipment...
+          Loading cookware...
         </ThemedText>
       </ThemedView>
     );
@@ -475,16 +475,16 @@ export function EquipmentSelector({
         <View
           style={[styles.footer, { backgroundColor: theme.backgroundDefault }]}
         >
-          <Button
+          <GlassButton
             variant="secondary"
             onPress={handleBack}
             style={styles.backButton}
           >
             Back
-          </Button>
-          <Button onPress={handleConfirm} style={styles.confirmButton}>
+          </GlassButton>
+          <GlassButton onPress={handleConfirm} style={styles.confirmButton}>
             Confirm Selection
-          </Button>
+          </GlassButton>
         </View>
       </ThemedView>
     );
@@ -510,7 +510,7 @@ export function EquipmentSelector({
               Welcome to Your Kitchen
             </ThemedText>
             <ThemedText type="body" style={styles.welcomeSubtitle}>
-              What equipment do you have? Select the items in your kitchen so we
+              What cookware do you have? Select the items in your kitchen so we
               can suggest recipes you can actually make.
             </ThemedText>
           </View>
@@ -524,9 +524,9 @@ export function EquipmentSelector({
               Start with common kitchen items, then customize to match your
               setup.
             </ThemedText>
-            <Button onPress={selectAllCommon} style={styles.selectCommonButton}>
+            <GlassButton onPress={selectAllCommon} style={styles.selectCommonButton}>
               Select All Common Items ({commonAppliances.length})
-            </Button>
+            </GlassButton>
           </GlassCard>
 
           {CATEGORIES.map((category) => {
@@ -555,13 +555,13 @@ export function EquipmentSelector({
               {selectedIds.size} items selected
             </ThemedText>
           </View>
-          <Button
+          <GlassButton
             onPress={handleContinue}
             disabled={selectedIds.size === 0}
             style={styles.continueButton}
           >
             Continue
-          </Button>
+          </GlassButton>
         </View>
       </ThemedView>
     );
@@ -576,7 +576,7 @@ export function EquipmentSelector({
         keyExtractor={(item) => item.id.toString()}
         numColumns={3}
         renderItem={({ item }) => (
-          <EquipmentItem
+          <CookwareItem
             appliance={item}
             isSelected={selectedIds.has(item.id)}
             onToggle={() => toggleItem(item.id)}
@@ -584,7 +584,7 @@ export function EquipmentSelector({
         )}
         ListHeaderComponent={
           <View style={styles.editHeader}>
-            <ThemedText type="h4">Select your equipment</ThemedText>
+            <ThemedText type="h4">Select your cookware</ThemedText>
             <View style={styles.selectionBadge}>
               <ThemedText type="small" style={{ color: AppColors.primary }}>
                 {selectedIds.size} selected
@@ -597,9 +597,9 @@ export function EquipmentSelector({
       <View
         style={[styles.footer, { backgroundColor: theme.backgroundDefault }]}
       >
-        <Button onPress={handleContinue} style={styles.saveButton}>
+        <GlassButton onPress={handleContinue} style={styles.saveButton}>
           Save Changes
-        </Button>
+        </GlassButton>
       </View>
     </ThemedView>
   );
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     width: "33.33%",
     padding: Spacing.xs,
   },
-  equipmentItem: {
+  cookwareItem: {
     alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,

@@ -24,7 +24,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { RecipeVoiceControls } from "@/components/RecipeVoiceControls";
 import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
 import { TermTooltip } from "@/components/TermTooltip";
@@ -828,7 +828,7 @@ export default function RecipeDetailScreen() {
           })}
 
           {availableCount < totalCount ? (
-            <Button
+            <GlassButton
               variant="outline"
               onPress={handleAddMissingToShoppingList}
               style={styles.addMissingButton}
@@ -841,10 +841,10 @@ export default function RecipeDetailScreen() {
               }
             >
               Add Missing to List
-            </Button>
+            </GlassButton>
           ) : null}
 
-          <Button
+          <GlassButton
             onPress={handleShopOnInstacart}
             loading={sendingToInstacart}
             disabled={sendingToInstacart}
@@ -853,7 +853,7 @@ export default function RecipeDetailScreen() {
             data-testid="button-shop-instacart"
           >
             Shop on Instacart
-          </Button>
+          </GlassButton>
         </GlassCard>
 
         <View

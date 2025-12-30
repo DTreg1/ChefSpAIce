@@ -74,6 +74,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     "SettingsTab",
     "NotificationsTab",
   ];
+  
   const visibleRoutes = state.routes.filter(
     (route) => !hiddenRoutes.includes(route.name),
   );

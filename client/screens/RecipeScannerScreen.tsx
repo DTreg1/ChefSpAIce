@@ -19,7 +19,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -221,7 +221,7 @@ export default function RecipeScannerScreen() {
             recipes.
           </ThemedText>
           {Platform.OS !== "web" ? (
-            <Button
+            <GlassButton
               onPress={async () => {
                 try {
                   await Linking.openSettings();
@@ -232,15 +232,15 @@ export default function RecipeScannerScreen() {
               style={styles.permissionButton}
             >
               Open Settings
-            </Button>
+            </GlassButton>
           ) : null}
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleClose}
             style={styles.cancelButton}
           >
             Cancel
-          </Button>
+          </GlassButton>
         </View>
       );
     }
@@ -261,16 +261,16 @@ export default function RecipeScannerScreen() {
           We need access to your camera to scan recipes from cookbooks and
           printed pages.
         </ThemedText>
-        <Button onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
           Enable Camera
-        </Button>
-        <Button
+        </GlassButton>
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Cancel
-        </Button>
+        </GlassButton>
       </View>
     );
   }
@@ -388,16 +388,16 @@ export default function RecipeScannerScreen() {
             { paddingBottom: insets.bottom + Spacing.md },
           ]}
         >
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleRetake}
             style={styles.retakeButton}
           >
             Retake Photo
-          </Button>
-          <Button onPress={handleSaveRecipe} style={styles.saveButton}>
+          </GlassButton>
+          <GlassButton onPress={handleSaveRecipe} style={styles.saveButton}>
             Save Recipe
-          </Button>
+          </GlassButton>
         </View>
       </ThemedView>
     );

@@ -18,7 +18,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { ExpiryBadge } from "@/components/ExpiryBadge";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -536,13 +536,13 @@ export default function GenerateRecipeScreen() {
       </View>
 
       {hasNoInventory ? (
-        <Button
+        <GlassButton
           onPress={() => navigation.goBack()}
           style={styles.actionButton}
           icon={<Feather name="plus" size={20} color="#FFFFFF" />}
         >
           Go to Inventory
-        </Button>
+        </GlassButton>
       ) : null}
 
       <Modal

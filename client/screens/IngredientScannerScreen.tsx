@@ -19,7 +19,6 @@ import * as ImageManipulator from "expo-image-manipulator";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/Button";
 import { GlassButton } from "@/components/GlassButton";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
@@ -272,7 +271,7 @@ export default function IngredientScannerScreen() {
             ingredient labels.
           </ThemedText>
           {Platform.OS !== "web" ? (
-            <Button
+            <GlassButton
               onPress={async () => {
                 try {
                   await Linking.openSettings();
@@ -283,15 +282,15 @@ export default function IngredientScannerScreen() {
               style={styles.permissionButton}
             >
               Open Settings
-            </Button>
+            </GlassButton>
           ) : null}
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleClose}
             style={styles.cancelButton}
           >
             Cancel
-          </Button>
+          </GlassButton>
         </View>
       );
     }
@@ -312,16 +311,16 @@ export default function IngredientScannerScreen() {
           We need access to your camera to scan ingredient labels from food
           packaging.
         </ThemedText>
-        <Button onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
           Enable Camera
-        </Button>
-        <Button
+        </GlassButton>
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Cancel
-        </Button>
+        </GlassButton>
       </View>
     );
   }
@@ -454,14 +453,14 @@ export default function IngredientScannerScreen() {
             { paddingBottom: insets.bottom + Spacing.md },
           ]}
         >
-          <Button
+          <GlassButton
             onPress={handleAddSelected}
             disabled={selectedIngredients.size === 0}
             style={styles.addButton}
           >
             Add {selectedIngredients.size} Item
             {selectedIngredients.size !== 1 ? "s" : ""} to Inventory
-          </Button>
+          </GlassButton>
         </View>
       </ThemedView>
     );

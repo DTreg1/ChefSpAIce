@@ -24,7 +24,6 @@ import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/Button";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -405,12 +404,12 @@ export default function AddFoodBatchScreen() {
           >
             All items have been removed. Go back to scan more food items.
           </ThemedText>
-          <Button
+          <GlassButton
             onPress={() => navigation.goBack()}
             style={styles.emptyButton}
           >
             Go Back
-          </Button>
+          </GlassButton>
         </View>
       </ThemedView>
     );
@@ -493,14 +492,14 @@ export default function AddFoodBatchScreen() {
           },
         ]}
       >
-        <Button
+        <GlassButton
           onPress={handleAddItems}
           disabled={selectedCount === 0 || saving}
           loading={saving}
           style={styles.addButton}
         >
           Add {selectedCount} Item{selectedCount !== 1 ? "s" : ""} to Inventory
-        </Button>
+        </GlassButton>
       </View>
 
       {editingItem !== null && editingIndex !== null ? (
@@ -786,12 +785,12 @@ function EditModal({
           <GlassButton variant="ghost" onPress={onClose} style={{ flex: 1 }}>
             Cancel
           </GlassButton>
-          <Button
+          <GlassButton
             onPress={handleSave}
             style={{ flex: 2, marginLeft: Spacing.md }}
           >
             Save Changes
-          </Button>
+          </GlassButton>
         </View>
       </Pressable>
     </Pressable>

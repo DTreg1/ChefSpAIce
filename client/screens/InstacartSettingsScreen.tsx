@@ -14,7 +14,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, InstacartSettings } from "@/lib/storage";
@@ -220,14 +220,14 @@ export default function InstacartSettingsScreen() {
         </View>
       </GlassCard>
 
-      <Button
+      <GlassButton
         variant="outline"
         onPress={handleOpenInstacart}
         icon={<Feather name="external-link" size={18} color={theme.text} />}
         data-testid="button-open-instacart"
       >
         Open Instacart Website
-      </Button>
+      </GlassButton>
     </ScrollView>
   );
 }

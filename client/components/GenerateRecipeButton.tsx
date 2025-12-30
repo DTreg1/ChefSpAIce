@@ -3,7 +3,7 @@ import { ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { storage, FoodItem } from "@/lib/storage";
 
@@ -63,14 +63,14 @@ export function GenerateRecipeButton({
   }, [navigation, onBeforeNavigate]);
 
   return (
-    <Button
+    <GlassButton
       onPress={handlePress}
       variant={variant}
       icon={<Feather name="book-open" size={16} color="#FFFFFF" />}
       style={style}
     >
       {label}
-    </Button>
+    </GlassButton>
   );
 }
 

@@ -18,7 +18,6 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/Button";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -193,9 +192,9 @@ export function ImageAnalysisResult({
           </View>
 
           <View style={styles.emptyStateActions}>
-            <Button onPress={onRetake} style={styles.fullWidthButton}>
+            <GlassButton onPress={onRetake} style={styles.fullWidthButton}>
               Retake Photo
-            </Button>
+            </GlassButton>
             {onScanMore ? (
               <GlassButton
                 variant="outline"
@@ -654,43 +653,43 @@ export function ImageAnalysisResult({
       >
         {selectedItems.size === 1 ? (
           <View style={styles.footerButtons}>
-            <Button
+            <GlassButton
               onPress={() => handleConfirm(true)}
               variant="outline"
               style={styles.singleItemButton}
             >
               Edit Details
-            </Button>
-            <Button onPress={handleQuickAdd} style={styles.singleItemButton}>
+            </GlassButton>
+            <GlassButton onPress={handleQuickAdd} style={styles.singleItemButton}>
               Quick Add
-            </Button>
+            </GlassButton>
           </View>
         ) : (
-          <Button
+          <GlassButton
             onPress={() => handleConfirm(false)}
             disabled={selectedItems.size === 0}
             style={styles.confirmButton}
           >
             Add {selectedItems.size} Item{selectedItems.size !== 1 ? "s" : ""}{" "}
             to Inventory
-          </Button>
+          </GlassButton>
         )}
         <View style={styles.footerSecondary}>
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={onRetake}
             style={styles.secondaryButton}
           >
             Retake Photo
-          </Button>
+          </GlassButton>
           {onScanMore ? (
-            <Button
+            <GlassButton
               variant="ghost"
               onPress={onScanMore}
               style={styles.secondaryButton}
             >
               Scan More
-            </Button>
+            </GlassButton>
           ) : null}
         </View>
       </View>

@@ -1,4 +1,5 @@
 import { useWebTheme } from "@/contexts/WebThemeContext";
+import { GlassButton } from "@/components/GlassButton";
 
 export function WebHeader() {
   const { isDark, toggleTheme } = useWebTheme();
@@ -14,13 +15,8 @@ export function WebHeader() {
           >
             ChefSpAIce
           </a>
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark 
-                ? "bg-white/10 hover:bg-white/20 text-white" 
-                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-            }`}
+          <GlassButton
+            onPress={toggleTheme}
             data-testid="button-theme-toggle"
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -41,7 +37,7 @@ export function WebHeader() {
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
             )}
-          </button>
+          </GlassButton>
         </nav>
       </div>
     </header>

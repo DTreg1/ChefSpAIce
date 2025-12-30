@@ -29,7 +29,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 const AppIcon = require("../../assets/images/icon.png");
@@ -1899,20 +1899,20 @@ export default function OnboardingScreen() {
 
       <View style={styles.fixedFooter}>
         <View style={styles.navigationButtons}>
-          <Button
+          <GlassButton
             onPress={() => setStep("welcome")}
             variant="secondary"
             style={styles.navButton}
           >
             Back
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             onPress={handlePreferencesToStorage}
             variant="primary"
             style={styles.navButton}
           >
             Continue
-          </Button>
+          </GlassButton>
         </View>
       </View>
     </Animated.View>
@@ -2019,21 +2019,21 @@ export default function OnboardingScreen() {
 
       <View style={styles.fixedFooter}>
         <View style={styles.navigationButtons}>
-          <Button
+          <GlassButton
             onPress={handleBackToPreferences}
             variant="secondary"
             style={styles.navButton}
           >
             Back
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             onPress={handleStorageToFoods}
             variant="primary"
             style={styles.navButton}
             disabled={selectedStorageAreas.size === 0}
           >
             Continue
-          </Button>
+          </GlassButton>
         </View>
       </View>
     </Animated.View>
@@ -2223,21 +2223,21 @@ export default function OnboardingScreen() {
 
         <View style={styles.fixedFooter}>
           <View style={styles.navigationButtons}>
-            <Button
+            <GlassButton
               onPress={handleBackToFoods}
               variant="secondary"
               style={styles.navButton}
             >
               Back
-            </Button>
-            <Button
+            </GlassButton>
+            <GlassButton
               onPress={handleCookwareToComplete}
               variant="primary"
               style={styles.navButton}
               disabled={saving}
             >
               {saving ? "Saving..." : "Start Using App"}
-            </Button>
+            </GlassButton>
           </View>
         </View>
       </Animated.View>
@@ -2343,20 +2343,20 @@ export default function OnboardingScreen() {
 
         <View style={styles.fixedFooter}>
           <View style={styles.navigationButtons}>
-            <Button
+            <GlassButton
               onPress={handleFoodsToPrev}
               variant="secondary"
               style={styles.navButton}
             >
               Back
-            </Button>
-            <Button
+            </GlassButton>
+            <GlassButton
               onPress={handleFoodsToCookware}
               variant="primary"
               style={styles.navButton}
             >
               Continue
-            </Button>
+            </GlassButton>
           </View>
         </View>
       </Animated.View>
@@ -2574,21 +2574,21 @@ export default function OnboardingScreen() {
         </View>
 
         <View style={styles.summaryActions}>
-          <Button
+          <GlassButton
             onPress={() => setStep("cookware")}
             variant="secondary"
             style={styles.editButton}
           >
             Back
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             onPress={handleComplete}
             variant="primary"
             disabled={saving}
             style={styles.completeButton}
           >
             {saving ? "Saving..." : "Start Using App"}
-          </Button>
+          </GlassButton>
         </View>
       </Animated.View>
     );

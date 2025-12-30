@@ -7,7 +7,7 @@ import {
 import { DrawerActions } from "@react-navigation/native";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -131,12 +131,6 @@ export function DrawerContent(props: DrawerContentComponentProps) {
       matchTab: "MealPlanTab",
       matchScreen: "ShoppingList",
     },
-    {
-      label: "Profile",
-      icon: "user",
-      route: "ProfileTab",
-      matchTab: "ProfileTab",
-    },
   ];
 
   const isItemActive = (item: (typeof menuItems)[0]) => {
@@ -228,6 +222,16 @@ export function DrawerContent(props: DrawerContentComponentProps) {
 
         <View style={styles.menuSection}>
           <DrawerItem
+            label="Profile"
+            icon="user"
+            onPress={() => {
+              closeDrawer();
+              navigation.navigate("Tabs", {
+                screen: "ProfileTab",
+              });
+            }}
+          />
+          <DrawerItem
             label="Analytics"
             icon="bar-chart-2"
             isActive={activeScreen === "Analytics"}
@@ -252,7 +256,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             }}
           />
           <DrawerItem
-            label="My Cookware"
+            label="Cookware"
             icon="tool"
             isActive={activeScreen === "Cookware"}
             onPress={() => {
@@ -275,7 +279,11 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         <Pressable
           style={({ pressed }) => [
             styles.addItemButton,
-            { backgroundColor: theme.glass.backgroundStrong, borderWidth: 1, borderColor: theme.glass.border },
+            {
+              backgroundColor: theme.glass.backgroundStrong,
+              borderWidth: 1,
+              borderColor: theme.glass.border,
+            },
             pressed ? { opacity: 0.8 } : null,
           ]}
           onPress={() => {
@@ -291,7 +299,11 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             color={theme.textSecondary}
             style={{ marginRight: Spacing.sm }}
           />
-          <ThemedText style={[styles.addItemText, { color: theme.textSecondary }]}>Sign Out</ThemedText>
+          <ThemedText
+            style={[styles.addItemText, { color: theme.textSecondary }]}
+          >
+            Sign Out
+          </ThemedText>
         </Pressable>
       </View>
     </View>

@@ -19,7 +19,7 @@ import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -734,7 +734,7 @@ export default function SettingsScreen() {
           );
         })}
 
-        <Button
+        <GlassButton
           variant="outline"
           onPress={handleResetMacros}
           style={styles.resetMacroButton}
@@ -745,7 +745,7 @@ export default function SettingsScreen() {
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
             Reset to Default (50/35/15)
           </ThemedText>
-        </Button>
+        </GlassButton>
       </GlassCard>
 
       <GlassCard style={styles.section}>
@@ -819,7 +819,7 @@ export default function SettingsScreen() {
         </ThemedText>
 
         {learnedPrefsCount > 0 ? (
-          <Button
+          <GlassButton
             variant="outline"
             onPress={handleResetStoragePreferences}
             style={styles.resetButton}
@@ -830,7 +830,7 @@ export default function SettingsScreen() {
             <ThemedText style={{ color: AppColors.warning }}>
               Reset Storage Preferences
             </ThemedText>
-          </Button>
+          </GlassButton>
         ) : null}
       </GlassCard>
 
@@ -887,14 +887,14 @@ export default function SettingsScreen() {
             </ThemedText>
 
             <View style={styles.deleteButtonRow}>
-              <Button
+              <GlassButton
                 variant="outline"
                 onPress={handleCancelDelete}
                 style={styles.cancelDeleteButton}
               >
                 <ThemedText>Cancel</ThemedText>
-              </Button>
-              <Button
+              </GlassButton>
+              <GlassButton
                 variant="primary"
                 onPress={handleDeleteAccountStep2}
                 style={styles.confirmDeleteButton}
@@ -903,7 +903,7 @@ export default function SettingsScreen() {
                 <ThemedText style={{ color: "#FFFFFF" }}>
                   Confirm Delete
                 </ThemedText>
-              </Button>
+              </GlassButton>
             </View>
           </View>
         )}

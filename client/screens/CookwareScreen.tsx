@@ -29,7 +29,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
@@ -538,7 +538,7 @@ export default function CookwareScreen() {
           </View>
         ))}
       </View>
-      <Button
+      <GlassButton
         onPress={handleAddAllCommon}
         disabled={savingCommon}
         loading={savingCommon}
@@ -547,7 +547,7 @@ export default function CookwareScreen() {
         {savingCommon
           ? "Adding..."
           : `Add ${commonAppliances.length} Common Items`}
-      </Button>
+      </GlassButton>
       <Pressable
         style={styles.skipButton}
         onPress={() => setShowFirstTimeSetup(false)}

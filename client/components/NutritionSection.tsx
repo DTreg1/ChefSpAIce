@@ -11,7 +11,6 @@ import Animated, {
 
 import { ThemedText } from "./ThemedText";
 import { GlassCard } from "./GlassCard";
-import { Button } from "./Button";
 import { GlassButton } from "./GlassButton";
 import { NutritionLabel } from "./NutritionLabel";
 import { NutritionScoreBadge, NutritionScoreDetail } from "./NutritionScoreBadge";
@@ -269,7 +268,7 @@ export function NutritionSection({
                 </ThemedText>
               </GlassButton>
             ) : null}
-            <Button
+            <GlassButton
               variant="outline"
               onPress={() => refetch()}
               style={styles.noDataButton}
@@ -284,7 +283,7 @@ export function NutritionSection({
               <ThemedText style={{ color: theme.textSecondary }}>
                 Retry
               </ThemedText>
-            </Button>
+            </GlassButton>
           </View>
         </View>
       );

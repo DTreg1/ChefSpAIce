@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -511,31 +510,31 @@ export default function DevComponentsScreen() {
 
         <SectionHeader title="Button Variants" />
         <View style={styles.buttonColumn}>
-          <Button variant="primary" onPress={() => {}}>
+          <GlassButton variant="primary" onPress={() => {}}>
             Primary Button
-          </Button>
-          <Button variant="secondary" onPress={() => {}}>
+          </GlassButton>
+          <GlassButton variant="secondary" onPress={() => {}}>
             Secondary Button
-          </Button>
-          <Button variant="outline" onPress={() => {}}>
+          </GlassButton>
+          <GlassButton variant="outline" onPress={() => {}}>
             Outline Button
-          </Button>
-          <Button variant="ghost" onPress={() => {}}>
+          </GlassButton>
+          <GlassButton variant="ghost" onPress={() => {}}>
             Ghost Button
-          </Button>
-          <Button variant="primary" loading>
+          </GlassButton>
+          <GlassButton variant="primary" loading>
             Loading State
-          </Button>
-          <Button variant="primary" disabled>
+          </GlassButton>
+          <GlassButton variant="primary" disabled>
             Disabled State
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             variant="primary"
             icon={<Feather name="plus" size={18} color="#FFFFFF" />}
             onPress={() => {}}
           >
             With Icon
-          </Button>
+          </GlassButton>
         </View>
 
         <SectionHeader title="Glass Button Variants" />

@@ -9,7 +9,7 @@ import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem, InstacartSettings } from "@/lib/storage";
@@ -256,7 +256,7 @@ export default function ShoppingListScreen() {
 
       {uncheckedItems.length > 0 ? (
         <View style={[styles.instacartButtonContainer, { paddingBottom: insets.bottom + Spacing.md }]}>
-          <Button
+          <GlassButton
             onPress={handleSendToInstacart}
             loading={sendingToInstacart}
             disabled={sendingToInstacart}
@@ -267,7 +267,7 @@ export default function ShoppingListScreen() {
             <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
               Send to Instacart
             </ThemedText>
-          </Button>
+          </GlassButton>
         </View>
       ) : null}
     </View>

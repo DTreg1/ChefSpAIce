@@ -12,7 +12,7 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { ExpiryBadge } from "@/components/ExpiryBadge";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -222,9 +222,9 @@ export function RecipeResult({
           {error ||
             "Something went wrong while creating your recipe. Please try again."}
         </ThemedText>
-        <Button onPress={onRegenerate} style={styles.retryButton}>
+        <GlassButton onPress={onRegenerate} style={styles.retryButton}>
           Try Again
-        </Button>
+        </GlassButton>
       </GlassCard>
     );
   }
@@ -514,16 +514,16 @@ export function RecipeResult({
       </GlassCard>
 
       <View style={styles.actionsContainer}>
-        <Button
+        <GlassButton
           onPress={onSave}
           icon={<Feather name="bookmark" size={18} color="#FFFFFF" />}
           style={styles.primaryAction}
         >
           Save to Recipes
-        </Button>
+        </GlassButton>
 
         <View style={styles.secondaryActions}>
-          <Button
+          <GlassButton
             onPress={onRegenerate}
             variant="outline"
             icon={
@@ -532,9 +532,9 @@ export function RecipeResult({
             style={styles.secondaryButton}
           >
             Generate Another
-          </Button>
+          </GlassButton>
 
-          <Button
+          <GlassButton
             onPress={handleShare}
             variant="outline"
             icon={
@@ -543,11 +543,11 @@ export function RecipeResult({
             style={styles.secondaryButton}
           >
             Share
-          </Button>
+          </GlassButton>
         </View>
 
         {missingIngredients.length > 0 ? (
-          <Button
+          <GlassButton
             onPress={handleAddMissingToList}
             variant="ghost"
             loading={addingToList}
@@ -555,7 +555,7 @@ export function RecipeResult({
             style={styles.addToListButton}
           >
             Add {missingIngredients.length} missing items to shopping list
-          </Button>
+          </GlassButton>
         ) : null}
       </View>
     </View>

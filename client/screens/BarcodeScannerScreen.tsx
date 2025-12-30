@@ -13,7 +13,7 @@ import * as Linking from "expo-linking";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -74,7 +74,7 @@ export default function BarcodeScannerScreen() {
             barcodes.
           </ThemedText>
           {Platform.OS !== "web" ? (
-            <Button
+            <GlassButton
               onPress={async () => {
                 try {
                   await Linking.openSettings();
@@ -85,15 +85,15 @@ export default function BarcodeScannerScreen() {
               style={styles.permissionButton}
             >
               Open Settings
-            </Button>
+            </GlassButton>
           ) : null}
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleClose}
             style={styles.cancelButton}
           >
             Cancel
-          </Button>
+          </GlassButton>
         </View>
       );
     }
@@ -114,16 +114,16 @@ export default function BarcodeScannerScreen() {
           We need access to your camera to scan barcodes and quickly add items
           to your inventory.
         </ThemedText>
-        <Button onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
           Enable Camera
-        </Button>
-        <Button
+        </GlassButton>
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Cancel
-        </Button>
+        </GlassButton>
       </View>
     );
   }
@@ -145,13 +145,13 @@ export default function BarcodeScannerScreen() {
           Barcode scanning works best on your mobile device. Scan the QR code to
           open in Expo Go.
         </ThemedText>
-        <Button
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Go Back
-        </Button>
+        </GlassButton>
       </View>
     );
   }
@@ -199,12 +199,12 @@ export default function BarcodeScannerScreen() {
             Position the barcode within the frame
           </ThemedText>
           {scanned ? (
-            <Button
+            <GlassButton
               onPress={() => setScanned(false)}
               style={styles.rescanButton}
             >
               Tap to Scan Again
-            </Button>
+            </GlassButton>
           ) : null}
         </View>
       </View>

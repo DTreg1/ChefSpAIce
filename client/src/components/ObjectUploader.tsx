@@ -6,6 +6,7 @@ import DashboardModal from "@uppy/react/dashboard-modal";
 import "@uppy/core/css/style.min.css";
 import "@uppy/dashboard/css/style.min.css";
 import AwsS3 from "@uppy/aws-s3";
+import { GlassButton } from "@/components/GlassButton";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
@@ -86,13 +87,11 @@ export function ObjectUploader({
 
   return (
     <div>
-      <button 
-        type="button"
-        onClick={() => setShowModal(true)} 
-        className={buttonClassName}
+      <GlassButton
+        onPress={() => setShowModal(true)} 
       >
         {children}
-      </button>
+      </GlassButton>
 
       <DashboardModal
         uppy={uppy}

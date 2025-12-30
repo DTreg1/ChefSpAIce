@@ -20,7 +20,7 @@ import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,

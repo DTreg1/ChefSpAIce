@@ -26,7 +26,7 @@ import * as FileSystem from "expo-file-system/legacy";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import {
   ImageAnalysisResult,
   IdentifiedFood,
@@ -384,7 +384,7 @@ export default function FoodCameraScreen() {
             items.
           </ThemedText>
           {Platform.OS !== "web" ? (
-            <Button
+            <GlassButton
               onPress={async () => {
                 try {
                   await Linking.openSettings();
@@ -395,15 +395,15 @@ export default function FoodCameraScreen() {
               style={styles.permissionButton}
             >
               Open Settings
-            </Button>
+            </GlassButton>
           ) : null}
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleClose}
             style={styles.cancelButton}
           >
             Cancel
-          </Button>
+          </GlassButton>
         </ThemedView>
       );
     }
@@ -418,16 +418,16 @@ export default function FoodCameraScreen() {
           We need access to your camera to identify food items and add them to
           your inventory.
         </ThemedText>
-        <Button onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
           Enable Camera
-        </Button>
-        <Button
+        </GlassButton>
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Cancel
-        </Button>
+        </GlassButton>
       </ThemedView>
     );
   }
@@ -443,13 +443,13 @@ export default function FoodCameraScreen() {
           Food camera scanning works best on your mobile device. Scan the QR
           code to open in Expo Go.
         </ThemedText>
-        <Button
+        <GlassButton
           variant="ghost"
           onPress={handleClose}
           style={styles.cancelButton}
         >
           Go Back
-        </Button>
+        </GlassButton>
       </ThemedView>
     );
   }
@@ -523,22 +523,22 @@ export default function FoodCameraScreen() {
             { paddingBottom: insets.bottom + Spacing.xl },
           ]}
         >
-          <Button
+          <GlassButton
             variant="ghost"
             onPress={handleRetake}
             disabled={screenState === "analyzing"}
             style={styles.previewRetakeButton}
           >
             Retake
-          </Button>
-          <Button
+          </GlassButton>
+          <GlassButton
             onPress={handleAnalyze}
             disabled={screenState === "analyzing"}
             loading={screenState === "analyzing"}
             style={styles.previewAnalyzeButton}
           >
             Analyze Food
-          </Button>
+          </GlassButton>
         </View>
       </View>
     );

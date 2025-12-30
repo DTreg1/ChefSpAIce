@@ -19,7 +19,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { Button } from "@/components/Button";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { CookingTerm } from "@/components/TermHighlighter";
@@ -357,7 +357,7 @@ export default function CookingTermsScreen() {
               ) : null}
 
               {selectedTerm.videoUrl ? (
-                <Button
+                <GlassButton
                   variant="outline"
                   onPress={() => handleVideoPress(selectedTerm.videoUrl!)}
                   style={styles.videoButton}
@@ -372,7 +372,7 @@ export default function CookingTermsScreen() {
                   <ThemedText style={{ color: theme.primary }}>
                     Watch Video
                   </ThemedText>
-                </Button>
+                </GlassButton>
               ) : null}
             </ScrollView>
           </View>
