@@ -1,13 +1,37 @@
-import { StyleSheet, View, Text, Pressable, ScrollView, Linking, useWindowDimensions, Platform } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  Pressable, 
+  ScrollView, 
+  Linking, 
+  useWindowDimensions, 
+  Platform,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useWebTheme } from "@/contexts/WebThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/query-client";
 
 const BRAND_GREEN = "#27AE60";
 const BRAND_GREEN_DARK = "#1E8449";
 
 const APP_STORE_URL = "#"; 
 const PLAY_STORE_URL = "#"; 
+
+interface PriceInfo {
+  id: string;
+  amount: number;
+  currency: string;
+  interval: string;
+  intervalCount: number;
+  trialDays: number;
+  productName: string;
+}
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -21,7 +45,17 @@ function getThemeColors(isDark: boolean) {
     footerBg: isDark ? "#0A0D10" : "#F1F5F9",
     storeBadgeBg: isDark ? "#1A1F25" : "#FFFFFF",
     storeBadgeBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    inputBg: isDark ? "#1A1F25" : "#FFFFFF",
+    inputBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    errorBg: isDark ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
   };
+}
+
+function formatPrice(amount: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amount / 100);
 }
 
 interface FeatureCardProps {
@@ -107,17 +141,141 @@ function StoreBadge({ type, colors }: StoreBadgeProps) {
   );
 }
 
+const PLAN_FEATURES = [
+  "Unlimited food inventory tracking",
+  "AI-powered recipe generation",
+  "Smart meal planning",
+  "Expiration alerts & notifications",
+  "Nutrition tracking & analytics",
+  "Cloud sync across devices",
+  "Shopping list management",
+  "Waste reduction insights",
+];
+
 export default function LandingScreen() {
   const { width } = useWindowDimensions();
   const isWide = width > 768;
   const { isDark, toggleTheme } = useWebTheme();
   const colors = getThemeColors(isDark);
+  const { signUp, signIn, signInWithApple, signInWithGoogle, isAppleAuthAvailable, isGoogleAuthAvailable, isAuthenticated } = useAuth();
+  
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
+  const [prices, setPrices] = useState<{ monthly: PriceInfo | null; annual: PriceInfo | null }>({ monthly: null, annual: null });
+  const [pricesLoading, setPricesLoading] = useState(true);
+  
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+  const signupSectionRef = useRef<View>(null);
+
+  useEffect(() => {
+    fetchPrices();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && Platform.OS === "web" && typeof window !== "undefined") {
+      window.location.href = "/onboarding";
+    }
+  }, [isAuthenticated]);
+
+  const fetchPrices = async () => {
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/subscriptions/prices", baseUrl);
+      const response = await fetch(url.toString());
+      if (response.ok) {
+        const data = await response.json();
+        setPrices(data);
+      }
+    } catch (error) {
+      console.error("Error fetching prices:", error);
+    } finally {
+      setPricesLoading(false);
+    }
+  };
+
+  const handleAuth = async () => {
+    setAuthError(null);
+    
+    if (!email || !password) {
+      setAuthError("Please enter your email and password");
+      return;
+    }
+
+    if (isSignUp && password !== confirmPassword) {
+      setAuthError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError("Password must be at least 6 characters");
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      if (isSignUp) {
+        const result = await signUp(email, password, undefined, selectedPlan);
+        if (!result.success) {
+          setAuthError(result.error || "Registration failed");
+        }
+      } else {
+        const result = await signIn(email, password);
+        if (!result.success) {
+          setAuthError(result.error || "Sign in failed");
+        }
+      }
+    } catch (error) {
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSocialAuth = async (provider: "apple" | "google") => {
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const result = provider === "apple" 
+        ? await signInWithApple(selectedPlan)
+        : await signInWithGoogle(selectedPlan);
+      if (!result.success) {
+        setAuthError(result.error || `${provider} sign in failed`);
+      }
+    } catch (error) {
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const scrollToSignup = () => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const element = document.getElementById("signup-section");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
 
   const navigateTo = (path: string) => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       window.location.href = path;
     }
   };
+
+  const annualPrice = prices.annual;
+  const monthlyPrice = prices.monthly;
+  const annualSavings = annualPrice && monthlyPrice
+    ? Math.round(((monthlyPrice.amount * 12 - annualPrice.amount) / (monthlyPrice.amount * 12)) * 100)
+    : 0;
 
   return (
     <ScrollView 
@@ -163,9 +321,25 @@ export default function LandingScreen() {
             and never let food go to waste again.
           </Text>
 
-          <View style={styles.storeBadges}>
-            <StoreBadge type="apple" colors={colors} />
-            <StoreBadge type="google" colors={colors} />
+          <View style={styles.heroCtas}>
+            <Pressable
+              style={[styles.primaryCta]}
+              onPress={scrollToSignup}
+              data-testid="button-get-started"
+            >
+              <LinearGradient
+                colors={[BRAND_GREEN, BRAND_GREEN_DARK]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryCtaGradient}
+              >
+                <Text style={styles.primaryCtaText}>Start Free Trial</Text>
+                <Feather name="arrow-right" size={20} color="#FFFFFF" />
+              </LinearGradient>
+            </Pressable>
+            <Text style={[styles.trialNote, { color: colors.textSecondary }]}>
+              7 days free, then pay as you go
+            </Text>
           </View>
         </View>
       </View>
@@ -235,22 +409,261 @@ export default function LandingScreen() {
         </View>
       </View>
 
-      <View style={styles.ctaSection} data-testid="section-cta">
-        <LinearGradient
-          colors={[BRAND_GREEN_DARK, BRAND_GREEN]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.ctaGradient}
-        >
-          <Text style={styles.ctaTitle} data-testid="text-cta-title">Ready to Transform Your Kitchen?</Text>
-          <Text style={styles.ctaSubtitle} data-testid="text-cta-subtitle">
-            Download ChefSpAIce free today and start saving food, time, and money.
-          </Text>
-          <View style={styles.storeBadges}>
-            <StoreBadge type="apple" colors={{ ...colors, storeBadgeBg: "rgba(255,255,255,0.15)", storeBadgeBorder: "rgba(255,255,255,0.2)", textPrimary: "#FFFFFF", textSecondary: "rgba(255,255,255,0.8)" }} />
-            <StoreBadge type="google" colors={{ ...colors, storeBadgeBg: "rgba(255,255,255,0.15)", storeBadgeBorder: "rgba(255,255,255,0.2)", textPrimary: "#FFFFFF", textSecondary: "rgba(255,255,255,0.8)" }} />
+      <View 
+        style={styles.pricingSection} 
+        data-testid="section-pricing"
+        nativeID="signup-section"
+        ref={signupSectionRef}
+      >
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} data-testid="text-pricing-title">
+          Choose Your Plan
+        </Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]} data-testid="text-pricing-subtitle">
+          Start with a free 7-day trial. Cancel anytime.
+        </Text>
+
+        <View style={[styles.pricingContainer, isWide && styles.pricingContainerWide]}>
+          <View style={styles.planCards}>
+            <Pressable
+              style={[
+                styles.planCard,
+                { backgroundColor: colors.card, borderColor: selectedPlan === "monthly" ? BRAND_GREEN : colors.cardBorder },
+                selectedPlan === "monthly" && styles.planCardSelected,
+              ]}
+              onPress={() => setSelectedPlan("monthly")}
+              data-testid="button-plan-monthly"
+            >
+              <View style={styles.planHeader}>
+                <Text style={[styles.planName, { color: colors.textPrimary }]}>Monthly</Text>
+                {pricesLoading ? (
+                  <ActivityIndicator size="small" color={BRAND_GREEN} />
+                ) : monthlyPrice ? (
+                  <Text style={[styles.planPrice, { color: BRAND_GREEN }]}>
+                    {formatPrice(monthlyPrice.amount, monthlyPrice.currency)}
+                    <Text style={[styles.planInterval, { color: colors.textSecondary }]}>/mo</Text>
+                  </Text>
+                ) : null}
+              </View>
+              <View style={[styles.planRadio, selectedPlan === "monthly" && styles.planRadioSelected]}>
+                {selectedPlan === "monthly" && <Feather name="check" size={14} color="#FFFFFF" />}
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.planCard,
+                { backgroundColor: colors.card, borderColor: selectedPlan === "annual" ? BRAND_GREEN : colors.cardBorder },
+                selectedPlan === "annual" && styles.planCardSelected,
+              ]}
+              onPress={() => setSelectedPlan("annual")}
+              data-testid="button-plan-annual"
+            >
+              {annualSavings > 0 && (
+                <View style={styles.savingsBadge}>
+                  <Text style={styles.savingsBadgeText}>Save {annualSavings}%</Text>
+                </View>
+              )}
+              <View style={styles.planHeader}>
+                <Text style={[styles.planName, { color: colors.textPrimary }]}>Annual</Text>
+                {pricesLoading ? (
+                  <ActivityIndicator size="small" color={BRAND_GREEN} />
+                ) : annualPrice ? (
+                  <View>
+                    <Text style={[styles.planPrice, { color: BRAND_GREEN }]}>
+                      {formatPrice(annualPrice.amount, annualPrice.currency)}
+                      <Text style={[styles.planInterval, { color: colors.textSecondary }]}>/yr</Text>
+                    </Text>
+                    <Text style={[styles.planMonthly, { color: colors.textSecondary }]}>
+                      {formatPrice(Math.round(annualPrice.amount / 12), annualPrice.currency)}/mo
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <View style={[styles.planRadio, selectedPlan === "annual" && styles.planRadioSelected]}>
+                {selectedPlan === "annual" && <Feather name="check" size={14} color="#FFFFFF" />}
+              </View>
+            </Pressable>
           </View>
-        </LinearGradient>
+
+          <View style={styles.featuresListContainer}>
+            <Text style={[styles.featuresListTitle, { color: colors.textPrimary }]}>Everything included:</Text>
+            <View style={styles.featuresList}>
+              {PLAN_FEATURES.map((feature, index) => (
+                <View key={index} style={styles.featuresListItem}>
+                  <Feather name="check-circle" size={16} color={BRAND_GREEN} />
+                  <Text style={[styles.featuresListText, { color: colors.textSecondary }]}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={[styles.signupCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <Text style={[styles.signupTitle, { color: colors.textPrimary }]}>
+              {isSignUp ? "Create Your Account" : "Welcome Back"}
+            </Text>
+            <Text style={[styles.signupSubtitle, { color: colors.textSecondary }]}>
+              {isSignUp ? "Start your 7-day free trial" : "Sign in to continue"}
+            </Text>
+
+            {authError && (
+              <View style={[styles.authErrorContainer, { backgroundColor: colors.errorBg }]}>
+                <Feather name="alert-circle" size={16} color="#EF4444" />
+                <Text style={styles.authErrorText}>{authError}</Text>
+              </View>
+            )}
+
+            <View style={styles.authInputContainer}>
+              <View style={[styles.authInputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
+                <Feather name="mail" size={20} color={colors.textSecondary} style={styles.authInputIcon} />
+                <TextInput
+                  style={[styles.authInput, { color: colors.textPrimary }]}
+                  placeholder="Email"
+                  placeholderTextColor={colors.textSecondary}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  data-testid="input-email"
+                />
+              </View>
+
+              <View style={[styles.authInputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
+                <Feather name="lock" size={20} color={colors.textSecondary} style={styles.authInputIcon} />
+                <TextInput
+                  ref={passwordRef}
+                  style={[styles.authInput, { color: colors.textPrimary }]}
+                  placeholder="Password"
+                  placeholderTextColor={colors.textSecondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  returnKeyType={isSignUp ? "next" : "done"}
+                  onSubmitEditing={() => {
+                    if (isSignUp) {
+                      confirmPasswordRef.current?.focus();
+                    } else {
+                      handleAuth();
+                    }
+                  }}
+                  data-testid="input-password"
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.authEyeButton}>
+                  <Feather name={showPassword ? "eye-off" : "eye"} size={20} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+
+              {isSignUp && (
+                <View style={[styles.authInputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
+                  <Feather name="lock" size={20} color={colors.textSecondary} style={styles.authInputIcon} />
+                  <TextInput
+                    ref={confirmPasswordRef}
+                    style={[styles.authInput, { color: colors.textPrimary }]}
+                    placeholder="Confirm Password"
+                    placeholderTextColor={colors.textSecondary}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    returnKeyType="done"
+                    onSubmitEditing={handleAuth}
+                    data-testid="input-confirm-password"
+                  />
+                </View>
+              )}
+            </View>
+
+            <Pressable
+              style={[styles.authButton, authLoading && styles.authButtonDisabled]}
+              onPress={handleAuth}
+              disabled={authLoading}
+              data-testid="button-auth-submit"
+            >
+              <LinearGradient
+                colors={[BRAND_GREEN, BRAND_GREEN_DARK]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.authButtonGradient}
+              >
+                {authLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.authButtonText}>
+                    {isSignUp ? "Start Free Trial" : "Sign In"}
+                  </Text>
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError(null);
+              }}
+              style={styles.authSwitchButton}
+              data-testid="button-switch-auth-mode"
+            >
+              <Text style={[styles.authSwitchText, { color: colors.textSecondary }]}>
+                {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                <Text style={{ color: BRAND_GREEN, fontWeight: "600" }}>
+                  {isSignUp ? "Sign In" : "Sign Up"}
+                </Text>
+              </Text>
+            </Pressable>
+
+            {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
+              <>
+                <View style={styles.authDividerContainer}>
+                  <View style={[styles.authDivider, { backgroundColor: colors.cardBorder }]} />
+                  <Text style={[styles.authDividerText, { color: colors.textSecondary }]}>
+                    or continue with
+                  </Text>
+                  <View style={[styles.authDivider, { backgroundColor: colors.cardBorder }]} />
+                </View>
+
+                <View style={styles.authSocialButtons}>
+                  {isAppleAuthAvailable && (
+                    <Pressable
+                      style={[styles.authSocialButton, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}
+                      onPress={() => handleSocialAuth("apple")}
+                      disabled={authLoading}
+                      data-testid="button-auth-apple"
+                    >
+                      <FontAwesome name="apple" size={20} color={colors.textPrimary} />
+                      <Text style={[styles.authSocialButtonText, { color: colors.textPrimary }]}>Apple</Text>
+                    </Pressable>
+                  )}
+                  {isGoogleAuthAvailable && (
+                    <Pressable
+                      style={[styles.authSocialButton, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}
+                      onPress={() => handleSocialAuth("google")}
+                      disabled={authLoading}
+                      data-testid="button-auth-google"
+                    >
+                      <Ionicons name="logo-google" size={20} color={colors.textPrimary} />
+                      <Text style={[styles.authSocialButtonText, { color: colors.textPrimary }]}>Google</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.mobileSection} data-testid="section-mobile">
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Available on All Devices</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+          Web, iOS, and Android - your kitchen assistant everywhere
+        </Text>
+        <View style={styles.storeBadges}>
+          <StoreBadge type="apple" colors={colors} />
+          <StoreBadge type="google" colors={colors} />
+        </View>
       </View>
 
       <View style={[styles.footer, { backgroundColor: colors.footerBg }]} data-testid="footer">
@@ -266,19 +679,19 @@ export default function LandingScreen() {
             <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-privacy">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Privacy Policy</Text>
             </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>|</Text>
             <Pressable onPress={() => navigateTo("/terms")} data-testid="link-terms">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Terms of Service</Text>
             </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>|</Text>
             <Pressable onPress={() => navigateTo("/about")} data-testid="link-about">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>About</Text>
             </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>|</Text>
             <Pressable onPress={() => navigateTo("/support")} data-testid="link-support">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Support</Text>
             </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>|</Text>
             <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-attributions">
               <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Attributions</Text>
             </Pressable>
@@ -358,6 +771,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 28,
     marginBottom: 40,
+  },
+  heroCtas: {
+    alignItems: "center",
+    gap: 12,
+  },
+  primaryCta: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  primaryCtaGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+  },
+  primaryCtaText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  trialNote: {
+    fontSize: 14,
   },
   storeBadges: {
     flexDirection: "row",
@@ -480,28 +916,210 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  ctaSection: {
+  pricingSection: {
     paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  ctaGradient: {
-    borderRadius: 24,
-    padding: 48,
+    paddingVertical: 60,
     alignItems: "center",
   },
-  ctaTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  ctaSubtitle: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    marginBottom: 32,
+  pricingContainer: {
+    width: "100%",
     maxWidth: 500,
+    gap: 24,
+  },
+  pricingContainerWide: {
+    maxWidth: 800,
+  },
+  planCards: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  planCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    position: "relative",
+  },
+  planCardSelected: {
+    backgroundColor: "rgba(39, 174, 96, 0.05)",
+  },
+  planHeader: {
+    gap: 8,
+  },
+  planName: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  planPrice: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  planInterval: {
+    fontSize: 16,
+    fontWeight: "400",
+  },
+  planMonthly: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  planRadio: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(0,0,0,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  planRadioSelected: {
+    backgroundColor: BRAND_GREEN,
+    borderColor: BRAND_GREEN,
+  },
+  savingsBadge: {
+    position: "absolute",
+    top: -10,
+    right: 16,
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  savingsBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  featuresListContainer: {
+    gap: 12,
+  },
+  featuresListTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  featuresList: {
+    gap: 8,
+  },
+  featuresListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  featuresListText: {
+    fontSize: 14,
+  },
+  signupCard: {
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    gap: 16,
+  },
+  signupTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  signupSubtitle: {
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  authErrorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+  },
+  authErrorText: {
+    color: "#EF4444",
+    fontSize: 14,
+    flex: 1,
+  },
+  authInputContainer: {
+    gap: 12,
+  },
+  authInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  authInputIcon: {
+    marginRight: 12,
+  },
+  authInput: {
+    flex: 1,
+    fontSize: 16,
+    height: "100%",
+    outlineStyle: "none",
+  } as any,
+  authEyeButton: {
+    padding: 4,
+  },
+  authButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  authButtonGradient: {
+    height: 52,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  authButtonDisabled: {
+    opacity: 0.7,
+  },
+  authButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  authSwitchButton: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  authSwitchText: {
+    fontSize: 14,
+  },
+  authDividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 8,
+  },
+  authDivider: {
+    flex: 1,
+    height: 1,
+  },
+  authDividerText: {
+    fontSize: 13,
+  },
+  authSocialButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  authSocialButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 48,
+  },
+  authSocialButtonText: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  mobileSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 60,
+    alignItems: "center",
   },
   footer: {
     paddingVertical: 48,

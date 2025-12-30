@@ -19,7 +19,7 @@ interface SubscriptionInfo {
   subscriptionEndsAt: string | null;
 }
 
-async function createTrialSubscription(userId: string): Promise<void> {
+async function createTrialSubscription(userId: string, selectedPlan: 'monthly' | 'annual' = 'monthly'): Promise<void> {
   // Check if subscription already exists (idempotent)
   const [existing] = await db
     .select()
@@ -40,7 +40,7 @@ async function createTrialSubscription(userId: string): Promise<void> {
     await db.insert(subscriptions).values({
       userId,
       status: 'trialing',
-      planType: 'trial',
+      planType: selectedPlan, // Use the selected plan type (monthly or annual) instead of 'trial'
       currentPeriodStart: now,
       currentPeriodEnd: trialEnd,
       trialStart: now,
@@ -132,7 +132,7 @@ function getExpiryDate(): Date {
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { email, password, displayName } = req.body;
+    const { email, password, displayName, selectedPlan } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
@@ -146,6 +146,10 @@ router.post("/register", async (req: Request, res: Response) => {
     if (password.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
+
+    // Validate selectedPlan if provided
+    const validPlans = ['monthly', 'annual'];
+    const plan = validPlans.includes(selectedPlan) ? selectedPlan : 'monthly';
 
     const existingUser = await db
       .select()
@@ -181,8 +185,8 @@ router.post("/register", async (req: Request, res: Response) => {
       userId: newUser.id,
     });
 
-    // Create trial subscription for new user (7-day free trial)
-    await createTrialSubscription(newUser.id);
+    // Create trial subscription for new user (7-day free trial) with selected plan
+    await createTrialSubscription(newUser.id, plan);
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 

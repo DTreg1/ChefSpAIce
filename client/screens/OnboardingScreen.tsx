@@ -823,7 +823,8 @@ export default function OnboardingScreen() {
     isAuthenticated,
   } = useAuth();
 
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  // Start at "preferences" if user is already authenticated (coming from landing page after signup)
+  const [step, setStep] = useState<OnboardingStep>(isAuthenticated ? "preferences" : "welcome");
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(
     new Set(),
@@ -863,7 +864,7 @@ export default function OnboardingScreen() {
     loadAppliances();
   }, []);
 
-  // Auto-advance to preferences setup when user becomes authenticated
+  // Auto-advance to preferences setup when user becomes authenticated (during onboarding welcome step)
   useEffect(() => {
     if (isAuthenticated && step === "welcome") {
       setStep("preferences");

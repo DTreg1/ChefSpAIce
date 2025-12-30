@@ -4,9 +4,47 @@ import appleSignin from "apple-signin-auth";
 import { randomBytes } from "crypto";
 import pg from "pg";
 import { db } from "../db";
-import { userSessions, userSyncData } from "@shared/schema";
+import { userSessions, userSyncData, subscriptions } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const router = Router();
+
+const TRIAL_DAYS = 7;
+
+async function createTrialSubscription(userId: string, selectedPlan: 'monthly' | 'annual' = 'monthly'): Promise<void> {
+  const [existing] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    return;
+  }
+
+  const now = new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+
+  try {
+    await db.insert(subscriptions).values({
+      userId,
+      status: 'trialing',
+      planType: selectedPlan,
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
+      trialStart: now,
+      trialEnd: trialEnd,
+      cancelAtPeriodEnd: false,
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
+      return;
+    }
+    throw error;
+  }
+}
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -56,6 +94,7 @@ function getGoogleClientIds(): string[] {
 interface AppleTokenPayload {
   identityToken: string;
   authorizationCode: string;
+  selectedPlan?: 'monthly' | 'annual';
   user?: {
     email?: string;
     name?: {
@@ -68,12 +107,13 @@ interface AppleTokenPayload {
 interface GoogleTokenPayload {
   idToken: string;
   accessToken?: string;
+  selectedPlan?: 'monthly' | 'annual';
 }
 
 router.post("/apple", async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { identityToken, authorizationCode, user } = req.body as AppleTokenPayload;
+    const { identityToken, authorizationCode, user, selectedPlan } = req.body as AppleTokenPayload;
 
     if (!identityToken) {
       return res.status(400).json({ error: "Identity token is required" });
@@ -88,6 +128,8 @@ router.post("/apple", async (req: Request, res: Response) => {
     const email = tokenEmail || user?.email || null;
     const firstName = user?.name?.firstName || null;
     const lastName = user?.name?.lastName || null;
+    const validPlans = ['monthly', 'annual'];
+    const plan = validPlans.includes(selectedPlan || '') ? selectedPlan as 'monthly' | 'annual' : 'monthly';
 
     await client.query("BEGIN");
 
@@ -167,6 +209,7 @@ router.post("/apple", async (req: Request, res: Response) => {
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
+      await createTrialSubscription(userId, plan);
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
@@ -196,11 +239,14 @@ router.post("/apple", async (req: Request, res: Response) => {
 router.post("/google", async (req: Request, res: Response) => {
   const dbClient = await pool.connect();
   try {
-    const { idToken, accessToken } = req.body as GoogleTokenPayload;
+    const { idToken, accessToken, selectedPlan } = req.body as GoogleTokenPayload;
 
     if (!idToken) {
       return res.status(400).json({ error: "ID token is required" });
     }
+    
+    const validPlans = ['monthly', 'annual'];
+    const plan = validPlans.includes(selectedPlan || '') ? selectedPlan as 'monthly' | 'annual' : 'monthly';
 
     const googleClient = new OAuth2Client();
     let payload;
@@ -322,6 +368,7 @@ router.post("/google", async (req: Request, res: Response) => {
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
+      await createTrialSubscription(userId, plan);
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);

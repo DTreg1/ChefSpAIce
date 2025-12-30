@@ -51,9 +51,9 @@ export interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithApple: () => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, displayName?: string, selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
+  signInWithApple: (selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: (selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   setSignOutCallback: (callback: () => void) => void;
   isAuthenticated: boolean;
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (email: string, password: string, displayName?: string) => {
+    async (email: string, password: string, displayName?: string, selectedPlan?: 'monthly' | 'annual') => {
       try {
         const baseUrl = getApiUrl();
         const url = new URL("/api/auth/register", baseUrl);
@@ -222,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch(url.toString(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, displayName }),
+          body: JSON.stringify({ email, password, displayName, selectedPlan }),
         });
 
         const data = await response.json();
@@ -286,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOutRef.current = signOut;
   }, [signOut]);
 
-  const signInWithApple = useCallback(async () => {
+  const signInWithApple = useCallback(async (selectedPlan?: 'monthly' | 'annual') => {
     if (Platform.OS !== "ios" || !AppleAuthentication) {
       return { success: false, error: "Apple Sign-In is only available on iOS" };
     }
@@ -308,6 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           identityToken: credential.identityToken,
           authorizationCode: credential.authorizationCode,
+          selectedPlan,
           user: {
             email: credential.email,
             name: {
@@ -354,7 +355,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (selectedPlan?: 'monthly' | 'annual') => {
     try {
       if (!promptGoogleAsync) {
         return { success: false, error: "Google sign in not available" };
@@ -377,6 +378,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           idToken,
           accessToken,
+          selectedPlan,
         }),
       });
 
