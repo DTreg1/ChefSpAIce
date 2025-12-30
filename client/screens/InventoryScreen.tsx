@@ -186,6 +186,27 @@ export default function InventoryScreen() {
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map(loc => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
+  const [filterRowWidth, setFilterRowWidth] = useState(0);
+  const [buttonWidths, setButtonWidths] = useState<number[]>([]);
+
+  const calculatedGap = useMemo(() => {
+    if (filterRowWidth === 0 || buttonWidths.length !== FOOD_GROUPS.length) {
+      return Spacing.sm; // Default gap while measuring
+    }
+    const totalButtonsWidth = buttonWidths.reduce((sum, w) => sum + w, 0);
+    const remainingSpace = filterRowWidth - totalButtonsWidth;
+    const numberOfGaps = FOOD_GROUPS.length - 1; // 5 gaps for 6 buttons
+    const gap = Math.max(0, remainingSpace / numberOfGaps);
+    return gap;
+  }, [filterRowWidth, buttonWidths]);
+
+  const handleButtonLayout = useCallback((index: number, width: number) => {
+    setButtonWidths(prev => {
+      const newWidths = [...prev];
+      newWidths[index] = width;
+      return newWidths;
+    });
+  }, []);
 
   const calculateNutritionTotals = useCallback((itemList: FoodItem[]) => {
     let totalCalories = 0;
@@ -791,9 +812,12 @@ export default function InventoryScreen() {
           </View>
         )}
 
-        {/* Food Group + Sort Row */}
-        <View style={styles.filterRow}>
-          {FOOD_GROUPS.map((group) => (
+        {/* Food Group Row */}
+        <View 
+          style={[styles.filterRow, { gap: calculatedGap }]}
+          onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
+        >
+          {FOOD_GROUPS.map((group, index) => (
             <Pressable
               key={group.key}
               testID={`filter-foodgroup-${group.key}`}
@@ -810,6 +834,7 @@ export default function InventoryScreen() {
                       : theme.glass.border,
                 },
               ]}
+              onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
               onPress={() => setFoodGroupFilter(group.key)}
             >
               <ThemedText
@@ -1055,7 +1080,6 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    gap: Spacing.sm,
     marginTop: Spacing.sm,
   },
   filterSummaryRow: {
