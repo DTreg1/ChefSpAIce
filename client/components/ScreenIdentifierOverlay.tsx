@@ -5,8 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Alert,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { storage } from "@/lib/storage";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -16,6 +18,7 @@ export function ScreenIdentifierOverlay({
   screenName,
 }: ScreenIdentifierOverlayProps) {
   const [copied, setCopied] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   if (!screenName) return null;
 
@@ -33,6 +36,38 @@ export function ScreenIdentifierOverlay({
     }
   };
 
+  const handleReset = async () => {
+    const confirmReset = () => {
+      setResetting(true);
+      storage.resetAllStorage().then(() => {
+        setResetting(false);
+        if (Platform.OS === "web") {
+          window.location.reload();
+        } else {
+          Alert.alert("Storage Reset", "Please restart the app to see changes.");
+        }
+      }).catch((err) => {
+        console.error("Failed to reset storage:", err);
+        setResetting(false);
+      });
+    };
+
+    if (Platform.OS === "web") {
+      if (confirm("Reset all local storage? This will sign you out and clear all data.")) {
+        confirmReset();
+      }
+    } else {
+      Alert.alert(
+        "Reset Storage",
+        "This will sign you out and clear all local data. Continue?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Reset", style: "destructive", onPress: confirmReset },
+        ]
+      );
+    }
+  };
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       <TouchableOpacity
@@ -47,6 +82,15 @@ export function ScreenIdentifierOverlay({
           <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
         </View>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.resetButton}
+        onPress={handleReset}
+        activeOpacity={0.8}
+        disabled={resetting}
+        data-testid="button-reset-storage"
+      >
+        <Text style={styles.resetText}>{resetting ? "..." : "Reset"}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -57,6 +101,9 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === "web" ? 10 : 100,
     left: 10,
     zIndex: 9999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   overlay: {
     flexDirection: "row",
@@ -92,6 +139,17 @@ const styles = StyleSheet.create({
   copyText: {
     color: "#fff",
     fontSize: 9,
+    fontWeight: "600",
+  },
+  resetButton: {
+    backgroundColor: "rgba(220, 38, 38, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  resetText: {
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "600",
   },
 });

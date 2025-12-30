@@ -670,6 +670,19 @@ export const storage = {
     await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING);
   },
 
+  async resetAllStorage(): Promise<void> {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const appKeys = allKeys.filter((key) => 
+      key.startsWith("@chefspaice/") || 
+      key.startsWith("@freshpantry/") ||
+      key === "auth_state"
+    );
+    if (appKeys.length > 0) {
+      await AsyncStorage.multiRemove(appKeys);
+    }
+    console.log("[Storage] Reset all storage, cleared keys:", appKeys.length);
+  },
+
   async getCustomStorageLocations(): Promise<CustomStorageLocation[]> {
     return (await getItem<CustomStorageLocation[]>(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS)) || [];
   },
