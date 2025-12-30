@@ -8,13 +8,80 @@ import bcrypt from "bcrypt";
 const router = Router();
 
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
-type PlanType = 'monthly' | 'annual' | null;
+type PlanType = 'monthly' | 'annual' | 'trial' | null;
+
+const TRIAL_DAYS = 7;
 
 interface SubscriptionInfo {
   subscriptionStatus: SubscriptionStatus;
   subscriptionPlanType: PlanType;
   trialEndsAt: string | null;
   subscriptionEndsAt: string | null;
+}
+
+async function createTrialSubscription(userId: string): Promise<void> {
+  // Check if subscription already exists (idempotent)
+  const [existing] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    // Subscription already exists (maybe from Stripe webhook), don't overwrite
+    return;
+  }
+
+  const now = new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+
+  try {
+    await db.insert(subscriptions).values({
+      userId,
+      status: 'trialing',
+      planType: 'trial',
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
+      trialStart: now,
+      trialEnd: trialEnd,
+      cancelAtPeriodEnd: false,
+    });
+  } catch (error: unknown) {
+    // Handle race condition where subscription was created between check and insert
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
+      console.log('Trial subscription already exists for user:', userId);
+      return;
+    }
+    throw error;
+  }
+}
+
+async function evaluateAndUpdateSubscriptionStatus(subscription: typeof subscriptions.$inferSelect): Promise<SubscriptionStatus> {
+  const now = new Date();
+  
+  // If trialing and trial has expired, mark as expired
+  if (subscription.status === 'trialing' && subscription.trialEnd && new Date(subscription.trialEnd) < now) {
+    await db
+      .update(subscriptions)
+      .set({ status: 'expired', updatedAt: now })
+      .where(eq(subscriptions.userId, subscription.userId));
+    return 'expired';
+  }
+  
+  // If active but current period has ended, mark as expired (unless it's a Stripe subscription which handles this via webhooks)
+  if (subscription.status === 'active' && subscription.currentPeriodEnd && !subscription.stripeSubscriptionId) {
+    if (new Date(subscription.currentPeriodEnd) < now) {
+      await db
+        .update(subscriptions)
+        .set({ status: 'expired', updatedAt: now })
+        .where(eq(subscriptions.userId, subscription.userId));
+      return 'expired';
+    }
+  }
+  
+  return subscription.status as SubscriptionStatus;
 }
 
 async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
@@ -33,8 +100,11 @@ async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
     };
   }
 
+  // Evaluate and potentially update the subscription status (e.g., expire trials)
+  const currentStatus = await evaluateAndUpdateSubscriptionStatus(subscription);
+
   return {
-    subscriptionStatus: subscription.status as SubscriptionStatus,
+    subscriptionStatus: currentStatus,
     subscriptionPlanType: subscription.planType as PlanType,
     trialEndsAt: subscription.trialEnd?.toISOString() || null,
     subscriptionEndsAt: subscription.currentPeriodEnd?.toISOString() || null,
@@ -110,6 +180,9 @@ router.post("/register", async (req: Request, res: Response) => {
     await db.insert(userSyncData).values({
       userId: newUser.id,
     });
+
+    // Create trial subscription for new user (7-day free trial)
+    await createTrialSubscription(newUser.id);
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 

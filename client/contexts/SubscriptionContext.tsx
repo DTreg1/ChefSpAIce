@@ -29,7 +29,7 @@ export type SubscriptionStatus =
 
 export interface Subscription {
   status: SubscriptionStatus;
-  planType: "monthly" | "annual" | null;
+  planType: "monthly" | "annual" | "trial" | null;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
   trialStart?: string | null;
