@@ -64,8 +64,6 @@ type FoodGroup =
   | "fruits"
   | "protein"
   | "dairy";
-type SortOption = "name" | "quantity";
-
 interface StorageLocationOption {
   key: string;
   label: string;
@@ -79,11 +77,6 @@ const FOOD_GROUPS: { key: FoodGroup; label: string }[] = [
   { key: "fruits", label: "Fruits" },
   { key: "protein", label: "Protein" },
   { key: "dairy", label: "Dairy" },
-];
-
-const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
-  { key: "name", label: "Name A-Z", icon: "type" },
-  { key: "quantity", label: "Quantity", icon: "hash" },
 ];
 
 const CATEGORY_TO_FOOD_GROUP: Record<string, FoodGroup> = {
@@ -183,7 +176,6 @@ export default function InventoryScreen() {
   const [filteredItems, setFilteredItems] = useState<FoodItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [foodGroupFilter, setFoodGroupFilter] = useState<FoodGroup>("all");
-  const [sortOption, setSortOption] = useState<SortOption>("name");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(120);
@@ -233,7 +225,6 @@ export default function InventoryScreen() {
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setFoodGroupFilter("all");
-    setSortOption("name");
   }, []);
 
   const loadItems = useCallback(async () => {
@@ -288,20 +279,11 @@ export default function InventoryScreen() {
       });
     }
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortOption) {
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "quantity":
-          return b.quantity - a.quantity;
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
+    // Apply sorting (alphabetically by name)
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     setFilteredItems(filtered);
-  }, [items, searchQuery, foodGroupFilter, sortOption]);
+  }, [items, searchQuery, foodGroupFilter]);
 
   const groupedSections = useMemo(() => {
     const locationOrder = storageLocations
@@ -843,33 +825,6 @@ export default function InventoryScreen() {
               </ThemedText>
             </Pressable>
           ))}
-          
-          {/* Sort Button */}
-          <Pressable
-            testID="button-sort-inventory"
-            style={[
-              styles.foodGroupChip,
-              {
-                backgroundColor: theme.glass.background,
-                borderColor: theme.glass.border,
-              },
-            ]}
-            onPress={() => {
-              const currentIndex = SORT_OPTIONS.findIndex(s => s.key === sortOption);
-              const nextIndex = (currentIndex + 1) % SORT_OPTIONS.length;
-              setSortOption(SORT_OPTIONS[nextIndex].key);
-            }}
-          >
-            <Feather
-              name={SORT_OPTIONS.find(s => s.key === sortOption)?.icon as any || "bar-chart-2"}
-              size={14}
-              color={theme.textSecondary}
-              style={{ marginRight: Spacing.xs }}
-            />
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {SORT_OPTIONS.find(s => s.key === sortOption)?.label || "Sort"}
-            </ThemedText>
-          </Pressable>
         </View>
       </BlurView>
 
