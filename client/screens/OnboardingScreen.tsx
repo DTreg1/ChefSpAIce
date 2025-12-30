@@ -856,13 +856,35 @@ export default function OnboardingScreen() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Pricing/plan selection states
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
+  const [prices, setPrices] = useState<{ monthly: any; annual: any }>({ monthly: null, annual: null });
+  const [pricesLoading, setPricesLoading] = useState(true);
+
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
 
   useEffect(() => {
     loadAppliances();
+    fetchPrices();
   }, []);
+
+  const fetchPrices = async () => {
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/subscriptions/prices", baseUrl);
+      const response = await fetch(url.toString());
+      if (response.ok) {
+        const data = await response.json();
+        setPrices(data);
+      }
+    } catch (error) {
+      console.error("Error fetching prices:", error);
+    } finally {
+      setPricesLoading(false);
+    }
+  };
 
   // Auto-advance to preferences setup when user becomes authenticated (during onboarding welcome step)
   useEffect(() => {
@@ -1000,7 +1022,7 @@ export default function OnboardingScreen() {
     try {
       let result;
       if (isSignUp) {
-        result = await signUp(email.trim(), password);
+        result = await signUp(email.trim(), password, undefined, selectedPlan);
       } else {
         result = await signIn(email.trim(), password);
       }
@@ -1030,9 +1052,9 @@ export default function OnboardingScreen() {
     try {
       let result;
       if (provider === "apple") {
-        result = await signInWithApple();
+        result = await signInWithApple(selectedPlan);
       } else {
-        result = await signInWithGoogle();
+        result = await signInWithGoogle(selectedPlan);
       }
 
       if (!result.success) {
@@ -1331,6 +1353,100 @@ export default function OnboardingScreen() {
             entering={FadeIn.delay(700).duration(400)}
             style={styles.authSection}
           >
+            {/* Plan Selection */}
+            {isSignUp && (
+              <View style={styles.planSelectionContainer}>
+                <ThemedText style={styles.planSelectionTitle}>Choose Your Plan</ThemedText>
+                <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
+                  Start with a free 7-day trial. Cancel anytime.
+                </ThemedText>
+                
+                <View style={styles.planCardsRow}>
+                  <Pressable
+                    style={[
+                      styles.planCard,
+                      { 
+                        backgroundColor: theme.glass.background,
+                        borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
+                        borderWidth: selectedPlan === "monthly" ? 2 : 1,
+                      },
+                    ]}
+                    onPress={() => {
+                      setSelectedPlan("monthly");
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                    }}
+                  >
+                    <View style={styles.planCardHeader}>
+                      <ThemedText style={styles.planCardName}>Monthly</ThemedText>
+                      {pricesLoading ? (
+                        <ActivityIndicator size="small" color={AppColors.primary} />
+                      ) : prices.monthly ? (
+                        <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
+                          ${(prices.monthly.amount / 100).toFixed(2)}
+                          <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                    <View style={[
+                      styles.planCardRadio,
+                      selectedPlan === "monthly" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
+                    ]}>
+                      {selectedPlan === "monthly" && <Feather name="check" size={12} color="#FFFFFF" />}
+                    </View>
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.planCard,
+                      { 
+                        backgroundColor: theme.glass.background,
+                        borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
+                        borderWidth: selectedPlan === "annual" ? 2 : 1,
+                      },
+                    ]}
+                    onPress={() => {
+                      setSelectedPlan("annual");
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                    }}
+                  >
+                    {prices.monthly && prices.annual && (
+                      <View style={styles.savingsBadge}>
+                        <ThemedText style={styles.savingsBadgeText}>
+                          Save {Math.round(((prices.monthly.amount * 12 - prices.annual.amount) / (prices.monthly.amount * 12)) * 100)}%
+                        </ThemedText>
+                      </View>
+                    )}
+                    <View style={styles.planCardHeader}>
+                      <ThemedText style={styles.planCardName}>Annual</ThemedText>
+                      {pricesLoading ? (
+                        <ActivityIndicator size="small" color={AppColors.primary} />
+                      ) : prices.annual ? (
+                        <View>
+                          <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
+                            ${(prices.annual.amount / 100).toFixed(2)}
+                            <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/yr</ThemedText>
+                          </ThemedText>
+                          <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
+                            ${(prices.annual.amount / 12 / 100).toFixed(2)}/mo
+                          </ThemedText>
+                        </View>
+                      ) : null}
+                    </View>
+                    <View style={[
+                      styles.planCardRadio,
+                      selectedPlan === "annual" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
+                    ]}>
+                      {selectedPlan === "annual" && <Feather name="check" size={12} color="#FFFFFF" />}
+                    </View>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
             <ThemedText style={styles.authTitle}>
               {isSignUp ? "Create Account" : "Welcome Back"}
             </ThemedText>
@@ -3101,6 +3217,75 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: "center",
     paddingTop: Spacing.lg,
+  },
+  planSelectionContainer: {
+    marginBottom: Spacing.lg,
+  },
+  planSelectionTitle: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    textAlign: "center" as const,
+    marginBottom: Spacing.xs,
+  },
+  planSelectionSubtitle: {
+    fontSize: 14,
+    textAlign: "center" as const,
+    marginBottom: Spacing.md,
+  },
+  planCardsRow: {
+    flexDirection: "row" as const,
+    gap: Spacing.sm,
+  },
+  planCard: {
+    flex: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    position: "relative" as const,
+  },
+  planCardHeader: {
+    gap: Spacing.xs,
+  },
+  planCardName: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  planCardPrice: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+  },
+  planCardInterval: {
+    fontSize: 14,
+    fontWeight: "400" as const,
+  },
+  planCardMonthly: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  planCardRadio: {
+    position: "absolute" as const,
+    top: 12,
+    right: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "rgba(0,0,0,0.2)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  savingsBadge: {
+    position: "absolute" as const,
+    top: -8,
+    right: 12,
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  savingsBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "700" as const,
   },
   authTitle: {
     fontSize: 20,

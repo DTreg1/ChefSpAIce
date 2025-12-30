@@ -38,21 +38,29 @@ The backend utilizes **Express.js** and **Node.js**. Data storage uses **Drizzle
 - **Feedback & Bug Reporting:** Users can submit feedback or bug reports through the chat modal using conversational AI. The chat assistant guides users through providing structured feedback (type, category, details) and saves it to the database. Suggestion chips ("Send Feedback" and "Report Bug") are available in the chat empty state. Both authenticated and anonymous submissions are supported. Database table `feedback` stores submissions with status tracking for admin triage. API endpoint at `POST /api/feedback` for direct submissions.
 - **AI-Powered Feedback Resolution Manager:** Admin-only feature at `/admin/feedback` for managing user feedback. Uses AI (GPT-4o-mini) to automatically group similar feedback items into "buckets" based on topic/issue. Features include: stats overview, filter by bucket status (open/in_progress/completed), expandable bucket cards showing all related feedback items, AI-powered prompt generation (GPT-4o) that creates comprehensive implementation prompts covering all feedback in a bucket, copy-to-clipboard for prompts, and bulk completion to resolve entire buckets at once. Database tables: `feedback_buckets` for grouping, `feedback.bucketId` for relationships. API endpoints: `GET /api/feedback/buckets`, `POST /api/feedback/buckets/:id/generate-prompt`, `POST /api/feedback/buckets/:id/complete`, `POST /api/feedback/categorize-uncategorized`.
 
-### Web Landing Page
-The project uses **platform-specific entry points** for optimized builds:
-- **App.web.tsx**: Web-only entry point for the landing page (used automatically for web builds)
-- **App.tsx**: Mobile-only entry point for the full app (used for iOS/Android)
+### Unified Onboarding Architecture
+The project uses a **single unified entry point** (App.tsx) for all platforms (web, iOS, Android):
+- **App.tsx**: Universal entry point with OnboardingScreen as the main experience for unauthenticated users
+- **OnboardingScreen**: Multi-step onboarding flow with welcome step (Step 0) containing features, pricing, and signup
 
-This separation reduces the web bundle from 4.26 MB to ~919 KB (78% smaller).
+**Onboarding Welcome Step Features:**
+- App logo and marketing content (features showcase)
+- Plan selection cards (Monthly $4.99/mo, Annual $49.90/yr with savings badge)
+- 7-day free trial messaging
+- Email/password signup or sign in toggle
+- Social auth buttons (Google Sign-In, Apple Sign-In on iOS)
+- Selected plan is passed to all auth methods and stored with trial subscription
 
 **Web Routes:**
-- `/` - Landing page with hero, features, how-it-works, support/donate, and CTA sections
+- `/` - OnboardingScreen for unauthenticated users; main app for authenticated users
 - `/about` - About page
 - `/privacy` - Privacy Policy
 - `/terms` - Terms of Service
 - `/attributions` - Attributions and credits
 - `/support` - Donation/support page
-- `/pricing` - Subscription pricing page with Monthly ($4.99/mo) and Annual ($49.90/yr) plans, 7-day free trial, and Stripe integration
+- `/pricing` - Subscription pricing page (redirects to web app onboarding)
+- `/subscription-success` - Stripe checkout success redirect
+- `/subscription-canceled` - Stripe checkout cancel redirect
 
 **Server Routing:**
 The Express server (server/index.ts) intelligently routes requests based on user-agent and environment:
@@ -60,8 +68,6 @@ The Express server (server/index.ts) intelligently routes requests based on user
 - Mobile browsers: Shown QR code page for Expo Go app installation
 - API routes (/api/*): Handled by Express
 - Expo client requests: Served appropriate manifest for iOS/Android
-
-**Web Donation Section:** The landing page includes a donate section with preset amounts ($5, $10, $25, $50, $100) that redirects to Stripe Checkout. Uses the same `/api/donations/create-checkout-session` endpoint as the mobile app.
 
 ## External Dependencies
 - **OpenAI API**: For AI-powered recipe generation and conversational kitchen assistance, accessed via Replit AI Integrations (gpt-4o-mini model).
