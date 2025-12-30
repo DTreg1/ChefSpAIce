@@ -64,7 +64,7 @@ type FoodGroup =
   | "fruits"
   | "protein"
   | "dairy";
-type SortOption = "expiration" | "name" | "quantity" | "recent";
+type SortOption = "name" | "quantity" | "recent";
 
 interface StorageLocationOption {
   key: string;
@@ -82,7 +82,6 @@ const FOOD_GROUPS: { key: FoodGroup; label: string }[] = [
 ];
 
 const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
-  { key: "expiration", label: "Expiration Date", icon: "calendar" },
   { key: "name", label: "Name A-Z", icon: "type" },
   { key: "quantity", label: "Quantity", icon: "hash" },
   { key: "recent", label: "Recently Added", icon: "clock" },
@@ -185,7 +184,7 @@ export default function InventoryScreen() {
   const [filteredItems, setFilteredItems] = useState<FoodItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [foodGroupFilter, setFoodGroupFilter] = useState<FoodGroup>("all");
-  const [sortOption, setSortOption] = useState<SortOption>("expiration");
+  const [sortOption, setSortOption] = useState<SortOption>("recent");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(120);
@@ -235,7 +234,7 @@ export default function InventoryScreen() {
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setFoodGroupFilter("all");
-    setSortOption("expiration");
+    setSortOption("recent");
   }, []);
 
   const loadItems = useCallback(async () => {
@@ -298,20 +297,10 @@ export default function InventoryScreen() {
         case "quantity":
           return b.quantity - a.quantity;
         case "recent":
+        default:
           const dateA = (a as any).addedDate ? new Date((a as any).addedDate).getTime() : 0;
           const dateB = (b as any).addedDate ? new Date((b as any).addedDate).getTime() : 0;
           return dateB - dateA;
-        case "expiration":
-        default:
-          const statusOrder = { expired: 0, expiring: 1, fresh: 2 };
-          const statusA = getExpirationStatus(a.expirationDate);
-          const statusB = getExpirationStatus(b.expirationDate);
-          if (statusA !== statusB) {
-            return statusOrder[statusA] - statusOrder[statusB];
-          }
-          const daysA = getDaysUntilExpiration(a.expirationDate);
-          const daysB = getDaysUntilExpiration(b.expirationDate);
-          return daysA - daysB;
       }
     });
 
