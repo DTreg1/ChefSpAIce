@@ -99,8 +99,11 @@ router.get("/prices", async (_req: Request, res: Response) => {
 
     const result = { monthly: monthlyPrice, annual: annualPrice };
 
-    pricesCache.data = result;
-    pricesCache.timestamp = Date.now();
+    // Only cache if we have at least one valid price
+    if (monthlyPrice || annualPrice) {
+      pricesCache.data = result;
+      pricesCache.timestamp = Date.now();
+    }
 
     res.json(result);
   } catch (error) {
