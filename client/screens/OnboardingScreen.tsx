@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -9,9 +9,10 @@ import {
   Platform,
   Image,
   Alert,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,6 +39,7 @@ import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
 import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Appliance {
   id: number;
@@ -758,7 +760,15 @@ export default function OnboardingScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
   const { markOnboardingComplete } = useOnboardingStatus();
-
+  const {
+    signIn,
+    signUp,
+    signInWithApple,
+    signInWithGoogle,
+    isAppleAuthAvailable,
+    isGoogleAuthAvailable,
+    isAuthenticated,
+  } = useAuth();
 
   const [step, setStep] = useState<OnboardingStep>("welcome");
   const [categoryIndex, setCategoryIndex] = useState(0);
@@ -771,6 +781,17 @@ export default function OnboardingScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
 
   useEffect(() => {
@@ -865,6 +886,78 @@ export default function OnboardingScreen() {
   const selectAllFoods = useCallback(() => {
     setSelectedFoodIds(new Set(STARTER_FOODS.map((f) => f.id)));
   }, []);
+
+  const handleAuth = async () => {
+    if (!username.trim() || !password.trim()) {
+      setAuthError("Please enter username and password");
+      return;
+    }
+
+    if (isSignUp && password !== confirmPassword) {
+      setAuthError("Passwords do not match");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      let result;
+      if (isSignUp) {
+        result = await signUp(username.trim(), password);
+      } else {
+        result = await signIn(username.trim(), password);
+      }
+
+      if (!result.success) {
+        setAuthError(result.error || "Authentication failed");
+        return;
+      }
+
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      setStep("equipment-category");
+    } catch (err) {
+      console.error("Auth error:", err);
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSocialAuth = async (provider: "apple" | "google") => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      let result;
+      if (provider === "apple") {
+        result = await signInWithApple();
+      } else {
+        result = await signInWithGoogle();
+      }
+
+      if (!result.success) {
+        if (result.error !== "User cancelled") {
+          setAuthError(result.error || "Authentication failed");
+        }
+        return;
+      }
+
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      setStep("equipment-category");
+    } catch (err) {
+      console.error("Social auth error:", err);
+      setAuthError("An unexpected error occurred");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleAcceptDefaults = () => {
     if (Platform.OS !== "web") {
@@ -1120,21 +1213,201 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Animated.View
-          entering={FadeIn.delay(700).duration(400)}
-          style={styles.welcomeFooter}
-        >
-          <Button
-            onPress={handleCustomize}
-            style={styles.getStartedButton}
-            testID="button-get-started"
+        {isAuthenticated ? (
+          <Animated.View
+            entering={FadeIn.delay(700).duration(400)}
+            style={styles.welcomeFooter}
           >
-            Get Started
-          </Button>
-          <ThemedText style={[styles.welcomeHint, { color: theme.textSecondary }]}>
-            Let's set up your kitchen in just a few steps
-          </ThemedText>
-        </Animated.View>
+            <Button
+              onPress={handleCustomize}
+              style={styles.getStartedButton}
+              testID="button-get-started"
+            >
+              Get Started
+            </Button>
+            <ThemedText style={[styles.welcomeHint, { color: theme.textSecondary }]}>
+              Let's set up your kitchen in just a few steps
+            </ThemedText>
+          </Animated.View>
+        ) : (
+          <Animated.View
+            entering={FadeIn.delay(700).duration(400)}
+            style={styles.authSection}
+          >
+            <ThemedText style={styles.authTitle}>
+              {isSignUp ? "Create Account" : "Welcome Back"}
+            </ThemedText>
+
+            {authError && (
+              <View style={[styles.authErrorContainer, { backgroundColor: `${AppColors.error}15` }]}>
+                <Feather name="alert-circle" size={16} color={AppColors.error} />
+                <ThemedText style={[styles.authErrorText, { color: AppColors.error }]}>
+                  {authError}
+                </ThemedText>
+              </View>
+            )}
+
+            <View style={styles.authInputContainer}>
+              <View
+                style={[
+                  styles.authInputWrapper,
+                  { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                ]}
+              >
+                <Feather name="user" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+                <TextInput
+                  style={[styles.authInput, { color: theme.text }]}
+                  placeholder="Username"
+                  placeholderTextColor={theme.textSecondary}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  data-testid="input-username"
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.authInputWrapper,
+                  { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                ]}
+              >
+                <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+                <TextInput
+                  ref={passwordRef}
+                  style={[styles.authInput, { color: theme.text }]}
+                  placeholder="Password"
+                  placeholderTextColor={theme.textSecondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  returnKeyType={isSignUp ? "next" : "done"}
+                  onSubmitEditing={() => {
+                    if (isSignUp) {
+                      confirmPasswordRef.current?.focus();
+                    } else {
+                      handleAuth();
+                    }
+                  }}
+                  data-testid="input-password"
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.authEyeButton}>
+                  <Feather name={showPassword ? "eye-off" : "eye"} size={20} color={theme.textSecondary} />
+                </Pressable>
+              </View>
+
+              {isSignUp && (
+                <View
+                  style={[
+                    styles.authInputWrapper,
+                    { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                  ]}
+                >
+                  <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+                  <TextInput
+                    ref={confirmPasswordRef}
+                    style={[styles.authInput, { color: theme.text }]}
+                    placeholder="Confirm Password"
+                    placeholderTextColor={theme.textSecondary}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    returnKeyType="done"
+                    onSubmitEditing={handleAuth}
+                    data-testid="input-confirm-password"
+                  />
+                </View>
+              )}
+            </View>
+
+            <Pressable
+              style={[
+                styles.authButton,
+                { backgroundColor: AppColors.primary },
+                authLoading && styles.authButtonDisabled,
+              ]}
+              onPress={handleAuth}
+              disabled={authLoading}
+              data-testid="button-auth-submit"
+            >
+              {authLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <ThemedText style={styles.authButtonText}>
+                  {isSignUp ? "Create Account" : "Sign In"}
+                </ThemedText>
+              )}
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError(null);
+              }}
+              style={styles.authSwitchButton}
+              data-testid="button-switch-auth-mode"
+            >
+              <ThemedText style={[styles.authSwitchText, { color: theme.textSecondary }]}>
+                {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                <ThemedText style={{ color: AppColors.primary, fontWeight: "600" }}>
+                  {isSignUp ? "Sign In" : "Sign Up"}
+                </ThemedText>
+              </ThemedText>
+            </Pressable>
+
+            {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
+              <>
+                <View style={styles.authDividerContainer}>
+                  <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+                  <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
+                    or continue with
+                  </ThemedText>
+                  <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+                </View>
+
+                <View style={styles.authSocialButtons}>
+                  {isAppleAuthAvailable && (
+                    <Pressable
+                      style={[
+                        styles.authSocialButton,
+                        { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                      ]}
+                      onPress={() => handleSocialAuth("apple")}
+                      disabled={authLoading}
+                      data-testid="button-signin-apple"
+                    >
+                      <Ionicons name="logo-apple" size={24} color={theme.text} />
+                      <ThemedText style={styles.authSocialButtonText}>Apple</ThemedText>
+                    </Pressable>
+                  )}
+
+                  {isGoogleAuthAvailable && (
+                    <Pressable
+                      style={[
+                        styles.authSocialButton,
+                        { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                      ]}
+                      onPress={() => handleSocialAuth("google")}
+                      disabled={authLoading}
+                      data-testid="button-signin-google"
+                    >
+                      <Image
+                        source={{ uri: "https://www.google.com/favicon.ico" }}
+                        style={styles.authGoogleIcon}
+                      />
+                      <ThemedText style={styles.authSocialButtonText}>Google</ThemedText>
+                    </Pressable>
+                  )}
+                </View>
+              </>
+            )}
+          </Animated.View>
+        )}
       </KeyboardAwareScrollViewCompat>
     </Animated.View>
   );
@@ -2574,5 +2847,108 @@ const styles = StyleSheet.create({
   welcomeHint: {
     fontSize: 14,
     textAlign: "center",
+  },
+  authSection: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+    paddingTop: Spacing.lg,
+  },
+  authTitle: {
+    fontSize: 20,
+    fontWeight: "600" as const,
+    textAlign: "center" as const,
+    marginBottom: Spacing.md,
+  },
+  authErrorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  authErrorText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  authInputContainer: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  authInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    height: 50,
+  },
+  authInputIcon: {
+    marginRight: Spacing.sm,
+  },
+  authInput: {
+    flex: 1,
+    fontSize: 16,
+    height: "100%",
+  },
+  authEyeButton: {
+    padding: Spacing.xs,
+  },
+  authButton: {
+    height: 50,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  authButtonDisabled: {
+    opacity: 0.6,
+  },
+  authButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  authSwitchButton: {
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  authSwitchText: {
+    fontSize: 14,
+  },
+  authDividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: Spacing.md,
+  },
+  authDivider: {
+    flex: 1,
+    height: 1,
+  },
+  authDividerText: {
+    paddingHorizontal: Spacing.md,
+    fontSize: 13,
+  },
+  authSocialButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  authSocialButton: {
+    flex: 1,
+    height: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+  },
+  authSocialButtonText: {
+    fontSize: 15,
+    fontWeight: "500" as const,
+  },
+  authGoogleIcon: {
+    width: 20,
+    height: 20,
   },
 });
