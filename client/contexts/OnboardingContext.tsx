@@ -13,6 +13,7 @@ interface OnboardingContextType {
   isCheckingOnboarding: boolean;
   markOnboardingComplete: () => void;
   resetOnboarding: () => void;
+  recheckOnboarding: () => Promise<void>;
 }
 
 const OnboardingContext = createContext<OnboardingContextType>({
@@ -20,6 +21,7 @@ const OnboardingContext = createContext<OnboardingContextType>({
   isCheckingOnboarding: true,
   markOnboardingComplete: () => {},
   resetOnboarding: () => {},
+  recheckOnboarding: async () => {},
 });
 
 export const useOnboardingStatus = () => useContext(OnboardingContext);
@@ -55,14 +57,24 @@ export function OnboardingProvider({
     setIsOnboardingComplete(false);
   }, []);
 
+  const recheckOnboarding = useCallback(async () => {
+    try {
+      const needsOnboarding = await storage.needsOnboarding();
+      setIsOnboardingComplete(!needsOnboarding);
+    } catch (error) {
+      console.error("Error rechecking onboarding status:", error);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       isOnboardingComplete,
       isCheckingOnboarding,
       markOnboardingComplete,
       resetOnboarding,
+      recheckOnboarding,
     }),
-    [isOnboardingComplete, isCheckingOnboarding, markOnboardingComplete, resetOnboarding],
+    [isOnboardingComplete, isCheckingOnboarding, markOnboardingComplete, resetOnboarding, recheckOnboarding],
   );
 
   return (

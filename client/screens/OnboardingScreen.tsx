@@ -813,7 +813,7 @@ export default function OnboardingScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
-  const { markOnboardingComplete } = useOnboardingStatus();
+  const { markOnboardingComplete, recheckOnboarding } = useOnboardingStatus();
   const {
     signIn,
     signUp,
@@ -1040,6 +1040,25 @@ export default function OnboardingScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
+      // For sign-in (returning users), check if they already completed onboarding
+      if (!isSignUp) {
+        // Recheck onboarding status after sync from cloud restored local data
+        await recheckOnboarding();
+        // Check local storage to see if onboarding was completed
+        const needsOnboarding = await storage.needsOnboarding();
+        if (!needsOnboarding) {
+          // User already completed onboarding, go to main app
+          markOnboardingComplete();
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            }),
+          );
+          return;
+        }
+      }
+
       setStep("preferences");
     } catch (err) {
       console.error("Auth error:", err);
@@ -1073,6 +1092,21 @@ export default function OnboardingScreen() {
 
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      // For returning social auth users, check if they already completed onboarding
+      await recheckOnboarding();
+      const needsOnboarding = await storage.needsOnboarding();
+      if (!needsOnboarding) {
+        // User already completed onboarding, go to main app
+        markOnboardingComplete();
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          }),
+        );
+        return;
       }
 
       setStep("preferences");
