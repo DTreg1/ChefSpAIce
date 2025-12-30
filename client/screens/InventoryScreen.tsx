@@ -64,7 +64,7 @@ type FoodGroup =
   | "fruits"
   | "protein"
   | "dairy";
-type SortOption = "name" | "quantity" | "recent";
+type SortOption = "name" | "quantity";
 
 interface StorageLocationOption {
   key: string;
@@ -84,7 +84,6 @@ const FOOD_GROUPS: { key: FoodGroup; label: string }[] = [
 const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
   { key: "name", label: "Name A-Z", icon: "type" },
   { key: "quantity", label: "Quantity", icon: "hash" },
-  { key: "recent", label: "Recently Added", icon: "clock" },
 ];
 
 const CATEGORY_TO_FOOD_GROUP: Record<string, FoodGroup> = {
@@ -184,7 +183,7 @@ export default function InventoryScreen() {
   const [filteredItems, setFilteredItems] = useState<FoodItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [foodGroupFilter, setFoodGroupFilter] = useState<FoodGroup>("all");
-  const [sortOption, setSortOption] = useState<SortOption>("recent");
+  const [sortOption, setSortOption] = useState<SortOption>("name");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(120);
@@ -234,7 +233,7 @@ export default function InventoryScreen() {
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setFoodGroupFilter("all");
-    setSortOption("recent");
+    setSortOption("name");
   }, []);
 
   const loadItems = useCallback(async () => {
@@ -296,11 +295,8 @@ export default function InventoryScreen() {
           return a.name.localeCompare(b.name);
         case "quantity":
           return b.quantity - a.quantity;
-        case "recent":
         default:
-          const dateA = (a as any).addedDate ? new Date((a as any).addedDate).getTime() : 0;
-          const dateB = (b as any).addedDate ? new Date((b as any).addedDate).getTime() : 0;
-          return dateB - dateA;
+          return a.name.localeCompare(b.name);
       }
     });
 
