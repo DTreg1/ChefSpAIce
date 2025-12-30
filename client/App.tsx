@@ -36,7 +36,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
-import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -93,7 +92,6 @@ function MobileAppContent() {
             <ChatModal />
           </>
         ) : null}
-        <ScreenIdentifierOverlay screenName={currentRoute} />
       </NavigationContainer>
       <StatusBar />
     </FloatingChatProvider>

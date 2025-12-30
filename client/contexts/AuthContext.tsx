@@ -149,6 +149,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token,
             isLoading: false,
           });
+          
+          // Automatically sync from cloud when app loads with stored auth
+          storage.syncFromCloud().then((result) => {
+            if (result.success) {
+              console.log("[Auth] Auto-synced data from cloud on app load");
+            }
+          }).catch((err) => {
+            console.error("[Auth] Failed to auto-sync from cloud:", err);
+          });
         } else {
           setState({
             user: null,
