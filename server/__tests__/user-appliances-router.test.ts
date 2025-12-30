@@ -1,5 +1,6 @@
 import request from "supertest";
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import {
   userAppliancesRouter,
   appliancesRouter,
@@ -8,10 +9,37 @@ import {
 
 const app = express();
 app.use(express.json());
-app.use("/api/appliances", appliancesRouter);
-app.use("/api/user/appliances", userAppliancesRouter);
 
 const TEST_USER_ID = "test-user-" + Date.now();
+
+const mockRequireAuth = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const token = authHeader.substring(7);
+  
+  if (!token || token === "invalid") {
+    return res.status(401).json({ error: "Invalid or expired session" });
+  }
+  
+  req.userId = token;
+  next();
+};
+
+app.use("/api/appliances", appliancesRouter);
+
+const mockUserAppliancesRouter = express.Router();
+mockUserAppliancesRouter.use(mockRequireAuth);
+
+import("../routers/user/appliances.router").then(() => {
+});
+
+app.use("/api/user/appliances", mockRequireAuth, (req, res, next) => {
+  userAppliancesRouter(req, res, next);
+});
 
 describe("User Appliances API", () => {
   let testApplianceId: number;
@@ -29,7 +57,7 @@ describe("User Appliances API", () => {
   });
 
   describe("GET /api/user/appliances", () => {
-    it("returns 401 when user ID is missing", async () => {
+    it("returns 401 when authorization header is missing", async () => {
       const response = await request(app).get("/api/user/appliances");
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty("error");
@@ -38,7 +66,7 @@ describe("User Appliances API", () => {
     it("returns empty array for user with no appliances", async () => {
       const response = await request(app)
         .get("/api/user/appliances")
-        .set("x-user-id", "empty-user-" + Date.now());
+        .set("Authorization", `Bearer empty-user-${Date.now()}`);
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -48,7 +76,7 @@ describe("User Appliances API", () => {
     it("returns array response for valid user", async () => {
       const response = await request(app)
         .get("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID);
+        .set("Authorization", `Bearer ${TEST_USER_ID}`);
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -56,7 +84,7 @@ describe("User Appliances API", () => {
   });
 
   describe("POST /api/user/appliances - Validation", () => {
-    it("returns 401 when user ID is missing", async () => {
+    it("returns 401 when authorization header is missing", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
         .send({ applianceId: testApplianceId });
@@ -68,7 +96,7 @@ describe("User Appliances API", () => {
     it("returns 400 when applianceId is missing", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({});
 
       expect(response.status).toBe(400);
@@ -78,7 +106,7 @@ describe("User Appliances API", () => {
     it("returns 400 when applianceId is not a number", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: "invalid" });
 
       expect(response.status).toBe(400);
@@ -88,7 +116,7 @@ describe("User Appliances API", () => {
     it("returns 404 for non-existent appliance", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: 999999 });
 
       expect(response.status).toBe(404);
@@ -99,7 +127,7 @@ describe("User Appliances API", () => {
       const userId = "validation-test-" + Date.now();
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", userId)
+        .set("Authorization", `Bearer ${userId}`)
         .send({ applianceId: 888888 });
 
       expect(response.status).toBe(404);
@@ -110,7 +138,7 @@ describe("User Appliances API", () => {
       const userId = "add-test-user-" + Date.now();
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", userId)
+        .set("Authorization", `Bearer ${userId}`)
         .send({ applianceId: testApplianceId });
 
       expect([201, 500]).toContain(response.status);
@@ -122,7 +150,7 @@ describe("User Appliances API", () => {
 
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", userId)
+        .set("Authorization", `Bearer ${userId}`)
         .send({
           applianceId: secondAppliance.id,
           notes: "My favorite appliance",
@@ -134,7 +162,7 @@ describe("User Appliances API", () => {
   });
 
   describe("DELETE /api/user/appliances/:applianceId - Validation", () => {
-    it("returns 401 when user ID is missing", async () => {
+    it("returns 401 when authorization header is missing", async () => {
       const response = await request(app).delete(
         `/api/user/appliances/${testApplianceId}`,
       );
@@ -145,7 +173,7 @@ describe("User Appliances API", () => {
     it("returns 400 for invalid appliance ID format", async () => {
       const response = await request(app)
         .delete("/api/user/appliances/invalid")
-        .set("x-user-id", TEST_USER_ID);
+        .set("Authorization", `Bearer ${TEST_USER_ID}`);
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain("Invalid appliance ID");
@@ -155,7 +183,7 @@ describe("User Appliances API", () => {
       const userId = "delete-not-found-" + Date.now();
       const response = await request(app)
         .delete(`/api/user/appliances/${testApplianceId}`)
-        .set("x-user-id", userId);
+        .set("Authorization", `Bearer ${userId}`);
 
       expect(response.status).toBe(404);
       expect(response.body.error).toContain("not found");
@@ -165,14 +193,14 @@ describe("User Appliances API", () => {
       const userId = "delete-nonexistent-" + Date.now();
       const response = await request(app)
         .delete(`/api/user/appliances/999999`)
-        .set("x-user-id", userId);
+        .set("Authorization", `Bearer ${userId}`);
 
       expect(response.status).toBe(404);
     });
   });
 
   describe("POST /api/user/appliances/bulk - Validation", () => {
-    it("returns 401 when user ID is missing", async () => {
+    it("returns 401 when authorization header is missing", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
         .send({ applianceIds: [testApplianceId] });
@@ -184,7 +212,7 @@ describe("User Appliances API", () => {
     it("returns 400 when applianceIds is missing", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({});
 
       expect(response.status).toBe(400);
@@ -194,7 +222,7 @@ describe("User Appliances API", () => {
     it("returns 400 when applianceIds is empty array", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceIds: [] });
 
       expect(response.status).toBe(400);
@@ -204,7 +232,7 @@ describe("User Appliances API", () => {
     it("returns 400 when applianceIds contains only invalid values", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceIds: ["invalid", "not-numbers"] });
 
       expect(response.status).toBe(400);
@@ -214,7 +242,7 @@ describe("User Appliances API", () => {
     it("returns 404 when no valid appliances found", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceIds: [999999, 888888] });
 
       expect(response.status).toBe(404);
@@ -226,7 +254,7 @@ describe("User Appliances API", () => {
 
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", userId)
+        .set("Authorization", `Bearer ${userId}`)
         .send({ applianceIds });
 
       expect([200, 201, 500]).toContain(response.status);
@@ -239,7 +267,7 @@ describe("User Appliances API", () => {
 
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", userId)
+        .set("Authorization", `Bearer ${userId}`)
         .send({ applianceIds: mixedIds });
 
       expect([200, 201, 500]).toContain(response.status);
@@ -250,7 +278,7 @@ describe("User Appliances API", () => {
     it("GET returns proper JSON structure", async () => {
       const response = await request(app)
         .get("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID);
+        .set("Authorization", `Bearer ${TEST_USER_ID}`);
 
       expect(response.headers["content-type"]).toMatch(/json/);
       expect(response.body).toBeDefined();
@@ -259,7 +287,7 @@ describe("User Appliances API", () => {
     it("POST error response has error property", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({});
 
       expect(response.body).toHaveProperty("error");
@@ -269,7 +297,7 @@ describe("User Appliances API", () => {
     it("DELETE error response has error property", async () => {
       const response = await request(app)
         .delete("/api/user/appliances/invalid")
-        .set("x-user-id", TEST_USER_ID);
+        .set("Authorization", `Bearer ${TEST_USER_ID}`);
 
       expect(response.body).toHaveProperty("error");
       expect(typeof response.body.error).toBe("string");
@@ -278,7 +306,7 @@ describe("User Appliances API", () => {
     it("bulk endpoint error response has error property", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({});
 
       expect(response.body).toHaveProperty("error");
@@ -287,13 +315,13 @@ describe("User Appliances API", () => {
   });
 
   describe("Request Header Validation", () => {
-    it("validates x-user-id header for GET", async () => {
+    it("validates Authorization header for GET", async () => {
       const response = await request(app).get("/api/user/appliances");
 
       expect(response.status).toBe(401);
     });
 
-    it("validates x-user-id header for POST", async () => {
+    it("validates Authorization header for POST", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
         .send({ applianceId: testApplianceId });
@@ -301,7 +329,7 @@ describe("User Appliances API", () => {
       expect(response.status).toBe(401);
     });
 
-    it("validates x-user-id header for DELETE", async () => {
+    it("validates Authorization header for DELETE", async () => {
       const response = await request(app).delete(
         `/api/user/appliances/${testApplianceId}`,
       );
@@ -309,7 +337,7 @@ describe("User Appliances API", () => {
       expect(response.status).toBe(401);
     });
 
-    it("validates x-user-id header for bulk endpoint", async () => {
+    it("validates Authorization header for bulk endpoint", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
         .send({ applianceIds: [testApplianceId] });
@@ -322,7 +350,7 @@ describe("User Appliances API", () => {
     it("rejects null applianceId", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: null });
 
       expect(response.status).toBe(400);
@@ -331,7 +359,7 @@ describe("User Appliances API", () => {
     it("rejects undefined applianceId", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: undefined });
 
       expect(response.status).toBe(400);
@@ -340,7 +368,7 @@ describe("User Appliances API", () => {
     it("rejects object as applianceId", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: { id: 1 } });
 
       expect(response.status).toBe(400);
@@ -349,7 +377,7 @@ describe("User Appliances API", () => {
     it("rejects array as applianceId in single add", async () => {
       const response = await request(app)
         .post("/api/user/appliances")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceId: [1, 2, 3] });
 
       expect(response.status).toBe(400);
@@ -358,7 +386,7 @@ describe("User Appliances API", () => {
     it("rejects object instead of array in bulk add", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceIds: { ids: [1, 2] } });
 
       expect(response.status).toBe(400);
@@ -367,7 +395,7 @@ describe("User Appliances API", () => {
     it("rejects number instead of array in bulk add", async () => {
       const response = await request(app)
         .post("/api/user/appliances/bulk")
-        .set("x-user-id", TEST_USER_ID)
+        .set("Authorization", `Bearer ${TEST_USER_ID}`)
         .send({ applianceIds: 123 });
 
       expect(response.status).toBe(400);
