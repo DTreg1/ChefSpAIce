@@ -1362,24 +1362,26 @@ export default function OnboardingScreen() {
                   Start with a free 7-day trial. Cancel anytime.
                 </ThemedText>
 
-                {/* Everything you get list */}
+                {/* Everything you get list - 2x4 grid */}
                 <View style={styles.featuresListContainer}>
                   <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
-                  {[
-                    "Unlimited food inventory tracking",
-                    "AI-powered recipe generation",
-                    "Smart meal planning",
-                    "Expiration alerts & notifications",
-                    "Nutrition tracking & analytics",
-                    "Cloud sync across devices",
-                    "Shopping list management",
-                    "Waste reduction insights",
-                  ].map((feature, index) => (
-                    <View key={index} style={styles.featureItem}>
-                      <Feather name="check-circle" size={16} color={AppColors.primary} />
-                      <ThemedText style={styles.featureItemText}>{feature}</ThemedText>
-                    </View>
-                  ))}
+                  <View style={styles.featuresGrid}>
+                    {[
+                      "Unlimited inventory",
+                      "AI recipes",
+                      "Meal planning",
+                      "Expiration alerts",
+                      "Nutrition tracking",
+                      "Cloud sync",
+                      "Shopping lists",
+                      "Waste reduction",
+                    ].map((feature, index) => (
+                      <View key={index} style={styles.featureGridItem}>
+                        <Feather name="check-circle" size={12} color={AppColors.primary} />
+                        <ThemedText style={styles.featureGridItemText}>{feature}</ThemedText>
+                      </View>
+                    ))}
+                  </View>
                 </View>
                 
                 <View style={styles.planCardsRow}>
@@ -3255,13 +3257,27 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   featuresListContainer: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     paddingHorizontal: Spacing.sm,
   },
   featuresListTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600" as const,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  featuresGrid: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+  },
+  featureGridItem: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    width: "50%" as const,
+    marginBottom: 4,
+  },
+  featureGridItemText: {
+    fontSize: 11,
   },
   featureItem: {
     flexDirection: "row" as const,
