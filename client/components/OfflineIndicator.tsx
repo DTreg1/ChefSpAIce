@@ -27,7 +27,8 @@ export function OfflineIndicator() {
     return unsubscribe;
   }, []);
 
-  const shouldShow = syncState && (!syncState.isOnline || syncState.pendingChanges > 0);
+  // Only show indicator when user is offline (not for pending changes - data saves instantly)
+  const shouldShow = syncState && !syncState.isOnline;
 
   useEffect(() => {
     translateY.value = withSpring(shouldShow ? 0 : -100, {
@@ -47,13 +48,10 @@ export function OfflineIndicator() {
 
   const getMessage = () => {
     if (isOffline && hasPending) {
-      return `Offline - ${syncState.pendingChanges} change${syncState.pendingChanges > 1 ? "s" : ""} pending`;
+      return `Offline - ${syncState.pendingChanges} change${syncState.pendingChanges > 1 ? "s" : ""} will sync when back online`;
     }
     if (isOffline) {
       return "You're offline";
-    }
-    if (hasPending) {
-      return `Syncing ${syncState.pendingChanges} change${syncState.pendingChanges > 1 ? "s" : ""}...`;
     }
     return "";
   };

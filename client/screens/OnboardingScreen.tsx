@@ -40,6 +40,7 @@ import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { syncManager } from "@/lib/sync-manager";
 
 interface Appliance {
   id: number;
@@ -1032,6 +1033,9 @@ export default function OnboardingScreen() {
         return;
       }
 
+      // Clear any stale sync queue items from previous sessions
+      await syncManager.clearQueue();
+
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -1063,6 +1067,9 @@ export default function OnboardingScreen() {
         }
         return;
       }
+
+      // Clear any stale sync queue items from previous sessions
+      await syncManager.clearQueue();
 
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
