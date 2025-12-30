@@ -65,13 +65,6 @@ export default function PricingScreen() {
     fetchPrices();
   }, []);
 
-  // Refresh subscription status only when screen mounts (not on every focus)
-  // This prevents constant re-fetching while still getting fresh data on navigation
-  useEffect(() => {
-    refreshSubscription();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchPrices = async () => {
     try {
       const baseUrl = getApiUrl();

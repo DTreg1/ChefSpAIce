@@ -41,14 +41,23 @@ import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-const SCREENS_WITHOUT_CHAT = ["AddItem"];
+const SCREENS_WITHOUT_CHAT = [
+  "AddItem",
+  "Pricing",
+  "Onboarding",
+  "Login",
+  "Register",
+  "ForgotPassword",
+];
 
-function getActiveRouteName(state: NavigationState | undefined): string | undefined {
+function getActiveRouteName(
+  state: NavigationState | undefined,
+): string | undefined {
   if (!state) return undefined;
   const route = state.routes[state.index];
   if (route.state) {
     return getActiveRouteName(route.state as NavigationState);
-  } 
+  }
   return route.name;
 }
 
@@ -56,8 +65,11 @@ function MobileAppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
-  const [currentRoute, setCurrentRoute] = useState<string | undefined>(undefined);
-  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const [currentRoute, setCurrentRoute] = useState<string | undefined>(
+    undefined,
+  );
+  const navigationRef =
+    useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useExpirationNotifications();
 
@@ -78,11 +90,18 @@ function MobileAppContent() {
     setCurrentRoute(routeName);
   }, []);
 
-  const showChat = !isCheckingOnboarding && isOnboardingComplete && !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
+  const showChat =
+    !isCheckingOnboarding &&
+    isOnboardingComplete &&
+    !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
 
   return (
     <FloatingChatProvider>
-      <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onStateChange}>
+      <NavigationContainer
+        ref={navigationRef}
+        theme={navigationTheme}
+        onStateChange={onStateChange}
+      >
         <AnimatedBackground bubbleCount={20} />
         <OfflineIndicator />
         <SubscriptionBanner />
