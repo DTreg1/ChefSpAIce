@@ -13,6 +13,7 @@ import SubscriptionSuccessScreen from "@/src/pages/subscription-success";
 import SubscriptionCanceledScreen from "@/src/pages/subscription-canceled";
 import Constants from "expo-constants";
 import { View, Text, ActivityIndicator } from "react-native";
+import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 
 const MobileApp = lazy(() => import("./NativeApp"));
 
@@ -116,30 +117,53 @@ function WebRouter() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  switch (route) {
-    case "/about":
-      return <AboutScreen />;
-    case "/privacy":
-      return <PrivacyScreen />;
-    case "/terms":
-      return <TermsScreen />;
-    case "/attributions":
-      return <AttributionsScreen />;
-    case "/support":
-      return <SupportScreen />;
-    case "/pricing":
-      return <PricingScreen />;
-    case "/admin/subscriptions":
-      return <AdminSubscriptionsScreen />;
-    case "/admin/feedback":
-      return <AdminFeedbackScreen />;
-    case "/subscription-success":
-      return <SubscriptionSuccessScreen />;
-    case "/subscription-canceled":
-      return <SubscriptionCanceledScreen />;
-    default:
-      return <LandingScreen />;
-  }
+  const screenNames: Record<WebRoute, string> = {
+    "/": "LandingScreen",
+    "/about": "AboutScreen",
+    "/privacy": "PrivacyScreen",
+    "/terms": "TermsScreen",
+    "/attributions": "AttributionsScreen",
+    "/support": "SupportScreen",
+    "/pricing": "PricingScreen",
+    "/admin/subscriptions": "AdminSubscriptionsScreen",
+    "/admin/feedback": "AdminFeedbackScreen",
+    "/subscription-success": "SubscriptionSuccessScreen",
+    "/subscription-canceled": "SubscriptionCanceledScreen",
+  };
+
+  const renderScreen = () => {
+    switch (route) {
+      case "/about":
+        return <AboutScreen />;
+      case "/privacy":
+        return <PrivacyScreen />;
+      case "/terms":
+        return <TermsScreen />;
+      case "/attributions":
+        return <AttributionsScreen />;
+      case "/support":
+        return <SupportScreen />;
+      case "/pricing":
+        return <PricingScreen />;
+      case "/admin/subscriptions":
+        return <AdminSubscriptionsScreen />;
+      case "/admin/feedback":
+        return <AdminFeedbackScreen />;
+      case "/subscription-success":
+        return <SubscriptionSuccessScreen />;
+      case "/subscription-canceled":
+        return <SubscriptionCanceledScreen />;
+      default:
+        return <LandingScreen />;
+    }
+  };
+
+  return (
+    <>
+      {renderScreen()}
+      <ScreenIdentifierOverlay screenName={screenNames[route]} />
+    </>
+  );
 }
 
 export default function App() {
