@@ -396,7 +396,6 @@ export const feedbackBuckets = pgTable(
 );
 
 export const insertFeedbackBucketSchema = createInsertSchema(feedbackBuckets).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -438,7 +437,6 @@ export const feedback = pgTable(
 );
 
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
 });
