@@ -1055,8 +1055,7 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.xs,
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
   },
   filterSummaryRow: {
