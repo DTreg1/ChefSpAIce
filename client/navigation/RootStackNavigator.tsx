@@ -70,7 +70,7 @@ function AuthGuardedNavigator() {
 
   useEffect(() => {
     checkOnboardingStatus();
-  }, []);
+  }, [isAuthenticated]);
 
   // Set up sign out callback to navigate to SignIn
   useEffect(() => {
