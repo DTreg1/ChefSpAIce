@@ -1198,12 +1198,12 @@ export default function OnboardingScreen() {
         }
       }
 
-      // Update existing items
+      // Update existing items (skip sync queue - we'll save directly at the end)
       for (const item of updatedItems) {
-        await storage.updateInventoryItem(item);
+        await storage.updateInventoryItem(item, { skipSync: true });
       }
 
-      // Add new items (skip sync during onboarding - user doesn't have subscription yet)
+      // Add new items (skip sync queue - we'll save directly at the end)
       if (newItems.length > 0) {
         await storage.addInventoryItems(newItems, { skipSync: true });
       }
@@ -1211,10 +1211,10 @@ export default function OnboardingScreen() {
       await storage.setOnboardingCompleted();
       markOnboardingComplete();
 
-      // Sync all data to cloud immediately after onboarding completes
-      const syncResult = await storage.syncToCloud();
-      if (!syncResult.success) {
-        console.warn("Initial cloud sync failed:", syncResult.error);
+      // Save all data directly to database (not via sync queue)
+      const saveResult = await storage.syncToCloud();
+      if (!saveResult.success) {
+        console.warn("Initial data save failed:", saveResult.error);
       }
 
       if (Platform.OS !== "web") {
