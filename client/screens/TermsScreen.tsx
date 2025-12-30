@@ -64,9 +64,9 @@ export default function TermsOfServicePage() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Free Service</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Subscription Service</Text>
             <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-              ChefSpAIce is currently provided as a free service. We reserve the right to introduce paid features or subscriptions in the future, with reasonable notice to users. We also accept voluntary donations to support development and maintenance.
+              ChefSpAIce requires an active subscription to use. We offer a 7-day free trial for new users. Subscription pricing and features may be updated with reasonable notice to users.
             </Text>
           </View>
 

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { StyleSheet, View, Text, Pressable, ScrollView, Linking, useWindowDimensions, Platform, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, Pressable, ScrollView, Linking, useWindowDimensions, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useWebTheme } from "@/contexts/WebThemeContext";
@@ -9,14 +8,6 @@ const BRAND_GREEN_DARK = "#1E8449";
 
 const APP_STORE_URL = "#"; 
 const PLAY_STORE_URL = "#"; 
-
-const DONATION_AMOUNTS = [
-  { label: "$5", value: 500 },
-  { label: "$10", value: 1000 },
-  { label: "$25", value: 2500 },
-  { label: "$50", value: 5000 },
-  { label: "$100", value: 10000 },
-];
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -113,96 +104,6 @@ function StoreBadge({ type, colors }: StoreBadgeProps) {
         </View>
       </View>
     </Pressable>
-  );
-}
-
-interface DonationSectionProps {
-  colors: ReturnType<typeof getThemeColors>;
-  isWide: boolean;
-}
-
-function DonationSection({ colors, isWide }: DonationSectionProps) {
-  const [loading, setLoading] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleDonate = async (amount: number) => {
-    setLoading(amount);
-    setError(null);
-    
-    try {
-      // In development, web is served from port 80 but API is on port 5000
-      // In production, both are on the same port so relative URL works
-      const isDev = window.location.port === "" || window.location.port === "80";
-      const apiBase = isDev ? `${window.location.protocol}//${window.location.hostname}:5000` : "";
-      
-      const response = await fetch(`${apiBase}/api/donations/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount,
-          anonymous: true,
-          successUrl: window.location.origin + "/?donation=success",
-          cancelUrl: window.location.origin + "/?donation=cancelled",
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError("Unable to start checkout. Please try again.");
-      }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  return (
-    <View style={styles.section} data-testid="section-support">
-      <View style={styles.supportIconContainer}>
-        <Feather name="heart" size={32} color={BRAND_GREEN} />
-      </View>
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]} data-testid="text-support-title">
-        Support ChefSpAIce
-      </Text>
-      <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, maxWidth: 600 }]} data-testid="text-support-subtitle">
-        ChefSpAIce is free to use. If you find it helpful, consider supporting our mission to reduce food waste worldwide.
-      </Text>
-      
-      <View style={[styles.donationGrid, isWide && styles.donationGridWide]}>
-        {DONATION_AMOUNTS.map(({ label, value }) => (
-          <Pressable
-            key={value}
-            style={({ pressed }) => [
-              styles.donationButton,
-              { backgroundColor: colors.card, borderColor: colors.cardBorder },
-              pressed && styles.donationButtonPressed,
-              loading === value && styles.donationButtonLoading,
-            ]}
-            onPress={() => handleDonate(value)}
-            disabled={loading !== null}
-            data-testid={`button-donate-${value}`}
-          >
-            {loading === value ? (
-              <ActivityIndicator size="small" color={BRAND_GREEN} />
-            ) : (
-              <Text style={[styles.donationButtonText, { color: colors.textPrimary }]}>{label}</Text>
-            )}
-          </Pressable>
-        ))}
-      </View>
-
-      {error ? (
-        <Text style={styles.donationError} data-testid="text-donation-error">{error}</Text>
-      ) : null}
-
-      <Text style={[styles.donationNote, { color: colors.textMuted }]} data-testid="text-donation-note">
-        Secure payments powered by Stripe
-      </Text>
-    </View>
   );
 }
 
@@ -333,8 +234,6 @@ export default function LandingScreen() {
           <StepCard number="3" title="Plan & Cook" description="Add recipes to your meal plan and follow step-by-step instructions." colors={colors} />
         </View>
       </View>
-
-      <DonationSection colors={colors} isWide={isWide} />
 
       <View style={styles.ctaSection} data-testid="section-cta">
         <LinearGradient
@@ -639,55 +538,5 @@ const styles = StyleSheet.create({
   footerDivider: {},
   copyright: {
     fontSize: 12,
-  },
-  supportIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  donationGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 12,
-    maxWidth: 400,
-  },
-  donationGridWide: {
-    gap: 16,
-  },
-  donationButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    minWidth: 80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  donationButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  donationButtonLoading: {
-    opacity: 0.7,
-  },
-  donationButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  donationError: {
-    color: "#E74C3C",
-    fontSize: 14,
-    marginTop: 16,
-    textAlign: "center",
-  },
-  donationNote: {
-    fontSize: 13,
-    marginTop: 20,
-    textAlign: "center",
   },
 });

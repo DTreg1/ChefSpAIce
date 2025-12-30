@@ -9,7 +9,6 @@ import { Client } from "pg";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
-import donationsRouter from "./stripe/donationsRouter";
 
 const app = express();
 const log = console.log;
@@ -183,7 +182,7 @@ function isMobileUserAgent(userAgent: string | undefined): boolean {
 
 function isWebRoute(pathname: string): boolean {
   const cleanPath = pathname.toLowerCase().split("?")[0];
-  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/support", "/pricing", "/subscription-success", "/subscription-canceled"];
+  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/pricing", "/subscription-success", "/subscription-canceled"];
   return webRoutes.includes(cleanPath);
 }
 
@@ -378,7 +377,7 @@ async function initStripe(retries = 3, delay = 2000) {
     log(`Webhook configured: ${webhook.url} (UUID: ${uuid})`);
 
     // Skip full backfill sync for faster startup - webhook handles new events
-    // Only sync checkout_sessions which we need for donations
+    // Only sync checkout_sessions which we need for subscriptions
     stripeSync
       .syncBackfill({
         include: ["checkout_sessions"],
@@ -429,9 +428,6 @@ async function initStripe(retries = 3, delay = 2000) {
 
   setupBodyParsing(app);
   setupRequestLogging(app);
-
-  // Register donations router after body parsing (needs parsed JSON body)
-  app.use("/api/donations", donationsRouter);
 
   configureExpoRouting(app);
 

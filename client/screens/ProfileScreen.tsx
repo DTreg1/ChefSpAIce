@@ -651,26 +651,6 @@ export default function ProfileScreen() {
           </ThemedText>
           <Feather name="chevron-right" size={20} color={theme.textSecondary} />
         </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Donation")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.error}15` },
-            ]}
-          >
-            <Feather name="heart" size={20} color={AppColors.error} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Support Us
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
       </GlassCard>
 
       {isAuthenticated ? (
