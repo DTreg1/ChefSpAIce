@@ -72,13 +72,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to SignIn
+  // Set up sign out callback to navigate to Onboarding (which has sign-in on welcome step)
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "SignIn" }],
+          routes: [{ name: "Onboarding" }],
         }),
       );
     });
@@ -92,16 +92,16 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to SignIn
+    // If user was authenticated but now is not, redirect to Onboarding
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to SignIn for authentication
+      // Redirect to Onboarding for authentication
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "SignIn" }],
+          routes: [{ name: "Onboarding" }],
         }),
       );
     }
