@@ -37,7 +37,7 @@ export default function SignInScreen() {
   } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,8 +48,8 @@ export default function SignInScreen() {
   const confirmPasswordRef = useRef<TextInput>(null);
 
   const handleAuth = async () => {
-    if (!username.trim() || !password.trim()) {
-      setAuthError("Please enter username and password");
+    if (!email.trim() || !password.trim()) {
+      setAuthError("Please enter email and password");
       return;
     }
 
@@ -64,9 +64,9 @@ export default function SignInScreen() {
     try {
       let result;
       if (isSignUp) {
-        result = await signUp(username.trim(), password);
+        result = await signUp(email.trim(), password);
       } else {
-        result = await signIn(username.trim(), password);
+        result = await signIn(email.trim(), password);
       }
 
       if (!result.success) {
@@ -205,18 +205,20 @@ export default function SignInScreen() {
                 { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
               ]}
             >
-              <Feather name="user" size={20} color={theme.textSecondary} style={styles.inputIcon} />
+              <Feather name="mail" size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="Username"
+                placeholder="Email"
                 placeholderTextColor={theme.textSecondary}
-                value={username}
-                onChangeText={setUsername}
+                value={email}
+                onChangeText={setEmail}
                 autoCapitalize="none"
                 autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
-                data-testid="input-username"
+                data-testid="input-email"
               />
             </View>
 
