@@ -374,12 +374,43 @@ export type InsertNutritionCorrection = z.infer<
 >;
 export type NutritionCorrection = typeof nutritionCorrections.$inferSelect;
 
+// Feedback buckets for grouping similar feedback items
+export const feedbackBuckets = pgTable(
+  "feedback_buckets",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    bucketType: varchar("bucket_type", { length: 20 }).notNull(), // 'bug' or 'feature'
+    status: varchar("status", { length: 20 }).default("open").notNull(), // 'open', 'in_progress', 'completed'
+    priority: varchar("priority", { length: 20 }).default("medium"), // 'low', 'medium', 'high', 'urgent'
+    generatedPrompt: text("generated_prompt"),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_feedback_buckets_status").on(table.status),
+    index("idx_feedback_buckets_type").on(table.bucketType),
+  ],
+);
+
+export const insertFeedbackBucketSchema = createInsertSchema(feedbackBuckets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertFeedbackBucket = z.infer<typeof insertFeedbackBucketSchema>;
+export type FeedbackBucket = typeof feedbackBuckets.$inferSelect;
+
 // Feedback table for user feedback and bug reports
 export const feedback = pgTable(
   "feedback",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: varchar("user_id").references(() => users.id),
+    bucketId: integer("bucket_id").references(() => feedbackBuckets.id),
     type: varchar("type", { length: 20 }).notNull(), // 'feedback' or 'bug'
     category: varchar("category", { length: 50 }), // 'suggestion', 'general', 'compliment', 'question' for feedback; 'crash', 'ui', 'data', 'performance' for bugs
     message: text("message").notNull(),
@@ -388,8 +419,12 @@ export const feedback = pgTable(
     screenContext: varchar("screen_context", { length: 100 }), // Which screen they were on
     stepsToReproduce: text("steps_to_reproduce"), // For bug reports
     severity: varchar("severity", { length: 20 }), // 'minor', 'major', 'critical' for bugs
-    status: varchar("status", { length: 20 }).default("new").notNull(), // 'new', 'reviewed', 'resolved', 'closed'
+    status: varchar("status", { length: 20 }).default("new").notNull(), // 'new', 'reviewed', 'in_progress', 'resolved', 'closed'
     adminNotes: text("admin_notes"),
+    priority: varchar("priority", { length: 20 }).default("medium"), // 'low', 'medium', 'high', 'urgent'
+    resolutionPrompt: text("resolution_prompt"), // Detailed prompt for agent chat implementation
+    assignedTo: varchar("assigned_to", { length: 100 }), // Developer/team assigned
+    resolvedAt: timestamp("resolved_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -397,6 +432,8 @@ export const feedback = pgTable(
     index("idx_feedback_type").on(table.type),
     index("idx_feedback_status").on(table.status),
     index("idx_feedback_created").on(table.createdAt),
+    index("idx_feedback_priority").on(table.priority),
+    index("idx_feedback_bucket").on(table.bucketId),
   ],
 );
 
