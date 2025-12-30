@@ -69,6 +69,11 @@ router.get("/prices", async (_req: Request, res: Response) => {
       expand: ["data.product"],
     });
 
+    console.log(`[Stripe Prices] Found ${prices.data.length} active recurring prices`);
+    for (const p of prices.data) {
+      console.log(`[Stripe Price] id=${p.id}, interval=${p.recurring?.interval}, interval_count=${p.recurring?.interval_count}, amount=${p.unit_amount}`);
+    }
+
     let monthlyPrice: PriceInfo | null = null;
     let annualPrice: PriceInfo | null = null;
 
