@@ -1174,9 +1174,9 @@ export default function OnboardingScreen() {
         }
       }
 
-      // Update existing items (skip sync during onboarding - user doesn't have subscription yet)
+      // Update existing items
       for (const item of updatedItems) {
-        await storage.updateInventoryItem(item, { skipSync: true });
+        await storage.updateInventoryItem(item);
       }
 
       // Add new items (skip sync during onboarding - user doesn't have subscription yet)
