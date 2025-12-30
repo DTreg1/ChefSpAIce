@@ -1246,6 +1246,7 @@ export default function OnboardingScreen() {
                 </ThemedText>
               </View>
             )}
+            
 
             <View style={styles.authInputContainer}>
               <View
@@ -1362,6 +1363,16 @@ export default function OnboardingScreen() {
               </ThemedText>
             </Pressable>
 
+
+            <Button
+              onPress={handleCustomize}
+              style={styles.getStartedButton}
+              testID="button-get-started"
+            >
+              Get Started
+            </Button>
+
+            
             {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
               <>
                 <View style={styles.authDividerContainer}>
