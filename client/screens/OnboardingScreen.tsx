@@ -1361,6 +1361,26 @@ export default function OnboardingScreen() {
                 <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
                   Start with a free 7-day trial. Cancel anytime.
                 </ThemedText>
+
+                {/* Everything you get list */}
+                <View style={styles.featuresListContainer}>
+                  <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
+                  {[
+                    "Unlimited food inventory tracking",
+                    "AI-powered recipe generation",
+                    "Smart meal planning",
+                    "Expiration alerts & notifications",
+                    "Nutrition tracking & analytics",
+                    "Cloud sync across devices",
+                    "Shopping list management",
+                    "Waste reduction insights",
+                  ].map((feature, index) => (
+                    <View key={index} style={styles.featureItem}>
+                      <Feather name="check-circle" size={16} color={AppColors.primary} />
+                      <ThemedText style={styles.featureItemText}>{feature}</ThemedText>
+                    </View>
+                  ))}
+                </View>
                 
                 <View style={styles.planCardsRow}>
                   <Pressable
@@ -3233,6 +3253,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center" as const,
     marginBottom: Spacing.md,
+  },
+  featuresListContainer: {
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.sm,
+  },
+  featuresListTitle: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    marginBottom: Spacing.sm,
+  },
+  featureItem: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: Spacing.xs,
+    marginBottom: 6,
+  },
+  featureItemText: {
+    fontSize: 14,
   },
   planCardsRow: {
     flexDirection: "row" as const,

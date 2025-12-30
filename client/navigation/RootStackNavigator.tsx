@@ -10,7 +10,6 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
-import PricingScreen from "@/screens/PricingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -23,7 +22,6 @@ export type RootStackParamList = {
   SignIn: undefined;
   Main: undefined;
   Onboarding: undefined;
-  Pricing: undefined;
   AddItem:
     | {
         barcode?: string;
@@ -129,12 +127,12 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // Authenticated user lost subscription - redirect to Pricing
+    // Authenticated user lost subscription - redirect to Onboarding (has pricing)
     if (isAuthenticated && wasActive && !isActive) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Pricing" }],
+          routes: [{ name: "Onboarding" }],
         }),
       );
     }
@@ -176,15 +174,12 @@ function AuthGuardedNavigator() {
 
   // Determine initial route:
   // 1. Needs onboarding (new user) → Onboarding (has embedded sign-in on step 1)
-  // 2. Not authenticated (returning user who completed onboarding) → SignIn
-  // 3. Authenticated but no active subscription → Pricing
+  // 2. Not authenticated (returning user who completed onboarding) → Onboarding
+  // 3. Authenticated but no active subscription → Onboarding (has pricing)
   // 4. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (!isAuthenticated || needsOnboarding) {
+    if (!isAuthenticated || needsOnboarding || !isActive) {
       return "Onboarding";
-    }
-    if (!isActive) {
-      return "Pricing";
     }
     return "Main";
   };
@@ -197,11 +192,6 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Pricing"
-        component={PricingScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

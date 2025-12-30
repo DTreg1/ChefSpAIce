@@ -194,7 +194,7 @@ export default function SubscriptionSuccessScreen() {
 
             <Pressable
               style={styles.secondaryButton}
-              onPress={() => (window.location.href = "/pricing")}
+              onPress={() => (window.location.href = "/")}
               data-testid="button-view-plans"
             >
               <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>Manage Subscription</Text>

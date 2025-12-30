@@ -102,7 +102,7 @@ export function useRequireSubscription(): UseRequireSubscriptionResult {
 
   useEffect(() => {
     if (!isLoading && !isActive) {
-      window.location.href = "/pricing";
+      window.location.href = "/";
     }
   }, [isLoading, isActive]);
 
@@ -149,7 +149,7 @@ export function SubscriptionGate({
           <Text style={styles.upgradeMessage} data-testid="text-upgrade-message">{upgradeMessage}</Text>
           <Pressable
             style={styles.upgradeButton}
-            onPress={() => (window.location.href = "/pricing")}
+            onPress={() => (window.location.href = "/")}
             data-testid="button-upgrade"
           >
             <Text style={styles.upgradeButtonText}>View Plans</Text>

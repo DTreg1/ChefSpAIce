@@ -58,7 +58,6 @@ The project uses a **single unified entry point** (App.tsx) for all platforms (w
 - `/terms` - Terms of Service
 - `/attributions` - Attributions and credits
 - `/support` - Donation/support page
-- `/pricing` - Subscription pricing page (redirects to web app onboarding)
 - `/subscription-success` - Stripe checkout success redirect
 - `/subscription-canceled` - Stripe checkout cancel redirect
 

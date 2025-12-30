@@ -85,7 +85,7 @@ export default function SubscriptionCanceledScreen() {
 
         <Pressable
           style={styles.primaryButton}
-          onPress={() => (window.location.href = "/pricing")}
+          onPress={() => (window.location.href = "/")}
           data-testid="button-view-pricing"
         >
           <Text style={styles.primaryButtonText}>View Plans & Pricing</Text>
