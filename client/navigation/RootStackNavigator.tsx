@@ -10,7 +10,6 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
-import SignInScreen from "@/screens/SignInScreen";
 import PricingScreen from "@/screens/PricingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
@@ -55,8 +54,16 @@ function LoadingScreen() {
 function AuthGuardedNavigator() {
   const screenOptions = useScreenOptions();
   const navigation = useNavigation();
-  const { isAuthenticated, isLoading: authLoading, setSignOutCallback } = useAuth();
-  const { isActive, isLoading: subscriptionLoading, refresh: refreshSubscription } = useSubscription();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    setSignOutCallback,
+  } = useAuth();
+  const {
+    isActive,
+    isLoading: subscriptionLoading,
+    refresh: refreshSubscription,
+  } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const hasInitialized = useRef(false);
@@ -74,7 +81,7 @@ function AuthGuardedNavigator() {
         CommonActions.reset({
           index: 0,
           routes: [{ name: "SignIn" }],
-        })
+        }),
       );
     });
   }, [navigation, setSignOutCallback]);
@@ -97,7 +104,7 @@ function AuthGuardedNavigator() {
         CommonActions.reset({
           index: 0,
           routes: [{ name: "SignIn" }],
-        })
+        }),
       );
     }
 
@@ -128,7 +135,7 @@ function AuthGuardedNavigator() {
         CommonActions.reset({
           index: 0,
           routes: [{ name: "Pricing" }],
-        })
+        }),
       );
     }
 
@@ -138,12 +145,19 @@ function AuthGuardedNavigator() {
         CommonActions.reset({
           index: 0,
           routes: [{ name: "Main" }],
-        })
+        }),
       );
     }
 
     prevSubscriptionState.current = { isActive, subscriptionLoading };
-  }, [isActive, subscriptionLoading, isAuthenticated, navigation, authLoading, isLoading]);
+  }, [
+    isActive,
+    subscriptionLoading,
+    isAuthenticated,
+    navigation,
+    authLoading,
+    isLoading,
+  ]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -166,11 +180,8 @@ function AuthGuardedNavigator() {
   // 3. Authenticated but no active subscription → Pricing
   // 4. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (needsOnboarding) {
+    if (!isAuthenticated || needsOnboarding) {
       return "Onboarding";
-    }
-    if (!isAuthenticated) {
-      return "SignIn";
     }
     if (!isActive) {
       return "Pricing";
@@ -183,11 +194,6 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
-      <Stack.Screen
-        name="SignIn"
-        component={SignInScreen}
-        options={{ headerShown: false }}
-      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
@@ -207,7 +213,7 @@ function AuthGuardedNavigator() {
         name="AddItem"
         component={AddItemScreen}
         options={{
-          presentation: "modal",
+          presentation: "fullScreenModal",
           headerTitle: "Add Item",
         }}
       />
@@ -239,7 +245,7 @@ function AuthGuardedNavigator() {
         name="FoodSearch"
         component={FoodSearchScreen}
         options={{
-          presentation: "modal",
+          presentation: "fullScreenModal",
           headerTitle: "Search Foods",
         }}
       />
@@ -247,7 +253,7 @@ function AuthGuardedNavigator() {
         name="AddFoodBatch"
         component={AddFoodBatchScreen}
         options={{
-          presentation: "modal",
+          presentation: "fullScreenModal",
           headerTitle: "Add Items",
         }}
       />
@@ -255,7 +261,7 @@ function AuthGuardedNavigator() {
         name="ScanHub"
         component={ScanHubScreen}
         options={{
-          presentation: "modal",
+          presentation: "fullScreenModal",
           headerShown: false,
         }}
       />
