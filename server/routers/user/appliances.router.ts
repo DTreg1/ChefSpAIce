@@ -7,13 +7,13 @@ import {
   type UserAppliance,
 } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { optionalAuth } from "../../middleware/auth";
+import { requireAuth } from "../../middleware/auth";
 
 export const appliancesRouter = Router();
 export const userAppliancesRouter = Router();
 
-// Apply auth middleware to all user appliances routes
-userAppliancesRouter.use(optionalAuth);
+// Apply auth middleware to all user appliances routes - all users must authenticate
+userAppliancesRouter.use(requireAuth);
 
 type FallbackAppliance = Omit<
   Appliance,

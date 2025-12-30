@@ -3,7 +3,6 @@ import { db } from "../db";
 import { subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-const INACTIVE_STATUSES = ["canceled", "expired", "past_due"];
 const ACTIVE_STATUSES = ["active", "trialing"];
 
 export async function requireSubscription(
@@ -18,13 +17,6 @@ export async function requireSubscription(
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    if (req.isGuest) {
-      return res.status(403).json({
-        error: "subscription_required",
-        message: "Active subscription required",
-      });
-    }
-
     const [subscription] = await db
       .select()
       .from(subscriptions)
@@ -32,13 +24,6 @@ export async function requireSubscription(
       .limit(1);
 
     if (!subscription) {
-      return res.status(403).json({
-        error: "subscription_required",
-        message: "Active subscription required",
-      });
-    }
-
-    if (INACTIVE_STATUSES.includes(subscription.status)) {
       return res.status(403).json({
         error: "subscription_required",
         message: "Active subscription required",
