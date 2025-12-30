@@ -161,16 +161,16 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. Not authenticated → SignIn
-  // 2. Authenticated but needs onboarding → Onboarding
+  // 1. Needs onboarding (new user) → Onboarding (has embedded sign-in on step 1)
+  // 2. Not authenticated (returning user who completed onboarding) → SignIn
   // 3. Authenticated but no active subscription → Pricing
   // 4. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
-    if (!isAuthenticated) {
-      return "SignIn";
-    }
     if (needsOnboarding) {
       return "Onboarding";
+    }
+    if (!isAuthenticated) {
+      return "SignIn";
     }
     if (!isActive) {
       return "Pricing";
