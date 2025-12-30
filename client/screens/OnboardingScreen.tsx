@@ -1174,14 +1174,14 @@ export default function OnboardingScreen() {
         }
       }
 
-      // Update existing items
+      // Update existing items (skip sync during onboarding - user doesn't have subscription yet)
       for (const item of updatedItems) {
-        await storage.updateInventoryItem(item);
+        await storage.updateInventoryItem(item, { skipSync: true });
       }
 
-      // Add new items
+      // Add new items (skip sync during onboarding - user doesn't have subscription yet)
       if (newItems.length > 0) {
-        await storage.addInventoryItems(newItems);
+        await storage.addInventoryItems(newItems, { skipSync: true });
       }
 
       await storage.setOnboardingCompleted();

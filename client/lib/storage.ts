@@ -293,6 +293,7 @@ export const storage = {
 
   async addInventoryItems(
     newItems: FoodItem[],
+    options?: { skipSync?: boolean }
   ): Promise<{ added: number; failed: number }> {
     const items = await this.getInventory();
     let added = 0;
@@ -309,10 +310,13 @@ export const storage = {
 
     await this.setInventory(items);
     
-    const token = await this.getAuthToken();
-    if (token) {
-      for (const item of newItems) {
-        syncManager.queueChange("inventory", "create", item);
+    // Skip sync if requested (e.g., during onboarding before subscription)
+    if (!options?.skipSync) {
+      const token = await this.getAuthToken();
+      if (token) {
+        for (const item of newItems) {
+          syncManager.queueChange("inventory", "create", item);
+        }
       }
     }
     
@@ -323,7 +327,7 @@ export const storage = {
     return { added, failed };
   },
 
-  async updateInventoryItem(item: FoodItem): Promise<void> {
+  async updateInventoryItem(item: FoodItem, options?: { skipSync?: boolean }): Promise<void> {
     const items = await this.getInventory();
     const index = items.findIndex((i) => i.id === item.id);
     if (index !== -1) {
@@ -331,9 +335,12 @@ export const storage = {
       items[index] = item;
       await this.setInventory(items);
       
-      const token = await this.getAuthToken();
-      if (token) {
-        syncManager.queueChange("inventory", "update", item);
+      // Skip sync if requested (e.g., during onboarding before subscription)
+      if (!options?.skipSync) {
+        const token = await this.getAuthToken();
+        if (token) {
+          syncManager.queueChange("inventory", "update", item);
+        }
       }
       
       if (oldItem.expirationDate !== item.expirationDate || item.expirationDate) {
