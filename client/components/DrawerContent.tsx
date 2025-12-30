@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AppColors,
   Spacing,
@@ -58,6 +59,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
 
 export function DrawerContent(props: DrawerContentComponentProps) {
   const { theme, isDark } = useTheme();
+  const { signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const { navigation, state } = props;
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
@@ -273,21 +275,21 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         <Pressable
           style={({ pressed }) => [
             styles.addItemButton,
-            { backgroundColor: AppColors.primary },
+            { backgroundColor: theme.glass.backgroundStrong, borderWidth: 1, borderColor: theme.glass.border },
             pressed ? { opacity: 0.8 } : null,
           ]}
           onPress={() => {
             closeDrawer();
-            navigation.navigate("AddItem");
+            signOut();
           }}
         >
           <Feather
-            name="plus"
+            name="log-out"
             size={20}
-            color="#FFFFFF"
+            color={theme.textSecondary}
             style={{ marginRight: Spacing.sm }}
           />
-          <ThemedText style={styles.addItemText}>Add Item</ThemedText>
+          <ThemedText style={[styles.addItemText, { color: theme.textSecondary }]}>Sign Out</ThemedText>
         </Pressable>
       </View>
     </View>
