@@ -933,6 +933,7 @@ export const storage = {
         syncData.preferences && this.setPreferences(syncData.preferences),
         syncData.cookware && this.setCookware(syncData.cookware),
         syncData.userProfile && this.setUserProfile(syncData.userProfile),
+        syncData.onboarding && setItem(STORAGE_KEYS.ONBOARDING, syncData.onboarding),
       ].filter(Boolean));
 
       return { success: true };
