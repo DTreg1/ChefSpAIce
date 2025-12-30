@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
   foodGroupChip: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     minHeight: 44,
     borderRadius: GlassEffect.borderRadius.pill,
