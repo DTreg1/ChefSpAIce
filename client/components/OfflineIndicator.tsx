@@ -83,10 +83,9 @@ export function OfflineIndicator() {
     <Animated.View
       style={[
         styles.container,
-        { paddingTop: insets.top + Spacing.xs },
+        { paddingTop: insets.top + Spacing.xs, pointerEvents: "none" },
         animatedStyle,
       ]}
-      pointerEvents="none"
     >
       {Platform.OS === "ios" ? (
         <BlurView intensity={80} tint="dark" style={styles.blur}>

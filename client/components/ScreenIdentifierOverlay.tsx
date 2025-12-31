@@ -90,7 +90,7 @@ export function ScreenIdentifierOverlay({
   };
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View style={[styles.container, { pointerEvents: "box-none" }]}>
       <TouchableOpacity
         style={styles.overlay}
         onPress={handleCopy}
