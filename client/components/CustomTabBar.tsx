@@ -231,6 +231,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         onPress={onPress}
         onLayout={(e) => handleTabLayout(route.name, e)}
         style={styles.tabButton}
+        testID={`tab-${route.name.toLowerCase().replace("tab", "")}`}
+        accessibilityRole="tab"
+        accessibilityLabel={`${label} tab`}
+        accessibilityState={{ selected: isFocused }}
+        accessibilityHint={`Navigate to ${label}`}
       >
         {isKitchenTab || isCookwareTab || isRecipesTab ? (
           <MaterialIcons

@@ -381,6 +381,10 @@ export function ChatModal() {
                 },
               ]}
               onPress={() => setInputText(suggestion)}
+              testID={`suggestion-chip-${index}`}
+              accessibilityRole="button"
+              accessibilityLabel={suggestion}
+              accessibilityHint="Tap to use this suggestion"
             >
               <ThemedText type="caption" style={{ fontSize: 11 }}>
                 {suggestion}
@@ -408,6 +412,10 @@ export function ChatModal() {
             onPress={() => setInputText(suggestion === "Send Feedback" 
               ? "I'd like to send some feedback" 
               : "I want to report a bug")}
+            testID={`feedback-chip-${suggestion.toLowerCase().replace(" ", "-")}`}
+            accessibilityRole="button"
+            accessibilityLabel={suggestion}
+            accessibilityHint={`Tap to ${suggestion.toLowerCase()}`}
           >
             <Feather 
               name={suggestion === "Report Bug" ? "alert-circle" : "message-square"} 

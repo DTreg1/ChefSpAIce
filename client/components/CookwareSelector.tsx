@@ -134,6 +134,11 @@ function CookwareItem({
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        testID={`cookware-item-${appliance.id}`}
+        accessibilityRole="checkbox"
+        accessibilityLabel={appliance.name}
+        accessibilityState={{ checked: isSelected }}
+        accessibilityHint={isSelected ? "Tap to deselect" : "Tap to select"}
         style={[
           styles.cookwareItem,
           {
@@ -243,6 +248,9 @@ function CategorySection({
             { backgroundColor: theme.glass.backgroundSubtle },
           ]}
           onPress={allSelected ? onDeselectAll : onSelectAll}
+          testID={`select-all-${category.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={allSelected ? `Deselect all ${category.label}` : `Select all ${category.label}`}
         >
           <Feather
             name={allSelected ? "x-square" : "check-square"}
