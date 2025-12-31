@@ -1,7 +1,38 @@
+/**
+ * =============================================================================
+ * REACT QUERY CLIENT CONFIGURATION
+ * =============================================================================
+ * 
+ * Sets up TanStack React Query for data fetching throughout ChefSpAIce.
+ * Provides the API request utilities and default query configuration.
+ * 
+ * KEY EXPORTS:
+ * - queryClient: Pre-configured QueryClient instance
+ * - getApiUrl(): Returns the Express API base URL
+ * - apiRequest(): Makes authenticated API calls with error handling
+ * - getQueryFn(): Factory for creating query functions
+ * 
+ * ERROR HANDLING:
+ * - 401 errors trigger auth error callback (auto-logout)
+ * - Non-OK responses throw errors with status and message
+ * 
+ * QUERY DEFAULTS:
+ * - No automatic refetching (staleTime: Infinity)
+ * - No retry on failure
+ * - Credentials included for auth cookies
+ * 
+ * USAGE:
+ * - Queries: useQuery({ queryKey: ['/api/recipes'] })
+ * - Mutations: useMutation + apiRequest()
+ * 
+ * @module lib/query-client
+ */
+
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
+ * Uses EXPO_PUBLIC_DOMAIN environment variable
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {

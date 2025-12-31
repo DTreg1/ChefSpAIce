@@ -1,8 +1,46 @@
+/**
+ * =============================================================================
+ * LOCAL STORAGE MODULE
+ * =============================================================================
+ * 
+ * The core data persistence layer for ChefSpAIce.
+ * Implements a local-first architecture with cloud sync capabilities.
+ * 
+ * ARCHITECTURE:
+ * - Uses AsyncStorage for persistent local storage on device
+ * - All data operations happen locally first (instant UI updates)
+ * - Syncs with server when online via sync-manager
+ * - Works offline - data is never lost
+ * 
+ * DATA ENTITIES:
+ * - FoodItem: Inventory items with expiration dates and nutrition
+ * - Recipe: Saved recipes (AI-generated or user-created)
+ * - MealPlan: Weekly meal planning assignments
+ * - ShoppingListItem: Shopping list with check states
+ * - ChatMessage: AI assistant conversation history
+ * - UserPreferences: User settings and preferences
+ * - WasteLogEntry: Tracking of wasted food for analytics
+ * - ConsumedLogEntry: Tracking of consumed food for analytics
+ * 
+ * KEY FEATURES:
+ * - Type-safe interfaces for all data models
+ * - Utility functions for expiration status
+ * - Cloud sync integration for authenticated users
+ * - Notification scheduling for expiring items
+ * - ID generation utilities
+ * 
+ * STORAGE KEYS:
+ * All keys are namespaced with @chefspaice/ prefix to avoid conflicts
+ * 
+ * @module lib/storage
+ */
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { syncManager } from "@/lib/sync-manager";
 
+/** Lazy-loaded notification scheduler to avoid circular dependencies */
 let scheduleNotifications: (() => Promise<number>) | null = null;
 
 async function triggerNotificationReschedule() {

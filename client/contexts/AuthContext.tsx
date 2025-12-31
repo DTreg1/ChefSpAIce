@@ -1,3 +1,40 @@
+/**
+ * =============================================================================
+ * AUTHENTICATION CONTEXT
+ * =============================================================================
+ * 
+ * Manages user authentication state throughout the ChefSpAIce app.
+ * Provides login, registration, and social auth capabilities.
+ * 
+ * AUTHENTICATION METHODS:
+ * - Email/Password: Traditional credentials-based auth
+ * - Apple Sign-In: Native iOS authentication (iOS only)
+ * - Google Sign-In: OAuth-based auth (Android only)
+ * 
+ * STATE MANAGEMENT:
+ * - Stores auth token and user info in AsyncStorage
+ * - Automatically loads stored auth on app launch
+ * - Syncs with server to validate token freshness
+ * - Auto-syncs user data from cloud after login
+ * 
+ * SECURITY:
+ * - Handles 401 errors by auto-logging out
+ * - Clears all local data on sign out
+ * - Secure token storage
+ * 
+ * PLATFORM HANDLING:
+ * - iOS: Apple Sign-In available
+ * - Android: Google Sign-In available
+ * - Web: Email/password only
+ * 
+ * INTEGRATION:
+ * - Works with SubscriptionContext for subscription management
+ * - Triggers cloud sync on authentication
+ * - Updates navigation state on auth changes
+ * 
+ * @module contexts/AuthContext
+ */
+
 import React, {
   createContext,
   useContext,

@@ -1,3 +1,38 @@
+/**
+ * =============================================================================
+ * SUBSCRIPTION CONTEXT
+ * =============================================================================
+ * 
+ * Manages Stripe subscription state for ChefSpAIce.
+ * Tracks user's subscription status, plan type, and trial information.
+ * 
+ * SUBSCRIPTION STATES:
+ * - active: Paid subscription is current
+ * - trialing: User is on 7-day free trial
+ * - past_due: Payment failed but still has access
+ * - canceled: Subscription ended
+ * - expired: Subscription fully expired
+ * - incomplete: Subscription not fully set up
+ * - null: No subscription (unauthenticated user)
+ * 
+ * PLAN TYPES:
+ * - monthly: $9.99/month
+ * - annual: $99.99/year
+ * - trial: 7-day free trial
+ * 
+ * KEY FEATURES:
+ * - isActive: True if user has access (active, trialing, or past_due)
+ * - isTrialing: True if currently on free trial
+ * - trialDaysRemaining: Days left in trial period
+ * - daysUntilExpiry: Days until subscription ends
+ * 
+ * CACHING:
+ * - Uses window globals to cache subscription across HMR reloads
+ * - Only fetches when token changes or on explicit refresh
+ * 
+ * @module contexts/SubscriptionContext
+ */
+
 import React, {
   createContext,
   useContext,

@@ -1,3 +1,45 @@
+/**
+ * =============================================================================
+ * ROOT STACK NAVIGATOR
+ * =============================================================================
+ * 
+ * The top-level navigation structure for ChefSpAIce.
+ * Controls the main navigation flow based on auth and onboarding state.
+ * 
+ * NAVIGATION STRUCTURE:
+ * 
+ * RootStack (this file)
+ * ├── Onboarding - First-time user setup and sign-in
+ * ├── Main (DrawerNavigator)
+ * │   ├── TabNavigator
+ * │   │   ├── InventoryStack (Inventory, ItemDetail)
+ * │   │   ├── RecipesStack (Recipes, RecipeDetail, GenerateRecipe, Chat)
+ * │   │   ├── MealPlanStack (MealPlan, SelectRecipe)
+ * │   │   ├── ShoppingListStack (ShoppingList)
+ * │   │   └── ProfileStack (Settings, Analytics, Cookware, etc.)
+ * │   └── Drawer items (same as tabs + extras)
+ * ├── AddItem - Add/edit inventory items (modal)
+ * ├── AddFoodBatch - Add multiple items from camera
+ * ├── ScanHub - Choose scanning method
+ * ├── BarcodeScanner - Scan product barcodes
+ * ├── IngredientScanner - Scan nutrition labels
+ * ├── RecipeScanner - Scan recipe cards
+ * ├── FoodCamera - AI food recognition
+ * └── FoodSearch - USDA food database search
+ * 
+ * AUTH FLOW:
+ * - Shows Onboarding for new/logged-out users
+ * - Redirects to Main after successful auth
+ * - Auto-logs out on 401 errors
+ * 
+ * SUBSCRIPTION HANDLING:
+ * - Checks subscription status after auth
+ * - Redirects to pricing if no active subscription
+ * - Supports 7-day free trial
+ * 
+ * @module navigation/RootStackNavigator
+ */
+
 import React, { useState, useEffect, useRef } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
