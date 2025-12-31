@@ -30,6 +30,8 @@ interface GlassCardProps {
   contentStyle?: StyleProp<ViewStyle>;
   tint?: "light" | "dark" | "default";
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const springConfig: WithSpringConfig = {
@@ -67,6 +69,8 @@ export function GlassCard({
   contentStyle,
   tint = "default",
   testID,
+  accessibilityLabel,
+  accessibilityHint,
 }: GlassCardProps) {
   const { theme, isDark } = useTheme();
   const scale = useSharedValue(1);
@@ -165,6 +169,10 @@ export function GlassCard({
   if (Platform.OS === "web") {
     return (
       <AnimatedPressable
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityHint={accessibilityHint}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -187,6 +195,10 @@ export function GlassCard({
   if (useLiquidGlass) {
     return (
       <AnimatedPressable
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityHint={accessibilityHint}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -204,6 +216,10 @@ export function GlassCard({
 
   return (
     <AnimatedPressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

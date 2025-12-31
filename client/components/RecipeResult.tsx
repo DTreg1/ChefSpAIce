@@ -337,8 +337,11 @@ export function RecipeResult({
                     },
                   ]}
                   onPress={() => toggleIngredient(index)}
+                  testID={`ingredient-item-${index}`}
                   accessibilityRole="checkbox"
+                  accessibilityLabel={`${ingredient.quantity} ${ingredient.unit} ${ingredient.name}`}
                   accessibilityState={{ checked: isChecked }}
+                  accessibilityHint={isChecked ? "Tap to uncheck" : "Tap to check off ingredient"}
                 >
                   <View
                     style={[
@@ -417,8 +420,11 @@ export function RecipeResult({
                     },
                   ]}
                   onPress={() => toggleIngredient(index)}
+                  testID={`missing-ingredient-${index}`}
                   accessibilityRole="checkbox"
+                  accessibilityLabel={`${ingredient.quantity} ${ingredient.unit} ${ingredient.name}, need to purchase`}
                   accessibilityState={{ checked: isChecked }}
+                  accessibilityHint={isChecked ? "Tap to uncheck" : "Tap to check off ingredient"}
                 >
                   <View
                     style={[
@@ -477,8 +483,11 @@ export function RecipeResult({
                   },
                 ]}
                 onPress={() => toggleStep(index)}
+                testID={`instruction-step-${index}`}
                 accessibilityRole="checkbox"
+                accessibilityLabel={`Step ${index + 1}: ${step}`}
                 accessibilityState={{ checked: isCompleted }}
+                accessibilityHint={isCompleted ? "Tap to mark as incomplete" : "Tap to mark as complete"}
               >
                 <View
                   style={[

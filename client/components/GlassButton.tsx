@@ -31,6 +31,8 @@ export interface GlassButtonProps {
   loading?: boolean;
   icon?: ReactNode;
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const springConfig: WithSpringConfig = {
@@ -52,6 +54,8 @@ export function GlassButton({
   loading = false,
   icon,
   testID,
+  accessibilityLabel,
+  accessibilityHint,
 }: GlassButtonProps) {
   const { theme, isDark } = useTheme();
   const scale = useSharedValue(1);
@@ -128,6 +132,10 @@ export function GlassButton({
     return (
       <AnimatedPressable
         testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || (typeof children === "string" ? children : undefined)}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: disabled || loading }}
         onPress={disabled || loading ? undefined : onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -172,6 +180,10 @@ export function GlassButton({
   return (
     <AnimatedPressable
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || (typeof children === "string" ? children : undefined)}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || loading }}
       onPress={disabled || loading ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
