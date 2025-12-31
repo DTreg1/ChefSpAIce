@@ -1,3 +1,29 @@
+/**
+ * =============================================================================
+ * CHEFSP-AICE ROOT APPLICATION
+ * =============================================================================
+ * 
+ * This is the main entry point for the ChefSpAIce mobile application.
+ * It sets up all the providers and context needed for the app to function.
+ * 
+ * Architecture Overview:
+ * - React Native + Expo framework
+ * - React Navigation for screen management
+ * - React Query for server state management
+ * - Context providers for global state (Auth, Subscription, Onboarding, Chat)
+ * 
+ * Provider Hierarchy (from outer to inner):
+ * 1. ErrorBoundary - Catches and displays errors gracefully
+ * 2. QueryClientProvider - React Query for API calls and caching
+ * 3. SafeAreaProvider - Safe area insets for notches/status bars
+ * 4. GestureHandlerRootView - Gesture handling for swipes/touches
+ * 5. KeyboardProvider - Keyboard-aware scroll handling
+ * 6. AuthProvider - User authentication state
+ * 7. SubscriptionProvider - Stripe subscription state
+ * 8. OnboardingProvider - First-time user experience
+ * 9. FloatingChatProvider - AI assistant chat modal
+ */
+
 import React, { useMemo, useState, useCallback, useRef } from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -40,26 +66,51 @@ import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+/**
+ * Screens where the floating chat button should NOT appear.
+ * These are typically screens where the chat would interfere with the UI
+ * or where the user hasn't completed authentication/setup yet.
+ */
 const SCREENS_WITHOUT_CHAT = [
-  "AddItem",
-  "Pricing",
-  "Onboarding",
-  "Login",
-  "Register",
-  "ForgotPassword",
+  "AddItem",     // Adding items - chat would interfere
+  "Pricing",     // Subscription flow - chat would distract
+  "Onboarding",  // Initial setup - not ready for chat
+  "Login",       // Auth screens - not authenticated yet
+  "Register",    // Auth screens - not authenticated yet
+  "ForgotPassword", // Auth screens - not authenticated yet
 ];
 
+/**
+ * Recursively traverses the navigation state to find the currently active screen.
+ * React Navigation stores state as a nested structure, so we need to traverse
+ * down to find the deepest active route.
+ * 
+ * @param state - The current navigation state
+ * @returns The name of the currently active route
+ */
 function getActiveRouteName(
   state: NavigationState | undefined,
 ): string | undefined {
   if (!state) return undefined;
   const route = state.routes[state.index];
+  // If this route has nested navigation, go deeper
   if (route.state) {
     return getActiveRouteName(route.state as NavigationState);
   }
   return route.name;
 }
 
+/**
+ * MOBILE APP CONTENT
+ * 
+ * The main content component that renders the navigation structure.
+ * This is wrapped by all the context providers and handles:
+ * - Navigation container setup with theming
+ * - Route tracking for chat button visibility
+ * - Animated background effects
+ * - Floating chat button and modal
+ * - Screen identifier overlay (for development)
+ */
 function MobileAppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -70,8 +121,11 @@ function MobileAppContent() {
   const navigationRef =
     useRef<NavigationContainerRef<RootStackParamList>>(null);
 
+  // Set up expiration notifications for food items
   useExpirationNotifications();
 
+  // Create a custom navigation theme with transparent backgrounds
+  // This allows the animated gradient background to show through
   const navigationTheme: Theme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
     return {
@@ -84,11 +138,13 @@ function MobileAppContent() {
     };
   }, [isDark]);
 
+  // Track navigation state changes to update current route
   const onStateChange = useCallback((state: NavigationState | undefined) => {
     const routeName = getActiveRouteName(state);
     setCurrentRoute(routeName);
   }, []);
 
+  // Only show chat button after onboarding is complete and not on excluded screens
   const showChat =
     !isCheckingOnboarding &&
     isOnboardingComplete &&
@@ -101,15 +157,24 @@ function MobileAppContent() {
         theme={navigationTheme}
         onStateChange={onStateChange}
       >
+        {/* Animated gradient background with floating bubbles */}
         <AnimatedBackground bubbleCount={20} />
+        
+        {/* Shows when device is offline */}
         <OfflineIndicator />
+        
+        {/* Main navigation stack */}
         <RootStackNavigator />
+        
+        {/* Floating chat button and modal - only shown after onboarding */}
         {showChat ? (
           <>
             <FloatingChatButton />
             <ChatModal />
           </>
         ) : null}
+        
+        {/* Development overlay showing current screen name */}
         <ScreenIdentifierOverlay screenName={currentRoute} />
       </NavigationContainer>
       <StatusBar />
@@ -117,9 +182,22 @@ function MobileAppContent() {
   );
 }
 
+/**
+ * ROOT WRAPPER
+ * 
+ * Sets up the core infrastructure providers:
+ * - GestureHandlerRootView for gesture recognition
+ * - KeyboardProvider for keyboard-aware scrolling
+ * - AuthProvider for user authentication state
+ * - SubscriptionProvider for Stripe subscription management
+ * - OnboardingProvider for first-time user experience
+ * 
+ * Also sets the root background color based on theme.
+ */
 function RootWrapper() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  // Deep green background color for the app
   const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
 
   return (
@@ -137,6 +215,15 @@ function RootWrapper() {
   );
 }
 
+/**
+ * APP - Main Export
+ * 
+ * The top-level component exported as the app entry point.
+ * Wraps everything in:
+ * - ErrorBoundary for graceful error handling
+ * - QueryClientProvider for React Query data fetching
+ * - SafeAreaProvider for handling device notches and safe areas
+ */
 export default function App() {
   return (
     <ErrorBoundary>
@@ -149,6 +236,9 @@ export default function App() {
   );
 }
 
+/**
+ * STYLES
+ */
 const styles = StyleSheet.create({
   root: {
     flex: 1,
