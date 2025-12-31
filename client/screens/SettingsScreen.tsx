@@ -1,3 +1,38 @@
+/**
+ * =============================================================================
+ * SETTINGS SCREEN
+ * =============================================================================
+ * 
+ * The user preferences and settings screen for ChefSpAIce.
+ * Allows users to customize their app experience and manage their account.
+ * 
+ * KEY FEATURES:
+ * - Cloud sync status indicator (for authenticated users)
+ * - Notification preferences (expiration alerts, timing)
+ * - Recipe display settings (cooking term highlighting)
+ * - Meal planning preferences (number of meals per day)
+ * - Cuisine preferences for recipe suggestions
+ * - Allergy/dietary restrictions management
+ * - Macro nutrient target adjustment
+ * - Instacart integration settings
+ * - Data management (clear data, reset preferences)
+ * - Account deletion with confirmation flow
+ * 
+ * UI COMPONENTS:
+ * - GlassCard sections for each settings group
+ * - Toggles for boolean settings
+ * - Chip selectors for multi-select options
+ * - Stepper controls for numeric values (macro targets)
+ * - Destructive action buttons with confirmation dialogs
+ * 
+ * DATA PERSISTENCE:
+ * - Settings saved to local storage
+ * - Synced with server for authenticated users
+ * - Macros auto-balance to always equal 100%
+ * 
+ * @module screens/SettingsScreen
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,

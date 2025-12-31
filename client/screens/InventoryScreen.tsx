@@ -1,3 +1,33 @@
+/**
+ * =============================================================================
+ * INVENTORY SCREEN
+ * =============================================================================
+ * 
+ * The main inventory management screen for ChefSpAIce.
+ * Users can view, filter, and manage their food inventory here.
+ * 
+ * KEY FEATURES:
+ * - View all food items grouped by storage location (fridge, freezer, pantry)
+ * - Search and filter items by name, category, or food group
+ * - See expiration dates with color-coded status badges
+ * - View nutrition information for each item
+ * - Swipe left/right to mark items as consumed or wasted
+ * - Pull to refresh inventory data
+ * 
+ * UI COMPONENTS:
+ * - Search bar with food group filter chips
+ * - Nutrition summary showing total macros
+ * - Collapsible sections by storage location
+ * - Swipeable cards with gesture animations
+ * 
+ * DATA FLOW:
+ * - Loads inventory from local storage (offline-first)
+ * - Syncs with server when online
+ * - Updates React Query cache on changes
+ * 
+ * @module screens/InventoryScreen
+ */
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,

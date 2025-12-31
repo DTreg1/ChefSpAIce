@@ -1,3 +1,43 @@
+/**
+ * =============================================================================
+ * CHEFSP-AICE API ROUTES
+ * =============================================================================
+ * 
+ * This file defines all the API endpoints for the ChefSpAIce application.
+ * It sets up route handlers for:
+ * 
+ * PUBLIC ROUTES (no auth required):
+ * - /api/auth/* - User authentication (login, register, password reset)
+ * - /api/auth/social/* - Social login (Google, Apple)
+ * - /api/subscriptions/* - Stripe subscription management
+ * - /api/feedback - User feedback collection
+ * - /api/cooking-terms - Cooking terminology definitions
+ * - /api/appliances - Kitchen appliance catalog
+ * 
+ * ADMIN ROUTES (admin auth required):
+ * - /api/admin/subscriptions/* - Subscription management
+ * 
+ * PROTECTED ROUTES (auth + active subscription required):
+ * - /api/suggestions - AI-powered recipe suggestions
+ * - /api/recipes - Recipe CRUD and AI generation
+ * - /api/nutrition - Nutrition data lookup
+ * - /api/instacart - Instacart integration
+ * - /api/user/appliances - User's kitchen equipment
+ * - /api/voice - Voice command processing
+ * - /api/ai - Image analysis for food recognition
+ * - /api/ingredients - Ingredient parsing and management
+ * - /api/sync - Cloud sync for local-first data
+ * 
+ * STANDALONE ENDPOINTS:
+ * - POST /api/chat - AI kitchen assistant with function calling
+ * - GET /api/food/search - USDA food database search
+ * - GET /api/food/:fdcId - USDA food details
+ * - POST /api/shelf-life - Shelf life estimation
+ * - GET /api/barcode/:barcode - Barcode lookup
+ * 
+ * @module server/routes
+ */
+
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import OpenAI from "openai";
@@ -35,34 +75,60 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { inArray } from "drizzle-orm";
 
+/**
+ * OpenAI client configuration
+ * Uses environment variables for Replit AI integration
+ */
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
+/**
+ * SHELF LIFE ESTIMATION
+ * 
+ * The shelf life system estimates how long food items will stay fresh.
+ * It uses a layered approach:
+ * 1. Check local database of known shelf life data
+ * 2. Fall back to AI estimation using GPT-4o-mini
+ * 3. Cache AI results for 24 hours to reduce API costs
+ */
+
+/** Zod schema for validating shelf life requests */
 const shelfLifeRequestSchema = z.object({
   foodName: z.string().min(1, "Food name is required"),
   category: z.string().optional(),
   storageLocation: z.string().optional(),
 });
 
+/** How confident we are in the shelf life estimate */
 type ConfidenceLevel = "high" | "medium" | "low";
+
+/** Where the shelf life data came from */
 type SourceType = "local" | "ai";
 
+/** Response structure for shelf life estimates */
 interface ShelfLifeResponse {
-  suggestedDays: number;
-  confidence: ConfidenceLevel;
-  source: SourceType;
-  notes?: string;
-  signsOfSpoilage?: string;
+  suggestedDays: number;       // Days until item should be used
+  confidence: ConfidenceLevel; // How reliable this estimate is
+  source: SourceType;          // Whether from local DB or AI
+  notes?: string;              // Storage tips for the item
+  signsOfSpoilage?: string;    // What to look for when food goes bad
 }
 
+/** Cache entry with timestamp for TTL management */
 interface CacheEntry {
   response: ShelfLifeResponse;
   timestamp: number;
 }
 
+/**
+ * In-memory cache for AI shelf life suggestions
+ * This reduces OpenAI API calls for repeated queries
+ */
 const aiSuggestionCache = new Map<string, CacheEntry>();
+
+/** Cache time-to-live: 24 hours */
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function getCacheKey(foodName: string, storageLocation?: string): string {
@@ -275,19 +341,41 @@ function mapFoodCategory(usdaCategory: string): string {
   return "Pantry Staples";
 }
 
+/**
+ * REGISTER ROUTES
+ * 
+ * Main function that registers all API routes on the Express app.
+ * Routes are organized by authentication requirements:
+ * 
+ * 1. PUBLIC - No authentication needed
+ * 2. ADMIN - Requires admin role
+ * 3. PROTECTED - Requires auth + active subscription
+ * 
+ * @param app - Express application instance
+ * @returns HTTP server instance
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Mount public routers (no subscription required)
-  app.use("/api/auth", authRouter);
-  app.use("/api/auth/social", socialAuthRouter);
-  app.use("/api/subscriptions", subscriptionRouter);
-  app.use("/api/feedback", feedbackRouter);
-  app.use("/api/cooking-terms", cookingTermsRouter);
-  app.use("/api/appliances", appliancesRouter);
+  // =========================================================================
+  // PUBLIC ROUTES - No authentication required
+  // =========================================================================
+  app.use("/api/auth", authRouter);           // Login, register, logout
+  app.use("/api/auth/social", socialAuthRouter); // Google/Apple OAuth
+  app.use("/api/subscriptions", subscriptionRouter); // Stripe webhooks & portal
+  app.use("/api/feedback", feedbackRouter);   // User feedback submission
+  app.use("/api/cooking-terms", cookingTermsRouter); // Cooking definitions
+  app.use("/api/appliances", appliancesRouter); // Kitchen appliance catalog
 
-  // Mount admin routers (require admin authentication)
+  // =========================================================================
+  // ADMIN ROUTES - Require admin authentication
+  // =========================================================================
   app.use("/api/admin/subscriptions", requireAdmin, adminSubscriptionsRouter);
 
-  // Mount protected routers (require auth + active subscription)
+  // =========================================================================
+  // PROTECTED ROUTES - Require auth + active subscription
+  // These routes are gated by middleware that checks:
+  // 1. User is authenticated (requireAuth)
+  // 2. User has active subscription or free trial (requireSubscription)
+  // =========================================================================
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
   app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);
   app.use("/api/nutrition", requireAuth, requireSubscription, nutritionRouter);
@@ -299,7 +387,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
 
 
-  // Chat endpoint with function calling for authenticated users
+  // =========================================================================
+  // AI CHAT ENDPOINT
+  // =========================================================================
+  /**
+   * POST /api/chat
+   * 
+   * The main AI kitchen assistant endpoint. Features:
+   * - Natural language conversation with GPT-4o-mini
+   * - Function calling to execute actions (add items, generate recipes, etc.)
+   * - Context-aware responses based on user's inventory
+   * - Respects dietary restrictions and preferences
+   * 
+   * For authenticated users, the AI can:
+   * - Add items to inventory
+   * - Mark items as consumed/wasted
+   * - Generate personalized recipes
+   * - Create meal plans
+   * - Add items to shopping list
+   */
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
       const { message, context, history, inventory, preferences, equipment, userId } = req.body;

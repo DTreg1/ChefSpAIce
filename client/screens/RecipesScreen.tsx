@@ -1,3 +1,36 @@
+/**
+ * =============================================================================
+ * RECIPES SCREEN
+ * =============================================================================
+ * 
+ * The recipe browsing and management screen for ChefSpAIce.
+ * Users can view their saved recipes, search, filter, and navigate to details.
+ * 
+ * KEY FEATURES:
+ * - View saved recipes in a 2-column grid layout
+ * - Search recipes by title or description
+ * - Filter by favorites and available cookware
+ * - See ingredient match percentage based on current inventory
+ * - Quick access to AI chef chat for recipe suggestions
+ * - Export recipes to CSV or PDF format
+ * - Generate new recipes via AI
+ * 
+ * UI COMPONENTS:
+ * - Blurred search header with filter chips
+ * - Grid of recipe cards with images
+ * - Match percentage badges (green/yellow/gray)
+ * - Cookware compatibility indicators
+ * - Favorite heart icons
+ * - Empty state with generate button
+ * 
+ * DATA FLOW:
+ * - Loads recipes and inventory from local storage
+ * - Calculates ingredient match on the fly
+ * - Checks cookware compatibility from user settings
+ * 
+ * @module screens/RecipesScreen
+ */
+
 import React, { useState, useCallback } from "react";
 import {
   View,
