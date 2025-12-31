@@ -1374,7 +1374,7 @@ export default function OnboardingScreen() {
                 >
                   <Feather
                     name={feature.icon}
-                    size={18}
+                    size={14}
                     color={feature.color}
                   />
                 </View>
@@ -1408,28 +1408,6 @@ export default function OnboardingScreen() {
                 <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
                   Start with a free 7-day trial. Cancel anytime.
                 </ThemedText>
-
-                {/* Everything you get list - 2x4 grid */}
-                <View style={styles.featuresListContainer}>
-                  <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
-                  <View style={styles.featuresGrid}>
-                    {[
-                      "Unlimited inventory",
-                      "AI recipes",
-                      "Meal planning",
-                      "Expiration alerts",
-                      "Nutrition tracking",
-                      "Cloud sync",
-                      "Shopping lists",
-                      "Waste reduction",
-                    ].map((feature, index) => (
-                      <View key={index} style={styles.featureGridItem}>
-                        <Feather name="check-circle" size={12} color={AppColors.primary} />
-                        <ThemedText style={styles.featureGridItemText}>{feature}</ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                </View>
                 
                 <View style={styles.planCardsRow}>
                   <Pressable
@@ -2640,8 +2618,8 @@ const styles = StyleSheet.create({
   },
   welcomeHeader: {
     alignItems: "center",
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
   },
   upgradeHeader: {
     alignItems: "center",
@@ -2738,42 +2716,42 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   appIconContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     overflow: "hidden",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   appIconImage: {
     width: "100%",
     height: "100%",
   },
   appName: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "700",
     textAlign: "center",
     letterSpacing: -0.5,
   },
   appTagline: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: "center",
-    marginTop: Spacing.xs,
+    marginTop: 2,
   },
   featuresContainer: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
   },
   featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    gap: Spacing.xs,
   },
   featureIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -2781,12 +2759,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   featureDescription: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
   },
   welcomeFooter: {
     marginTop: "auto",
@@ -3287,21 +3265,21 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     alignSelf: "center",
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
   planSelectionContainer: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   planSelectionTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700" as const,
     textAlign: "center" as const,
-    marginBottom: Spacing.xs,
+    marginBottom: 2,
   },
   planSelectionSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: "center" as const,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   featuresListContainer: {
     marginBottom: Spacing.md,
@@ -3341,36 +3319,36 @@ const styles = StyleSheet.create({
   },
   planCard: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
     position: "relative" as const,
   },
   planCardHeader: {
-    gap: Spacing.xs,
+    gap: 2,
   },
   planCardName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
   },
   planCardPrice: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700" as const,
   },
   planCardInterval: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "400" as const,
   },
   planCardMonthly: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   planCardRadio: {
     position: "absolute" as const,
-    top: 12,
-    right: 12,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
     borderColor: "rgba(0,0,0,0.2)",
     justifyContent: "center" as const,
@@ -3378,23 +3356,23 @@ const styles = StyleSheet.create({
   },
   savingsBadge: {
     position: "absolute" as const,
-    top: -8,
-    right: 12,
+    top: -6,
+    right: 8,
     backgroundColor: "#F59E0B",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   savingsBadgeText: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700" as const,
   },
   authTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "600" as const,
     textAlign: "center" as const,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   authErrorContainer: {
     flexDirection: "row",
@@ -3409,16 +3387,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   authInputContainer: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   authInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    height: 50,
+    paddingHorizontal: Spacing.sm,
+    height: 44,
   },
   authInputIcon: {
     marginRight: Spacing.sm,
@@ -3432,7 +3410,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   authButton: {
-    height: 50,
+    height: 44,
     borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
@@ -3447,15 +3425,15 @@ const styles = StyleSheet.create({
   },
   authSwitchButton: {
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   authSwitchText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   authDividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: Spacing.md,
+    marginVertical: Spacing.sm,
   },
   authDivider: {
     flex: 1,
@@ -3471,13 +3449,13 @@ const styles = StyleSheet.create({
   },
   authSocialButton: {
     flex: 1,
-    height: 50,
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
     borderRadius: BorderRadius.md,
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   authSocialButtonText: {
     fontSize: 15,
