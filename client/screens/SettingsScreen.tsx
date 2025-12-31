@@ -108,7 +108,7 @@ export default function SettingsScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -437,6 +437,35 @@ export default function SettingsScreen() {
 
   const handleCancelDelete = () => {
     setDeleteStep("none");
+  };
+
+  const handleResetForTesting = async () => {
+    const message =
+      "This will sign you out and reset the app to its initial state, as if you were a new user. Use this to test the landing page and onboarding flow.\n\nAll local data will be cleared.";
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`Reset App for Testing?\n\n${message}`)) {
+        await signOut();
+        await storage.resetAllStorage();
+        window.alert("App has been reset. Reloading...");
+        window.location.reload();
+      }
+    } else {
+      Alert.alert("Reset App for Testing", message, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            await storage.resetAllStorage();
+            Alert.alert("App Reset", "The app has been reset to its initial state.", [
+              { text: "OK", onPress: () => reloadAppAsync() },
+            ]);
+          },
+        },
+      ]);
+    }
   };
 
   return (
@@ -904,6 +933,25 @@ export default function SettingsScreen() {
                 </ThemedText>
                 <ThemedText type="caption">
                   Permanently remove your account and all data
+                </ThemedText>
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
+              onPress={handleResetForTesting}
+              testID="button-reset-for-testing"
+              accessibilityRole="button"
+              accessibilityLabel="Reset app for testing"
+              accessibilityHint="Signs out and resets the app to experience it as a new user"
+            >
+              <View style={styles.dangerMenuIcon}>
+                <Feather name="refresh-cw" size={18} color={theme.textSecondary} />
+              </View>
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body">Reset App (For Testing)</ThemedText>
+                <ThemedText type="caption">
+                  Sign out and reset to test as a new user
                 </ThemedText>
               </View>
             </Pressable>
