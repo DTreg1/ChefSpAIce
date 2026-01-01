@@ -5,7 +5,7 @@ import {
   DrawerContentComponentProps,
 } from "@react-navigation/drawer";
 import { DrawerActions } from "@react-navigation/native";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

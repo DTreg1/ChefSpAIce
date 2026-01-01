@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, Pressable, Text, Platform } from "react-native";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,

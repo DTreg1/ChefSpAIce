@@ -15,7 +15,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";

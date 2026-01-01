@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { View, Pressable, StyleSheet, Platform, Animated } from "react-native";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 

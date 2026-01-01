@@ -11,7 +11,7 @@ import {
   Dimensions,
   useWindowDimensions,
 } from "react-native";
-import { GlassView } from "expo-glass-effect";
+import { GlassView } from "@/components/GlassViewWithContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {

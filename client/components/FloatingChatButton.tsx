@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Pressable, Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,

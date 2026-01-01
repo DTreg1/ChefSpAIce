@@ -24,7 +24,7 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
