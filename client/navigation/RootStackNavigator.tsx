@@ -55,6 +55,11 @@ import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
+import AboutScreen from "@/screens/AboutScreen";
+import PrivacyScreen from "@/screens/PrivacyScreen";
+import TermsScreen from "@/screens/TermsScreen";
+import SupportScreen from "@/screens/SupportScreen";
+import AttributionsScreen from "@/screens/AttributionsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -68,6 +73,11 @@ export type RootStackParamList = {
   Main: undefined;
   Onboarding: undefined;
   Landing: undefined;
+  About: undefined;
+  Privacy: undefined;
+  Terms: undefined;
+  Support: undefined;
+  Attributions: undefined;
   AddItem:
     | {
         barcode?: string;
@@ -248,6 +258,10 @@ function AuthGuardedNavigator() {
           <LandingScreen
             onGetStarted={() => props.navigation.navigate("Onboarding")}
             onSignIn={() => props.navigation.navigate("Onboarding")}
+            onAbout={() => props.navigation.navigate("About")}
+            onPrivacy={() => props.navigation.navigate("Privacy")}
+            onTerms={() => props.navigation.navigate("Terms")}
+            onSupport={() => props.navigation.navigate("Support")}
           />
         )}
       </Stack.Screen>
@@ -324,6 +338,31 @@ function AuthGuardedNavigator() {
           presentation: "fullScreenModal",
           headerShown: false,
         }}
+      />
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ headerTitle: "About" }}
+      />
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{ headerTitle: "Privacy Policy" }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerTitle: "Terms of Service" }}
+      />
+      <Stack.Screen
+        name="Support"
+        component={SupportScreen}
+        options={{ headerTitle: "Support" }}
+      />
+      <Stack.Screen
+        name="Attributions"
+        component={AttributionsScreen}
+        options={{ headerTitle: "Attributions" }}
       />
     </Stack.Navigator>
   );

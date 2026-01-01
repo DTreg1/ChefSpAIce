@@ -105,9 +105,13 @@ function StepCard({ number, title, description, isDark, isWide }: StepCardProps)
 interface LandingScreenProps {
   onGetStarted?: () => void;
   onSignIn?: () => void;
+  onAbout?: () => void;
+  onPrivacy?: () => void;
+  onTerms?: () => void;
+  onSupport?: () => void;
 }
 
-export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenProps) {
+export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPrivacy, onTerms, onSupport }: LandingScreenProps) {
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
   const isWide = width > 768;
@@ -122,6 +126,30 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
   const handleSignIn = () => {
     if (onSignIn) {
       onSignIn();
+    }
+  };
+
+  const handleAbout = () => {
+    if (onAbout) {
+      onAbout();
+    }
+  };
+
+  const handlePrivacy = () => {
+    if (onPrivacy) {
+      onPrivacy();
+    }
+  };
+
+  const handleTerms = () => {
+    if (onTerms) {
+      onTerms();
+    }
+  };
+
+  const handleSupport = () => {
+    if (onSupport) {
+      onSupport();
     }
   };
 
@@ -318,13 +346,21 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             </View>
             <Text style={styles.footerText}>Your AI-powered kitchen companion</Text>
             <View style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}>
-              <Text style={styles.footerLink}>About</Text>
+              <Pressable onPress={handleAbout} data-testid="link-about">
+                <Text style={styles.footerLink}>About</Text>
+              </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Text style={styles.footerLink}>Privacy</Text>
+              <Pressable onPress={handlePrivacy} data-testid="link-privacy">
+                <Text style={styles.footerLink}>Privacy</Text>
+              </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Text style={styles.footerLink}>Terms</Text>
+              <Pressable onPress={handleTerms} data-testid="link-terms">
+                <Text style={styles.footerLink}>Terms</Text>
+              </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Text style={styles.footerLink}>Support</Text>
+              <Pressable onPress={handleSupport} data-testid="link-support">
+                <Text style={styles.footerLink}>Support</Text>
+              </Pressable>
             </View>
             <Text style={styles.copyright}>&copy; 2025 ChefSpAIce. All rights reserved.</Text>
           </View>
