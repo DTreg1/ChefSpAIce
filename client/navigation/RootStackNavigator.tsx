@@ -41,7 +41,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import DrawerNavigator from "@/navigation/DrawerNavigator";
@@ -52,6 +52,7 @@ import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import LandingScreen from "@/screens/LandingScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -60,10 +61,13 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
+const isWeb = Platform.OS === "web";
+
 export type RootStackParamList = {
   SignIn: undefined;
   Main: undefined;
   Onboarding: undefined;
+  Landing: undefined;
   AddItem:
     | {
         barcode?: string;
@@ -114,13 +118,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Onboarding (which has sign-in on welcome step)
+  // Set up sign out callback to navigate to Landing (web) or Onboarding (mobile)
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
         }),
       );
     });
@@ -134,16 +138,16 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Onboarding
+    // If user was authenticated but now is not, redirect to Landing (web) or Onboarding (mobile)
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to Onboarding for authentication
+      // Redirect to Landing for web, Onboarding for mobile
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
         }),
       );
     }
@@ -215,11 +219,16 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
-  // 1. Needs onboarding (new user) → Onboarding (has embedded sign-in on step 1)
-  // 2. Not authenticated (returning user who completed onboarding) → Onboarding
-  // 3. Authenticated but no active subscription → Onboarding (has pricing)
-  // 4. Otherwise → Main
+  // 1. Web + not authenticated → Landing (marketing page)
+  // 2. Needs onboarding (new user) → Onboarding (has embedded sign-in on step 1)
+  // 3. Not authenticated (returning user who completed onboarding) → Onboarding
+  // 4. Authenticated but no active subscription → Onboarding (has pricing)
+  // 5. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
+    // Show landing page for web users who aren't authenticated
+    if (isWeb && !isAuthenticated) {
+      return "Landing";
+    }
     if (!isAuthenticated || needsOnboarding || !isActive) {
       return "Onboarding";
     }
@@ -231,6 +240,17 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
+      <Stack.Screen
+        name="Landing"
+        options={{ headerShown: false }}
+      >
+        {(props) => (
+          <LandingScreen
+            onGetStarted={() => props.navigation.navigate("Onboarding")}
+            onSignIn={() => props.navigation.navigate("Onboarding")}
+          />
+        )}
+      </Stack.Screen>
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
