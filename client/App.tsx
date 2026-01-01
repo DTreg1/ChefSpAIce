@@ -58,7 +58,7 @@ import {
   OnboardingProvider,
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
@@ -67,18 +67,10 @@ import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 /**
- * Screens where the floating chat button should NOT appear.
- * These are typically screens where the chat would interfere with the UI
- * or where the user hasn't completed authentication/setup yet.
+ * Screens where the floating chat button should NOT appear even after auth/onboarding.
+ * Currently only the AddItem screen where the chat would interfere with the UI.
  */
-const SCREENS_WITHOUT_CHAT = [
-  "AddItem",     // Adding items - chat would interfere
-  "Pricing",     // Subscription flow - chat would distract
-  "Onboarding",  // Initial setup - not ready for chat
-  "Login",       // Auth screens - not authenticated yet
-  "Register",    // Auth screens - not authenticated yet
-  "ForgotPassword", // Auth screens - not authenticated yet
-];
+const SCREENS_WITHOUT_CHAT = ["AddItem"];
 
 /**
  * Recursively traverses the navigation state to find the currently active screen.
@@ -93,7 +85,6 @@ function getActiveRouteName(
 ): string | undefined {
   if (!state) return undefined;
   const route = state.routes[state.index];
-  // If this route has nested navigation, go deeper
   if (route.state) {
     return getActiveRouteName(route.state as NavigationState);
   }
@@ -114,6 +105,7 @@ function getActiveRouteName(
 function MobileAppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
@@ -121,11 +113,8 @@ function MobileAppContent() {
   const navigationRef =
     useRef<NavigationContainerRef<RootStackParamList>>(null);
 
-  // Set up expiration notifications for food items
   useExpirationNotifications();
 
-  // Create a custom navigation theme with transparent backgrounds
-  // This allows the animated gradient background to show through
   const navigationTheme: Theme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
     return {
@@ -138,14 +127,20 @@ function MobileAppContent() {
     };
   }, [isDark]);
 
-  // Track navigation state changes to update current route
   const onStateChange = useCallback((state: NavigationState | undefined) => {
     const routeName = getActiveRouteName(state);
     setCurrentRoute(routeName);
   }, []);
 
-  // Only show chat button after onboarding is complete and not on excluded screens
+  /**
+   * Only show chat button when:
+   * 1. User is authenticated (has an account)
+   * 2. Onboarding is complete
+   * 3. Not on excluded screens (like AddItem where chat would interfere)
+   */
   const showChat =
+    !isAuthLoading &&
+    isAuthenticated &&
     !isCheckingOnboarding &&
     isOnboardingComplete &&
     !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
@@ -166,7 +161,7 @@ function MobileAppContent() {
         {/* Main navigation stack */}
         <RootStackNavigator />
         
-        {/* Floating chat button and modal - only shown after onboarding */}
+        {/* Floating chat button and modal - only shown after auth + onboarding */}
         {showChat ? (
           <>
             <FloatingChatButton />
