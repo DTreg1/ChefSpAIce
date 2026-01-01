@@ -15,6 +15,7 @@ interface FeatureCardProps {
   description: string;
   testId: string;
   isDark: boolean;
+  isWide?: boolean;
 }
 
 function GlassCard({ children, style, testId }: { children: React.ReactNode; style?: any; testId?: string }) {
@@ -61,14 +62,14 @@ function GlassCard({ children, style, testId }: { children: React.ReactNode; sty
   );
 }
 
-function FeatureCard({ icon, title, description, testId, isDark }: FeatureCardProps) {
+function FeatureCard({ icon, title, description, testId, isDark, isWide }: FeatureCardProps) {
   return (
-    <GlassCard style={styles.featureCard} testId={`card-feature-${testId}`}>
+    <GlassCard style={[styles.featureCard, isWide && styles.featureCardWide]} testId={`card-feature-${testId}`}>
       <View style={styles.featureIconContainer}>{icon}</View>
-      <Text style={[styles.featureTitle, { color: isDark ? "#FFFFFF" : "#FFFFFF" }]} data-testid={`text-feature-title-${testId}`}>
+      <Text style={[styles.featureTitle, { color: "#FFFFFF" }]} data-testid={`text-feature-title-${testId}`}>
         {title}
       </Text>
-      <Text style={[styles.featureDescription, { color: isDark ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.8)" }]} data-testid={`text-feature-desc-${testId}`}>
+      <Text style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]} data-testid={`text-feature-desc-${testId}`}>
         {description}
       </Text>
     </GlassCard>
@@ -80,11 +81,12 @@ interface StepCardProps {
   title: string;
   description: string;
   isDark: boolean;
+  isWide?: boolean;
 }
 
-function StepCard({ number, title, description, isDark }: StepCardProps) {
+function StepCard({ number, title, description, isDark, isWide }: StepCardProps) {
   return (
-    <GlassCard style={styles.stepCard} testId={`card-step-${number}`}>
+    <GlassCard style={[styles.stepCard, isWide && styles.stepCardWide]} testId={`card-step-${number}`}>
       <View style={styles.stepNumber}>
         <Text style={styles.stepNumberText}>{number}</Text>
       </View>
@@ -203,6 +205,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="barcode"
               isDark={isDark}
+              isWide={isWide}
               icon={<MaterialCommunityIcons name="barcode-scan" size={28} color={AppColors.primary} />}
               title="Barcode Scanning"
               description="Quickly add items to your inventory by scanning barcodes. Automatic product info lookup."
@@ -210,6 +213,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="ai-recipes"
               isDark={isDark}
+              isWide={isWide}
               icon={<MaterialCommunityIcons name="creation" size={28} color={AppColors.primary} />}
               title="AI Recipe Generation"
               description="Get personalized recipes based on what's in your pantry. No more wasted ingredients."
@@ -217,6 +221,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="expiration"
               isDark={isDark}
+              isWide={isWide}
               icon={<Feather name="clock" size={28} color={AppColors.primary} />}
               title="Expiration Tracking"
               description="Never forget about food again. Get notifications before items expire."
@@ -224,6 +229,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="meal-planning"
               isDark={isDark}
+              isWide={isWide}
               icon={<Feather name="calendar" size={28} color={AppColors.primary} />}
               title="Meal Planning"
               description="Plan your week with a beautiful calendar view. Drag and drop recipes to any day."
@@ -231,6 +237,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="shopping"
               isDark={isDark}
+              isWide={isWide}
               icon={<Feather name="shopping-cart" size={28} color={AppColors.primary} />}
               title="Smart Shopping Lists"
               description="Auto-generate shopping lists from recipes. Check off items as you shop."
@@ -238,6 +245,7 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
             <FeatureCard
               testId="analytics"
               isDark={isDark}
+              isWide={isWide}
               icon={<Feather name="bar-chart-2" size={28} color={AppColors.primary} />}
               title="Waste Analytics"
               description="Track your food waste and savings over time. See your environmental impact."
@@ -257,18 +265,21 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
               title="Add Your Food"
               description="Scan barcodes, take photos, or manually add items to your inventory."
               isDark={isDark}
+              isWide={isWide}
             />
             <StepCard
               number="2"
               title="Get AI Recipes"
               description="Tell us what you're craving and we'll create recipes using your ingredients."
               isDark={isDark}
+              isWide={isWide}
             />
             <StepCard
               number="3"
               title="Plan & Cook"
               description="Add recipes to your meal plan and follow step-by-step instructions."
               isDark={isDark}
+              isWide={isWide}
             />
           </View>
         </View>
@@ -459,7 +470,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 16,
     width: "100%",
-    maxWidth: 400,
   },
   featuresGridWide: {
     flexDirection: "row",
@@ -483,9 +493,10 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     padding: 24,
-    minWidth: isWeb ? 280 : undefined,
-    maxWidth: isWeb ? 300 : undefined,
-    flex: isWeb ? undefined : 1,
+  },
+  featureCardWide: {
+    minWidth: 280,
+    maxWidth: 300,
   },
   featureIconContainer: {
     width: 48,
@@ -509,7 +520,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 16,
     width: "100%",
-    maxWidth: 400,
   },
   stepsContainerWide: {
     flexDirection: "row",
@@ -522,8 +532,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     padding: 20,
-    flex: isWeb ? 1 : undefined,
-    minWidth: isWeb ? 280 : undefined,
+  },
+  stepCardWide: {
+    flex: 1,
+    minWidth: 280,
   },
   stepNumber: {
     width: 40,
