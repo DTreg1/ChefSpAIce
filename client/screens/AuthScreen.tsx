@@ -98,8 +98,8 @@ export default function AuthScreen() {
       if (response.ok) {
         const data = await response.json();
         setPrices({
-          monthly: data.monthly ? { amount: data.monthly.unit_amount } : null,
-          annual: data.annual ? { amount: data.annual.unit_amount } : null,
+          monthly: data.monthly ? { amount: data.monthly.amount } : null,
+          annual: data.annual ? { amount: data.annual.amount } : null,
         });
       }
     } catch (err) {
