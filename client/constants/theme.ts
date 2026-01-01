@@ -64,7 +64,8 @@ export const Colors = {
   light: {
     text: AppColors.text,
     textSecondary: AppColors.textSecondary,
-    textOnGlass: "#000000",
+    textOnGlass: "#FFFFFF",
+    textSecondaryOnGlass: "rgba(255, 255, 255, 0.8)",
     buttonText: "#FFFFFF",
     tabIconDefault: AppColors.textSecondary,
     tabIconSelected: AppColors.primary,
@@ -87,6 +88,7 @@ export const Colors = {
     text: "#ECEDEE",
     textSecondary: "#B0B8C0",
     textOnGlass: "#FFFFFF",
+    textSecondaryOnGlass: "rgba(255, 255, 255, 0.8)",
     buttonText: "#FFFFFF",
     tabIconDefault: AppColors.textSecondary,
     tabIconSelected: AppColors.primary,
