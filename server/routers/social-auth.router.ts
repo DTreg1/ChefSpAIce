@@ -396,26 +396,36 @@ router.post("/google", async (req: Request, res: Response) => {
 });
 
 async function verifyAppleToken(identityToken: string): Promise<{ sub: string; email?: string } | null> {
-  if (!process.env.APPLE_CLIENT_ID) {
-    console.error("APPLE_CLIENT_ID environment variable is not set");
-    return null;
-  }
+  // Support both bundle ID (native iOS) and service ID (web)
+  // Native iOS uses bundle ID as audience, web uses service ID
+  const bundleId = "com.chefspaice.chefspaice";
+  const serviceId = process.env.APPLE_CLIENT_ID || `service.${bundleId}`;
+  const validAudiences = [bundleId, serviceId];
   
   try {
-    const payload = await appleSignin.verifyIdToken(identityToken, {
-      audience: process.env.APPLE_CLIENT_ID,
-      ignoreExpiration: false,
-    });
-    
-    if (!payload || !payload.sub) {
-      console.warn("Apple token verification failed: missing sub");
-      return null;
+    // Try each audience - native iOS tokens use bundle ID, web tokens use service ID
+    for (const audience of validAudiences) {
+      try {
+        const payload = await appleSignin.verifyIdToken(identityToken, {
+          audience,
+          ignoreExpiration: false,
+        });
+        
+        if (payload && payload.sub) {
+          console.log(`Apple token verified with audience: ${audience}`);
+          return {
+            sub: payload.sub,
+            email: payload.email,
+          };
+        }
+      } catch (err) {
+        // Try next audience
+        continue;
+      }
     }
     
-    return {
-      sub: payload.sub,
-      email: payload.email,
-    };
+    console.warn("Apple token verification failed: no valid audience matched");
+    return null;
   } catch (error) {
     console.error("Apple token JWKS verification failed:", error);
     return null;
