@@ -195,6 +195,37 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
           </View>
         </View>
 
+        <View style={styles.section} data-testid="section-how-it-works">
+          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">How It Works</Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-howitworks-subtitle">
+            Get started in three simple steps
+          </Text>
+          
+          <View style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}>
+            <StepCard
+              number="1"
+              title="Add Your Food"
+              description="Scan barcodes, take photos, or manually add items to your inventory."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="2"
+              title="Get AI Recipes"
+              description="Tell us what you're craving and we'll create recipes using your ingredients."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="3"
+              title="Plan & Cook"
+              description="Add recipes to your meal plan and follow step-by-step instructions."
+              isDark={isDark}
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
         <View style={styles.section} data-testid="section-features">
           <Text style={styles.sectionTitle} data-testid="text-features-title">Smart Features</Text>
           <Text style={styles.sectionSubtitle} data-testid="text-features-subtitle">
@@ -249,37 +280,6 @@ export default function LandingScreen({ onGetStarted, onSignIn }: LandingScreenP
               icon={<Feather name="bar-chart-2" size={28} color={AppColors.primary} />}
               title="Waste Analytics"
               description="Track your food waste and savings over time. See your environmental impact."
-            />
-          </View>
-        </View>
-
-        <View style={styles.section} data-testid="section-how-it-works">
-          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">How It Works</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-howitworks-subtitle">
-            Get started in three simple steps
-          </Text>
-          
-          <View style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}>
-            <StepCard
-              number="1"
-              title="Add Your Food"
-              description="Scan barcodes, take photos, or manually add items to your inventory."
-              isDark={isDark}
-              isWide={isWide}
-            />
-            <StepCard
-              number="2"
-              title="Get AI Recipes"
-              description="Tell us what you're craving and we'll create recipes using your ingredients."
-              isDark={isDark}
-              isWide={isWide}
-            />
-            <StepCard
-              number="3"
-              title="Plan & Cook"
-              description="Add recipes to your meal plan and follow step-by-step instructions."
-              isDark={isDark}
-              isWide={isWide}
             />
           </View>
         </View>
