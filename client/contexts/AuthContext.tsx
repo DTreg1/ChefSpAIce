@@ -177,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadStoredAuth = async () => {
       try {
+        // First try AsyncStorage (works on all platforms)
         const storedData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         if (storedData) {
           const { user, token }: StoredAuthData = JSON.parse(storedData);
@@ -195,13 +196,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }).catch((err) => {
             console.error("[Auth] Failed to auto-sync from cloud:", err);
           });
-        } else {
-          setState({
-            user: null,
-            token: null,
-            isLoading: false,
-          });
+          return;
         }
+        
+        // On web, try to restore session from cookie if no AsyncStorage data
+        if (isWeb) {
+          try {
+            const baseUrl = getApiUrl();
+            const url = new URL("/api/auth/restore-session", baseUrl);
+            const response = await fetch(url.toString(), {
+              method: "GET",
+              credentials: "include", // Important: include cookies
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const authData: StoredAuthData = {
+                user: data.user,
+                token: data.token,
+              };
+              
+              // Store in AsyncStorage for consistency
+              await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+              await storage.setAuthToken(data.token);
+              
+              setState({
+                user: data.user,
+                token: data.token,
+                isLoading: false,
+              });
+              
+              console.log("[Auth] Restored session from cookie");
+              
+              // Sync from cloud
+              storage.syncFromCloud().then((result) => {
+                if (result.success) {
+                  console.log("[Auth] Auto-synced data from cloud after cookie restore");
+                }
+              }).catch((err) => {
+                console.error("[Auth] Failed to auto-sync from cloud:", err);
+              });
+              return;
+            }
+          } catch (cookieError) {
+            console.log("[Auth] No cookie session to restore");
+          }
+        }
+        
+        setState({
+          user: null,
+          token: null,
+          isLoading: false,
+        });
       } catch (error) {
         console.error("Error loading auth state:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -218,6 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -259,6 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch(url.toString(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email, password, displayName, selectedPlan }),
         });
 
@@ -295,6 +343,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
+      // Call logout endpoint to clear cookie
+      const baseUrl = getApiUrl();
+      const logoutUrl = new URL("/api/auth/logout", baseUrl);
+      const token = state.token;
+      
+      await fetch(logoutUrl.toString(), {
+        method: "POST",
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      }).catch(() => {
+        // Ignore network errors during logout
+      });
+      
       // Clear stored auth data
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
@@ -316,7 +377,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Sign out error:", error);
     }
-  }, []);
+  }, [state.token]);
 
   // Keep signOutRef updated with the latest signOut function
   useEffect(() => {
@@ -342,6 +403,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           identityToken: credential.identityToken,
           authorizationCode: credential.authorizationCode,
@@ -412,6 +474,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           idToken,
           accessToken,

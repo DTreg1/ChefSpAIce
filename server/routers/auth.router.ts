@@ -130,6 +130,24 @@ function getExpiryDate(): Date {
   return date;
 }
 
+const AUTH_COOKIE_NAME = "chefspaice_auth";
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+function setAuthCookie(res: Response, token: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "strict" : "lax",
+    maxAge: COOKIE_MAX_AGE,
+    path: "/",
+  });
+}
+
+function clearAuthCookie(res: Response): void {
+  res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
+}
+
 router.post("/register", async (req: Request, res: Response) => {
   try {
     const { email, password, displayName, selectedPlan } = req.body;
@@ -190,6 +208,9 @@ router.post("/register", async (req: Request, res: Response) => {
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 
+    // Set persistent auth cookie for web auto sign-in
+    setAuthCookie(res, token);
+
     res.status(201).json({
       user: {
         id: newUser.id,
@@ -240,6 +261,9 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
 
+    // Set persistent auth cookie for web auto sign-in
+    setAuthCookie(res, token);
+
     res.json({
       user: {
         id: user.id,
@@ -259,16 +283,27 @@ router.post("/login", async (req: Request, res: Response) => {
 router.post("/logout", async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(200).json({ success: true });
+    const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+    
+    // Get token from either header or cookie
+    let token: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    } else if (cookieToken) {
+      token = cookieToken;
+    }
+    
+    if (token) {
+      await db.delete(userSessions).where(eq(userSessions.token, token));
     }
 
-    const token = authHeader.substring(7);
-    await db.delete(userSessions).where(eq(userSessions.token, token));
+    // Always clear the auth cookie
+    clearAuthCookie(res);
 
     res.json({ success: true });
   } catch (error) {
     console.error("Logout error:", error);
+    clearAuthCookie(res);
     res.status(200).json({ success: true });
   }
 });
@@ -316,6 +351,55 @@ router.get("/me", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Auth check error:", error);
     res.status(500).json({ error: "Failed to verify authentication" });
+  }
+});
+
+router.get("/restore-session", async (req: Request, res: Response) => {
+  try {
+    const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+    
+    if (!cookieToken) {
+      return res.status(401).json({ error: "No session cookie" });
+    }
+
+    const [session] = await db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.token, cookieToken))
+      .limit(1);
+
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      clearAuthCookie(res);
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1);
+
+    if (!user) {
+      clearAuthCookie(res);
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const subscriptionInfo = await getSubscriptionInfo(user.id);
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        ...subscriptionInfo,
+      },
+      token: cookieToken,
+    });
+  } catch (error) {
+    console.error("Session restore error:", error);
+    clearAuthCookie(res);
+    res.status(500).json({ error: "Failed to restore session" });
   }
 });
 

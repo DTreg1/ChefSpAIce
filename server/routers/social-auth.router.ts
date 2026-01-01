@@ -60,6 +60,20 @@ function getExpiryDate(): Date {
   return date;
 }
 
+const AUTH_COOKIE_NAME = "chefspaice_auth";
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+function setAuthCookie(res: Response, token: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "strict" : "lax",
+    maxAge: COOKIE_MAX_AGE,
+    path: "/",
+  });
+}
+
 async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {
   const token = generateToken();
   const expiresAt = getExpiryDate();
@@ -213,6 +227,9 @@ router.post("/apple", async (req: Request, res: Response) => {
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
+
+    // Set persistent auth cookie for web auto sign-in
+    setAuthCookie(res, token);
 
     res.json({
       user: {
@@ -372,6 +389,9 @@ router.post("/google", async (req: Request, res: Response) => {
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
+
+    // Set persistent auth cookie for web auto sign-in
+    setAuthCookie(res, token);
 
     res.json({
       user: {
