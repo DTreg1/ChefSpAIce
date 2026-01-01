@@ -1437,7 +1437,7 @@ export default function OnboardingScreen() {
                       { 
                         backgroundColor: theme.glass.background,
                         borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
-                        borderWidth: selectedPlan === "monthly" ? 2 : 1,
+                        borderWidth: 2,
                       },
                     ]}
                     onPress={() => {
@@ -1472,7 +1472,7 @@ export default function OnboardingScreen() {
                       { 
                         backgroundColor: theme.glass.background,
                         borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
-                        borderWidth: selectedPlan === "annual" ? 2 : 1,
+                        borderWidth: 2,
                       },
                     ]}
                     onPress={() => {
