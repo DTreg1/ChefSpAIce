@@ -1408,7 +1408,28 @@ export default function OnboardingScreen() {
                 <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
                   Start with a free 7-day trial. Cancel anytime.
                 </ThemedText>
-                
+
+                {/* Everything you get list - 2x4 grid */}
+                <View style={styles.featuresListContainer}>
+                  <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
+                  <View style={styles.featuresGrid}>
+                    {[
+                      "Unlimited inventory",
+                      "AI recipes",
+                      "Meal planning",
+                      "Expiration alerts",
+                      "Nutrition tracking",
+                      "Cloud sync",
+                      "Shopping lists",
+                      "Waste reduction",
+                    ].map((feature, index) => (
+                      <View key={index} style={styles.featureGridItem}>
+                        <Feather name="check-circle" size={12} color={AppColors.primary} />
+                        <ThemedText style={styles.featureGridItemText}>{feature}</ThemedText>
+                      </View>
+                    ))}
+                  </View>
+                </View>
                 <View style={styles.planCardsRow}>
                   <Pressable
                     style={[
@@ -2740,6 +2761,9 @@ const styles = StyleSheet.create({
   featuresContainer: {
     gap: Spacing.xs,
     marginBottom: Spacing.md,
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
   },
   featureCard: {
     flexDirection: "row",
