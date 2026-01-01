@@ -1,0 +1,50 @@
+# Server-side code (not needed for mobile build)
+server/
+
+# Documentation
+docs/
+DESIGN_GUIDELINES.md
+replit.md
+
+# Database migrations (server-side only)
+migrations/
+drizzle.config.ts
+
+# Development scripts
+scripts/
+
+# Attached assets from development
+attached_assets/
+
+# Test files
+**/__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.js
+
+# Linting config (not needed for build)
+eslint.config.js
+
+# Git
+.git/
+.gitignore
+
+# IDE/Editor
+.vscode/
+.idea/
+
+# Replit
+.replit
+replit.nix
+.cache/
+.config/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+.tmp/
+tmp/
