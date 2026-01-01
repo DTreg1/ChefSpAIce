@@ -2,6 +2,7 @@ import { Text, type TextProps } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
 import { Typography } from "@/constants/theme";
+import { useGlassContext } from "@/contexts/GlassContext";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -26,6 +27,7 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const { theme, isDark } = useTheme();
+  const { isOnGlass } = useGlassContext();
 
   const getColor = () => {
     if (isDark && darkColor) {
@@ -38,6 +40,13 @@ export function ThemedText({
 
     if (type === "link") {
       return theme.link;
+    }
+
+    if (isOnGlass) {
+      if (type === "caption") {
+        return theme.textSecondaryOnGlass;
+      }
+      return theme.textOnGlass;
     }
 
     if (type === "caption") {

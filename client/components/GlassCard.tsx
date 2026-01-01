@@ -19,6 +19,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, GlassEffect } from "@/constants/theme";
+import { GlassProvider } from "@/contexts/GlassContext";
 
 interface GlassCardProps {
   intensity?: "subtle" | "regular" | "strong";
@@ -102,19 +103,21 @@ export function GlassCard({
   };
 
   const content = (
-    <View style={[styles.content, contentStyle]}>
-      {title ? (
-        <ThemedText type="h4" style={styles.cardTitle}>
-          {title}
-        </ThemedText>
-      ) : null}
-      {description ? (
-        <ThemedText type="small" style={styles.cardDescription}>
-          {description}
-        </ThemedText>
-      ) : null}
-      {children}
-    </View>
+    <GlassProvider>
+      <View style={[styles.content, contentStyle]}>
+        {title ? (
+          <ThemedText type="h4" style={styles.cardTitle}>
+            {title}
+          </ThemedText>
+        ) : null}
+        {description ? (
+          <ThemedText type="small" style={styles.cardDescription}>
+            {description}
+          </ThemedText>
+        ) : null}
+        {children}
+      </View>
+    </GlassProvider>
   );
 
   const renderGlassContent = () => {
