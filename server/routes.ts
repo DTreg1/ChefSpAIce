@@ -1122,6 +1122,17 @@ BEHAVIOR GUIDELINES:
     }
   });
 
+  // Serve privacy policy HTML for app store submission
+  app.get("/privacy-policy", (_req: Request, res: Response) => {
+    const privacyPath = require("path").resolve(
+      process.cwd(),
+      "server",
+      "templates",
+      "privacy-policy.html"
+    );
+    res.sendFile(privacyPath);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
