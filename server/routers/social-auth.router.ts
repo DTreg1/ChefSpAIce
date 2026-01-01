@@ -416,11 +416,13 @@ router.post("/google", async (req: Request, res: Response) => {
 });
 
 async function verifyAppleToken(identityToken: string): Promise<{ sub: string; email?: string } | null> {
-  // Support both bundle ID (native iOS) and service ID (web)
+  // Support bundle ID (native iOS), service ID (web), and Expo Go (development)
   // Native iOS uses bundle ID as audience, web uses service ID
+  // Expo Go uses its own bundle ID for development testing
   const bundleId = "com.chefspaice.chefspaice";
   const serviceId = process.env.APPLE_CLIENT_ID || `service.${bundleId}`;
-  const validAudiences = [bundleId, serviceId];
+  const expoGoBundleId = "host.exp.Exponent"; // Expo Go bundle ID for development
+  const validAudiences = [bundleId, serviceId, expoGoBundleId];
   
   try {
     // Try each audience - native iOS tokens use bundle ID, web tokens use service ID
