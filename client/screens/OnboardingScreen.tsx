@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,11 +8,9 @@ import {
   Dimensions,
   Platform,
   Image,
-  Alert,
-  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -30,17 +28,12 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-
-const AppIcon = require("../../assets/images/icon.png");
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
 import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { syncManager } from "@/lib/sync-manager";
 
 interface Appliance {
   id: number;
@@ -533,7 +526,6 @@ const springConfig: WithSpringConfig = {
 };
 
 type OnboardingStep =
-  | "welcome"
   | "preferences"
   | "storage"
   | "foods"
@@ -813,19 +805,10 @@ export default function OnboardingScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
-  const { markOnboardingComplete, recheckOnboarding } = useOnboardingStatus();
-  const {
-    signIn,
-    signUp,
-    signInWithApple,
-    signInWithGoogle,
-    isAppleAuthAvailable,
-    isGoogleAuthAvailable,
-    isAuthenticated,
-  } = useAuth();
+  const { markOnboardingComplete } = useOnboardingStatus();
 
-  // Start at "preferences" if user is already authenticated (coming from landing page after signup)
-  const [step, setStep] = useState<OnboardingStep>(isAuthenticated ? "preferences" : "welcome");
+  // Always start at "preferences" since authentication is now handled in AuthScreen
+  const [step, setStep] = useState<OnboardingStep>("preferences");
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(
     new Set(),
@@ -849,50 +832,10 @@ export default function OnboardingScreen() {
     new Set(["fridge", "freezer", "pantry", "counter"])
   );
 
-  const [isSignUp, setIsSignUp] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  // Pricing/plan selection states
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
-  const [prices, setPrices] = useState<{ monthly: any; annual: any }>({ monthly: null, annual: null });
-  const [pricesLoading, setPricesLoading] = useState(true);
-
-  const passwordRef = useRef<TextInput>(null);
-  const confirmPasswordRef = useRef<TextInput>(null);
-
-
   useEffect(() => {
     loadAppliances();
-    fetchPrices();
   }, []);
 
-  const fetchPrices = async () => {
-    try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/prices", baseUrl);
-      const response = await fetch(url.toString());
-      if (response.ok) {
-        const data = await response.json();
-        setPrices(data);
-      }
-    } catch (error) {
-      console.error("Error fetching prices:", error);
-    } finally {
-      setPricesLoading(false);
-    }
-  };
-
-  // Auto-advance to preferences setup when user becomes authenticated (during onboarding welcome step)
-  useEffect(() => {
-    if (isAuthenticated && step === "welcome") {
-      setStep("preferences");
-    }
-  }, [isAuthenticated, step]);
 
 
   const loadAppliances = async () => {
@@ -1005,118 +948,6 @@ export default function OnboardingScreen() {
   const selectAllFoods = useCallback(() => {
     setSelectedFoodIds(new Set(STARTER_FOODS.map((f) => f.id)));
   }, []);
-
-  const handleAuth = async () => {
-    if (!email.trim() || !password.trim()) {
-      setAuthError("Please enter email and password");
-      return;
-    }
-
-    if (isSignUp && password !== confirmPassword) {
-      setAuthError("Passwords do not match");
-      return;
-    }
-
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      let result;
-      if (isSignUp) {
-        result = await signUp(email.trim(), password, undefined, selectedPlan);
-      } else {
-        result = await signIn(email.trim(), password);
-      }
-
-      if (!result.success) {
-        setAuthError(result.error || "Authentication failed");
-        return;
-      }
-
-      // Clear any stale sync queue items from previous sessions
-      await syncManager.clearQueue();
-
-      if (Platform.OS !== "web") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      // For sign-in (returning users), check if they already completed onboarding
-      if (!isSignUp) {
-        // Recheck onboarding status after sync from cloud restored local data
-        await recheckOnboarding();
-        // Check local storage to see if onboarding was completed
-        const needsOnboarding = await storage.needsOnboarding();
-        if (!needsOnboarding) {
-          // User already completed onboarding, go to main app
-          markOnboardingComplete();
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: "Main" }],
-            }),
-          );
-          return;
-        }
-      }
-
-      setStep("preferences");
-    } catch (err) {
-      console.error("Auth error:", err);
-      setAuthError("An unexpected error occurred");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleSocialAuth = async (provider: "apple" | "google") => {
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      let result;
-      if (provider === "apple") {
-        result = await signInWithApple(selectedPlan);
-      } else {
-        result = await signInWithGoogle(selectedPlan);
-      }
-
-      if (!result.success) {
-        if (result.error !== "User cancelled") {
-          setAuthError(result.error || "Authentication failed");
-        }
-        return;
-      }
-
-      // Clear any stale sync queue items from previous sessions
-      await syncManager.clearQueue();
-
-      if (Platform.OS !== "web") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      // For returning social auth users, check if they already completed onboarding
-      await recheckOnboarding();
-      const needsOnboarding = await storage.needsOnboarding();
-      if (!needsOnboarding) {
-        // User already completed onboarding, go to main app
-        markOnboardingComplete();
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          }),
-        );
-        return;
-      }
-
-      setStep("preferences");
-    } catch (err) {
-      console.error("Social auth error:", err);
-      setAuthError("An unexpected error occurred");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handlePreferencesToStorage = () => {
     if (Platform.OS !== "web") {
@@ -1288,34 +1119,6 @@ export default function OnboardingScreen() {
     );
   }
 
-  const FEATURES = [
-    {
-      icon: "package" as keyof typeof Feather.glyphMap,
-      title: "Track Your Food",
-      description: "Never forget what's in your fridge, freezer, or pantry",
-      color: "#3B82F6",
-    },
-    {
-      icon: "clock" as keyof typeof Feather.glyphMap,
-      title: "Reduce Waste",
-      description: "Get alerts before food expires so nothing goes bad",
-      color: "#F59E0B",
-    },
-    {
-      icon: "book-open" as keyof typeof Feather.glyphMap,
-      title: "Smart Recipes",
-      description: "AI generates recipes from ingredients you already have",
-      color: "#8B5CF6",
-    },
-  ];
-
-  const PREVIEW_ITEMS = [
-    { icon: "box" as keyof typeof Feather.glyphMap, label: "Fridge" },
-    { icon: "thermometer" as keyof typeof Feather.glyphMap, label: "Freezer" },
-    { icon: "archive" as keyof typeof Feather.glyphMap, label: "Pantry" },
-    { icon: "sun" as keyof typeof Feather.glyphMap, label: "Counter" },
-  ];
-
   const handleCancelUpgrade = () => {
     navigation.dispatch(
       CommonActions.reset({
@@ -1324,378 +1127,6 @@ export default function OnboardingScreen() {
       }),
     );
   };
-
-  const renderWelcomeStep = () => (
-    <Animated.View
-      entering={FadeIn.duration(400)}
-      exiting={FadeOut.duration(200)}
-      style={styles.stepContainer}
-    >
-      <KeyboardAwareScrollViewCompat
-        style={styles.welcomeScrollView}
-        contentContainerStyle={styles.welcomeScrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.welcomeHeader}>
-          <Animated.View
-            entering={FadeIn.delay(100).duration(500)}
-            style={styles.appIconContainer}
-          >
-            <Image
-              source={AppIcon}
-              style={styles.appIconImage}
-              resizeMode="cover"
-            />
-          </Animated.View>
-          <Animated.View entering={FadeIn.delay(200).duration(400)}>
-            <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
-          </Animated.View>
-          <Animated.View entering={FadeIn.delay(300).duration(400)}>
-            <ThemedText
-              style={[styles.appTagline, { color: theme.textSecondary }]}
-            >
-              Your AI-powered kitchen companion
-            </ThemedText>
-          </Animated.View>
-        </View>
-
-        <View style={styles.featuresContainer}>
-          {FEATURES.map((feature, index) => (
-            <Animated.View
-              key={feature.title}
-              entering={FadeIn.delay(400 + index * 100).duration(300)}
-            >
-              <GlassCard contentStyle={styles.featureCard}>
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: `${feature.color}15` },
-                  ]}
-                >
-                  <Feather
-                    name={feature.icon}
-                    size={14}
-                    color={feature.color}
-                  />
-                </View>
-                <View style={styles.featureTextContainer}>
-                  <ThemedText style={styles.featureTitle}>
-                    {feature.title}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.featureDescription,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {feature.description}
-                  </ThemedText>
-                </View>
-              </GlassCard>
-            </Animated.View>
-          ))}
-        </View>
-
-        {isAuthenticated ? null : (
-          <Animated.View
-            entering={FadeIn.delay(700).duration(400)}
-            style={styles.authSection}
-          >
-            {/* Plan Selection */}
-            {isSignUp && (
-              <View style={styles.planSelectionContainer}>
-                <ThemedText style={styles.planSelectionTitle}>Choose Your Plan</ThemedText>
-                <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
-                  Start with a free 7-day trial. Cancel anytime.
-                </ThemedText>
-
-                {/* Everything you get list - 2x4 grid */}
-                <View style={styles.featuresListContainer}>
-                  <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
-                  <View style={styles.featuresGrid}>
-                    {[
-                      "Unlimited inventory",
-                      "AI recipes",
-                      "Meal planning",
-                      "Expiration alerts",
-                      "Nutrition tracking",
-                      "Cloud sync",
-                      "Shopping lists",
-                      "Waste reduction",
-                    ].map((feature, index) => (
-                      <View key={index} style={styles.featureGridItem}>
-                        <Feather name="check-circle" size={12} color={AppColors.primary} />
-                        <ThemedText style={styles.featureGridItemText}>{feature}</ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.planCardsRow}>
-                  <Pressable
-                    style={[
-                      styles.planCard,
-                      { 
-                        backgroundColor: theme.glass.background,
-                        borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
-                        borderWidth: 2,
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedPlan("monthly");
-                      if (Platform.OS !== "web") {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                    }}
-                  >
-                    <View style={styles.planCardHeader}>
-                      <ThemedText style={styles.planCardName}>Monthly</ThemedText>
-                      {pricesLoading ? (
-                        <ActivityIndicator size="small" color={AppColors.primary} />
-                      ) : prices.monthly ? (
-                        <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                          ${(prices.monthly.amount / 100).toFixed(2)}
-                          <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-                        </ThemedText>
-                      ) : null}
-                    </View>
-                    <View style={[
-                      styles.planCardRadio,
-                      selectedPlan === "monthly" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
-                    ]}>
-                      {selectedPlan === "monthly" && <Feather name="check" size={12} color="#FFFFFF" />}
-                    </View>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.planCard,
-                      { 
-                        backgroundColor: theme.glass.background,
-                        borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
-                        borderWidth: 2,
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedPlan("annual");
-                      if (Platform.OS !== "web") {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                    }}
-                  >
-                    {prices.monthly && prices.annual && (
-                      <View style={styles.savingsBadge}>
-                        <ThemedText style={styles.savingsBadgeText}>
-                          Save {Math.round(((prices.monthly.amount * 12 - prices.annual.amount) / (prices.monthly.amount * 12)) * 100)}%
-                        </ThemedText>
-                      </View>
-                    )}
-                    <View style={styles.planCardHeader}>
-                      <ThemedText style={styles.planCardName}>Annual</ThemedText>
-                      {pricesLoading ? (
-                        <ActivityIndicator size="small" color={AppColors.primary} />
-                      ) : prices.annual ? (
-                        <View>
-                          <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                            ${(prices.annual.amount / 100).toFixed(2)}
-                            <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/yr</ThemedText>
-                          </ThemedText>
-                          <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
-                            ${(prices.annual.amount / 12 / 100).toFixed(2)}/mo
-                          </ThemedText>
-                        </View>
-                      ) : null}
-                    </View>
-                    <View style={[
-                      styles.planCardRadio,
-                      selectedPlan === "annual" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
-                    ]}>
-                      {selectedPlan === "annual" && <Feather name="check" size={12} color="#FFFFFF" />}
-                    </View>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            <ThemedText style={styles.authTitle}>
-              {isSignUp ? "Create Account" : "Welcome Back"}
-            </ThemedText>
-
-            {authError && (
-              <View style={[styles.authErrorContainer, { backgroundColor: `${AppColors.error}15` }]}>
-                <Feather name="alert-circle" size={16} color={AppColors.error} />
-                <ThemedText style={[styles.authErrorText, { color: AppColors.error }]}>
-                  {authError}
-                </ThemedText>
-              </View>
-            )}
-            
-
-            <View style={styles.authInputContainer}>
-              <View
-                style={[
-                  styles.authInputWrapper,
-                  { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
-                ]}
-              >
-                <Feather name="mail" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
-                <TextInput
-                  style={[styles.authInput, { color: theme.text }]}
-                  placeholder="Email"
-                  placeholderTextColor={theme.textSecondary}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  textContentType="emailAddress"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                  data-testid="input-email"
-                />
-              </View>
-
-              <View
-                style={[
-                  styles.authInputWrapper,
-                  { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
-                ]}
-              >
-                <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
-                <TextInput
-                  ref={passwordRef}
-                  style={[styles.authInput, { color: theme.text }]}
-                  placeholder="Password"
-                  placeholderTextColor={theme.textSecondary}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  returnKeyType={isSignUp ? "next" : "done"}
-                  onSubmitEditing={() => {
-                    if (isSignUp) {
-                      confirmPasswordRef.current?.focus();
-                    } else {
-                      handleAuth();
-                    }
-                  }}
-                  data-testid="input-password"
-                />
-                <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.authEyeButton}>
-                  <Feather name={showPassword ? "eye-off" : "eye"} size={20} color={theme.textSecondary} />
-                </Pressable>
-              </View>
-
-              {isSignUp && (
-                <View
-                  style={[
-                    styles.authInputWrapper,
-                    { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
-                  ]}
-                >
-                  <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
-                  <TextInput
-                    ref={confirmPasswordRef}
-                    style={[styles.authInput, { color: theme.text }]}
-                    placeholder="Confirm Password"
-                    placeholderTextColor={theme.textSecondary}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    returnKeyType="done"
-                    onSubmitEditing={handleAuth}
-                    data-testid="input-confirm-password"
-                  />
-                </View>
-              )}
-            </View>
-
-            <Pressable
-              style={[
-                styles.authButton,
-                { backgroundColor: AppColors.primary },
-                authLoading && styles.authButtonDisabled,
-              ]}
-              onPress={handleAuth}
-              disabled={authLoading}
-              data-testid="button-auth-submit"
-            >
-              {authLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <ThemedText style={styles.authButtonText}>
-                  {isSignUp ? "Create Account" : "Sign In"}
-                </ThemedText>
-              )}
-            </Pressable>
-
-            <Pressable
-              onPress={() => {
-                setIsSignUp(!isSignUp);
-                setAuthError(null);
-              }}
-              style={styles.authSwitchButton}
-              data-testid="button-switch-auth-mode"
-            >
-              <ThemedText style={[styles.authSwitchText, { color: theme.textSecondary }]}>
-                {isSignUp ? "Already have an account? " : "Don't have an account? "}
-                <ThemedText style={{ color: AppColors.primary, fontWeight: "600" }}>
-                  {isSignUp ? "Sign In" : "Sign Up"}
-                </ThemedText>
-              </ThemedText>
-            </Pressable>
-
-            {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
-              <>
-                <View style={styles.authDividerContainer}>
-                  <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
-                  <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
-                    or continue with
-                  </ThemedText>
-                  <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
-                </View>
-
-                <View style={styles.authSocialButtons}>
-                  {isAppleAuthAvailable && (
-                    <Pressable
-                      style={[
-                        styles.authSocialButton,
-                        { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
-                      ]}
-                      onPress={() => handleSocialAuth("apple")}
-                      disabled={authLoading}
-                      data-testid="button-signin-apple"
-                    >
-                      <Ionicons name="logo-apple" size={24} color={theme.text} />
-                      <ThemedText style={styles.authSocialButtonText}>Apple</ThemedText>
-                    </Pressable>
-                  )}
-
-                  {isGoogleAuthAvailable && (
-                    <Pressable
-                      style={[
-                        styles.authSocialButton,
-                        { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
-                      ]}
-                      onPress={() => handleSocialAuth("google")}
-                      disabled={authLoading}
-                      data-testid="button-signin-google"
-                    >
-                      <Image
-                        source={{ uri: "https://www.google.com/favicon.ico" }}
-                        style={styles.authGoogleIcon}
-                      />
-                      <ThemedText style={styles.authSocialButtonText}>Google</ThemedText>
-                    </Pressable>
-                  )}
-                </View>
-              </>
-            )}
-          </Animated.View>
-        )}
-      </KeyboardAwareScrollViewCompat>
-    </Animated.View>
-  );
 
   const renderPreferencesStep = () => (
     <Animated.View
@@ -1899,7 +1330,7 @@ export default function OnboardingScreen() {
       <View style={styles.fixedFooter}>
         <View style={styles.navigationButtons}>
           <GlassButton
-            onPress={() => setStep("welcome")}
+            onPress={() => navigation.goBack()}
             variant="secondary"
             style={styles.navButton}
           >
@@ -2604,7 +2035,6 @@ export default function OnboardingScreen() {
         },
       ]}
     >
-      {step === "welcome" && renderWelcomeStep()}
       {step === "preferences" && renderPreferencesStep()}
       {step === "storage" && renderStorageStep()}
       {step === "foods" && renderFoodsStep()}

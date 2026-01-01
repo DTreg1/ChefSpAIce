@@ -53,6 +53,7 @@ import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
+import AuthScreen from "@/screens/AuthScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import AboutScreen from "@/screens/AboutScreen";
@@ -70,6 +71,7 @@ const isWeb = Platform.OS === "web";
 
 export type RootStackParamList = {
   SignIn: undefined;
+  Auth: undefined;
   Main: undefined;
   Onboarding: undefined;
   Landing: undefined;
@@ -128,13 +130,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Landing (web) or Onboarding (mobile)
+  // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     });
@@ -148,16 +150,16 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Landing (web) or Onboarding (mobile)
+    // If user was authenticated but now is not, redirect to Landing (web) or Auth (mobile)
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to Landing for web, Onboarding for mobile
+      // Redirect to Landing for web, Auth for mobile
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     }
@@ -230,8 +232,8 @@ function AuthGuardedNavigator() {
 
   // Determine initial route:
   // 1. Web + not authenticated → Landing (marketing page)
-  // 2. Needs onboarding (new user) → Onboarding (has embedded sign-in on step 1)
-  // 3. Not authenticated (returning user who completed onboarding) → Onboarding
+  // 2. Mobile + not authenticated → Auth (sign in/sign up)
+  // 3. Authenticated + needs onboarding → Onboarding
   // 4. Authenticated but no active subscription → Onboarding (has pricing)
   // 5. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
@@ -239,7 +241,12 @@ function AuthGuardedNavigator() {
     if (isWeb && !isAuthenticated) {
       return "Landing";
     }
-    if (!isAuthenticated || needsOnboarding || !isActive) {
+    // Show auth screen for mobile users who aren't authenticated
+    if (!isAuthenticated) {
+      return "Auth";
+    }
+    // Authenticated users who need onboarding or subscription
+    if (needsOnboarding || !isActive) {
       return "Onboarding";
     }
     return "Main";
@@ -256,8 +263,8 @@ function AuthGuardedNavigator() {
       >
         {(props) => (
           <LandingScreen
-            onGetStarted={() => props.navigation.navigate("Onboarding")}
-            onSignIn={() => props.navigation.navigate("Onboarding")}
+            onGetStarted={() => props.navigation.navigate("Auth")}
+            onSignIn={() => props.navigation.navigate("Auth")}
             onAbout={() => props.navigation.navigate("About")}
             onPrivacy={() => props.navigation.navigate("Privacy")}
             onTerms={() => props.navigation.navigate("Terms")}
@@ -265,6 +272,11 @@ function AuthGuardedNavigator() {
           />
         )}
       </Stack.Screen>
+      <Stack.Screen
+        name="Auth"
+        component={AuthScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
