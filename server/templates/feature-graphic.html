@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChefSpAIce Feature Graphic</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .feature-graphic {
+      width: 1024px;
+      height: 500px;
+      background: linear-gradient(135deg, #1a2e05 0%, #27AE60 50%, #1a2e05 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.1;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.2) 0%, transparent 40%);
+    }
+    .content {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+      z-index: 1;
+    }
+    .icon-container {
+      width: 180px;
+      height: 180px;
+      background: white;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .icon-container img {
+      width: 140px;
+      height: 140px;
+      border-radius: 24px;
+    }
+    .icon-placeholder {
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(135deg, #27AE60, #1a2e05);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+    .text-content {
+      text-align: left;
+    }
+    .app-name {
+      font-size: 72px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+    .tagline {
+      font-size: 28px;
+      color: rgba(255,255,255,0.95);
+      font-weight: 400;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .features {
+      display: flex;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .feature-badge {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="feature-graphic">
+    <div class="pattern"></div>
+    <div class="content">
+      <div class="icon-container">
+        <img src="/assets/images/icon.png" alt="ChefSpAIce" onerror="this.style.display='none';this.parentElement.querySelector('.icon-placeholder').style.display='flex';">
+        <div class="icon-placeholder" style="display:none;">
+          <span style="filter: grayscale(1) brightness(100);">&#127869;</span>
+        </div>
+      </div>
+      <div class="text-content">
+        <div class="app-name">ChefSpAIce</div>
+        <div class="tagline">Your AI-Powered Kitchen Companion</div>
+        <div class="features">
+          <span class="feature-badge">Track Inventory</span>
+          <span class="feature-badge">AI Recipes</span>
+          <span class="feature-badge">Reduce Waste</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="instructions">
+    Screenshot this at exactly 1024x500 for Google Play Feature Graphic
+  </div>
+</body>
+</html>

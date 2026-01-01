@@ -1133,6 +1133,17 @@ BEHAVIOR GUIDELINES:
     res.sendFile(privacyPath);
   });
 
+  // Serve feature graphic template for Google Play
+  app.get("/feature-graphic", (_req: Request, res: Response) => {
+    const featurePath = require("path").resolve(
+      process.cwd(),
+      "server",
+      "templates",
+      "feature-graphic.html"
+    );
+    res.sendFile(featurePath);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
