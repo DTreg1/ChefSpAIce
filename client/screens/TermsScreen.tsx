@@ -1,6 +1,5 @@
-import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -15,33 +14,11 @@ function getThemeColors(isDark: boolean) {
 }
 
 export default function TermsOfServicePage() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
-
-  const navigateTo = (path: string) => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.location.href = path;
-    }
-  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigateTo("/")} style={styles.logoContainer}>
-          <Text style={[styles.logoText, { color: colors.brandGreen }]}>ChefSpAIce</Text>
-        </Pressable>
-        <Pressable
-          onPress={toggleTheme}
-          style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-        >
-          {isDark ? (
-            <Feather name="sun" size={20} color={colors.textPrimary} />
-          ) : (
-            <Feather name="moon" size={20} color={colors.textPrimary} />
-          )}
-        </Pressable>
-      </View>
-
       <View style={styles.main}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Terms of Service</Text>
@@ -112,39 +89,6 @@ export default function TermsOfServicePage() {
             </Text>
           </View>
 
-          <View style={[styles.backLink, { borderTopColor: colors.borderColor }]}>
-            <Pressable onPress={() => navigateTo("/")}>
-              <Text style={[styles.link, { color: colors.brandGreen }]}>&larr; Back to Home</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
-        <View style={styles.footerContent}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            Helping you reduce food waste, one meal at a time.
-          </Text>
-          <View style={styles.footerLinks}>
-            <Pressable onPress={() => navigateTo("/about")} data-testid="link-about">
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>About</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-privacy">
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Privacy Policy</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/support")} data-testid="link-support">
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Support</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-attributions">
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Attributions</Text>
-            </Pressable>
-          </View>
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
-            © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
-          </Text>
         </View>
       </View>
     </ScrollView>

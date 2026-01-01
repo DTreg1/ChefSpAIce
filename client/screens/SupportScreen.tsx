@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Pressable, Platform, TextInput } from "react-native";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useTheme } from "@/hooks/useTheme";
 
 const BRAND_GREEN = "#27AE60";
 const SUPPORT_EMAIL = "support@chefspaice.com";
@@ -101,15 +101,9 @@ const TROUBLESHOOTING_DATA = [
 ];
 
 export default function SupportPage() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-
-  const navigateTo = (path: string) => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.location.href = path;
-    }
-  };
 
   const openEmail = () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -119,24 +113,6 @@ export default function SupportPage() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigateTo("/")} style={styles.logoContainer}>
-          <MaterialCommunityIcons name="chef-hat" size={28} color={colors.brandGreen} />
-          <Text style={[styles.logoText, { color: colors.brandGreen }]}>ChefSpAIce</Text>
-        </Pressable>
-        <Pressable
-          onPress={toggleTheme}
-          style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-          data-testid="button-theme-toggle"
-        >
-          {isDark ? (
-            <Feather name="sun" size={20} color={colors.textPrimary} />
-          ) : (
-            <Feather name="moon" size={20} color={colors.textPrimary} />
-          )}
-        </Pressable>
-      </View>
-
       <View style={styles.main}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]} data-testid="text-support-title">Support</Text>
@@ -248,48 +224,6 @@ export default function SupportPage() {
             </View>
           </View>
 
-          <View style={styles.linksSection}>
-            <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-privacy">
-              <Text style={[styles.linkText, { color: colors.brandGreen }]}>Privacy Policy</Text>
-            </Pressable>
-            <Pressable onPress={() => navigateTo("/terms")} data-testid="link-terms">
-              <Text style={[styles.linkText, { color: colors.brandGreen }]}>Terms of Service</Text>
-            </Pressable>
-          </View>
-
-          <View style={[styles.backLink, { borderTopColor: colors.cardBorder }]}>
-            <Pressable onPress={() => navigateTo("/")} data-testid="link-back">
-              <Text style={[styles.link, { color: colors.brandGreen }]}>&larr; Back to Home</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
-        <View style={styles.footerContent}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            Helping you reduce food waste, one meal at a time.
-          </Text>
-          <View style={styles.footerLinksRow}>
-            <Pressable onPress={() => navigateTo("/about")} data-testid="link-footer-about">
-              <Text style={[styles.footerLinkText, { color: colors.textSecondary }]}>About</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/privacy")} data-testid="link-footer-privacy">
-              <Text style={[styles.footerLinkText, { color: colors.textSecondary }]}>Privacy Policy</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/terms")} data-testid="link-footer-terms">
-              <Text style={[styles.footerLinkText, { color: colors.textSecondary }]}>Terms of Service</Text>
-            </Pressable>
-            <Text style={[styles.footerDivider, { color: colors.textMuted }]}>•</Text>
-            <Pressable onPress={() => navigateTo("/attributions")} data-testid="link-footer-attributions">
-              <Text style={[styles.footerLinkText, { color: colors.textSecondary }]}>Attributions</Text>
-            </Pressable>
-          </View>
-          <Text style={[styles.copyright, { color: colors.textMuted }]}>
-            © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
-          </Text>
         </View>
       </View>
     </ScrollView>
