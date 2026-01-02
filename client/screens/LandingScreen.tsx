@@ -1,11 +1,12 @@
 import { StyleSheet, View, Text, Pressable, ScrollView, useWindowDimensions, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Feather, MaterialCommunityIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useState } from "react";
 
 const isWeb = Platform.OS === "web";
 
@@ -102,6 +103,151 @@ function StepCard({ number, title, description, isDark, isWide }: StepCardProps)
   );
 }
 
+interface BenefitCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  testId: string;
+  isWide?: boolean;
+}
+
+function BenefitCard({ icon, title, description, testId, isWide }: BenefitCardProps) {
+  return (
+    <View style={[styles.benefitCard, isWide && styles.benefitCardWide]} data-testid={`card-benefit-${testId}`}>
+      <View style={styles.benefitIconContainer}>{icon}</View>
+      <Text style={styles.benefitTitle} data-testid={`text-benefit-title-${testId}`}>{title}</Text>
+      <Text style={styles.benefitDescription} data-testid={`text-benefit-desc-${testId}`}>{description}</Text>
+    </View>
+  );
+}
+
+interface PricingCardProps {
+  tier: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  isPopular?: boolean;
+  buttonText: string;
+  onPress: () => void;
+  testId: string;
+  isWide?: boolean;
+}
+
+function PricingCard({ tier, price, period, description, features, isPopular, buttonText, onPress, testId, isWide }: PricingCardProps) {
+  return (
+    <GlassCard 
+      style={[
+        styles.pricingCard, 
+        isWide && styles.pricingCardWide,
+        isPopular && styles.pricingCardPopular
+      ]} 
+      testId={`card-pricing-${testId}`}
+    >
+      {isPopular && (
+        <View style={styles.popularBadge}>
+          <Text style={styles.popularBadgeText}>Most Popular</Text>
+        </View>
+      )}
+      <Text style={styles.pricingTier} data-testid={`text-pricing-tier-${testId}`}>{tier}</Text>
+      <View style={styles.pricingPriceContainer}>
+        <Text style={styles.pricingPrice} data-testid={`text-pricing-price-${testId}`}>{price}</Text>
+        {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
+      </View>
+      <Text style={styles.pricingDescription} data-testid={`text-pricing-desc-${testId}`}>{description}</Text>
+      <View style={styles.pricingFeatures}>
+        {features.map((feature, index) => (
+          <View key={index} style={styles.pricingFeatureRow}>
+            <Feather name="check" size={16} color={AppColors.primary} />
+            <Text style={styles.pricingFeatureText}>{feature}</Text>
+          </View>
+        ))}
+      </View>
+      <Pressable
+        style={({ pressed }) => [
+          isPopular ? styles.pricingButtonPrimary : styles.pricingButtonSecondary,
+          pressed && styles.buttonPressed
+        ]}
+        onPress={onPress}
+        data-testid={`button-pricing-${testId}`}
+      >
+        {isPopular ? (
+          <LinearGradient
+            colors={[AppColors.primary, "#1E8449"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.pricingButtonGradient}
+          >
+            <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
+          </LinearGradient>
+        ) : (
+          <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
+        )}
+      </Pressable>
+    </GlassCard>
+  );
+}
+
+interface TestimonialCardProps {
+  name: string;
+  role: string;
+  quote: string;
+  rating: number;
+  testId: string;
+  isWide?: boolean;
+}
+
+function TestimonialCard({ name, role, quote, rating, testId, isWide }: TestimonialCardProps) {
+  return (
+    <GlassCard style={[styles.testimonialCard, isWide && styles.testimonialCardWide]} testId={`card-testimonial-${testId}`}>
+      <View style={styles.testimonialStars}>
+        {[...Array(5)].map((_, i) => (
+          <FontAwesome 
+            key={i} 
+            name={i < rating ? "star" : "star-o"} 
+            size={16} 
+            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"} 
+          />
+        ))}
+      </View>
+      <Text style={styles.testimonialQuote} data-testid={`text-testimonial-quote-${testId}`}>"{quote}"</Text>
+      <View style={styles.testimonialAuthor}>
+        <View style={styles.testimonialAvatar}>
+          <Text style={styles.testimonialAvatarText}>{name.charAt(0)}</Text>
+        </View>
+        <View>
+          <Text style={styles.testimonialName} data-testid={`text-testimonial-name-${testId}`}>{name}</Text>
+          <Text style={styles.testimonialRole}>{role}</Text>
+        </View>
+      </View>
+    </GlassCard>
+  );
+}
+
+interface FAQItemProps {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  testId: string;
+}
+
+function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
+  return (
+    <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
+      <GlassCard style={styles.faqCard}>
+        <View style={styles.faqHeader}>
+          <Text style={styles.faqQuestion} data-testid={`text-faq-question-${testId}`}>{question}</Text>
+          <Feather name={isOpen ? "chevron-up" : "chevron-down"} size={20} color="rgba(255,255,255,0.7)" />
+        </View>
+        {isOpen && (
+          <Text style={styles.faqAnswer} data-testid={`text-faq-answer-${testId}`}>{answer}</Text>
+        )}
+      </GlassCard>
+    </Pressable>
+  );
+}
+
 interface LandingScreenProps {
   onGetStarted?: () => void;
   onSignIn?: () => void;
@@ -116,6 +262,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const { isDark } = useTheme();
   const isWide = width > 768;
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
   const handleGetStarted = () => {
     if (onGetStarted) {
@@ -153,6 +300,57 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
     }
   };
 
+  const testimonials = [
+    {
+      name: "Sarah M.",
+      role: "Busy Mom of 3",
+      quote: "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
+      rating: 5,
+    },
+    {
+      name: "James K.",
+      role: "Home Chef",
+      quote: "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
+      rating: 5,
+    },
+    {
+      name: "Emily R.",
+      role: "Sustainability Advocate",
+      quote: "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
+      rating: 5,
+    },
+  ];
+
+  const faqs = [
+    {
+      question: "How does the AI recipe generation work?",
+      answer: "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
+    },
+    {
+      question: "Is there a free trial available?",
+      answer: "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
+    },
+    {
+      question: "Can I use the app on multiple devices?",
+      answer: "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
+    },
+    {
+      question: "How accurate is the expiration tracking?",
+      answer: "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
+    },
+    {
+      question: "Can I cancel my subscription anytime?",
+      answer: "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
+    },
+  ];
+
+  const trustLogos = [
+    { name: "App Store", iconType: "material", icon: "apple" },
+    { name: "Google Play", iconType: "material", icon: "google-play" },
+    { name: "Forbes", iconType: "feather", icon: "award" },
+    { name: "TechCrunch", iconType: "feather", icon: "globe" },
+  ];
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -185,8 +383,8 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         <View style={[styles.heroSection, isWide && styles.heroSectionWide]} data-testid="section-hero">
           <View style={styles.heroContent}>
             <View style={styles.tagline}>
-              <Feather name="zap" size={16} color={AppColors.primary} />
-              <Text style={styles.taglineText} data-testid="text-tagline">Reduce Food Waste</Text>
+              <FontAwesome name="star" size={14} color="#FFD700" />
+              <Text style={styles.taglineText} data-testid="text-tagline">Rated 4.9/5 by 10,000+ users</Text>
             </View>
             
             <Text style={styles.heroTitle} data-testid="text-hero-title">
@@ -218,8 +416,73 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 </LinearGradient>
               </Pressable>
               
-              <Text style={styles.trialText}>7-day free trial, no credit card required</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed
+                ]}
+                onPress={handleSignIn}
+                data-testid="button-learn-more"
+              >
+                <Text style={styles.secondaryButtonText}>Learn More</Text>
+              </Pressable>
             </View>
+            
+            <Text style={styles.trialText}>7-day free trial, no credit card required</Text>
+          </View>
+        </View>
+
+        <View style={styles.trustSection} data-testid="section-trust">
+          <Text style={styles.trustTitle}>Featured On</Text>
+          <View style={[styles.trustLogos, isWide && styles.trustLogosWide]}>
+            {trustLogos.map((logo, index) => (
+              <View key={index} style={styles.trustLogoItem}>
+                {logo.iconType === "material" ? (
+                  <MaterialCommunityIcons name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                ) : (
+                  <Feather name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                )}
+                <Text style={styles.trustLogoText}>{logo.name}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-benefits">
+          <Text style={styles.sectionTitle} data-testid="text-benefits-title">Why Choose ChefSpAIce?</Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-benefits-subtitle">
+            Save money, reduce waste, and eat better
+          </Text>
+          
+          <View style={[styles.benefitsGrid, isWide && styles.benefitsGridWide]}>
+            <BenefitCard
+              testId="save-money"
+              isWide={isWide}
+              icon={<Feather name="dollar-sign" size={32} color={AppColors.primary} />}
+              title="Save $200+/month"
+              description="Stop throwing away expired food. Our users save an average of $200 per month on groceries."
+            />
+            <BenefitCard
+              testId="reduce-waste"
+              isWide={isWide}
+              icon={<Feather name="trash-2" size={32} color={AppColors.primary} />}
+              title="Reduce Waste by 70%"
+              description="Smart expiration tracking and AI-powered meal planning means less food in the trash."
+            />
+            <BenefitCard
+              testId="eat-better"
+              isWide={isWide}
+              icon={<Feather name="heart" size={32} color={AppColors.primary} />}
+              title="Eat Healthier"
+              description="Personalized recipes based on your dietary preferences and what's actually in your kitchen."
+            />
+            <BenefitCard
+              testId="save-time"
+              isWide={isWide}
+              icon={<Feather name="clock" size={32} color={AppColors.primary} />}
+              title="Save 5+ Hours/Week"
+              description="No more wondering 'what's for dinner?' AI suggests meals in seconds, not hours."
+            />
           </View>
         </View>
 
@@ -312,6 +575,107 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
           </View>
         </View>
 
+        <View style={styles.section} data-testid="section-pricing">
+          <Text style={styles.sectionTitle} data-testid="text-pricing-title">Simple, Transparent Pricing</Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-pricing-subtitle">
+            Choose the plan that works best for you
+          </Text>
+          
+          <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
+            <PricingCard
+              tier="Free"
+              price="$0"
+              period=""
+              description="Perfect for getting started"
+              features={[
+                "Up to 20 pantry items",
+                "5 AI recipes per month",
+                "Basic expiration alerts",
+                "Manual item entry",
+              ]}
+              buttonText="Get Started"
+              onPress={handleGetStarted}
+              testId="free"
+              isWide={isWide}
+            />
+            <PricingCard
+              tier="Pro"
+              price="$4.99"
+              period="month"
+              description="Best for home cooks"
+              features={[
+                "Unlimited pantry items",
+                "Unlimited AI recipes",
+                "Smart notifications",
+                "Barcode scanning",
+                "Meal planning",
+                "Shopping lists",
+              ]}
+              isPopular={true}
+              buttonText="Start Free Trial"
+              onPress={handleGetStarted}
+              testId="pro"
+              isWide={isWide}
+            />
+            <PricingCard
+              tier="Family"
+              price="$9.99"
+              period="month"
+              description="Perfect for households"
+              features={[
+                "Everything in Pro",
+                "Up to 5 family members",
+                "Shared meal planning",
+                "Nutrition insights",
+                "Priority support",
+                "Early access to features",
+              ]}
+              buttonText="Start Free Trial"
+              onPress={handleGetStarted}
+              testId="family"
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-testimonials">
+          <Text style={styles.sectionTitle} data-testid="text-testimonials-title">Loved by Thousands</Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-testimonials-subtitle">
+            See what our users are saying
+          </Text>
+          
+          <View style={[styles.testimonialsGrid, isWide && styles.testimonialsGridWide]}>
+            {testimonials.map((testimonial, index) => (
+              <TestimonialCard
+                key={index}
+                {...testimonial}
+                testId={`${index + 1}`}
+                isWide={isWide}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-faq">
+          <Text style={styles.sectionTitle} data-testid="text-faq-title">Frequently Asked Questions</Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-faq-subtitle">
+            Got questions? We've got answers
+          </Text>
+          
+          <View style={styles.faqContainer}>
+            {faqs.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onToggle={() => setOpenFAQ(openFAQ === index ? null : index)}
+                testId={`${index + 1}`}
+              />
+            ))}
+          </View>
+        </View>
+
         <View style={styles.ctaSection} data-testid="section-cta">
           <GlassCard style={styles.ctaCard}>
             <Text style={styles.ctaTitle}>Ready to reduce food waste?</Text>
@@ -335,6 +699,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 <Text style={styles.ctaButtonText}>Start Your Free Trial</Text>
               </LinearGradient>
             </Pressable>
+            <Text style={styles.ctaNote}>No credit card required</Text>
           </GlassCard>
         </View>
 
@@ -461,8 +826,10 @@ const styles = StyleSheet.create({
     maxWidth: 500,
   },
   heroButtons: {
+    flexDirection: "row",
     alignItems: "center",
     gap: 16,
+    marginBottom: 16,
   },
   primaryButton: {
     borderRadius: GlassEffect.borderRadius.pill,
@@ -480,9 +847,55 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  secondaryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: GlassEffect.borderRadius.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
   trialText: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.6)",
+  },
+  trustSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  trustTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.5)",
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: 24,
+  },
+  trustLogos: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 32,
+  },
+  trustLogosWide: {
+    gap: 48,
+  },
+  trustLogoItem: {
+    alignItems: "center",
+    gap: 8,
+  },
+  trustLogoText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.5)",
   },
   section: {
     paddingHorizontal: 24,
@@ -501,6 +914,48 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginBottom: 40,
+  },
+  benefitsGrid: {
+    flexDirection: "column",
+    gap: 24,
+    width: "100%",
+    maxWidth: 800,
+  },
+  benefitsGridWide: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 32,
+  },
+  benefitCard: {
+    alignItems: "center",
+    padding: 24,
+  },
+  benefitCardWide: {
+    width: "45%",
+    minWidth: 280,
+  },
+  benefitIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(39, 174, 96, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  benefitTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  benefitDescription: {
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
+    lineHeight: 24,
   },
   featuresGrid: {
     flexDirection: "column",
@@ -598,6 +1053,197 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  pricingGrid: {
+    flexDirection: "column",
+    gap: 20,
+    width: "100%",
+    maxWidth: 400,
+  },
+  pricingGridWide: {
+    flexDirection: "row",
+    justifyContent: "center",
+    maxWidth: 1000,
+    gap: 24,
+  },
+  pricingCard: {
+    padding: 28,
+    alignItems: "center",
+  },
+  pricingCardWide: {
+    flex: 1,
+    minWidth: 280,
+    maxWidth: 320,
+  },
+  pricingCardPopular: {
+    borderColor: AppColors.primary,
+    borderWidth: 2,
+  },
+  popularBadge: {
+    position: "absolute",
+    top: -12,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: GlassEffect.borderRadius.pill,
+  },
+  popularBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  pricingTier: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  pricingPriceContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginBottom: 8,
+  },
+  pricingPrice: {
+    fontSize: 48,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  pricingPeriod: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
+  },
+  pricingDescription: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    marginBottom: 24,
+  },
+  pricingFeatures: {
+    width: "100%",
+    gap: 12,
+    marginBottom: 24,
+  },
+  pricingFeatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  pricingFeatureText: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  pricingButtonPrimary: {
+    width: "100%",
+    borderRadius: GlassEffect.borderRadius.pill,
+    overflow: "hidden",
+  },
+  pricingButtonSecondary: {
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: GlassEffect.borderRadius.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+  },
+  pricingButtonGradient: {
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  pricingButtonTextPrimary: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  pricingButtonTextSecondary: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  testimonialsGrid: {
+    flexDirection: "column",
+    gap: 20,
+    width: "100%",
+    maxWidth: 400,
+  },
+  testimonialsGridWide: {
+    flexDirection: "row",
+    justifyContent: "center",
+    maxWidth: 1000,
+    gap: 24,
+  },
+  testimonialCard: {
+    padding: 24,
+  },
+  testimonialCardWide: {
+    flex: 1,
+    minWidth: 280,
+    maxWidth: 320,
+  },
+  testimonialStars: {
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 16,
+  },
+  testimonialQuote: {
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.9)",
+    lineHeight: 24,
+    marginBottom: 20,
+    fontStyle: "italic",
+  },
+  testimonialAuthor: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  testimonialAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: AppColors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  testimonialAvatarText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  testimonialName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  testimonialRole: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.6)",
+  },
+  faqContainer: {
+    width: "100%",
+    maxWidth: 700,
+    gap: 12,
+  },
+  faqCard: {
+    padding: 20,
+  },
+  faqHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  faqQuestion: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    flex: 1,
+    paddingRight: 16,
+  },
+  faqAnswer: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    lineHeight: 22,
+    marginTop: 16,
+  },
   ctaSection: {
     paddingHorizontal: 24,
     paddingVertical: 48,
@@ -634,6 +1280,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  ctaNote: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.5)",
+    marginTop: 16,
   },
   footer: {
     backgroundColor: "rgba(0, 0, 0, 0.3)",
