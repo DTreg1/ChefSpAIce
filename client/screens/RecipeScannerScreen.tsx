@@ -91,6 +91,7 @@ export default function RecipeScannerScreen() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             image: manipResult.base64,
           }),

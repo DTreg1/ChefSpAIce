@@ -93,7 +93,9 @@ export default function ShoppingListScreen() {
     setSendingToInstacart(true);
 
     try {
-      const response = await fetch(`${getApiUrl()}api/instacart/status`);
+      const response = await fetch(`${getApiUrl()}api/instacart/status`, {
+        credentials: "include",
+      });
       const status = await response.json();
 
       if (!status.configured) {
@@ -108,6 +110,7 @@ export default function ShoppingListScreen() {
       const listResponse = await fetch(`${getApiUrl()}api/instacart/create-shopping-list`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           title: "ChefSpAIce Shopping List",
           items: uncheckedItems.map((item) => ({

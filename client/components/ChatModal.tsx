@@ -209,6 +209,7 @@ export function ChatModal() {
       const response = await fetch(new URL("/api/chat", baseUrl).href, {
         method: "POST",
         headers,
+        credentials: "include",
         body: JSON.stringify({
           message: userMessage.content,
           context: inventoryContext,

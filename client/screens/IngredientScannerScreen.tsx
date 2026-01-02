@@ -112,6 +112,7 @@ export default function IngredientScannerScreen() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             image: manipResult.base64,
           }),
