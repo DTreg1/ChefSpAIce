@@ -510,15 +510,21 @@ const styles = StyleSheet.create({
   },
   cameraTitle: {
     color: "#FFFFFF",
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    ...Platform.select({
+      web: {
+        textShadow: "0px 1px 3px rgba(0, 0, 0, 0.5)",
+      },
+      default: {},
+    }),
   },
   cameraSubtitle: {
     color: "rgba(255, 255, 255, 0.8)",
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...Platform.select({
+      web: {
+        textShadow: "0px 1px 2px rgba(0, 0, 0, 0.5)",
+      },
+      default: {},
+    }),
   },
   cameraHeaderSpacer: {
     width: 44,
