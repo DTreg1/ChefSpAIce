@@ -29,6 +29,18 @@
  */
 
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
+
+async function getStoredAuthToken(): Promise<string | null> {
+  try {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    return token ? JSON.parse(token) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
@@ -80,9 +92,20 @@ export async function apiRequest(
   const baseUrl = getApiUrl();
   const url = new URL(route, baseUrl);
 
+  const token = await getStoredAuthToken();
+  const headers: Record<string, string> = {};
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -105,7 +128,15 @@ export const getQueryFn: <T>(options: {
     const baseUrl = getApiUrl();
     const url = new URL(queryKey.join("/") as string, baseUrl);
 
+    const token = await getStoredAuthToken();
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
+      headers,
       credentials: "include",
     });
 
