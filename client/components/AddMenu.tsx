@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, Pressable, Text, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Text, Platform, Modal } from "react-native";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import Animated, {
@@ -16,6 +16,8 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing, GlassColors, Colors } from "@/constants/theme";
 import { getGenerateRecipeParams } from "@/components/GenerateRecipeButton";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,
@@ -181,7 +183,10 @@ export function AddMenu({
   const { isDark } = useTheme();
   const overlayOpacity = useSharedValue(0);
   const [shouldRender, setShouldRender] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
+  
+  const { checkLimit, usage, entitlements, isProUser } = useSubscription();
 
   const p0 = useSharedValue(0);
   const p1 = useSharedValue(0);
@@ -234,6 +239,14 @@ export function AddMenu({
   }));
 
   const handleItemPress = async (itemId: string) => {
+    if (itemId === "add-item") {
+      const limitCheck = checkLimit("pantryItems");
+      if (!limitCheck.allowed) {
+        setShowUpgradePrompt(true);
+        return;
+      }
+    }
+
     onClose();
 
     setTimeout(async () => {
@@ -250,6 +263,18 @@ export function AddMenu({
           break;
       }
     }, 250);
+  };
+
+  const handleUpgrade = () => {
+    setShowUpgradePrompt(false);
+    onClose();
+    setTimeout(() => {
+      onNavigate("Pricing");
+    }, 250);
+  };
+
+  const handleDismissUpgrade = () => {
+    setShowUpgradePrompt(false);
   };
 
   const menuItems: MenuItemConfig[] = MENU_ITEMS.map((item) => ({
@@ -306,35 +331,59 @@ export function AddMenu({
     );
   };
 
+  const pantryLimit = checkLimit("pantryItems");
+  const remaining = typeof pantryLimit.remaining === 'number' ? pantryLimit.remaining : 25;
+  const max = typeof entitlements.maxPantryItems === 'number' ? entitlements.maxPantryItems : 25;
+
   return (
-    <Animated.View
-      style={[
-        styles.overlay,
-        overlayAnimatedStyle,
-        { pointerEvents: isOpen ? "auto" : "none" },
-      ]}
-    >
-      {renderOverlayBackground()}
+    <>
+      <Animated.View
+        style={[
+          styles.overlay,
+          overlayAnimatedStyle,
+          { pointerEvents: isOpen ? "auto" : "none" },
+        ]}
+      >
+        {renderOverlayBackground()}
 
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-      <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]}>
-        <View style={styles.menuRow}>
-          {allItems.map((item, index) => (
-            <MenuItem
-              key={item.id}
-              item={item}
-              onPress={item.onPress}
-              progress={animRefs.current.progress[index]}
-              scale={animRefs.current.scale[index]}
-              isDark={isDark}
-              glassColors={glassColors}
-              textColor={textColor}
-            />
-          ))}
+        <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]}>
+          <View style={styles.menuRow}>
+            {allItems.map((item, index) => (
+              <MenuItem
+                key={item.id}
+                item={item}
+                onPress={item.onPress}
+                progress={animRefs.current.progress[index]}
+                scale={animRefs.current.scale[index]}
+                isDark={isDark}
+                glassColors={glassColors}
+                textColor={textColor}
+              />
+            ))}
+          </View>
         </View>
-      </View>
-    </Animated.View>
+      </Animated.View>
+
+      <Modal
+        visible={showUpgradePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDismissUpgrade}
+      >
+        <View style={styles.upgradeModalOverlay}>
+          <UpgradePrompt
+            type="limit"
+            limitName="pantry items"
+            remaining={remaining}
+            max={max}
+            onUpgrade={handleUpgrade}
+            onDismiss={handleDismissUpgrade}
+          />
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -400,5 +449,12 @@ const styles = StyleSheet.create({
     lineHeight: 13,
     opacity: 0.6,
     marginTop: 2,
+  },
+  upgradeModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
   },
 });
