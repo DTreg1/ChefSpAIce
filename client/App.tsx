@@ -147,20 +147,20 @@ function MobileAppContent() {
 
   return (
     <FloatingChatProvider>
-      {/* Web max-width container for better readability on large screens */}
-      <View style={styles.webContainer}>
-        <View style={styles.webContent}>
-          <NavigationContainer
-            ref={navigationRef}
-            theme={navigationTheme}
-            onStateChange={onStateChange}
-          >
-            {/* Animated gradient background with floating bubbles */}
-            <AnimatedBackground bubbleCount={20} />
-            
-            {/* Shows when device is offline */}
-            <OfflineIndicator />
-            
+      <NavigationContainer
+        ref={navigationRef}
+        theme={navigationTheme}
+        onStateChange={onStateChange}
+      >
+        {/* Animated gradient background - full screen, outside max-width container */}
+        <AnimatedBackground bubbleCount={20} />
+        
+        {/* Shows when device is offline */}
+        <OfflineIndicator />
+        
+        {/* Web max-width container for better readability on large screens */}
+        <View style={styles.webContainer}>
+          <View style={styles.webContent}>
             {/* Main navigation stack */}
             <RootStackNavigator />
             
@@ -174,9 +174,9 @@ function MobileAppContent() {
             
             {/* Development overlay showing current screen name */}
             <ScreenIdentifierOverlay screenName={currentRoute} />
-          </NavigationContainer>
+          </View>
         </View>
-      </View>
+      </NavigationContainer>
       <StatusBar />
     </FloatingChatProvider>
   );
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   webContainer: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
   },
   webContent: {
