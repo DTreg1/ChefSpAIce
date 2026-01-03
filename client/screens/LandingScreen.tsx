@@ -625,7 +625,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               features={[
                 "25 pantry items",
                 "5 AI recipes per month",
-                "Standard storage areas",
+                "Basic storage areas",
                 "5 cookware items",
                 "Item scanning",
                 "Daily meal planning",
