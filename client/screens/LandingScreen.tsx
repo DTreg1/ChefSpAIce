@@ -449,13 +449,15 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
           <View style={[styles.trustLogos, isWide && styles.trustLogosWide]}>
             {trustLogos.map((logo, index) => (
               <View key={index} style={styles.trustLogoItem}>
-                {logo.iconType === "material" ? (
-                  <MaterialCommunityIcons name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
-                ) : logo.iconType === "custom" && logo.icon === "replit" ? (
-                  <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
-                ) : (
-                  <Feather name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
-                )}
+                <View style={styles.trustLogoIconContainer}>
+                  {logo.iconType === "material" ? (
+                    <MaterialCommunityIcons name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                  ) : logo.iconType === "custom" && logo.icon === "replit" ? (
+                    <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
+                  ) : (
+                    <Feather name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                  )}
+                </View>
                 <Text style={styles.trustLogoText}>{logo.name}</Text>
               </View>
             ))}
@@ -906,6 +908,12 @@ const styles = StyleSheet.create({
   trustLogoItem: {
     alignItems: "center",
     gap: 8,
+  },
+  trustLogoIconContainer: {
+    height: 24,
+    width: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
   trustLogoText: {
     fontSize: 12,
