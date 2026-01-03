@@ -25,7 +25,7 @@
  */
 
 import React, { useMemo, useState, useCallback, useRef } from "react";
-import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   NavigationContainer,
@@ -147,31 +147,36 @@ function MobileAppContent() {
 
   return (
     <FloatingChatProvider>
-      <NavigationContainer
-        ref={navigationRef}
-        theme={navigationTheme}
-        onStateChange={onStateChange}
-      >
-        {/* Animated gradient background with floating bubbles */}
-        <AnimatedBackground bubbleCount={20} />
-        
-        {/* Shows when device is offline */}
-        <OfflineIndicator />
-        
-        {/* Main navigation stack */}
-        <RootStackNavigator />
-        
-        {/* Floating chat button and modal - only shown after auth + onboarding */}
-        {showChat ? (
-          <>
-            <FloatingChatButton />
-            <ChatModal />
-          </>
-        ) : null}
-        
-        {/* Development overlay showing current screen name */}
-        <ScreenIdentifierOverlay screenName={currentRoute} />
-      </NavigationContainer>
+      {/* Web max-width container for better readability on large screens */}
+      <View style={styles.webContainer}>
+        <View style={styles.webContent}>
+          <NavigationContainer
+            ref={navigationRef}
+            theme={navigationTheme}
+            onStateChange={onStateChange}
+          >
+            {/* Animated gradient background with floating bubbles */}
+            <AnimatedBackground bubbleCount={20} />
+            
+            {/* Shows when device is offline */}
+            <OfflineIndicator />
+            
+            {/* Main navigation stack */}
+            <RootStackNavigator />
+            
+            {/* Floating chat button and modal - only shown after auth + onboarding */}
+            {showChat ? (
+              <>
+                <FloatingChatButton />
+                <ChatModal />
+              </>
+            ) : null}
+            
+            {/* Development overlay showing current screen name */}
+            <ScreenIdentifierOverlay screenName={currentRoute} />
+          </NavigationContainer>
+        </View>
+      </View>
       <StatusBar />
     </FloatingChatProvider>
   );
@@ -237,6 +242,15 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  webContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  webContent: {
+    flex: 1,
+    width: "100%",
+    maxWidth: Platform.OS === "web" ? 900 : undefined,
   },
   layoutRoot: {
     flex: 1,
