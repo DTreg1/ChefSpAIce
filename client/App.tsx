@@ -244,12 +244,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   webContainer: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   webContent: {
     flex: 1,
-    width: "100%",
     maxWidth: Platform.OS === "web" ? 900 : undefined,
   },
   layoutRoot: {
