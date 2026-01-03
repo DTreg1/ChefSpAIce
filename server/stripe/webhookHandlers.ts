@@ -1,9 +1,10 @@
 import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { db } from "../db";
-import { subscriptions } from "@shared/schema";
+import { subscriptions, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getPlanTypeFromPriceId } from "./subscriptionConfig";
 import Stripe from "stripe";
+import { SubscriptionTier } from "@shared/subscription";
 
 export class WebhookHandlers {
   static async processWebhook(
@@ -83,6 +84,38 @@ async function findUserIdFromCustomerMetadata(stripeCustomerId: string): Promise
   }
 }
 
+async function updateUserSubscriptionTier(
+  userId: string,
+  tier: SubscriptionTier,
+  status: string,
+  stripeCustomerId?: string,
+  stripeSubscriptionId?: string,
+  trialEnd?: Date | null
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    subscriptionTier: tier,
+    subscriptionStatus: status,
+    updatedAt: new Date(),
+  };
+
+  if (stripeCustomerId) {
+    updateData.stripeCustomerId = stripeCustomerId;
+  }
+  if (stripeSubscriptionId) {
+    updateData.stripeSubscriptionId = stripeSubscriptionId;
+  }
+  if (trialEnd) {
+    updateData.trialEndsAt = trialEnd;
+  }
+
+  await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.id, userId));
+
+  console.log(`[Webhook] Updated user ${userId} tier to ${tier}, status to ${status}`);
+}
+
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
   console.log("[Webhook] checkout.session.completed:", session.id);
 
@@ -153,6 +186,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
         updatedAt: now,
       },
     });
+
+  const tier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
+  const status = subscription.status === "trialing" ? "trialing" : "active";
+  await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
 
   console.log("[Webhook] Subscription record created/updated for user:", userId);
 }
@@ -268,6 +305,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
+  const tier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
+  const statusStr = subscription.status === "trialing" ? "trialing" : 
+                    subscription.status === "active" ? "active" : subscription.status;
+  await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, undefined, trialEnd);
+
   console.log("[Webhook] Subscription updated for user:", userId, "Status:", subscription.status);
 }
 
@@ -298,6 +340,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+
+  const userId = await findUserByStripeCustomerId(stripeCustomerId);
+  if (userId) {
+    await updateUserSubscriptionTier(userId, SubscriptionTier.BASIC, finalStatus);
+  }
 
   console.log("[Webhook] Subscription marked as", finalStatus, "for customer:", stripeCustomerId);
 }

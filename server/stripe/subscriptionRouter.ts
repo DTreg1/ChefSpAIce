@@ -3,6 +3,14 @@ import { db } from "../db";
 import { users, userSessions, subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import {
+  getUserEntitlements,
+  checkPantryItemLimit,
+  checkAiRecipeLimit,
+  checkCookwareLimit,
+  checkFeatureAccess,
+} from "../services/subscriptionService";
+import { SubscriptionTier, STRIPE_PRICE_IDS } from "@shared/subscription";
 
 const router = Router();
 
@@ -317,6 +325,212 @@ router.get("/session/:sessionId", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching session details:", error);
     res.status(500).json({ error: "Failed to fetch session details" });
+  }
+});
+
+router.get("/me", async (req: Request, res: Response) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const entitlements = await getUserEntitlements(user.id);
+
+    res.json({
+      tier: entitlements.tier,
+      status: entitlements.status,
+      entitlements: entitlements.limits,
+      usage: entitlements.usage,
+      remaining: entitlements.remaining,
+      trialEndsAt: entitlements.trialEndsAt?.toISOString() || null,
+    });
+  } catch (error) {
+    console.error("Error fetching subscription entitlements:", error);
+    res.status(500).json({ error: "Failed to fetch subscription info" });
+  }
+});
+
+router.get("/check-limit/:limitType", async (req: Request, res: Response) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { limitType } = req.params;
+
+    let result;
+    switch (limitType) {
+      case "pantryItems":
+        result = await checkPantryItemLimit(user.id);
+        break;
+      case "aiRecipes":
+        result = await checkAiRecipeLimit(user.id);
+        break;
+      case "cookware":
+        result = await checkCookwareLimit(user.id);
+        break;
+      default:
+        return res.status(400).json({ error: "Invalid limit type. Use: pantryItems, aiRecipes, or cookware" });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error checking limit:", error);
+    res.status(500).json({ error: "Failed to check limit" });
+  }
+});
+
+router.get("/check-feature/:feature", async (req: Request, res: Response) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { feature } = req.params;
+    const validFeatures = [
+      "recipeScanning",
+      "bulkScanning",
+      "aiKitchenAssistant",
+      "weeklyMealPrepping",
+      "customStorageAreas",
+    ];
+
+    if (!validFeatures.includes(feature)) {
+      return res.status(400).json({
+        error: `Invalid feature. Use: ${validFeatures.join(", ")}`,
+      });
+    }
+
+    const allowed = await checkFeatureAccess(
+      user.id,
+      feature as "recipeScanning" | "bulkScanning" | "aiKitchenAssistant" | "weeklyMealPrepping" | "customStorageAreas"
+    );
+
+    res.json({
+      allowed,
+      upgradeRequired: !allowed,
+    });
+  } catch (error) {
+    console.error("Error checking feature access:", error);
+    res.status(500).json({ error: "Failed to check feature access" });
+  }
+});
+
+router.post("/upgrade", async (req: Request, res: Response) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { billingPeriod = "monthly", successUrl, cancelUrl } = req.body;
+
+    const stripe = await getUncachableStripeClient();
+
+    const [existingSubscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
+    let stripeCustomerId = existingSubscription?.stripeCustomerId;
+
+    if (!stripeCustomerId) {
+      const existingCustomers = await stripe.customers.list({
+        email: user.email,
+        limit: 1,
+      });
+
+      if (existingCustomers.data.length > 0) {
+        stripeCustomerId = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            userId: user.id,
+          },
+        });
+        stripeCustomerId = customer.id;
+      }
+    }
+
+    const prices = await stripe.prices.list({
+      active: true,
+      type: "recurring",
+      expand: ["data.product"],
+    });
+
+    let priceId: string | null = null;
+    for (const price of prices.data) {
+      const product = price.product as { name?: string } | null;
+      const productName = (typeof product === "object" && product?.name) || "";
+
+      if (productName.toLowerCase().includes("pro")) {
+        if (billingPeriod === "annual" && price.recurring?.interval === "year") {
+          priceId = price.id;
+          break;
+        } else if (billingPeriod === "monthly" && price.recurring?.interval === "month") {
+          priceId = price.id;
+          break;
+        }
+      }
+    }
+
+    if (!priceId) {
+      for (const price of prices.data) {
+        if (billingPeriod === "annual" && price.recurring?.interval === "year") {
+          priceId = price.id;
+          break;
+        } else if (billingPeriod === "monthly" && price.recurring?.interval === "month") {
+          priceId = price.id;
+          break;
+        }
+      }
+    }
+
+    if (!priceId) {
+      return res.status(400).json({ error: "No suitable price found for Pro upgrade" });
+    }
+
+    const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+      ? `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`
+      : "http://localhost:5000";
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: stripeCustomerId,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          tier: SubscriptionTier.PRO,
+        },
+      },
+      allow_promotion_codes: true,
+      success_url: successUrl || `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${baseUrl}/subscription/cancel`,
+      metadata: {
+        userId: user.id,
+        type: "upgrade",
+        tier: SubscriptionTier.PRO,
+      },
+    });
+
+    res.json({
+      sessionId: session.id,
+      url: session.url,
+    });
+  } catch (error) {
+    console.error("Error creating upgrade checkout session:", error);
+    res.status(500).json({ error: "Failed to create upgrade session" });
   }
 });
 
