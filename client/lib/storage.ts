@@ -72,6 +72,7 @@ const STORAGE_KEYS = {
   ONBOARDING: "@chefspaice/onboarding",
   CUSTOM_STORAGE_LOCATIONS: "@chefspaice/custom_storage_locations",
   INSTACART_SETTINGS: "@chefspaice/instacart_settings",
+  ONBOARDING_STEP: "@chefspaice/onboarding_step",
 } as const;
 
 export const DEFAULT_STORAGE_LOCATIONS = [
@@ -91,6 +92,7 @@ export interface OnboardingStatus {
   cookwareSetupCompleted: boolean;
   cookwareSetupSkipped: boolean;
   completedAt?: string;
+  currentStep?: string;
 }
 
 export interface UserProfile {
@@ -707,6 +709,18 @@ export const storage = {
       cookwareSetupSkipped: true,
       completedAt: new Date().toISOString(),
     });
+  },
+
+  async getOnboardingStep(): Promise<string | null> {
+    return await getItem<string>(STORAGE_KEYS.ONBOARDING_STEP);
+  },
+
+  async setOnboardingStep(step: string): Promise<void> {
+    await setItem(STORAGE_KEYS.ONBOARDING_STEP, step);
+  },
+
+  async clearOnboardingStep(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP);
   },
 
   async needsOnboarding(): Promise<boolean> {

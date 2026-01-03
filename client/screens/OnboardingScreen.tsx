@@ -814,8 +814,8 @@ export default function OnboardingScreen() {
   const isPro = entitlements.maxCookware === 'unlimited';
   const cookwareLimit = isPro ? Infinity : BASIC_COOKWARE_LIMIT;
 
-  // Always start at "preferences" since authentication is now handled in AuthScreen
   const [step, setStep] = useState<OnboardingStep>("preferences");
+  const [stepLoaded, setStepLoaded] = useState(false);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(
     new Set(),
@@ -825,6 +825,32 @@ export default function OnboardingScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Load saved step on mount to support resume functionality
+  useEffect(() => {
+    const loadSavedStep = async () => {
+      try {
+        const savedStep = await storage.getOnboardingStep();
+        if (savedStep && ["preferences", "storage", "foods", "cookware", "complete"].includes(savedStep)) {
+          setStep(savedStep as OnboardingStep);
+        }
+      } catch (err) {
+        console.error("Error loading saved onboarding step:", err);
+      } finally {
+        setStepLoaded(true);
+      }
+    };
+    loadSavedStep();
+  }, []);
+
+  // Save step whenever it changes (after initial load)
+  useEffect(() => {
+    if (stepLoaded && step !== "complete") {
+      storage.setOnboardingStep(step).catch((err) => {
+        console.error("Error saving onboarding step:", err);
+      });
+    }
+  }, [step, stepLoaded]);
 
   // Preference states
   const [servingSize, setServingSize] = useState(2);
@@ -1110,6 +1136,7 @@ export default function OnboardingScreen() {
       }
 
       await storage.setOnboardingCompleted();
+      await storage.clearOnboardingStep();
       markOnboardingComplete();
 
       // Save all data directly to database (not via sync queue)
