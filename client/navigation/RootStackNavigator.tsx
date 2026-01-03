@@ -195,14 +195,18 @@ function AuthGuardedNavigator() {
       );
     }
 
-    // Authenticated user gained subscription - redirect to Main
+    // Authenticated user gained subscription - redirect to Main (unless onboarding is needed)
     if (isAuthenticated && !wasActive && isActive) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Main" }],
-        }),
-      );
+      // Only redirect to Main if onboarding is complete
+      // This prevents bypassing onboarding for new users who just activated their trial
+      if (!needsOnboarding) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          }),
+        );
+      }
     }
 
     prevSubscriptionState.current = { isActive, subscriptionLoading };
@@ -213,6 +217,7 @@ function AuthGuardedNavigator() {
     navigation,
     authLoading,
     isLoading,
+    needsOnboarding,
   ]);
 
   const checkOnboardingStatus = async () => {
