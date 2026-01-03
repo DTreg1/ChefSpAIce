@@ -678,19 +678,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
 
     const { operation, data } = req.body;
 
-    if (operation === "create") {
-      const limitCheck = await checkCookwareLimit(session.userId);
-      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
-      if (remaining < 1) {
-        return res.status(403).json({
-          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-          code: "COOKWARE_LIMIT_REACHED",
-          limit: limitCheck.limit,
-          remaining: 0,
-        });
-      }
-    }
-
+    // Fetch existing cookware FIRST before any mutation decisions
     const existingSyncData = await db
       .select()
       .from(userSyncData)
@@ -701,6 +689,30 @@ router.post("/cookware", async (req: Request, res: Response) => {
       currentCookware = JSON.parse(existingSyncData[0].cookware);
     }
 
+    // Determine if this operation would add a new item
+    const isAddingNewItem = operation === "create" || 
+      (operation === "update" && currentCookware.findIndex(
+        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      ) === -1);
+
+    // Check limit BEFORE any mutation if adding a new item
+    if (isAddingNewItem) {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+      
+      // Check if current count would exceed limit after adding
+      if (currentCookware.length >= maxLimit) {
+        return res.status(403).json({
+          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+          code: "COOKWARE_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+          count: currentCookware.length,
+        });
+      }
+    }
+
+    // Now safe to mutate the array
     if (operation === "create") {
       currentCookware.push(data);
     } else if (operation === "update") {
@@ -710,16 +722,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       if (index !== -1) {
         currentCookware[index] = data;
       } else {
-        const limitCheck = await checkCookwareLimit(session.userId);
-        const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
-        if (remaining < 1) {
-          return res.status(403).json({
-            error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-            code: "COOKWARE_LIMIT_REACHED",
-            limit: limitCheck.limit,
-            remaining: 0,
-          });
-        }
+        // Already checked limit above, safe to push
         currentCookware.push(data);
       }
     } else if (operation === "delete") {
@@ -728,17 +731,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       );
     }
 
-    const finalLimitCheck = await checkCookwareLimit(session.userId);
-    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
-    if (currentCookware.length > maxLimit) {
-      return res.status(403).json({
-        error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-        code: "COOKWARE_LIMIT_REACHED",
-        limit: finalLimitCheck.limit,
-        count: currentCookware.length,
-      });
-    }
-
+    // Persist to database
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
@@ -785,6 +778,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid data: missing id" });
     }
 
+    // Fetch existing cookware FIRST before any mutation decisions
     const existingSyncData = await db
       .select()
       .from(userSyncData)
@@ -799,7 +793,24 @@ router.put("/cookware", async (req: Request, res: Response) => {
       (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
     );
     
-    if (index !== -1) {
+    // If item not found, this would add a new one - check limit FIRST
+    if (index === -1) {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+      
+      if (currentCookware.length >= maxLimit) {
+        return res.status(403).json({
+          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+          code: "COOKWARE_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+          count: currentCookware.length,
+        });
+      }
+      // Safe to add new item
+      currentCookware.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+    } else {
+      // Update existing item - check timestamps for conflict resolution
       const existingItem = currentCookware[index] as { updatedAt?: string };
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
       const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
@@ -815,39 +826,24 @@ router.put("/cookware", async (req: Request, res: Response) => {
           itemId: (data as { id: string }).id,
         });
       }
-    } else {
-      const limitCheck = await checkCookwareLimit(session.userId);
-      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
-      if (remaining < 1) {
-        return res.status(403).json({
-          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-          code: "COOKWARE_LIMIT_REACHED",
-          limit: limitCheck.limit,
-          remaining: 0,
-        });
-      }
-      currentCookware.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
     }
 
-    const finalLimitCheck = await checkCookwareLimit(session.userId);
-    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
-    if (currentCookware.length > maxLimit) {
-      return res.status(403).json({
-        error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-        code: "COOKWARE_LIMIT_REACHED",
-        limit: finalLimitCheck.limit,
-        count: currentCookware.length,
-      });
-    }
-
-    await db
-      .update(userSyncData)
-      .set({
+    // Persist to database
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
         cookware: JSON.stringify(currentCookware),
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(userSyncData.userId, session.userId));
+      });
+    } else {
+      await db
+        .update(userSyncData)
+        .set({
+          cookware: JSON.stringify(currentCookware),
+          lastSyncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userSyncData.userId, session.userId));
+    }
 
     res.json({
       success: true,
