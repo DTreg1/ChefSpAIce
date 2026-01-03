@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
-import { checkPantryItemLimit } from "../services/subscriptionService";
+import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 
 const router = Router();
 
@@ -657,6 +657,256 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Meal plans delete sync error:", error);
     res.status(500).json({ error: "Failed to sync meal plan deletion" });
+  }
+});
+
+// =========================================================================
+// COOKWARE SYNC ROUTES - with limit enforcement
+// =========================================================================
+
+router.post("/cookware", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const { operation, data } = req.body;
+
+    if (operation === "create") {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+      if (remaining < 1) {
+        return res.status(403).json({
+          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+          code: "COOKWARE_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+        });
+      }
+    }
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentCookware: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
+      currentCookware = JSON.parse(existingSyncData[0].cookware);
+    }
+
+    if (operation === "create") {
+      currentCookware.push(data);
+    } else if (operation === "update") {
+      const index = currentCookware.findIndex(
+        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      );
+      if (index !== -1) {
+        currentCookware[index] = data;
+      } else {
+        const limitCheck = await checkCookwareLimit(session.userId);
+        const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+        if (remaining < 1) {
+          return res.status(403).json({
+            error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+            code: "COOKWARE_LIMIT_REACHED",
+            limit: limitCheck.limit,
+            remaining: 0,
+          });
+        }
+        currentCookware.push(data);
+      }
+    } else if (operation === "delete") {
+      currentCookware = currentCookware.filter(
+        (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+      );
+    }
+
+    const finalLimitCheck = await checkCookwareLimit(session.userId);
+    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
+    if (currentCookware.length > maxLimit) {
+      return res.status(403).json({
+        error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+        code: "COOKWARE_LIMIT_REACHED",
+        limit: finalLimitCheck.limit,
+        count: currentCookware.length,
+      });
+    }
+
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        cookware: JSON.stringify(currentCookware),
+      });
+    } else {
+      await db
+        .update(userSyncData)
+        .set({
+          cookware: JSON.stringify(currentCookware),
+          lastSyncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userSyncData.userId, session.userId));
+    }
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation,
+      itemId: (data as { id: string }).id,
+    });
+  } catch (error) {
+    console.error("Cookware sync error:", error);
+    res.status(500).json({ error: "Failed to sync cookware" });
+  }
+});
+
+router.put("/cookware", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const { data, clientTimestamp } = req.body;
+    
+    if (!data || !(data as { id: string }).id) {
+      return res.status(400).json({ error: "Invalid data: missing id" });
+    }
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentCookware: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
+      currentCookware = JSON.parse(existingSyncData[0].cookware);
+    }
+
+    const index = currentCookware.findIndex(
+      (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+    );
+    
+    if (index !== -1) {
+      const existingItem = currentCookware[index] as { updatedAt?: string };
+      const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
+      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      
+      if (newTimestamp >= existingTimestamp) {
+        currentCookware[index] = { ...data, updatedAt: clientTimestamp || new Date().toISOString() };
+      } else {
+        return res.json({
+          success: true,
+          syncedAt: new Date().toISOString(),
+          operation: "skipped",
+          reason: "stale_update",
+          itemId: (data as { id: string }).id,
+        });
+      }
+    } else {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+      if (remaining < 1) {
+        return res.status(403).json({
+          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+          code: "COOKWARE_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+        });
+      }
+      currentCookware.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+    }
+
+    const finalLimitCheck = await checkCookwareLimit(session.userId);
+    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
+    if (currentCookware.length > maxLimit) {
+      return res.status(403).json({
+        error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+        code: "COOKWARE_LIMIT_REACHED",
+        limit: finalLimitCheck.limit,
+        count: currentCookware.length,
+      });
+    }
+
+    await db
+      .update(userSyncData)
+      .set({
+        cookware: JSON.stringify(currentCookware),
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(userSyncData.userId, session.userId));
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation: "update",
+      itemId: (data as { id: string }).id,
+    });
+  } catch (error) {
+    console.error("Cookware update sync error:", error);
+    res.status(500).json({ error: "Failed to sync cookware update" });
+  }
+});
+
+router.delete("/cookware", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const { data } = req.body;
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentCookware: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
+      currentCookware = JSON.parse(existingSyncData[0].cookware);
+    }
+
+    currentCookware = currentCookware.filter(
+      (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+    );
+
+    await db
+      .update(userSyncData)
+      .set({
+        cookware: JSON.stringify(currentCookware),
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(userSyncData.userId, session.userId));
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation: "delete",
+      itemId: (data as { id: string }).id,
+    });
+  } catch (error) {
+    console.error("Cookware delete sync error:", error);
+    res.status(500).json({ error: "Failed to sync cookware deletion" });
   }
 });
 
