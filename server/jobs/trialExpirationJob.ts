@@ -1,7 +1,7 @@
 import { db } from "../db";
-import { subscriptions, users } from "@shared/schema";
-import { eq, and, lt, isNull } from "drizzle-orm";
-import { SubscriptionTier } from "@shared/subscription";
+import { subscriptions } from "@shared/schema";
+import { eq, and, lt } from "drizzle-orm";
+import { expireTrialSubscription } from "../services/subscriptionService";
 
 export async function checkExpiredTrials(): Promise<{ expired: number; errors: string[] }> {
   const now = new Date();
@@ -27,23 +27,7 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
 
     for (const trial of expiredTrials) {
       try {
-        await db
-          .update(subscriptions)
-          .set({
-            status: "expired",
-            updatedAt: now,
-          })
-          .where(eq(subscriptions.userId, trial.userId));
-
-        await db
-          .update(users)
-          .set({
-            subscriptionStatus: "expired",
-            subscriptionTier: SubscriptionTier.BASIC,
-            updatedAt: now,
-          })
-          .where(eq(users.id, trial.userId));
-
+        await expireTrialSubscription(trial.userId);
         expiredCount++;
         console.log(`[TrialJob] Expired trial for user ${trial.userId}`);
       } catch (error) {

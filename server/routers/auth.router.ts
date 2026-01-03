@@ -4,60 +4,12 @@ import { users, userSessions, userSyncData, subscriptions } from "@shared/schema
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
-import { checkCookwareLimit, checkFeatureAccess } from "../services/subscriptionService";
+import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
 
 const router = Router();
 
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
 type PlanType = 'monthly' | 'annual' | 'trial' | null;
-
-const TRIAL_DAYS = 7;
-
-interface SubscriptionInfo {
-  subscriptionStatus: SubscriptionStatus;
-  subscriptionPlanType: PlanType;
-  trialEndsAt: string | null;
-  subscriptionEndsAt: string | null;
-}
-
-async function createTrialSubscription(userId: string, selectedPlan: 'monthly' | 'annual' = 'monthly'): Promise<void> {
-  // Check if subscription already exists (idempotent)
-  const [existing] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
-
-  if (existing) {
-    // Subscription already exists (maybe from Stripe webhook), don't overwrite
-    return;
-  }
-
-  const now = new Date();
-  const trialEnd = new Date(now);
-  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-
-  try {
-    await db.insert(subscriptions).values({
-      userId,
-      status: 'trialing',
-      planType: selectedPlan, // Use the selected plan type (monthly or annual) instead of 'trial'
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-      trialStart: now,
-      trialEnd: trialEnd,
-      cancelAtPeriodEnd: false,
-    });
-  } catch (error: unknown) {
-    // Handle race condition where subscription was created between check and insert
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
-      console.log('Trial subscription already exists for user:', userId);
-      return;
-    }
-    throw error;
-  }
-}
 
 async function evaluateAndUpdateSubscriptionStatus(subscription: typeof subscriptions.$inferSelect): Promise<SubscriptionStatus> {
   const now = new Date();
@@ -205,7 +157,7 @@ router.post("/register", async (req: Request, res: Response) => {
     });
 
     // Create trial subscription for new user (7-day free trial) with selected plan
-    await createTrialSubscription(newUser.id, plan);
+    await ensureTrialSubscription(newUser.id, plan);
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 

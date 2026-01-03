@@ -48,6 +48,7 @@ export interface SubscriptionData {
   };
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
 }
 
 export interface LimitCheckResult {
@@ -182,6 +183,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           },
           trialEndsAt: data.trialEndsAt || null,
           currentPeriodEnd: data.currentPeriodEnd || null,
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
         };
         
         setSubscriptionData(sub);

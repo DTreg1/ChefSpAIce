@@ -4,47 +4,11 @@ import appleSignin from "apple-signin-auth";
 import { randomBytes } from "crypto";
 import pg from "pg";
 import { db } from "../db";
-import { userSessions, userSyncData, subscriptions } from "@shared/schema";
+import { userSessions, userSyncData } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { ensureTrialSubscription } from "../services/subscriptionService";
 
 const router = Router();
-
-const TRIAL_DAYS = 7;
-
-async function createTrialSubscription(userId: string, selectedPlan: 'monthly' | 'annual' = 'monthly'): Promise<void> {
-  const [existing] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
-
-  if (existing) {
-    return;
-  }
-
-  const now = new Date();
-  const trialEnd = new Date(now);
-  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-
-  try {
-    await db.insert(subscriptions).values({
-      userId,
-      status: 'trialing',
-      planType: selectedPlan,
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-      trialStart: now,
-      trialEnd: trialEnd,
-      cancelAtPeriodEnd: false,
-    });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
-      return;
-    }
-    throw error;
-  }
-}
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -223,7 +187,7 @@ router.post("/apple", async (req: Request, res: Response) => {
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
-      await createTrialSubscription(userId, plan);
+      await ensureTrialSubscription(userId, plan);
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
@@ -385,7 +349,7 @@ router.post("/google", async (req: Request, res: Response) => {
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
-      await createTrialSubscription(userId, plan);
+      await ensureTrialSubscription(userId, plan);
     }
 
     const { token, expiresAt } = await createSessionWithDrizzle(userId);

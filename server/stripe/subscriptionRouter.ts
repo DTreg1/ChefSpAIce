@@ -337,13 +337,23 @@ router.get("/me", async (req: Request, res: Response) => {
 
     const entitlements = await getUserEntitlements(user.id);
 
+    // Get subscription for additional fields
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
     res.json({
       tier: entitlements.tier,
       status: entitlements.status,
+      planType: subscription?.planType || null,
       entitlements: entitlements.limits,
       usage: entitlements.usage,
       remaining: entitlements.remaining,
       trialEndsAt: entitlements.trialEndsAt?.toISOString() || null,
+      currentPeriodEnd: subscription?.currentPeriodEnd?.toISOString() || null,
+      cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
     });
   } catch (error) {
     console.error("Error fetching subscription entitlements:", error);

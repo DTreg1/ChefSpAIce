@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, userSyncData } from "@shared/schema";
+import { users, userSyncData, subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   SubscriptionTier,
@@ -9,6 +9,8 @@ import {
   isWithinLimit,
   getRemainingQuota,
 } from "@shared/subscription";
+
+const TRIAL_DAYS = 7;
 
 export interface UserEntitlements {
   tier: SubscriptionTier;
@@ -314,4 +316,101 @@ export async function checkTrialExpiration(userId: string): Promise<boolean> {
   }
 
   return false;
+}
+
+export async function ensureTrialSubscription(
+  userId: string,
+  selectedPlan: 'monthly' | 'annual' = 'monthly'
+): Promise<{ created: boolean; trialEnd: Date }> {
+  const now = new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+
+  const [existing] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    if (existing.status === 'trialing') {
+      await db
+        .update(users)
+        .set({
+          subscriptionTier: SubscriptionTier.PRO,
+          subscriptionStatus: 'trialing',
+          trialEndsAt: existing.trialEnd || trialEnd,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+      return { created: false, trialEnd: existing.trialEnd || trialEnd };
+    }
+    return { created: false, trialEnd: existing.trialEnd || trialEnd };
+  }
+
+  try {
+    await db.insert(subscriptions).values({
+      userId,
+      status: 'trialing',
+      planType: selectedPlan,
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
+      trialStart: now,
+      trialEnd: trialEnd,
+      cancelAtPeriodEnd: false,
+    });
+
+    await db
+      .update(users)
+      .set({
+        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionStatus: 'trialing',
+        trialEndsAt: trialEnd,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+
+    return { created: true, trialEnd };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
+      const [sub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
+
+      if (sub?.status === 'trialing') {
+        await db
+          .update(users)
+          .set({
+            subscriptionTier: SubscriptionTier.PRO,
+            subscriptionStatus: 'trialing',
+            trialEndsAt: sub.trialEnd || trialEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+      }
+      return { created: false, trialEnd: sub?.trialEnd || trialEnd };
+    }
+    throw error;
+  }
+}
+
+export async function expireTrialSubscription(userId: string): Promise<void> {
+  await db
+    .update(subscriptions)
+    .set({
+      status: 'expired',
+    })
+    .where(eq(subscriptions.userId, userId));
+
+  await db
+    .update(users)
+    .set({
+      subscriptionTier: SubscriptionTier.BASIC,
+      subscriptionStatus: 'expired',
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
 }
