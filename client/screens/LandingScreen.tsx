@@ -623,11 +623,12 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               period={isAnnual ? "year" : "month"}
               description="Perfect for getting started"
               features={[
-                "Unlimited pantry items",
+                "25 pantry items",
                 "5 AI recipes per month",
+                "Standard storage areas",
+                "5 cookware items",
                 "Expiration alerts",
                 "Barcode scanning",
-                "Basic shopping lists",
               ]}
               buttonText="Start Free Trial"
               onPress={handleGetStarted}
@@ -640,12 +641,12 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               period={isAnnual ? "year" : "month"}
               description="Best for home cooks"
               features={[
-                "Everything in Basic",
+                "Unlimited pantry items",
                 "Unlimited AI recipes",
+                "Customizable storage areas",
+                "Unlimited cookware",
                 "Live AI Kitchen Assistant",
                 "Meal planning calendar",
-                "Smart notifications",
-                "Priority support",
               ]}
               isPopular={true}
               buttonText="Start Free Trial"
