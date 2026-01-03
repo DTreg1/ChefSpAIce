@@ -347,8 +347,8 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const trustLogos = [
     { name: "App Store", iconType: "material", icon: "apple" },
     { name: "Google Play", iconType: "material", icon: "google-play" },
-    { name: "Forbes", iconType: "feather", icon: "award" },
-    { name: "TechCrunch", iconType: "feather", icon: "globe" },
+    { name: "Replit", iconType: "material", icon: "code-braces" },
+    { name: "GitHub", iconType: "feather", icon: "github" },
   ];
 
   return (
