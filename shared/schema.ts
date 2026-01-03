@@ -79,6 +79,15 @@ import { z } from "zod";
  * Auth provider fields:
  * - primaryProvider: Main auth method ("email", "google", "apple")
  * - primaryProviderId: Provider's unique ID for this user
+ * 
+ * Subscription fields:
+ * - subscriptionTier: "BASIC" or "PRO" (default: BASIC)
+ * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
+ * - stripeCustomerId: Stripe customer ID for payment processing
+ * - stripeSubscriptionId: Stripe subscription ID for managing subscription
+ * - aiRecipesGeneratedThisMonth: Counter for AI recipe generation limit (resets monthly)
+ * - aiRecipesResetDate: When the monthly AI recipe counter resets
+ * - trialEndsAt: When the 7-day trial expires
  */
 export const users = pgTable("users", {
   id: varchar("id")
@@ -116,6 +125,13 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   primaryProvider: varchar("primary_provider"),
   primaryProviderId: varchar("primary_provider_id"),
+  subscriptionTier: text("subscription_tier").notNull().default("BASIC"),
+  subscriptionStatus: text("subscription_status").notNull().default("trialing"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month").notNull().default(0),
+  aiRecipesResetDate: timestamp("ai_recipes_reset_date"),
+  trialEndsAt: timestamp("trial_ends_at"),
 });
 
 /**
