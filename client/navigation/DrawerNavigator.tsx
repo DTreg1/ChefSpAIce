@@ -30,7 +30,7 @@ export default function DrawerNavigator() {
         swipeEnabled: true,
         swipeEdgeWidth: 50,
         sceneStyle: {
-          backgroundColor: theme.backgroundRoot,
+          backgroundColor: "transparent",
         },
       }}
     >

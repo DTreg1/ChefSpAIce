@@ -47,7 +47,7 @@ export default function MainTabNavigator() {
         tabBarInactiveTintColor: theme.tabIconDefault,
         headerShown: false,
         sceneStyle: {
-          backgroundColor: theme.backgroundRoot,
+          backgroundColor: "transparent",
         },
       }}
       screenLayout={({ children }) => <UnmountOnBlur>{children}</UnmountOnBlur>}
