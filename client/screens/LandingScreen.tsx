@@ -624,10 +624,10 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               description="Perfect for getting started"
               features={[
                 "Unlimited pantry items",
-                "50 AI recipes per month",
-                "Smart expiration alerts",
+                "5 AI recipes per month",
+                "Expiration alerts",
                 "Barcode scanning",
-                "Manual item entry",
+                "Basic shopping lists",
               ]}
               buttonText="Start Free Trial"
               onPress={handleGetStarted}
@@ -642,9 +642,9 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               features={[
                 "Everything in Basic",
                 "Unlimited AI recipes",
+                "Live AI Kitchen Assistant",
+                "Meal planning calendar",
                 "Smart notifications",
-                "Meal planning",
-                "Shopping lists",
                 "Priority support",
               ]}
               isPopular={true}
