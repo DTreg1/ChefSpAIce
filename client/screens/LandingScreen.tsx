@@ -264,6 +264,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const isWide = width > 768;
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const handleGetStarted = () => {
     if (onGetStarted) {
@@ -597,58 +598,59 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
             Choose the plan that works best for you
           </Text>
           
+          <View style={styles.billingToggleContainer}>
+            <Pressable 
+              style={styles.billingToggle}
+              onPress={() => setIsAnnual(!isAnnual)}
+              data-testid="toggle-billing-period"
+            >
+              <View style={[styles.billingOption, !isAnnual && styles.billingOptionActive]}>
+                <Text style={[styles.billingOptionText, !isAnnual && styles.billingOptionTextActive]}>Monthly</Text>
+              </View>
+              <View style={[styles.billingOption, isAnnual && styles.billingOptionActive]}>
+                <Text style={[styles.billingOptionText, isAnnual && styles.billingOptionTextActive]}>Annually</Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save 17%</Text>
+                </View>
+              </View>
+            </Pressable>
+          </View>
+          
           <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
             <PricingCard
-              tier="Free"
-              price="$0"
-              period=""
+              tier="Basic"
+              price={isAnnual ? "$49.90" : "$4.99"}
+              period={isAnnual ? "year" : "month"}
               description="Perfect for getting started"
               features={[
-                "Up to 20 pantry items",
-                "5 AI recipes per month",
-                "Basic expiration alerts",
+                "Unlimited pantry items",
+                "50 AI recipes per month",
+                "Smart expiration alerts",
+                "Barcode scanning",
                 "Manual item entry",
               ]}
-              buttonText="Get Started"
+              buttonText="Start Free Trial"
               onPress={handleGetStarted}
-              testId="free"
+              testId="basic"
               isWide={isWide}
             />
             <PricingCard
               tier="Pro"
-              price="$4.99"
-              period="month"
+              price={isAnnual ? "$99.90" : "$9.99"}
+              period={isAnnual ? "year" : "month"}
               description="Best for home cooks"
               features={[
-                "Unlimited pantry items",
+                "Everything in Basic",
                 "Unlimited AI recipes",
                 "Smart notifications",
-                "Barcode scanning",
                 "Meal planning",
                 "Shopping lists",
+                "Priority support",
               ]}
               isPopular={true}
               buttonText="Start Free Trial"
               onPress={handleGetStarted}
               testId="pro"
-              isWide={isWide}
-            />
-            <PricingCard
-              tier="Family"
-              price="$9.99"
-              period="month"
-              description="Perfect for households"
-              features={[
-                "Everything in Pro",
-                "Up to 5 family members",
-                "Shared meal planning",
-                "Nutrition insights",
-                "Priority support",
-                "Early access to features",
-              ]}
-              buttonText="Start Free Trial"
-              onPress={handleGetStarted}
-              testId="family"
               isWide={isWide}
             />
           </View>
@@ -1074,6 +1076,48 @@ const styles = StyleSheet.create({
   stepDescription: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  billingToggleContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  billingToggle: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 30,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  billingOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 26,
+    gap: 8,
+  },
+  billingOptionActive: {
+    backgroundColor: AppColors.primary,
+  },
+  billingOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.6)",
+  },
+  billingOptionTextActive: {
+    color: "#FFFFFF",
+  },
+  saveBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  saveBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   pricingGrid: {
     flexDirection: "column",
