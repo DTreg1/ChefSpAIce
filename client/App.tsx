@@ -59,7 +59,7 @@ import {
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { SubscriptionProvider } from "./hooks/useSubscription";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
