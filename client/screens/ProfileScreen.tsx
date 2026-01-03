@@ -704,27 +704,44 @@ export default function ProfileScreen() {
                 <ThemedText type="body" style={{ fontWeight: "600" }}>
                   {isActive
                     ? isTrialing
-                      ? `Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
-                      : "Premium Subscription"
-                    : "No Active Subscription"}
+                      ? `Pro Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
+                      : tier === "PRO" ? "Pro Subscription" : "Basic Plan"
+                    : "Basic Plan"}
                 </ThemedText>
                 <ThemedText type="caption">
                   {isActive
-                    ? `${tier === "PRO" ? "Pro" : "Basic"} Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : planType === "trial" ? " (Trial)" : ""}`
-                    : "Upgrade for full access"}
+                    ? isTrialing
+                      ? "Full Pro access during trial"
+                      : tier === "PRO" 
+                        ? `Pro Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : ""}`
+                        : "25 items, 5 AI recipes, 5 cookware"
+                    : "25 items, 5 AI recipes, 5 cookware"}
                 </ThemedText>
               </View>
             </View>
-            <Pressable
-              style={styles.manageSubscriptionButton}
-              onPress={handleManageSubscription}
-              data-testid="button-manage-subscription"
-            >
-              <ThemedText type="body" style={{ color: AppColors.accent }}>
-                Manage Subscription
-              </ThemedText>
-              <Feather name="external-link" size={16} color={AppColors.accent} />
-            </Pressable>
+            {(isActive && tier === "PRO" && !isTrialing) ? (
+              <Pressable
+                style={styles.manageSubscriptionButton}
+                onPress={handleManageSubscription}
+                data-testid="button-manage-subscription"
+              >
+                <ThemedText type="body" style={{ color: AppColors.accent }}>
+                  Manage Subscription
+                </ThemedText>
+                <Feather name="external-link" size={16} color={AppColors.accent} />
+              </Pressable>
+            ) : (
+              <Pressable
+                style={styles.manageSubscriptionButton}
+                onPress={handleManageSubscription}
+                data-testid="button-upgrade-subscription"
+              >
+                <ThemedText type="body" style={{ color: AppColors.primary }}>
+                  Upgrade to Pro
+                </ThemedText>
+                <Feather name="arrow-right" size={16} color={AppColors.primary} />
+              </Pressable>
+            )}
           </GlassCard>
 
           <GlassCard style={styles.logoutCard}>
