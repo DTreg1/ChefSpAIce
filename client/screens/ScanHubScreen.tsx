@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -9,7 +9,9 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -67,15 +69,17 @@ function ScanOptionCard({
   option,
   onPress,
   isDark,
+  isLocked,
 }: {
   option: ScanOption;
   onPress: () => void;
   isDark: boolean;
+  isLocked?: boolean;
 }) {
   return (
     <Pressable
       testID={`scan-option-${option.id}`}
-      accessibilityLabel={`${option.title}: ${option.subtitle}`}
+      accessibilityLabel={`${option.title}: ${option.subtitle}${isLocked ? ' (Pro feature)' : ''}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
@@ -83,7 +87,7 @@ function ScanOptionCard({
         pressed && styles.optionPressed,
       ]}
     >
-      <GlassCard style={styles.optionCard}>
+      <GlassCard style={[styles.optionCard, isLocked && styles.optionCardLocked]}>
         <View style={styles.optionContent}>
           <View
             style={[
@@ -91,12 +95,19 @@ function ScanOptionCard({
               { backgroundColor: `${option.color}20`, borderColor: option.color },
             ]}
           >
-            <Feather name={option.icon} size={28} color={option.color} />
+            <Feather name={isLocked ? "lock" : option.icon} size={28} color={option.color} />
           </View>
           <View style={styles.textContainer}>
-            <ThemedText type="body" style={styles.optionTitle}>
-              {option.title}
-            </ThemedText>
+            <View style={styles.titleRow}>
+              <ThemedText type="body" style={styles.optionTitle}>
+                {option.title}
+              </ThemedText>
+              {isLocked && (
+                <View style={styles.proBadge}>
+                  <ThemedText type="small" style={styles.proBadgeText}>PRO</ThemedText>
+                </View>
+              )}
+            </View>
             <ThemedText
               type="caption"
               style={[styles.optionSubtitle, { color: option.color }]}
@@ -108,7 +119,7 @@ function ScanOptionCard({
             </ThemedText>
           </View>
           <Feather
-            name="chevron-right"
+            name={isLocked ? "lock" : "chevron-right"}
             size={24}
             color={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)"}
           />
@@ -123,11 +134,37 @@ export default function ScanHubScreen() {
   const { isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { checkFeature } = useSubscription();
+  const [upgradePrompt, setUpgradePrompt] = useState<{
+    visible: boolean;
+    feature: 'recipeScanning' | 'bulkScanning';
+  }>({ visible: false, feature: 'recipeScanning' });
+
+  const isOptionLocked = (optionId: string): boolean => {
+    if (optionId === 'recipe') {
+      return !checkFeature('canUseRecipeScanning');
+    }
+    if (optionId === 'food') {
+      return !checkFeature('canUseBulkScanning');
+    }
+    return false;
+  };
 
   const handleOptionPress = async (option: ScanOption) => {
     if (Platform.OS !== "web") {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    
+    // Check if this is a Pro-only feature
+    if (option.id === 'recipe' && !checkFeature('canUseRecipeScanning')) {
+      setUpgradePrompt({ visible: true, feature: 'recipeScanning' });
+      return;
+    }
+    if (option.id === 'food' && !checkFeature('canUseBulkScanning')) {
+      setUpgradePrompt({ visible: true, feature: 'bulkScanning' });
+      return;
+    }
+    
     navigation.replace(option.screen as any, option.params);
   };
 
@@ -176,9 +213,22 @@ export default function ScanHubScreen() {
             option={option}
             onPress={() => handleOptionPress(option)}
             isDark={isDark}
+            isLocked={isOptionLocked(option.id)}
           />
         ))}
       </ScrollView>
+
+      {upgradePrompt.visible && (
+        <UpgradePrompt
+          type="feature"
+          featureName={upgradePrompt.feature === 'recipeScanning' ? 'Recipe Scanning' : 'Bulk Scanning'}
+          onUpgrade={() => {
+            setUpgradePrompt({ ...upgradePrompt, visible: false });
+            navigation.navigate("Pricing" as any);
+          }}
+          onDismiss={() => setUpgradePrompt({ ...upgradePrompt, visible: false })}
+        />
+      )}
     </ThemedView>
   );
 }
@@ -249,6 +299,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
   optionTitle: {
     fontWeight: "600",
   },
@@ -261,5 +316,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
+  },
+  optionCardLocked: {
+    opacity: 0.85,
+  },
+  proBadge: {
+    backgroundColor: AppColors.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  proBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
 });

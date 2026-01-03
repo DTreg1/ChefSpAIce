@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -21,7 +21,9 @@ import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Spacing,
   BorderRadius,
@@ -32,6 +34,7 @@ import {
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -42,6 +45,7 @@ export default function MealPlanScreen() {
   const { theme, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
+  const { checkFeature } = useSubscription();
 
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date()),
@@ -56,6 +60,9 @@ export default function MealPlanScreen() {
     slotId: string;
     date: Date;
   }>({ visible: false, recipe: null, slotId: "", date: new Date() });
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  const canUseWeeklyPrepping = checkFeature('canUseWeeklyMealPrepping');
 
   const currentPreset = getPresetById(
     preferences?.mealPlanPresetId || DEFAULT_PRESET_ID,
@@ -80,10 +87,18 @@ export default function MealPlanScreen() {
   );
 
   const navigatePrevWeek = () => {
+    if (!canUseWeeklyPrepping) {
+      setShowUpgradePrompt(true);
+      return;
+    }
     setCurrentWeekStart(addDays(currentWeekStart, -7));
   };
 
   const navigateNextWeek = () => {
+    if (!canUseWeeklyPrepping) {
+      setShowUpgradePrompt(true);
+      return;
+    }
     setCurrentWeekStart(addDays(currentWeekStart, 7));
   };
 
@@ -166,15 +181,38 @@ export default function MealPlanScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
         <View style={styles.weekNavigation}>
-          <Pressable onPress={navigatePrevWeek} style={styles.navButton}>
-            <Feather name="chevron-left" size={24} color={theme.text} />
+          <Pressable 
+            onPress={navigatePrevWeek} 
+            style={[styles.navButton, !canUseWeeklyPrepping && styles.navButtonLocked]}
+          >
+            {!canUseWeeklyPrepping && (
+              <View style={styles.navLockBadge}>
+                <Feather name="lock" size={8} color="#FFFFFF" />
+              </View>
+            )}
+            <Feather name="chevron-left" size={24} color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text} />
           </Pressable>
-          <ThemedText type="h4">
-            {format(currentWeekStart, "MMM d")} -{" "}
-            {format(addDays(currentWeekStart, 6), "MMM d, yyyy")}
-          </ThemedText>
-          <Pressable onPress={navigateNextWeek} style={styles.navButton}>
-            <Feather name="chevron-right" size={24} color={theme.text} />
+          <View style={styles.weekTitleContainer}>
+            <ThemedText type="h4">
+              {format(currentWeekStart, "MMM d")} -{" "}
+              {format(addDays(currentWeekStart, 6), "MMM d, yyyy")}
+            </ThemedText>
+            {!canUseWeeklyPrepping && (
+              <View style={styles.weekProBadge}>
+                <ThemedText type="small" style={styles.weekProBadgeText}>PRO</ThemedText>
+              </View>
+            )}
+          </View>
+          <Pressable 
+            onPress={navigateNextWeek} 
+            style={[styles.navButton, !canUseWeeklyPrepping && styles.navButtonLocked]}
+          >
+            {!canUseWeeklyPrepping && (
+              <View style={styles.navLockBadge}>
+                <Feather name="lock" size={8} color="#FFFFFF" />
+              </View>
+            )}
+            <Feather name="chevron-right" size={24} color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text} />
           </Pressable>
         </View>
 
@@ -492,6 +530,20 @@ export default function MealPlanScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {showUpgradePrompt && (
+        <UpgradePrompt
+          type="feature"
+          featureName="Weekly Meal Prepping"
+          onUpgrade={() => {
+            setShowUpgradePrompt(false);
+            navigation.getParent()?.dispatch(
+              CommonActions.navigate('Pricing')
+            );
+          }}
+          onDismiss={() => setShowUpgradePrompt(false)}
+        />
+      )}
     </View>
   );
 }
@@ -514,6 +566,39 @@ const styles = StyleSheet.create({
   },
   navButton: {
     padding: Spacing.sm,
+    position: "relative",
+  },
+  navButtonLocked: {
+    opacity: 0.6,
+  },
+  navLockBadge: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: AppColors.warning,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  weekTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  weekProBadge: {
+    backgroundColor: AppColors.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  weekProBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   weekGrid: {
     flexDirection: "row",

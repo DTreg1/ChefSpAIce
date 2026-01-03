@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Pressable, Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -18,7 +20,10 @@ import Animated, {
 
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AppColors, Spacing } from "@/constants/theme";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,9 +34,13 @@ export function FloatingChatButton() {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
+  const { checkFeature } = useSubscription();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scale = useSharedValue(1);
   const pulseScale = useSharedValue(1);
 
+  const canUseAiAssistant = checkFeature('canUseAiKitchenAssistant');
 
   React.useEffect(() => {
     pulseScale.value = withRepeat(
@@ -71,6 +80,11 @@ export function FloatingChatButton() {
     if (isChatOpen) {
       closeChat();
     } else {
+      // Check if user has access to AI Kitchen Assistant
+      if (!canUseAiAssistant) {
+        setShowUpgradePrompt(true);
+        return;
+      }
       openChat();
     }
   };
@@ -117,22 +131,41 @@ export function FloatingChatButton() {
   const innerContent = renderInnerContent();
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      exiting={FadeOut.duration(200)}
-      style={[styles.container, { bottom: bottomPosition, right: Spacing.lg }]}
-    >
-      <Animated.View style={pulseStyle}>
-        <AnimatedPressable
-          onPress={handlePress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={[styles.buttonWrapper, animatedStyle]}
-        >
-          {innerContent}
-        </AnimatedPressable>
+    <>
+      <Animated.View
+        entering={FadeIn.duration(300)}
+        exiting={FadeOut.duration(200)}
+        style={[styles.container, { bottom: bottomPosition, right: Spacing.lg }]}
+      >
+        <Animated.View style={pulseStyle}>
+          <AnimatedPressable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={[styles.buttonWrapper, animatedStyle]}
+          >
+            {innerContent}
+            {!canUseAiAssistant && (
+              <View style={styles.lockBadge}>
+                <Feather name="lock" size={10} color="#FFFFFF" />
+              </View>
+            )}
+          </AnimatedPressable>
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+
+      {showUpgradePrompt && (
+        <UpgradePrompt
+          type="feature"
+          featureName="AI Kitchen Assistant"
+          onUpgrade={() => {
+            setShowUpgradePrompt(false);
+            navigation.navigate("Pricing" as any);
+          }}
+          onDismiss={() => setShowUpgradePrompt(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -190,5 +223,27 @@ const styles = StyleSheet.create({
   buttonOverlay: {
     backgroundColor: `${AppColors.primary}CC`,
     borderRadius: BUTTON_SIZE / 2,
+  },
+  lockBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: AppColors.warning,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
 });

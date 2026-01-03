@@ -8,7 +8,8 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -16,7 +17,9 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Spacing,
   BorderRadius,
@@ -26,6 +29,7 @@ import {
   storage,
   DEFAULT_STORAGE_LOCATIONS,
 } from "@/lib/storage";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface StorageLocationOption {
   key: string;
@@ -51,11 +55,16 @@ const AVAILABLE_ICONS = [
 export default function StorageLocationsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { checkFeature } = useSubscription();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [customLocations, setCustomLocations] = useState<StorageLocationOption[]>([]);
   const [newLocationName, setNewLocationName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("box");
   const [isAdding, setIsAdding] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  const canCustomize = checkFeature('canCustomizeStorageAreas');
 
   const loadCustomLocations = useCallback(async () => {
     try {
@@ -225,84 +234,125 @@ export default function StorageLocationsScreen() {
         </GlassCard>
       )}
 
-      {isAdding ? (
-        <GlassCard style={styles.addCard}>
-          <ThemedText type="h4" style={styles.addTitle}>
-            New Storage Location
-          </ThemedText>
-          
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.glass.backgroundSubtle,
-                color: theme.text,
-                borderColor: theme.glass.border,
-              },
-            ]}
-            value={newLocationName}
-            onChangeText={setNewLocationName}
-            placeholder="Enter location name..."
-            placeholderTextColor={theme.textSecondary}
-            autoFocus
-          />
+      {canCustomize ? (
+        isAdding ? (
+          <GlassCard style={styles.addCard}>
+            <ThemedText type="h4" style={styles.addTitle}>
+              New Storage Location
+            </ThemedText>
+            
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  color: theme.text,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+              value={newLocationName}
+              onChangeText={setNewLocationName}
+              placeholder="Enter location name..."
+              placeholderTextColor={theme.textSecondary}
+              autoFocus
+            />
 
-          <ThemedText type="caption" style={styles.iconLabel}>
-            Choose an icon
-          </ThemedText>
-          <View style={styles.iconGrid}>
-            {AVAILABLE_ICONS.map((icon) => (
-              <Pressable
-                key={icon}
-                style={[
-                  styles.iconOption,
-                  { backgroundColor: theme.glass.backgroundSubtle },
-                  selectedIcon === icon && {
-                    backgroundColor: AppColors.primary,
-                    borderColor: AppColors.primary,
-                  },
-                ]}
-                onPress={() => setSelectedIcon(icon)}
+            <ThemedText type="caption" style={styles.iconLabel}>
+              Choose an icon
+            </ThemedText>
+            <View style={styles.iconGrid}>
+              {AVAILABLE_ICONS.map((icon) => (
+                <Pressable
+                  key={icon}
+                  style={[
+                    styles.iconOption,
+                    { backgroundColor: theme.glass.backgroundSubtle },
+                    selectedIcon === icon && {
+                      backgroundColor: AppColors.primary,
+                      borderColor: AppColors.primary,
+                    },
+                  ]}
+                  onPress={() => setSelectedIcon(icon)}
+                >
+                  <Feather
+                    name={icon as any}
+                    size={20}
+                    color={selectedIcon === icon ? "#FFFFFF" : theme.text}
+                  />
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.addActions}>
+              <GlassButton
+                variant="ghost"
+                onPress={() => {
+                  setIsAdding(false);
+                  setNewLocationName("");
+                  setSelectedIcon("box");
+                }}
+                style={{ flex: 1 }}
               >
-                <Feather
-                  name={icon as any}
-                  size={20}
-                  color={selectedIcon === icon ? "#FFFFFF" : theme.text}
-                />
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={styles.addActions}>
-            <GlassButton
-              variant="ghost"
-              onPress={() => {
-                setIsAdding(false);
-                setNewLocationName("");
-                setSelectedIcon("box");
-              }}
-              style={{ flex: 1 }}
-            >
-              Cancel
-            </GlassButton>
-            <GlassButton
-              variant="primary"
-              onPress={handleAddLocation}
-              style={{ flex: 1, marginLeft: Spacing.md }}
-            >
-              Add Location
-            </GlassButton>
-          </View>
-        </GlassCard>
+                Cancel
+              </GlassButton>
+              <GlassButton
+                variant="primary"
+                onPress={handleAddLocation}
+                style={{ flex: 1, marginLeft: Spacing.md }}
+              >
+                Add Location
+              </GlassButton>
+            </View>
+          </GlassCard>
+        ) : (
+          <GlassButton
+            variant="primary"
+            onPress={() => setIsAdding(true)}
+            style={styles.addButton}
+          >
+            <Feather name="plus" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
+            Add Custom Location
+          </GlassButton>
+        )
       ) : (
-        <GlassButton
-          variant="primary"
-          onPress={() => setIsAdding(true)}
-          style={styles.addButton}
+        <Pressable
+          style={styles.proUpgradeCard}
+          onPress={() => setShowUpgradePrompt(true)}
         >
-          <Feather name="plus" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
-          Add Custom Location
-        </GlassButton>
+          <GlassCard style={styles.proUpgradeCardInner}>
+            <View style={styles.proUpgradeContent}>
+              <View style={[styles.lockIconContainer, { backgroundColor: `${AppColors.warning}20` }]}>
+                <Feather name="lock" size={24} color={AppColors.warning} />
+              </View>
+              <View style={styles.proUpgradeText}>
+                <View style={styles.proTitleRow}>
+                  <ThemedText type="body" style={styles.proUpgradeTitle}>
+                    Add Custom Locations
+                  </ThemedText>
+                  <View style={styles.proBadge}>
+                    <ThemedText type="small" style={styles.proBadgeText}>PRO</ThemedText>
+                  </View>
+                </View>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  Upgrade to create custom storage areas like "Garage Fridge" or "Wine Cellar"
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            </View>
+          </GlassCard>
+        </Pressable>
+      )}
+
+      {showUpgradePrompt && (
+        <UpgradePrompt
+          type="feature"
+          featureName="Custom Storage Areas"
+          onUpgrade={() => {
+            setShowUpgradePrompt(false);
+            navigation.navigate("Pricing" as any);
+          }}
+          onDismiss={() => setShowUpgradePrompt(false)}
+        />
       )}
     </KeyboardAwareScrollViewCompat>
   );
@@ -400,5 +450,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  proUpgradeCard: {
+    marginTop: Spacing.lg,
+  },
+  proUpgradeCardInner: {
+    padding: Spacing.md,
+  },
+  proUpgradeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  lockIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  proUpgradeText: {
+    flex: 1,
+  },
+  proTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: 4,
+  },
+  proUpgradeTitle: {
+    fontWeight: "600",
+  },
+  proBadge: {
+    backgroundColor: AppColors.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  proBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
 });
