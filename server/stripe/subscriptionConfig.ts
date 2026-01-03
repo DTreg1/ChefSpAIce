@@ -1,7 +1,7 @@
-import { SubscriptionTier, MONTHLY_PRICES, ANNUAL_PRICES } from "@shared/subscription";
+import { SubscriptionTier, MONTHLY_PRICES, ANNUAL_PRICES, TRIAL_CONFIG } from "@shared/subscription";
 
 export const SUBSCRIPTION_CONFIG = {
-  TRIAL_DAYS: 7,
+  TRIAL_DAYS: TRIAL_CONFIG.TRIAL_DAYS,
   BASIC_MONTHLY: {
     priceId: process.env.STRIPE_BASIC_MONTHLY_PRICE_ID || '',
     amount: MONTHLY_PRICES.BASIC * 100,

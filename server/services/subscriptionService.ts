@@ -5,12 +5,13 @@ import {
   SubscriptionTier,
   TierLimits,
   TIER_CONFIG,
+  TRIAL_CONFIG,
   getTierLimits,
   isWithinLimit,
   getRemainingQuota,
 } from "@shared/subscription";
 
-const TRIAL_DAYS = 7;
+const { TRIAL_DAYS } = TRIAL_CONFIG;
 
 export interface UserEntitlements {
   tier: SubscriptionTier;

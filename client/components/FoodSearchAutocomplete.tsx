@@ -36,7 +36,7 @@ interface FoodNutrition {
   servingSize?: string;
 }
 
-export interface FoodItem {
+export interface FoodSearchResult {
   id: string;
   name: string;
   normalizedName: string;
@@ -52,13 +52,13 @@ export interface FoodItem {
 }
 
 interface SearchResponse {
-  results: FoodItem[];
+  results: FoodSearchResult[];
   sources: FoodSource[];
   totalCount: number;
 }
 
 interface FoodSearchAutocompleteProps {
-  onSelect: (item: FoodItem) => void;
+  onSelect: (item: FoodSearchResult) => void;
   placeholder?: string;
   initialValue?: string;
 }
@@ -197,7 +197,7 @@ function ResultItem({
   onSelect,
   isSelected,
 }: {
-  item: FoodItem;
+  item: FoodSearchResult;
   query: string;
   onSelect: () => void;
   isSelected: boolean;
@@ -290,7 +290,7 @@ export function FoodSearchAutocomplete({
   });
 
   const rawFoods = data?.foods || data?.results || [];
-  const results: FoodItem[] = rawFoods.map((food: any) => ({
+  const results: FoodSearchResult[] = rawFoods.map((food: any) => ({
     id: `usda-${food.fdcId}`,
     name: food.description,
     normalizedName: food.description?.toLowerCase() || "",
@@ -326,7 +326,7 @@ export function FoodSearchAutocomplete({
   }, [debouncedQuery]);
 
   const handleSelect = useCallback(
-    (item: FoodItem) => {
+    (item: FoodSearchResult) => {
       setQuery(item.name);
       setIsOpen(false);
       setSelectedIndex(-1);
@@ -340,7 +340,7 @@ export function FoodSearchAutocomplete({
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    const customItem: FoodItem = {
+    const customItem: FoodSearchResult = {
       id: `custom-${Date.now()}`,
       name: trimmedQuery,
       normalizedName: trimmedQuery.toLowerCase(),

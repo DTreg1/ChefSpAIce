@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
+import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
 
 const router = Router();
 
@@ -51,8 +52,8 @@ router.post("/inventory", async (req: Request, res: Response) => {
       const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
       if (remaining < 1) {
         return res.status(403).json({
-          error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-          code: "PANTRY_LIMIT_REACHED",
+          error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
+          code: ERROR_CODES.PANTRY_LIMIT_REACHED,
           limit: limitCheck.limit,
           remaining: 0,
         });
@@ -82,8 +83,8 @@ router.post("/inventory", async (req: Request, res: Response) => {
         const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
         if (remaining < 1) {
           return res.status(403).json({
-            error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-            code: "PANTRY_LIMIT_REACHED",
+            error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
+            code: ERROR_CODES.PANTRY_LIMIT_REACHED,
             limit: limitCheck.limit,
             remaining: 0,
           });
@@ -100,8 +101,8 @@ router.post("/inventory", async (req: Request, res: Response) => {
     const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
     if (currentInventory.length > maxLimit) {
       return res.status(403).json({
-        error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-        code: "PANTRY_LIMIT_REACHED",
+        error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
+        code: ERROR_CODES.PANTRY_LIMIT_REACHED,
         limit: finalLimitCheck.limit,
         count: currentInventory.length,
       });
@@ -188,8 +189,8 @@ router.put("/inventory", async (req: Request, res: Response) => {
       const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
       if (remaining < 1) {
         return res.status(403).json({
-          error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-          code: "PANTRY_LIMIT_REACHED",
+          error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
+          code: ERROR_CODES.PANTRY_LIMIT_REACHED,
           limit: limitCheck.limit,
           remaining: 0,
         });
@@ -201,8 +202,8 @@ router.put("/inventory", async (req: Request, res: Response) => {
     const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
     if (currentInventory.length > maxLimit) {
       return res.status(403).json({
-        error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-        code: "PANTRY_LIMIT_REACHED",
+        error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
+        code: ERROR_CODES.PANTRY_LIMIT_REACHED,
         limit: finalLimitCheck.limit,
         count: currentInventory.length,
       });
@@ -703,8 +704,8 @@ router.post("/cookware", async (req: Request, res: Response) => {
       // Check if current count would exceed limit after adding
       if (currentCookware.length >= maxLimit) {
         return res.status(403).json({
-          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-          code: "COOKWARE_LIMIT_REACHED",
+          error: ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED],
+          code: ERROR_CODES.COOKWARE_LIMIT_REACHED,
           limit: limitCheck.limit,
           remaining: 0,
           count: currentCookware.length,
@@ -800,8 +801,8 @@ router.put("/cookware", async (req: Request, res: Response) => {
       
       if (currentCookware.length >= maxLimit) {
         return res.status(403).json({
-          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-          code: "COOKWARE_LIMIT_REACHED",
+          error: ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED],
+          code: ERROR_CODES.COOKWARE_LIMIT_REACHED,
           limit: limitCheck.limit,
           remaining: 0,
           count: currentCookware.length,
