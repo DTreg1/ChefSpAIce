@@ -263,6 +263,14 @@ export async function upgradeUserTier(
 
 export async function downgradeUserTier(userId: string): Promise<void> {
   await db
+    .update(subscriptions)
+    .set({
+      status: 'canceled',
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, userId));
+
+  await db
     .update(users)
     .set({
       subscriptionTier: SubscriptionTier.BASIC,
@@ -280,8 +288,18 @@ export async function setTrialExpiration(
   trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
   await db
+    .update(subscriptions)
+    .set({
+      status: 'trialing',
+      trialEnd: trialEndsAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, userId));
+
+  await db
     .update(users)
     .set({
+      subscriptionTier: SubscriptionTier.PRO,
       subscriptionStatus: "trialing",
       trialEndsAt,
       updatedAt: new Date(),
@@ -305,13 +323,7 @@ export async function checkTrialExpiration(userId: string): Promise<boolean> {
 
   const now = new Date();
   if (now >= new Date(user.trialEndsAt)) {
-    await db
-      .update(users)
-      .set({
-        subscriptionStatus: "expired",
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    await expireTrialSubscription(userId);
     return true;
   }
 
