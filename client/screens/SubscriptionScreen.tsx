@@ -54,6 +54,8 @@ export default function SubscriptionScreen() {
   } = useSubscription();
 
   const [isManaging, setIsManaging] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -127,12 +129,61 @@ export default function SubscriptionScreen() {
     }
   };
 
-  const handleUpgrade = () => {
-    navigation.dispatch(
-      CommonActions.navigate({
-        name: "Pricing",
-      })
-    );
+  const handleUpgrade = async (plan: 'monthly' | 'annual' = 'annual') => {
+    setIsCheckingOut(true);
+    try {
+      const baseUrl = getApiUrl();
+      
+      // Get price ID from env or use appropriate tier
+      const priceIdKey = plan === 'monthly' ? 'STRIPE_PRO_MONTHLY_PRICE_ID' : 'STRIPE_PRO_ANNUAL_PRICE_ID';
+      
+      // First fetch the prices to get the correct price ID
+      const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
+      const prices = await pricesResponse.json();
+      
+      const priceId = plan === 'monthly' ? prices.monthly?.id : prices.annual?.id;
+      
+      if (!priceId) {
+        console.error("No price ID available for", plan);
+        return;
+      }
+
+      const response = await fetch(`${baseUrl}/api/subscriptions/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          priceId,
+          successUrl: Platform.OS === 'web' 
+            ? `${window.location.origin}/subscription?success=true`
+            : `${baseUrl}/subscription?success=true`,
+          cancelUrl: Platform.OS === 'web'
+            ? `${window.location.origin}/subscription?canceled=true`
+            : `${baseUrl}/subscription?canceled=true`,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url) {
+          if (Platform.OS === "web") {
+            window.location.href = data.url;
+          } else {
+            await Linking.openURL(data.url);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to create checkout session:", errorData);
+      }
+    } catch (error) {
+      console.error("Error starting checkout:", error);
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const statusInfo = getStatusDisplay();
@@ -331,17 +382,24 @@ export default function SubscriptionScreen() {
           </View>
 
           <GlassButton
-            onPress={handleUpgrade}
+            onPress={() => handleUpgrade('annual')}
+            disabled={isCheckingOut}
             style={styles.upgradeButton}
-            icon={<Feather name="star" size={18} color="#FFFFFF" />}
+            icon={
+              isCheckingOut ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Feather name="star" size={18} color="#FFFFFF" />
+              )
+            }
             testID="button-upgrade-pro"
           >
-            Upgrade to Pro
+            {isCheckingOut ? "Loading..." : "Upgrade to Pro"}
           </GlassButton>
         </GlassCard>
       )}
 
-      {isProUser && (
+      {isProUser && isActive && !isTrialing && (
         <GlassCard style={styles.manageCard}>
           <ThemedText style={styles.sectionTitle}>Manage Subscription</ThemedText>
           <ThemedText style={[styles.manageDescription, { color: theme.textSecondary }]}>
@@ -362,6 +420,54 @@ export default function SubscriptionScreen() {
             testID="button-manage-subscription"
           >
             {isManaging ? "Opening..." : "Manage Subscription"}
+          </GlassButton>
+        </GlassCard>
+      )}
+
+      {isTrialing && (
+        <GlassCard style={styles.upgradeCard}>
+          <View style={styles.upgradeHeader}>
+            <Feather name="star" size={24} color={AppColors.warning} />
+            <ThemedText style={styles.upgradeTitle}>Subscribe to Keep Pro</ThemedText>
+          </View>
+          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
+            Your trial ends soon. Subscribe now to keep unlimited access to all Pro features.
+          </ThemedText>
+
+          <View style={styles.pricingOptions}>
+            <View style={styles.priceOption}>
+              <ThemedText style={styles.priceLabel}>Monthly</ThemedText>
+              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO}</ThemedText>
+              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
+                per month
+              </ThemedText>
+            </View>
+            <View style={[styles.priceOption, styles.priceOptionHighlight]}>
+              <View style={[styles.savingsBadge, { backgroundColor: AppColors.success }]}>
+                <ThemedText style={styles.savingsText}>Save 17%</ThemedText>
+              </View>
+              <ThemedText style={styles.priceLabel}>Annual</ThemedText>
+              <ThemedText style={styles.priceAmount}>${(ANNUAL_PRICES.PRO / 12).toFixed(2)}</ThemedText>
+              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
+                per month (${ANNUAL_PRICES.PRO}/year)
+              </ThemedText>
+            </View>
+          </View>
+
+          <GlassButton
+            onPress={() => handleUpgrade('annual')}
+            disabled={isCheckingOut}
+            style={styles.upgradeButton}
+            icon={
+              isCheckingOut ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Feather name="credit-card" size={18} color="#FFFFFF" />
+              )
+            }
+            testID="button-subscribe-pro"
+          >
+            {isCheckingOut ? "Loading..." : "Subscribe to Pro"}
           </GlassButton>
         </GlassCard>
       )}
