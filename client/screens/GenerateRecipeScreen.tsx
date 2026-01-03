@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { View, StyleSheet, Modal, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Modal, ActivityIndicator, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -13,7 +13,7 @@ import {
   CommonActions,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -433,7 +433,7 @@ export default function GenerateRecipeScreen() {
             <ThemedText type="caption">AI Recipes</ThemedText>
             {isProUser ? (
               <View style={styles.unlimitedBadge}>
-                <Feather name="infinity" size={12} color={AppColors.secondary} />
+                <MaterialCommunityIcons name="infinity" size={12} color={AppColors.secondary} />
                 <ThemedText type="caption" style={{ color: AppColors.secondary, marginLeft: 4 }}>
                   Unlimited
                 </ThemedText>
@@ -442,7 +442,6 @@ export default function GenerateRecipeScreen() {
               <UsageBadge
                 current={usage.aiRecipesUsedThisMonth}
                 max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
-                label="this month"
               />
             )}
           </View>
@@ -609,18 +608,43 @@ export default function GenerateRecipeScreen() {
         </View>
       </Modal>
 
-      <UpgradePrompt
-        visible={showUpgradePrompt}
-        onClose={() => setShowUpgradePrompt(false)}
-        type="limit"
-        limitType="aiRecipes"
-        currentUsage={usage.aiRecipesUsedThisMonth}
-        maxAllowed={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
-        onUpgrade={() => {
-          setShowUpgradePrompt(false);
-          navigation.navigate("Pricing" as any);
-        }}
-      />
+      {showUpgradePrompt && Platform.OS === 'web' && (
+        <View style={styles.webUpgradeOverlay}>
+          <UpgradePrompt
+            type="limit"
+            limitName="AI Recipes"
+            remaining={Math.max(0, (typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5) - usage.aiRecipesUsedThisMonth)}
+            max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+            onUpgrade={() => {
+              setShowUpgradePrompt(false);
+              navigation.navigate("Pricing" as any);
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        </View>
+      )}
+      {showUpgradePrompt && Platform.OS !== 'web' && (
+        <Modal
+          visible={showUpgradePrompt}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+        >
+          <View style={styles.modalOverlay}>
+            <UpgradePrompt
+              type="limit"
+              limitName="AI Recipes"
+              remaining={Math.max(0, (typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5) - usage.aiRecipesUsedThisMonth)}
+              max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+              onUpgrade={() => {
+                setShowUpgradePrompt(false);
+                navigation.navigate("Pricing" as any);
+              }}
+              onDismiss={() => setShowUpgradePrompt(false)}
+            />
+          </View>
+        </Modal>
+      )}
     </ThemedView>
   );
 }
@@ -760,5 +784,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     backgroundColor: "rgba(255, 152, 0, 0.1)",
     borderRadius: BorderRadius.sm,
+  },
+  webUpgradeOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.xl,
+    zIndex: 100,
   },
 });
