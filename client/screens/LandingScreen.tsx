@@ -347,9 +347,23 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const trustLogos = [
     { name: "App Store", iconType: "material", icon: "apple" },
     { name: "Google Play", iconType: "material", icon: "google-play" },
-    { name: "Replit", iconType: "material", icon: "code-braces" },
+    { name: "Replit", iconType: "custom", icon: "replit" },
     { name: "GitHub", iconType: "feather", icon: "github" },
   ];
+
+  const ReplitLogo = ({ size = 24, color = "rgba(255,255,255,0.5)" }: { size?: number; color?: string }) => {
+    const boxSize = size / 3;
+    return (
+      <View style={{ width: size, height: size * 0.67, flexDirection: "row", flexWrap: "wrap" }}>
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: color }} />
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: "transparent" }} />
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: "transparent" }} />
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: color }} />
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: color }} />
+        <View style={{ width: boxSize, height: boxSize, backgroundColor: "transparent" }} />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -439,6 +453,8 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               <View key={index} style={styles.trustLogoItem}>
                 {logo.iconType === "material" ? (
                   <MaterialCommunityIcons name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                ) : logo.iconType === "custom" && logo.icon === "replit" ? (
+                  <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
                 ) : (
                   <Feather name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
                 )}
