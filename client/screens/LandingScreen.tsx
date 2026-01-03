@@ -383,8 +383,8 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         <View style={[styles.heroSection, isWide && styles.heroSectionWide]} data-testid="section-hero">
           <View style={styles.heroContent}>
             <View style={styles.tagline}>
-              <FontAwesome name="star" size={14} color="#FFD700" />
-              <Text style={styles.taglineText} data-testid="text-tagline">Rated 4.9/5 by 10,000+ users</Text>
+              <MaterialCommunityIcons name="leaf" size={14} color={AppColors.primary} />
+              <Text style={styles.taglineText} data-testid="text-tagline">Reduce Food Waste, Save Money</Text>
             </View>
             
             <Text style={styles.heroTitle} data-testid="text-hero-title">
