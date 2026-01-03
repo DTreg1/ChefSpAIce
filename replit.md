@@ -19,6 +19,7 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **State Management:** AsyncStorage for local data, React Query for server state, and component-level React hooks.
 - **Authentication:** Custom username/password with SHA-256 hashing, social login (Apple Sign-In, Google Sign-In), and 30-day session tokens using HTTP-only cookies for persistent authentication.
 - **Trial Subscription System:** New users receive a 7-day free trial, automatically expiring to redirect users to a pricing screen until a paid plan is selected.
+- **Tiered Subscription Limits:** Basic tier ($4.99/month) includes 25 pantry items, 5 AI recipes/month, and 5 cookware items. Pro tier ($9.99/month) offers unlimited pantry/cookware/AI recipes, plus Recipe Scanning, Bulk Scanning, Live AI Kitchen Assistant, Custom Storage Areas, and Weekly Meal Prepping. Limits are enforced in both UI (disabled states, counters, UpgradePrompt modals) and during onboarding (cookware pre-selection respects tier limits).
 - **Onboarding Flow:** A 6-step sequence for new users to set preferences, define storage areas, select starter foods, and input kitchen equipment. Returning users bypass this flow.
 - **Cloud Sync:** All authenticated user data is synced to PostgreSQL as JSON, managed by a real-time sync manager with retry logic and conflict resolution.
 - **Storage Preferences:** The system learns user storage choices per item and category, providing smart suggestions based on history and predefined shelf-life data.

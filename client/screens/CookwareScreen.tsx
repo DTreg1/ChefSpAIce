@@ -30,10 +30,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
+import { useNavigation, CommonActions } from "@react-navigation/native";
+
+const BASIC_COOKWARE_LIMIT = 5;
 
 interface Appliance {
   id: number;
@@ -114,6 +119,7 @@ const GroupedSection = React.memo(function GroupedSection({
   ownedApplianceIds,
   togglingIds,
   onToggleAppliance,
+  isAtLimit,
 }: {
   section: GroupedSectionData;
   isCollapsed: boolean;
@@ -121,6 +127,7 @@ const GroupedSection = React.memo(function GroupedSection({
   ownedApplianceIds: Set<number>;
   togglingIds: Set<number>;
   onToggleAppliance: (id: number) => void;
+  isAtLimit: boolean;
 }) {
   const { theme } = useTheme();
   
@@ -164,6 +171,7 @@ const GroupedSection = React.memo(function GroupedSection({
             isOwned={ownedApplianceIds.has(appliance.id)}
             onToggle={onToggleAppliance}
             isToggling={togglingIds.has(appliance.id)}
+            isAtLimit={isAtLimit}
           />
         ))}
       </View>
@@ -176,20 +184,25 @@ const CookwareItem = React.memo(function CookwareItem({
   isOwned,
   onToggle,
   isToggling,
+  isAtLimit,
 }: {
   appliance: Appliance;
   isOwned: boolean;
   onToggle: (id: number) => void;
   isToggling: boolean;
+  isAtLimit: boolean;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+
+  const isDisabled = isAtLimit && !isOwned;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const handlePressIn = () => {
+    if (isDisabled) return;
     scale.value = withSpring(0.95, springConfig);
   };
 
@@ -198,7 +211,7 @@ const CookwareItem = React.memo(function CookwareItem({
   };
 
   const handlePress = () => {
-    if (isToggling) return;
+    if (isToggling || isDisabled) return;
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -219,7 +232,7 @@ const CookwareItem = React.memo(function CookwareItem({
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={isToggling}
+        disabled={isToggling || isDisabled}
         style={[
           styles.cookwareItem,
           {
@@ -227,7 +240,7 @@ const CookwareItem = React.memo(function CookwareItem({
               ? `${AppColors.primary}15`
               : theme.glass.background,
             borderColor: isOwned ? AppColors.primary : theme.glass.border,
-            opacity: isToggling ? 0.6 : 1,
+            opacity: isToggling || isDisabled ? 0.4 : 1,
           },
         ]}
       >
@@ -283,6 +296,8 @@ export default function CookwareScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
+  const { entitlements, checkLimit } = useSubscription();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
@@ -295,6 +310,11 @@ export default function CookwareScreen() {
   const [savingCommon, setSavingCommon] = useState(false);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  const isPro = entitlements.maxCookware === 'unlimited';
+  const cookwareLimit = isPro ? Infinity : BASIC_COOKWARE_LIMIT;
+  const isAtLimit = !isPro && ownedCookwareIds.length >= BASIC_COOKWARE_LIMIT;
 
   const toggleSection = useCallback((key: string) => {
     setCollapsedSections((prev) => ({
@@ -493,9 +513,10 @@ export default function CookwareScreen() {
         ownedApplianceIds={ownedApplianceIds}
         togglingIds={togglingIds}
         onToggleAppliance={toggleAppliance}
+        isAtLimit={isAtLimit}
       />
     );
-  }, [collapsedSections, toggleSection, ownedApplianceIds, togglingIds, toggleAppliance]);
+  }, [collapsedSections, toggleSection, ownedApplianceIds, togglingIds, toggleAppliance, isAtLimit]);
 
   const renderCookwareItem = ({ item }: { item: Appliance }) => (
     <CookwareItem
@@ -503,6 +524,7 @@ export default function CookwareScreen() {
       isOwned={ownedApplianceIds.has(item.id)}
       onToggle={toggleAppliance}
       isToggling={togglingIds.has(item.id)}
+      isAtLimit={isAtLimit}
     />
   );
 
@@ -590,32 +612,73 @@ export default function CookwareScreen() {
         ) : null}
       </View>
 
-      <Pressable
-        style={[
-          styles.ownedToggle,
-          {
-            backgroundColor: showOwnedOnly
-              ? `${AppColors.primary}15`
-              : theme.glass.backgroundSubtle,
-            borderColor: showOwnedOnly ? AppColors.primary : theme.glass.border,
-          },
-        ]}
-        onPress={() => setShowOwnedOnly(!showOwnedOnly)}
-      >
-        <Feather
-          name={showOwnedOnly ? "check-square" : "square"}
-          size={16}
-          color={showOwnedOnly ? AppColors.primary : theme.textSecondary}
-        />
-        <ThemedText
-          type="small"
-          style={{
-            color: showOwnedOnly ? AppColors.primary : theme.textSecondary,
-          }}
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[
+            styles.ownedToggle,
+            {
+              backgroundColor: showOwnedOnly
+                ? `${AppColors.primary}15`
+                : theme.glass.backgroundSubtle,
+              borderColor: showOwnedOnly ? AppColors.primary : theme.glass.border,
+            },
+          ]}
+          onPress={() => setShowOwnedOnly(!showOwnedOnly)}
         >
-          Show only owned items
-        </ThemedText>
-      </Pressable>
+          <Feather
+            name={showOwnedOnly ? "check-square" : "square"}
+            size={16}
+            color={showOwnedOnly ? AppColors.primary : theme.textSecondary}
+          />
+          <ThemedText
+            type="small"
+            style={{
+              color: showOwnedOnly ? AppColors.primary : theme.textSecondary,
+            }}
+          >
+            Show only owned
+          </ThemedText>
+        </Pressable>
+
+        {!isPro && (
+          <View
+            style={[
+              styles.limitBadge,
+              {
+                backgroundColor: isAtLimit ? `${AppColors.warning}20` : `${AppColors.primary}15`,
+                borderColor: isAtLimit ? AppColors.warning : AppColors.primary,
+              },
+            ]}
+          >
+            <Feather
+              name={isAtLimit ? "alert-circle" : "tool"}
+              size={14}
+              color={isAtLimit ? AppColors.warning : AppColors.primary}
+            />
+            <ThemedText
+              type="small"
+              style={{ color: isAtLimit ? AppColors.warning : AppColors.primary, fontWeight: "600" }}
+            >
+              {ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}
+            </ThemedText>
+          </View>
+        )}
+      </View>
+
+      {isAtLimit && (
+        <Pressable 
+          style={[styles.limitWarning, { backgroundColor: `${AppColors.warning}15` }]}
+          onPress={() => setShowUpgradePrompt(true)}
+        >
+          <Feather name="alert-circle" size={16} color={AppColors.warning} />
+          <ThemedText type="small" style={{ color: AppColors.warning, flex: 1 }}>
+            Limit reached. Remove an item to select a different one.
+          </ThemedText>
+          <View style={styles.upgradeChip}>
+            <ThemedText type="small" style={styles.upgradeChipText}>Upgrade</ThemedText>
+          </View>
+        </Pressable>
+      )}
     </BlurView>
   );
 
@@ -683,6 +746,22 @@ export default function CookwareScreen() {
             }
           />
         </>
+      )}
+
+      {showUpgradePrompt && (
+        <UpgradePrompt
+          type="limit"
+          limitName="Cookware"
+          remaining={0}
+          max={BASIC_COOKWARE_LIMIT}
+          onUpgrade={() => {
+            setShowUpgradePrompt(false);
+            navigation.getParent()?.dispatch(
+              CommonActions.navigate('Pricing')
+            );
+          }}
+          onDismiss={() => setShowUpgradePrompt(false)}
+        />
       )}
     </ThemedView>
   );
@@ -857,7 +936,41 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    alignSelf: "flex-start",
+  },
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.sm,
+  },
+  limitBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+  },
+  limitWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  upgradeChip: {
+    backgroundColor: AppColors.warning,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.sm,
+  },
+  upgradeChipText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 12,
   },
   itemWrapper: {
     width: "33.33%",

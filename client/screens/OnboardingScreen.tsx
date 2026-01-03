@@ -29,11 +29,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
 import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
+
+const BASIC_COOKWARE_LIMIT = 5;
 
 interface Appliance {
   id: number;
@@ -806,6 +809,10 @@ export default function OnboardingScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
   const { markOnboardingComplete } = useOnboardingStatus();
+  const { entitlements } = useSubscription();
+
+  const isPro = entitlements.maxCookware === 'unlimited';
+  const cookwareLimit = isPro ? Infinity : BASIC_COOKWARE_LIMIT;
 
   // Always start at "preferences" since authentication is now handled in AuthScreen
   const [step, setStep] = useState<OnboardingStep>("preferences");
@@ -831,12 +838,20 @@ export default function OnboardingScreen() {
   const [selectedStorageAreas, setSelectedStorageAreas] = useState<Set<string>>(
     new Set(["fridge", "freezer", "pantry", "counter"])
   );
+  const [appliancesLoaded, setAppliancesLoaded] = useState(false);
 
   useEffect(() => {
     loadAppliances();
   }, []);
 
-
+  // Enforce cookware limit when subscription changes or after initial load
+  useEffect(() => {
+    if (appliancesLoaded && !isPro && selectedEquipmentIds.size > BASIC_COOKWARE_LIMIT) {
+      // Trim excess items to enforce limit
+      const trimmedIds = Array.from(selectedEquipmentIds).slice(0, BASIC_COOKWARE_LIMIT);
+      setSelectedEquipmentIds(new Set(trimmedIds));
+    }
+  }, [isPro, appliancesLoaded]);
 
   const loadAppliances = async () => {
     try {
@@ -851,10 +866,13 @@ export default function OnboardingScreen() {
         const data = await response.json();
         const commonItems = data.filter((a: Appliance) => a.isCommon);
         setAppliances(data);
+        // Pre-select up to 5 common items (limit will be enforced by the effect above)
+        const itemsToSelect = commonItems.slice(0, BASIC_COOKWARE_LIMIT);
         const commonIds = new Set<number>(
-          commonItems.map((a: Appliance) => a.id),
+          itemsToSelect.map((a: Appliance) => a.id),
         );
         setSelectedEquipmentIds(commonIds);
+        setAppliancesLoaded(true);
       }
     } catch (err) {
       console.error("Error loading appliances:", err);
@@ -866,18 +884,25 @@ export default function OnboardingScreen() {
 
   const equipmentSelectedCount = selectedEquipmentIds.size;
   const foodSelectedCount = selectedFoodIds.size;
+  const isAtEquipmentLimit = !isPro && equipmentSelectedCount >= BASIC_COOKWARE_LIMIT;
 
   const toggleAppliance = useCallback((id: number) => {
     setSelectedEquipmentIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
+        // Always allow deselecting
         newSet.delete(id);
       } else {
+        // Check limit before adding
+        if (!isPro && newSet.size >= BASIC_COOKWARE_LIMIT) {
+          // At limit, don't add more
+          return prev;
+        }
         newSet.add(id);
       }
       return newSet;
     });
-  }, []);
+  }, [isPro]);
 
   const toggleCuisine = useCallback((id: string) => {
     setSelectedCuisines((prev) => {
@@ -1534,16 +1559,21 @@ export default function OnboardingScreen() {
           <View
             style={[
               styles.statBadge,
-              { backgroundColor: `${AppColors.primary}15` },
+              { backgroundColor: isAtEquipmentLimit ? `${AppColors.warning}15` : `${AppColors.primary}15` },
             ]}
           >
-            <Feather name="tool" size={14} color={AppColors.primary} />
+            <Feather name="tool" size={14} color={isAtEquipmentLimit ? AppColors.warning : AppColors.primary} />
             <ThemedText
-              style={[styles.statBadgeText, { color: AppColors.primary }]}
+              style={[styles.statBadgeText, { color: isAtEquipmentLimit ? AppColors.warning : AppColors.primary }]}
             >
-              {equipmentSelectedCount} Cookware
+              {isPro ? `${equipmentSelectedCount} Cookware` : `${equipmentSelectedCount}/${BASIC_COOKWARE_LIMIT} Cookware`}
             </ThemedText>
           </View>
+          {isAtEquipmentLimit && (
+            <ThemedText style={[styles.limitWarning, { color: AppColors.warning }]}>
+              Basic plan limit reached. Upgrade for unlimited cookware.
+            </ThemedText>
+          )}
         </View>
 
         <ScrollView
@@ -1598,10 +1628,12 @@ export default function OnboardingScreen() {
                 <View style={styles.cookwareCategoryItems}>
                   {group.appliances.map((appliance) => {
                     const isSelected = selectedEquipmentIds.has(appliance.id);
+                    const isDisabled = !isSelected && isAtEquipmentLimit;
                     return (
                       <Pressable
                         key={appliance.id}
                         onPress={() => {
+                          if (isDisabled) return;
                           if (Platform.OS !== "web") {
                             Haptics.impactAsync(
                               Haptics.ImpactFeedbackStyle.Light,
@@ -1618,6 +1650,7 @@ export default function OnboardingScreen() {
                             borderColor: isSelected
                               ? AppColors.primary
                               : theme.border,
+                            opacity: isDisabled ? 0.4 : 1,
                           },
                         ]}
                       >
@@ -2632,10 +2665,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   allCookwareStats: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.md,
+    flexDirection: "column",
+    alignItems: "center",
+    gap: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  limitWarning: {
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "500",
   },
   statBadge: {
     flexDirection: "row",
