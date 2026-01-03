@@ -62,12 +62,12 @@ export const GlassEffect = {
 
 export const Colors = {
   light: {
-    text: AppColors.text,
-    textSecondary: AppColors.textSecondary,
+    text: "#FFFFFF",
+    textSecondary: "rgba(255, 255, 255, 0.75)",
     textOnGlass: "#FFFFFF",
     textSecondaryOnGlass: "rgba(255, 255, 255, 0.8)",
     buttonText: "#FFFFFF",
-    tabIconDefault: AppColors.textSecondary,
+    tabIconDefault: "rgba(255, 255, 255, 0.6)",
     tabIconSelected: AppColors.primary,
     link: AppColors.accent,
     backgroundRoot: "transparent",
