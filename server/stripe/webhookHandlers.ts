@@ -149,14 +149,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
   const priceId = subscription.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  let tier: SubscriptionTier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
   
-  if (session.metadata?.tier) {
-    tier = session.metadata.tier as SubscriptionTier;
-  } else if (priceId) {
+  if (priceId) {
     const tierInfo = await getTierFromPriceId(priceId, stripe);
-    tier = tierInfo.tier;
-    planType = tierInfo.planType;
+    if (tierInfo) {
+      tier = tierInfo.tier;
+      planType = tierInfo.planType;
+    }
   }
 
   const now = new Date();
@@ -228,15 +228,15 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
   
-  if (subscription.metadata?.tier) {
-    tier = subscription.metadata.tier as SubscriptionTier;
-  } else if (priceId) {
+  if (priceId) {
     const stripe = await getUncachableStripeClient();
     const tierInfo = await getTierFromPriceId(priceId, stripe);
-    tier = tierInfo.tier;
-    planType = tierInfo.planType;
+    if (tierInfo) {
+      tier = tierInfo.tier;
+      planType = tierInfo.planType;
+    }
   }
 
   const now = new Date();
@@ -306,15 +306,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
   
-  if (subscription.metadata?.tier) {
-    tier = subscription.metadata.tier as SubscriptionTier;
-  } else if (priceId) {
+  if (priceId) {
     const stripe = await getUncachableStripeClient();
     const tierInfo = await getTierFromPriceId(priceId, stripe);
-    tier = tierInfo.tier;
-    planType = tierInfo.planType;
+    if (tierInfo) {
+      tier = tierInfo.tier;
+      planType = tierInfo.planType;
+    }
   }
 
   const currentPeriodStart = new Date((sub.current_period_start || sub.start_date || Date.now() / 1000) * 1000);

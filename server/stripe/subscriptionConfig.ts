@@ -106,7 +106,7 @@ export function getTierFromProductName(productName: string): SubscriptionTier {
 export async function getTierFromPriceId(
   priceId: string,
   stripe: { prices: { retrieve: (id: string, opts?: any) => Promise<any> } }
-): Promise<{ tier: SubscriptionTier; planType: "monthly" | "annual" }> {
+): Promise<{ tier: SubscriptionTier; planType: "monthly" | "annual" } | null> {
   try {
     const price = await stripe.prices.retrieve(priceId, {
       expand: ["product"],
@@ -125,6 +125,6 @@ export async function getTierFromPriceId(
     return { tier, planType };
   } catch (error) {
     console.error("[SubscriptionConfig] Error fetching price details:", error);
-    return { tier: SubscriptionTier.PRO, planType: "monthly" };
+    return null;
   }
 }
