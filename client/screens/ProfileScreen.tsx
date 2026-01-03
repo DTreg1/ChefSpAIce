@@ -166,6 +166,8 @@ export default function ProfileScreen() {
     resetOnboarding();
   };
 
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+
   const handleManageSubscription = async () => {
     try {
       const baseUrl = getApiUrl();
@@ -193,6 +195,53 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error("Error opening subscription portal:", error);
+    }
+  };
+
+  const handleUpgradeSubscription = async () => {
+    try {
+      setUpgradeLoading(true);
+      const baseUrl = getApiUrl();
+
+      const pricesResponse = await fetch(new URL("/api/subscriptions/prices", baseUrl).toString());
+      if (!pricesResponse.ok) {
+        throw new Error("Failed to fetch prices");
+      }
+      const prices = await pricesResponse.json();
+
+      const priceId = prices.monthly?.id || prices.annual?.id;
+      if (!priceId) {
+        throw new Error("No subscription prices available");
+      }
+
+      const checkoutUrl = new URL("/api/subscriptions/create-checkout-session", baseUrl);
+      const response = await fetch(checkoutUrl.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ priceId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url) {
+          if (Platform.OS === "web") {
+            (window as Window).location.href = data.url;
+          } else {
+            const { Linking } = require("react-native");
+            Linking.openURL(data.url);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Checkout session error:", errorData);
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+    } finally {
+      setUpgradeLoading(false);
     }
   };
 
@@ -733,13 +782,14 @@ export default function ProfileScreen() {
             ) : (
               <Pressable
                 style={styles.manageSubscriptionButton}
-                onPress={handleManageSubscription}
+                onPress={handleUpgradeSubscription}
+                disabled={upgradeLoading}
                 data-testid="button-upgrade-subscription"
               >
                 <ThemedText type="body" style={{ color: AppColors.primary }}>
-                  Upgrade to Pro
+                  {upgradeLoading ? "Loading..." : "Upgrade to Pro"}
                 </ThemedText>
-                <Feather name="arrow-right" size={16} color={AppColors.primary} />
+                {!upgradeLoading && <Feather name="arrow-right" size={16} color={AppColors.primary} />}
               </Pressable>
             )}
           </GlassCard>
