@@ -21,6 +21,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { AppColors } from "@/constants/theme";
 import { AddMenu } from "./AddMenu";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
@@ -58,6 +59,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { hideFloatingChat, showFloatingChat } = useFloatingChat();
+  const { isProUser, usage, entitlements } = useSubscription();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
   const addButtonScale = useSharedValue(1);
@@ -67,6 +69,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const indicatorScale = useSharedValue(1);
   const colors = isDark ? COLORS.dark : COLORS.light;
   const useLiquidGlass = isLiquidGlassAvailable();
+
+  // Calculate remaining AI recipes for Basic users
+  const maxAiRecipes = typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5;
+  const remainingAiRecipes = maxAiRecipes - usage.aiRecipesUsedThisMonth;
+  const showRecipeBadge = !isProUser && remainingAiRecipes >= 0;
 
   const hiddenRoutes = [
     "AddTab",
@@ -225,6 +232,13 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         CookwareTab: "Cookware",
       }[route.name] || route.name.replace("Tab", "");
 
+    // Determine badge color for AI recipe remaining indicator
+    const getBadgeColor = () => {
+      if (remainingAiRecipes <= 0) return AppColors.error;
+      if (remainingAiRecipes <= 2) return AppColors.warning;
+      return AppColors.success;
+    };
+
     return (
       <Pressable
         key={route.key}
@@ -237,23 +251,30 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityState={{ selected: isFocused }}
         accessibilityHint={`Navigate to ${label}`}
       >
-        {isKitchenTab || isCookwareTab || isRecipesTab ? (
-          <MaterialIcons
-            name={
-              isKitchenTab ? "kitchen" : isRecipesTab ? "art-track" : "blender"
-            }
-            size={ICON_SIZE}
-            color={isFocused ? colors.selected : colors.unselected}
-            style={styles.tabIcon}
-          />
-        ) : (
-          <Feather
-            name={(iconName as keyof typeof Feather.glyphMap) || "circle"}
-            size={ICON_SIZE}
-            color={isFocused ? colors.selected : colors.unselected}
-            style={styles.tabIcon}
-          />
-        )}
+        <View style={styles.iconWrapper}>
+          {isKitchenTab || isCookwareTab || isRecipesTab ? (
+            <MaterialIcons
+              name={
+                isKitchenTab ? "kitchen" : isRecipesTab ? "art-track" : "blender"
+              }
+              size={ICON_SIZE}
+              color={isFocused ? colors.selected : colors.unselected}
+              style={styles.tabIcon}
+            />
+          ) : (
+            <Feather
+              name={(iconName as keyof typeof Feather.glyphMap) || "circle"}
+              size={ICON_SIZE}
+              color={isFocused ? colors.selected : colors.unselected}
+              style={styles.tabIcon}
+            />
+          )}
+          {isRecipesTab && showRecipeBadge && (
+            <View style={[styles.recipeBadge, { backgroundColor: getBadgeColor() }]}>
+              <Text style={styles.recipeBadgeText}>{remainingAiRecipes}</Text>
+            </View>
+          )}
+        </View>
         <Text
           style={[
             styles.tabLabel,
@@ -456,6 +477,25 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     zIndex: 1,
+  },
+  iconWrapper: {
+    position: "relative",
+  },
+  recipeBadge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  recipeBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
   },
   tabLabel: {
     fontSize: 10,

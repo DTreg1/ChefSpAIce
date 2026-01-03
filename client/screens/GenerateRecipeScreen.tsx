@@ -20,7 +20,9 @@ import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { ExpiryBadge } from "@/components/ExpiryBadge";
+import { UpgradePrompt, UsageBadge } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   storage,
@@ -73,6 +75,7 @@ export default function GenerateRecipeScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+  const { checkLimit, usage, entitlements, isProUser, refetch: refetchSubscription } = useSubscription();
 
   const [inventory, setInventory] = useState<InventoryItemWithExpiry[]>([]);
   const [cookware, setCookware] = useState<
@@ -89,6 +92,7 @@ export default function GenerateRecipeScreen() {
     "recipe",
   );
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const autoGenerateTriggered = useRef(false);
 
   const { mealType, greeting } = useMemo(() => getMealTypeFromTime(), []);
@@ -176,6 +180,13 @@ export default function GenerateRecipeScreen() {
 
   const handleGenerate = async () => {
     if (inventory.length === 0) {
+      return;
+    }
+
+    // Check AI recipe limit before generating
+    const aiRecipeLimit = checkLimit('aiRecipes');
+    if (!aiRecipeLimit.allowed) {
+      setShowUpgradePrompt(true);
       return;
     }
 
@@ -321,6 +332,9 @@ export default function GenerateRecipeScreen() {
       // Save the complete recipe (with image if available)
       await storage.addRecipe(newRecipe);
 
+      // Refetch subscription to update AI recipe count
+      await refetchSubscription();
+
       // Navigate with complete recipe (pass full recipe so image is available immediately)
       setShowProgressModal(false);
       navigation.dispatch(
@@ -413,6 +427,25 @@ export default function GenerateRecipeScreen() {
               ? "Add items to your inventory to generate recipes"
               : `Creating a ${mealType} recipe using your pantry items`}
           </ThemedText>
+
+          {/* AI Recipe Usage Indicator */}
+          <View style={styles.usageIndicatorRow}>
+            <ThemedText type="caption">AI Recipes</ThemedText>
+            {isProUser ? (
+              <View style={styles.unlimitedBadge}>
+                <Feather name="infinity" size={12} color={AppColors.secondary} />
+                <ThemedText type="caption" style={{ color: AppColors.secondary, marginLeft: 4 }}>
+                  Unlimited
+                </ThemedText>
+              </View>
+            ) : (
+              <UsageBadge
+                current={usage.aiRecipesUsedThisMonth}
+                max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+                label="this month"
+              />
+            )}
+          </View>
         </View>
 
         {!hasNoInventory ? (
@@ -575,6 +608,19 @@ export default function GenerateRecipeScreen() {
           </GlassCard>
         </View>
       </Modal>
+
+      <UpgradePrompt
+        visible={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        type="limit"
+        limitType="aiRecipes"
+        currentUsage={usage.aiRecipesUsedThisMonth}
+        maxAllowed={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+        onUpgrade={() => {
+          setShowUpgradePrompt(false);
+          navigation.navigate("Pricing" as any);
+        }}
+      />
     </ThemedView>
   );
 }
@@ -593,6 +639,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.md,
     paddingVertical: Spacing.xl,
+  },
+  usageIndicatorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  unlimitedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(130, 87, 229, 0.15)",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
   },
   iconContainer: {
     width: 96,
