@@ -25,7 +25,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import {
   Spacing,
@@ -52,7 +52,7 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
-  const { subscription, isActive, isTrialing, trialDaysRemaining } = useSubscription();
+  const { tier, planType, isActive, isTrialing, trialDaysRemaining } = useSubscription();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -525,6 +525,27 @@ export default function ProfileScreen() {
       <GlassCard style={styles.menuCard}>
         <Pressable
           style={styles.menuItem}
+          onPress={() => navigation.navigate("Subscription")}
+          data-testid="link-subscription"
+        >
+          <View
+            style={[
+              styles.menuIcon,
+              { backgroundColor: `${AppColors.warning}15` },
+            ]}
+          >
+            <Feather name="star" size={20} color={AppColors.warning} />
+          </View>
+          <ThemedText type="body" style={styles.menuLabel}>
+            Subscription
+          </ThemedText>
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        </Pressable>
+        <View
+          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
+        />
+        <Pressable
+          style={styles.menuItem}
           onPress={() => navigation.navigate("Analytics")}
         >
           <View
@@ -689,9 +710,7 @@ export default function ProfileScreen() {
                 </ThemedText>
                 <ThemedText type="caption">
                   {isActive
-                    ? subscription?.planType === "annual"
-                      ? "Annual Plan"
-                      : "Monthly Plan"
+                    ? `${tier === "PRO" ? "Pro" : "Basic"} Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : planType === "trial" ? " (Trial)" : ""}`
                     : "Upgrade for full access"}
                 </ThemedText>
               </View>

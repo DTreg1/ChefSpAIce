@@ -53,6 +53,7 @@ export interface LimitCheckResult {
 export interface SubscriptionContextValue {
   tier: SubscriptionTier;
   status: SubscriptionStatus;
+  planType: 'monthly' | 'annual' | 'trial' | null;
   isProUser: boolean;
   isTrialing: boolean;
   isActive: boolean;
@@ -85,6 +86,7 @@ const defaultUsage: Usage = {
 const SubscriptionContext = createContext<SubscriptionContextValue>({
   tier: SubscriptionTier.BASIC,
   status: 'none',
+  planType: null,
   isProUser: false,
   isTrialing: false,
   isActive: false,
@@ -204,6 +206,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
   const tier = subscriptionData?.tier ?? SubscriptionTier.BASIC;
   const status = subscriptionData?.status ?? 'none';
+  const planType = subscriptionData?.planType ?? null;
   const isProUser = tier === SubscriptionTier.PRO;
   const isTrialing = status === 'trialing';
   const isActive = status === 'active' || status === 'trialing';
@@ -240,6 +243,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const value = useMemo<SubscriptionContextValue>(() => ({
     tier,
     status,
+    planType,
     isProUser,
     isTrialing,
     isActive,
@@ -253,6 +257,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   }), [
     tier,
     status,
+    planType,
     isProUser,
     isTrialing,
     isActive,

@@ -845,13 +845,17 @@ export default function OnboardingScreen() {
   }, []);
 
   // Enforce cookware limit when subscription changes or after initial load
+  // Also watch entitlements.maxCookware directly for more reliable enforcement
   useEffect(() => {
-    if (appliancesLoaded && !isPro && selectedEquipmentIds.size > BASIC_COOKWARE_LIMIT) {
+    const maxCookware = entitlements.maxCookware;
+    const limit = maxCookware === 'unlimited' ? Infinity : maxCookware;
+    
+    if (appliancesLoaded && selectedEquipmentIds.size > limit) {
       // Trim excess items to enforce limit
-      const trimmedIds = Array.from(selectedEquipmentIds).slice(0, BASIC_COOKWARE_LIMIT);
+      const trimmedIds = Array.from(selectedEquipmentIds).slice(0, limit);
       setSelectedEquipmentIds(new Set(trimmedIds));
     }
-  }, [isPro, appliancesLoaded]);
+  }, [entitlements.maxCookware, appliancesLoaded, selectedEquipmentIds.size]);
 
   const loadAppliances = async () => {
     try {
