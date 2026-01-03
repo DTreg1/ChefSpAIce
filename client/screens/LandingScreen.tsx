@@ -624,7 +624,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               description="Perfect for getting started"
               features={[
                 "25 pantry items",
-                "5 AI recipes per month",
+                "5 AI generated recipes per month",
                 "Basic storage areas",
                 "5 cookware items",
                 "Item scanning",
@@ -642,7 +642,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               description="Best for home cooks"
               features={[
                 "Unlimited pantry items",
-                "Unlimited AI recipes",
+                "Unlimited AI generated recipes",
                 "Recipe & Bulk Scanning",
                 "Customizable storage areas",
                 "Live AI Kitchen Assistant",
