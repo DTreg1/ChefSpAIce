@@ -1,7 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { SubscriptionTier, TierLimits, TIER_CONFIG } from "../../shared/subscription";
+import { TrialEndedModal } from "@/components/TrialEndedModal";
+import { Linking } from "react-native";
+
+const TRIAL_ENDED_DISMISSED_KEY = "trial_ended_dismissed";
 
 declare global {
   interface Window {
@@ -58,9 +63,12 @@ export interface SubscriptionContextValue {
   isTrialing: boolean;
   isActive: boolean;
   isLoading: boolean;
+  isTrialExpired: boolean;
   trialDaysRemaining: number | null;
   entitlements: Entitlements;
   usage: Usage;
+  subscription: SubscriptionData | null;
+  isPastDue: boolean;
   checkLimit: (type: 'pantryItems' | 'aiRecipes' | 'cookware') => LimitCheckResult;
   checkFeature: (feature: keyof Omit<Entitlements, 'maxPantryItems' | 'maxAiRecipes' | 'maxCookware'>) => boolean;
   refetch: () => Promise<void>;
@@ -91,9 +99,12 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   isTrialing: false,
   isActive: false,
   isLoading: true,
+  isTrialExpired: false,
   trialDaysRemaining: null,
   entitlements: defaultEntitlements,
   usage: defaultUsage,
+  subscription: null,
+  isPastDue: false,
   checkLimit: () => ({ allowed: true, remaining: 'unlimited' }),
   checkFeature: () => false,
   refetch: async () => {},
@@ -116,6 +127,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
+  const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
+  const [trialEndedDismissed, setTrialEndedDismissed] = useState(false);
 
   const fetchSubscription = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -210,6 +223,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const isProUser = tier === SubscriptionTier.PRO;
   const isTrialing = status === 'trialing';
   const isActive = status === 'active' || status === 'trialing';
+  const isPastDue = status === 'past_due';
+  const isTrialExpired = status === 'expired' || (planType === 'trial' && status === 'canceled');
 
   const trialDaysRemaining = useMemo(() => {
     if (!isTrialing || !subscriptionData?.trialEndsAt) return null;
@@ -218,6 +233,47 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     const diff = trialEnd.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [isTrialing, subscriptionData?.trialEndsAt]);
+
+  // Check if trial ended modal should be shown
+  useEffect(() => {
+    const checkTrialEndedDismissed = async () => {
+      try {
+        const dismissed = await AsyncStorage.getItem(TRIAL_ENDED_DISMISSED_KEY);
+        setTrialEndedDismissed(dismissed === 'true');
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+    checkTrialEndedDismissed();
+  }, []);
+
+  // Show trial ended modal when trial expires
+  useEffect(() => {
+    if (isTrialExpired && !trialEndedDismissed && !isLoading) {
+      setShowTrialEndedModal(true);
+    }
+  }, [isTrialExpired, trialEndedDismissed, isLoading]);
+
+  const handleDismissTrialModal = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(TRIAL_ENDED_DISMISSED_KEY, 'true');
+      setTrialEndedDismissed(true);
+    } catch (e) {
+      // Ignore errors
+    }
+    setShowTrialEndedModal(false);
+  }, []);
+
+  const handleUpgradePress = useCallback(() => {
+    setShowTrialEndedModal(false);
+    // Use Linking to navigate to pricing - this works without navigation context
+    Linking.openURL('/pricing').catch(() => {
+      // Fallback for web: direct window navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = '/pricing';
+      }
+    });
+  }, []);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -248,9 +304,12 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isTrialing,
     isActive,
     isLoading,
+    isTrialExpired,
     trialDaysRemaining,
     entitlements,
     usage,
+    subscription: subscriptionData,
+    isPastDue,
     checkLimit,
     checkFeature,
     refetch: fetchSubscription,
@@ -262,9 +321,12 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isTrialing,
     isActive,
     isLoading,
+    isTrialExpired,
     trialDaysRemaining,
     entitlements,
     usage,
+    subscriptionData,
+    isPastDue,
     checkLimit,
     checkFeature,
     fetchSubscription,
@@ -273,6 +335,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
+      <TrialEndedModal
+        visible={showTrialEndedModal}
+        onDismiss={handleDismissTrialModal}
+        onUpgrade={handleUpgradePress}
+      />
     </SubscriptionContext.Provider>
   );
 }

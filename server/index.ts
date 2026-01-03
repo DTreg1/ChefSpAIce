@@ -10,6 +10,7 @@ import { Client } from "pg";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
+import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
 
 const app = express();
 const log = console.log;
@@ -437,6 +438,9 @@ async function initStripe(retries = 3, delay = 2000) {
       initStripe().catch((err) => {
         console.error("Background Stripe init failed:", err);
       });
+
+      // Start trial expiration background job (runs every hour)
+      startTrialExpirationJob(60 * 60 * 1000);
     },
   );
 })();
