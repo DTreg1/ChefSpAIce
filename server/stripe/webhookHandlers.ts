@@ -2,7 +2,7 @@ import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { db } from "../db";
 import { subscriptions, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { getPlanTypeFromPriceId } from "./subscriptionConfig";
+import { getPlanTypeFromPriceId, getTierFromPriceId, getTierFromProductName } from "./subscriptionConfig";
 import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
 
@@ -147,7 +147,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
   const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId) as any;
 
   const priceId = subscription.items?.data?.[0]?.price?.id;
-  const planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  
+  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  
+  if (session.metadata?.tier) {
+    tier = session.metadata.tier as SubscriptionTier;
+  } else if (priceId) {
+    const tierInfo = await getTierFromPriceId(priceId, stripe);
+    tier = tierInfo.tier;
+    planType = tierInfo.planType;
+  }
 
   const now = new Date();
   const currentPeriodStart = new Date((subscription.current_period_start || subscription.start_date || Date.now() / 1000) * 1000);
@@ -187,11 +197,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
       },
     });
 
-  const tier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
 
-  console.log("[Webhook] Subscription record created/updated for user:", userId);
+  console.log("[Webhook] Subscription record created/updated for user:", userId, "Tier:", tier);
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
@@ -217,7 +226,18 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
 
   const sub = subscription as any;
   const priceId = sub.items?.data?.[0]?.price?.id;
-  const planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  
+  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  
+  if (subscription.metadata?.tier) {
+    tier = subscription.metadata.tier as SubscriptionTier;
+  } else if (priceId) {
+    const stripe = await getUncachableStripeClient();
+    const tierInfo = await getTierFromPriceId(priceId, stripe);
+    tier = tierInfo.tier;
+    planType = tierInfo.planType;
+  }
 
   const now = new Date();
   const currentPeriodStart = new Date((sub.current_period_start || sub.start_date || Date.now() / 1000) * 1000);
@@ -256,8 +276,11 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
         updatedAt: now,
       },
     });
+  
+  const status = subscription.status === "trialing" ? "trialing" : "active";
+  await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, subscription.id, trialEnd);
 
-  console.log("[Webhook] Subscription created for user:", userId);
+  console.log("[Webhook] Subscription created for user:", userId, "Tier:", tier);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
@@ -281,7 +304,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
 
   const sub = subscription as any;
   const priceId = sub.items?.data?.[0]?.price?.id;
-  const planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
+  
+  let tier: SubscriptionTier = SubscriptionTier.PRO;
+  
+  if (subscription.metadata?.tier) {
+    tier = subscription.metadata.tier as SubscriptionTier;
+  } else if (priceId) {
+    const stripe = await getUncachableStripeClient();
+    const tierInfo = await getTierFromPriceId(priceId, stripe);
+    tier = tierInfo.tier;
+    planType = tierInfo.planType;
+  }
 
   const currentPeriodStart = new Date((sub.current_period_start || sub.start_date || Date.now() / 1000) * 1000);
   const currentPeriodEnd = new Date((sub.current_period_end || (Date.now() / 1000 + 30 * 24 * 60 * 60)) * 1000);
@@ -305,12 +339,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
-  const tier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
   const statusStr = subscription.status === "trialing" ? "trialing" : 
                     subscription.status === "active" ? "active" : subscription.status;
   await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, undefined, trialEnd);
 
-  console.log("[Webhook] Subscription updated for user:", userId, "Status:", subscription.status);
+  console.log("[Webhook] Subscription updated for user:", userId, "Tier:", tier, "Status:", subscription.status);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
