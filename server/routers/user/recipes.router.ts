@@ -10,6 +10,11 @@ import {
   compareQuantities,
   AvailabilityStatus,
 } from "../../integrations/usda";
+import {
+  checkAiRecipeLimit,
+  incrementAiRecipeCount,
+  checkFeatureAccess,
+} from "../../services/subscriptionService";
 
 const router = Router();
 
@@ -373,6 +378,21 @@ export function buildSmartPrompt(params: {
 
 router.post("/generate", async (req: Request, res: Response) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const limitCheck = await checkAiRecipeLimit(req.userId);
+    const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+    if (remaining < 1) {
+      return res.status(403).json({
+        error: "Monthly AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
+        code: "AI_RECIPE_LIMIT_REACHED",
+        limit: limitCheck.limit,
+        remaining: 0,
+      });
+    }
+
     const parseResult = generateRecipeSchema.safeParse(req.body);
 
     if (!parseResult.success) {
@@ -965,10 +985,18 @@ ABSOLUTE RULES:
       `Smart recipe generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`,
     );
 
+    await incrementAiRecipeCount(req.userId!);
+
+    const updatedLimit = await checkAiRecipeLimit(req.userId!);
+
     return res.json({
       ...recipe,
       totalExpiringItems: expiringItems.length,
       prioritizedExpiring: prioritizeExpiring,
+      subscription: {
+        aiRecipesRemaining: updatedLimit.remaining,
+        aiRecipesLimit: updatedLimit.limit,
+      },
     });
   } catch (error) {
     console.error("Smart recipe generation error:", error);
@@ -1131,6 +1159,19 @@ function detectMimeType(base64: string): string {
 
 router.post("/scan", async (req: Request, res: Response) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const hasAccess = await checkFeatureAccess(req.userId, "recipeScanning");
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: "Recipe scanning is a Pro feature. Upgrade to Pro to scan recipes from images.",
+        code: "FEATURE_NOT_AVAILABLE",
+        feature: "recipeScanning",
+      });
+    }
+
     const contentType = req.headers["content-type"] || "";
 
     let base64Image: string;

@@ -4,6 +4,7 @@ import { users, userSessions, userSyncData, subscriptions } from "@shared/schema
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
+import { checkCookwareLimit, checkFeatureAccess } from "../services/subscriptionService";
 
 const router = Router();
 
@@ -475,6 +476,32 @@ router.post("/sync", async (req: Request, res: Response) => {
     }
 
     const { data } = req.body;
+
+    if (data.cookware && Array.isArray(data.cookware)) {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+      const incomingCount = data.cookware.length;
+      
+      if (incomingCount > maxLimit) {
+        return res.status(403).json({
+          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+          code: "COOKWARE_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          count: incomingCount,
+        });
+      }
+    }
+
+    if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
+      const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: "Custom storage areas are a Pro feature. Upgrade to Pro to create custom storage locations.",
+          code: "FEATURE_NOT_AVAILABLE",
+          feature: "customStorageAreas",
+        });
+      }
+    }
 
     await db
       .update(userSyncData)

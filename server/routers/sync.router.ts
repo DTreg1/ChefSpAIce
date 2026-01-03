@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
+import { checkPantryItemLimit } from "../services/subscriptionService";
 
 const router = Router();
 
@@ -45,6 +46,19 @@ router.post("/inventory", async (req: Request, res: Response) => {
 
     const { operation, data, clientTimestamp } = req.body;
 
+    if (operation === "create") {
+      const limitCheck = await checkPantryItemLimit(session.userId);
+      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+      if (remaining < 1) {
+        return res.status(403).json({
+          error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
+          code: "PANTRY_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+        });
+      }
+    }
+
     const existingSyncData = await db
       .select()
       .from(userSyncData)
@@ -64,12 +78,33 @@ router.post("/inventory", async (req: Request, res: Response) => {
       if (index !== -1) {
         currentInventory[index] = data;
       } else {
+        const limitCheck = await checkPantryItemLimit(session.userId);
+        const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+        if (remaining < 1) {
+          return res.status(403).json({
+            error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
+            code: "PANTRY_LIMIT_REACHED",
+            limit: limitCheck.limit,
+            remaining: 0,
+          });
+        }
         currentInventory.push(data);
       }
     } else if (operation === "delete") {
       currentInventory = currentInventory.filter(
         (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
       );
+    }
+
+    const finalLimitCheck = await checkPantryItemLimit(session.userId);
+    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
+    if (currentInventory.length > maxLimit) {
+      return res.status(403).json({
+        error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
+        code: "PANTRY_LIMIT_REACHED",
+        limit: finalLimitCheck.limit,
+        count: currentInventory.length,
+      });
     }
 
     if (existingSyncData.length === 0) {
@@ -149,7 +184,28 @@ router.put("/inventory", async (req: Request, res: Response) => {
         });
       }
     } else {
+      const limitCheck = await checkPantryItemLimit(session.userId);
+      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+      if (remaining < 1) {
+        return res.status(403).json({
+          error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
+          code: "PANTRY_LIMIT_REACHED",
+          limit: limitCheck.limit,
+          remaining: 0,
+        });
+      }
       currentInventory.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+    }
+
+    const finalLimitCheck = await checkPantryItemLimit(session.userId);
+    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
+    if (currentInventory.length > maxLimit) {
+      return res.status(403).json({
+        error: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
+        code: "PANTRY_LIMIT_REACHED",
+        limit: finalLimitCheck.limit,
+        count: currentInventory.length,
+      });
     }
 
     await db

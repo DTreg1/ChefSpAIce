@@ -74,6 +74,7 @@ import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { inArray } from "drizzle-orm";
+import { checkFeatureAccess } from "./services/subscriptionService";
 
 /**
  * OpenAI client configuration
@@ -430,6 +431,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (sessions.length > 0 && new Date(sessions[0].expiresAt) > new Date()) {
           authenticatedUserId = sessions[0].userId;
+        }
+      }
+
+      if (authenticatedUserId) {
+        const hasAccess = await checkFeatureAccess(authenticatedUserId, "aiKitchenAssistant");
+        if (!hasAccess) {
+          return res.status(403).json({
+            error: "Live AI Kitchen Assistant is a Pro feature. Upgrade to Pro to chat with your AI kitchen assistant.",
+            code: "FEATURE_NOT_AVAILABLE",
+            feature: "aiKitchenAssistant",
+          });
         }
       }
 
