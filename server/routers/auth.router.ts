@@ -11,6 +11,13 @@ const router = Router();
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
 type PlanType = 'monthly' | 'annual' | 'trial' | null;
 
+interface SubscriptionInfo {
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionPlanType: PlanType;
+  trialEndsAt: string | null;
+  subscriptionEndsAt: string | null;
+}
+
 async function evaluateAndUpdateSubscriptionStatus(subscription: typeof subscriptions.$inferSelect): Promise<SubscriptionStatus> {
   const now = new Date();
   

@@ -53,6 +53,13 @@ export class MemStorage implements IStorage {
       isAdmin: insertUser.isAdmin ?? false,
       primaryProvider: insertUser.primaryProvider ?? null,
       primaryProviderId: insertUser.primaryProviderId ?? null,
+      subscriptionTier: insertUser.subscriptionTier ?? "BASIC",
+      subscriptionStatus: insertUser.subscriptionStatus ?? "trialing",
+      stripeCustomerId: insertUser.stripeCustomerId ?? null,
+      stripeSubscriptionId: insertUser.stripeSubscriptionId ?? null,
+      aiRecipesGeneratedThisMonth: insertUser.aiRecipesGeneratedThisMonth ?? 0,
+      aiRecipesResetDate: insertUser.aiRecipesResetDate ?? null,
+      trialEndsAt: insertUser.trialEndsAt ?? null,
       createdAt: now,
       updatedAt: now,
     };

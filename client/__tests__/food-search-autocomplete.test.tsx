@@ -30,7 +30,7 @@ jest.mock("@expo/vector-icons", () => ({
 
 import {
   FoodSearchAutocomplete,
-  FoodItem,
+  FoodSearchResult,
 } from "@/components/FoodSearchAutocomplete";
 
 const mockFetch = jest.fn();

@@ -23,7 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   FoodSearchAutocomplete,
-  FoodItem as SearchFoodItem,
+  FoodSearchResult as SearchFoodItem,
 } from "@/components/FoodSearchAutocomplete";
 import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
