@@ -78,36 +78,10 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
-  const [pricesLoading, setPricesLoading] = useState(true);
-  const [prices, setPrices] = useState<{
-    monthly: { amount: number } | null;
-    annual: { amount: number } | null;
-  }>({ monthly: null, annual: null });
+  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
 
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    fetchPrices();
-  }, []);
-
-  const fetchPrices = async () => {
-    try {
-      const response = await fetch(`${getApiUrl()}/api/subscriptions/prices`);
-      if (response.ok) {
-        const data = await response.json();
-        setPrices({
-          monthly: data.monthly ? { amount: data.monthly.amount } : null,
-          annual: data.annual ? { amount: data.annual.amount } : null,
-        });
-      }
-    } catch (err) {
-      console.error("Failed to fetch prices:", err);
-    } finally {
-      setPricesLoading(false);
-    }
-  };
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -126,7 +100,7 @@ export default function AuthScreen() {
     try {
       let result;
       if (isSignUp) {
-        result = await signUp(email.trim(), password, undefined, selectedPlan);
+        result = await signUp(email.trim(), password, undefined, selectedTier);
       } else {
         result = await signIn(email.trim(), password);
       }
@@ -178,9 +152,9 @@ export default function AuthScreen() {
     try {
       let result;
       if (provider === "apple") {
-        result = await signInWithApple(selectedPlan);
+        result = await signInWithApple(selectedTier);
       } else {
-        result = await signInWithGoogle(selectedPlan);
+        result = await signInWithGoogle(selectedTier);
       }
 
       if (!result.success) {
@@ -302,7 +276,7 @@ export default function AuthScreen() {
                     styles.planCardLeft,
                     { 
                       backgroundColor: theme.glass.background,
-                      borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
+                      borderColor: selectedTier === "basic" ? AppColors.primary : theme.glass.border,
                       borderTopWidth: 2,
                       borderBottomWidth: 2,
                       borderLeftWidth: 2,
@@ -310,25 +284,25 @@ export default function AuthScreen() {
                     },
                   ]}
                   onPress={() => {
-                    setSelectedPlan("monthly");
+                    setSelectedTier("basic");
                     if (Platform.OS !== "web") {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }
                   }}
-                  data-testid="button-plan-monthly"
+                  data-testid="button-tier-basic"
                 >
                   <View style={styles.planCardContent}>
-                    <ThemedText style={styles.planCardName}>Monthly</ThemedText>
+                    <ThemedText style={styles.planCardName}>Basic</ThemedText>
                     <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      $9.99
+                      $4.99
                       <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
                     </ThemedText>
                   </View>
                   <View style={[
                     styles.planCardRadio,
-                    selectedPlan === "monthly" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
+                    selectedTier === "basic" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
                   ]}>
-                    {selectedPlan === "monthly" && <Feather name="check" size={12} color="#FFFFFF" />}
+                    {selectedTier === "basic" && <Feather name="check" size={12} color="#FFFFFF" />}
                   </View>
                 </Pressable>
 
@@ -338,7 +312,7 @@ export default function AuthScreen() {
                     styles.planCardRight,
                     { 
                       backgroundColor: theme.glass.background,
-                      borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
+                      borderColor: selectedTier === "pro" ? AppColors.primary : theme.glass.border,
                       borderTopWidth: 2,
                       borderBottomWidth: 2,
                       borderRightWidth: 2,
@@ -346,31 +320,28 @@ export default function AuthScreen() {
                     },
                   ]}
                   onPress={() => {
-                    setSelectedPlan("annual");
+                    setSelectedTier("pro");
                     if (Platform.OS !== "web") {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }
                   }}
-                  data-testid="button-plan-annual"
+                  data-testid="button-tier-pro"
                 >
-                  <View style={styles.savingsBadge}>
-                    <ThemedText style={styles.savingsBadgeText}>Save 17%</ThemedText>
+                  <View style={styles.popularBadge}>
+                    <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
                   </View>
                   <View style={styles.planCardContent}>
-                    <ThemedText style={styles.planCardName}>Annual</ThemedText>
+                    <ThemedText style={styles.planCardName}>Pro</ThemedText>
                     <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      $99.90
-                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/yr</ThemedText>
-                    </ThemedText>
-                    <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
-                      $8.33/mo
+                      $9.99
+                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
                     </ThemedText>
                   </View>
                   <View style={[
                     styles.planCardRadio,
-                    selectedPlan === "annual" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
+                    selectedTier === "pro" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
                   ]}>
-                    {selectedPlan === "annual" && <Feather name="check" size={12} color="#FFFFFF" />}
+                    {selectedTier === "pro" && <Feather name="check" size={12} color="#FFFFFF" />}
                   </View>
                 </Pressable>
               </View>
@@ -729,16 +700,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  savingsBadge: {
+  popularBadge: {
     position: "absolute",
     top: -8,
     right: Spacing.sm,
-    backgroundColor: AppColors.primary,
+    backgroundColor: AppColors.warning,
     paddingHorizontal: Spacing.xs,
     paddingVertical: 2,
     borderRadius: BorderRadius.sm,
   },
-  savingsBadgeText: {
+  popularBadgeText: {
     fontSize: 10,
     fontWeight: "600",
     color: "#FFFFFF",

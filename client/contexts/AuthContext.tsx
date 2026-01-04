@@ -88,9 +88,9 @@ export interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, displayName?: string, selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
-  signInWithApple: (selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: (selectedPlan?: 'monthly' | 'annual') => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, displayName?: string, selectedTier?: 'basic' | 'pro') => Promise<{ success: boolean; error?: string }>;
+  signInWithApple: (selectedTier?: 'basic' | 'pro') => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: (selectedTier?: 'basic' | 'pro') => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   setSignOutCallback: (callback: () => void) => void;
   isAuthenticated: boolean;
@@ -298,7 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (email: string, password: string, displayName?: string, selectedPlan?: 'monthly' | 'annual') => {
+    async (email: string, password: string, displayName?: string, selectedTier?: 'basic' | 'pro') => {
       try {
         const baseUrl = getApiUrl();
         const url = new URL("/api/auth/register", baseUrl);
@@ -307,7 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email, password, displayName, selectedPlan }),
+          body: JSON.stringify({ email, password, displayName, selectedTier }),
         });
 
         const data = await response.json();
@@ -384,7 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOutRef.current = signOut;
   }, [signOut]);
 
-  const signInWithApple = useCallback(async (selectedPlan?: 'monthly' | 'annual') => {
+  const signInWithApple = useCallback(async (selectedTier?: 'basic' | 'pro') => {
     if (Platform.OS !== "ios" || !AppleAuthentication) {
       return { success: false, error: "Apple Sign-In is only available on iOS" };
     }
@@ -407,7 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           identityToken: credential.identityToken,
           authorizationCode: credential.authorizationCode,
-          selectedPlan,
+          selectedTier,
           user: {
             email: credential.email,
             name: {
@@ -454,7 +454,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signInWithGoogle = useCallback(async (selectedPlan?: 'monthly' | 'annual') => {
+  const signInWithGoogle = useCallback(async (selectedTier?: 'basic' | 'pro') => {
     try {
       if (!promptGoogleAsync) {
         return { success: false, error: "Google sign in not available" };
@@ -478,7 +478,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           idToken,
           accessToken,
-          selectedPlan,
+          selectedTier,
         }),
       });
 
