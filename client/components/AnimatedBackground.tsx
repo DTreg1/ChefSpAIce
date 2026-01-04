@@ -109,7 +109,7 @@ function Bubble({ config }: BubbleProps) {
 }
 
 function GradientBackground({ isDark }: { isDark: boolean }) {
-  const gradientColor = isDark ? LIME_900 : LIME_950;
+  const gradientColor = isDark ? LIME_950 : LIME_900;
   const transparentColor = isDark
     ? "rgba(61, 107, 28, 0)"
     : "rgba(26, 46, 5, 0)";

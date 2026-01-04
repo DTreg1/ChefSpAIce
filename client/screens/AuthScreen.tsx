@@ -317,16 +317,12 @@ export default function AuthScreen() {
                   }}
                   data-testid="button-plan-monthly"
                 >
-                  <View style={styles.planCardHeader}>
+                  <View style={styles.planCardContent}>
                     <ThemedText style={styles.planCardName}>Monthly</ThemedText>
-                    {pricesLoading ? (
-                      <ActivityIndicator size="small" color={AppColors.primary} />
-                    ) : prices.monthly ? (
-                      <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                        ${(prices.monthly.amount / 100).toFixed(2)}
-                        <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-                      </ThemedText>
-                    ) : null}
+                    <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
+                      $9.99
+                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+                    </ThemedText>
                   </View>
                   <View style={[
                     styles.planCardRadio,
@@ -357,28 +353,18 @@ export default function AuthScreen() {
                   }}
                   data-testid="button-plan-annual"
                 >
-                  {prices.monthly && prices.annual && (
-                    <View style={styles.savingsBadge}>
-                      <ThemedText style={styles.savingsBadgeText}>
-                        Save {Math.round(((prices.monthly.amount * 12 - prices.annual.amount) / (prices.monthly.amount * 12)) * 100)}%
-                      </ThemedText>
-                    </View>
-                  )}
-                  <View style={styles.planCardHeader}>
+                  <View style={styles.savingsBadge}>
+                    <ThemedText style={styles.savingsBadgeText}>Save 17%</ThemedText>
+                  </View>
+                  <View style={styles.planCardContent}>
                     <ThemedText style={styles.planCardName}>Annual</ThemedText>
-                    {pricesLoading ? (
-                      <ActivityIndicator size="small" color={AppColors.primary} />
-                    ) : prices.annual ? (
-                      <View>
-                        <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                          ${(prices.annual.amount / 100).toFixed(2)}
-                          <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/yr</ThemedText>
-                        </ThemedText>
-                        <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
-                          ${(prices.annual.amount / 12 / 100).toFixed(2)}/mo
-                        </ThemedText>
-                      </View>
-                    ) : null}
+                    <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
+                      $99.90
+                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/yr</ThemedText>
+                    </ThemedText>
+                    <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
+                      $8.33/mo
+                    </ThemedText>
                   </View>
                   <View style={[
                     styles.planCardRadio,
@@ -707,6 +693,9 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: BorderRadius.lg,
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
+  },
+  planCardContent: {
+    flex: 1,
   },
   planCardHeader: {
     marginBottom: Spacing.xs,
