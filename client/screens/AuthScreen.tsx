@@ -15,9 +15,11 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation, useRoute, CommonActions, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -61,7 +63,11 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<AuthScreenRouteProp>();
   const { recheckOnboarding, markOnboardingComplete } = useOnboardingStatus();
+  
+  const initialTier = route.params?.selectedTier || 'pro';
+  const initialBilling = route.params?.billingPeriod || 'monthly';
   const {
     signIn,
     signUp,
@@ -78,8 +84,8 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">(initialTier);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">(initialBilling);
 
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -787,10 +793,6 @@ const styles = StyleSheet.create({
   planCardInterval: {
     fontSize: 12,
     fontWeight: "400",
-  },
-  planCardMonthly: {
-    fontSize: 11,
-    marginTop: 2,
   },
   planCardRadio: {
     position: "absolute",

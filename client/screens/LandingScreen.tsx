@@ -250,7 +250,7 @@ function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
 }
 
 interface LandingScreenProps {
-  onGetStarted?: () => void;
+  onGetStarted?: (tier?: 'basic' | 'pro', billing?: 'monthly' | 'annual') => void;
   onSignIn?: () => void;
   onAbout?: () => void;
   onPrivacy?: () => void;
@@ -266,9 +266,9 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleGetStarted = () => {
+  const handleGetStarted = (tier?: 'basic' | 'pro') => {
     if (onGetStarted) {
-      onGetStarted();
+      onGetStarted(tier, isAnnual ? 'annual' : 'monthly');
     }
   };
 
@@ -414,7 +414,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                   styles.primaryButton,
                   pressed && styles.buttonPressed
                 ]}
-                onPress={handleGetStarted}
+                onPress={() => handleGetStarted()}
                 data-testid="button-get-started"
               >
                 <LinearGradient
@@ -619,7 +619,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 "Daily meal planning",
               ]}
               buttonText="Start Free Trial"
-              onPress={handleGetStarted}
+              onPress={() => handleGetStarted('basic')}
               testId="basic"
               isWide={isWide}
             />
@@ -638,7 +638,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               ]}
               isPopular={true}
               buttonText="Start Free Trial"
-              onPress={handleGetStarted}
+              onPress={() => handleGetStarted('pro')}
               testId="pro"
               isWide={isWide}
             />
@@ -694,7 +694,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 styles.ctaButton,
                 pressed && styles.buttonPressed
               ]}
-              onPress={handleGetStarted}
+              onPress={() => handleGetStarted()}
               data-testid="button-cta-get-started"
             >
               <LinearGradient
