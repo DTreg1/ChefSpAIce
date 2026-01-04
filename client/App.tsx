@@ -201,7 +201,7 @@ function RootWrapper() {
   const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
 
   return (
-    <GestureHandlerRootView style={[styles.root, { backgroundColor }]}>
+    <GestureHandlerRootView>
       <KeyboardProvider>
         <AuthProvider>
           <SubscriptionProvider>
