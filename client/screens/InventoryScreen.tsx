@@ -61,6 +61,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/query-client";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -224,6 +225,10 @@ export default function InventoryScreen() {
   const [buttonWidths, setButtonWidths] = useState<number[]>([]);
   const [funFact, setFunFact] = useState<string | null>(null);
   const [funFactLoading, setFunFactLoading] = useState(false);
+  const [funFactTimestamp, setFunFactTimestamp] = useState<number | null>(null);
+  const [funFactTimeRemaining, setFunFactTimeRemaining] = useState<string>("");
+
+  const FUN_FACT_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
   const calculatedGap = useMemo(() => {
     if (filterRowWidth === 0 || buttonWidths.length !== FOOD_GROUPS.length) {
@@ -342,49 +347,100 @@ export default function InventoryScreen() {
     setFilteredItems(filtered);
   }, [items, searchQuery, foodGroupFilter]);
 
-  useEffect(() => {
-    const fetchFunFact = async () => {
-      if (items.length === 0 || nutritionTotals.itemsWithNutrition === 0) {
-        setFunFact(null);
-        return;
-      }
+  const formatTimeRemaining = (ms: number): string => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
 
-      setFunFactLoading(true);
+  const fetchFunFactFromAPI = async (forceRefresh = false) => {
+    if (items.length === 0 || nutritionTotals.itemsWithNutrition === 0) {
+      setFunFact(null);
+      return;
+    }
+
+    // Check local storage for cached fun fact (unless forcing refresh)
+    if (!forceRefresh) {
       try {
-        const token = await storage.getAuthToken();
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
+        const cached = await AsyncStorage.getItem("funFact");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const elapsed = Date.now() - parsed.timestamp;
+          if (elapsed < FUN_FACT_TTL) {
+            setFunFact(parsed.fact);
+            setFunFactTimestamp(parsed.timestamp);
+            return;
+          }
         }
-
-        const baseUrl = getApiUrl();
-        const url = new URL("/api/suggestions/fun-fact", baseUrl);
-        const response = await fetch(url.toString(), {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            items: items.slice(0, 20).map((i) => ({
-              name: i.name,
-              category: i.category,
-              quantity: i.quantity,
-            })),
-            nutritionTotals,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setFunFact(data.fact);
-        }
-      } catch (error) {
-        console.error("Error fetching fun fact:", error);
-      } finally {
-        setFunFactLoading(false);
+      } catch (e) {
+        // Ignore parse errors
       }
+    }
+
+    setFunFactLoading(true);
+    try {
+      const token = await storage.getAuthToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/suggestions/fun-fact", baseUrl);
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          items: items.slice(0, 20).map((i) => ({
+            name: i.name,
+            category: i.category,
+            quantity: i.quantity,
+          })),
+          nutritionTotals,
+          forceRefresh,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const timestamp = Date.now();
+        setFunFact(data.fact);
+        setFunFactTimestamp(timestamp);
+        // Save to local storage
+        await AsyncStorage.setItem("funFact", JSON.stringify({ fact: data.fact, timestamp }));
+      }
+    } catch (error) {
+      console.error("Error fetching fun fact:", error);
+    } finally {
+      setFunFactLoading(false);
+    }
+  };
+
+  const handleRefreshFunFact = () => {
+    fetchFunFactFromAPI(true);
+  };
+
+  useEffect(() => {
+    fetchFunFactFromAPI();
+  }, [items.length, nutritionTotals.calories]);
+
+  // Update time remaining every minute
+  useEffect(() => {
+    if (!funFactTimestamp) return;
+
+    const updateTimeRemaining = () => {
+      const elapsed = Date.now() - funFactTimestamp;
+      const remaining = Math.max(0, FUN_FACT_TTL - elapsed);
+      setFunFactTimeRemaining(formatTimeRemaining(remaining));
     };
 
-    fetchFunFact();
-  }, [items.length, nutritionTotals.calories]);
+    updateTimeRemaining();
+    const interval = setInterval(updateTimeRemaining, 60000);
+    return () => clearInterval(interval);
+  }, [funFactTimestamp]);
 
   const groupedSections = useMemo(() => {
     const locationOrder = storageLocations
@@ -452,7 +508,26 @@ export default function InventoryScreen() {
             </ThemedText>
             {funFact && (
               <View style={styles.funFactContainer}>
-                <Feather name="info" size={14} color={AppColors.primary} />
+                <View style={styles.funFactHeader}>
+                  <Feather name="info" size={14} color={AppColors.primary} />
+                  {funFactTimeRemaining && (
+                    <ThemedText type="caption" style={styles.funFactTimer}>
+                      Next in {funFactTimeRemaining}
+                    </ThemedText>
+                  )}
+                  <Pressable
+                    onPress={handleRefreshFunFact}
+                    disabled={funFactLoading}
+                    style={styles.funFactRefreshButton}
+                    testID="button-refresh-fun-fact"
+                  >
+                    <Feather 
+                      name="refresh-cw" 
+                      size={14} 
+                      color={funFactLoading ? theme.textSecondary : AppColors.primary} 
+                    />
+                  </Pressable>
+                </View>
                 <ThemedText type="caption" style={styles.funFactText}>
                   {funFact}
                 </ThemedText>
@@ -1197,18 +1272,30 @@ const styles = StyleSheet.create({
     marginLeft: 24,
   },
   funFactContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacing.sm,
+    flexDirection: "column",
+    gap: Spacing.xs,
     marginTop: Spacing.sm,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
-  funFactText: {
+  funFactHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  funFactTimer: {
     flex: 1,
+    opacity: 0.6,
+    fontSize: 11,
+  },
+  funFactRefreshButton: {
+    padding: Spacing.xs,
+  },
+  funFactText: {
     fontStyle: "italic",
     opacity: 0.9,
+    marginLeft: 22,
   },
   foodGroupFilters: {
     flexDirection: "row",

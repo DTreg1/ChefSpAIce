@@ -285,7 +285,7 @@ const funFactCache = new Map<
   }
 >();
 
-const FUN_FACT_CACHE_TTL = 10 * 60 * 1000;
+const FUN_FACT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 router.post("/fun-fact", async (req: Request, res: Response) => {
   try {
