@@ -94,7 +94,7 @@ export default function AuthScreen() {
 
   const fetchPrices = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}api/subscriptions/prices`);
+      const response = await fetch(`${getApiUrl()}/api/subscriptions/prices`);
       if (response.ok) {
         const data = await response.json();
         setPrices({
