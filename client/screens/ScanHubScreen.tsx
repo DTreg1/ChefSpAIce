@@ -224,7 +224,14 @@ export default function ScanHubScreen() {
           featureName={upgradePrompt.feature === 'recipeScanning' ? 'Recipe Scanning' : 'Bulk Scanning'}
           onUpgrade={() => {
             setUpgradePrompt({ ...upgradePrompt, visible: false });
-            navigation.navigate("Pricing" as any);
+            // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
+            navigation.navigate("Main" as any, { 
+              screen: 'Tabs', 
+              params: { 
+                screen: 'ProfileTab', 
+                params: { screen: 'Subscription' } 
+              } 
+            });
           }}
           onDismiss={() => setUpgradePrompt({ ...upgradePrompt, visible: false })}
         />

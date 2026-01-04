@@ -617,7 +617,17 @@ export default function GenerateRecipeScreen() {
             max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
             onUpgrade={() => {
               setShowUpgradePrompt(false);
-              navigation.navigate("Pricing" as any);
+              // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
+              const rootNav = navigation.getParent()?.getParent()?.getParent();
+              if (rootNav) {
+                rootNav.navigate("Main" as any, { 
+                  screen: 'Tabs', 
+                  params: { 
+                    screen: 'ProfileTab', 
+                    params: { screen: 'Subscription' } 
+                  } 
+                });
+              }
             }}
             onDismiss={() => setShowUpgradePrompt(false)}
           />
@@ -638,7 +648,10 @@ export default function GenerateRecipeScreen() {
               max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
               onUpgrade={() => {
                 setShowUpgradePrompt(false);
-                navigation.navigate("Pricing" as any);
+                navigation.navigate("Main" as any, { 
+                  screen: 'ProfileTab', 
+                  params: { screen: 'Subscription' } 
+                });
               }}
               onDismiss={() => setShowUpgradePrompt(false)}
             />

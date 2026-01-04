@@ -69,7 +69,7 @@ import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { db } from "./db";
-import { userSessions, appliances } from "../shared/schema";
+import { userSessions, appliances, users } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
@@ -1133,6 +1133,127 @@ BEHAVIOR GUIDELINES:
       res.status(500).json({ error: "Failed to lookup barcode" });
     }
   });
+
+  // Development-only endpoint to set user subscription tier for testing
+  if (process.env.NODE_ENV !== 'production') {
+    console.log("[TEST] Registering test endpoints for development mode");
+    
+    // Version with auth
+    app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response) => {
+      console.log("[TEST] set-subscription-tier endpoint hit (with auth)");
+      try {
+        const userId = req.userId;
+        if (!userId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
+
+        const { tier, status } = req.body;
+        
+        if (!tier || !['BASIC', 'PRO'].includes(tier)) {
+          return res.status(400).json({ error: "Invalid tier. Must be 'BASIC' or 'PRO'" });
+        }
+
+        const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
+        const newStatus = status && validStatuses.includes(status) ? status : 'active';
+
+        // Update user's subscription tier directly
+        await db
+          .update(users)
+          .set({
+            subscriptionTier: tier,
+            subscriptionStatus: newStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        // Also update subscriptions table if exists
+        const { subscriptions } = await import("../shared/schema");
+        await db
+          .update(subscriptions)
+          .set({
+            status: newStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.userId, userId));
+
+        console.log(`[TEST] Set user ${userId} to tier: ${tier}, status: ${newStatus}`);
+        
+        res.json({ 
+          success: true, 
+          tier, 
+          status: newStatus,
+          message: `Subscription updated to ${tier} (${newStatus})`
+        });
+      } catch (error) {
+        console.error("Error setting subscription tier:", error);
+        res.status(500).json({ error: "Failed to set subscription tier" });
+      }
+    });
+
+    // Version without auth - uses email to find user (for testing only)
+    app.post("/api/test/set-tier-by-email", async (req: Request, res: Response) => {
+      console.log("[TEST] set-tier-by-email endpoint hit");
+      try {
+        const { email, tier, status } = req.body;
+        
+        if (!email) {
+          return res.status(400).json({ error: "Email is required" });
+        }
+        
+        if (!tier || !['BASIC', 'PRO'].includes(tier)) {
+          return res.status(400).json({ error: "Invalid tier. Must be 'BASIC' or 'PRO'" });
+        }
+
+        // Find user by email
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
+        const newStatus = status && validStatuses.includes(status) ? status : 'active';
+
+        // Update user's subscription tier directly
+        await db
+          .update(users)
+          .set({
+            subscriptionTier: tier,
+            subscriptionStatus: newStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id));
+
+        // Also update subscriptions table if exists
+        const { subscriptions } = await import("../shared/schema");
+        await db
+          .update(subscriptions)
+          .set({
+            status: newStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.userId, user.id));
+
+        console.log(`[TEST] Set user ${user.id} (${email}) to tier: ${tier}, status: ${newStatus}`);
+        
+        res.json({ 
+          success: true, 
+          userId: user.id,
+          email,
+          tier, 
+          status: newStatus,
+          message: `Subscription updated to ${tier} (${newStatus})`
+        });
+      } catch (error) {
+        console.error("Error setting subscription tier:", error);
+        res.status(500).json({ error: "Failed to set subscription tier" });
+      }
+    });
+  }
 
   // Serve privacy policy HTML for app store submission
   app.get("/privacy-policy", (_req: Request, res: Response) => {

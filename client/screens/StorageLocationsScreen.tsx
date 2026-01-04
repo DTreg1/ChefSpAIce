@@ -349,7 +349,17 @@ export default function StorageLocationsScreen() {
           featureName="Custom Storage Areas"
           onUpgrade={() => {
             setShowUpgradePrompt(false);
-            navigation.navigate("Pricing" as any);
+            // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
+            const rootNav = navigation.getParent()?.getParent()?.getParent();
+            if (rootNav) {
+              rootNav.navigate("Main" as any, { 
+                screen: 'Tabs', 
+                params: { 
+                  screen: 'ProfileTab', 
+                  params: { screen: 'Subscription' } 
+                } 
+              });
+            }
           }}
           onDismiss={() => setShowUpgradePrompt(false)}
         />

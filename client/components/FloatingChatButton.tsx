@@ -160,7 +160,14 @@ export function FloatingChatButton() {
           featureName="AI Kitchen Assistant"
           onUpgrade={() => {
             setShowUpgradePrompt(false);
-            navigation.navigate("Pricing" as any);
+            // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
+            navigation.navigate("Main" as any, { 
+              screen: 'Tabs', 
+              params: { 
+                screen: 'ProfileTab', 
+                params: { screen: 'Subscription' } 
+              } 
+            });
           }}
           onDismiss={() => setShowUpgradePrompt(false)}
         />

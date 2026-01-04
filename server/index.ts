@@ -226,6 +226,11 @@ function configureExpoRouting(app: express.Application) {
   }
 
   app.use((req: Request, res: Response, next: NextFunction) => {
+    // Debug logging for API routes
+    if (req.path.startsWith("/api/test")) {
+      log(`[DEBUG] Test API route: ${req.method} ${req.path}`);
+    }
+    
     if (req.path.startsWith("/api")) {
       return next();
     }

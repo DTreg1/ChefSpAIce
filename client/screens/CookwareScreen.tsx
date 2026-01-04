@@ -703,9 +703,17 @@ export default function CookwareScreen() {
           max={BASIC_COOKWARE_LIMIT}
           onUpgrade={() => {
             setShowUpgradePrompt(false);
-            navigation.getParent()?.dispatch(
-              CommonActions.navigate('Pricing')
-            );
+            // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
+            const rootNav = navigation.getParent()?.getParent()?.getParent();
+            if (rootNav) {
+              rootNav.navigate("Main" as any, { 
+                screen: 'Tabs', 
+                params: { 
+                  screen: 'ProfileTab', 
+                  params: { screen: 'Subscription' } 
+                } 
+              });
+            }
           }}
           onDismiss={() => setShowUpgradePrompt(false)}
         />
