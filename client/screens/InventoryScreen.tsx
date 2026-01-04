@@ -956,20 +956,6 @@ export default function InventoryScreen() {
           ) : null}
         </View>
 
-        {/* Usage Indicator Row */}
-        <View style={styles.usageIndicatorRow}>
-          <View style={styles.usageIndicatorLeft}>
-            <Feather name="package" size={14} color={theme.textSecondary} />
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              Pantry Items
-            </ThemedText>
-          </View>
-          <UsageBadge
-            current={items.length}
-            max={isProUser ? "unlimited" : (typeof entitlements.maxPantryItems === 'number' ? entitlements.maxPantryItems : 25)}
-          />
-        </View>
-
         {/* Filter Summary Row */}
         {(activeFilterCount > 0 || filteredItems.length !== items.length) && (
           <View style={styles.filterSummaryRow}>
