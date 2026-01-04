@@ -368,7 +368,6 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
     <View style={styles.container}>
       <LinearGradient
         colors={isDark ? ["#0A1F0F", "#0F1419", "#0A0F14"] : ["#1A3D2A", "#1E4D35", "#0F2A1A"]}
-        style={StyleSheet.absoluteFillObject}
       />
       
       <ScrollView 
@@ -427,17 +426,6 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                   <Text style={styles.primaryButtonText}>Get Started Free</Text>
                   <Feather name="arrow-right" size={18} color="#FFFFFF" />
                 </LinearGradient>
-              </Pressable>
-              
-              <Pressable
-                style={({ pressed }) => [
-                  styles.secondaryButton,
-                  pressed && styles.buttonPressed
-                ]}
-                onPress={handleSignIn}
-                data-testid="button-learn-more"
-              >
-                <Text style={styles.secondaryButtonText}>Learn More</Text>
               </Pressable>
             </View>
             

@@ -252,13 +252,6 @@ export default function AuthScreen() {
       ]}
     >
       <View style={styles.header}>
-        <Pressable
-          onPress={handleBack}
-          style={[styles.backButton, { backgroundColor: theme.glass.background }]}
-          data-testid="button-auth-back"
-        >
-          <Feather name="arrow-left" size={20} color={theme.text} />
-        </Pressable>
       </View>
 
       <KeyboardAwareScrollViewCompat
@@ -267,64 +260,9 @@ export default function AuthScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.welcomeHeader}>
-          <Animated.View
-            entering={FadeIn.delay(100).duration(500)}
-            style={styles.appIconContainer}
-          >
-            <Image
-              source={AppIcon}
-              style={styles.appIconImage}
-              resizeMode="cover"
-            />
-          </Animated.View>
-          <Animated.View entering={FadeIn.delay(200).duration(400)}>
-            <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
-          </Animated.View>
-          <Animated.View entering={FadeIn.delay(300).duration(400)}>
-            <ThemedText
-              style={[styles.appTagline, { color: theme.textSecondary }]}
-            >
-              Your AI-powered kitchen companion
-            </ThemedText>
-          </Animated.View>
         </View>
 
-        <View style={styles.featuresContainer}>
-          {FEATURES.map((feature, index) => (
-            <Animated.View
-              key={feature.title}
-              entering={FadeIn.delay(400 + index * 100).duration(300)}
-            >
-              <GlassCard contentStyle={styles.featureCard}>
-                <View
-                  style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: `${feature.color}15` },
-                  ]}
-                >
-                  <Feather
-                    name={feature.icon}
-                    size={14}
-                    color={feature.color}
-                  />
-                </View>
-                <View style={styles.featureTextContainer}>
-                  <ThemedText style={styles.featureTitle}>
-                    {feature.title}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.featureDescription,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {feature.description}
-                  </ThemedText>
-                </View>
-              </GlassCard>
-            </Animated.View>
-          ))}
-        </View>
+        
 
         <Animated.View
           entering={FadeIn.delay(700).duration(400)}
@@ -361,6 +299,7 @@ export default function AuthScreen() {
                 <Pressable
                   style={[
                     styles.planCard,
+                    styles.planCardLeft,
                     { 
                       backgroundColor: theme.glass.background,
                       borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
@@ -397,6 +336,7 @@ export default function AuthScreen() {
                 <Pressable
                   style={[
                     styles.planCard,
+                    styles.planCardRight,
                     { 
                       backgroundColor: theme.glass.background,
                       borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
@@ -744,13 +684,24 @@ const styles = StyleSheet.create({
   },
   planCardsRow: {
     flexDirection: "row",
-    gap: Spacing.sm,
   },
   planCard: {
     flex: 1,
     padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
     position: "relative",
+  },
+  planCardLeft: {
+    borderTopLeftRadius: BorderRadius.lg,
+    borderBottomLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    borderRightWidth: 0,
+  },
+  planCardRight: {
+    borderTopRightRadius: BorderRadius.lg,
+    borderBottomRightRadius: BorderRadius.lg,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
   },
   planCardHeader: {
     marginBottom: Spacing.xs,
