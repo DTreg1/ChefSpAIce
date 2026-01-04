@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Platform, Pressable } from "react-native";
+import { View, StyleSheet, Platform, Image, Pressable } from "react-native";
 import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
@@ -7,7 +7,7 @@ import {
 import { DrawerActions } from "@react-navigation/native";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
-import { Feather, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -178,11 +178,10 @@ export function DrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <MaterialCommunityIcons
-              name="chef-hat"
-              size={36}
-              color={AppColors.primary}
+            <Image
+              source={require("../../assets/images/icon.png")}
               style={styles.logo}
+              resizeMode="contain"
             />
             <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
           </View>
@@ -327,6 +326,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   logo: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
     marginRight: Spacing.md,
   },
   appName: {

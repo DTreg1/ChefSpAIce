@@ -1,6 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Linking, Platform } from "react-native";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, StyleSheet, Image, Pressable, Linking, Platform } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
@@ -105,10 +105,10 @@ function TrialBadge() {
 export function HeaderTitle({ title }: HeaderTitleProps) {
   return (
     <View style={styles.container}>
-      <MaterialCommunityIcons
-        name="chef-hat"
-        size={28}
-        color={AppColors.primary}
+      <Image
+        source={require("../../assets/images/icon.png")}
+        style={styles.icon}
+        resizeMode="contain"
       />
       <ThemedText style={styles.title}>{title}</ThemedText>
       <TrialBadge />
@@ -122,6 +122,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     gap: Spacing.sm,
+  },
+  icon: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
   title: {
     fontSize: 17,
