@@ -277,4 +277,90 @@ Return JSON:
   }
 });
 
+const funFactCache = new Map<
+  string,
+  {
+    fact: string;
+    timestamp: number;
+  }
+>();
+
+const FUN_FACT_CACHE_TTL = 10 * 60 * 1000;
+
+router.post("/fun-fact", async (req: Request, res: Response) => {
+  try {
+    const { items, nutritionTotals } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.json({
+        fact: "Add some items to your inventory to discover fun facts about your food!",
+      });
+    }
+
+    const itemNames = items.map((i: any) => i.name).slice(0, 20);
+    const cacheKey = `funfact:${itemNames.sort().join(",")}:${nutritionTotals?.calories || 0}`;
+    
+    const cached = funFactCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < FUN_FACT_CACHE_TTL) {
+      return res.json({ fact: cached.fact });
+    }
+
+    const itemList = itemNames.join(", ");
+    const nutritionContext = nutritionTotals 
+      ? `Total nutrition: ${nutritionTotals.calories} calories, ${nutritionTotals.protein}g protein, ${nutritionTotals.carbs}g carbs, ${nutritionTotals.fat}g fat from ${nutritionTotals.itemsWithNutrition} items.`
+      : "";
+
+    const prompt = `Based on this kitchen inventory, generate ONE short, fun, interesting fact (1-2 sentences max).
+
+Inventory items: ${itemList}
+${nutritionContext}
+
+The fact should be:
+- Surprising, educational, or amusing
+- Related to the specific foods in the inventory
+- About food history, nutrition trivia, cultural facts, or cooking tips
+- Encouraging and positive in tone
+
+Examples of good facts:
+- "Your eggs could make 3 perfect French omelets - the dish that chefs use to test their skills!"
+- "With your tomatoes and basil, you have the classic combo that inspired Caprese salad in 1950s Italy."
+- "Your pantry has enough protein for a small army of gym enthusiasts!"
+
+Return JSON: { "fact": "<your fun fact>" }`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a fun, witty food expert who shares interesting facts. Always respond with valid JSON. Keep facts brief and engaging.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 150,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("No response from AI");
+    }
+
+    const parsed = JSON.parse(content);
+    const fact = parsed.fact || "Your kitchen is full of delicious possibilities!";
+
+    funFactCache.set(cacheKey, { fact, timestamp: Date.now() });
+
+    return res.json({ fact });
+  } catch (error) {
+    console.error("Fun fact generation error:", error);
+    return res.json({
+      fact: "Your kitchen is stocked with tasty ingredients!",
+    });
+  }
+});
+
 export default router;

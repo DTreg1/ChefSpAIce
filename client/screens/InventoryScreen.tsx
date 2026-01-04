@@ -58,6 +58,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useQueryClient } from "@tanstack/react-query";
+import { getApiUrl } from "@/lib/query-client";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
@@ -221,6 +222,8 @@ export default function InventoryScreen() {
   ]);
   const [filterRowWidth, setFilterRowWidth] = useState(0);
   const [buttonWidths, setButtonWidths] = useState<number[]>([]);
+  const [funFact, setFunFact] = useState<string | null>(null);
+  const [funFactLoading, setFunFactLoading] = useState(false);
 
   const calculatedGap = useMemo(() => {
     if (filterRowWidth === 0 || buttonWidths.length !== FOOD_GROUPS.length) {
@@ -339,6 +342,50 @@ export default function InventoryScreen() {
     setFilteredItems(filtered);
   }, [items, searchQuery, foodGroupFilter]);
 
+  useEffect(() => {
+    const fetchFunFact = async () => {
+      if (items.length === 0 || nutritionTotals.itemsWithNutrition === 0) {
+        setFunFact(null);
+        return;
+      }
+
+      setFunFactLoading(true);
+      try {
+        const token = await storage.getAuthToken();
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const baseUrl = getApiUrl();
+        const url = new URL("/api/suggestions/fun-fact", baseUrl);
+        const response = await fetch(url.toString(), {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            items: items.slice(0, 20).map((i) => ({
+              name: i.name,
+              category: i.category,
+              quantity: i.quantity,
+            })),
+            nutritionTotals,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setFunFact(data.fact);
+        }
+      } catch (error) {
+        console.error("Error fetching fun fact:", error);
+      } finally {
+        setFunFactLoading(false);
+      }
+    };
+
+    fetchFunFact();
+  }, [items.length, nutritionTotals.calories]);
+
   const groupedSections = useMemo(() => {
     const locationOrder = storageLocations
       .filter((loc) => loc.key !== "all")
@@ -401,9 +448,23 @@ export default function InventoryScreen() {
               </ThemedText>
             </View>
             <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
-              Based on {nutritionTotals.itemsWithNutrition} items with nutrition
-              data
+              Based on {nutritionTotals.itemsWithNutrition} items with nutrition data
             </ThemedText>
+            {funFact && (
+              <View style={styles.funFactContainer}>
+                <Feather name="info" size={14} color={AppColors.primary} />
+                <ThemedText type="caption" style={styles.funFactText}>
+                  {funFact}
+                </ThemedText>
+              </View>
+            )}
+            {funFactLoading && !funFact && (
+              <View style={styles.funFactContainer}>
+                <ThemedText type="caption" style={styles.funFactText}>
+                  Discovering a fun fact about your kitchen...
+                </ThemedText>
+              </View>
+            )}
           </GlassCard>
         ) : null}
       </View>
@@ -1134,6 +1195,20 @@ const styles = StyleSheet.create({
   nutritionSummaryMeta: {
     marginTop: Spacing.xs,
     marginLeft: 24,
+  },
+  funFactContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+  },
+  funFactText: {
+    flex: 1,
+    fontStyle: "italic",
+    opacity: 0.9,
   },
   foodGroupFilters: {
     flexDirection: "row",
