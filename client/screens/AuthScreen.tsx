@@ -303,7 +303,10 @@ export default function AuthScreen() {
                     { 
                       backgroundColor: theme.glass.background,
                       borderColor: selectedPlan === "monthly" ? AppColors.primary : theme.glass.border,
-                      borderWidth: 2,
+                      borderTopWidth: 2,
+                      borderBottomWidth: 2,
+                      borderLeftWidth: 2,
+                      borderRightWidth: 1,
                     },
                   ]}
                   onPress={() => {
@@ -340,7 +343,10 @@ export default function AuthScreen() {
                     { 
                       backgroundColor: theme.glass.background,
                       borderColor: selectedPlan === "annual" ? AppColors.primary : theme.glass.border,
-                      borderWidth: 2,
+                      borderTopWidth: 2,
+                      borderBottomWidth: 2,
+                      borderRightWidth: 2,
+                      borderLeftWidth: 1,
                     },
                   ]}
                   onPress={() => {
@@ -695,7 +701,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: BorderRadius.lg,
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
-    borderRightWidth: 0,
   },
   planCardRight: {
     borderTopRightRadius: BorderRadius.lg,
