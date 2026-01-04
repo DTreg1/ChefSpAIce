@@ -354,16 +354,16 @@ class SyncManager {
       
       if (data) {
         if (data.inventory) {
-          await AsyncStorage.setItem("@freshpantry/inventory", JSON.stringify(data.inventory));
+          await AsyncStorage.setItem("@chefspaice/inventory", JSON.stringify(data.inventory));
         }
         if (data.recipes) {
-          await AsyncStorage.setItem("@freshpantry/saved_recipes", JSON.stringify(data.recipes));
+          await AsyncStorage.setItem("@chefspaice/recipes", JSON.stringify(data.recipes));
         }
         if (data.mealPlans) {
-          await AsyncStorage.setItem("@freshpantry/meal_plans", JSON.stringify(data.mealPlans));
+          await AsyncStorage.setItem("@chefspaice/meal_plans", JSON.stringify(data.mealPlans));
         }
         if (data.shoppingList) {
-          await AsyncStorage.setItem("@freshpantry/shopping_list", JSON.stringify(data.shoppingList));
+          await AsyncStorage.setItem("@chefspaice/shopping_list", JSON.stringify(data.shoppingList));
         }
       }
 

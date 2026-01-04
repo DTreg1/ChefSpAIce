@@ -66,6 +66,7 @@ import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { getApiUrl } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import { useFloatingChat } from "@/contexts/FloatingChatContext";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
@@ -76,6 +77,7 @@ export default function RecipesScreen() {
   const { theme, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+  const { openChat } = useFloatingChat();
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -476,7 +478,7 @@ export default function RecipesScreen() {
               borderWidth: 1,
             },
           ]}
-          onPress={() => navigation.navigate("Chat")}
+          onPress={() => openChat()}
         >
           <Feather name="message-circle" size={16} color={theme.text} />
           <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>

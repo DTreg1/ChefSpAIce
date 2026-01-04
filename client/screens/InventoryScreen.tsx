@@ -42,7 +42,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
@@ -312,12 +312,20 @@ export default function InventoryScreen() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
+  // Use navigation.addListener for more reliable focus events on web
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
       loadItems();
       loadStorageLocations();
-    }, [loadItems, loadStorageLocations]),
-  );
+    });
+    return unsubscribe;
+  }, [navigation, loadItems, loadStorageLocations]);
+
+  // Also load on initial mount
+  useEffect(() => {
+    loadItems();
+    loadStorageLocations();
+  }, []);
 
   useEffect(() => {
     let filtered = items;

@@ -104,24 +104,35 @@ export default function ItemDetailScreen() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!item) return;
 
-    Alert.alert(
-      "Remove Inventory",
-      `Are you sure you want to remove "${item.name}" from your inventory? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            await storage.deleteInventoryItem(item.id);
-            navigation.goBack();
+    // Use window.confirm on web, Alert.alert on native
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        `Are you sure you want to remove "${item.name}" from your inventory? This cannot be undone.`
+      );
+      if (confirmed) {
+        await storage.deleteInventoryItem(item.id);
+        navigation.goBack();
+      }
+    } else {
+      Alert.alert(
+        "Remove Inventory",
+        `Are you sure you want to remove "${item.name}" from your inventory? This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              await storage.deleteInventoryItem(item.id);
+              navigation.goBack();
+            },
           },
-        },
-      ],
-    );
+        ],
+      );
+    }
   };
 
   const handleDateChange = (
