@@ -1241,6 +1241,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.sm,
     minHeight: 44,
+    minWidth: 80,
     borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
