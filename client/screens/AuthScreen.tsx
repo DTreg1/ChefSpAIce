@@ -79,9 +79,15 @@ export default function AuthScreen() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
+
+  const prices = {
+    basic: { monthly: 4.99, annual: 49.90 },
+    pro: { monthly: 9.99, annual: 99.90 },
+  };
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -249,6 +255,50 @@ export default function AuthScreen() {
                 Start with a free 7-day trial. Cancel anytime.
               </ThemedText>
 
+              <View style={styles.billingToggleContainer}>
+                <Pressable
+                  style={[
+                    styles.billingToggleButton,
+                    billingPeriod === "monthly" && styles.billingToggleButtonActive,
+                  ]}
+                  onPress={() => {
+                    setBillingPeriod("monthly");
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                  data-testid="button-billing-monthly"
+                >
+                  <ThemedText style={[
+                    styles.billingToggleText,
+                    billingPeriod === "monthly" && styles.billingToggleTextActive,
+                  ]}>Monthly</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.billingToggleButton,
+                    billingPeriod === "annual" && styles.billingToggleButtonActive,
+                  ]}
+                  onPress={() => {
+                    setBillingPeriod("annual");
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                  data-testid="button-billing-annual"
+                >
+                  <ThemedText style={[
+                    styles.billingToggleText,
+                    billingPeriod === "annual" && styles.billingToggleTextActive,
+                  ]}>Annual</ThemedText>
+                  {billingPeriod === "annual" && (
+                    <View style={styles.saveBadge}>
+                      <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+                    </View>
+                  )}
+                </Pressable>
+              </View>
+
               <View style={styles.featuresListContainer}>
                 <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
                 <View style={styles.featuresGrid}>
@@ -294,9 +344,14 @@ export default function AuthScreen() {
                   <View style={styles.planCardContent}>
                     <ThemedText style={styles.planCardName}>Basic</ThemedText>
                     <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      $4.99
-                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+                      ${prices.basic[billingPeriod].toFixed(2)}
+                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/{billingPeriod === "monthly" ? "mo" : "yr"}</ThemedText>
                     </ThemedText>
+                    {billingPeriod === "annual" && (
+                      <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
+                        ${(prices.basic.annual / 12).toFixed(2)}/mo
+                      </ThemedText>
+                    )}
                   </View>
                   <View style={[
                     styles.planCardRadio,
@@ -333,9 +388,14 @@ export default function AuthScreen() {
                   <View style={styles.planCardContent}>
                     <ThemedText style={styles.planCardName}>Pro</ThemedText>
                     <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      $9.99
-                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+                      ${prices.pro[billingPeriod].toFixed(2)}
+                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/{billingPeriod === "monthly" ? "mo" : "yr"}</ThemedText>
                     </ThemedText>
+                    {billingPeriod === "annual" && (
+                      <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
+                        ${(prices.pro.annual / 12).toFixed(2)}/mo
+                      </ThemedText>
+                    )}
                   </View>
                   <View style={[
                     styles.planCardRadio,
@@ -622,6 +682,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: Spacing.md,
+  },
+  billingToggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 24,
+    padding: 4,
+    alignSelf: "center",
+  },
+  billingToggleButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  billingToggleButtonActive: {
+    backgroundColor: AppColors.primary,
+  },
+  billingToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  billingToggleTextActive: {
+    color: "#FFFFFF",
+  },
+  saveBadge: {
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  saveBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  planCardMonthly: {
+    fontSize: 11,
+    marginTop: 2,
   },
   featuresListContainer: {
     marginBottom: Spacing.md,
