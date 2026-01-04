@@ -612,59 +612,6 @@ export default function CookwareScreen() {
         ) : null}
       </View>
 
-      <View style={styles.filterRow}>
-        <Pressable
-          style={[
-            styles.ownedToggle,
-            {
-              backgroundColor: showOwnedOnly
-                ? `${AppColors.primary}15`
-                : theme.glass.backgroundSubtle,
-              borderColor: showOwnedOnly ? AppColors.primary : theme.glass.border,
-            },
-          ]}
-          onPress={() => setShowOwnedOnly(!showOwnedOnly)}
-        >
-          <Feather
-            name={showOwnedOnly ? "check-square" : "square"}
-            size={16}
-            color={showOwnedOnly ? AppColors.primary : theme.textSecondary}
-          />
-          <ThemedText
-            type="small"
-            style={{
-              color: showOwnedOnly ? AppColors.primary : theme.textSecondary,
-            }}
-          >
-            Show only owned
-          </ThemedText>
-        </Pressable>
-
-        {!isPro && (
-          <View
-            style={[
-              styles.limitBadge,
-              {
-                backgroundColor: isAtLimit ? `${AppColors.warning}20` : `${AppColors.primary}15`,
-                borderColor: isAtLimit ? AppColors.warning : AppColors.primary,
-              },
-            ]}
-          >
-            <Feather
-              name={isAtLimit ? "alert-circle" : "tool"}
-              size={14}
-              color={isAtLimit ? AppColors.warning : AppColors.primary}
-            />
-            <ThemedText
-              type="small"
-              style={{ color: isAtLimit ? AppColors.warning : AppColors.primary, fontWeight: "600" }}
-            >
-              {ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}
-            </ThemedText>
-          </View>
-        )}
-      </View>
-
       {isAtLimit && (
         <Pressable 
           style={[styles.limitWarning, { backgroundColor: `${AppColors.warning}15` }]}
@@ -672,7 +619,7 @@ export default function CookwareScreen() {
         >
           <Feather name="alert-circle" size={16} color={AppColors.warning} />
           <ThemedText type="small" style={{ color: AppColors.warning, flex: 1 }}>
-            Limit reached. Remove an item to select a different one.
+            Limit reached ({ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}). Remove an item to select a different one.
           </ThemedText>
           <View style={styles.upgradeChip}>
             <ThemedText type="small" style={styles.upgradeChipText}>Upgrade</ThemedText>
