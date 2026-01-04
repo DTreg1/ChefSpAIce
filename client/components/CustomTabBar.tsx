@@ -417,11 +417,16 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
     bottom: 0,
     alignItems: "center",
     zIndex: 1001,
+    paddingHorizontal: 16,
+    maxWidth: 500,
+    alignSelf: "center",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   pillContainer: {
     height: TAB_BAR_HEIGHT,
