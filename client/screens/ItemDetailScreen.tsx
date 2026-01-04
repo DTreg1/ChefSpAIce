@@ -79,7 +79,7 @@ export default function ItemDetailScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <HeaderButton onPress={handleSave}>
+        <HeaderButton onPress={handleSave} testID="button-save-item">
           <ThemedText style={{ color: AppColors.primary, fontWeight: "600" }}>
             Save
           </ThemedText>
@@ -175,7 +175,7 @@ export default function ItemDetailScreen() {
       <GlassCard style={styles.section}>
         <View style={styles.sectionHeader}>
           <ThemedText type="h4">Basic Info</ThemedText>
-          <Pressable style={styles.removeButton} onPress={handleDelete}>
+          <Pressable style={styles.removeButton} onPress={handleDelete} testID="button-remove-item">
             <Feather name="trash-2" size={14} color={AppColors.warning} />
             <ThemedText
               style={{
@@ -194,6 +194,7 @@ export default function ItemDetailScreen() {
             Name
           </ThemedText>
           <TextInput
+            testID="input-item-name"
             style={[
               styles.input,
               {
@@ -216,6 +217,7 @@ export default function ItemDetailScreen() {
               Quantity
             </ThemedText>
             <TextInput
+              testID="input-item-quantity"
               style={[
                 styles.input,
                 {
@@ -239,6 +241,7 @@ export default function ItemDetailScreen() {
               Unit
             </ThemedText>
             <TextInput
+              testID="input-item-unit"
               style={[
                 styles.input,
                 {
@@ -312,6 +315,7 @@ export default function ItemDetailScreen() {
           {STORAGE_OPTIONS.map((loc) => (
             <Pressable
               key={loc.key}
+              testID={`button-storage-${loc.key}`}
               style={[
                 styles.locationCard,
                 {
@@ -352,6 +356,7 @@ export default function ItemDetailScreen() {
 
         <View style={styles.row}>
           <Pressable
+            testID="button-purchase-date"
             style={[
               styles.dateButtonCompact,
               {
@@ -374,6 +379,7 @@ export default function ItemDetailScreen() {
           </Pressable>
 
           <Pressable
+            testID="button-expiration-date"
             style={[
               styles.dateButtonCompact,
               {
@@ -402,6 +408,7 @@ export default function ItemDetailScreen() {
           Notes
         </ThemedText>
         <TextInput
+          testID="input-item-notes"
           style={[
             styles.input,
             styles.textArea,
@@ -445,7 +452,7 @@ export default function ItemDetailScreen() {
                     ? "Expiration Date"
                     : "Purchase Date"}
                 </ThemedText>
-                <Pressable onPress={handleDatePickerDone}>
+                <Pressable onPress={handleDatePickerDone} testID="button-date-picker-done">
                   <ThemedText
                     style={{ color: AppColors.primary, fontWeight: "600" }}
                   >
