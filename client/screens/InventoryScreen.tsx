@@ -970,6 +970,11 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+    ...Platform.select({
+      web: {
+        scrollbarWidth: "none",
+      } as any,
+    }),
   },
   listContent: {
     paddingHorizontal: Spacing.lg,
