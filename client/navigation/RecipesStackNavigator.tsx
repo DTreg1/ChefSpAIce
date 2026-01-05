@@ -1,4 +1,5 @@
 import React from "react";
+import { View, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import RecipesScreen from "@/screens/RecipesScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
@@ -23,6 +24,15 @@ export type RecipesStackParamList = {
 
 const Stack = createNativeStackNavigator<RecipesStackParamList>();
 
+function RecipesHeaderLeft() {
+  return (
+    <View style={styles.headerLeftContainer}>
+      <HamburgerButton />
+      <HeaderSearch screenKey="recipes" placeholder="Search recipes..." />
+    </View>
+  );
+}
+
 export default function RecipesStackNavigator() {
   const screenOptions = useScreenOptions({ transparent: false });
 
@@ -33,8 +43,7 @@ export default function RecipesStackNavigator() {
         component={RecipesScreen}
         options={{
           headerTitle: () => <HeaderTitle title="Recipes" materialIcon="notebook-heart-outline" />,
-          headerLeft: () => <HamburgerButton />,
-          headerRight: () => <HeaderSearch screenKey="recipes" placeholder="Search recipes..." />,
+          headerLeft: () => <RecipesHeaderLeft />,
         }}
       />
       <Stack.Screen
@@ -55,3 +64,10 @@ export default function RecipesStackNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerLeftContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+});

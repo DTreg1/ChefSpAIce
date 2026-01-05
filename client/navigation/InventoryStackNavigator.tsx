@@ -10,7 +10,6 @@ import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
-import { useSearch } from "@/contexts/SearchContext";
 import { Spacing } from "@/constants/theme";
 
 export type InventoryStackParamList = {
@@ -40,14 +39,11 @@ function ExportButton() {
   );
 }
 
-function InventoryHeaderRight() {
-  const { isSearchOpen } = useSearch();
-  const isOpen = isSearchOpen("inventory");
-
+function InventoryHeaderLeft() {
   return (
-    <View style={styles.headerRightContainer}>
+    <View style={styles.headerLeftContainer}>
+      <HamburgerButton />
       <HeaderSearch screenKey="inventory" placeholder="Search items..." />
-      {!isOpen && <ExportButton />}
     </View>
   );
 }
@@ -62,8 +58,8 @@ export default function InventoryStackNavigator() {
         component={InventoryScreen}
         options={{
           headerTitle: () => <HeaderTitle title="Kitchen" materialIcon="stove" />,
-          headerLeft: () => <HamburgerButton />,
-          headerRight: () => <InventoryHeaderRight />,
+          headerLeft: () => <InventoryHeaderLeft />,
+          headerRight: () => <ExportButton />,
         }}
       />
       <Stack.Screen
@@ -78,7 +74,7 @@ export default function InventoryStackNavigator() {
 }
 
 const styles = StyleSheet.create({
-  headerRightContainer: {
+  headerLeftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
