@@ -37,6 +37,7 @@ import {
   FlatList,
   StyleSheet,
   Pressable,
+  TouchableOpacity,
   RefreshControl,
   Dimensions,
   Alert,
@@ -381,7 +382,7 @@ export default function RecipesScreen() {
 
   const renderMenuButton = () => (
     <View style={styles.menuContainer}>
-      <Pressable
+      <TouchableOpacity
         style={[
           styles.menuButton,
           {
@@ -391,9 +392,12 @@ export default function RecipesScreen() {
         ]}
         onPress={() => setMenuOpen(!menuOpen)}
         testID="button-recipes-menu"
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Recipe options menu"
       >
         <Feather name="more-vertical" size={20} color={theme.text} />
-      </Pressable>
+      </TouchableOpacity>
 
       {menuOpen && (
         <>
