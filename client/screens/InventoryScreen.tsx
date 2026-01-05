@@ -354,10 +354,16 @@ export default function InventoryScreen() {
 
     // Food group filter (multi-select: show items matching ANY selected group)
     if (selectedFoodGroups.length > 0) {
+      console.log('[Filter] Filtering by food groups:', selectedFoodGroups);
       filtered = filtered.filter((item) => {
         const itemFoodGroup = getItemFoodGroup(item);
-        return itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
+        const passes = itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
+        if (!passes) {
+          console.log(`[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`);
+        }
+        return passes;
       });
+      console.log('[Filter] After filtering:', filtered.length, 'items');
     }
 
     // Apply sorting (alphabetically by name)
@@ -979,7 +985,7 @@ export default function InventoryScreen() {
                   styles.foodGroupChip,
                   {
                     backgroundColor: isSelected
-                      ? AppColors.primary + "30"
+                      ? AppColors.primary
                       : theme.glass.background,
                     borderColor: isSelected
                       ? AppColors.primary
@@ -988,19 +994,22 @@ export default function InventoryScreen() {
                 ]}
                 onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
                 onPress={() => {
-                  setSelectedFoodGroups((prev) =>
-                    isSelected
+                  setSelectedFoodGroups((prev) => {
+                    const newSelection = isSelected
                       ? prev.filter((g) => g !== group.key)
-                      : [...prev, group.key]
-                  );
+                      : [...prev, group.key];
+                    console.log('[Filter] Selected food groups:', newSelection);
+                    return newSelection;
+                  });
                 }}
               >
                 <ThemedText
                   type="caption"
                   style={{
                     color: isSelected
-                      ? AppColors.primary
+                      ? "#FFFFFF"
                       : theme.textSecondary,
+                    fontWeight: isSelected ? "600" : "400",
                   }}
                 >
                   {group.label}
