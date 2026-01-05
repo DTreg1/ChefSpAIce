@@ -512,7 +512,8 @@ export default function InventoryScreen() {
                 style={styles.nutritionSummaryText}
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                minimumFontScale={0.6}
+                minimumFontScale={0.5}
+                ellipsizeMode={undefined}
               >
                 {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
               </ThemedText>
@@ -1266,6 +1267,7 @@ const styles = StyleSheet.create({
   },
   nutritionSummaryText: {
     flex: 1,
+    flexShrink: 1,
   },
   nutritionSummaryMeta: {
     marginTop: Spacing.xs,
