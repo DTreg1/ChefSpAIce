@@ -161,15 +161,19 @@ export function GlassButton({
           ) : (
             <View style={styles.glassButtonContent}>
               {icon}
-              <ThemedText
-                type="button"
-                style={[
-                  styles.buttonText,
-                  { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
-                ]}
-              >
-                {children}
-              </ThemedText>
+              {typeof children === "string" ? (
+                <ThemedText
+                  type="button"
+                  style={[
+                    styles.buttonText,
+                    { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
+                  ]}
+                >
+                  {children}
+                </ThemedText>
+              ) : (
+                children
+              )}
             </View>
           )}
         </BlurView>
@@ -204,15 +208,19 @@ export function GlassButton({
       ) : (
         <View style={styles.glassButtonContent}>
           {icon}
-          <ThemedText
-            type="button"
-            style={[
-              styles.buttonText,
-              { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
-            ]}
-          >
-            {children}
-          </ThemedText>
+          {typeof children === "string" ? (
+            <ThemedText
+              type="button"
+              style={[
+                styles.buttonText,
+                { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
+              ]}
+            >
+              {children}
+            </ThemedText>
+          ) : (
+            children
+          )}
         </View>
       )}
     </AnimatedPressable>
