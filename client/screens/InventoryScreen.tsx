@@ -1286,7 +1286,6 @@ const styles = StyleSheet.create({
   funFactText: {
     fontStyle: "italic",
     opacity: 0.9,
-    marginLeft: 22,
   },
   foodGroupFilters: {
     flexDirection: "row",
@@ -1329,15 +1328,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Spacing.xs,
     marginTop: Spacing.sm,
-  },
-  nutritionFilterChip: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    minHeight: 44,
-    borderRadius: GlassEffect.borderRadius.pill,
-    borderWidth: 1,
   },
   groupCard: {
     marginBottom: Spacing.md,
