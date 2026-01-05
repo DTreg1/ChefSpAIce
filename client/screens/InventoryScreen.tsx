@@ -1263,9 +1263,7 @@ const styles = StyleSheet.create({
   listHeader: {
     gap: Spacing.md,
   },
-  listFooter: {
-    marginTop: Spacing.md,
-  },
+  listFooter: {},
   funFactCard: {
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
