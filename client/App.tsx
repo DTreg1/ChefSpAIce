@@ -2,16 +2,16 @@
  * =============================================================================
  * CHEFSP-AICE ROOT APPLICATION
  * =============================================================================
- * 
+ *
  * This is the main entry point for the ChefSpAIce mobile application.
  * It sets up all the providers and context needed for the app to function.
- * 
+ *
  * Architecture Overview:
  * - React Native + Expo framework
  * - React Navigation for screen management
  * - React Query for server state management
  * - Context providers for global state (Auth, Subscription, Onboarding, Chat)
- * 
+ *
  * Provider Hierarchy (from outer to inner):
  * 1. ErrorBoundary - Catches and displays errors gracefully
  * 2. QueryClientProvider - React Query for API calls and caching
@@ -70,13 +70,20 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
  * Screens where the floating chat button should NOT appear even after auth/onboarding.
  * Currently only the AddItem screen where the chat would interfere with the UI.
  */
-const SCREENS_WITHOUT_CHAT = ["AddItem"];
+const SCREENS_WITHOUT_CHAT = [
+  "AddItem",
+  "Auth",
+  "Onboarding",
+  "Subscription",
+  "Profile",
+  "Settings",
+];
 
 /**
  * Recursively traverses the navigation state to find the currently active screen.
  * React Navigation stores state as a nested structure, so we need to traverse
  * down to find the deepest active route.
- * 
+ *
  * @param state - The current navigation state
  * @returns The name of the currently active route
  */
@@ -93,7 +100,7 @@ function getActiveRouteName(
 
 /**
  * MOBILE APP CONTENT
- * 
+ *
  * The main content component that renders the navigation structure.
  * This is wrapped by all the context providers and handles:
  * - Navigation container setup with theming
@@ -154,16 +161,16 @@ function MobileAppContent() {
       >
         {/* Animated gradient background - full screen, outside max-width container */}
         <AnimatedBackground bubbleCount={20} />
-        
+
         {/* Shows when device is offline */}
         <OfflineIndicator />
-        
+
         {/* Web max-width container for better readability on large screens */}
         <View style={styles.webContainer}>
           <View style={styles.webContent}>
             {/* Main navigation stack */}
             <RootStackNavigator />
-            
+
             {/* Floating chat button and modal - only shown after auth + onboarding */}
             {showChat ? (
               <>
@@ -171,7 +178,7 @@ function MobileAppContent() {
                 <ChatModal />
               </>
             ) : null}
-            
+
             {/* Development overlay showing current screen name */}
             <ScreenIdentifierOverlay screenName={currentRoute} />
           </View>
@@ -184,14 +191,14 @@ function MobileAppContent() {
 
 /**
  * ROOT WRAPPER
- * 
+ *
  * Sets up the core infrastructure providers:
  * - GestureHandlerRootView for gesture recognition
  * - KeyboardProvider for keyboard-aware scrolling
  * - AuthProvider for user authentication state
  * - SubscriptionProvider for Stripe subscription management
  * - OnboardingProvider for first-time user experience
- * 
+ *
  * Also sets the root background color based on theme.
  */
 function RootWrapper() {
@@ -217,7 +224,7 @@ function RootWrapper() {
 
 /**
  * APP - Main Export
- * 
+ *
  * The top-level component exported as the app entry point.
  * Wraps everything in:
  * - ErrorBoundary for graceful error handling
