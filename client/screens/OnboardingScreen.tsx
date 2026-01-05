@@ -1175,15 +1175,6 @@ export default function OnboardingScreen() {
     );
   }
 
-  const handleCancelUpgrade = () => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: "Main" as never }],
-      }),
-    );
-  };
-
   const renderPreferencesStep = () => (
     <Animated.View
       entering={SlideInRight.duration(300)}

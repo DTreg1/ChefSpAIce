@@ -62,7 +62,7 @@ import {
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider } from "./hooks/useSubscription";
+import { SubscriptionProvider, useSubscription } from "./hooks/useSubscription";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
@@ -76,6 +76,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 const SCREENS_WITHOUT_CHAT = [
   "AddItem",
   "Auth",
+  "Landing",
   "Onboarding",
   "Subscription",
   "Profile",
@@ -117,6 +118,7 @@ function MobileAppContent() {
   const isDark = colorScheme === "dark";
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
+  const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } = useSubscription();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
@@ -144,16 +146,26 @@ function MobileAppContent() {
 
   /**
    * Only show chat button when:
-   * 1. User is authenticated (has an account)
-   * 2. Onboarding is complete
-   * 3. Not on excluded screens (like AddItem where chat would interfere)
+   * 1. Navigation route is known (not undefined/initial state)
+   * 2. All loading states are complete (auth, subscription, onboarding checks)
+   * 3. User is authenticated (has an account)
+   * 4. User has an active subscription
+   * 5. Onboarding is complete
+   * 6. Not on excluded screens (like AddItem where chat would interfere)
+   * 
+   * IMPORTANT: We require currentRoute to be defined to prevent the chat button
+   * from flashing during initial navigation setup, before we know which screen
+   * the user is on. This ensures the button never appears on auth/onboarding screens.
    */
   const showChat =
+    currentRoute !== undefined &&
     !isAuthLoading &&
+    !isSubscriptionLoading &&
     isAuthenticated &&
+    isSubscriptionActive &&
     !isCheckingOnboarding &&
     isOnboardingComplete &&
-    !SCREENS_WITHOUT_CHAT.includes(currentRoute || "");
+    !SCREENS_WITHOUT_CHAT.includes(currentRoute);
 
   return (
     <FloatingChatProvider>
