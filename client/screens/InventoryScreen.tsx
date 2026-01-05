@@ -508,12 +508,8 @@ export default function InventoryScreen() {
             <View style={styles.nutritionSummaryContent}>
               <Feather name="zap" size={16} color={AppColors.primary} />
               <ThemedText 
-                type="small" 
+                type="caption" 
                 style={styles.nutritionSummaryText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.5}
-                ellipsizeMode={undefined}
               >
                 {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
               </ThemedText>
