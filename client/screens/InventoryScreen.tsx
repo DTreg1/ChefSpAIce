@@ -1057,11 +1057,6 @@ const styles = StyleSheet.create({
   },
   searchBlur: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.sm,
-  },
-  filterFade: {
-    height: 16,
   },
   searchContent: {},
   searchInputContainer: {
