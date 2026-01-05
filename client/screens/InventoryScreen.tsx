@@ -2,10 +2,10 @@
  * =============================================================================
  * INVENTORY SCREEN
  * =============================================================================
- *
+ * 
  * The main inventory management screen for ChefSpAIce.
  * Users can view, filter, and manage their food inventory here.
- *
+ * 
  * KEY FEATURES:
  * - View all food items grouped by storage location (fridge, freezer, pantry)
  * - Search and filter items by name, category, or food group
@@ -13,18 +13,18 @@
  * - View nutrition information for each item
  * - Swipe left/right to mark items as consumed or wasted
  * - Pull to refresh inventory data
- *
+ * 
  * UI COMPONENTS:
  * - Search bar with food group filter chips
  * - Nutrition summary showing total macros
  * - Collapsible sections by storage location
  * - Swipeable cards with gesture animations
- *
+ * 
  * DATA FLOW:
  * - Loads inventory from local storage (offline-first)
  * - Syncs with server when online
  * - Updates React Query cache on changes
- *
+ * 
  * @module screens/InventoryScreen
  */
 
@@ -62,10 +62,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  GlassView,
-  isLiquidGlassAvailable,
-} from "@/components/GlassViewWithContext";
+import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -95,7 +92,12 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UsageBadge } from "@/components/UpgradePrompt";
 import { useSearch } from "@/contexts/SearchContext";
 
-type FoodGroup = "grains" | "vegetables" | "fruits" | "protein" | "dairy";
+type FoodGroup =
+  | "grains"
+  | "vegetables"
+  | "fruits"
+  | "protein"
+  | "dairy";
 interface StorageLocationOption {
   key: string;
   label: string;
@@ -220,15 +222,9 @@ export default function InventoryScreen() {
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
-  const [storageLocations, setStorageLocations] = useState<
-    StorageLocationOption[]
-  >([
+  const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([
     { key: "all", label: "All", icon: "grid" },
-    ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({
-      key: loc.key,
-      label: loc.label,
-      icon: loc.icon,
-    })),
+    ...DEFAULT_STORAGE_LOCATIONS.map(loc => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
   const [filterRowWidth, setFilterRowWidth] = useState(0);
   const [buttonWidths, setButtonWidths] = useState<number[]>([]);
@@ -251,7 +247,7 @@ export default function InventoryScreen() {
   }, [filterRowWidth, buttonWidths]);
 
   const handleButtonLayout = useCallback((index: number, width: number) => {
-    setButtonWidths((prev) => {
+    setButtonWidths(prev => {
       const newWidths = [...prev];
       newWidths[index] = width;
       return newWidths;
@@ -323,11 +319,11 @@ export default function InventoryScreen() {
 
   // Use navigation.addListener for more reliable focus events on web
   useEffect(() => {
-    const unsubscribeFocus = navigation.addListener("focus", () => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
       loadItems();
       loadStorageLocations();
     });
-    const unsubscribeBlur = navigation.addListener("blur", () => {
+    const unsubscribeBlur = navigation.addListener('blur', () => {
       collapseSearch("inventory");
     });
     return () => {
@@ -351,28 +347,23 @@ export default function InventoryScreen() {
       filtered = filtered.filter((item) => {
         const matchesName = item.name.toLowerCase().includes(query);
         const matchesCategory = item.category.toLowerCase().includes(query);
-        const matchesLocation = (item.storageLocation)
-          .toLowerCase()
-          .includes(query);
+        const matchesLocation = (item.storageLocation || "").toLowerCase().includes(query);
         return matchesName || matchesCategory || matchesLocation;
       });
     }
 
     // Food group filter (multi-select: show items matching ANY selected group)
     if (selectedFoodGroups.length > 0) {
-      console.log("[Filter] Filtering by food groups:", selectedFoodGroups);
+      console.log('[Filter] Filtering by food groups:', selectedFoodGroups);
       filtered = filtered.filter((item) => {
         const itemFoodGroup = getItemFoodGroup(item);
-        const passes =
-          itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
+        const passes = itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
         if (!passes) {
-          console.log(
-            `[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`,
-          );
+          console.log(`[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`);
         }
         return passes;
       });
-      console.log("[Filter] After filtering:", filtered.length, "items");
+      console.log('[Filter] After filtering:', filtered.length, 'items');
     }
 
     // Apply sorting (alphabetically by name)
@@ -417,9 +408,7 @@ export default function InventoryScreen() {
     setFunFactLoading(true);
     try {
       const token = await storage.getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -446,10 +435,7 @@ export default function InventoryScreen() {
         setFunFact(data.fact);
         setFunFactTimestamp(timestamp);
         // Save to local storage
-        await AsyncStorage.setItem(
-          "funFact",
-          JSON.stringify({ fact: data.fact, timestamp }),
-        );
+        await AsyncStorage.setItem("funFact", JSON.stringify({ fact: data.fact, timestamp }));
       }
     } catch (error) {
       console.error("Error fetching fun fact:", error);
@@ -534,7 +520,7 @@ export default function InventoryScreen() {
     if (items.length === 0) return null;
     const showFunFact = funFact || funFactLoading;
     if (!showFunFact) return null;
-
+    
     return (
       <View style={styles.listHeader}>
         <GlassCard style={styles.funFactCard}>
@@ -553,12 +539,10 @@ export default function InventoryScreen() {
                   style={styles.funFactRefreshButton}
                   testID="button-refresh-fun-fact"
                 >
-                  <Feather
-                    name="refresh-cw"
-                    size={14}
-                    color={
-                      funFactLoading ? theme.textSecondary : AppColors.primary
-                    }
+                  <Feather 
+                    name="refresh-cw" 
+                    size={14} 
+                    color={funFactLoading ? theme.textSecondary : AppColors.primary} 
                   />
                 </Pressable>
               </View>
@@ -582,21 +566,18 @@ export default function InventoryScreen() {
   const renderListFooter = () => {
     if (items.length === 0) return null;
     if (nutritionTotals.itemsWithNutrition === 0) return null;
-
+    
     return (
       <View style={styles.listFooter}>
         <GlassCard style={styles.nutritionSummary}>
           <View style={styles.nutritionSummaryContent}>
             <Feather name="zap" size={16} color={AppColors.primary} />
             <ThemedText style={styles.nutritionSummaryText}>
-              {nutritionTotals.calories.toLocaleString()} cal |{" "}
-              {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g
-              carbs | {nutritionTotals.fat}g fat
+              {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
             </ThemedText>
           </View>
           <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
-            Based on {nutritionTotals.itemsWithNutrition} items with nutrition
-            data
+            Based on {nutritionTotals.itemsWithNutrition} items with nutrition data
           </ThemedText>
         </GlassCard>
       </View>
@@ -673,13 +654,20 @@ export default function InventoryScreen() {
     const daysLeft = getDaysUntilExpiration(item.expirationDate);
 
     const getBadgeColor = () => {
+      // Muted, desaturated colors that match the glass morphism theme
+      const mutedColors = {
+        success: "#6B8E6B", // Muted sage green
+        warning: "#C4956A", // Muted warm amber
+        error: "#B57D7D",   // Muted dusty rose
+      };
+      
       switch (status) {
         case "expired":
-          return AppColors.error;
+          return mutedColors.error;
         case "expiring":
-          return AppColors.warning;
+          return mutedColors.warning;
         default:
-          return AppColors.success;
+          return mutedColors.success;
       }
     };
 
@@ -796,9 +784,7 @@ export default function InventoryScreen() {
             end={{ x: 1, y: 0.5 }}
             style={styles.actionGradient}
           >
-            <Animated.View
-              style={[styles.actionButtonInner, wastedActionStyle]}
-            >
+            <Animated.View style={[styles.actionButtonInner, wastedActionStyle]}>
               <Feather name="trash-2" size={22} color="#FFFFFF" />
               <ThemedText type="caption" style={styles.actionText}>
                 Wasted
@@ -959,7 +945,7 @@ export default function InventoryScreen() {
     if (loading) {
       return <InventoryListSkeleton sectionCount={3} />;
     }
-
+    
     return (
       <View style={styles.emptyState}>
         <View
@@ -985,54 +971,56 @@ export default function InventoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <View
+      <View 
         style={styles.searchContainer}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
         {/* Food Group Row */}
-        <View style={[styles.filterRow, styles.searchBlur]}>
-          {FOOD_GROUPS.map((group, index) => {
-            const isSelected = selectedFoodGroups.includes(group.key);
-            return (
-              <Pressable
-                key={group.key}
-                testID={`filter-foodgroup-${group.key}`}
-                style={[
-                  styles.foodGroupChip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : theme.glass.background,
-                    borderColor: isSelected
-                      ? AppColors.primary
-                      : theme.glass.border,
-                  },
-                ]}
-                onLayout={(e) =>
-                  handleButtonLayout(index, e.nativeEvent.layout.width)
-                }
-                onPress={() => {
-                  setSelectedFoodGroups((prev) => {
-                    const newSelection = isSelected
-                      ? prev.filter((g) => g !== group.key)
-                      : [...prev, group.key];
-                    console.log("[Filter] Selected food groups:", newSelection);
-                    return newSelection;
-                  });
+        <View 
+          style={[styles.filterRow, styles.searchBlur]}
+        >
+        {FOOD_GROUPS.map((group, index) => {
+          const isSelected = selectedFoodGroups.includes(group.key);
+          return (
+            <Pressable
+              key={group.key}
+              testID={`filter-foodgroup-${group.key}`}
+              style={[
+                styles.foodGroupChip,
+                {
+                  backgroundColor: isSelected
+                    ? AppColors.primary
+                    : theme.glass.background,
+                  borderColor: isSelected
+                    ? AppColors.primary
+                    : theme.glass.border,
+                },
+              ]}
+              onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
+              onPress={() => {
+                setSelectedFoodGroups((prev) => {
+                  const newSelection = isSelected
+                    ? prev.filter((g) => g !== group.key)
+                    : [...prev, group.key];
+                  console.log('[Filter] Selected food groups:', newSelection);
+                  return newSelection;
+                });
+              }}
+            >
+              <ThemedText
+                type="caption"
+                style={{
+                  color: isSelected
+                    ? "#FFFFFF"
+                    : theme.textSecondary,
+                  fontWeight: isSelected ? "600" : "400",
                 }}
               >
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: isSelected ? "#FFFFFF" : theme.textSecondary,
-                    fontWeight: isSelected ? "600" : "400",
-                  }}
-                >
-                  {group.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
+                {group.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
         </View>
       </View>
 

@@ -53,9 +53,8 @@ export function HeaderSearch({ screenKey, placeholder = "Search..." }: HeaderSea
 
   const textColor = typeof theme.text === 'string' ? theme.text : '#000';
   const secondaryColor = typeof theme.textSecondary === 'string' ? theme.textSecondary : '#888';
-  // Use solid background colors instead of transparent glass
-  const bgColor = typeof theme.surface === 'string' ? theme.surface : '#FFFFFF';
-  const borderColor = typeof theme.border === 'string' ? theme.border : '#E9ECEF';
+  const bgColor = typeof theme.glass?.background === 'string' ? theme.glass.background : 'rgba(255,255,255,0.1)';
+  const borderColor = typeof theme.glass?.border === 'string' ? theme.glass.border : 'rgba(255,255,255,0.2)';
 
   if (!isOpen) {
     return (
@@ -117,8 +116,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    flex: 1,
-    minWidth: 180,
+    minWidth: 200,
+    maxWidth: 280,
   },
   closeButton: {
     width: 40,
