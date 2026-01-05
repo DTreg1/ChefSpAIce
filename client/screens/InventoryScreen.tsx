@@ -512,8 +512,9 @@ export default function InventoryScreen() {
                 style={styles.nutritionSummaryText}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.6}
               >
-                {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g P | {nutritionTotals.carbs}g C | {nutritionTotals.fat}g F
+                {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
               </ThemedText>
             </View>
             <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
