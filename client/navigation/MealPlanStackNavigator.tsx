@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MealPlanScreen from "@/screens/MealPlanScreen";
 import ShoppingListScreen from "@/screens/ShoppingListScreen";
 import SelectRecipeScreen from "@/screens/SelectRecipeScreen";
+import { HeaderTitle } from "@/components/HeaderTitle";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
@@ -26,7 +27,7 @@ export default function MealPlanStackNavigator() {
         name="MealPlan"
         component={MealPlanScreen}
         options={{
-          headerTitle: "Meal Plan",
+          headerTitle: () => <HeaderTitle title="Meals" icon="calendar" />,
           headerLeft: () => <HamburgerButton />,
         }}
       />

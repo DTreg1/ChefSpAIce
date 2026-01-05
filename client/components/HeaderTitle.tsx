@@ -1,117 +1,29 @@
 import React from "react";
-import { View, StyleSheet, Image, Pressable, Linking, Platform } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { View, StyleSheet } from "react-native";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
-import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { getApiUrl } from "@/lib/query-client";
+import { Spacing, AppColors } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title: string;
+  icon?: keyof typeof Feather.glyphMap;
+  materialIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
-function TrialBadge() {
-  const { isAuthenticated, token } = useAuth();
-  const { isTrialing, isPastDue, trialDaysRemaining, isLoading, subscription } =
-    useSubscription();
-
-  if (isLoading || !isAuthenticated) {
-    return null;
-  }
-
-  const handleManageSubscription = async () => {
-    try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.url) {
-          if (Platform.OS === "web") {
-            window.location.href = data.url;
-          } else {
-            Linking.openURL(data.url);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error opening subscription portal:", error);
-    }
-  };
-
-  if (isTrialing && trialDaysRemaining !== null) {
-    const trialText =
-      trialDaysRemaining === 0
-        ? "Trial ends today"
-        : trialDaysRemaining === 1
-          ? "1 day left"
-          : `${trialDaysRemaining} days left`;
-
-    return (
-      <Pressable
-        style={styles.trialBadge}
-        onPress={handleManageSubscription}
-        data-testid="header-trial-badge"
-      >
-        <Feather name="clock" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>{trialText}</ThemedText>
-        <Feather name="chevron-right" size={12} color="#fff" />
-      </Pressable>
-    );
-  }
-
-  if (isPastDue) {
-    return (
-      <Pressable
-        style={[styles.trialBadge, styles.pastDueBadge]}
-        onPress={handleManageSubscription}
-        data-testid="header-past-due-badge"
-      >
-        <Feather name="alert-circle" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>Payment issue</ThemedText>
-        <Feather name="chevron-right" size={12} color="#fff" />
-      </Pressable>
-    );
-  }
-
-  if (subscription?.cancelAtPeriodEnd) {
-    return (
-      <Pressable
-        style={[styles.trialBadge, styles.cancelingBadge]}
-        onPress={handleManageSubscription}
-        data-testid="header-canceling-badge"
-      >
-        <Feather name="alert-triangle" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>Ending soon</ThemedText>
-        <Feather name="chevron-right" size={12} color="#fff" />
-      </Pressable>
-    );
-  }
-
-  return null;
-}
-
-export function HeaderTitle({ title }: HeaderTitleProps) {
+export function HeaderTitle({ title, icon, materialIcon }: HeaderTitleProps) {
   return (
     <View style={styles.container}>
-      <Image
-        source={require("../../assets/images/icon.png")}
-        style={styles.icon}
-        resizeMode="contain"
-      />
+      {materialIcon ? (
+        <MaterialCommunityIcons
+          name={materialIcon}
+          size={22}
+          color={AppColors.primary}
+        />
+      ) : icon ? (
+        <Feather name={icon} size={20} color={AppColors.primary} />
+      ) : null}
       <ThemedText style={styles.title}>{title}</ThemedText>
-      <TrialBadge />
     </View>
   );
 }
@@ -123,34 +35,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     gap: Spacing.sm,
   },
-  icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-  },
   title: {
     fontSize: 17,
     fontWeight: "600",
     color: AppColors.primary,
-  },
-  trialBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: AppColors.primary,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    gap: 4,
-  },
-  pastDueBadge: {
-    backgroundColor: AppColors.warning,
-  },
-  cancelingBadge: {
-    backgroundColor: AppColors.error,
-  },
-  trialText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#fff",
   },
 });

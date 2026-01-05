@@ -47,7 +47,7 @@ export default function InventoryStackNavigator() {
         name="Inventory"
         component={InventoryScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="ChefSpAIce" />,
+          headerTitle: () => <HeaderTitle title="Kitchen" materialIcon="stove" />,
           headerLeft: () => <HamburgerButton />,
           headerRight: () => <ExportButton />,
         }}

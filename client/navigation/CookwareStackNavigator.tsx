@@ -1,6 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CookwareScreen from "@/screens/CookwareScreen";
+import { HeaderTitle } from "@/components/HeaderTitle";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
@@ -19,7 +20,7 @@ export default function CookwareStackNavigator() {
         name="Cookware"
         component={CookwareScreen}
         options={{
-          headerTitle: "My Cookware",
+          headerTitle: () => <HeaderTitle title="Cookware" materialIcon="silverware-fork-knife" />,
           headerLeft: () => <HamburgerButton />,
         }}
       />

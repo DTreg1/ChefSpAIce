@@ -14,6 +14,7 @@ import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import InstacartSettingsScreen from "@/screens/InstacartSettingsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import { HeaderTitle } from "@/components/HeaderTitle";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
@@ -57,7 +58,7 @@ export default function ProfileStackNavigator() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          headerTitle: "Profile",
+          headerTitle: () => <HeaderTitle title="Profile" icon="user" />,
           headerLeft: () => <HamburgerButton />,
           headerRight: () => <SettingsButton />,
         }}
