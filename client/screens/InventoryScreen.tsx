@@ -507,8 +507,13 @@ export default function InventoryScreen() {
           <GlassCard style={styles.nutritionSummary}>
             <View style={styles.nutritionSummaryContent}>
               <Feather name="zap" size={16} color={AppColors.primary} />
-              <ThemedText type="small" style={styles.nutritionSummaryText}>
-                {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
+              <ThemedText 
+                type="small" 
+                style={styles.nutritionSummaryText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g P | {nutritionTotals.carbs}g C | {nutritionTotals.fat}g F
               </ThemedText>
             </View>
             <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
