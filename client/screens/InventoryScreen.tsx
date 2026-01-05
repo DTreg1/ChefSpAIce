@@ -968,60 +968,54 @@ export default function InventoryScreen() {
         style={styles.searchContainer}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height + 16)}
       >
-        <BlurView
-          intensity={0}
-          tint={isDark ? "dark" : "light"}
-          style={styles.searchBlur}
+        {/* Food Group Row */}
+        <View 
+          style={[styles.filterRow, styles.searchBlur, { gap: calculatedGap }]}
+          onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
         >
-          {/* Food Group Row */}
-          <View 
-            style={[styles.filterRow, { gap: calculatedGap }]}
-            onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
-          >
-          {FOOD_GROUPS.map((group, index) => {
-            const isSelected = selectedFoodGroups.includes(group.key);
-            return (
-              <Pressable
-                key={group.key}
-                testID={`filter-foodgroup-${group.key}`}
-                style={[
-                  styles.foodGroupChip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : 'transparent',
-                    borderColor: isSelected
-                      ? AppColors.primary
-                      : theme.textTertiary,
-                  },
-                ]}
-                onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
-                onPress={() => {
-                  setSelectedFoodGroups((prev) => {
-                    const newSelection = isSelected
-                      ? prev.filter((g) => g !== group.key)
-                      : [...prev, group.key];
-                    console.log('[Filter] Selected food groups:', newSelection);
-                    return newSelection;
-                  });
+        {FOOD_GROUPS.map((group, index) => {
+          const isSelected = selectedFoodGroups.includes(group.key);
+          return (
+            <Pressable
+              key={group.key}
+              testID={`filter-foodgroup-${group.key}`}
+              style={[
+                styles.foodGroupChip,
+                {
+                  backgroundColor: isSelected
+                    ? AppColors.primary
+                    : theme.glass.background,
+                  borderColor: isSelected
+                    ? AppColors.primary
+                    : theme.glass.border,
+                },
+              ]}
+              onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
+              onPress={() => {
+                setSelectedFoodGroups((prev) => {
+                  const newSelection = isSelected
+                    ? prev.filter((g) => g !== group.key)
+                    : [...prev, group.key];
+                  console.log('[Filter] Selected food groups:', newSelection);
+                  return newSelection;
+                });
+              }}
+            >
+              <ThemedText
+                type="caption"
+                style={{
+                  color: isSelected
+                    ? "#FFFFFF"
+                    : theme.textSecondary,
+                  fontWeight: isSelected ? "600" : "400",
                 }}
               >
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: isSelected
-                      ? "#FFFFFF"
-                      : theme.textSecondary,
-                    fontWeight: isSelected ? "600" : "400",
-                  }}
-                >
-                  {group.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-          </View>
-        </BlurView>
+                {group.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+        </View>
       </View>
 
       <FlatList
