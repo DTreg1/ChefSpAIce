@@ -47,7 +47,6 @@ const TIME_OPTIONS = [15, 30, 45, 60, 90, 120];
 
 export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [servings, setServings] = useState(4);
@@ -68,7 +67,6 @@ export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalPro
   const loadPreferences = async () => {
     const prefs = await storage.getPreferences();
     if (prefs) {
-      setPreferences(prefs);
       setServings(prefs.servingSize || 4);
       setMaxTime(prefs.maxCookingTime || 60);
       setDietaryRestrictions(prefs.dietaryRestrictions?.join(", ") || "");
@@ -83,18 +81,20 @@ export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalPro
   const handleSave = async () => {
     setSaving(true);
     try {
+      const currentPrefs = await storage.getPreferences();
       const updatedPrefs: UserPreferences = {
-        ...preferences,
+        ...currentPrefs,
         dietaryRestrictions: dietaryRestrictions.split(",").map(s => s.trim()).filter(Boolean),
         cuisinePreferences: cuisine.split(",").map(s => s.trim()).filter(Boolean),
-        notificationsEnabled: preferences?.notificationsEnabled ?? true,
-        expirationAlertDays: preferences?.expirationAlertDays ?? 3,
+        notificationsEnabled: currentPrefs?.notificationsEnabled ?? true,
+        expirationAlertDays: currentPrefs?.expirationAlertDays ?? 3,
         servingSize: servings,
         maxCookingTime: maxTime,
         mealType: mealType as UserPreferences['mealType'],
         prioritizeExpiring,
         cookingLevel: cookingLevel as UserPreferences['cookingLevel'],
         llmCreativity: creativity as UserPreferences['llmCreativity'],
+        macroTargets: currentPrefs?.macroTargets ?? DEFAULT_MACRO_TARGETS,
       };
       await storage.setPreferences(updatedPrefs);
       onClose();

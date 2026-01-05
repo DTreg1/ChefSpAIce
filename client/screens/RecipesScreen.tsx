@@ -36,7 +36,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  TextInput,
   Pressable,
   RefreshControl,
   Dimensions,
@@ -49,7 +48,6 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -95,7 +93,6 @@ export default function RecipesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [filterByCookware, setFilterByCookware] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -214,10 +211,7 @@ export default function RecipesScreen() {
       recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFavorite = showFavoritesOnly ? recipe.isFavorite : true;
-    const matchesCookware = filterByCookware
-      ? canMakeWithCookware(recipe)
-      : true;
-    return matchesSearch && matchesFavorite && matchesCookware;
+    return matchesSearch && matchesFavorite;
   });
 
   const handleToggleFavorite = async (recipe: Recipe) => {
