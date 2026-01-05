@@ -10,10 +10,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
   FadeIn,
   FadeOut,
 } from "react-native-reanimated";
@@ -38,20 +34,8 @@ export function FloatingChatButton() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scale = useSharedValue(1);
-  const pulseScale = useSharedValue(1);
 
   const canUseAiAssistant = checkFeature('canUseAiKitchenAssistant');
-
-  React.useEffect(() => {
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
 
   const handlePressIn = () => {
     scale.value = withSpring(0.9, { damping: 15, stiffness: 400 });
@@ -63,10 +47,6 @@ export function FloatingChatButton() {
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-  }));
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
   }));
 
   const bottomPadding = Math.max(insets.bottom, 10);
@@ -137,21 +117,19 @@ export function FloatingChatButton() {
         exiting={FadeOut.duration(200)}
         style={[styles.container, { bottom: bottomPosition, right: Spacing.lg }]}
       >
-        <Animated.View style={pulseStyle}>
-          <AnimatedPressable
-            onPress={handlePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            style={[styles.buttonWrapper, animatedStyle]}
-          >
-            {innerContent}
-            {!canUseAiAssistant && (
-              <View style={styles.lockBadge}>
-                <Feather name="lock" size={10} color="#FFFFFF" />
-              </View>
-            )}
-          </AnimatedPressable>
-        </Animated.View>
+        <AnimatedPressable
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[styles.buttonWrapper, animatedStyle]}
+        >
+          {innerContent}
+          {!canUseAiAssistant && (
+            <View style={styles.lockBadge}>
+              <Feather name="lock" size={10} color="#FFFFFF" />
+            </View>
+          )}
+        </AnimatedPressable>
       </Animated.View>
 
       {showUpgradePrompt && (
