@@ -970,8 +970,7 @@ export default function InventoryScreen() {
       >
         {/* Food Group Row */}
         <View 
-          style={[styles.filterRow, styles.searchBlur, { gap: calculatedGap }]}
-          onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
+          style={[styles.filterRow, styles.searchBlur]}
         >
         {FOOD_GROUPS.map((group, index) => {
           const isSelected = selectedFoodGroups.includes(group.key);
@@ -1299,6 +1298,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     marginTop: Spacing.sm,
+    justifyContent: "space-between",
   },
   filterSummaryRow: {
     flexDirection: "row",
