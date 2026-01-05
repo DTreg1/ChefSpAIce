@@ -277,10 +277,10 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             />
             <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
           </View>
-          <TrialBadge />
           <ThemedText type="small" style={styles.tagline}>
             Reduce waste, eat fresh
           </ThemedText>
+          <TrialBadge />
         </View>
 
         <View
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     gap: 4,
     marginLeft: 52,
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   pastDueBadge: {
     backgroundColor: AppColors.warning,

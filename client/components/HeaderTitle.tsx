@@ -17,11 +17,11 @@ export function HeaderTitle({ title, icon, materialIcon }: HeaderTitleProps) {
       {materialIcon ? (
         <MaterialCommunityIcons
           name={materialIcon}
-          size={22}
+          size={26}
           color={AppColors.primary}
         />
       ) : icon ? (
-        <Feather name={icon} size={20} color={AppColors.primary} />
+        <Feather name={icon} size={24} color={AppColors.primary} />
       ) : null}
       <ThemedText style={styles.title}>{title}</ThemedText>
     </View>
