@@ -1,21 +1,22 @@
 /**
- * LogBox Configuration for Known Cosmetic Warnings
- * 
- * This module uses React Native's LogBox to suppress known cosmetic warnings
- * from third-party libraries during development. These warnings do not affect
- * app functionality.
- * 
- * Known suppressed warnings:
- * - "Unexpected text node: . A text node cannot be a child of a <View>"
- *   Source: react-native-web View validation
- *   Cause: Unknown third-party library (possibly expo-glass-effect or expo-blur)
- *   Impact: None - purely cosmetic warning
+ * Debug mode to trace the source of the "Unexpected text node" error.
+ * This will log the full stack trace when the error occurs.
  */
 
-import { LogBox } from 'react-native';
-
-if (__DEV__) {
-  LogBox.ignoreLogs([
-    'Unexpected text node: . A text node cannot be a child of a <View>',
-  ]);
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  let errorCount = 0;
+  
+  console.error = function(...args) {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+    if (firstArg.includes('Unexpected text node')) {
+      errorCount++;
+      const stack = new Error().stack;
+      const stackLines = stack ? stack.split('\n').slice(0, 20) : [];
+      console.log('[DEBUG] Error count:', errorCount);
+      console.log('[DEBUG] Stack lines:');
+      stackLines.forEach((line, i) => console.log(`[STACK ${i}]:`, line));
+    }
+    return originalError.apply(console, args);
+  };
 }
