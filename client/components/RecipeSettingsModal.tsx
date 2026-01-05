@@ -5,14 +5,12 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
-  TextInput,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, UserPreferences, DEFAULT_MACRO_TARGETS } from "@/lib/storage";
@@ -46,18 +44,69 @@ const CREATIVITY_LEVELS = [
 const SERVING_OPTIONS = [1, 2, 4, 6, 8, 12];
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120];
 
+const CUISINE_OPTIONS = [
+  { id: "american", label: "American" },
+  { id: "italian", label: "Italian" },
+  { id: "mexican", label: "Mexican" },
+  { id: "asian", label: "Asian" },
+  { id: "mediterranean", label: "Mediterranean" },
+  { id: "indian", label: "Indian" },
+  { id: "french", label: "French" },
+  { id: "japanese", label: "Japanese" },
+  { id: "chinese", label: "Chinese" },
+  { id: "thai", label: "Thai" },
+  { id: "korean", label: "Korean" },
+  { id: "greek", label: "Greek" },
+];
+
+const DIETARY_OPTIONS = [
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "vegan", label: "Vegan" },
+  { id: "pescatarian", label: "Pescatarian" },
+  { id: "gluten-free", label: "Gluten-Free" },
+  { id: "dairy-free", label: "Dairy-Free" },
+  { id: "keto", label: "Keto" },
+  { id: "paleo", label: "Paleo" },
+  { id: "halal", label: "Halal" },
+  { id: "kosher", label: "Kosher" },
+];
+
 export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
   const [saving, setSaving] = useState(false);
 
   const [servings, setServings] = useState(4);
   const [maxTime, setMaxTime] = useState(60);
-  const [dietaryRestrictions, setDietaryRestrictions] = useState("");
-  const [cuisine, setCuisine] = useState("");
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<Set<string>>(new Set());
+  const [cuisines, setCuisines] = useState<Set<string>>(new Set());
   const [mealType, setMealType] = useState<string | undefined>(undefined);
   const [prioritizeExpiring, setPrioritizeExpiring] = useState(false);
   const [cookingLevel, setCookingLevel] = useState<string>("intermediate");
   const [creativity, setCreativity] = useState<string>("special");
+
+  const toggleDietary = (id: string) => {
+    setDietaryRestrictions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleCuisine = (id: string) => {
+    setCuisines((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (visible) {
@@ -70,8 +119,8 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
     if (prefs) {
       setServings(prefs.servingSize || 4);
       setMaxTime(prefs.maxCookingTime || 60);
-      setDietaryRestrictions(prefs.dietaryRestrictions?.join(", ") || "");
-      setCuisine(prefs.cuisinePreferences?.join(", ") || "");
+      setDietaryRestrictions(new Set(prefs.dietaryRestrictions || []));
+      setCuisines(new Set(prefs.cuisinePreferences || []));
       setMealType(prefs.mealType);
       setPrioritizeExpiring(prefs.prioritizeExpiring || false);
       setCookingLevel(prefs.cookingLevel || "intermediate");
@@ -85,8 +134,8 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
       const currentPrefs = await storage.getPreferences();
       const updatedPrefs: UserPreferences = {
         ...currentPrefs,
-        dietaryRestrictions: dietaryRestrictions.split(",").map(s => s.trim()).filter(Boolean),
-        cuisinePreferences: cuisine.split(",").map(s => s.trim()).filter(Boolean),
+        dietaryRestrictions: Array.from(dietaryRestrictions),
+        cuisinePreferences: Array.from(cuisines),
         notificationsEnabled: currentPrefs?.notificationsEnabled ?? true,
         expirationAlertDays: currentPrefs?.expirationAlertDays ?? 3,
         servingSize: servings,
@@ -234,38 +283,30 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
 
             <GlassCard style={styles.section}>
               <ThemedText type="caption" style={styles.sectionTitle}>Dietary Restrictions</ThemedText>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
-                    color: theme.text,
-                  },
-                ]}
-                value={dietaryRestrictions}
-                onChangeText={setDietaryRestrictions}
-                placeholder="e.g., vegetarian, gluten-free, dairy-free"
-                placeholderTextColor={theme.textSecondary}
-              />
+              <View style={styles.optionsRow}>
+                {DIETARY_OPTIONS.map((option) => (
+                  <OptionChip
+                    key={option.id}
+                    selected={dietaryRestrictions.has(option.id)}
+                    onPress={() => toggleDietary(option.id)}
+                    label={option.label}
+                  />
+                ))}
+              </View>
             </GlassCard>
 
             <GlassCard style={styles.section}>
               <ThemedText type="caption" style={styles.sectionTitle}>Cuisine Preferences</ThemedText>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
-                    color: theme.text,
-                  },
-                ]}
-                value={cuisine}
-                onChangeText={setCuisine}
-                placeholder="e.g., Italian, Mexican, Asian"
-                placeholderTextColor={theme.textSecondary}
-              />
+              <View style={styles.optionsRow}>
+                {CUISINE_OPTIONS.map((option) => (
+                  <OptionChip
+                    key={option.id}
+                    selected={cuisines.has(option.id)}
+                    onPress={() => toggleCuisine(option.id)}
+                    label={option.label}
+                  />
+                ))}
+              </View>
             </GlassCard>
 
             <GlassCard style={styles.section}>
@@ -374,12 +415,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    fontSize: 16,
   },
   toggleRow: {
     flexDirection: "row",
