@@ -959,31 +959,6 @@ export default function InventoryScreen() {
         style={[styles.searchContainer, styles.searchBlur]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
-        {/* Filter Summary Row */}
-        {(activeFilterCount > 0 || filteredItems.length !== items.length) && (
-          <View style={styles.filterSummaryRow}>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {filteredItems.length} of {items.length} items
-              {activeFilterCount > 0 ? ` (${activeFilterCount} filter${activeFilterCount > 1 ? 's' : ''} active)` : ''}
-            </ThemedText>
-            {activeFilterCount > 0 && (
-              <Pressable
-                testID="button-clear-filters"
-                style={[
-                  styles.clearFiltersButton,
-                  { borderColor: theme.glass.border },
-                ]}
-                onPress={clearAllFilters}
-              >
-                <Feather name="x" size={12} color={theme.textSecondary} />
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.xs }}>
-                  Clear
-                </ThemedText>
-              </Pressable>
-            )}
-          </View>
-        )}
-
         {/* Food Group Row */}
         <View 
           style={[styles.filterRow, { gap: calculatedGap }]}
@@ -1000,7 +975,7 @@ export default function InventoryScreen() {
                   {
                     backgroundColor: isSelected
                       ? AppColors.primary + "30"
-                      : "transparent",
+                      : theme.glass.background,
                     borderColor: isSelected
                       ? AppColors.primary
                       : theme.glass.border,
