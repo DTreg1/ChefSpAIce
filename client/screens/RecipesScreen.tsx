@@ -31,7 +31,7 @@
  * @module screens/RecipesScreen
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useLayoutEffect } from "react";
 import {
   View,
   FlatList,
@@ -84,9 +84,33 @@ export default function RecipesScreen() {
   useEffect(() => {
     const unsubscribe = navigation.addListener('blur', () => {
       collapseSearch("recipes");
+      setMenuOpen(false);
     });
     return unsubscribe;
   }, [navigation, collapseSearch]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={[
+            styles.headerMenuButton,
+            {
+              backgroundColor: theme.glass.background,
+              borderColor: theme.glass.border,
+            },
+          ]}
+          onPress={() => setMenuOpen((prev) => !prev)}
+          testID="button-recipes-menu"
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Recipe options menu"
+        >
+          <Feather name="more-vertical" size={20} color={theme.text} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, theme]);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -380,104 +404,86 @@ export default function RecipesScreen() {
     );
   };
 
-  const renderMenuButton = () => (
-    <View style={styles.menuContainer}>
-      <TouchableOpacity
-        style={[
-          styles.menuButton,
-          {
-            backgroundColor: theme.glass.background,
-            borderColor: theme.glass.border,
-          },
-        ]}
-        onPress={() => setMenuOpen(!menuOpen)}
-        testID="button-recipes-menu"
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="Recipe options menu"
-      >
-        <Feather name="more-vertical" size={20} color={theme.text} />
-      </TouchableOpacity>
-
-      {menuOpen && (
-        <>
+  const renderMenuDropdown = () => {
+    if (!menuOpen) return null;
+    return (
+      <>
+        <Pressable
+          style={styles.menuOverlay}
+          onPress={() => setMenuOpen(false)}
+        />
+        <View
+          style={[
+            styles.menuDropdown,
+            {
+              backgroundColor: theme.backgroundSecondary,
+              borderColor: theme.glass.border,
+            },
+          ]}
+        >
           <Pressable
-            style={styles.menuOverlay}
-            onPress={() => setMenuOpen(false)}
-          />
-          <View
-            style={[
-              styles.menuDropdown,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                borderColor: theme.glass.border,
-              },
-            ]}
+            style={styles.menuItem}
+            onPress={() => {
+              setShowFavoritesOnly(!showFavoritesOnly);
+              setMenuOpen(false);
+            }}
+            testID="button-toggle-favorites"
           >
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setShowFavoritesOnly(!showFavoritesOnly);
-                setMenuOpen(false);
-              }}
-              testID="button-toggle-favorites"
-            >
-              <View style={styles.menuItemRow}>
-                <Feather
-                  name="heart"
-                  size={18}
-                  color={showFavoritesOnly ? AppColors.primary : theme.text}
-                />
-                <ThemedText type="small" style={{ flex: 1 }}>
-                  Favorites Only
-                </ThemedText>
-                {showFavoritesOnly && (
-                  <Feather name="check" size={16} color={AppColors.primary} />
-                )}
-              </View>
-            </Pressable>
+            <View style={styles.menuItemRow}>
+              <Feather
+                name="heart"
+                size={18}
+                color={showFavoritesOnly ? AppColors.primary : theme.text}
+              />
+              <ThemedText type="small" style={{ flex: 1 }}>
+                Favorites Only
+              </ThemedText>
+              {showFavoritesOnly && (
+                <Feather name="check" size={16} color={AppColors.primary} />
+              )}
+            </View>
+          </Pressable>
 
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setShowSettingsModal(true);
-                setMenuOpen(false);
-              }}
-              testID="button-customize-recipes"
-            >
-              <View style={styles.menuItemRow}>
-                <Feather name="sliders" size={18} color={theme.text} />
-                <ThemedText type="small" style={{ flex: 1 }}>
-                  Customize
-                </ThemedText>
-              </View>
-            </Pressable>
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              setShowSettingsModal(true);
+              setMenuOpen(false);
+            }}
+            testID="button-customize-recipes"
+          >
+            <View style={styles.menuItemRow}>
+              <Feather name="sliders" size={18} color={theme.text} />
+              <ThemedText type="small" style={{ flex: 1 }}>
+                Customize
+              </ThemedText>
+            </View>
+          </Pressable>
 
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                handleExport();
-                setMenuOpen(false);
-              }}
-              disabled={exporting}
-              testID="button-export-recipes"
-            >
-              <View style={styles.menuItemRow}>
-                <Feather name="download" size={18} color={theme.text} />
-                <ThemedText type="small" style={{ flex: 1 }}>
-                  {exporting ? "Exporting..." : "Export"}
-                </ThemedText>
-              </View>
-            </Pressable>
-          </View>
-        </>
-      )}
-    </View>
-  );
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              handleExport();
+              setMenuOpen(false);
+            }}
+            disabled={exporting}
+            testID="button-export-recipes"
+          >
+            <View style={styles.menuItemRow}>
+              <Feather name="download" size={18} color={theme.text} />
+              <ThemedText type="small" style={{ flex: 1 }}>
+                {exporting ? "Exporting..." : "Export"}
+              </ThemedText>
+            </View>
+          </Pressable>
+        </View>
+      </>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      {renderMenuButton()}
+      {renderMenuDropdown()}
       <FlatList
         style={styles.list}
         contentContainerStyle={[
@@ -651,30 +657,24 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-  menuContainer: {
-    position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.lg,
-    zIndex: 1000,
-    elevation: 1000,
-  },
-  menuButton: {
+  headerMenuButton: {
     padding: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
+    marginRight: Spacing.sm,
   },
   menuOverlay: {
     position: "absolute",
-    top: -100,
-    left: -300,
-    right: -50,
-    bottom: -500,
-    zIndex: 99,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
   menuDropdown: {
     position: "absolute",
-    top: 44,
-    right: 0,
+    top: Spacing.sm,
+    right: Spacing.lg,
     minWidth: 180,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 1001,
-    zIndex: 1001,
+    zIndex: 1000,
     overflow: "hidden",
   },
   menuItem: {
