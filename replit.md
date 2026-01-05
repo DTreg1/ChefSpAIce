@@ -49,6 +49,3 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **expo-camera**: For barcode scanning.
 - **date-fns**: For date manipulation.
 - **@react-native-async-storage/async-storage**: Persistent local storage.
-
-## Known Issues
-- **React Native Web View Text Node Warning (Web Only)**: A cosmetic console error "Unexpected text node: . A text node cannot be a child of a <View>" appears in browser DevTools during web development. This originates from react-native-web's View validation and is likely caused by a third-party library (possibly expo-glass-effect or expo-blur). The error does not affect app functionality. The LogBox configuration in `client/suppressConsoleErrors.js` filters this from React Native's internal logging, though the browser DevTools may still display it due to lower-level console capture that occurs before JavaScript patches can intercept.
