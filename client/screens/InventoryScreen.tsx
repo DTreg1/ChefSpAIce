@@ -654,13 +654,20 @@ export default function InventoryScreen() {
     const daysLeft = getDaysUntilExpiration(item.expirationDate);
 
     const getBadgeColor = () => {
+      // Muted, desaturated colors that match the glass morphism theme
+      const mutedColors = {
+        success: "#6B8E6B", // Muted sage green
+        warning: "#C4956A", // Muted warm amber
+        error: "#B57D7D",   // Muted dusty rose
+      };
+      
       switch (status) {
         case "expired":
-          return AppColors.error;
+          return mutedColors.error;
         case "expiring":
-          return AppColors.warning;
+          return mutedColors.warning;
         default:
-          return AppColors.success;
+          return mutedColors.success;
       }
     };
 
