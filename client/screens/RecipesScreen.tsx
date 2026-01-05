@@ -54,6 +54,7 @@ import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { RecipeGridSkeleton } from "@/components/Skeleton";
+import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -66,7 +67,6 @@ import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { getApiUrl } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
-import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { useSearch } from "@/contexts/SearchContext";
 
 const { width } = Dimensions.get("window");
@@ -78,7 +78,6 @@ export default function RecipesScreen() {
   const { theme, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
-  const { openChat } = useFloatingChat();
 
   const { getSearchQuery, collapseSearch } = useSearch();
   const searchQuery = getSearchQuery("recipes");
@@ -89,6 +88,7 @@ export default function RecipesScreen() {
     });
     return unsubscribe;
   }, [navigation, collapseSearch]);
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
   const [userCookware, setUserCookware] = useState<string[]>([]);
@@ -96,8 +96,9 @@ export default function RecipesScreen() {
   const [loading, setLoading] = useState(true);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [filterByCookware, setFilterByCookware] = useState(false);
-  const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleExport = useCallback(() => {
     if (recipes.length === 0) {
@@ -384,124 +385,107 @@ export default function RecipesScreen() {
     );
   };
 
-  const renderSearchSection = () => (
-    <BlurView
-      intensity={15}
-      tint={isDark ? "dark" : "light"}
-      style={[styles.searchSection, styles.searchContainer]}
-      onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
-    >
-      <View style={styles.filterRow}>
-        <Pressable
-          style={[
-            styles.filterChip,
-            {
-              backgroundColor: showFavoritesOnly
-                ? AppColors.primary + "E6"
-                : theme.glass.background,
-              borderColor: showFavoritesOnly
-                ? "transparent"
-                : theme.glass.border,
-              borderWidth: 1,
-            },
-          ]}
-          onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
-        >
-          <Feather
-            name="heart"
-            size={16}
-            color={showFavoritesOnly ? "#FFFFFF" : theme.text}
+  const renderMenuButton = () => (
+    <View style={styles.menuContainer}>
+      <Pressable
+        style={[
+          styles.menuButton,
+          {
+            backgroundColor: theme.glass.background,
+            borderColor: theme.glass.border,
+          },
+        ]}
+        onPress={() => setMenuOpen(!menuOpen)}
+        testID="button-recipes-menu"
+      >
+        <Feather name="more-vertical" size={20} color={theme.text} />
+      </Pressable>
+
+      {menuOpen && (
+        <>
+          <Pressable
+            style={styles.menuOverlay}
+            onPress={() => setMenuOpen(false)}
           />
-          <ThemedText
-            type="small"
-            style={{
-              color: showFavoritesOnly ? "#FFFFFF" : theme.text,
-              marginLeft: Spacing.xs,
-            }}
+          <View
+            style={[
+              styles.menuDropdown,
+              {
+                backgroundColor: theme.backgroundSecondary,
+                borderColor: theme.glass.border,
+              },
+            ]}
           >
-            Favorites
-          </ThemedText>
-        </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                setShowFavoritesOnly(!showFavoritesOnly);
+                setMenuOpen(false);
+              }}
+              testID="button-toggle-favorites"
+            >
+              <View style={styles.menuItemRow}>
+                <Feather
+                  name="heart"
+                  size={18}
+                  color={showFavoritesOnly ? AppColors.primary : theme.text}
+                />
+                <ThemedText type="small" style={{ flex: 1 }}>
+                  Favorites Only
+                </ThemedText>
+                {showFavoritesOnly && (
+                  <Feather name="check" size={16} color={AppColors.primary} />
+                )}
+              </View>
+            </Pressable>
 
-        <Pressable
-          style={[
-            styles.filterChip,
-            {
-              backgroundColor: filterByCookware
-                ? AppColors.primary + "E6"
-                : theme.glass.background,
-              borderColor: filterByCookware
-                ? "transparent"
-                : theme.glass.border,
-              borderWidth: 1,
-            },
-          ]}
-          onPress={() => setFilterByCookware(!filterByCookware)}
-        >
-          <Feather
-            name="tool"
-            size={16}
-            color={filterByCookware ? "#FFFFFF" : theme.text}
-          />
-          <ThemedText
-            type="small"
-            style={{
-              color: filterByCookware ? "#FFFFFF" : theme.text,
-              marginLeft: Spacing.xs,
-            }}
-          >
-            My Cookware
-          </ThemedText>
-        </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                setShowSettingsModal(true);
+                setMenuOpen(false);
+              }}
+              testID="button-customize-recipes"
+            >
+              <View style={styles.menuItemRow}>
+                <Feather name="sliders" size={18} color={theme.text} />
+                <ThemedText type="small" style={{ flex: 1 }}>
+                  Customize
+                </ThemedText>
+              </View>
+            </Pressable>
 
-        <Pressable
-          style={[
-            styles.filterChip,
-            {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
-              borderWidth: 1,
-            },
-          ]}
-          onPress={() => openChat()}
-        >
-          <Feather name="message-circle" size={16} color={theme.text} />
-          <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
-            Ask Chef
-          </ThemedText>
-        </Pressable>
-
-        <Pressable
-          testID="button-export-recipes"
-          style={[
-            styles.filterChip,
-            {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
-              borderWidth: 1,
-            },
-          ]}
-          onPress={handleExport}
-          disabled={exporting}
-        >
-          <Feather name="download" size={16} color={theme.text} />
-          <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
-            {exporting ? "..." : "Export"}
-          </ThemedText>
-        </Pressable>
-      </View>
-    </BlurView>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                handleExport();
+                setMenuOpen(false);
+              }}
+              disabled={exporting}
+              testID="button-export-recipes"
+            >
+              <View style={styles.menuItemRow}>
+                <Feather name="download" size={18} color={theme.text} />
+                <ThemedText type="small" style={{ flex: 1 }}>
+                  {exporting ? "Exporting..." : "Export"}
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        </>
+      )}
+    </View>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      {renderSearchSection()}
+      {renderMenuButton()}
       <FlatList
         style={styles.list}
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: filterHeaderHeight + Spacing.md,
+            paddingTop: Spacing.md,
             paddingBottom: tabBarHeight + 80,
           },
         ]}
@@ -518,6 +502,10 @@ export default function RecipesScreen() {
             tintColor={AppColors.primary}
           />
         }
+      />
+      <RecipeSettingsModal
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
       />
     </View>
   );
@@ -664,5 +652,47 @@ const styles = StyleSheet.create({
   generateButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  menuContainer: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.lg,
+    zIndex: 100,
+  },
+  menuButton: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  menuOverlay: {
+    position: "absolute",
+    top: -100,
+    left: -300,
+    right: -50,
+    bottom: -500,
+    zIndex: 99,
+  },
+  menuDropdown: {
+    position: "absolute",
+    top: 44,
+    right: 0,
+    minWidth: 180,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 100,
+    overflow: "hidden",
+  },
+  menuItem: {
+    padding: Spacing.md,
+  },
+  menuItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
 });

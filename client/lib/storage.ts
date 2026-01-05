@@ -201,6 +201,11 @@ export interface UserPreferences {
   servingSize?: number;
   dailyMeals?: number;
   storageAreas?: string[];
+  maxCookingTime?: number;
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  prioritizeExpiring?: boolean;
+  cookingLevel?: 'basic' | 'intermediate' | 'professional';
+  llmCreativity?: 'basic' | 'special' | 'spicy' | 'wild';
 }
 
 export interface InstacartStore {
