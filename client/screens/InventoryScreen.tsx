@@ -218,7 +218,7 @@ export default function InventoryScreen() {
   const [selectedFoodGroups, setSelectedFoodGroups] = useState<FoodGroup[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filterHeaderHeight, setFilterHeaderHeight] = useState(120);
+  const [filterHeaderHeight, setFilterHeaderHeight] = useState(80);
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
@@ -966,7 +966,7 @@ export default function InventoryScreen() {
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <View 
         style={styles.searchContainer}
-        onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height + 16)}
+        onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
         {/* Food Group Row */}
         <View 
