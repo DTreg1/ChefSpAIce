@@ -507,10 +507,7 @@ export default function InventoryScreen() {
           <GlassCard style={styles.nutritionSummary}>
             <View style={styles.nutritionSummaryContent}>
               <Feather name="zap" size={16} color={AppColors.primary} />
-              <ThemedText 
-                type="caption" 
-                style={styles.nutritionSummaryText}
-              >
+              <ThemedText style={styles.nutritionSummaryText}>
                 {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
               </ThemedText>
             </View>
@@ -1259,11 +1256,12 @@ const styles = StyleSheet.create({
   nutritionSummaryContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   nutritionSummaryText: {
     flex: 1,
     flexShrink: 1,
+    fontSize: 10,
   },
   nutritionSummaryMeta: {
     marginTop: Spacing.xs,
