@@ -969,7 +969,7 @@ export default function InventoryScreen() {
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height + 16)}
       >
         <BlurView
-          intensity={15}
+          intensity={0}
           tint={isDark ? "dark" : "light"}
           style={styles.searchBlur}
         >
@@ -989,10 +989,10 @@ export default function InventoryScreen() {
                   {
                     backgroundColor: isSelected
                       ? AppColors.primary
-                      : theme.glass.background,
+                      : 'transparent',
                     borderColor: isSelected
                       ? AppColors.primary
-                      : theme.glass.border,
+                      : theme.textTertiary,
                   },
                 ]}
                 onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
@@ -1022,10 +1022,6 @@ export default function InventoryScreen() {
           })}
           </View>
         </BlurView>
-        <LinearGradient
-          colors={[isDark ? 'rgba(23,23,23,0.7)' : 'rgba(255,255,255,0.7)', 'transparent']}
-          style={styles.filterFade}
-        />
       </View>
 
       <FlatList
