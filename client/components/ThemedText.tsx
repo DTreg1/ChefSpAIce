@@ -1,4 +1,4 @@
-import { Text, type TextProps, Platform } from "react-native";
+import { Text, type TextProps } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
 import { Typography } from "@/constants/theme";
@@ -81,22 +81,7 @@ export function ThemedText({
     }
   };
 
-  const getTextShadow = () => {
-    if (isDark) return {};
-    
-    return Platform.select({
-      web: {
-        textShadow: "0px 1px 2px rgba(0, 0, 0, 0.3)",
-      },
-      default: {
-        textShadowColor: "rgba(0, 0, 0, 0.3)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-      },
-    });
-  };
-
   return (
-    <Text style={[{ color: getColor() }, getTypeStyle(), getTextShadow(), style]} {...rest} />
+    <Text style={[{ color: getColor() }, getTypeStyle(), style]} {...rest} />
   );
 }
