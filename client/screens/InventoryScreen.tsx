@@ -119,6 +119,11 @@ const CATEGORY_TO_FOOD_GROUP: Record<string, FoodGroup> = {
   bread: "grains",
   grains: "grains",
   bakery: "grains",
+  fruit: "fruits",
+  fruits: "fruits",
+  vegetable: "vegetables",
+  vegetables: "vegetables",
+  protein: "protein",
 };
 
 const FRUIT_NAMES = [
