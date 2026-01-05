@@ -90,9 +90,9 @@ export default function SubscriptionScreen() {
 
   const getMonthlyPrice = (): string => {
     if (tier === SubscriptionTier.PRO) {
-      return `$${MONTHLY_PRICES.PRO}/month`;
+      return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
     }
-    return `$${MONTHLY_PRICES.BASIC}/month`;
+    return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
   };
 
   const handleManageSubscription = async () => {
@@ -364,7 +364,7 @@ export default function SubscriptionScreen() {
           <View style={styles.pricingOptions}>
             <View style={styles.priceOption}>
               <ThemedText style={styles.priceLabel}>Monthly</ThemedText>
-              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO}</ThemedText>
+              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO.toFixed(2)}</ThemedText>
               <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
                 per month
               </ThemedText>
@@ -376,7 +376,7 @@ export default function SubscriptionScreen() {
               <ThemedText style={styles.priceLabel}>Annual</ThemedText>
               <ThemedText style={styles.priceAmount}>${(ANNUAL_PRICES.PRO / 12).toFixed(2)}</ThemedText>
               <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month (${ANNUAL_PRICES.PRO}/year)
+                per month (${ANNUAL_PRICES.PRO.toFixed(2)}/year)
               </ThemedText>
             </View>
           </View>
@@ -437,7 +437,7 @@ export default function SubscriptionScreen() {
           <View style={styles.pricingOptions}>
             <View style={styles.priceOption}>
               <ThemedText style={styles.priceLabel}>Monthly</ThemedText>
-              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO}</ThemedText>
+              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO.toFixed(2)}</ThemedText>
               <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
                 per month
               </ThemedText>
@@ -449,7 +449,7 @@ export default function SubscriptionScreen() {
               <ThemedText style={styles.priceLabel}>Annual</ThemedText>
               <ThemedText style={styles.priceAmount}>${(ANNUAL_PRICES.PRO / 12).toFixed(2)}</ThemedText>
               <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month (${ANNUAL_PRICES.PRO}/year)
+                per month (${ANNUAL_PRICES.PRO.toFixed(2)}/year)
               </ThemedText>
             </View>
           </View>
