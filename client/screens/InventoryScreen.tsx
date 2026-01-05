@@ -501,55 +501,68 @@ export default function InventoryScreen() {
 
   const renderListHeader = () => {
     if (items.length === 0) return null;
+    const showFunFact = funFact || funFactLoading;
+    if (!showFunFact) return null;
+    
     return (
       <View style={styles.listHeader}>
-        {nutritionTotals.itemsWithNutrition > 0 ? (
-          <GlassCard style={styles.nutritionSummary}>
-            <View style={styles.nutritionSummaryContent}>
-              <Feather name="zap" size={16} color={AppColors.primary} />
-              <ThemedText style={styles.nutritionSummaryText}>
-                {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
+        <GlassCard style={styles.funFactCard}>
+          {funFact && (
+            <View style={styles.funFactContainer}>
+              <View style={styles.funFactHeader}>
+                <Feather name="info" size={14} color={AppColors.primary} />
+                {funFactTimeRemaining && (
+                  <ThemedText type="caption" style={styles.funFactTimer}>
+                    Next in {funFactTimeRemaining}
+                  </ThemedText>
+                )}
+                <Pressable
+                  onPress={handleRefreshFunFact}
+                  disabled={funFactLoading}
+                  style={styles.funFactRefreshButton}
+                  testID="button-refresh-fun-fact"
+                >
+                  <Feather 
+                    name="refresh-cw" 
+                    size={14} 
+                    color={funFactLoading ? theme.textSecondary : AppColors.primary} 
+                  />
+                </Pressable>
+              </View>
+              <ThemedText type="caption" style={styles.funFactText}>
+                {funFact}
               </ThemedText>
             </View>
-            <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
-              Based on {nutritionTotals.itemsWithNutrition} items with nutrition data
+          )}
+          {funFactLoading && !funFact && (
+            <View style={styles.funFactContainer}>
+              <ThemedText type="caption" style={styles.funFactText}>
+                Discovering a fun fact about your kitchen...
+              </ThemedText>
+            </View>
+          )}
+        </GlassCard>
+      </View>
+    );
+  };
+
+  const renderListFooter = () => {
+    if (items.length === 0) return null;
+    if (nutritionTotals.itemsWithNutrition === 0) return null;
+    
+    return (
+      <View style={styles.listFooter}>
+        <GlassCard style={styles.nutritionSummary}>
+          <View style={styles.nutritionSummaryContent}>
+            <Feather name="zap" size={16} color={AppColors.primary} />
+            <ThemedText style={styles.nutritionSummaryText}>
+              {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
             </ThemedText>
-            {funFact && (
-              <View style={styles.funFactContainer}>
-                <View style={styles.funFactHeader}>
-                  <Feather name="info" size={14} color={AppColors.primary} />
-                  {funFactTimeRemaining && (
-                    <ThemedText type="caption" style={styles.funFactTimer}>
-                      Next in {funFactTimeRemaining}
-                    </ThemedText>
-                  )}
-                  <Pressable
-                    onPress={handleRefreshFunFact}
-                    disabled={funFactLoading}
-                    style={styles.funFactRefreshButton}
-                    testID="button-refresh-fun-fact"
-                  >
-                    <Feather 
-                      name="refresh-cw" 
-                      size={14} 
-                      color={funFactLoading ? theme.textSecondary : AppColors.primary} 
-                    />
-                  </Pressable>
-                </View>
-                <ThemedText type="caption" style={styles.funFactText}>
-                  {funFact}
-                </ThemedText>
-              </View>
-            )}
-            {funFactLoading && !funFact && (
-              <View style={styles.funFactContainer}>
-                <ThemedText type="caption" style={styles.funFactText}>
-                  Discovering a fun fact about your kitchen...
-                </ThemedText>
-              </View>
-            )}
-          </GlassCard>
-        ) : null}
+          </View>
+          <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
+            Based on {nutritionTotals.itemsWithNutrition} items with nutrition data
+          </ThemedText>
+        </GlassCard>
       </View>
     );
   };
@@ -1044,6 +1057,7 @@ export default function InventoryScreen() {
         keyExtractor={(item) => item.key}
         renderItem={renderGroupedSection}
         ListHeaderComponent={renderListHeader}
+        ListFooterComponent={renderListFooter}
         ListEmptyComponent={!loading ? renderEmptyState : null}
         refreshControl={
           <RefreshControl
@@ -1249,6 +1263,13 @@ const styles = StyleSheet.create({
   listHeader: {
     gap: Spacing.md,
   },
+  listFooter: {
+    marginTop: Spacing.md,
+  },
+  funFactCard: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+  },
   nutritionSummary: {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.xs,
@@ -1270,10 +1291,6 @@ const styles = StyleSheet.create({
   funFactContainer: {
     flexDirection: "column",
     gap: Spacing.xs,
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   funFactHeader: {
     flexDirection: "row",
