@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  TextInput,
   Pressable,
   ActivityIndicator,
   RefreshControl,
@@ -37,6 +36,7 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
 import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useSearch } from "@/contexts/SearchContext";
 
 const BASIC_COOKWARE_LIMIT = 5;
 
@@ -298,8 +298,9 @@ export default function CookwareScreen() {
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { entitlements, checkLimit } = useSubscription();
+  const { getSearchQuery } = useSearch();
+  const searchQuery = getSearchQuery("cookware");
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [showFirstTimeSetup, setShowFirstTimeSetup] = useState<boolean | null>(
     null,
@@ -581,38 +582,16 @@ export default function CookwareScreen() {
     </GlassCard>
   );
 
-  const renderHeader = () => (
-    <BlurView
-      intensity={15}
-      tint={isDark ? "dark" : "light"}
-      style={[styles.headerSection, styles.fixedHeader]}
-      onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
-    >
-      <View
-        style={[
-          styles.searchContainer,
-          {
-            backgroundColor: theme.glass.backgroundSubtle,
-            borderColor: theme.glass.border,
-          },
-        ]}
+  const renderHeader = () => {
+    if (!isAtLimit) return null;
+    
+    return (
+      <BlurView
+        intensity={15}
+        tint={isDark ? "dark" : "light"}
+        style={[styles.headerSection, styles.fixedHeader]}
+        onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <Feather name="search" size={20} color={theme.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search cookware..."
-          placeholderTextColor={theme.textSecondary}
-        />
-        {searchQuery.length > 0 ? (
-          <Pressable onPress={() => setSearchQuery("")}>
-            <Feather name="x" size={20} color={theme.textSecondary} />
-          </Pressable>
-        ) : null}
-      </View>
-
-      {isAtLimit && (
         <Pressable 
           style={[styles.limitWarning, { backgroundColor: `${AppColors.warning}15` }]}
           onPress={() => setShowUpgradePrompt(true)}
@@ -625,9 +604,9 @@ export default function CookwareScreen() {
             <ThemedText type="small" style={styles.upgradeChipText}>Upgrade</ThemedText>
           </View>
         </Pressable>
-      )}
-    </BlurView>
-  );
+      </BlurView>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -868,20 +847,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AppColors.primary,
     flexShrink: 0,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    gap: Spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: Spacing.xs,
   },
   ownedToggle: {
     flexDirection: "row",
