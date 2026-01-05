@@ -1,0 +1,64 @@
+Task: Fix "Unexpected text node: . A text node cannot be a child of a View" Console Error
+
+Problem Description:
+A persistent console error appears on every page load: "Unexpected text node: . A text node cannot be a child of a <View>." This error comes from react-native-web when a View component has a raw text node (specifically a period ".") as a direct child instead of being wrapped in a Text component.
+
+Error Context:
+
+The error appears immediately after [Auth] Auto-synced data from cloud on app load
+It occurs on the initial render before user interaction
+The literal character being rendered is a period "."
+Investigation Steps:
+
+Search for conditional renders that could output a period:
+
+Look for patterns like {condition && value} where value might be a string containing "."
+Check for ternary expressions like {condition ? "." : null} or {condition ? something : "."}
+Search for template literals that might evaluate to just "."
+Check components that render during initial auth flow:
+
+client/App.tsx - Main app wrapper and providers
+client/navigation/RootStackNavigator.tsx - Initial navigation setup
+client/contexts/AuthContext.tsx - Auth provider that logs the sync message
+client/contexts/SubscriptionContext.tsx or client/hooks/useSubscription.tsx
+Any loading indicators or skeleton screens
+Search for common patterns that cause this:
+
+# Search for standalone periods in JSX
+grep -rn ">\s*\.\s*<" client --include="*.tsx"
+# Search for period at end of JSX expression
+grep -rn "}\s*\.\s*{" client --include="*.tsx"
+# Search for period in conditional render
+grep -rn "&&\s*['\"]\\.['\"]" client --include="*.tsx"
+# Check for text content ending with period followed by View close
+grep -rn "\\..*</View>" client --include="*.tsx"
+Check for numeric conditionals that might render "0" or similar:
+
+{count && <Component />} where count=0 renders "0" as text
+Fix with {count > 0 && <Component />} or {count ? <Component /> : null}
+Look at these specific file patterns:
+
+Badge components that might show "." for loading states
+Separator/divider components
+Breadcrumb or navigation indicators
+Any component using dots for pagination or loading
+Glass effect components or overlays
+Use React DevTools debugging:
+
+Open browser DevTools → Components tab
+Search for any View component with a text child
+Look for components rendering during auth/load phase
+Fix Approach:
+Once located, either:
+
+Wrap the text in a <Text> component: <Text>.</Text>
+Remove the decorative period if not needed
+Fix the conditional to prevent the period from rendering as a bare text node
+Files to Prioritize:
+
+client/components/DrawerContent.tsx
+client/components/GlassViewWithContext.tsx
+client/App.tsx
+client/navigation/*.tsx
+Any component with blur effects or glass styling
+Loading/skeleton components
