@@ -651,7 +651,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Spacing.sm,
     right: Spacing.lg,
-    zIndex: 100,
+    zIndex: 1000,
+    elevation: 1000,
   },
   menuButton: {
     padding: Spacing.sm,
@@ -677,8 +678,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 5,
-    zIndex: 100,
+    elevation: 1001,
+    zIndex: 1001,
     overflow: "hidden",
   },
   menuItem: {
