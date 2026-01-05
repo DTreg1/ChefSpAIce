@@ -1261,7 +1261,7 @@ const styles = StyleSheet.create({
   nutritionSummaryText: {
     flex: 1,
     flexShrink: 1,
-    fontSize: 11,
+    fontSize: 12,
   },
   nutritionSummaryMeta: {
     marginTop: Spacing.xs,
