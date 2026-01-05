@@ -1023,9 +1023,7 @@ export default function InventoryScreen() {
           </View>
         </BlurView>
         <LinearGradient
-          colors={isDark 
-            ? ['rgba(26, 26, 26, 0.95)', 'rgba(26, 26, 26, 0)'] 
-            : ['rgba(245, 245, 245, 0.95)', 'rgba(245, 245, 245, 0)']}
+          colors={[isDark ? 'rgba(23,23,23,0.95)' : 'rgba(255,255,255,0.95)', 'transparent']}
           style={styles.filterFade}
         />
       </View>
