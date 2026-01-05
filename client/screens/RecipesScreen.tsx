@@ -554,6 +554,7 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
   },
   filterChip: {
