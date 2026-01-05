@@ -31,7 +31,7 @@
  * @module screens/RecipesScreen
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   FlatList,
@@ -67,6 +67,7 @@ import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { getApiUrl } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
+import { useSearch } from "@/contexts/SearchContext";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
@@ -79,10 +80,18 @@ export default function RecipesScreen() {
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
   const { openChat } = useFloatingChat();
 
+  const { getSearchQuery, collapseSearch } = useSearch();
+  const searchQuery = getSearchQuery("recipes");
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      collapseSearch("recipes");
+    });
+    return unsubscribe;
+  }, [navigation, collapseSearch]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
   const [userCookware, setUserCookware] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -382,30 +391,6 @@ export default function RecipesScreen() {
       style={[styles.searchSection, styles.searchContainer]}
       onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
     >
-      <View
-        style={[
-          styles.searchInputContainer,
-          {
-            backgroundColor: theme.glass.backgroundSubtle,
-            borderColor: theme.glass.border,
-          },
-        ]}
-      >
-        <Feather name="search" size={20} color={theme.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Search recipes..."
-          placeholderTextColor={theme.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 ? (
-          <Pressable onPress={() => setSearchQuery("")}>
-            <Feather name="x" size={20} color={theme.textSecondary} />
-          </Pressable>
-        ) : null}
-      </View>
-
       <View style={styles.filterRow}>
         <Pressable
           style={[

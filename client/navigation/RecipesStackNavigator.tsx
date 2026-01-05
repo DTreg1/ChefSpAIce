@@ -4,6 +4,7 @@ import RecipesScreen from "@/screens/RecipesScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import GenerateRecipeScreen from "@/screens/GenerateRecipeScreen";
 import { HeaderTitle } from "@/components/HeaderTitle";
+import { HeaderSearch } from "@/components/HeaderSearch";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import type { Recipe } from "@/lib/storage";
@@ -33,6 +34,7 @@ export default function RecipesStackNavigator() {
         options={{
           headerTitle: () => <HeaderTitle title="Recipes" materialIcon="notebook-heart-outline" />,
           headerLeft: () => <HamburgerButton />,
+          headerRight: () => <HeaderSearch screenKey="recipes" placeholder="Search recipes..." />,
         }}
       />
       <Stack.Screen

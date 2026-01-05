@@ -90,6 +90,7 @@ import {
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UsageBadge } from "@/components/UpgradePrompt";
+import { useSearch } from "@/contexts/SearchContext";
 
 type FoodGroup =
   | "all"
@@ -207,9 +208,10 @@ export default function InventoryScreen() {
   const queryClient = useQueryClient();
   const { usage, entitlements, isProUser } = useSubscription();
 
+  const { getSearchQuery, clearSearch, collapseSearch } = useSearch();
+  const searchQuery = getSearchQuery("inventory");
   const [items, setItems] = useState<FoodItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<FoodItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [foodGroupFilter, setFoodGroupFilter] = useState<FoodGroup>("all");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -285,9 +287,9 @@ export default function InventoryScreen() {
   }, [searchQuery, foodGroupFilter]);
 
   const clearAllFilters = useCallback(() => {
-    setSearchQuery("");
+    clearSearch("inventory");
     setFoodGroupFilter("all");
-  }, []);
+  }, [clearSearch]);
 
   const loadItems = useCallback(async () => {
     try {
@@ -314,12 +316,18 @@ export default function InventoryScreen() {
 
   // Use navigation.addListener for more reliable focus events on web
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
       loadItems();
       loadStorageLocations();
     });
-    return unsubscribe;
-  }, [navigation, loadItems, loadStorageLocations]);
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      collapseSearch("inventory");
+    });
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation, loadItems, loadStorageLocations, collapseSearch]);
 
   // Also load on initial mount
   useEffect(() => {
@@ -953,30 +961,6 @@ export default function InventoryScreen() {
         style={[styles.searchContainer, styles.searchBlur]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <View
-          style={[
-            styles.searchInputContainer,
-            {
-              backgroundColor: theme.glass.backgroundSubtle,
-              borderColor: theme.glass.border,
-            },
-          ]}
-        >
-          <Feather name="search" size={20} color={theme.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search items..."
-            placeholderTextColor={theme.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 ? (
-            <Pressable onPress={() => setSearchQuery("")}>
-              <Feather name="x" size={20} color={theme.textSecondary} />
-            </Pressable>
-          ) : null}
-        </View>
-
         {/* Filter Summary Row */}
         {(activeFilterCount > 0 || filteredItems.length !== items.length) && (
           <View style={styles.filterSummaryRow}>

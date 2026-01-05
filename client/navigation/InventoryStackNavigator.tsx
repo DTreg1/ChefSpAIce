@@ -1,14 +1,16 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import InventoryScreen from "@/screens/InventoryScreen";
 import ItemDetailScreen from "@/screens/ItemDetailScreen";
 import { HeaderTitle } from "@/components/HeaderTitle";
+import { HeaderSearch } from "@/components/HeaderSearch";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
+import { useSearch } from "@/contexts/SearchContext";
 import { Spacing } from "@/constants/theme";
 
 export type InventoryStackParamList = {
@@ -38,6 +40,18 @@ function ExportButton() {
   );
 }
 
+function InventoryHeaderRight() {
+  const { isSearchOpen } = useSearch();
+  const isOpen = isSearchOpen("inventory");
+
+  return (
+    <View style={styles.headerRightContainer}>
+      <HeaderSearch screenKey="inventory" placeholder="Search items..." />
+      {!isOpen && <ExportButton />}
+    </View>
+  );
+}
+
 export default function InventoryStackNavigator() {
   const screenOptions = useScreenOptions({ transparent: false });
 
@@ -49,7 +63,7 @@ export default function InventoryStackNavigator() {
         options={{
           headerTitle: () => <HeaderTitle title="Kitchen" materialIcon="stove" />,
           headerLeft: () => <HamburgerButton />,
-          headerRight: () => <ExportButton />,
+          headerRight: () => <InventoryHeaderRight />,
         }}
       />
       <Stack.Screen
@@ -64,6 +78,10 @@ export default function InventoryStackNavigator() {
 }
 
 const styles = StyleSheet.create({
+  headerRightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   headerButton: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.sm,

@@ -56,6 +56,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { FloatingChatProvider } from "@/contexts/FloatingChatContext";
+import { SearchProvider } from "@/contexts/SearchContext";
 import {
   OnboardingProvider,
   useOnboardingStatus,
@@ -212,7 +213,9 @@ function RootWrapper() {
           <AuthProvider>
             <SubscriptionProvider>
               <OnboardingProvider>
-                <MobileAppContent />
+                <SearchProvider>
+                  <MobileAppContent />
+                </SearchProvider>
               </OnboardingProvider>
             </SubscriptionProvider>
           </AuthProvider>
