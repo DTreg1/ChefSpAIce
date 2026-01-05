@@ -510,6 +510,7 @@ export default function RecipesScreen() {
       <RecipeSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        onGenerate={() => navigation.navigate("GenerateRecipe")}
       />
     </View>
   );

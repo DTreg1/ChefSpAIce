@@ -20,6 +20,7 @@ import { storage, UserPreferences, DEFAULT_MACRO_TARGETS } from "@/lib/storage";
 interface RecipeSettingsModalProps {
   visible: boolean;
   onClose: () => void;
+  onGenerate?: () => void;
 }
 
 const MEAL_TYPES = [
@@ -45,7 +46,7 @@ const CREATIVITY_LEVELS = [
 const SERVING_OPTIONS = [1, 2, 4, 6, 8, 12];
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120];
 
-export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalProps) {
+export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
   const [saving, setSaving] = useState(false);
 
@@ -78,7 +79,7 @@ export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalPro
     }
   };
 
-  const handleSave = async () => {
+  const handleGenerate = async () => {
     setSaving(true);
     try {
       const currentPrefs = await storage.getPreferences();
@@ -98,6 +99,9 @@ export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalPro
       };
       await storage.setPreferences(updatedPrefs);
       onClose();
+      if (onGenerate) {
+        onGenerate();
+      }
     } catch (error) {
       console.error("Error saving preferences:", error);
     } finally {
@@ -303,9 +307,20 @@ export function RecipeSettingsModal({ visible, onClose }: RecipeSettingsModalPro
           </ScrollView>
 
           <View style={styles.footer}>
-            <GlassButton onPress={handleSave} loading={saving} style={styles.saveButton}>
-              Save Settings
-            </GlassButton>
+            <Pressable
+              style={[
+                styles.generateButton,
+                { opacity: saving ? 0.7 : 1 },
+              ]}
+              onPress={handleGenerate}
+              disabled={saving}
+              testID="button-generate-recipe"
+            >
+              <Feather name="zap" size={20} color="#FFFFFF" />
+              <ThemedText type="button" style={styles.generateButtonText}>
+                {saving ? "Saving..." : "Generate Recipe"}
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
       </BlurView>
@@ -390,9 +405,20 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: Spacing.lg,
-    paddingTop: 0,
+    paddingTop: Spacing.md,
   },
-  saveButton: {
-    width: "100%",
+  generateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: AppColors.primary,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+  },
+  generateButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });
