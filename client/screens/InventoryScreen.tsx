@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   listHeader: {
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   listFooter: {},
   funFactCard: {
