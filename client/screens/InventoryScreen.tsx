@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   listHeader: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   listFooter: {},
   funFactCard: {
@@ -1269,7 +1269,6 @@ const styles = StyleSheet.create({
   },
   funFactContainer: {
     flexDirection: "column",
-    gap: Spacing.xs,
   },
   funFactHeader: {
     flexDirection: "row",
