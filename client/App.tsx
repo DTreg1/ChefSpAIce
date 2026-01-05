@@ -26,7 +26,9 @@
 
 import React, { useMemo, useState, useCallback, useRef } from "react";
 import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
+import { useColorScheme as useSystemColorScheme } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -193,6 +195,7 @@ function MobileAppContent() {
  * ROOT WRAPPER
  *
  * Sets up the core infrastructure providers:
+ * - ThemeProvider for theme management
  * - GestureHandlerRootView for gesture recognition
  * - KeyboardProvider for keyboard-aware scrolling
  * - AuthProvider for user authentication state
@@ -202,23 +205,20 @@ function MobileAppContent() {
  * Also sets the root background color based on theme.
  */
 function RootWrapper() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  // Deep green background color for the app
-  const backgroundColor = isDark ? "#0a1205" : "#1a2e05";
-
   return (
-    <GestureHandlerRootView>
-      <KeyboardProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <OnboardingProvider>
-              <MobileAppContent />
-            </OnboardingProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+    <ThemeProvider>
+      <GestureHandlerRootView>
+        <KeyboardProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <OnboardingProvider>
+                <MobileAppContent />
+              </OnboardingProvider>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </ThemeProvider>
   );
 }
 

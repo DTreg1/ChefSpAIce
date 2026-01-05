@@ -24,6 +24,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
 import { useTheme } from "@/hooks/useTheme";
+import type { ThemePreference } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
@@ -48,7 +49,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme } = useTheme();
+  const { theme, isDark, colorScheme, themePreference, setThemePreference } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
@@ -382,12 +383,39 @@ export default function ProfileScreen() {
             >
               <Feather name={isDark ? "moon" : "sun"} size={20} color={AppColors.accent} />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <ThemedText type="body">Theme</ThemedText>
               <ThemedText type="caption">
-                {isDark ? "Dark mode" : "Light mode"} (System)
+                {themePreference === "system" 
+                  ? `System (${isDark ? "Dark" : "Light"})` 
+                  : themePreference === "dark" 
+                    ? "Dark mode" 
+                    : "Light mode"}
               </ThemedText>
             </View>
+          </View>
+          <View style={styles.themeToggleGroup}>
+            {(["light", "system", "dark"] as ThemePreference[]).map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setThemePreference(option)}
+                style={[
+                  styles.themeToggleButton,
+                  {
+                    backgroundColor: themePreference === option 
+                      ? AppColors.accent 
+                      : theme.backgroundSecondary,
+                  },
+                ]}
+                data-testid={`button-theme-${option}`}
+              >
+                <Feather
+                  name={option === "light" ? "sun" : option === "dark" ? "moon" : "monitor"}
+                  size={16}
+                  color={themePreference === option ? "#FFFFFF" : theme.textSecondary}
+                />
+              </Pressable>
+            ))}
           </View>
         </View>
 
@@ -1098,5 +1126,16 @@ const styles = StyleSheet.create({
   },
   signInText: {
     flex: 1,
+  },
+  themeToggleGroup: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+  },
+  themeToggleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
