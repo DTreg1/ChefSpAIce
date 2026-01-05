@@ -1265,7 +1265,6 @@ const styles = StyleSheet.create({
   },
   listFooter: {},
   funFactCard: {
-    paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
   },
   nutritionSummary: {
