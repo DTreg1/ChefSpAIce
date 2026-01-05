@@ -964,17 +964,20 @@ export default function InventoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <BlurView
-        intensity={15}
-        tint={isDark ? "dark" : "light"}
-        style={[styles.searchContainer, styles.searchBlur]}
-        onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
+      <View 
+        style={styles.searchContainer}
+        onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height + 16)}
       >
-        {/* Food Group Row */}
-        <View 
-          style={[styles.filterRow, { gap: calculatedGap }]}
-          onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
+        <BlurView
+          intensity={15}
+          tint={isDark ? "dark" : "light"}
+          style={styles.searchBlur}
         >
+          {/* Food Group Row */}
+          <View 
+            style={[styles.filterRow, { gap: calculatedGap }]}
+            onLayout={(e) => setFilterRowWidth(e.nativeEvent.layout.width)}
+          >
           {FOOD_GROUPS.map((group, index) => {
             const isSelected = selectedFoodGroups.includes(group.key);
             return (
@@ -1017,8 +1020,13 @@ export default function InventoryScreen() {
               </Pressable>
             );
           })}
-        </View>
-      </BlurView>
+          </View>
+        </BlurView>
+        <LinearGradient
+          colors={[isDark ? 'rgba(23,23,23,0.95)' : 'rgba(255,255,255,0.95)', 'transparent']}
+          style={styles.filterFade}
+        />
+      </View>
 
       <FlatList
         style={styles.list}
@@ -1062,6 +1070,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xs,
     paddingBottom: Spacing.sm,
+  },
+  filterFade: {
+    height: 16,
   },
   searchContent: {},
   searchInputContainer: {
