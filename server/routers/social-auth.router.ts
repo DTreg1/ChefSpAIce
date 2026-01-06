@@ -27,12 +27,13 @@ function getExpiryDate(): Date {
 const AUTH_COOKIE_NAME = "chefspaice_auth";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
-function setAuthCookie(res: Response, token: string): void {
-  const isProduction = process.env.NODE_ENV === "production";
+function setAuthCookie(res: Response, token: string, req?: Request): void {
+  // Always use secure cookies when served over HTTPS (Replit always uses HTTPS)
+  const isSecure = req ? req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' : true;
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isSecure,
+    sameSite: "lax",
     maxAge: COOKIE_MAX_AGE,
     path: "/",
   });
@@ -193,7 +194,7 @@ router.post("/apple", async (req: Request, res: Response) => {
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, req);
 
     res.json({
       user: {
@@ -355,7 +356,7 @@ router.post("/google", async (req: Request, res: Response) => {
     const { token, expiresAt } = await createSessionWithDrizzle(userId);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, req);
 
     res.json({
       user: {
