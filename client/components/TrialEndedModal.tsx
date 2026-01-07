@@ -22,11 +22,6 @@ const PRO_FEATURES = [
   { icon: "calendar" as const, name: "Weekly Meal Prepping", description: "Plan meals in advance" },
 ];
 
-const BASIC_LIMITS = {
-  pantryItems: 25,
-  aiRecipes: 5,
-  cookware: 5,
-};
 
 interface TrialEndedModalProps {
   visible: boolean;
@@ -61,30 +56,6 @@ export function TrialEndedModal({ visible, onDismiss, onUpgrade }: TrialEndedMod
               <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>
                 You still have Basic access. Upgrade to Pro to unlock all features.
               </ThemedText>
-            </View>
-
-            <View style={[styles.section, { backgroundColor: theme.surface }]}>
-              <ThemedText type="h4" style={styles.sectionTitle}>
-                Your Basic Plan Includes:
-              </ThemedText>
-              <View style={styles.limitRow}>
-                <Ionicons name="cube-outline" size={20} color={theme.textSecondary} />
-                <ThemedText type="body" style={{ color: theme.text }}>
-                  {BASIC_LIMITS.pantryItems} pantry items
-                </ThemedText>
-              </View>
-              <View style={styles.limitRow}>
-                <Ionicons name="sparkles-outline" size={20} color={theme.textSecondary} />
-                <ThemedText type="body" style={{ color: theme.text }}>
-                  {BASIC_LIMITS.aiRecipes} AI recipes per month
-                </ThemedText>
-              </View>
-              <View style={styles.limitRow}>
-                <Ionicons name="construct-outline" size={20} color={theme.textSecondary} />
-                <ThemedText type="body" style={{ color: theme.text }}>
-                  {BASIC_LIMITS.cookware} cookware items
-                </ThemedText>
-              </View>
             </View>
 
             <View style={styles.section}>
