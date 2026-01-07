@@ -195,17 +195,24 @@ export const authProviders = pgTable(
  * Sessions are validated on each protected API request.
  * Expired sessions are periodically cleaned up.
  */
-export const userSessions = pgTable("user_sessions", {
-  id: varchar("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: varchar("user_id")
-    .notNull()
-    .references(() => users.id),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const userSessions = pgTable(
+  "user_sessions",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_user_sessions_user").on(table.userId),
+    index("idx_user_sessions_expires").on(table.expiresAt),
+  ],
+);
 
 /**
  * USER SYNC DATA TABLE

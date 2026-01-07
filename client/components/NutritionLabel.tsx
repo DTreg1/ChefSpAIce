@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -30,7 +30,7 @@ interface NutrientRowProps {
   textColor: string;
 }
 
-function NutrientRow({
+const NutrientRow = memo(function NutrientRow({
   label,
   value,
   unit,
@@ -95,7 +95,7 @@ function NutrientRow({
       ) : null}
     </View>
   );
-}
+});
 
 function formatValue(value: number): string {
   if (value === 0) return "0";
@@ -104,7 +104,7 @@ function formatValue(value: number): string {
   return Math.round(value).toString();
 }
 
-export function NutritionLabel({
+export const NutritionLabel = memo(function NutritionLabel({
   nutrition,
   quantity = 1,
   unit,
@@ -117,8 +117,10 @@ export function NutritionLabel({
   const borderColor = isDark ? "#FFFFFF" : "#000000";
   const backgroundColor = isDark ? "#1A1A1A" : "#FFFFFF";
 
-  const scaled =
-    quantity !== 1 ? scaleNutrition(nutrition, quantity) : nutrition;
+  const scaled = useMemo(
+    () => (quantity !== 1 ? scaleNutrition(nutrition, quantity) : nutrition),
+    [nutrition, quantity]
+  );
 
   if (compact) {
     return (
@@ -391,7 +393,7 @@ export function NutritionLabel({
       </ThemedText>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

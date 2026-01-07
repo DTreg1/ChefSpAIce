@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, memo, useCallback, useMemo } from "react";
 import { View, StyleSheet, Pressable, Text, Platform, Modal } from "react-native";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
@@ -73,7 +73,7 @@ const MENU_ITEMS: Omit<MenuItemConfig, "onPress">[] = [
   },
 ];
 
-function MenuItem({
+const MenuItem = memo(function MenuItem({
   item,
   onPress,
   progress,
@@ -167,14 +167,14 @@ function MenuItem({
       ) : null}
     </AnimatedPressable>
   );
-}
+});
 
 type AnimationRefs = {
   progress: SharedValue<number>[];
   scale: SharedValue<number>[];
 };
 
-export function AddMenu({
+export const AddMenu = memo(function AddMenu({
   isOpen,
   onClose,
   onNavigate,
@@ -186,7 +186,7 @@ export function AddMenu({
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
   
-  const { checkLimit, usage, entitlements, isProUser } = useSubscription();
+  const { checkLimit, entitlements } = useSubscription();
 
   const p0 = useSharedValue(0);
   const p1 = useSharedValue(0);
@@ -200,8 +200,8 @@ export function AddMenu({
     scale: [s0, s1, s2],
   });
 
-  const glassColors = isDark ? GlassColors.dark : GlassColors.light;
-  const textColor = isDark ? Colors.dark.text : Colors.light.text;
+  const glassColors = useMemo(() => isDark ? GlassColors.dark : GlassColors.light, [isDark]);
+  const textColor = useMemo(() => isDark ? Colors.dark.text : Colors.light.text, [isDark]);
 
   useEffect(() => {
     if (isOpen) {
@@ -238,7 +238,7 @@ export function AddMenu({
     opacity: overlayOpacity.value,
   }));
 
-  const handleItemPress = async (itemId: string) => {
+  const handleItemPress = useCallback(async (itemId: string) => {
     if (itemId === "add-item") {
       const limitCheck = checkLimit("pantryItems");
       if (!limitCheck.allowed) {
@@ -263,26 +263,24 @@ export function AddMenu({
           break;
       }
     }, 250);
-  };
+  }, [checkLimit, onClose, onNavigate]);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = useCallback(() => {
     setShowUpgradePrompt(false);
     onClose();
     setTimeout(() => {
       onNavigate("Pricing");
     }, 250);
-  };
+  }, [onClose, onNavigate]);
 
-  const handleDismissUpgrade = () => {
+  const handleDismissUpgrade = useCallback(() => {
     setShowUpgradePrompt(false);
-  };
+  }, []);
 
-  const menuItems: MenuItemConfig[] = MENU_ITEMS.map((item) => ({
+  const menuItems = useMemo(() => MENU_ITEMS.map((item) => ({
     ...item,
     onPress: () => handleItemPress(item.id),
-  }));
-
-  const allItems = menuItems;
+  })), [handleItemPress]);
 
   if (!shouldRender) {
     return null;
@@ -350,7 +348,7 @@ export function AddMenu({
 
         <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]}>
           <View style={styles.menuRow}>
-            {allItems.map((item, index) => (
+            {menuItems.map((item, index) => (
               <MenuItem
                 key={item.id}
                 item={item}
@@ -385,7 +383,7 @@ export function AddMenu({
       </Modal>
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   overlay: {

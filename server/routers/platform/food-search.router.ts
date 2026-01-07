@@ -14,6 +14,28 @@ import {
 
 const router = Router();
 
+const SEARCH_CACHE_TTL = 5 * 60 * 1000;
+const searchCache = new Map<string, { data: SearchResponse; timestamp: number }>();
+
+function getCachedSearch(key: string): SearchResponse | null {
+  const cached = searchCache.get(key);
+  if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
+    return cached.data;
+  }
+  if (cached) {
+    searchCache.delete(key);
+  }
+  return null;
+}
+
+function setCachedSearch(key: string, data: SearchResponse): void {
+  if (searchCache.size > 100) {
+    const oldestKey = searchCache.keys().next().value;
+    if (oldestKey) searchCache.delete(oldestKey);
+  }
+  searchCache.set(key, { data, timestamp: Date.now() });
+}
+
 type FoodSource = "usda" | "openfoodfacts" | "local";
 
 interface SearchResult {
@@ -160,6 +182,12 @@ router.get("/search", async (req: Request, res: Response) => {
       100,
     );
 
+    const cacheKey = `${query.toLowerCase().trim()}:${sources.sort().join(",")}:${limit}`;
+    const cached = getCachedSearch(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const searchPromises: Promise<SearchResult[]>[] = [];
     const usedSources: FoodSource[] = [];
 
@@ -259,6 +287,7 @@ router.get("/search", async (req: Request, res: Response) => {
       totalCount: flatResults.length,
     };
 
+    setCachedSearch(cacheKey, response);
     res.json(response);
   } catch (error) {
     console.error("Food search error:", error);

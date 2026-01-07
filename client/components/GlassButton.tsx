@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, memo, useMemo, useCallback } from "react";
 import {
   StyleSheet,
   Pressable,
@@ -45,7 +45,7 @@ const springConfig: WithSpringConfig = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function GlassButton({
+export const GlassButton = memo(function GlassButton({
   onPress,
   children,
   style,
@@ -64,19 +64,19 @@ export function GlassButton({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     if (!disabled && !loading) {
       scale.value = withSpring(0.97, springConfig);
     }
-  };
+  }, [disabled, loading, scale]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     if (!disabled && !loading) {
       scale.value = withSpring(1, springConfig);
     }
-  };
+  }, [disabled, loading, scale]);
 
-  const getBackgroundColor = () => {
+  const backgroundColor = useMemo(() => {
     switch (variant) {
       case "primary":
         return `${AppColors.primary}80`;
@@ -89,9 +89,9 @@ export function GlassButton({
       default:
         return `${AppColors.primary}80`;
     }
-  };
+  }, [variant, theme.glass.background]);
 
-  const getTextColor = () => {
+  const textColor = useMemo(() => {
     switch (variant) {
       case "primary":
       case "secondary":
@@ -103,9 +103,9 @@ export function GlassButton({
       default:
         return "#FFFFFF";
     }
-  };
+  }, [variant, theme.textOnGlass]);
 
-  const getBorderStyle = () => {
+  const borderStyle = useMemo(() => {
     if (variant === "outline") {
       return {
         borderWidth: 2,
@@ -116,9 +116,9 @@ export function GlassButton({
       borderWidth: GlassEffect.borderWidth,
       borderColor: theme.glass.border,
     };
-  };
+  }, [variant, theme.glass.border]);
 
-  const getBlurTint = () => {
+  const blurTint = useMemo(() => {
     switch (variant) {
       case "primary":
       case "secondary":
@@ -126,7 +126,7 @@ export function GlassButton({
       default:
         return isDark ? "dark" : "light";
     }
-  };
+  }, [variant, isDark]);
 
   if (Platform.OS !== "web") {
     return (
@@ -149,15 +149,15 @@ export function GlassButton({
       >
         <BlurView
           intensity={40}
-          tint={getBlurTint()}
+          tint={blurTint}
           style={[
             styles.glassButton,
-            { backgroundColor: getBackgroundColor() },
-            getBorderStyle(),
+            { backgroundColor },
+            borderStyle,
           ]}
         >
           {loading ? (
-            <ActivityIndicator color={getTextColor()} size="small" />
+            <ActivityIndicator color={textColor} size="small" />
           ) : (
             <View style={styles.glassButtonContent}>
               {icon}
@@ -165,7 +165,7 @@ export function GlassButton({
                 type="button"
                 style={[
                   styles.buttonText,
-                  { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
+                  { color: textColor, marginLeft: icon ? Spacing.sm : 0 },
                 ]}
               >
                 {children}
@@ -191,16 +191,16 @@ export function GlassButton({
       style={[
         styles.button,
         {
-          backgroundColor: getBackgroundColor(),
+          backgroundColor,
           opacity: disabled ? 0.5 : 1,
         },
-        getBorderStyle(),
+        borderStyle,
         style,
         animatedStyle,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
+        <ActivityIndicator color={textColor} size="small" />
       ) : (
         <View style={styles.glassButtonContent}>
           {icon}
@@ -208,7 +208,7 @@ export function GlassButton({
             type="button"
             style={[
               styles.buttonText,
-              { color: getTextColor(), marginLeft: icon ? Spacing.sm : 0 },
+              { color: textColor, marginLeft: icon ? Spacing.sm : 0 },
             ]}
           >
             {children}
@@ -217,7 +217,7 @@ export function GlassButton({
       )}
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   button: {
