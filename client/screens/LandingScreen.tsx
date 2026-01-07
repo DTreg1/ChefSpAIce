@@ -804,11 +804,11 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     paddingHorizontal: 24,
-    paddingVertical: 48,
+    paddingVertical: 24,
     alignItems: "center",
   },
   heroSectionWide: {
-    paddingVertical: 80,
+    paddingVertical: 40,
   },
   heroContent: {
     alignItems: "center",
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 24,
-    paddingVertical: 48,
+    paddingVertical: 24,
     alignItems: "center",
   },
   sectionTitle: {
@@ -1316,7 +1316,7 @@ const styles = StyleSheet.create({
   },
   ctaSection: {
     paddingHorizontal: 24,
-    paddingVertical: 48,
+    paddingVertical: 24,
     alignItems: "center",
   },
   ctaCard: {
@@ -1358,7 +1358,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     backgroundColor: "rgba(0, 0, 0, 0.3)",
-    paddingVertical: 48,
+    paddingVertical: 24,
     paddingHorizontal: 24,
   },
   footerContent: {
