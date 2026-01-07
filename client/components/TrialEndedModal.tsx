@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -44,7 +45,11 @@ export function TrialEndedModal({ visible, onDismiss, onUpgrade }: TrialEndedMod
       onRequestClose={onDismiss}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
+        <BlurView
+          intensity={80}
+          tint={isDark ? "dark" : "light"}
+          style={[styles.modal, { backgroundColor: isDark ? 'rgba(26, 26, 26, 0.85)' : 'rgba(255, 255, 255, 0.85)' }]}
+        >
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <View style={[styles.iconContainer, { backgroundColor: `${AppColors.warning}20` }]}>
@@ -125,7 +130,7 @@ export function TrialEndedModal({ visible, onDismiss, onUpgrade }: TrialEndedMod
               </ThemedText>
             </Pressable>
           </View>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -145,6 +150,7 @@ const styles = StyleSheet.create({
     maxHeight: "90%",
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
+    overflow: "hidden",
   },
   header: {
     alignItems: "center",
