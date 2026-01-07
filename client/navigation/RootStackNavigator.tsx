@@ -185,14 +185,26 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // Authenticated user lost subscription - redirect to Onboarding (has pricing)
+    // Authenticated user lost subscription - redirect based on onboarding status
+    // If user has completed onboarding, redirect to Auth (archive them)
+    // If user still needs onboarding, redirect to Onboarding for pricing
     if (isAuthenticated && wasActive && !isActive) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Onboarding" }],
-        }),
-      );
+      if (!needsOnboarding) {
+        // User completed onboarding but subscription inactive - archive by sending to Auth
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: isWeb ? "Landing" : "Auth" }],
+          }),
+        );
+      } else {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Onboarding" }],
+          }),
+        );
+      }
     }
 
     // Authenticated user gained subscription - redirect to Main (unless onboarding is needed)
@@ -238,8 +250,8 @@ function AuthGuardedNavigator() {
   // Determine initial route:
   // 1. Web + not authenticated → Landing (marketing page)
   // 2. Mobile + not authenticated → Auth (sign in/sign up)
-  // 3. Authenticated + needs onboarding → Onboarding
-  // 4. Authenticated but no active subscription → Onboarding (has pricing)
+  // 3. Authenticated + subscription inactive + completed onboarding → Auth (archived account)
+  // 4. Authenticated + needs onboarding → Onboarding
   // 5. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
     // Show landing page for web users who aren't authenticated
@@ -250,9 +262,14 @@ function AuthGuardedNavigator() {
     if (!isAuthenticated) {
       return "Auth";
     }
-    // Authenticated users who need onboarding or subscription
-    if (needsOnboarding || !isActive) {
+    // User needs onboarding - send to Onboarding (includes pricing)
+    if (needsOnboarding) {
       return "Onboarding";
+    }
+    // User has completed onboarding but has no active subscription - archive them
+    // This prevents users with expired/canceled subscriptions from seeing onboarding again
+    if (!isActive) {
+      return isWeb ? "Landing" : "Auth";
     }
     return "Main";
   };
