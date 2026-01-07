@@ -27,8 +27,8 @@ This document outlines everything needed for Apple App Store submission readines
 | ✅ | What's New text | Version 1.0.0 release notes prepared |
 | ✅ | Age Rating | 4+ (No objectionable content) |
 | ✅ | Promotional Text | Added to docs/app-store-listing.md |
-| ✅ | Support URL | https://your-domain.repl.co/support |
-| ✅ | Marketing URL | https://your-domain.repl.co/marketing |
+| ✅ | Support URL | https://chefspaice.com/support |
+| ✅ | Marketing URL | https://chefspaice.com/marketing |
 
 ---
 
@@ -36,12 +36,12 @@ This document outlines everything needed for Apple App Store submission readines
 
 | Status | Item | Notes |
 |--------|------|-------|
+| ✅ | Screenshot guide | docs/screenshot-guide.md with recommended sequence |
 | ⬜ | iPhone 6.7" screenshots (3-10) | 1290 x 2796 pixels required |
 | ⬜ | iPhone 6.5" screenshots (3-10) | 1242 x 2688 pixels required |
 | ⬜ | iPhone 5.5" screenshots (3-10) | 1242 x 2208 pixels required |
 | ⬜ | iPad 12.9" screenshots | 2048 x 2732 pixels (if supporting iPad) |
 | ⬜ | App Preview video (optional) | Up to 30 seconds |
-| ✅ | Screenshot guide | docs/screenshot-guide.md with recommended sequence |
 
 ---
 
