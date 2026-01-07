@@ -724,7 +724,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               <View style={styles.qrCodeContainer}>
                 <QRCode
                   value="https://chefspaice.com"
-                  size={100}
+                  size={140}
                   color="#FFFFFF"
                   backgroundColor="transparent"
                 />
