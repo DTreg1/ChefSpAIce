@@ -3,11 +3,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
+import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
+import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
 
@@ -717,6 +719,19 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
             <Text style={styles.footerText}>Your AI-powered kitchen companion</Text>
+            
+            <View style={styles.qrCodeSection} data-testid="qr-code-section">
+              <View style={styles.qrCodeContainer}>
+                <QRCode
+                  value={isWeb ? (typeof window !== 'undefined' ? window.location.origin : 'https://chefspai.ce') : (Constants.expoConfig?.extra?.webUrl || 'https://chefspai.ce')}
+                  size={100}
+                  color="#FFFFFF"
+                  backgroundColor="transparent"
+                />
+              </View>
+              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">Scan to share with a friend</Text>
+            </View>
+            
             <View style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}>
               <Pressable onPress={handleAbout} data-testid="link-about">
                 <Text style={styles.footerLink}>About</Text>
@@ -1364,6 +1379,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.6)",
     marginBottom: 24,
+  },
+  qrCodeSection: {
+    alignItems: "center",
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  qrCodeContainer: {
+    padding: 8,
+    backgroundColor: "rgba(39, 174, 96, 0.15)",
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  qrCodeLabel: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
   },
   footerLinks: {
     flexDirection: "row",
