@@ -67,6 +67,13 @@ if (isIOS) {
 if (isAndroid || isWeb) {
   Google = require("expo-auth-session/providers/google");
   WebBrowser = require("expo-web-browser");
+  // Complete any pending auth sessions (needed for OAuth redirects on web)
+  WebBrowser?.maybeCompleteAuthSession();
+}
+
+// Also import WebBrowser on web for Apple auth
+if (isWeb && !WebBrowser) {
+  WebBrowser = require("expo-web-browser");
   WebBrowser?.maybeCompleteAuthSession();
 }
 
@@ -137,8 +144,10 @@ function useAppleAuthWeb() {
     return [null, null, null] as const;
   }
   
+  // Use AuthSession.makeRedirectUri which works with expo-web-browser's maybeCompleteAuthSession
+  // This creates a redirect URI that Expo can handle internally
   const redirectUri = AuthSession.makeRedirectUri({
-    scheme: "chefspaice",
+    // On web, this creates a redirect that AuthSession can capture
   });
   
   return AuthSession.useAuthRequest(
@@ -146,8 +155,12 @@ function useAppleAuthWeb() {
       clientId: APPLE_CLIENT_ID,
       scopes: ["name", "email"],
       responseType: AuthSession.ResponseType.Code,
-      usePKCE: true,
+      usePKCE: false, // Apple doesn't support PKCE in the standard way
       redirectUri,
+      // Apple requires response_mode=query for code response
+      extraParams: {
+        response_mode: "query",
+      },
     },
     appleAuthDiscovery
   );
@@ -162,9 +175,10 @@ function useGoogleAuth() {
     return [null, null, null] as const;
   }
   
-  return Google.useAuthRequest({
+  // Use useIdTokenAuthRequest to get an ID token directly (needed for server verification)
+  return Google.useIdTokenAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
+    clientId: GOOGLE_WEB_CLIENT_ID,
   });
 }
 
@@ -458,7 +472,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
       // Web Apple OAuth authentication
-      else if (isWeb && promptAppleAsync) {
+      else if (isWeb && promptAppleAsync && appleRequest) {
         const result = await promptAppleAsync();
         
         if (result.type !== "success") {
@@ -475,6 +489,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           authorizationCode: code,
           selectedTier,
           isWebAuth: true,
+          // Pass the redirect URI used in the auth request so server can use it for token exchange
+          redirectUri: appleRequest.redirectUri,
         };
       } else {
         return { success: false, error: "Apple Sign-In is not available" };
@@ -540,11 +556,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const result = await promptGoogleAsync();
 
-      if (result.type !== "success" || !result.authentication) {
+      if (result.type !== "success") {
         return { success: false, error: "Google sign in cancelled" };
       }
 
-      const { accessToken, idToken } = result.authentication;
+      // For useIdTokenAuthRequest, the id_token is in params, not authentication
+      const idToken = result.params?.id_token || result.authentication?.idToken;
+      const accessToken = result.authentication?.accessToken;
+      
+      if (!idToken) {
+        console.error("Google sign in: no id_token received", result);
+        return { success: false, error: "No ID token received from Google" };
+      }
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/social/google", baseUrl);

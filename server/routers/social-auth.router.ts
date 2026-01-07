@@ -76,6 +76,7 @@ interface AppleTokenPayload {
   selectedPlan?: 'monthly' | 'annual';
   selectedTier?: 'basic' | 'pro';
   isWebAuth?: boolean;
+  redirectUri?: string; // For web auth: the redirect URI used in the auth request
   user?: {
     email?: string;
     name?: {
@@ -94,14 +95,14 @@ interface GoogleTokenPayload {
 router.post("/apple", async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth } = req.body as AppleTokenPayload;
+    const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
 
     let verifiedToken: { sub: string; email?: string } | null = null;
     
     // Handle web OAuth flow - exchange authorization code for tokens
     if (isWebAuth && authorizationCode && !identityToken) {
       try {
-        const tokenResponse = await exchangeAppleAuthCode(authorizationCode);
+        const tokenResponse = await exchangeAppleAuthCode(authorizationCode, redirectUri);
         if (!tokenResponse) {
           return res.status(401).json({ error: "Failed to exchange Apple authorization code" });
         }
@@ -407,7 +408,7 @@ router.post("/google", async (req: Request, res: Response) => {
 });
 
 // Exchange Apple authorization code for tokens (web OAuth flow)
-async function exchangeAppleAuthCode(authorizationCode: string): Promise<{ sub: string; email?: string } | null> {
+async function exchangeAppleAuthCode(authorizationCode: string, clientRedirectUri?: string): Promise<{ sub: string; email?: string } | null> {
   const clientId = process.env.APPLE_CLIENT_ID;
   const teamId = process.env.APPLE_TEAM_ID;
   const keyId = process.env.APPLE_KEY_ID;
@@ -427,11 +428,22 @@ async function exchangeAppleAuthCode(authorizationCode: string): Promise<{ sub: 
       privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines from env
     });
     
-    // Exchange authorization code for tokens
+    // Use the redirect URI from the client if provided, otherwise construct one
+    // This must exactly match what was used in the authorization request
+    let redirectUri = clientRedirectUri;
+    if (!redirectUri) {
+      const domain = process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
+      redirectUri = domain.includes('localhost') 
+        ? 'https://localhost:5000/auth/callback/apple'
+        : `https://${domain}/auth/callback/apple`;
+    }
+    
+    console.log("Apple auth code exchange with redirectUri:", redirectUri);
+      
     const tokenResponse = await appleSignin.getAuthorizationToken(authorizationCode, {
       clientID: clientId,
       clientSecret,
-      redirectUri: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://localhost:5000'}/auth/callback/apple`,
+      redirectUri,
     });
     
     if (!tokenResponse || !tokenResponse.id_token) {
