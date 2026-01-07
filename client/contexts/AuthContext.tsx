@@ -58,21 +58,14 @@ let AppleAuthentication: typeof import("expo-apple-authentication") | null = nul
 let Google: typeof import("expo-auth-session/providers/google") | null = null;
 let WebBrowser: typeof import("expo-web-browser") | null = null;
 
-// Load Apple auth on iOS (native) 
+// Load Apple auth on iOS only (native)
 if (isIOS) {
   AppleAuthentication = require("expo-apple-authentication");
 }
 
-// Load Google auth on Android and Web
-if (isAndroid || isWeb) {
+// Load Google auth on Android only (not web - requires OAuth console configuration)
+if (isAndroid) {
   Google = require("expo-auth-session/providers/google");
-  WebBrowser = require("expo-web-browser");
-  // Complete any pending auth sessions (needed for OAuth redirects on web)
-  WebBrowser?.maybeCompleteAuthSession();
-}
-
-// Also import WebBrowser on web for Apple auth
-if (isWeb && !WebBrowser) {
   WebBrowser = require("expo-web-browser");
   WebBrowser?.maybeCompleteAuthSession();
 }
@@ -129,58 +122,16 @@ interface StoredAuthData {
 }
 
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const APPLE_CLIENT_ID = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
-
-// Apple OAuth endpoints for Sign in with Apple on web
-const appleAuthDiscovery = {
-  authorizationEndpoint: "https://appleid.apple.com/auth/authorize",
-  tokenEndpoint: "https://appleid.apple.com/auth/token",
-};
-
-function useAppleAuthWeb() {
-  // Only use Apple OAuth on web when client ID is configured
-  if (!isWeb || !APPLE_CLIENT_ID) {
-    return [null, null, null] as const;
-  }
-  
-  // Use AuthSession.makeRedirectUri which works with expo-web-browser's maybeCompleteAuthSession
-  // This creates a redirect URI that Expo can handle internally
-  const redirectUri = AuthSession.makeRedirectUri({
-    // On web, this creates a redirect that AuthSession can capture
-  });
-  
-  console.log("[Apple Auth] Using redirect URI:", redirectUri);
-  
-  return AuthSession.useAuthRequest(
-    {
-      clientId: APPLE_CLIENT_ID,
-      scopes: ["name", "email"],
-      responseType: AuthSession.ResponseType.Code,
-      usePKCE: false, // Apple doesn't support PKCE in the standard way
-      redirectUri,
-      // Apple requires response_mode=fragment for web popup flow with AuthSession
-      extraParams: {
-        response_mode: "fragment",
-      },
-    },
-    appleAuthDiscovery
-  );
-}
 
 function useGoogleAuth() {
-  // Use Google auth on Android and Web when client IDs are configured
-  const hasAndroidConfig = isAndroid && !!GOOGLE_ANDROID_CLIENT_ID;
-  const hasWebConfig = isWeb && !!GOOGLE_WEB_CLIENT_ID;
-  
-  if (!Google || (!hasAndroidConfig && !hasWebConfig)) {
+  // Use Google auth on Android only (not web - requires OAuth console configuration)
+  if (!isAndroid || !Google || !GOOGLE_ANDROID_CLIENT_ID) {
     return [null, null, null] as const;
   }
   
   // Use useIdTokenAuthRequest to get an ID token directly (needed for server verification)
   return Google.useIdTokenAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    clientId: GOOGLE_WEB_CLIENT_ID,
   });
 }
 
@@ -214,18 +165,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const [googleRequest, googleResponse, promptGoogleAsync] = useGoogleAuth();
-  const [appleRequest, appleResponse, promptAppleAsync] = useAppleAuthWeb();
 
   useEffect(() => {
     const checkAppleAuth = async () => {
-      // On iOS, check native Apple auth availability
-      if (Platform.OS === "ios" && AppleAuthentication) {
+      // Apple auth only available on iOS (native)
+      if (isIOS && AppleAuthentication) {
         const available = await AppleAuthentication.isAvailableAsync();
         setIsAppleAuthAvailable(available);
-      }
-      // On web, Apple auth is available if client ID is configured
-      else if (isWeb && APPLE_CLIENT_ID) {
-        setIsAppleAuthAvailable(true);
       }
     };
     checkAppleAuth();
@@ -451,58 +397,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       let authPayload: any;
       
-      // iOS native Apple authentication
-      if (Platform.OS === "ios" && AppleAuthentication) {
-        const credential = await AppleAuthentication.signInAsync({
-          requestedScopes: [
-            AppleAuthentication.AppleAuthenticationScope.EMAIL,
-            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          ],
-        });
-        
-        authPayload = {
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-          selectedTier,
-          user: {
-            email: credential.email,
-            name: {
-              firstName: credential.fullName?.givenName,
-              lastName: credential.fullName?.familyName,
-            },
+      // iOS native Apple authentication only
+      if (!isIOS || !AppleAuthentication) {
+        return { success: false, error: "Apple Sign-In is only available on iOS" };
+      }
+      
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        ],
+      });
+      
+      authPayload = {
+        identityToken: credential.identityToken,
+        authorizationCode: credential.authorizationCode,
+        selectedTier,
+        user: {
+          email: credential.email,
+          name: {
+            firstName: credential.fullName?.givenName,
+            lastName: credential.fullName?.familyName,
           },
-        };
-      }
-      // Web Apple OAuth authentication
-      else if (isWeb && promptAppleAsync && appleRequest) {
-        console.log("[Apple Auth Web] Starting auth flow with redirectUri:", appleRequest.redirectUri);
-        const result = await promptAppleAsync();
-        
-        console.log("[Apple Auth Web] Auth result:", result.type, result.params);
-        
-        if (result.type !== "success") {
-          console.log("[Apple Auth Web] Auth not successful:", result);
-          return { success: false, error: "Apple sign in cancelled" };
-        }
-        
-        // For web, we get an authorization code that we send to the server
-        const { code } = result.params;
-        if (!code) {
-          console.error("[Apple Auth Web] No authorization code in params:", result.params);
-          return { success: false, error: "No authorization code received" };
-        }
-        
-        console.log("[Apple Auth Web] Got authorization code, sending to server");
-        authPayload = {
-          authorizationCode: code,
-          selectedTier,
-          isWebAuth: true,
-          // Pass the redirect URI used in the auth request so server can use it for token exchange
-          redirectUri: appleRequest.redirectUri,
-        };
-      } else {
-        return { success: false, error: "Apple Sign-In is not available" };
-      }
+        },
+      };
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/social/apple", baseUrl);
@@ -554,7 +472,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Apple sign in error:", error);
       return { success: false, error: "Apple sign in failed" };
     }
-  }, [promptAppleAsync]);
+  }, []);
 
   const signInWithGoogle = useCallback(async (selectedTier?: 'basic' | 'pro') => {
     try {
@@ -631,7 +549,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [promptGoogleAsync]);
 
   // Google auth is available on Android and Web when the auth request is ready
-  const isGoogleAuthAvailable = (isAndroid || isWeb) && !!promptGoogleAsync;
+  const isGoogleAuthAvailable = isAndroid && !!promptGoogleAsync;
 
   const value = useMemo(
     () => ({
