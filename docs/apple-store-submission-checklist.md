@@ -27,7 +27,7 @@ This document outlines everything needed for Apple App Store submission readines
 | ✅ | What's New text | Version 1.0.0 release notes prepared |
 | ✅ | Age Rating | 4+ (No objectionable content) |
 | ✅ | Promotional Text | Added to docs/app-store-listing.md |
-| ⬜ | Support URL | Set up support page (support@chefspaice.com configured) |
+| ✅ | Support URL | https://your-domain.repl.co/support |
 | ⬜ | Marketing URL | Create marketing website/landing page URL |
 
 ---

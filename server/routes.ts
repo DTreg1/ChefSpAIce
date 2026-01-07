@@ -1266,6 +1266,17 @@ BEHAVIOR GUIDELINES:
     res.sendFile(privacyPath);
   });
 
+  // Serve support page HTML for app store submission
+  app.get("/support", (_req: Request, res: Response) => {
+    const supportPath = require("path").resolve(
+      process.cwd(),
+      "server",
+      "templates",
+      "support.html"
+    );
+    res.sendFile(supportPath);
+  });
+
   // Serve feature graphic template for Google Play
   app.get("/feature-graphic", (_req: Request, res: Response) => {
     const featurePath = require("path").resolve(
