@@ -46,6 +46,7 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as AuthSession from "expo-auth-session";
 import { getApiUrl, queryClient, setAuthErrorCallback, clearAuthErrorCallback } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 
@@ -57,13 +58,13 @@ let AppleAuthentication: typeof import("expo-apple-authentication") | null = nul
 let Google: typeof import("expo-auth-session/providers/google") | null = null;
 let WebBrowser: typeof import("expo-web-browser") | null = null;
 
-// Only load Apple auth on iOS
+// Load Apple auth on iOS (native) 
 if (isIOS) {
   AppleAuthentication = require("expo-apple-authentication");
 }
 
-// Only load Google auth on Android
-if (isAndroid) {
+// Load Google auth on Android and Web
+if (isAndroid || isWeb) {
   Google = require("expo-auth-session/providers/google");
   WebBrowser = require("expo-web-browser");
   WebBrowser?.maybeCompleteAuthSession();
@@ -121,15 +122,49 @@ interface StoredAuthData {
 }
 
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const APPLE_CLIENT_ID = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
 
-function useGoogleAuth() {
-  // Only use Google auth on Android when client ID is configured
-  // Check for client ID before calling the hook to avoid "androidClientId must be defined" error
-  if (!isAndroid || !Google || !GOOGLE_ANDROID_CLIENT_ID) {
+// Apple OAuth endpoints for Sign in with Apple on web
+const appleAuthDiscovery = {
+  authorizationEndpoint: "https://appleid.apple.com/auth/authorize",
+  tokenEndpoint: "https://appleid.apple.com/auth/token",
+};
+
+function useAppleAuthWeb() {
+  // Only use Apple OAuth on web when client ID is configured
+  if (!isWeb || !APPLE_CLIENT_ID) {
     return [null, null, null] as const;
   }
+  
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: "chefspaice",
+  });
+  
+  return AuthSession.useAuthRequest(
+    {
+      clientId: APPLE_CLIENT_ID,
+      scopes: ["name", "email"],
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
+      redirectUri,
+    },
+    appleAuthDiscovery
+  );
+}
+
+function useGoogleAuth() {
+  // Use Google auth on Android and Web when client IDs are configured
+  const hasAndroidConfig = isAndroid && !!GOOGLE_ANDROID_CLIENT_ID;
+  const hasWebConfig = isWeb && !!GOOGLE_WEB_CLIENT_ID;
+  
+  if (!Google || (!hasAndroidConfig && !hasWebConfig)) {
+    return [null, null, null] as const;
+  }
+  
   return Google.useAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 }
 
@@ -163,12 +198,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const [googleRequest, googleResponse, promptGoogleAsync] = useGoogleAuth();
+  const [appleRequest, appleResponse, promptAppleAsync] = useAppleAuthWeb();
 
   useEffect(() => {
     const checkAppleAuth = async () => {
+      // On iOS, check native Apple auth availability
       if (Platform.OS === "ios" && AppleAuthentication) {
         const available = await AppleAuthentication.isAvailableAsync();
         setIsAppleAuthAvailable(available);
+      }
+      // On web, Apple auth is available if client ID is configured
+      else if (isWeb && APPLE_CLIENT_ID) {
+        setIsAppleAuthAvailable(true);
       }
     };
     checkAppleAuth();
@@ -391,26 +432,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [signOut]);
 
   const signInWithApple = useCallback(async (selectedTier?: 'basic' | 'pro') => {
-    if (Platform.OS !== "ios" || !AppleAuthentication) {
-      return { success: false, error: "Apple Sign-In is only available on iOS" };
-    }
-
     try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        ],
-      });
-
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/social/apple", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
+      let authPayload: any;
+      
+      // iOS native Apple authentication
+      if (Platform.OS === "ios" && AppleAuthentication) {
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          ],
+        });
+        
+        authPayload = {
           identityToken: credential.identityToken,
           authorizationCode: credential.authorizationCode,
           selectedTier,
@@ -421,7 +455,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               lastName: credential.fullName?.familyName,
             },
           },
-        }),
+        };
+      }
+      // Web Apple OAuth authentication
+      else if (isWeb && promptAppleAsync) {
+        const result = await promptAppleAsync();
+        
+        if (result.type !== "success") {
+          return { success: false, error: "Apple sign in cancelled" };
+        }
+        
+        // For web, we get an authorization code that we send to the server
+        const { code } = result.params;
+        if (!code) {
+          return { success: false, error: "No authorization code received" };
+        }
+        
+        authPayload = {
+          authorizationCode: code,
+          selectedTier,
+          isWebAuth: true,
+        };
+      } else {
+        return { success: false, error: "Apple Sign-In is not available" };
+      }
+
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/auth/social/apple", baseUrl);
+
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(authPayload),
       });
 
       const data = await response.json();
@@ -464,7 +530,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Apple sign in error:", error);
       return { success: false, error: "Apple sign in failed" };
     }
-  }, []);
+  }, [promptAppleAsync]);
 
   const signInWithGoogle = useCallback(async (selectedTier?: 'basic' | 'pro') => {
     try {
@@ -533,8 +599,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [promptGoogleAsync]);
 
-  // Google auth is available on Android when the auth request is ready
-  const isGoogleAuthAvailable = isAndroid && !!promptGoogleAsync;
+  // Google auth is available on Android and Web when the auth request is ready
+  const isGoogleAuthAvailable = (isAndroid || isWeb) && !!promptGoogleAsync;
 
   const value = useMemo(
     () => ({

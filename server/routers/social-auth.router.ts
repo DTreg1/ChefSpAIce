@@ -71,9 +71,11 @@ function getGoogleClientIds(): string[] {
 }
 
 interface AppleTokenPayload {
-  identityToken: string;
-  authorizationCode: string;
+  identityToken?: string;
+  authorizationCode?: string;
   selectedPlan?: 'monthly' | 'annual';
+  selectedTier?: 'basic' | 'pro';
+  isWebAuth?: boolean;
   user?: {
     email?: string;
     name?: {
@@ -92,13 +94,31 @@ interface GoogleTokenPayload {
 router.post("/apple", async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { identityToken, authorizationCode, user, selectedPlan } = req.body as AppleTokenPayload;
+    const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth } = req.body as AppleTokenPayload;
 
-    if (!identityToken) {
-      return res.status(400).json({ error: "Identity token is required" });
+    let verifiedToken: { sub: string; email?: string } | null = null;
+    
+    // Handle web OAuth flow - exchange authorization code for tokens
+    if (isWebAuth && authorizationCode && !identityToken) {
+      try {
+        const tokenResponse = await exchangeAppleAuthCode(authorizationCode);
+        if (!tokenResponse) {
+          return res.status(401).json({ error: "Failed to exchange Apple authorization code" });
+        }
+        verifiedToken = tokenResponse;
+      } catch (error) {
+        console.error("Apple web auth code exchange error:", error);
+        return res.status(401).json({ error: "Apple web authentication failed" });
+      }
+    }
+    // Handle native iOS flow - verify identity token directly
+    else if (identityToken) {
+      verifiedToken = await verifyAppleToken(identityToken);
+    }
+    else {
+      return res.status(400).json({ error: "Identity token or authorization code is required" });
     }
 
-    const verifiedToken = await verifyAppleToken(identityToken);
     if (!verifiedToken || !verifiedToken.sub) {
       return res.status(401).json({ error: "Invalid Apple token" });
     }
@@ -107,8 +127,14 @@ router.post("/apple", async (req: Request, res: Response) => {
     const email = tokenEmail || user?.email || null;
     const firstName = user?.name?.firstName || null;
     const lastName = user?.name?.lastName || null;
+    // Support both selectedPlan (legacy) and selectedTier (new)
     const validPlans = ['monthly', 'annual'];
-    const plan = validPlans.includes(selectedPlan || '') ? selectedPlan as 'monthly' | 'annual' : 'monthly';
+    const validTiers = ['basic', 'pro'];
+    const plan = validPlans.includes(selectedPlan || '') 
+      ? selectedPlan as 'monthly' | 'annual' 
+      : validTiers.includes(selectedTier || '') 
+        ? 'monthly'  // Default to monthly billing when tier is selected
+        : 'monthly';
 
     await client.query("BEGIN");
 
@@ -379,6 +405,60 @@ router.post("/google", async (req: Request, res: Response) => {
     dbClient.release();
   }
 });
+
+// Exchange Apple authorization code for tokens (web OAuth flow)
+async function exchangeAppleAuthCode(authorizationCode: string): Promise<{ sub: string; email?: string } | null> {
+  const clientId = process.env.APPLE_CLIENT_ID;
+  const teamId = process.env.APPLE_TEAM_ID;
+  const keyId = process.env.APPLE_KEY_ID;
+  const privateKey = process.env.APPLE_PRIVATE_KEY;
+  
+  if (!clientId || !teamId || !keyId || !privateKey) {
+    console.error("Apple web auth not configured: missing APPLE_CLIENT_ID, APPLE_TEAM_ID, APPLE_KEY_ID, or APPLE_PRIVATE_KEY");
+    return null;
+  }
+  
+  try {
+    // Generate client secret for Apple token exchange
+    const clientSecret = appleSignin.getClientSecret({
+      clientID: clientId,
+      teamID: teamId,
+      keyIdentifier: keyId,
+      privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines from env
+    });
+    
+    // Exchange authorization code for tokens
+    const tokenResponse = await appleSignin.getAuthorizationToken(authorizationCode, {
+      clientID: clientId,
+      clientSecret,
+      redirectUri: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'https://localhost:5000'}/auth/callback/apple`,
+    });
+    
+    if (!tokenResponse || !tokenResponse.id_token) {
+      console.error("Apple token exchange failed: no id_token in response");
+      return null;
+    }
+    
+    // Verify the ID token from the exchange
+    const payload = await appleSignin.verifyIdToken(tokenResponse.id_token, {
+      audience: clientId,
+      ignoreExpiration: false,
+    });
+    
+    if (!payload || !payload.sub) {
+      console.error("Apple token verification failed after exchange");
+      return null;
+    }
+    
+    return {
+      sub: payload.sub,
+      email: payload.email,
+    };
+  } catch (error) {
+    console.error("Apple auth code exchange error:", error);
+    return null;
+  }
+}
 
 async function verifyAppleToken(identityToken: string): Promise<{ sub: string; email?: string } | null> {
   // Support bundle ID (native iOS), service ID (web), and Expo Go (development)
