@@ -1,8 +1,8 @@
-const fs = require("fs");
-const path = require("path");
-const { spawn } = require("child_process");
-const { Readable } = require("stream");
-const { pipeline } = require("stream/promises");
+import fs from "fs";
+import path from "path";
+import { spawn } from "child_process";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 
 let metroProcess = null;
 
@@ -136,7 +136,6 @@ async function startMetro() {
 
 async function downloadFile(url, outputPath) {
   const controller = new AbortController();
-  // Increased timeout from 2 minutes to 5 minutes for Metro bundle generation
   const timeoutId = setTimeout(() => controller.abort(), 300_000);
 
   try {
