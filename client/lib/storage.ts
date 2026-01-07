@@ -734,7 +734,10 @@ export const storage = {
   },
 
   async resetOnboarding(): Promise<void> {
+    // Clear onboarding status so needsOnboarding() returns true
     await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING);
+    // Also clear any saved onboarding step to start fresh
+    await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP);
   },
 
   async resetAllStorage(): Promise<void> {

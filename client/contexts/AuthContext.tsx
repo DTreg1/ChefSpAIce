@@ -324,12 +324,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
         await storage.setAuthToken(data.token);
 
+        // Reset onboarding status for new users to ensure they see onboarding
+        // This prevents stale local data from previous sessions from affecting the new user
+        await storage.resetOnboarding();
+
         setState({
           user: data.user,
           token: data.token,
           isLoading: false,
         });
 
+        // Sync fresh state to cloud (with onboarding reset)
+        // This ensures the clean onboarding status is saved server-side
         await storage.syncToCloud();
 
         return { success: true };
@@ -432,6 +438,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
       await storage.setAuthToken(data.token);
 
+      // Reset onboarding status for new users to ensure they see onboarding
+      if (data.isNewUser) {
+        await storage.resetOnboarding();
+      }
+
       setState({
         user: authData.user,
         token: data.token,
@@ -439,6 +450,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (data.isNewUser) {
+        // Sync fresh state to cloud (with onboarding reset)
         await storage.syncToCloud();
       } else {
         await storage.syncFromCloud();
@@ -496,6 +508,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
       await storage.setAuthToken(data.token);
 
+      // Reset onboarding status for new users to ensure they see onboarding
+      if (data.isNewUser) {
+        await storage.resetOnboarding();
+      }
+
       setState({
         user: authData.user,
         token: data.token,
@@ -503,6 +520,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (data.isNewUser) {
+        // Sync fresh state to cloud (with onboarding reset)
         await storage.syncToCloud();
       } else {
         await storage.syncFromCloud();
