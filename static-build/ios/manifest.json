@@ -1,11 +1,11 @@
 {
-  "id": "aef4df96-ba18-4787-9ca1-4b0675972e2c",
-  "createdAt": "2026-01-07T22:38:27.304Z",
+  "id": "435b2299-2b78-4d64-8136-3ecd0c892641",
+  "createdAt": "2026-01-07T23:06:43.228Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1767825507304-3277",
+    "key": "bundle-1767827203228-6876",
     "contentType": "application/javascript",
-    "url": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/1767825507304-3277/_expo/static/js/ios/bundle.js"
+    "url": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/1767827203228-6876/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -51,9 +51,9 @@
           "foregroundImage": "./assets/images/android-icon-foreground.png",
           "backgroundImage": "./assets/images/android-icon-background.png",
           "monochromeImage": "./assets/images/android-icon-monochrome.png",
-          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png",
-          "monochromeImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-monochrome.png",
-          "backgroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-background.png"
+          "foregroundImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-foreground.png",
+          "monochromeImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-monochrome.png",
+          "backgroundImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-background.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -153,7 +153,7 @@
       "androidStatusBar": {
         "backgroundColor": "#1a2e05"
       },
-      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
+      "iconUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/icon.png",
       "hostUri": "ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/ios"
     },
     "expoGo": {
