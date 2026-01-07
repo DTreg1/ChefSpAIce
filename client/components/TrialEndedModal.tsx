@@ -44,7 +44,7 @@ export function TrialEndedModal({ visible, onDismiss, onUpgrade }: TrialEndedMod
       onRequestClose={onDismiss}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: theme.backgroundRoot }]}>
+        <View style={[styles.modal, { backgroundColor: isDark ? '#1a1a1a' : '#ffffff' }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <View style={[styles.iconContainer, { backgroundColor: `${AppColors.warning}20` }]}>
