@@ -26,7 +26,7 @@ This document outlines everything needed for Apple App Store submission readines
 | ✅ | Keywords | 100 chars defined in docs/app-store-listing.md |
 | ✅ | What's New text | Version 1.0.0 release notes prepared |
 | ✅ | Age Rating | 4+ (No objectionable content) |
-| ⬜ | Promotional Text | Create 170-char promotional text |
+| ✅ | Promotional Text | Added to docs/app-store-listing.md |
 | ⬜ | Support URL | Set up support page (support@chefspaice.com configured) |
 | ⬜ | Marketing URL | Create marketing website/landing page URL |
 

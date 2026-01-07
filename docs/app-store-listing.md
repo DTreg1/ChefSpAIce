@@ -9,6 +9,9 @@ Smart Kitchen & Recipe Manager
 ## Short Description (Google Play - 80 characters max)
 Track food inventory, reduce waste, and get AI-powered recipes from your pantry.
 
+## Promotional Text (Apple - 170 characters max)
+Your AI kitchen assistant. Track food inventory, scan barcodes, get expiration alerts, and generate recipes from ingredients you have. Save money by reducing food waste.
+
 ---
 
 ## Full Description (Apple App Store)
