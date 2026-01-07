@@ -1,12 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { SubscriptionTier, TierLimits, TIER_CONFIG } from "../../shared/subscription";
-import { TrialEndedModal } from "@/components/TrialEndedModal";
-import { Linking } from "react-native";
-
-const TRIAL_ENDED_DISMISSED_KEY = "trial_ended_dismissed";
 
 declare global {
   interface Window {
@@ -128,8 +123,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
-  const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
-  const [trialEndedDismissed, setTrialEndedDismissed] = useState(false);
 
   const fetchSubscription = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -236,46 +229,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [isTrialing, subscriptionData?.trialEndsAt]);
 
-  // Check if trial ended modal should be shown
-  useEffect(() => {
-    const checkTrialEndedDismissed = async () => {
-      try {
-        const dismissed = await AsyncStorage.getItem(TRIAL_ENDED_DISMISSED_KEY);
-        setTrialEndedDismissed(dismissed === 'true');
-      } catch (e) {
-        // Ignore errors
-      }
-    };
-    checkTrialEndedDismissed();
-  }, []);
-
-  // Show trial ended modal when trial expires
-  useEffect(() => {
-    if (isTrialExpired && !trialEndedDismissed && !isLoading) {
-      setShowTrialEndedModal(true);
-    }
-  }, [isTrialExpired, trialEndedDismissed, isLoading]);
-
-  const handleDismissTrialModal = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem(TRIAL_ENDED_DISMISSED_KEY, 'true');
-      setTrialEndedDismissed(true);
-    } catch (e) {
-      // Ignore errors
-    }
-    setShowTrialEndedModal(false);
-  }, []);
-
-  const handleUpgradePress = useCallback(() => {
-    setShowTrialEndedModal(false);
-    // Use Linking to navigate to pricing - this works without navigation context
-    Linking.openURL('/pricing').catch(() => {
-      // Fallback for web: direct window navigation
-      if (typeof window !== 'undefined') {
-        window.location.href = '/pricing';
-      }
-    });
-  }, []);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -337,11 +290,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
-      <TrialEndedModal
-        visible={showTrialEndedModal}
-        onDismiss={handleDismissTrialModal}
-        onUpgrade={handleUpgradePress}
-      />
     </SubscriptionContext.Provider>
   );
 }
