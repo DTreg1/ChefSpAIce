@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, R
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { SubscriptionTier, TierLimits, TIER_CONFIG } from "../../shared/subscription";
+import { TrialEndedModal } from "@/components/TrialEndedModal";
 
 declare global {
   interface Window {
@@ -123,6 +124,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
+  const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
+  const { signOut } = useAuth();
 
   const fetchSubscription = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -229,6 +232,24 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [isTrialing, subscriptionData?.trialEndsAt]);
 
+  // Show trial ended modal when trial expires
+  useEffect(() => {
+    if (isTrialExpired && !isLoading && isAuthenticated) {
+      setShowTrialEndedModal(true);
+    }
+  }, [isTrialExpired, isLoading, isAuthenticated]);
+
+  // Handle dismiss - sign user out to "archive" their account
+  const handleDismissTrialModal = useCallback(async () => {
+    setShowTrialEndedModal(false);
+    await signOut();
+  }, [signOut]);
+
+  // Handle upgrade - sign user out so they can upgrade from landing page
+  const handleUpgradePress = useCallback(async () => {
+    setShowTrialEndedModal(false);
+    await signOut();
+  }, [signOut]);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -290,6 +311,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
+      <TrialEndedModal
+        visible={showTrialEndedModal}
+        onDismiss={handleDismissTrialModal}
+        onUpgrade={handleUpgradePress}
+      />
     </SubscriptionContext.Provider>
   );
 }
