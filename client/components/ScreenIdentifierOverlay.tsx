@@ -11,6 +11,7 @@ import * as Clipboard from "expo-clipboard";
 import { storage } from "@/lib/storage";
 import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
+import { getApiUrl } from "@/lib/query-client";
 
 interface ScreenIdentifierOverlayProps {
   screenName: string | undefined;
@@ -42,31 +43,35 @@ export function ScreenIdentifierOverlay({
     const confirmReset = async () => {
       setResetting(true);
       try {
+        // 1. Call logout API to clear server-side session cookie
+        const baseUrl = getApiUrl();
+        const logoutUrl = new URL("/api/auth/logout", baseUrl);
+        await fetch(logoutUrl.toString(), {
+          method: "POST",
+          credentials: "include",
+        }).catch(() => {
+          // Ignore network errors during logout
+        });
+
+        // 2. Clear all local storage and caches
         await storage.resetAllStorage();
         await syncManager.clearQueue();
         queryClient.clear();
-        const syncResult = await syncManager.fullSync();
+
+        console.log("[Reset] Signed out and cleared all local data");
         
-        if (syncResult.success) {
-          queryClient.invalidateQueries();
-          if (Platform.OS === "web") {
-            console.log("[Storage] Reset complete, data synced from server");
-          } else {
-            Alert.alert("Storage Reset", "Data has been refreshed from the server.");
-          }
-        } else {
-          if (Platform.OS === "web") {
-            window.location.reload();
-          } else {
-            Alert.alert("Storage Reset", "Please restart the app to see changes.");
-          }
-        }
-      } catch (err) {
-        console.error("Failed to reset storage:", err);
+        // 3. Reload the page to show landing/auth screen
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
-          Alert.alert("Storage Reset", "Please restart the app to see changes.");
+          Alert.alert("App Reset", "The app has been reset. Please restart to see the landing screen.");
+        }
+      } catch (err) {
+        console.error("Failed to reset:", err);
+        if (Platform.OS === "web") {
+          window.location.reload();
+        } else {
+          Alert.alert("Reset Error", "Please restart the app manually.");
         }
       } finally {
         setResetting(false);
@@ -74,13 +79,13 @@ export function ScreenIdentifierOverlay({
     };
 
     if (Platform.OS === "web") {
-      if (confirm("Reset all local storage? This will sign you out and clear all data.")) {
+      if (confirm("Reset app for testing? This will sign you out and show the landing page.")) {
         confirmReset();
       }
     } else {
       Alert.alert(
-        "Reset Storage",
-        "This will sign you out and clear all local data. Continue?",
+        "Reset App",
+        "This will sign you out and reset the app to the landing page. Continue?",
         [
           { text: "Cancel", style: "cancel" },
           { text: "Reset", style: "destructive", onPress: confirmReset },
