@@ -150,6 +150,8 @@ function useAppleAuthWeb() {
     // On web, this creates a redirect that AuthSession can capture
   });
   
+  console.log("[Apple Auth] Using redirect URI:", redirectUri);
+  
   return AuthSession.useAuthRequest(
     {
       clientId: APPLE_CLIENT_ID,
@@ -157,9 +159,9 @@ function useAppleAuthWeb() {
       responseType: AuthSession.ResponseType.Code,
       usePKCE: false, // Apple doesn't support PKCE in the standard way
       redirectUri,
-      // Apple requires response_mode=query for code response
+      // Apple requires response_mode=fragment for web popup flow with AuthSession
       extraParams: {
-        response_mode: "query",
+        response_mode: "fragment",
       },
     },
     appleAuthDiscovery
@@ -473,18 +475,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       // Web Apple OAuth authentication
       else if (isWeb && promptAppleAsync && appleRequest) {
+        console.log("[Apple Auth Web] Starting auth flow with redirectUri:", appleRequest.redirectUri);
         const result = await promptAppleAsync();
         
+        console.log("[Apple Auth Web] Auth result:", result.type, result.params);
+        
         if (result.type !== "success") {
+          console.log("[Apple Auth Web] Auth not successful:", result);
           return { success: false, error: "Apple sign in cancelled" };
         }
         
         // For web, we get an authorization code that we send to the server
         const { code } = result.params;
         if (!code) {
+          console.error("[Apple Auth Web] No authorization code in params:", result.params);
           return { success: false, error: "No authorization code received" };
         }
         
+        console.log("[Apple Auth Web] Got authorization code, sending to server");
         authPayload = {
           authorizationCode: code,
           selectedTier,
