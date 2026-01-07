@@ -723,13 +723,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
             <View style={styles.qrCodeSection} data-testid="qr-code-section">
               <View style={styles.qrCodeContainer}>
                 <QRCode
-                  value={isWeb ? (typeof window !== 'undefined' ? window.location.origin : 'https://chefspai.ce') : (Constants.expoConfig?.extra?.webUrl || 'https://chefspai.ce')}
+                  value={process.env.EXPO_PUBLIC_APPLE_APP_URL || 'https://apps.apple.com/app/id6757112063'}
                   size={100}
                   color="#FFFFFF"
                   backgroundColor="transparent"
                 />
               </View>
-              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">Scan to share with a friend</Text>
+              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">Scan to download from the App Store</Text>
             </View>
             
             <View style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}>
