@@ -10,7 +10,7 @@ This document outlines everything needed for Apple App Store submission readines
 |--------|------|-------|
 | ✅ | App Store Connect account | ASC App ID: 6757112063 configured in eas.json |
 | ✅ | Bundle Identifier | com.chefspaice.chefspaice |
-| ⬜ | Apple Developer Team ID | APPLE_TEAM_ID needs to be set as environment variable |
+| ✅ | Apple Developer Team ID | APPLE_TEAM_ID configured as environment secret |
 | ⬜ | App Store Connect listing created | Create app listing in App Store Connect |
 | ⬜ | App category selected | Primary: Food & Drink, Secondary: Lifestyle |
 
