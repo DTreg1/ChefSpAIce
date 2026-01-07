@@ -1277,6 +1277,17 @@ BEHAVIOR GUIDELINES:
     res.sendFile(supportPath);
   });
 
+  // Serve marketing landing page for app store submission
+  app.get("/marketing", (_req: Request, res: Response) => {
+    const marketingPath = require("path").resolve(
+      process.cwd(),
+      "server",
+      "templates",
+      "marketing.html"
+    );
+    res.sendFile(marketingPath);
+  });
+
   // Serve feature graphic template for Google Play
   app.get("/feature-graphic", (_req: Request, res: Response) => {
     const featurePath = require("path").resolve(

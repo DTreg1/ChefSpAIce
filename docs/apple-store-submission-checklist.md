@@ -28,7 +28,7 @@ This document outlines everything needed for Apple App Store submission readines
 | ✅ | Age Rating | 4+ (No objectionable content) |
 | ✅ | Promotional Text | Added to docs/app-store-listing.md |
 | ✅ | Support URL | https://your-domain.repl.co/support |
-| ⬜ | Marketing URL | Create marketing website/landing page URL |
+| ✅ | Marketing URL | https://your-domain.repl.co/marketing |
 
 ---
 
