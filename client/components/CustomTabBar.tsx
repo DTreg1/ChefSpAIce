@@ -38,14 +38,14 @@ const COLORS = {
     selected: "#0088FF",
     unselected: "#404040",
     selectionBg: "#EDEDED",
-    pillBg: "rgba(247, 247, 247, 0.85)",
-    pillBorder: "rgba(255, 255, 255, 0.5)",
+    pillBg: "rgba(255, 255, 255, 0.92)",
+    pillBorder: "rgba(200, 200, 200, 0.5)",
   },
   dark: {
     selected: "#0A84FF",
     unselected: "#8E8E93",
     selectionBg: "rgba(255, 255, 255, 0.12)",
-    pillBg: "rgba(30, 30, 30, 0.85)",
+    pillBg: "rgba(28, 28, 30, 0.95)",
     pillBorder: "rgba(255, 255, 255, 0.1)",
   },
 };
@@ -308,21 +308,38 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   const renderPillBackground = () => {
+    // Solid base layer to ensure consistent appearance regardless of screen content
+    const baseLayer = (
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          styles.pillBlur,
+          {
+            backgroundColor: isDark ? "rgba(28, 28, 30, 0.85)" : "rgba(255, 255, 255, 0.85)",
+          },
+        ]}
+      />
+    );
+
     if (useLiquidGlass) {
       return (
-        <GlassView
-          glassEffectStyle="regular"
-          style={[StyleSheet.absoluteFill, styles.pillBlur]}
-        />
+        <>
+          {baseLayer}
+          <GlassView
+            glassEffectStyle="regular"
+            style={[StyleSheet.absoluteFill, styles.pillBlur]}
+          />
+        </>
       );
     }
 
     if (Platform.OS === "ios") {
       return (
         <>
+          {baseLayer}
           <BlurView
-            intensity={80}
-            tint={isDark ? "systemThickMaterialDark" : "systemThickMaterial"}
+            intensity={60}
+            tint={isDark ? "dark" : "light"}
             style={[StyleSheet.absoluteFill, styles.pillBlur]}
           />
           <View
