@@ -6,12 +6,19 @@ import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
-import { useNavigation } from "@react-navigation/native";
+import { NavigationContext } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
+
+// Safe navigation hook that returns null when not inside NavigationContainer
+function useSafeNavigation(): NativeStackNavigationProp<any> | null {
+  const navigationContext = useContext(NavigationContext);
+  // Return the navigation object from context or null if not available
+  return navigationContext as NativeStackNavigationProp<any> | null;
+}
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -264,7 +271,10 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
   const isWide = width > 768;
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  
+  // Use safe navigation that doesn't crash when outside NavigationContainer (web)
+  const navigation = useSafeNavigation();
+  
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 

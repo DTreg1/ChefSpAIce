@@ -51,7 +51,9 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "title": "ChefSpAIce - AI-Powered Kitchen Assistant"
     },
     "plugins": [
       [
