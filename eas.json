@@ -9,6 +9,9 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       }
     },
     "preview": {
@@ -18,6 +21,9 @@
       },
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       }
     },
     "production": {
@@ -27,6 +33,9 @@
       },
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       }
     }
   },

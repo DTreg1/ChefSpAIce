@@ -12,6 +12,8 @@
     "server:prod": "NODE_ENV=production node server_dist/index.js",
     "db:push": "drizzle-kit push",
     "eas:init": "npx eas-cli init",
+    "eas:build": "npx eas-cli build",
+    "build:web": "npx eas-cli build --platform web",
     "build:ios": "npx eas-cli build --platform ios",
     "build:android": "npx eas-cli build --platform android",
     "submit:ios": "npx eas-cli submit --platform ios",
