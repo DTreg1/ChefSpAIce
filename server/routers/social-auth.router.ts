@@ -438,7 +438,9 @@ async function exchangeAppleAuthCode(authorizationCode: string, clientRedirectUr
         : `https://${domain}/auth/callback/apple`;
     }
     
-    console.log("Apple auth code exchange with redirectUri:", redirectUri);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Auth] Apple auth code exchange with redirectUri:", redirectUri);
+    }
       
     const tokenResponse = await appleSignin.getAuthorizationToken(authorizationCode, {
       clientID: clientId,
@@ -491,7 +493,9 @@ async function verifyAppleToken(identityToken: string): Promise<{ sub: string; e
         });
         
         if (payload && payload.sub) {
-          console.log(`Apple token verified with audience: ${audience}`);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[Auth] Apple token verified with audience: ${audience}`);
+          }
           return {
             sub: payload.sub,
             email: payload.email,

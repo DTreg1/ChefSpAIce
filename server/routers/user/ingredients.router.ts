@@ -182,9 +182,7 @@ router.post("/scan", async (req: Request, res: Response) => {
     const mimeType = detectMimeType(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(
-      `Scanning ingredient label: ${(base64Image.length / 1024).toFixed(1)}KB`,
-    );
+    console.log(`[Ingredients] Scanning label: ${(base64Image.length / 1024).toFixed(1)}KB`);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -251,9 +249,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(
-      `Ingredient scan complete: ${result.ingredients.length} ingredients found`,
-    );
+    console.log(`[Ingredients] Scan complete: ${result.ingredients.length} items found`);
 
     return res.json({
       productName: result.productName,

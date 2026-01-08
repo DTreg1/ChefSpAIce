@@ -585,7 +585,9 @@ async function getCachedAppliances(): Promise<FallbackAppliance[]> {
       return allAppliances;
     }
   } catch (error) {
-    console.log("Database not available, using fallback appliances");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Appliances] Database not available, using fallback");
+    }
   }
 
   appliancesCache = {

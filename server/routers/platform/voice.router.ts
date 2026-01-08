@@ -183,9 +183,7 @@ router.post("/transcribe", async (req: Request, res: Response) => {
       response_format: "json",
     });
 
-    console.log(
-      `Voice transcription completed: "${response.text.substring(0, 50)}..."`,
-    );
+    console.log(`[Voice] Transcription completed: "${response.text.substring(0, 50)}..."`);
 
     return res.json({
       transcript: response.text,
@@ -322,9 +320,7 @@ Return ONLY valid JSON in this format:
 
     parsed.confidence = Math.max(0, Math.min(1, parsed.confidence));
 
-    console.log(
-      `Voice command parsed: "${text}" -> ${parsed.intent} (confidence: ${parsed.confidence})`,
-    );
+    console.log(`[Voice] Command parsed: "${text}" -> ${parsed.intent} (confidence: ${parsed.confidence})`);
 
     return res.json({
       ...parsed,

@@ -168,9 +168,9 @@ router.post("/waste-reduction", async (req: Request, res: Response) => {
 
     const cached = getFromCache(cacheKey);
     if (cached && !forceRefresh) {
-      console.log(
-        `Waste reduction cache hit for device: ${deviceId}, hash: ${itemsHash}`,
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Suggestions] Cache hit for device: ${deviceId}`);
+      }
       return res.json({
         suggestions: cached.suggestions,
         expiringItems: cached.expiringItems,
@@ -253,7 +253,7 @@ Return JSON:
       const suggestions = parseTips(rawSuggestions);
 
       setInCache(cacheKey, { suggestions, expiringItems });
-      console.log(`Waste reduction tips generated for device: ${deviceId}`);
+      console.log(`[Suggestions] Waste reduction tips generated for device: ${deviceId}`);
 
       return res.json({
         suggestions,

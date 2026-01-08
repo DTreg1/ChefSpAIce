@@ -126,9 +126,7 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
     const base64Image = fileData.toString("base64");
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(
-      `Analyzing food image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`,
-    );
+    console.log(`[ImageAnalysis] Analyzing food image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`);
 
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
@@ -171,9 +169,7 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(
-      `Food analysis complete: ${parseResult.data!.items.length} items identified`,
-    );
+    console.log(`[ImageAnalysis] Complete: ${parseResult.data!.items.length} items identified`);
     return res.json(parseResult.data);
   } catch (error: any) {
     console.error("Image analysis error:", error);
