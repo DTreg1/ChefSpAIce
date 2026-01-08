@@ -367,6 +367,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/appliances", appliancesRouter); // Kitchen appliance catalog
 
   // =========================================================================
+  // PRE-REGISTRATION ENDPOINT
+  // Allows users to sign up from the landing page with just their email.
+  // Creates a user account that they can activate later.
+  // =========================================================================
+  app.post("/api/pre-register", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return res.status(400).json({ error: "Please enter a valid email address" });
+      }
+
+      // Check if user already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
+
+      if (existingUser) {
+        // User already exists - return success anyway (don't reveal if email exists)
+        return res.json({ 
+          success: true, 
+          message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
+        });
+      }
+
+      // Create a new pre-registered user
+      const now = new Date();
+      await db.insert(users).values({
+        email: normalizedEmail,
+        displayName: normalizedEmail.split("@")[0],
+        hasCompletedOnboarding: false,
+        isActivated: false,
+        preRegistrationSource: "landing",
+        preRegisteredAt: now,
+        subscriptionStatus: "none",
+        subscriptionTier: "BASIC",
+      });
+
+      return res.json({ 
+        success: true, 
+        message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
+      });
+    } catch (error) {
+      console.error("Pre-registration error:", error);
+      return res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
+  // =========================================================================
   // ADMIN ROUTES - Require admin authentication
   // =========================================================================
   app.use("/api/admin/subscriptions", requireAdmin, adminSubscriptionsRouter);

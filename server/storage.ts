@@ -60,6 +60,9 @@ export class MemStorage implements IStorage {
       aiRecipesGeneratedThisMonth: insertUser.aiRecipesGeneratedThisMonth ?? 0,
       aiRecipesResetDate: insertUser.aiRecipesResetDate ?? null,
       trialEndsAt: insertUser.trialEndsAt ?? null,
+      preRegistrationSource: insertUser.preRegistrationSource ?? null,
+      preRegisteredAt: insertUser.preRegisteredAt ?? null,
+      isActivated: insertUser.isActivated ?? true,
       createdAt: now,
       updatedAt: now,
     };

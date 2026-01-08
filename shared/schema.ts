@@ -88,6 +88,11 @@ import { z } from "zod";
  * - aiRecipesGeneratedThisMonth: Counter for AI recipe generation limit (resets monthly)
  * - aiRecipesResetDate: When the monthly AI recipe counter resets
  * - trialEndsAt: When the 7-day trial expires
+ * 
+ * Pre-registration fields (for landing page signups):
+ * - preRegistrationSource: Where the user signed up from ("landing", "app", etc.)
+ * - preRegisteredAt: When the user pre-registered (before full activation)
+ * - isActivated: Whether the user has completed registration (set password or linked social)
  */
 export const users = pgTable("users", {
   id: varchar("id")
@@ -132,6 +137,9 @@ export const users = pgTable("users", {
   aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month").notNull().default(0),
   aiRecipesResetDate: timestamp("ai_recipes_reset_date"),
   trialEndsAt: timestamp("trial_ends_at"),
+  preRegistrationSource: varchar("pre_registration_source"),
+  preRegisteredAt: timestamp("pre_registered_at"),
+  isActivated: boolean("is_activated").notNull().default(true),
 });
 
 /**

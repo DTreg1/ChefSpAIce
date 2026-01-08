@@ -673,6 +673,15 @@
       background: rgba(255, 255, 255, 0.15);
     }
     
+    .store-button.coming-soon {
+      opacity: 0.7;
+      cursor: default;
+    }
+    
+    .store-button.coming-soon:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
     .store-button img {
       width: 24px;
       height: 24px;
@@ -754,6 +763,68 @@
       vertical-align: middle;
     }
     
+    /* Signup Form Styles */
+    .signup-form {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    
+    .hero-signup {
+      margin-bottom: 16px;
+    }
+    
+    .signup-input-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .signup-input {
+      flex: 1;
+      min-width: 240px;
+      padding: 14px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    .signup-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .signup-input:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .signup-btn {
+      white-space: nowrap;
+      padding: 14px 28px;
+    }
+    
+    .signup-message {
+      margin-top: 12px;
+      font-size: 14px;
+      min-height: 20px;
+    }
+    
+    .signup-message.success {
+      color: var(--primary);
+    }
+    
+    .signup-message.error {
+      color: #ff6b6b;
+    }
+    
+    .signup-message.loading {
+      color: var(--text-muted);
+    }
+
     @media (max-width: 768px) {
       .hero {
         padding: 40px 20px 60px;
@@ -774,6 +845,18 @@
       .header-buttons .btn-ghost {
         display: none;
       }
+      
+      .signup-input-group {
+        flex-direction: column;
+      }
+      
+      .signup-input {
+        min-width: 100%;
+      }
+      
+      .signup-btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -789,7 +872,7 @@
     </a>
     <div class="header-buttons">
       <a href="/about" class="btn btn-ghost">About</a>
-      <a href="exps://EXPS_URL_PLACEHOLDER" class="btn btn-primary">Get the App</a>
+      <a href="#signup" class="btn btn-primary" onclick="document.getElementById('hero-email').focus(); return false;" data-testid="button-header-signup">Get Notified</a>
     </div>
   </header>
 
@@ -809,16 +892,24 @@
       and never let food go to waste again.
     </p>
     
-    <div class="hero-buttons">
-      <a href="exps://EXPS_URL_PLACEHOLDER" class="btn btn-primary">
-        Get Started Free
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-        </svg>
-      </a>
-    </div>
+    <form id="hero-signup-form" class="signup-form hero-signup" data-testid="form-hero-signup">
+      <div class="signup-input-group">
+        <input 
+          type="email" 
+          id="hero-email" 
+          placeholder="Enter your email address" 
+          class="signup-input"
+          data-testid="input-hero-email"
+          required
+        />
+        <button type="submit" class="btn btn-primary signup-btn" data-testid="button-hero-signup">
+          Get Notified
+        </button>
+      </div>
+      <p id="hero-message" class="signup-message" data-testid="text-hero-message"></p>
+    </form>
     
-    <p class="trial-text">7-day free trial, no credit card required</p>
+    <p class="trial-text">Coming soon to App Store & Google Play</p>
   </section>
 
   <!-- Trust Section -->
@@ -1103,37 +1194,50 @@
   <!-- CTA Section -->
   <section class="cta-section">
     <div class="cta-card">
-      <h2 class="cta-title">Ready to Transform Your Kitchen?</h2>
-      <p class="cta-subtitle">Join thousands of home cooks saving money and reducing waste.</p>
-      <a href="exps://EXPS_URL_PLACEHOLDER" class="btn btn-primary">
-        Start Your Free Trial
-      </a>
-      <p class="cta-note">No credit card required</p>
+      <h2 class="cta-title">Be the First to Know</h2>
+      <p class="cta-subtitle">ChefSpAIce is coming soon to the App Store and Google Play. Enter your email to get notified when we launch!</p>
+      <form id="cta-signup-form" class="signup-form" data-testid="form-cta-signup">
+        <div class="signup-input-group">
+          <input 
+            type="email" 
+            id="cta-email" 
+            placeholder="Enter your email address" 
+            class="signup-input"
+            data-testid="input-cta-email"
+            required
+          />
+          <button type="submit" class="btn btn-primary signup-btn" data-testid="button-cta-signup">
+            Notify Me
+          </button>
+        </div>
+        <p id="cta-message" class="signup-message" data-testid="text-cta-message"></p>
+      </form>
+      <p class="cta-note">We'll never share your email. Unsubscribe anytime.</p>
     </div>
   </section>
 
   <!-- App Download -->
   <section class="app-download">
-    <p class="app-download-title">Download ChefSpAIce on your mobile device</p>
+    <p class="app-download-title">Coming soon to your favorite app store</p>
     <div class="store-buttons">
-      <a href="https://apps.apple.com/app/id982107779" class="store-button" target="_blank">
+      <div class="store-button coming-soon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
         </svg>
         <div class="store-button-text">
-          <div class="store-button-label">Download on the</div>
+          <div class="store-button-label">Coming soon to</div>
           <div class="store-button-name">App Store</div>
         </div>
-      </a>
-      <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" class="store-button" target="_blank">
+      </div>
+      <div class="store-button coming-soon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
           <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
         </svg>
         <div class="store-button-text">
-          <div class="store-button-label">Get it on</div>
+          <div class="store-button-label">Coming soon to</div>
           <div class="store-button-name">Google Play</div>
         </div>
-      </a>
+      </div>
     </div>
   </section>
 
@@ -1171,6 +1275,61 @@
         faqItem.classList.add('open');
       }
     }
+
+    async function handleSignup(form, emailInput, messageEl) {
+      const email = emailInput.value.trim();
+      
+      if (!email) {
+        messageEl.textContent = 'Please enter your email address.';
+        messageEl.className = 'signup-message error';
+        return;
+      }
+      
+      messageEl.textContent = 'Signing up...';
+      messageEl.className = 'signup-message loading';
+      
+      try {
+        const response = await fetch('/api/pre-register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          messageEl.textContent = data.message;
+          messageEl.className = 'signup-message success';
+          emailInput.value = '';
+        } else {
+          messageEl.textContent = data.error || 'Something went wrong. Please try again.';
+          messageEl.className = 'signup-message error';
+        }
+      } catch (error) {
+        messageEl.textContent = 'Something went wrong. Please try again.';
+        messageEl.className = 'signup-message error';
+      }
+    }
+
+    document.getElementById('hero-signup-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      handleSignup(
+        this,
+        document.getElementById('hero-email'),
+        document.getElementById('hero-message')
+      );
+    });
+
+    document.getElementById('cta-signup-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      handleSignup(
+        this,
+        document.getElementById('cta-email'),
+        document.getElementById('cta-message')
+      );
+    });
   </script>
 </body>
 </html>
