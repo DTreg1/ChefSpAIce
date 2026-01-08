@@ -1,11 +1,11 @@
 {
-  "id": "34a938b8-92a1-4bf1-9158-d0e3cae7e446",
-  "createdAt": "2026-01-08T00:50:48.055Z",
+  "id": "be137121-21d0-48ca-9edf-248677daa54a",
+  "createdAt": "2026-01-08T01:04:21.320Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1767833448055-19104",
+    "key": "bundle-1767834261320-20370",
     "contentType": "application/javascript",
-    "url": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/1767833448055-19104/_expo/static/js/android/bundle.js"
+    "url": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/1767834261320-20370/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -51,9 +51,9 @@
           "foregroundImage": "./assets/images/android-icon-foreground.png",
           "backgroundImage": "./assets/images/android-icon-background.png",
           "monochromeImage": "./assets/images/android-icon-monochrome.png",
-          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png",
-          "monochromeImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-monochrome.png",
-          "backgroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-background.png"
+          "foregroundImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-foreground.png",
+          "monochromeImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-monochrome.png",
+          "backgroundImageUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/android-icon-background.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -143,7 +143,6 @@
           }
         }
       },
-      "description": "ChefSpAIce",
       "sdkVersion": "54.0.0",
       "platforms": [
         "ios",
@@ -153,7 +152,7 @@
       "androidStatusBar": {
         "backgroundColor": "#1a2e05"
       },
-      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
+      "iconUrl": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/assets/./assets/images/icon.png",
       "hostUri": "ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/android"
     },
     "expoGo": {
