@@ -6,7 +6,7 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "cloudrun"
-build = ["sh", "-c", "npm run expo:static:build && npm run server:build"]
+build = ["npm", "run", "server:build"]
 run = ["npm", "run", "server:prod"]
 
 [[ports]]
@@ -53,6 +53,7 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.shared]
+EXPO_PUBLIC_APPLE_APP_URL = "https://apps.apple.com/app/id6757112063"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc"
