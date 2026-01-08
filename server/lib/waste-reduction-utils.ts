@@ -13,7 +13,7 @@ export type TipCategory =
 export interface TipAction {
   type: "navigate" | "search" | "external";
   target: string;
-  params?: Record<string, any>;
+  params?: Record<string, string | number | boolean>;
 }
 
 export interface WasteTip {
@@ -51,19 +51,27 @@ export function generateItemsHash(items: ExpiringItem[]): string {
   return Math.abs(hash).toString(36);
 }
 
-export function parseTips(rawSuggestions: any[]): WasteTip[] {
-  return rawSuggestions.map((tip: any) => {
+interface RawTip {
+  text?: string;
+  category?: TipCategory;
+  searchQuery?: string;
+}
+
+export function parseTips(rawSuggestions: (string | RawTip)[]): WasteTip[] {
+  return rawSuggestions.map((tip) => {
     const baseTip: WasteTip = {
       text: typeof tip === "string" ? tip : tip.text || "",
       category: ((typeof tip === "object" && tip.category) ||
         "general") as TipCategory,
     };
 
-    if (baseTip.category === "recipe" && tip.searchQuery) {
+    const tipObj = typeof tip === "object" ? tip : null;
+
+    if (baseTip.category === "recipe" && tipObj?.searchQuery) {
       baseTip.action = {
         type: "search",
         target: "recipes",
-        params: { query: tip.searchQuery },
+        params: { query: tipObj.searchQuery },
       };
     } else if (baseTip.category === "freeze") {
       baseTip.action = {

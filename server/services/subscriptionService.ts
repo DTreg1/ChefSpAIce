@@ -1,5 +1,28 @@
+/**
+ * =============================================================================
+ * SUBSCRIPTION ENTITLEMENTS SERVICE
+ * =============================================================================
+ * 
+ * Manages user subscription entitlements, usage limits, and feature access.
+ * This is the core business logic layer for subscription features.
+ * 
+ * RESPONSIBILITIES:
+ * - User entitlements calculation (tier, limits, remaining quota)
+ * - Usage limit checks (pantry items, AI recipes, cookware)
+ * - Feature access control (recipe scanning, AI assistant, etc.)
+ * - Trial management (creation, expiration, checking)
+ * - Monthly usage counter resets
+ * 
+ * RELATED FILES:
+ * - server/stripe/subscriptionService.ts: Stripe-specific database operations
+ * - server/middleware/requireSubscription.ts: Route-level access control
+ * - shared/subscription.ts: Tier configuration and limits
+ * 
+ * @module server/services/subscriptionService
+ */
+
 import { db } from "../db";
-import { users, userSyncData, subscriptions } from "@shared/schema";
+import { users, userSyncData, subscriptions, User, UserSyncData } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   SubscriptionTier,
@@ -54,10 +77,32 @@ async function getUserSyncData(userId: string) {
   return syncData;
 }
 
-function parseJsonArray(jsonString: string | null): any[] {
+interface ParsedInventoryItem {
+  id: string;
+  name: string;
+  quantity?: number;
+  [key: string]: unknown;
+}
+
+interface ParsedCookwareItem {
+  id: number | string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+function parseInventoryArray(jsonString: string | null): ParsedInventoryItem[] {
   if (!jsonString) return [];
   try {
-    return JSON.parse(jsonString);
+    return JSON.parse(jsonString) as ParsedInventoryItem[];
+  } catch {
+    return [];
+  }
+}
+
+function parseCookwareArray(jsonString: string | null): ParsedCookwareItem[] {
+  if (!jsonString) return [];
+  try {
+    return JSON.parse(jsonString) as ParsedCookwareItem[];
   } catch {
     return [];
   }
@@ -66,33 +111,38 @@ function parseJsonArray(jsonString: string | null): any[] {
 export async function getUserEntitlements(
   userId: string
 ): Promise<UserEntitlements> {
-  const user = await getUserById(userId);
-  if (!user) {
+  // Optimized: Fetch user and sync data in parallel, then check monthly reset
+  const [initialUser, syncData] = await Promise.all([
+    getUserById(userId),
+    getUserSyncData(userId),
+  ]);
+
+  if (!initialUser) {
     throw new Error("User not found");
   }
 
-  await resetMonthlyCountsIfNeeded(userId);
-
-  const refreshedUser = await getUserById(userId);
-  if (!refreshedUser) {
+  // Check if monthly counters need reset (only re-fetches user if update occurred)
+  const wasReset = await resetMonthlyCountsIfNeededOptimized(userId, initialUser);
+  
+  // Use refreshed user only if reset occurred, otherwise use cached user
+  const user = wasReset ? await getUserById(userId) : initialUser;
+  if (!user) {
     throw new Error("User not found after refresh");
   }
 
-  const syncData = await getUserSyncData(userId);
-
-  const tier = (refreshedUser.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
   const limits = getTierLimits(tier);
 
-  const inventory = parseJsonArray(syncData?.inventory || null);
-  const cookware = parseJsonArray(syncData?.cookware || null);
+  const inventory = parseInventoryArray(syncData?.inventory || null);
+  const cookware = parseCookwareArray(syncData?.cookware || null);
 
   const pantryItemCount = inventory.length;
   const cookwareCount = cookware.length;
-  const aiRecipesUsedThisMonth = refreshedUser.aiRecipesGeneratedThisMonth || 0;
+  const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
 
   return {
     tier,
-    status: refreshedUser.subscriptionStatus || "trialing",
+    status: user.subscriptionStatus || "trialing",
     limits,
     usage: {
       pantryItemCount,
@@ -104,7 +154,7 @@ export async function getUserEntitlements(
       aiRecipes: getRemainingQuota(tier, "maxAiRecipesPerMonth", aiRecipesUsedThisMonth),
       cookware: getRemainingQuota(tier, "maxCookwareItems", cookwareCount),
     },
-    trialEndsAt: refreshedUser.trialEndsAt,
+    trialEndsAt: user.trialEndsAt,
   };
 }
 
@@ -242,6 +292,43 @@ export async function resetMonthlyCountsIfNeeded(userId: string): Promise<void> 
       })
       .where(eq(users.id, userId));
   }
+}
+
+/**
+ * Optimized version of resetMonthlyCountsIfNeeded that accepts a pre-fetched user
+ * to avoid redundant database queries. Returns true if a reset was performed.
+ * 
+ * @param userId - The user's ID
+ * @param user - Pre-fetched user object to avoid additional DB query
+ * @returns boolean indicating if monthly counts were reset
+ */
+async function resetMonthlyCountsIfNeededOptimized(
+  userId: string,
+  user: NonNullable<Awaited<ReturnType<typeof getUserById>>>
+): Promise<boolean> {
+  const resetDate = user.aiRecipesResetDate;
+  if (!resetDate) {
+    return false;
+  }
+
+  const now = new Date();
+  if (now >= new Date(resetDate)) {
+    const oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+    await db
+      .update(users)
+      .set({
+        aiRecipesGeneratedThisMonth: 0,
+        aiRecipesResetDate: oneMonthFromNow,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+    
+    return true;
+  }
+  
+  return false;
 }
 
 export async function upgradeUserTier(

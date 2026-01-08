@@ -1,7 +1,32 @@
+/**
+ * =============================================================================
+ * STRIPE SUBSCRIPTION DATABASE SERVICE
+ * =============================================================================
+ * 
+ * Handles Stripe-specific subscription database operations.
+ * This service manages the `subscriptions` table with Stripe integration data.
+ * 
+ * RESPONSIBILITIES:
+ * - CRUD operations for subscription records
+ * - Stripe customer/subscription ID lookups
+ * - Subscription status checks (active, trialing, etc.)
+ * - Trial days remaining calculations
+ * 
+ * RELATED FILES:
+ * - server/services/subscriptionService.ts: Entitlements, limits, usage tracking
+ * - server/stripe/webhookHandlers.ts: Stripe webhook event processing
+ * - server/stripe/stripeClient.ts: Stripe API client
+ * 
+ * @module server/stripe/subscriptionService
+ */
+
 import { db } from "../db";
-import { subscriptions, users, Subscription, InsertSubscription } from "@shared/schema";
+import { subscriptions, users, Subscription, InsertSubscription, User } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+/**
+ * Retrieves a subscription by user ID.
+ */
 export async function getSubscriptionByUserId(userId: string): Promise<Subscription | null> {
   const [subscription] = await db
     .select()
@@ -12,6 +37,9 @@ export async function getSubscriptionByUserId(userId: string): Promise<Subscript
   return subscription || null;
 }
 
+/**
+ * Retrieves a subscription by Stripe subscription ID.
+ */
 export async function getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | null> {
   const [subscription] = await db
     .select()
@@ -22,6 +50,10 @@ export async function getSubscriptionByStripeId(stripeSubscriptionId: string): P
   return subscription || null;
 }
 
+/**
+ * Creates or updates a subscription record.
+ * Uses upsert pattern based on userId.
+ */
 export async function createOrUpdateSubscription(data: Partial<InsertSubscription> & { userId: string }): Promise<Subscription> {
   const existingSubscription = await getSubscriptionByUserId(data.userId);
 
@@ -52,7 +84,11 @@ export async function createOrUpdateSubscription(data: Partial<InsertSubscriptio
   }
 }
 
-export async function getUserByStripeCustomerId(customerId: string): Promise<typeof users.$inferSelect | null> {
+/**
+ * Finds a user by their Stripe customer ID.
+ * Looks up the subscription first, then retrieves the associated user.
+ */
+export async function getUserByStripeCustomerId(customerId: string): Promise<User | null> {
   const [subscription] = await db
     .select()
     .from(subscriptions)
@@ -70,6 +106,10 @@ export async function getUserByStripeCustomerId(customerId: string): Promise<typ
   return user || null;
 }
 
+/**
+ * Links a Stripe customer ID to a user's subscription record.
+ * Creates a new subscription record if one doesn't exist.
+ */
 export async function linkStripeCustomerToUser(userId: string, customerId: string): Promise<void> {
   const existingSubscription = await getSubscriptionByUserId(userId);
 
@@ -95,11 +135,18 @@ export async function linkStripeCustomerToUser(userId: string, customerId: strin
   }
 }
 
+/**
+ * Checks if a subscription is currently active (paid or trialing).
+ */
 export function isSubscriptionActive(subscription: Subscription | null): boolean {
   if (!subscription) return false;
   return subscription.status === "trialing" || subscription.status === "active";
 }
 
+/**
+ * Calculates the number of days remaining in a trial period.
+ * Returns 0 if no trial or trial has expired.
+ */
 export function getTrialDaysRemaining(subscription: Subscription | null): number {
   if (!subscription || !subscription.trialEnd) return 0;
 

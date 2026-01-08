@@ -15,7 +15,7 @@ export type TipCategory =
 export interface TipAction {
   type: "navigate" | "search" | "external";
   target: string;
-  params?: Record<string, any>;
+  params?: Record<string, string | number | boolean>;
 }
 
 export interface WasteTip {
@@ -100,10 +100,22 @@ export function generateExpiringItemsSignature(
   return expiring || "none";
 }
 
+interface AlertButton {
+  text: string;
+  onPress?: () => void;
+  style?: "default" | "cancel" | "destructive";
+}
+
+interface NavigateParams {
+  screen?: string;
+  params?: Record<string, string | number | boolean>;
+  searchQuery?: string;
+}
+
 export function handleTipAction(
   tip: WasteTip,
-  navigate: (screen: string, params: any) => void,
-  alertFn: (title: string, msg: string, buttons?: any[]) => void,
+  navigate: (screen: string, params: NavigateParams) => void,
+  alertFn: (title: string, msg: string, buttons?: AlertButton[]) => void,
   expiringItem?: ExpiringItem,
 ): void {
   if (!tip.action) return;

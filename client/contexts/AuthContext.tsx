@@ -398,9 +398,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOutRef.current = signOut;
   }, [signOut]);
 
+  interface AppleAuthPayload {
+    identityToken: string | null;
+    authorizationCode: string | null;
+    selectedTier?: 'basic' | 'pro';
+    user: {
+      email: string | null;
+      name: {
+        firstName?: string | null;
+        lastName?: string | null;
+      };
+    };
+  }
+
   const signInWithApple = useCallback(async (selectedTier?: 'basic' | 'pro') => {
     try {
-      let authPayload: any;
+      let authPayload: AppleAuthPayload | null = null;
       
       // iOS native Apple authentication only
       if (!isIOS || !AppleAuthentication) {
@@ -470,8 +483,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       return { success: true };
-    } catch (error: any) {
-      if (error.code === "ERR_CANCELED") {
+    } catch (error: unknown) {
+      const errorWithCode = error as { code?: string };
+      if (errorWithCode.code === "ERR_CANCELED") {
         return { success: false, error: "Sign in cancelled" };
       }
       console.error("Apple sign in error:", error);

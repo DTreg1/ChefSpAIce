@@ -1,74 +1,30 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+/**
+ * =============================================================================
+ * STORAGE INTERFACE
+ * =============================================================================
+ * 
+ * This file defines the storage interface abstraction for user operations.
+ * 
+ * NOTE: This file is kept for potential future use cases such as:
+ * - Unit testing with mock storage implementations
+ * - Switching between different storage backends
+ * - Local development without database connection
+ * 
+ * Currently, the application uses direct Drizzle ORM queries in routes
+ * for PostgreSQL database operations. See server/db.ts for the database
+ * connection and shared/schema.ts for the data models.
+ * 
+ * @module server/storage
+ */
 
+import { type User, type InsertUser } from "@shared/schema";
+
+/**
+ * Storage interface for user operations.
+ * Implementations must provide these core user management methods.
+ */
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 }
-
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const now = new Date();
-    const user: User = {
-      id,
-      password: insertUser.password ?? null,
-      displayName: insertUser.displayName ?? null,
-      email: insertUser.email,
-      firstName: insertUser.firstName ?? null,
-      lastName: insertUser.lastName ?? null,
-      profileImageUrl: insertUser.profileImageUrl ?? null,
-      dietaryRestrictions: insertUser.dietaryRestrictions ?? null,
-      allergens: insertUser.allergens ?? null,
-      favoriteCategories: insertUser.favoriteCategories ?? null,
-      expirationAlertDays: insertUser.expirationAlertDays ?? 3,
-      storageAreasEnabled: insertUser.storageAreasEnabled ?? null,
-      householdSize: insertUser.householdSize ?? 2,
-      cookingSkillLevel: insertUser.cookingSkillLevel ?? "beginner",
-      preferredUnits: insertUser.preferredUnits ?? "imperial",
-      foodsToAvoid: insertUser.foodsToAvoid ?? null,
-      hasCompletedOnboarding: insertUser.hasCompletedOnboarding ?? false,
-      notificationsEnabled: insertUser.notificationsEnabled ?? false,
-      notifyExpiringFood: insertUser.notifyExpiringFood ?? true,
-      notifyRecipeSuggestions: insertUser.notifyRecipeSuggestions ?? false,
-      notifyMealReminders: insertUser.notifyMealReminders ?? true,
-      notificationTime: insertUser.notificationTime ?? "09:00",
-      isAdmin: insertUser.isAdmin ?? false,
-      primaryProvider: insertUser.primaryProvider ?? null,
-      primaryProviderId: insertUser.primaryProviderId ?? null,
-      subscriptionTier: insertUser.subscriptionTier ?? "BASIC",
-      subscriptionStatus: insertUser.subscriptionStatus ?? "trialing",
-      stripeCustomerId: insertUser.stripeCustomerId ?? null,
-      stripeSubscriptionId: insertUser.stripeSubscriptionId ?? null,
-      aiRecipesGeneratedThisMonth: insertUser.aiRecipesGeneratedThisMonth ?? 0,
-      aiRecipesResetDate: insertUser.aiRecipesResetDate ?? null,
-      trialEndsAt: insertUser.trialEndsAt ?? null,
-      preRegistrationSource: insertUser.preRegistrationSource ?? null,
-      preRegisteredAt: insertUser.preRegisteredAt ?? null,
-      isActivated: insertUser.isActivated ?? true,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.users.set(id, user);
-    return user;
-  }
-}
-
-export const storage = new MemStorage();

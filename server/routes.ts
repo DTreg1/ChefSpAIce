@@ -508,11 +508,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userPreferences = preferences || null;
       let userEquipment = equipment || [];
       
+      interface InventoryItem {
+        name: string;
+        quantity?: number;
+        unit?: string;
+      }
+      
       if (authenticatedUserId) {
         const userData = await getUserSyncData(authenticatedUserId);
         fullInventory = userData.inventory;
         if (fullInventory.length > 0) {
-          inventoryContext = `Available ingredients: ${fullInventory.map((i: any) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`;
+          inventoryContext = `Available ingredients: ${(fullInventory as InventoryItem[]).map((i) => `${i.quantity} ${i.unit} ${i.name}`).join(", ")}`;
         }
         // Use server-side preferences/equipment if available
         if (userData.preferences) {
@@ -523,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else if (inventory && Array.isArray(inventory)) {
         fullInventory = inventory;
-        inventoryContext = `Available ingredients: ${inventory.map((i: any) => `${i.quantity || 1} ${i.unit || 'item'} ${i.name}`).join(", ")}`;
+        inventoryContext = `Available ingredients: ${(inventory as InventoryItem[]).map((i) => `${i.quantity || 1} ${i.unit || 'item'} ${i.name}`).join(", ")}`;
       }
 
       // Build preferences context
@@ -736,12 +742,34 @@ BEHAVIOR GUIDELINES:
 
       const data = await response.json();
 
+      interface UsdaNutrient {
+        nutrientId?: number;
+        value?: number;
+        nutrient?: { id?: number };
+        amount?: number;
+      }
+      
+      interface UsdaFood {
+        fdcId: number;
+        description: string;
+        brandOwner?: string;
+        dataType?: string;
+        servingSize?: number;
+        servingSizeUnit?: string;
+        foodNutrients?: UsdaNutrient[];
+        foodCategory?: string;
+        brandedFoodCategory?: string;
+        gtinUpc?: string;
+        ingredients?: string;
+        householdServingFullText?: string;
+      }
+      
       // Map USDA response to our simplified format
-      const foods = (data.foods || []).map((food: any) => {
+      const foods = (data.foods || []).map((food: UsdaFood) => {
         // Extract key nutrients
         const nutrients = food.foodNutrients || [];
         const getN = (id: number) =>
-          nutrients.find((n: any) => n.nutrientId === id)?.value || 0;
+          nutrients.find((n) => n.nutrientId === id)?.value || 0;
         const usdaCategory =
           food.foodCategory || food.brandedFoodCategory || "";
 
@@ -797,10 +825,16 @@ BEHAVIOR GUIDELINES:
       const food = await response.json();
 
       // Extract nutrients
-      const nutrients = food.foodNutrients || [];
+      interface FoodNutrient {
+        nutrient?: { id?: number };
+        nutrientId?: number;
+        amount?: number;
+        value?: number;
+      }
+      const nutrients: FoodNutrient[] = food.foodNutrients || [];
       const getN = (id: number) => {
         const nutrient = nutrients.find(
-          (n: any) => n.nutrient?.id === id || n.nutrientId === id,
+          (n) => n.nutrient?.id === id || n.nutrientId === id,
         );
         return nutrient?.amount || nutrient?.value || 0;
       };
@@ -1098,7 +1132,7 @@ BEHAVIOR GUIDELINES:
       const cleanBarcode = barcode.replace(/\D/g, "");
 
       // Fetch from OpenFoodFacts
-      let openFoodFactsResult: { found: boolean; raw: any } = {
+      let openFoodFactsResult: { found: boolean; raw: unknown } = {
         found: false,
         raw: null,
       };
@@ -1126,7 +1160,7 @@ BEHAVIOR GUIDELINES:
       }
 
       // Fetch from USDA
-      let usdaResult: { found: boolean; raw: any } = {
+      let usdaResult: { found: boolean; raw: unknown } = {
         found: false,
         raw: null,
       };
@@ -1149,10 +1183,14 @@ BEHAVIOR GUIDELINES:
 
           if (usdaResponse.ok) {
             const usdaData = await usdaResponse.json();
-            const foods = usdaData.foods || [];
+            interface UsdaBarcodeFood {
+              gtinUpc?: string;
+              [key: string]: unknown;
+            }
+            const foods: UsdaBarcodeFood[] = usdaData.foods || [];
 
             // Look for exact barcode match
-            const exactMatch = foods.find((food: any) => {
+            const exactMatch = foods.find((food) => {
               if (food.gtinUpc) {
                 const foodUpc = food.gtinUpc.replace(/\D/g, "");
                 return (

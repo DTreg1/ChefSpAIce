@@ -46,7 +46,7 @@ type TipCategory = "recipe" | "storage" | "freeze" | "preserve" | "general";
 interface TipAction {
   type: "navigate" | "search" | "external";
   target: string;
-  params?: Record<string, any>;
+  params?: Record<string, string | number | boolean>;
 }
 
 interface WasteTip {
@@ -177,12 +177,48 @@ async function fetchWasteReductionTips(
   return result;
 }
 
+interface GlassTheme {
+  background: string;
+  backgroundStrong: string;
+  backgroundSubtle: string;
+  border: string;
+  borderStrong: string;
+  borderSubtle: string;
+  overlay: string;
+  shadowColor: string;
+  insetHighlight: string;
+}
+
+interface ThemeColors {
+  text: string;
+  textSecondary: string;
+  textOnGlass: string;
+  textSecondaryOnGlass: string;
+  buttonText: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
+  link: string;
+  backgroundRoot: string;
+  backgroundDefault: string;
+  backgroundSecondary: string;
+  backgroundTertiary: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  warning: string;
+  success: string;
+  error: string;
+  border: string;
+  surface: string;
+  glass: GlassTheme;
+}
+
 interface SwipeableTipProps {
   tip: WasteTip;
   tipId: string;
   onDismiss: (tipId: string) => void;
   onAction: (tip: WasteTip) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 function SwipeableTip({
