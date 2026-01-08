@@ -180,8 +180,8 @@ function configureExpoRouting(app: express.Application) {
   const appName = getAppName();
   const isDevelopment = process.env.NODE_ENV !== "production";
 
-  log("Configuring Expo routing");
-  log(`Environment: ${isDevelopment ? "development" : "production"}`);
+  log("[Expo] Configuring Expo routing");
+  log(`[Expo] Environment: ${isDevelopment ? "development" : "production"}`);
 
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
   
@@ -192,7 +192,7 @@ function configureExpoRouting(app: express.Application) {
       ws: true,
       on: {
         error: (err: Error, req: any, res: any) => {
-          log(`Metro proxy error: ${err.message}`);
+          log(`[Expo] Metro proxy error: ${err.message}`);
           if (res && !res.headersSent && res.writeHead) {
             res.writeHead(502, { "Content-Type": "text/html" });
             res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
@@ -252,7 +252,7 @@ function configureExpoRouting(app: express.Application) {
     next();
   });
 
-  log(`Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving landing page"}, mobile browsers get QR page`);
+  log(`[Expo] Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving landing page"}, mobile browsers get QR page`);
 }
 
 function configureStaticFiles(app: express.Application) {
@@ -284,11 +284,11 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
     });
     
     try {
-      log(`Warming up database connection... (attempt ${attempt}/${retries})`);
+      log(`[Database] Warming up database connection... (attempt ${attempt}/${retries})`);
       await client.connect();
       await client.query('SELECT 1');
       await client.end();
-      log("Database connection ready");
+      log("[Database] Database connection ready");
       return true;
     } catch (error) {
       try {
@@ -299,7 +299,7 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
         console.error("Failed to connect to database after retries:", error);
         return false;
       }
-      log(`Database warmup attempt ${attempt} failed, retrying in ${delay}ms...`);
+      log(`[Database] Database warmup attempt ${attempt} failed, retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -310,22 +310,22 @@ async function initStripe(retries = 3, delay = 2000) {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    log("DATABASE_URL not found, skipping Stripe initialization");
+    log("[Stripe] DATABASE_URL not found, skipping Stripe initialization");
     return;
   }
 
   const dbReady = await warmupDatabase(databaseUrl);
   if (!dbReady) {
-    log("Database not available, skipping Stripe initialization");
+    log("[Stripe] Database not available, skipping Stripe initialization");
     return;
   }
 
   try {
-    log("Initializing Stripe schema...");
+    log("[Stripe] Initializing Stripe schema...");
     await runMigrations({
       databaseUrl,
     });
-    log("Stripe schema ready");
+    log("[Stripe] Stripe schema ready");
   } catch (migrationError) {
     console.error("Failed to initialize Stripe schema:", migrationError);
     return;
@@ -335,7 +335,7 @@ async function initStripe(retries = 3, delay = 2000) {
 
     const stripeSync = await getStripeSync();
 
-    log("Setting up managed webhook...");
+    log("[Stripe] Setting up managed webhook...");
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
     const { webhook, uuid } = await stripeSync.findOrCreateManagedWebhook(
       `${webhookBaseUrl}/api/stripe/webhook`,
@@ -344,7 +344,7 @@ async function initStripe(retries = 3, delay = 2000) {
         description: "Managed webhook for Stripe sync",
       },
     );
-    log(`Webhook configured: ${webhook.url} (UUID: ${uuid})`);
+    log(`[Stripe] Webhook configured: ${webhook.url} (UUID: ${uuid})`);
 
     // Skip full backfill sync for faster startup - webhook handles new events
     // Only sync checkout_sessions which we need for subscriptions
@@ -353,7 +353,7 @@ async function initStripe(retries = 3, delay = 2000) {
         include: ["checkout_sessions"],
       })
       .then(() => {
-        log("Stripe checkout sessions synced");
+        log("[Stripe] Stripe checkout sessions synced");
       })
       .catch((err: Error) => {
         console.error("Error syncing Stripe data:", err);
@@ -422,7 +422,7 @@ async function initStripe(retries = 3, delay = 2000) {
       reusePort: true,
     },
     () => {
-      log(`express server serving on port ${port}`);
+      log(`[Server] Express server serving on port ${port}`);
 
       // Initialize Stripe in background after server starts
       initStripe().catch((err) => {
