@@ -163,7 +163,9 @@ async function getAIShelfLifeSuggestion(
   const cacheKey = getCacheKey(foodName, storageLocation);
   const cached = getFromCache(cacheKey);
   if (cached) {
-    console.log(`Shelf life cache hit for: ${foodName}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[ShelfLife] Cache hit for: ${foodName}`);
+    }
     return cached;
   }
 
@@ -217,7 +219,9 @@ Return JSON: {
     };
 
     setInCache(cacheKey, response);
-    console.log(`Shelf life AI response cached for: ${foodName}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[ShelfLife] AI response cached for: ${foodName}`);
+    }
 
     return response;
   } catch (error) {
@@ -918,9 +922,7 @@ BEHAVIOR GUIDELINES:
           ingredients: mapped.ingredients || null,
           source: "usda" as const,
         };
-        console.log(
-          `Found USDA product for barcode ${cleanCode}: ${product.name}`,
-        );
+        console.log(`[Barcode] Found USDA product for ${cleanCode}: ${product.name}`);
         return res.json({ product });
       }
 
@@ -935,16 +937,14 @@ BEHAVIOR GUIDELINES:
       );
 
       if (!response.ok) {
-        console.log(
-          `OpenFoodFacts API error for barcode ${cleanCode}: ${response.status}`,
-        );
+        console.log(`[Barcode] OpenFoodFacts API error for ${cleanCode}: ${response.status}`);
         return res.json({ product: null, message: "Product not found" });
       }
 
       const data = await response.json();
 
       if (data.status !== 1 || !data.product) {
-        console.log(`Product not found for barcode ${cleanCode}`);
+        console.log(`[Barcode] Product not found for ${cleanCode}`);
         return res.json({
           product: null,
           message: "Product not found in database",
@@ -981,9 +981,7 @@ BEHAVIOR GUIDELINES:
         source: "openfoodfacts" as const,
       };
 
-      console.log(
-        `Found OpenFoodFacts product for barcode ${cleanCode}: ${product.name}`,
-      );
+      console.log(`[Barcode] Found OpenFoodFacts product for ${cleanCode}: ${product.name}`);
       res.json({ product });
     } catch (error) {
       console.error("Barcode lookup error:", error);
@@ -1029,9 +1027,9 @@ BEHAVIOR GUIDELINES:
           mappedLocation,
         );
         if (directMatch) {
-          console.log(
-            `Shelf life direct match for: ${foodName} in ${mappedLocation}`,
-          );
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[ShelfLife] Direct match for: ${foodName} in ${mappedLocation}`);
+          }
           return res.json({
             suggestedDays: directMatch.days,
             confidence: "high" as ConfidenceLevel,
@@ -1046,9 +1044,9 @@ BEHAVIOR GUIDELINES:
             mappedLocation,
           );
           if (categoryMatch) {
-            console.log(
-              `Shelf life category match for: ${foodName} (${category}) in ${mappedLocation}`,
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(`[ShelfLife] Category match for: ${foodName} (${category}) in ${mappedLocation}`);
+            }
             return res.json({
               suggestedDays: categoryMatch.days,
               confidence: "high" as ConfidenceLevel,
@@ -1065,9 +1063,9 @@ BEHAVIOR GUIDELINES:
             mappedLocation,
           );
           if (matchedEntry) {
-            console.log(
-              `Shelf life partial match for: ${foodName} -> ${partialMatch.matchedCategory} in ${mappedLocation}`,
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(`[ShelfLife] Partial match for: ${foodName} -> ${partialMatch.matchedCategory} in ${mappedLocation}`);
+            }
             return res.json({
               suggestedDays: matchedEntry.days,
               confidence: "medium" as ConfidenceLevel,
@@ -1076,9 +1074,9 @@ BEHAVIOR GUIDELINES:
             });
           }
 
-          console.log(
-            `Shelf life partial match (default location) for: ${foodName} -> ${partialMatch.matchedCategory}`,
-          );
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[ShelfLife] Partial match (default location) for: ${foodName} -> ${partialMatch.matchedCategory}`);
+          }
           return res.json({
             suggestedDays: partialMatch.days,
             confidence: "medium" as ConfidenceLevel,
@@ -1088,7 +1086,7 @@ BEHAVIOR GUIDELINES:
         }
 
         try {
-          console.log(`Shelf life AI fallback for: ${foodName}`);
+          console.log(`[ShelfLife] AI fallback for: ${foodName}`);
           const aiSuggestion = await getAIShelfLifeSuggestion(
             foodName,
             category,
