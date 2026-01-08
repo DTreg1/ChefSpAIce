@@ -10980,6 +10980,17 @@ async function initStripe(retries = 3, delay = 2e3) {
   }
 }
 (async () => {
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: Date.now() });
+  });
+  app.get("/", (req, res, next) => {
+    const userAgent = req.header("user-agent") || "";
+    const isHealthCheck = !userAgent || userAgent.includes("curl") || userAgent.includes("health") || userAgent.includes("kube-probe");
+    if (isHealthCheck) {
+      return res.status(200).send("OK");
+    }
+    next();
+  });
   setupCors(app);
   app.post(
     "/api/stripe/webhook/:uuid",
