@@ -50,8 +50,23 @@ function getDeploymentUrl() {
 function prepareDirectories(timestamp) {
   console.log("Preparing build directories...");
 
+  // Remove only mobile-specific directories, preserve web export files (index.html, assets, _expo, etc.)
+  const mobileDirs = ["ios", "android"];
+  for (const dir of mobileDirs) {
+    const dirPath = path.join("static-build", dir);
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true });
+    }
+  }
+  
+  // Remove old timestamp directories (they start with a number)
   if (fs.existsSync("static-build")) {
-    fs.rmSync("static-build", { recursive: true });
+    const entries = fs.readdirSync("static-build");
+    for (const entry of entries) {
+      if (/^\d+/.test(entry)) {
+        fs.rmSync(path.join("static-build", entry), { recursive: true });
+      }
+    }
   }
 
   const dirs = [
