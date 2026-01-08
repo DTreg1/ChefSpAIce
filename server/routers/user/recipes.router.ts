@@ -461,10 +461,12 @@ router.post("/generate", async (req: Request, res: Response) => {
       previousRecipeTitles,
     });
 
-    console.log(
-      "Smart recipe generation prompt:",
-      prompt.substring(0, 500) + "...",
-    );
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[Recipe] Smart generation prompt:",
+        prompt.substring(0, 500) + "...",
+      );
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -712,7 +714,9 @@ ABSOLUTE RULES:
 
         // Allow universal utilities like water even if not in inventory
         if (isAllowedUtility(ing.name)) {
-          console.log(`Allowing utility ingredient: ${ing.name}`);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[Recipe] Allowing utility ingredient: ${ing.name}`);
+          }
           return { 
             ...ing, 
             fromInventory: false,
@@ -722,7 +726,9 @@ ABSOLUTE RULES:
         }
 
         // Ingredient doesn't match inventory - remove it (no exceptions for oil, salt, etc.)
-        console.log(`Removing ingredient not in inventory: ${ing.name}`);
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[Recipe] Removing ingredient not in inventory: ${ing.name}`);
+        }
         return null;
       })
       .filter((ing): ing is NonNullable<typeof ing> => ing !== null);
@@ -930,9 +936,9 @@ ABSOLUTE RULES:
     // Check description for phantom ingredients
     const descPhantoms = findUnmatchedIngredients(recipe.description || "");
     if (descPhantoms.length > 0) {
-      console.log(
-        `Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`,
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Recipe] Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`);
+      }
       const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
       recipe.description = `A delicious dish featuring ${ingredientList}.`;
     }
@@ -941,9 +947,9 @@ ABSOLUTE RULES:
     const instructionsText = (recipe.instructions || []).join(" ");
     const instrPhantoms = findUnmatchedIngredients(instructionsText);
     if (instrPhantoms.length > 0) {
-      console.log(
-        `Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`,
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Recipe] Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`);
+      }
       // Rewrite instructions to use generic terms instead of specific phantom ingredients
       recipe.instructions = (recipe.instructions || []).map((step) => {
         let cleanStep = step;
@@ -962,16 +968,16 @@ ABSOLUTE RULES:
     }));
 
     const filteredCount = originalIngredientCount - recipe.ingredients.length;
-    if (filteredCount > 0) {
-      console.log(`Filtered out ${filteredCount} ingredients not in inventory`);
+    if (filteredCount > 0 && process.env.NODE_ENV !== "production") {
+      console.log(`[Recipe] Filtered out ${filteredCount} ingredients not in inventory`);
     }
 
     if (quickRecipe) {
       const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       if (totalTime > 20) {
-        console.log(
-          `Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`,
-        );
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[Recipe] Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`);
+        }
         const ratio = 20 / totalTime;
         recipe.prepTime = Math.max(
           5,
@@ -984,9 +990,7 @@ ABSOLUTE RULES:
     const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
     recipe.usedExpiringCount = usedExpiringCount;
 
-    console.log(
-      `Smart recipe generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`,
-    );
+    console.log(`[Recipe] Generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`);
 
     await incrementAiRecipeCount(req.userId!);
 
@@ -1071,7 +1075,7 @@ router.post("/generate-image", async (req: Request, res: Response) => {
     // Fixed suffix that cannot be overridden by user input
     imagePrompt += `. Beautifully plated on a ceramic dish, natural lighting, shallow depth of field, appetizing colors, restaurant quality presentation, overhead shot, clean background, high resolution, photorealistic. No text or words in the image.`;
 
-    console.log(`Generating recipe image for: "${safeTitle}"`);
+    console.log(`[Recipe] Generating image for: "${safeTitle}"`);
 
     const response = await openai.images.generate({
       model: "gpt-image-1",
@@ -1200,9 +1204,7 @@ router.post("/scan", async (req: Request, res: Response) => {
     const mimeType = detectMimeType(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(
-      `Scanning recipe: ${(base64Image.length / 1024).toFixed(1)}KB`,
-    );
+    console.log(`[Recipe] Scanning image: ${(base64Image.length / 1024).toFixed(1)}KB`);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -1258,7 +1260,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`Recipe scan complete: "${result.title}"`);
+    console.log(`[Recipe] Scan complete: "${result.title}"`);
 
     return res.json({
       title: result.title || "Untitled Recipe",

@@ -342,7 +342,9 @@ router.get("/:foodId", async (req: Request, res: Response) => {
     const cacheKey = getCacheKey(foodId, source);
     const cached = getFromCache(cacheKey);
     if (cached) {
-      console.log(`Nutrition cache hit for: ${foodId}`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Nutrition] Cache hit for: ${foodId}`);
+      }
       return res.json({
         nutrition: cached.nutrition,
         source: "cache",
@@ -542,7 +544,7 @@ router.post("/estimate", async (req: Request, res: Response) => {
 router.delete("/cache", async (req: Request, res: Response) => {
   const sizeBefore = nutritionCache.size;
   nutritionCache.clear();
-  console.log(`Nutrition cache cleared: ${sizeBefore} entries removed`);
+  console.log(`[Nutrition] Cache cleared: ${sizeBefore} entries removed`);
   return res.json({ message: "Cache cleared", entriesRemoved: sizeBefore });
 });
 
@@ -588,7 +590,7 @@ router.post("/corrections", async (req: Request, res: Response) => {
       })
       .returning();
 
-    console.log(`Nutrition correction submitted for: ${data.productName}`);
+    console.log(`[Nutrition] Correction submitted for: ${data.productName}`);
 
     return res.status(201).json({
       message: "Correction submitted successfully",
