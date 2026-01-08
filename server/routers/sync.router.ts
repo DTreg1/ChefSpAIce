@@ -1,11 +1,107 @@
 import { Router, Request, Response } from "express";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
 
 const router = Router();
+
+const syncOperationSchema = z.enum(["create", "update", "delete"]);
+
+const inventoryItemSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  name: z.string(),
+  barcode: z.string().optional(),
+  quantity: z.number(),
+  unit: z.string(),
+  storageLocation: z.string(),
+  purchaseDate: z.string(),
+  expirationDate: z.string(),
+  category: z.string(),
+  usdaCategory: z.string().optional(),
+  nutrition: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fat: z.number(),
+    fiber: z.number().optional(),
+    sugar: z.number().optional(),
+  }).optional(),
+  notes: z.string().optional(),
+  imageUri: z.string().optional(),
+  fdcId: z.number().optional(),
+  updatedAt: z.string().optional(),
+});
+
+const recipeSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  title: z.string(),
+  description: z.string().optional(),
+  ingredients: z.array(z.object({
+    name: z.string(),
+    quantity: z.union([z.number(), z.string()]),
+    unit: z.string(),
+    fromInventory: z.boolean().optional(),
+  })),
+  instructions: z.array(z.string()),
+  prepTime: z.number().optional(),
+  cookTime: z.number().optional(),
+  servings: z.number().optional(),
+  imageUri: z.string().optional(),
+  nutrition: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fat: z.number(),
+  }).optional(),
+  isFavorite: z.boolean().optional(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+const mealPlanSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  date: z.string(),
+  meals: z.array(z.object({
+    type: z.string(),
+    recipeId: z.string().optional(),
+    customMeal: z.string().optional(),
+  })).optional(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+const cookwareSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  name: z.string().optional(),
+  category: z.string().optional(),
+  alternatives: z.array(z.string()).optional(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+const inventorySyncRequestSchema = z.object({
+  operation: syncOperationSchema,
+  data: inventoryItemSchema,
+  clientTimestamp: z.string().optional(),
+});
+
+const recipeSyncRequestSchema = z.object({
+  operation: syncOperationSchema,
+  data: recipeSchema,
+  clientTimestamp: z.string().optional(),
+});
+
+const mealPlanSyncRequestSchema = z.object({
+  operation: syncOperationSchema,
+  data: mealPlanSchema,
+  clientTimestamp: z.string().optional(),
+});
+
+const cookwareSyncRequestSchema = z.object({
+  operation: syncOperationSchema,
+  data: cookwareSchema,
+  clientTimestamp: z.string().optional(),
+});
 
 async function getSessionFromToken(token: string) {
   if (!token) return null;
@@ -45,7 +141,15 @@ router.post("/inventory", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { operation, data, clientTimestamp } = req.body;
+    const parseResult = inventorySyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { operation, data, clientTimestamp } = parseResult.data;
 
     if (operation === "create") {
       const limitCheck = await checkPantryItemLimit(session.userId);
@@ -70,11 +174,13 @@ router.post("/inventory", async (req: Request, res: Response) => {
       currentInventory = JSON.parse(existingSyncData[0].inventory);
     }
 
+    const dataIdStr = String(data.id);
+    
     if (operation === "create") {
       currentInventory.push(data);
     } else if (operation === "update") {
       const index = currentInventory.findIndex(
-        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
       );
       if (index !== -1) {
         currentInventory[index] = data;
@@ -93,7 +199,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
       }
     } else if (operation === "delete") {
       currentInventory = currentInventory.filter(
-        (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
       );
     }
 
@@ -128,7 +234,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation,
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Inventory sync error:", error);
@@ -148,11 +254,20 @@ router.put("/inventory", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data, clientTimestamp } = req.body;
-    
-    if (!data || !(data as { id: string }).id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z.object({
+      data: inventoryItemSchema,
+      clientTimestamp: z.string().optional(),
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
     }
+
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -165,23 +280,27 @@ router.put("/inventory", async (req: Request, res: Response) => {
     }
 
     const index = currentInventory.findIndex(
-      (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
     );
     
     if (index !== -1) {
       const existingItem = currentInventory[index] as { updatedAt?: string };
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      // Prefer data.updatedAt (actual modification time), fallback to clientTimestamp (queue time), then Date.now()
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
+                           clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
       
       if (newTimestamp >= existingTimestamp) {
-        currentInventory[index] = { ...data, updatedAt: clientTimestamp || new Date().toISOString() };
+        currentInventory[index] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: (data as { id: string }).id,
+          itemId: dataIdStr,
         });
       }
     } else {
@@ -195,7 +314,8 @@ router.put("/inventory", async (req: Request, res: Response) => {
           remaining: 0,
         });
       }
-      currentInventory.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      currentInventory.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
     }
 
     const finalLimitCheck = await checkPantryItemLimit(session.userId);
@@ -222,7 +342,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "update",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Inventory update sync error:", error);
@@ -242,7 +362,19 @@ router.delete("/inventory", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data } = req.body;
+    const deleteSchema = z.object({
+      data: z.object({ id: z.union([z.string(), z.number()]) }),
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -255,7 +387,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
     }
 
     currentInventory = currentInventory.filter(
-      (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
     );
 
     await db
@@ -271,7 +403,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "delete",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Inventory delete sync error:", error);
@@ -291,7 +423,16 @@ router.post("/recipes", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { operation, data } = req.body;
+    const parseResult = recipeSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -307,7 +448,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
       currentRecipes.push(data);
     } else if (operation === "update") {
       const index = currentRecipes.findIndex(
-        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
       );
       if (index !== -1) {
         currentRecipes[index] = data;
@@ -316,7 +457,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
       }
     } else if (operation === "delete") {
       currentRecipes = currentRecipes.filter(
-        (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
       );
     }
 
@@ -340,7 +481,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation,
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Recipes sync error:", error);
@@ -360,11 +501,20 @@ router.put("/recipes", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data, clientTimestamp } = req.body;
-    
-    if (!data || !(data as { id: string }).id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z.object({
+      data: recipeSchema,
+      clientTimestamp: z.string().optional(),
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
     }
+
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -377,27 +527,31 @@ router.put("/recipes", async (req: Request, res: Response) => {
     }
 
     const index = currentRecipes.findIndex(
-      (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
     );
     
     if (index !== -1) {
       const existingItem = currentRecipes[index] as { updatedAt?: string };
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
+                           clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
       
       if (newTimestamp >= existingTimestamp) {
-        currentRecipes[index] = { ...data, updatedAt: clientTimestamp || new Date().toISOString() };
+        currentRecipes[index] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: (data as { id: string }).id,
+          itemId: dataIdStr,
         });
       }
     } else {
-      currentRecipes.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      currentRecipes.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
     }
 
     await db
@@ -413,7 +567,7 @@ router.put("/recipes", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "update",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Recipes update sync error:", error);
@@ -433,7 +587,19 @@ router.delete("/recipes", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data } = req.body;
+    const deleteSchema = z.object({
+      data: z.object({ id: z.union([z.string(), z.number()]) }),
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -446,7 +612,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
     }
 
     currentRecipes = currentRecipes.filter(
-      (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
     );
 
     await db
@@ -462,7 +628,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "delete",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Recipes delete sync error:", error);
@@ -482,7 +648,16 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { operation, data } = req.body;
+    const parseResult = mealPlanSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+  });
+    }
+
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -498,7 +673,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       currentMealPlans.push(data);
     } else if (operation === "update") {
       const index = currentMealPlans.findIndex(
-        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
       );
       if (index !== -1) {
         currentMealPlans[index] = data;
@@ -507,7 +682,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       }
     } else if (operation === "delete") {
       currentMealPlans = currentMealPlans.filter(
-        (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
       );
     }
 
@@ -531,7 +706,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation,
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Meal plans sync error:", error);
@@ -551,11 +726,20 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data, clientTimestamp } = req.body;
-    
-    if (!data || !(data as { id: string }).id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z.object({
+      data: mealPlanSchema,
+      clientTimestamp: z.string().optional(),
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
     }
+
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -568,27 +752,31 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
     }
 
     const index = currentMealPlans.findIndex(
-      (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
     );
     
     if (index !== -1) {
       const existingItem = currentMealPlans[index] as { updatedAt?: string };
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
+                           clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
       
       if (newTimestamp >= existingTimestamp) {
-        currentMealPlans[index] = { ...data, updatedAt: clientTimestamp || new Date().toISOString() };
+        currentMealPlans[index] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: (data as { id: string }).id,
+          itemId: dataIdStr,
         });
       }
     } else {
-      currentMealPlans.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      currentMealPlans.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
     }
 
     await db
@@ -604,7 +792,7 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "update",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Meal plans update sync error:", error);
@@ -624,7 +812,19 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data } = req.body;
+    const deleteSchema = z.object({
+      data: z.object({ id: z.union([z.string(), z.number()]) }),
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -637,7 +837,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
     }
 
     currentMealPlans = currentMealPlans.filter(
-      (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
     );
 
     await db
@@ -653,7 +853,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "delete",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Meal plans delete sync error:", error);
@@ -677,7 +877,16 @@ router.post("/cookware", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { operation, data } = req.body;
+    const parseResult = cookwareSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     // Fetch existing cookware FIRST before any mutation decisions
     const existingSyncData = await db
@@ -693,7 +902,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
     // Determine if this operation would add a new item
     const isAddingNewItem = operation === "create" || 
       (operation === "update" && currentCookware.findIndex(
-        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
       ) === -1);
 
     // Check limit BEFORE any mutation if adding a new item
@@ -718,7 +927,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       currentCookware.push(data);
     } else if (operation === "update") {
       const index = currentCookware.findIndex(
-        (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
       );
       if (index !== -1) {
         currentCookware[index] = data;
@@ -728,7 +937,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       }
     } else if (operation === "delete") {
       currentCookware = currentCookware.filter(
-        (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
       );
     }
 
@@ -753,7 +962,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation,
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Cookware sync error:", error);
@@ -773,11 +982,20 @@ router.put("/cookware", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data, clientTimestamp } = req.body;
-    
-    if (!data || !(data as { id: string }).id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z.object({
+      data: cookwareSchema,
+      clientTimestamp: z.string().optional(),
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
     }
+
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     // Fetch existing cookware FIRST before any mutation decisions
     const existingSyncData = await db
@@ -791,7 +1009,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
     }
 
     const index = currentCookware.findIndex(
-      (item: unknown) => (item as { id: string }).id === (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
     );
     
     // If item not found, this would add a new one - check limit FIRST
@@ -809,22 +1027,26 @@ router.put("/cookware", async (req: Request, res: Response) => {
         });
       }
       // Safe to add new item
-      currentCookware.push({ ...data, updatedAt: clientTimestamp || new Date().toISOString() });
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      currentCookware.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
     } else {
       // Update existing item - check timestamps for conflict resolution
       const existingItem = currentCookware[index] as { updatedAt?: string };
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
+                           clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
       
       if (newTimestamp >= existingTimestamp) {
-        currentCookware[index] = { ...data, updatedAt: clientTimestamp || new Date().toISOString() };
+        currentCookware[index] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: (data as { id: string }).id,
+          itemId: dataIdStr,
         });
       }
     }
@@ -850,7 +1072,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "update",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Cookware update sync error:", error);
@@ -870,7 +1092,19 @@ router.delete("/cookware", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
 
-    const { data } = req.body;
+    const deleteSchema = z.object({
+      data: z.object({ id: z.union([z.string(), z.number()]) }),
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     const existingSyncData = await db
       .select()
@@ -883,7 +1117,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
     }
 
     currentCookware = currentCookware.filter(
-      (item: unknown) => (item as { id: string }).id !== (data as { id: string }).id
+      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
     );
 
     await db
@@ -899,7 +1133,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
       success: true,
       syncedAt: new Date().toISOString(),
       operation: "delete",
-      itemId: (data as { id: string }).id,
+      itemId: dataIdStr,
     });
   } catch (error) {
     console.error("Cookware delete sync error:", error);

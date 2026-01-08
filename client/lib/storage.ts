@@ -117,6 +117,7 @@ export interface FoodItem {
   notes?: string;
   imageUri?: string;
   fdcId?: number;
+  updatedAt?: string;
 }
 
 export interface NutritionInfo {
@@ -148,6 +149,7 @@ export interface Recipe {
   dietaryTags?: string[];
   requiredCookware?: string[];
   optionalCookware?: string[];
+  updatedAt?: string;
 }
 
 export type IngredientAvailability = "available" | "partial" | "unavailable";
@@ -165,6 +167,7 @@ export interface MealPlan {
   id: string;
   date: string;
   meals: Record<string, string | undefined>;
+  updatedAt?: string;
 }
 
 export interface ShoppingListItem {
@@ -323,12 +326,13 @@ export const storage = {
 
   async addInventoryItem(item: FoodItem): Promise<void> {
     const items = await this.getInventory();
-    items.push(item);
+    const itemWithTimestamp = { ...item, updatedAt: new Date().toISOString() };
+    items.push(itemWithTimestamp);
     await this.setInventory(items);
     
     const token = await this.getAuthToken();
     if (token) {
-      syncManager.queueChange("inventory", "create", item);
+      syncManager.queueChange("inventory", "create", itemWithTimestamp);
     }
     
     if (item.expirationDate) {
@@ -343,10 +347,14 @@ export const storage = {
     const items = await this.getInventory();
     let added = 0;
     let failed = 0;
+    const timestamp = new Date().toISOString();
+    const itemsWithTimestamp: FoodItem[] = [];
 
     for (const item of newItems) {
       try {
-        items.push(item);
+        const itemWithTimestamp = { ...item, updatedAt: timestamp };
+        items.push(itemWithTimestamp);
+        itemsWithTimestamp.push(itemWithTimestamp);
         added++;
       } catch {
         failed++;
@@ -359,7 +367,7 @@ export const storage = {
     if (!options?.skipSync) {
       const token = await this.getAuthToken();
       if (token) {
-        for (const item of newItems) {
+        for (const item of itemsWithTimestamp) {
           syncManager.queueChange("inventory", "create", item);
         }
       }
@@ -377,14 +385,15 @@ export const storage = {
     const index = items.findIndex((i) => i.id === item.id);
     if (index !== -1) {
       const oldItem = items[index];
-      items[index] = item;
+      const itemWithTimestamp = { ...item, updatedAt: new Date().toISOString() };
+      items[index] = itemWithTimestamp;
       await this.setInventory(items);
       
       // Skip sync if requested (e.g., during onboarding before subscription)
       if (!options?.skipSync) {
         const token = await this.getAuthToken();
         if (token) {
-          syncManager.queueChange("inventory", "update", item);
+          syncManager.queueChange("inventory", "update", itemWithTimestamp);
         }
       }
       
@@ -456,13 +465,14 @@ export const storage = {
       }
     }
 
-    recipes.push(recipeToStore);
+    const recipeWithTimestamp = { ...recipeToStore, updatedAt: new Date().toISOString() };
+    recipes.push(recipeWithTimestamp);
     await this.setRecipes(recipes);
-    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeToStore.imageUri);
+    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
     
     const token = await this.getAuthToken();
     if (token) {
-      const recipeForSync = { ...recipeToStore, imageUri: undefined };
+      const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
       syncManager.queueChange("recipes", "create", recipeForSync);
     }
   },
@@ -472,13 +482,14 @@ export const storage = {
     const recipes = await this.getRawRecipes();
     const index = recipes.findIndex((r) => r.id === recipe.id);
     if (index !== -1) {
+      const updatedRecipe = { ...recipe, updatedAt: new Date().toISOString() };
       // Store large base64 images separately to avoid AsyncStorage size limits
       if (recipe.imageUri?.startsWith("data:image")) {
         await this.setRecipeImage(recipe.id, recipe.imageUri);
         // Store reference flag instead of full data
-        recipes[index] = { ...recipe, imageUri: `stored:${recipe.id}` };
+        recipes[index] = { ...updatedRecipe, imageUri: `stored:${recipe.id}` };
       } else {
-        recipes[index] = recipe;
+        recipes[index] = updatedRecipe;
       }
       await this.setRecipes(recipes);
       
@@ -553,6 +564,7 @@ export const storage = {
     const index = recipes.findIndex((r) => r.id === id);
     if (index !== -1) {
       recipes[index].isFavorite = !recipes[index].isFavorite;
+      recipes[index].updatedAt = new Date().toISOString();
       await this.setRecipes(recipes);
       
       const token = await this.getAuthToken();
@@ -573,28 +585,30 @@ export const storage = {
 
   async addMealPlan(plan: MealPlan): Promise<void> {
     const plans = await this.getMealPlans();
-    plans.push(plan);
+    const planWithTimestamp = { ...plan, updatedAt: new Date().toISOString() };
+    plans.push(planWithTimestamp);
     await this.setMealPlans(plans);
     
     const token = await this.getAuthToken();
     if (token) {
-      syncManager.queueChange("mealPlans", "create", plan);
+      syncManager.queueChange("mealPlans", "create", planWithTimestamp);
     }
   },
 
   async updateMealPlan(updatedPlan: MealPlan): Promise<void> {
     const plans = await this.getMealPlans();
     const index = plans.findIndex((p) => p.id === updatedPlan.id);
+    const planWithTimestamp = { ...updatedPlan, updatedAt: new Date().toISOString() };
     if (index !== -1) {
-      plans[index] = updatedPlan;
+      plans[index] = planWithTimestamp;
     } else {
-      plans.push(updatedPlan);
+      plans.push(planWithTimestamp);
     }
     await this.setMealPlans(plans);
     
     const token = await this.getAuthToken();
     if (token) {
-      syncManager.queueChange("mealPlans", "update", updatedPlan);
+      syncManager.queueChange("mealPlans", "update", planWithTimestamp);
     }
   },
 

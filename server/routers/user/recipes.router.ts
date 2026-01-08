@@ -26,7 +26,7 @@ const openai = new OpenAI({
 const generateRecipeSchema = z.object({
   prioritizeExpiring: z.boolean().default(false),
   quickRecipe: z.boolean().default(false),
-  ingredients: z.array(z.number()).optional(),
+  ingredients: z.array(z.union([z.number(), z.string()])).optional(),
   servings: z.number().min(1).max(20).default(4),
   maxTime: z.number().min(5).max(480).default(60),
   dietaryRestrictions: z.string().optional(),
@@ -37,7 +37,7 @@ const generateRecipeSchema = z.object({
   inventory: z
     .array(
       z.object({
-        id: z.number(),
+        id: z.union([z.number(), z.string()]),
         name: z.string(),
         quantity: z.number().optional(),
         unit: z.string().optional(),
@@ -48,7 +48,7 @@ const generateRecipeSchema = z.object({
   equipment: z
     .array(
       z.object({
-        id: z.number(),
+        id: z.union([z.number(), z.string()]),
         name: z.string(),
         alternatives: z.array(z.string()).optional(),
       }),
@@ -65,7 +65,7 @@ const generateRecipeSchema = z.object({
 });
 
 export interface InventoryItem {
-  id: number;
+  id: number | string;
   name: string;
   quantity?: number;
   unit?: string;
@@ -78,7 +78,7 @@ export interface ExpiringItem extends InventoryItem {
 }
 
 export interface EquipmentItem {
-  id: number;
+  id: number | string;
   name: string;
   alternatives?: string[];
 }
@@ -122,7 +122,7 @@ export function calculateDaysUntilExpiry(
 
 export function organizeInventory(
   items: InventoryItem[],
-  selectedIds?: number[],
+  selectedIds?: (number | string)[],
 ): {
   expiringItems: ExpiringItem[];
   otherItems: InventoryItem[];
@@ -131,7 +131,10 @@ export function organizeInventory(
 
   const filteredItems =
     selectedIds && selectedIds.length > 0
-      ? items.filter((item) => selectedIds.includes(item.id))
+      ? items.filter((item) => {
+          const itemIdStr = String(item.id);
+          return selectedIds.some((selId) => String(selId) === itemIdStr);
+        })
       : items;
 
   const itemsWithExpiry = filteredItems.map((item) => ({
