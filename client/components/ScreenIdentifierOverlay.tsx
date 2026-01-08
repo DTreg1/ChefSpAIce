@@ -23,7 +23,10 @@ export function ScreenIdentifierOverlay({
   const [copied, setCopied] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  if (!screenName) return null;
+  // Check environment variable to hide overlay (default: show in dev)
+  const showOverlay = process.env.EXPO_PUBLIC_SHOW_DEV_OVERLAY !== "false";
+  
+  if (!screenName || !showOverlay) return null;
 
   const handleCopy = async () => {
     try {
