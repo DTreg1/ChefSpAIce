@@ -743,10 +743,38 @@ export const storage = {
   },
 
   async needsOnboarding(): Promise<boolean> {
-    const status = await this.getOnboardingStatus();
-    const needs = !status.cookwareSetupCompleted && !status.cookwareSetupSkipped;
-    console.log(`[Storage] needsOnboarding check: completed=${status.cookwareSetupCompleted}, skipped=${status.cookwareSetupSkipped}, result=${needs}`);
-    return needs;
+    try {
+      const status = await this.getOnboardingStatus();
+      
+      // If onboarding was explicitly completed or skipped, respect that
+      if (status.cookwareSetupCompleted || status.cookwareSetupSkipped) {
+        console.log(`[Storage] needsOnboarding: false (explicitly ${status.cookwareSetupCompleted ? 'completed' : 'skipped'})`);
+        return false;
+      }
+      
+      // Fallback: If user has existing data, assume onboarding was completed
+      // This prevents false redirects due to storage read failures or cleared cache
+      const [recipes, inventory, preferences] = await Promise.all([
+        this.getRecipes().catch(() => []),
+        this.getInventory().catch(() => []),
+        this.getPreferences().catch(() => null),
+      ]);
+      
+      const hasExistingData = recipes.length > 0 || inventory.length > 0 || preferences !== null;
+      if (hasExistingData) {
+        console.log(`[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`);
+        // Auto-fix: Mark onboarding as completed since user has data
+        await this.setOnboardingCompleted().catch(() => {});
+        return false;
+      }
+      
+      console.log(`[Storage] needsOnboarding: true (no completion flag, no existing data)`);
+      return true;
+    } catch (error) {
+      // On any error, default to NOT needing onboarding to prevent redirect loops
+      console.error(`[Storage] needsOnboarding error, defaulting to false:`, error);
+      return false;
+    }
   },
 
   async resetOnboarding(): Promise<void> {
