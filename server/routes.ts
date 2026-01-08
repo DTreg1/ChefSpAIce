@@ -361,6 +361,16 @@ function mapFoodCategory(usdaCategory: string): string {
  */
 export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
+  // HEALTH CHECK - Used by client for network detection
+  // =========================================================================
+  app.get("/api/health", (_req: Request, res: Response) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+  app.head("/api/health", (_req: Request, res: Response) => {
+    res.status(200).end();
+  });
+
+  // =========================================================================
   // PUBLIC ROUTES - No authentication required
   // =========================================================================
   app.use("/api/auth", authRouter);           // Login, register, logout

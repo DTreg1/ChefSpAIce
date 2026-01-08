@@ -190,10 +190,12 @@ function AuthGuardedNavigator() {
     // Authenticated user lost subscription - redirect to Subscription screen
     // This allows users to resubscribe instead of being stuck in an auth loop
     if (isAuthenticated && wasActive && !isActive) {
+      const target = needsOnboarding ? "Onboarding" : "Subscription";
+      console.log(`[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`);
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: needsOnboarding ? "Onboarding" : "Subscription", params: { reason: 'expired' } }],
+          routes: [{ name: target, params: { reason: 'expired' } }],
         }),
       );
     }
@@ -203,12 +205,15 @@ function AuthGuardedNavigator() {
       // Only redirect to Main if onboarding is complete
       // This prevents bypassing onboarding for new users who just activated their trial
       if (!needsOnboarding) {
+        console.log("[Nav] Subscription gained, redirecting to Main");
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
             routes: [{ name: "Main" }],
           }),
         );
+      } else {
+        console.log("[Nav] Subscription gained but needs onboarding, staying in current flow");
       }
     }
 
@@ -226,9 +231,10 @@ function AuthGuardedNavigator() {
   const checkOnboardingStatus = async () => {
     try {
       const needs = await storage.needsOnboarding();
+      console.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
       setNeedsOnboarding(needs);
     } catch (err) {
-      console.error("Error checking onboarding status:", err);
+      console.error("[Nav] Error checking onboarding status:", err);
     } finally {
       setIsLoading(false);
     }
@@ -247,21 +253,26 @@ function AuthGuardedNavigator() {
   const getInitialRoute = (): keyof RootStackParamList => {
     // Show landing page for web users who aren't authenticated
     if (isWeb && !isAuthenticated) {
+      console.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
     // Show auth screen for mobile users who aren't authenticated
     if (!isAuthenticated) {
+      console.log("[Nav] Initial route: Auth (mobile, unauthenticated)");
       return "Auth";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
     if (needsOnboarding) {
+      console.log("[Nav] Initial route: Onboarding (needsOnboarding=true)");
       return "Onboarding";
     }
     // User has completed onboarding but has no active subscription - send to Subscription
     // so they can see pricing and resubscribe (instead of going through onboarding again)
     if (!isActive) {
+      console.log("[Nav] Initial route: Subscription (inactive subscription)");
       return "Subscription";
     }
+    console.log("[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)");
     return "Main";
   };
 

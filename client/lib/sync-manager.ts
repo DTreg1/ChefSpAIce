@@ -57,15 +57,55 @@ class SyncManager {
     try {
       const networkState = await Network.getNetworkStateAsync();
       const wasOffline = !this.isOnline;
-      this.isOnline = networkState.isConnected ?? true;
       
+      // Use isInternetReachable if available (more reliable than isConnected)
+      // Fall back to isConnected, then default to true
+      let networkOnline = networkState.isInternetReachable ?? networkState.isConnected ?? true;
+      
+      // Log network state for debugging
+      if (!networkOnline) {
+        console.log(`[Sync] Network reports offline (connected: ${networkState.isConnected}, reachable: ${networkState.isInternetReachable})`);
+      }
+      
+      // If expo-network reports offline, do a quick ping check as fallback
+      // expo-network can be unreliable in Expo Go on cellular
+      if (!networkOnline) {
+        console.log("[Sync] Performing ping check fallback...");
+        networkOnline = await this.pingCheck();
+        console.log(`[Sync] Ping check result: ${networkOnline ? "online" : "offline"}`);
+      }
+      
+      this.isOnline = networkOnline;
+      
+      // Log significant state changes
       if (wasOffline && this.isOnline) {
+        console.log("[Sync] Network restored, processing sync queue");
         this.processSyncQueue();
+      } else if (!wasOffline && !this.isOnline) {
+        console.log("[Sync] Network connection lost");
       }
       
       this.notifyListeners();
-    } catch {
+    } catch (error) {
+      console.log("[Sync] Network check error, assuming online:", error);
       this.isOnline = true;
+    }
+  }
+
+  private async pingCheck(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(`${getApiUrl()}/api/health`, {
+        method: "HEAD",
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeout);
+      return response.ok;
+    } catch {
+      return false;
     }
   }
 

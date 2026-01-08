@@ -744,7 +744,9 @@ export const storage = {
 
   async needsOnboarding(): Promise<boolean> {
     const status = await this.getOnboardingStatus();
-    return !status.cookwareSetupCompleted && !status.cookwareSetupSkipped;
+    const needs = !status.cookwareSetupCompleted && !status.cookwareSetupSkipped;
+    console.log(`[Storage] needsOnboarding check: completed=${status.cookwareSetupCompleted}, skipped=${status.cookwareSetupSkipped}, result=${needs}`);
+    return needs;
   },
 
   async resetOnboarding(): Promise<void> {
