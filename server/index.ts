@@ -228,11 +228,15 @@ function configureExpoRouting(app: express.Application) {
     const isMetroAsset = req.path.startsWith("/_expo") || 
                           req.path.startsWith("/node_modules") || 
                           req.path.endsWith(".bundle") || 
-                          req.path.endsWith(".map");
+                          req.path.endsWith(".map") ||
+                          req.path.endsWith(".js") ||
+                          req.path.endsWith(".css") ||
+                          req.path.endsWith(".json");
 
     // Desktop browsers get the React Native web app via Metro (development only)
     if (isDevelopment && metroProxy) {
-      if (isWebRoute(req.path) || isMetroAsset) {
+      // Proxy web routes and all potential Metro assets to Metro bundler
+      if (isWebRoute(req.path) || isMetroAsset || req.path.startsWith("/assets/")) {
         return metroProxy(req, res, next);
       }
     } else if (isWebRoute(req.path)) {
