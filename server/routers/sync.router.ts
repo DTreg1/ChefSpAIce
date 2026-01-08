@@ -79,6 +79,17 @@ const cookwareSchema = z.object({
   updatedAt: z.string().optional(),
 }).passthrough();
 
+const shoppingListItemSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  name: z.string(),
+  quantity: z.number(),
+  unit: z.string(),
+  isChecked: z.boolean(),
+  category: z.string().optional(),
+  recipeId: z.string().optional(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
 const inventorySyncRequestSchema = z.object({
   operation: syncOperationSchema,
   data: inventoryItemSchema,
@@ -100,6 +111,12 @@ const mealPlanSyncRequestSchema = z.object({
 const cookwareSyncRequestSchema = z.object({
   operation: syncOperationSchema,
   data: cookwareSchema,
+  clientTimestamp: z.string().optional(),
+});
+
+const shoppingListSyncRequestSchema = z.object({
+  operation: syncOperationSchema,
+  data: shoppingListItemSchema,
   clientTimestamp: z.string().optional(),
 });
 
@@ -1138,6 +1155,242 @@ router.delete("/cookware", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Cookware delete sync error:", error);
     res.status(500).json({ error: "Failed to sync cookware deletion" });
+  }
+});
+
+// =========================================================================
+// SHOPPING LIST SYNC ROUTES
+// =========================================================================
+
+router.post("/shoppingList", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const parseResult = shoppingListSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentShoppingList: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+
+    if (operation === "create") {
+      currentShoppingList.push(data);
+    } else if (operation === "update") {
+      const index = currentShoppingList.findIndex(
+        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+      );
+      if (index !== -1) {
+        currentShoppingList[index] = data;
+      } else {
+        currentShoppingList.push(data);
+      }
+    } else if (operation === "delete") {
+      currentShoppingList = currentShoppingList.filter(
+        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      );
+    }
+
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        shoppingList: JSON.stringify(currentShoppingList),
+      });
+    } else {
+      await db
+        .update(userSyncData)
+        .set({
+          shoppingList: JSON.stringify(currentShoppingList),
+          lastSyncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userSyncData.userId, session.userId));
+    }
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation,
+      itemId: dataIdStr,
+    });
+  } catch (error) {
+    console.error("Shopping list sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list" });
+  }
+});
+
+router.put("/shoppingList", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const updateSchema = z.object({
+      data: shoppingListItemSchema,
+      clientTimestamp: z.string().optional(),
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentShoppingList: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+
+    const index = currentShoppingList.findIndex(
+      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    );
+    
+    if (index !== -1) {
+      const existingItem = currentShoppingList[index] as { updatedAt?: string };
+      const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
+                           clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
+      
+      if (newTimestamp >= existingTimestamp) {
+        currentShoppingList[index] = { ...data, updatedAt: finalTimestamp };
+      } else {
+        return res.json({
+          success: true,
+          syncedAt: new Date().toISOString(),
+          operation: "skipped",
+          reason: "stale_update",
+          itemId: dataIdStr,
+        });
+      }
+    } else {
+      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      currentShoppingList.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
+    }
+
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        shoppingList: JSON.stringify(currentShoppingList),
+      });
+    } else {
+      await db
+        .update(userSyncData)
+        .set({
+          shoppingList: JSON.stringify(currentShoppingList),
+          lastSyncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userSyncData.userId, session.userId));
+    }
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation: "update",
+      itemId: dataIdStr,
+    });
+  } catch (error) {
+    console.error("Shopping list update sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list update" });
+  }
+});
+
+router.delete("/shoppingList", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const deleteSchema = z.object({
+      data: z.object({ id: z.union([z.string(), z.number()]) }),
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid request data", 
+        details: parseResult.error.errors.map(e => e.message).join(", ") 
+      });
+    }
+
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    let currentShoppingList: unknown[] = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+
+    currentShoppingList = currentShoppingList.filter(
+      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    );
+
+    await db
+      .update(userSyncData)
+      .set({
+        shoppingList: JSON.stringify(currentShoppingList),
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(userSyncData.userId, session.userId));
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      operation: "delete",
+      itemId: dataIdStr,
+    });
+  } catch (error) {
+    console.error("Shopping list delete sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list deletion" });
   }
 });
 
