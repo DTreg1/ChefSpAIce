@@ -1,0 +1,170 @@
+{
+  "id": "8420dfe8-b14a-476d-997d-21b271fc6664",
+  "createdAt": "2026-01-08T12:58:28.666Z",
+  "runtimeVersion": "exposdk:54.0.0",
+  "launchAsset": {
+    "key": "bundle-1767877108666-6719",
+    "contentType": "application/javascript",
+    "url": "https://ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/1767877108666-6719/_expo/static/js/ios/bundle.js"
+  },
+  "assets": [],
+  "metadata": {},
+  "extra": {
+    "eas": {
+      "projectId": "5b92d512-fd14-4e4f-b537-76dc95139451"
+    },
+    "expoClient": {
+      "name": "ChefSpAIce",
+      "slug": "chefspaice",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "chefspaice",
+      "userInterfaceStyle": "automatic",
+      "newArchEnabled": true,
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.chefspaice.chefspaice",
+        "infoPlist": {
+          "NSCameraUsageDescription": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory.",
+          "NSPhotoLibraryUsageDescription": "ChefSpAIce needs photo library access to select images for your food items.",
+          "ITSAppUsesNonExemptEncryption": false
+        },
+        "config": {
+          "usesNonExemptEncryption": false
+        },
+        "privacyManifests": {
+          "NSPrivacyAccessedAPITypes": [
+            {
+              "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+              "NSPrivacyAccessedAPITypeReasons": [
+                "CA92.1"
+              ]
+            }
+          ]
+        }
+      },
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#27AE60",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "backgroundImage": "./assets/images/android-icon-background.png",
+          "monochromeImage": "./assets/images/android-icon-monochrome.png",
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png",
+          "monochromeImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-monochrome.png",
+          "backgroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-background.png"
+        },
+        "edgeToEdgeEnabled": true,
+        "predictiveBackGestureEnabled": false,
+        "package": "com.chefspaice.chefspaice.app",
+        "versionCode": 1,
+        "permissions": [
+          "android.permission.CAMERA",
+          "android.permission.VIBRATE",
+          "android.permission.RECEIVE_BOOT_COMPLETED",
+          "android.permission.SCHEDULE_EXACT_ALARM",
+          "android.permission.RECORD_AUDIO"
+        ]
+      },
+      "web": {
+        "output": "single",
+        "favicon": "./assets/images/favicon.png"
+      },
+      "plugins": [
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#1a2e05",
+            "dark": {
+              "backgroundColor": "#0a1205"
+            }
+          }
+        ],
+        "expo-web-browser",
+        [
+          "expo-camera",
+          {
+            "cameraPermission": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory."
+          }
+        ],
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/images/icon.png",
+            "color": "#27AE60"
+          }
+        ],
+        [
+          "expo-image-picker",
+          {
+            "photosPermission": "ChefSpAIce needs photo library access to select images for your food items."
+          }
+        ]
+      ],
+      "experiments": {
+        "reactCompiler": true
+      },
+      "extra": {
+        "eas": {
+          "projectId": "5b92d512-fd14-4e4f-b537-76dc95139451"
+        }
+      },
+      "owner": "dtreg1",
+      "_internal": {
+        "isDebug": false,
+        "projectRoot": "/home/runner/workspace",
+        "dynamicConfigPath": {},
+        "staticConfigPath": "/home/runner/workspace/app.json",
+        "packageJsonPath": "/home/runner/workspace/package.json",
+        "pluginHistory": {
+          "expo-splash-screen": {
+            "name": "expo-splash-screen",
+            "version": "31.0.13"
+          },
+          "expo-web-browser": {
+            "name": "expo-web-browser",
+            "version": "15.0.10"
+          },
+          "expo-camera": {
+            "name": "expo-camera",
+            "version": "17.0.10"
+          },
+          "expo-notifications": {
+            "name": "expo-notifications",
+            "version": "0.32.16"
+          },
+          "expo-image-picker": {
+            "name": "expo-image-picker",
+            "version": "17.0.10"
+          }
+        }
+      },
+      "sdkVersion": "54.0.0",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "androidStatusBar": {
+        "backgroundColor": "#1a2e05"
+      },
+      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
+      "hostUri": "ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/ios"
+    },
+    "expoGo": {
+      "debuggerHost": "ce7158eb-e089-40f3-b04c-581c44068858-00-3655xtxhqyydt.worf.replit.dev/ios",
+      "developer": {
+        "tool": "expo-cli",
+        "projectRoot": "/home/runner/workspace"
+      },
+      "packagerOpts": {
+        "dev": false
+      },
+      "mainModuleName": "client/index"
+    },
+    "scopeKey": "@anonymous/chefspaice-6878183f-6e23-4b17-ad8a-e2a6345f7f4d"
+  }
+}
