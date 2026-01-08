@@ -1,8 +1,8 @@
-import fs from "fs";
-import path from "path";
-import { spawn } from "child_process";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
+const fs = require("fs");
+const path = require("path");
+const { spawn } = require("child_process");
+const { Readable } = require("stream");
+const { pipeline } = require("stream/promises");
 
 let metroProcess = null;
 
