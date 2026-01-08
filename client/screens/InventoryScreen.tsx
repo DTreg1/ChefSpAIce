@@ -759,7 +759,7 @@ export default function InventoryScreen() {
         exiting={FadeOut}
         style={styles.swipeContainer}
       >
-        <Pressable style={styles.consumedAction} onPress={handleConsumed}>
+        <Pressable style={styles.consumedAction} onPress={handleConsumed} testID={`button-consumed-${item.id}`}>
           <LinearGradient
             colors={["rgba(46, 204, 113, 0.25)", "transparent"]}
             start={{ x: 0, y: 0.5 }}
@@ -777,7 +777,7 @@ export default function InventoryScreen() {
           </LinearGradient>
         </Pressable>
 
-        <Pressable style={styles.wastedAction} onPress={handleWasted}>
+        <Pressable style={styles.wastedAction} onPress={handleWasted} testID={`button-wasted-${item.id}`}>
           <LinearGradient
             colors={["transparent", "rgba(231, 76, 60, 0.25)"]}
             start={{ x: 0, y: 0.5 }}
@@ -799,6 +799,7 @@ export default function InventoryScreen() {
               onPress={() =>
                 navigation.navigate("ItemDetail", { itemId: item.id })
               }
+              testID={`card-inventory-item-${item.id}`}
             >
               <GlassView
                 style={[
@@ -889,6 +890,7 @@ export default function InventoryScreen() {
         <Pressable
           style={styles.sectionHeader}
           onPress={() => toggleSection(section.key)}
+          testID={`button-toggle-section-${section.key}`}
         >
           <View style={styles.sectionHeaderLeft}>
             <Feather
@@ -947,7 +949,7 @@ export default function InventoryScreen() {
     }
     
     return (
-      <View style={styles.emptyState}>
+      <View style={styles.emptyState} testID="container-empty-inventory">
         <View
           style={[
             styles.emptyIconContainer,
@@ -959,10 +961,10 @@ export default function InventoryScreen() {
         >
           <Feather name="inbox" size={48} color={theme.textSecondary} />
         </View>
-        <ThemedText type="h3" style={styles.emptyTitle}>
+        <ThemedText type="h3" style={styles.emptyTitle} testID="text-empty-title">
           Your pantry is empty
         </ThemedText>
-        <ThemedText type="body" style={styles.emptySubtitle}>
+        <ThemedText type="body" style={styles.emptySubtitle} testID="text-empty-subtitle">
           Tap the + button to add your first item
         </ThemedText>
       </View>
@@ -970,7 +972,7 @@ export default function InventoryScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-inventory">
       <View 
         style={styles.searchContainer}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}

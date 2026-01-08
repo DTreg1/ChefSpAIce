@@ -819,13 +819,13 @@ export default function SettingsScreen() {
         <Pressable
           style={styles.integrationRow}
           onPress={() => navigation.navigate("InstacartSettings")}
-          data-testid="button-instacart-settings"
+          testID="button-instacart-settings"
         >
           <View style={styles.settingInfo}>
             <Feather name="shopping-cart" size={20} color={theme.text} />
             <View style={styles.settingText}>
-              <ThemedText type="body">Instacart</ThemedText>
-              <ThemedText type="caption">
+              <ThemedText type="body" testID="text-instacart-title">Instacart</ThemedText>
+              <ThemedText type="caption" testID="text-instacart-status">
                 {instacartSettings.isConnected
                   ? `Connected${instacartSettings.preferredStores.length > 0 ? ` - ${instacartSettings.preferredStores.length} stores` : ""}`
                   : "Connect to order groceries"}

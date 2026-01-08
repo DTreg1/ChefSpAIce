@@ -154,6 +154,7 @@ export default function ShoppingListScreen() {
         <Pressable
           style={styles.listItem}
           onPress={() => handleToggleItem(item.id)}
+          testID={`card-shopping-item-${item.id}`}
         >
           <View
             style={[
@@ -188,6 +189,7 @@ export default function ShoppingListScreen() {
             onPress={() => handleDeleteItem(item.id)}
             hitSlop={8}
             style={styles.deleteButton}
+            testID={`button-delete-shopping-item-${item.id}`}
           >
             <Feather name="x" size={18} color={theme.textSecondary} />
           </Pressable>
@@ -197,19 +199,19 @@ export default function ShoppingListScreen() {
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
+    <View style={styles.emptyState} testID="container-empty-shopping">
       <Feather name="shopping-cart" size={64} color={theme.textSecondary} />
-      <ThemedText type="h3" style={styles.emptyTitle}>
+      <ThemedText type="h3" style={styles.emptyTitle} testID="text-empty-shopping-title">
         Your list is empty
       </ThemedText>
-      <ThemedText type="body" style={styles.emptySubtitle}>
+      <ThemedText type="body" style={styles.emptySubtitle} testID="text-empty-shopping-subtitle">
         Add missing ingredients from recipes to build your shopping list
       </ThemedText>
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-shopping-list">
       <FlatList
         style={styles.list}
         contentContainerStyle={[
@@ -226,12 +228,12 @@ export default function ShoppingListScreen() {
         ListEmptyComponent={!loading ? renderEmptyState : null}
         ListHeaderComponent={
           items.length > 0 ? (
-            <View style={styles.header}>
-              <ThemedText type="body">
+            <View style={styles.header} testID="container-shopping-header">
+              <ThemedText type="body" testID="text-items-remaining">
                 {uncheckedItems.length} items remaining
               </ThemedText>
               {checkedItems.length > 0 ? (
-                <Pressable onPress={handleClearChecked}>
+                <Pressable onPress={handleClearChecked} testID="button-clear-checked">
                   <ThemedText type="small" style={{ color: AppColors.error }}>
                     Clear checked
                   </ThemedText>
@@ -249,9 +251,10 @@ export default function ShoppingListScreen() {
             styles.completedBanner,
             { backgroundColor: AppColors.success },
           ]}
+          testID="container-completed-banner"
         >
           <Feather name="check-circle" size={24} color="#FFFFFF" />
-          <ThemedText type="body" style={styles.completedText}>
+          <ThemedText type="body" style={styles.completedText} testID="text-shopping-complete">
             Shopping complete! All items checked off.
           </ThemedText>
         </View>
@@ -265,7 +268,7 @@ export default function ShoppingListScreen() {
             disabled={sendingToInstacart}
             icon={<Feather name="shopping-bag" size={18} color="#FFFFFF" />}
             style={[styles.instacartButton, { backgroundColor: "#003D29" }]}
-            data-testid="button-send-to-instacart"
+            testID="button-send-to-instacart"
           >
             <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
               Send to Instacart
