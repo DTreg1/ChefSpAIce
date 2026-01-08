@@ -22,7 +22,7 @@
  */
 
 import { db } from "../db";
-import { users, userSyncData, subscriptions, User, UserSyncData } from "@shared/schema";
+import { users, userSyncData, subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   SubscriptionTier,
