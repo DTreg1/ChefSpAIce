@@ -310,7 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email, password, displayName, selectedTier }),
+          body: JSON.stringify({ email, password, displayName, selectedPlan: selectedTier === 'basic' ? 'monthly' : selectedTier === 'pro' ? 'annual' : 'monthly' }),
         });
 
         const data = await response.json();
