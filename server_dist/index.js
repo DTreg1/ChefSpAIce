@@ -186,13 +186,20 @@ var init_schema = __esm({
         index("idx_auth_providers_user").on(table.userId)
       ]
     );
-    userSessions = pgTable("user_sessions", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").notNull().references(() => users.id),
-      token: text("token").notNull().unique(),
-      expiresAt: timestamp("expires_at").notNull(),
-      createdAt: timestamp("created_at").defaultNow()
-    });
+    userSessions = pgTable(
+      "user_sessions",
+      {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        userId: varchar("user_id").notNull().references(() => users.id),
+        token: text("token").notNull().unique(),
+        expiresAt: timestamp("expires_at").notNull(),
+        createdAt: timestamp("created_at").defaultNow()
+      },
+      (table) => [
+        index("idx_user_sessions_user").on(table.userId),
+        index("idx_user_sessions_expires").on(table.expiresAt)
+      ]
+    );
     userSyncData = pgTable("user_sync_data", {
       id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
       userId: varchar("user_id").notNull().references(() => users.id).unique(),
