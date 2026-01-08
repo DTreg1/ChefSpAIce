@@ -61,6 +61,7 @@ import PrivacyScreen from "@/screens/PrivacyScreen";
 import TermsScreen from "@/screens/TermsScreen";
 import SupportScreen from "@/screens/SupportScreen";
 import AttributionsScreen from "@/screens/AttributionsScreen";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -75,6 +76,7 @@ export type RootStackParamList = {
   Main: undefined;
   Onboarding: undefined;
   Landing: undefined;
+  Subscription: { reason?: 'expired' | 'resubscribe' } | undefined;
   About: undefined;
   Privacy: undefined;
   Terms: undefined;
@@ -185,13 +187,13 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // Authenticated user lost subscription - redirect to Onboarding for pricing
+    // Authenticated user lost subscription - redirect to Subscription screen
     // This allows users to resubscribe instead of being stuck in an auth loop
     if (isAuthenticated && wasActive && !isActive) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: "Onboarding" }],
+          routes: [{ name: needsOnboarding ? "Onboarding" : "Subscription", params: { reason: 'expired' } }],
         }),
       );
     }
@@ -255,10 +257,10 @@ function AuthGuardedNavigator() {
     if (needsOnboarding) {
       return "Onboarding";
     }
-    // User has completed onboarding but has no active subscription - send to Onboarding
-    // so they can see pricing and resubscribe (instead of being stuck in auth loop)
+    // User has completed onboarding but has no active subscription - send to Subscription
+    // so they can see pricing and resubscribe (instead of going through onboarding again)
     if (!isActive) {
-      return "Onboarding";
+      return "Subscription";
     }
     return "Main";
   };
@@ -299,6 +301,11 @@ function AuthGuardedNavigator() {
         name="Main"
         component={DrawerNavigator}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Subscription"
+        component={SubscriptionScreen}
+        options={{ headerTitle: "Subscription" }}
       />
       <Stack.Screen
         name="AddItem"

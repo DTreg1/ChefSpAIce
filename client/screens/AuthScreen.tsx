@@ -128,27 +128,45 @@ export default function AuthScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      if (!isSignUp) {
-        await recheckOnboarding();
-        const needsOnboarding = await storage.needsOnboarding();
-        if (!needsOnboarding) {
-          markOnboardingComplete();
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: "Main" }],
-            }),
-          );
-          return;
-        }
+      // Check onboarding and subscription status to determine navigation
+      await recheckOnboarding();
+      const needsOnboarding = await storage.needsOnboarding();
+      
+      if (needsOnboarding) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Onboarding" }],
+          }),
+        );
+        return;
       }
 
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Onboarding" }],
-        }),
-      );
+      // Onboarding complete - check subscription status via API
+      const baseUrl = getApiUrl();
+      const subscriptionResponse = await fetch(`${baseUrl}/api/subscriptions/me`, {
+        credentials: "include",
+      });
+      const subscriptionData = await subscriptionResponse.json();
+      const isSubscriptionActive = subscriptionData?.status === 'active' || subscriptionData?.status === 'trialing';
+      
+      if (isSubscriptionActive) {
+        markOnboardingComplete();
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          }),
+        );
+      } else {
+        // Expired subscription - go to Subscription screen to resubscribe
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Subscription", params: { reason: 'expired' } }],
+          }),
+        );
+      }
     } catch (err) {
       console.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
@@ -182,9 +200,29 @@ export default function AuthScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
+      // Check onboarding and subscription status to determine navigation
       await recheckOnboarding();
       const needsOnboarding = await storage.needsOnboarding();
-      if (!needsOnboarding) {
+      
+      if (needsOnboarding) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Onboarding" }],
+          }),
+        );
+        return;
+      }
+
+      // Onboarding complete - check subscription status via API
+      const baseUrl = getApiUrl();
+      const subscriptionResponse = await fetch(`${baseUrl}/api/subscriptions/me`, {
+        credentials: "include",
+      });
+      const subscriptionData = await subscriptionResponse.json();
+      const isSubscriptionActive = subscriptionData?.status === 'active' || subscriptionData?.status === 'trialing';
+      
+      if (isSubscriptionActive) {
         markOnboardingComplete();
         navigation.dispatch(
           CommonActions.reset({
@@ -192,15 +230,15 @@ export default function AuthScreen() {
             routes: [{ name: "Main" }],
           }),
         );
-        return;
+      } else {
+        // Expired subscription - go to Subscription screen to resubscribe
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Subscription", params: { reason: 'expired' } }],
+          }),
+        );
       }
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Onboarding" }],
-        }),
-      );
     } catch (err) {
       console.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");
