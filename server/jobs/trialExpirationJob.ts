@@ -23,13 +23,10 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
         )
       );
 
-    console.log(`[TrialJob] Found ${expiredTrials.length} expired trials to process`);
-
     for (const trial of expiredTrials) {
       try {
         await expireTrialSubscription(trial.userId);
         expiredCount++;
-        console.log(`[TrialJob] Expired trial for user ${trial.userId}`);
       } catch (error) {
         const msg = `Failed to expire trial for user ${trial.userId}: ${error}`;
         errors.push(msg);
@@ -37,7 +34,9 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
       }
     }
 
-    console.log(`[TrialJob] Successfully expired ${expiredCount} trials`);
+    if (expiredCount > 0) {
+      console.log(`[TrialJob] Expired ${expiredCount} trial(s)`);
+    }
   } catch (error) {
     const msg = `Error querying expired trials: ${error}`;
     errors.push(msg);
@@ -55,12 +54,12 @@ export function startTrialExpirationJob(intervalMs: number = 60 * 60 * 1000): vo
     return;
   }
 
-  console.log(`[TrialJob] Starting trial expiration job (interval: ${intervalMs}ms)`);
+  const intervalHours = Math.round(intervalMs / (60 * 60 * 1000));
+  console.log(`[TrialJob] Started (interval: ${intervalHours}h)`);
 
   checkExpiredTrials();
 
   jobInterval = setInterval(async () => {
-    console.log("[TrialJob] Running scheduled trial expiration check...");
     await checkExpiredTrials();
   }, intervalMs);
 }

@@ -180,9 +180,6 @@ function configureExpoRouting(app: express.Application) {
   const appName = getAppName();
   const isDevelopment = process.env.NODE_ENV !== "production";
 
-  log("[Expo] Configuring Expo routing");
-  log(`[Expo] Environment: ${isDevelopment ? "development" : "production"}`);
-
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
   
   if (isDevelopment) {
@@ -252,7 +249,7 @@ function configureExpoRouting(app: express.Application) {
     next();
   });
 
-  log(`[Expo] Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving landing page"}, mobile browsers get QR page`);
+  log(`[Expo] Routing ready (${isDevelopment ? "dev: Metro proxy" : "prod: landing page"})`);
 }
 
 function configureStaticFiles(app: express.Application) {
@@ -284,11 +281,10 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
     });
     
     try {
-      log(`[Database] Warming up database connection... (attempt ${attempt}/${retries})`);
       await client.connect();
       await client.query('SELECT 1');
       await client.end();
-      log("[Database] Database connection ready");
+      log(`[Database] Connected (attempt ${attempt}/${retries})`);
       return true;
     } catch (error) {
       try {
@@ -299,7 +295,7 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
         console.error("Failed to connect to database after retries:", error);
         return false;
       }
-      log(`[Database] Database warmup attempt ${attempt} failed, retrying in ${delay}ms...`);
+      log(`[Database] Connection failed (attempt ${attempt}/${retries}), retrying...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -321,11 +317,9 @@ async function initStripe(retries = 3, delay = 2000) {
   }
 
   try {
-    log("[Stripe] Initializing Stripe schema...");
     await runMigrations({
       databaseUrl,
     });
-    log("[Stripe] Stripe schema ready");
   } catch (migrationError) {
     console.error("Failed to initialize Stripe schema:", migrationError);
     return;
@@ -335,7 +329,6 @@ async function initStripe(retries = 3, delay = 2000) {
 
     const stripeSync = await getStripeSync();
 
-    log("[Stripe] Setting up managed webhook...");
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
     const { webhook, uuid } = await stripeSync.findOrCreateManagedWebhook(
       `${webhookBaseUrl}/api/stripe/webhook`,
@@ -344,7 +337,7 @@ async function initStripe(retries = 3, delay = 2000) {
         description: "Managed webhook for Stripe sync",
       },
     );
-    log(`[Stripe] Webhook configured: ${webhook.url} (UUID: ${uuid})`);
+    log(`[Stripe] Ready (webhook: ${uuid.slice(0, 8)}...)`);
 
     // Skip full backfill sync for faster startup - webhook handles new events
     // Only sync checkout_sessions which we need for subscriptions
@@ -353,7 +346,7 @@ async function initStripe(retries = 3, delay = 2000) {
         include: ["checkout_sessions"],
       })
       .then(() => {
-        log("[Stripe] Stripe checkout sessions synced");
+        log("[Stripe] Sessions synced");
       })
       .catch((err: Error) => {
         console.error("Error syncing Stripe data:", err);
