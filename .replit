@@ -50,7 +50,7 @@ ensurePreviewReachable = "/status"
 
 [userenv.shared]
 EXPO_PUBLIC_APPLE_APP_URL = "https://apps.apple.com/app/id6757112063"
-EXPO_PUBLIC_SHOW_DEV_OVERLAY = "true"
+EXPO_PUBLIC_SHOW_DEV_OVERLAY = "false"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc"
