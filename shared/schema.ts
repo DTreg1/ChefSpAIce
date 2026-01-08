@@ -169,7 +169,7 @@ export const authProviders = pgTable(
       .default(sql`gen_random_uuid()`),
     userId: varchar("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     provider: varchar("provider").notNull(),
     providerId: varchar("provider_id").notNull(),
     providerEmail: varchar("provider_email"),
@@ -211,7 +211,7 @@ export const userSessions = pgTable(
       .default(sql`gen_random_uuid()`),
     userId: varchar("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     token: text("token").notNull().unique(),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
@@ -250,7 +250,7 @@ export const userSyncData = pgTable("user_sync_data", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: varchar("user_id")
     .notNull()
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .unique(),
   inventory: text("inventory"),
   recipes: text("recipes"),
@@ -393,10 +393,10 @@ export const userAppliances = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: varchar("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     applianceId: integer("appliance_id")
       .notNull()
-      .references(() => appliances.id),
+      .references(() => appliances.id, { onDelete: "cascade" }),
     notes: text("notes"),
     brand: varchar("brand", { length: 100 }),
     createdAt: timestamp("created_at").defaultNow(),
@@ -638,7 +638,7 @@ export const nutritionCorrections = pgTable(
   "nutrition_corrections",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: varchar("user_id").references(() => users.id),
+    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
     productName: text("product_name").notNull(),
     barcode: varchar("barcode", { length: 50 }),
     brand: varchar("brand", { length: 200 }),
@@ -745,8 +745,8 @@ export const feedback = pgTable(
   "feedback",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: varchar("user_id").references(() => users.id),
-    bucketId: integer("bucket_id").references(() => feedbackBuckets.id),
+    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+    bucketId: integer("bucket_id").references(() => feedbackBuckets.id, { onDelete: "set null" }),
     type: varchar("type", { length: 20 }).notNull(),
     category: varchar("category", { length: 50 }),
     message: text("message").notNull(),
@@ -816,7 +816,7 @@ export const subscriptions = pgTable(
       .default(sql`gen_random_uuid()`),
     userId: varchar("user_id")
       .notNull()
-      .references(() => users.id)
+      .references(() => users.id, { onDelete: "cascade" })
       .unique(),
     stripeCustomerId: varchar("stripe_customer_id"),
     stripeSubscriptionId: varchar("stripe_subscription_id"),
