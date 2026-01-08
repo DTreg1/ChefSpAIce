@@ -392,19 +392,6 @@ async function initStripe(retries = 3, delay = 2000) {
     res.status(200).json({ status: "ok", timestamp: Date.now() });
   });
 
-  // Also add a quick root response for health checks that hit /
-  app.get("/", (req, res, next) => {
-    // If this is a health check (no user-agent or curl), respond quickly
-    const userAgent = req.header("user-agent") || "";
-    const isHealthCheck = !userAgent || userAgent.includes("curl") || userAgent.includes("health") || userAgent.includes("kube-probe");
-    
-    if (isHealthCheck) {
-      return res.status(200).send("OK");
-    }
-    
-    // Otherwise, pass to the full routing logic
-    next();
-  });
 
   setupCors(app);
 
