@@ -303,8 +303,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string, displayName?: string, selectedTier?: 'basic' | 'pro') => {
       try {
+        console.log("[SignUp] Starting registration...", { email, selectedTier });
         const baseUrl = getApiUrl();
+        console.log("[SignUp] API URL:", baseUrl);
         const url = new URL("/api/auth/register", baseUrl);
+        console.log("[SignUp] Full URL:", url.toString());
         
         const response = await fetch(url.toString(), {
           method: "POST",
@@ -312,8 +315,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           credentials: "include",
           body: JSON.stringify({ email, password, displayName, selectedPlan: selectedTier === 'basic' ? 'monthly' : selectedTier === 'pro' ? 'annual' : 'monthly' }),
         });
+        console.log("[SignUp] Response status:", response.status);
 
         const data = await response.json();
+        console.log("[SignUp] Response data:", data);
         
         if (!response.ok) {
           return { success: false, error: data.error || "Registration failed" };
