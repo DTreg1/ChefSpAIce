@@ -10783,22 +10783,6 @@ function getAppName() {
     return "App Landing Page";
   }
 }
-function serveExpoManifest(platform, res) {
-  const manifestPath = path.resolve(
-    process.cwd(),
-    "static-build",
-    platform,
-    "manifest.json"
-  );
-  if (!fs.existsSync(manifestPath)) {
-    return res.status(404).json({ error: `Manifest not found for platform: ${platform}` });
-  }
-  res.setHeader("expo-protocol-version", "1");
-  res.setHeader("expo-sfv-version", "0");
-  res.setHeader("content-type", "application/json");
-  const manifest = fs.readFileSync(manifestPath, "utf-8");
-  res.send(manifest);
-}
 function serveLandingPage({
   req,
   res,
@@ -10837,10 +10821,8 @@ function configureExpoRouting(app2) {
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
   const isDevelopment = process.env.NODE_ENV !== "production";
-  const staticBuildPath = path.resolve(process.cwd(), "static-build");
-  const hasStaticBuild = fs.existsSync(path.join(staticBuildPath, "index.html"));
-  log("Serving static Expo files with dynamic manifest routing");
-  log(`Environment: ${isDevelopment ? "development" : "production"}, Static build: ${hasStaticBuild ? "available" : "not found"}`);
+  log("Configuring Expo routing");
+  log(`Environment: ${isDevelopment ? "development" : "production"}`);
   let metroProxy = null;
   if (isDevelopment) {
     metroProxy = createProxyMiddleware({
@@ -10865,15 +10847,9 @@ function configureExpoRouting(app2) {
     if (req.path.startsWith("/api")) {
       return next();
     }
-    const platform = req.header("expo-platform");
-    if (platform && (platform === "ios" || platform === "android")) {
-      if (req.path === "/" || req.path === "/manifest") {
-        return serveExpoManifest(platform, res);
-      }
-    }
     const userAgent = req.header("user-agent");
     const isMobile = isMobileUserAgent(userAgent);
-    if (req.path === "/" && isMobile && !platform) {
+    if (req.path === "/" && isMobile) {
       return serveLandingPage({
         req,
         res,
@@ -10886,17 +10862,20 @@ function configureExpoRouting(app2) {
       if (isWebRoute(req.path) || isMetroAsset) {
         return metroProxy(req, res, next);
       }
-    } else if (hasStaticBuild && isWebRoute(req.path)) {
-      const indexPath = path.join(staticBuildPath, "index.html");
-      return res.sendFile(indexPath);
+    } else if (isWebRoute(req.path)) {
+      return serveLandingPage({
+        req,
+        res,
+        landingPageTemplate,
+        appName
+      });
     }
     next();
   });
-  log(`Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving static build"}, mobile browsers get QR page`);
+  log(`Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving landing page"}, mobile browsers get QR page`);
 }
 function configureStaticFiles(app2) {
   app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app2.use(express.static(path.resolve(process.cwd(), "static-build")));
 }
 function setupErrorHandler(app2) {
   app2.use((err, _req, res, _next) => {
