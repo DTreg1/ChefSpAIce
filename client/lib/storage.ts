@@ -145,6 +145,7 @@ export interface Recipe {
   isAIGenerated: boolean;
   createdAt: string;
   imageUri?: string;
+  cloudImageUri?: string;
   cuisine?: string;
   dietaryTags?: string[];
   requiredCookware?: string[];
@@ -425,14 +426,34 @@ export const storage = {
   async getRecipes(): Promise<Recipe[]> {
     const recipes = await this.getRawRecipes();
     // Resolve stored image references (images are stored individually per recipe)
+    // Falls back to cloudImageUri if local image is not available
     const resolvedRecipes = await Promise.all(
       recipes.map(async (recipe) => {
+        let resolvedImageUri: string | undefined = recipe.imageUri;
+        
         if (recipe.imageUri?.startsWith("stored:")) {
           const recipeId = recipe.imageUri.replace("stored:", "");
           const imageUri = await this.getRecipeImage(recipeId);
-          return { ...recipe, imageUri: imageUri || undefined };
+          resolvedImageUri = imageUri || undefined;
+        } else if (recipe.imageUri?.startsWith("file://")) {
+          // Check if local file exists
+          try {
+            const FileSystem = await import("expo-file-system/legacy");
+            const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
+            if (!fileInfo.exists) {
+              resolvedImageUri = undefined;
+            }
+          } catch {
+            resolvedImageUri = undefined;
+          }
         }
-        return recipe;
+        
+        // Fallback to cloud image if local is not available
+        if (!resolvedImageUri && recipe.cloudImageUri) {
+          resolvedImageUri = recipe.cloudImageUri;
+        }
+        
+        return { ...recipe, imageUri: resolvedImageUri };
       }),
     );
     return resolvedRecipes;
@@ -452,26 +473,93 @@ export const storage = {
 
     // Store images separately to avoid AsyncStorage size limits
     let recipeToStore = recipe;
+    let cloudImageUri: string | undefined = recipe.cloudImageUri;
+    
     if (recipe.imageUri?.startsWith("data:image")) {
       console.log("[storage.addRecipe] Image is data URI, storing separately");
       // Store image separately (works on both web and native)
       const success = await this.setRecipeImage(recipe.id, recipe.imageUri);
       console.log("[storage.addRecipe] Image storage success:", success);
-      if (success) {
-        recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}` };
-      } else {
-        // If storage failed, don't store image reference
-        recipeToStore = { ...recipe, imageUri: undefined };
+      
+      // Upload to cloud storage in background
+      if (!cloudImageUri) {
+        try {
+          const token = await this.getAuthToken();
+          if (token) {
+            const { getApiUrl } = await import("@/lib/query-client");
+            const baseUrl = getApiUrl();
+            const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                recipeId: recipe.id,
+                base64Data: recipe.imageUri,
+              }),
+            });
+            if (response.ok) {
+              const result = await response.json();
+              cloudImageUri = result.cloudImageUri;
+              console.log("[storage.addRecipe] Cloud upload success:", cloudImageUri);
+            }
+          }
+        } catch (error) {
+          console.log("[storage.addRecipe] Cloud upload failed:", error);
+        }
       }
+      
+      if (success) {
+        recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}`, cloudImageUri };
+      } else {
+        // If local storage failed, still keep cloud URI
+        recipeToStore = { ...recipe, imageUri: undefined, cloudImageUri };
+      }
+    } else if (recipe.imageUri?.startsWith("file://")) {
+      // Native file URI - upload to cloud
+      if (!cloudImageUri) {
+        try {
+          const token = await this.getAuthToken();
+          if (token) {
+            const FileSystem = await import("expo-file-system/legacy");
+            const base64 = await FileSystem.readAsStringAsync(recipe.imageUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            const { getApiUrl } = await import("@/lib/query-client");
+            const baseUrl = getApiUrl();
+            const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                recipeId: recipe.id,
+                base64Data: base64,
+              }),
+            });
+            if (response.ok) {
+              const result = await response.json();
+              cloudImageUri = result.cloudImageUri;
+              console.log("[storage.addRecipe] Cloud upload success:", cloudImageUri);
+            }
+          }
+        } catch (error) {
+          console.log("[storage.addRecipe] Cloud upload failed:", error);
+        }
+      }
+      recipeToStore = { ...recipe, cloudImageUri };
     }
 
     const recipeWithTimestamp = { ...recipeToStore, updatedAt: new Date().toISOString() };
     recipes.push(recipeWithTimestamp);
     await this.setRecipes(recipes);
-    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
+    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri, "cloudImageUri:", recipeWithTimestamp.cloudImageUri);
     
     const token = await this.getAuthToken();
     if (token) {
+      // Include cloudImageUri in sync, but not local imageUri
       const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
       syncManager.queueChange("recipes", "create", recipeForSync);
     }

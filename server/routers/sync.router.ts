@@ -50,6 +50,7 @@ const recipeSchema = z.object({
   cookTime: z.number().optional(),
   servings: z.number().optional(),
   imageUri: z.string().optional(),
+  cloudImageUri: z.string().optional(),
   nutrition: z.object({
     calories: z.number(),
     protein: z.number(),
