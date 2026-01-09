@@ -591,9 +591,7 @@ export default function GenerateRecipeScreen() {
               {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
             </ThemedText>
             <ThemedText type="body" style={styles.modalSubtitle}>
-              {progressStage === "recipe"
-                ? "Checking what's in the kitchen..."
-                : "Creating a beautiful image..."}
+              Checking what's in the kitchen...
             </ThemedText>
             {expiringItems.length > 0 ? (
               <View style={styles.progressExpiringNote}>
