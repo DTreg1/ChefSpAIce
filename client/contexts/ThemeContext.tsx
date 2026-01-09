@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus, Platform } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
@@ -23,10 +23,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const hasPersistedScheme = useRef(false);
   // Initialize with current appearance - this is our single source of truth for system theme
-  // Default to "light" if system returns null (common on iOS initial load)
   const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme>(() => {
     const initial = Appearance.getColorScheme();
-    return initial === "light" || initial === "dark" ? initial : "light";
+    return initial === "light" || initial === "dark" ? initial : "dark";
   });
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
