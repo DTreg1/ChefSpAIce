@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet, Appearance } from "react-native";
+import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
@@ -23,6 +23,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [cachedResolvedScheme, setCachedResolvedScheme] = useState<ColorScheme | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const hasPersistedScheme = useRef(false);
+  const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -44,14 +45,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Listen for app state changes to refresh theme when app comes back to foreground
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        // Force a fresh read of the current system color scheme
+        const currentScheme = Appearance.getColorScheme();
+        if (currentScheme === "light" || currentScheme === "dark") {
+          setLiveSystemScheme(currentScheme);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
+
+  // Also listen for Appearance changes directly (handles real-time system theme changes)
+  useEffect(() => {
+    const listener = Appearance.addChangeListener(({ colorScheme }) => {
+      if (colorScheme === "light" || colorScheme === "dark") {
+        setLiveSystemScheme(colorScheme);
+      }
+    });
+    return () => listener.remove();
+  }, []);
+
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
     AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
   }, []);
 
   // Calculate the effective system scheme using multiple fallbacks
+  // Prioritize liveSystemScheme (updated on app resume) over the hook value
   const effectiveSystemScheme: ColorScheme = 
-    systemColorScheme ?? Appearance.getColorScheme() ?? cachedResolvedScheme ?? "dark";
+    liveSystemScheme ?? systemColorScheme ?? Appearance.getColorScheme() ?? cachedResolvedScheme ?? "dark";
 
   // Calculate the final color scheme
   const colorScheme: ColorScheme = 
