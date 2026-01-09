@@ -1,7 +1,7 @@
 import { StyleSheet, View, Text, ScrollView, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const BRAND_GREEN = "#27AE60";
 
@@ -18,7 +18,7 @@ function getThemeColors(isDark: boolean) {
 }
 
 export default function SubscriptionCanceledScreen() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
 
   return (
@@ -31,7 +31,6 @@ export default function SubscriptionCanceledScreen() {
           <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
         </Pressable>
         <Pressable
-          onPress={toggleTheme}
           style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
           data-testid="button-theme-toggle"
         >

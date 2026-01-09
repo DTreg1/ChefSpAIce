@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const BRAND_GREEN = "#27AE60";
 
@@ -43,7 +43,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function SubscriptionSuccessScreen() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
   const [sessionDetails, setSessionDetails] = useState<SessionDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,6 @@ export default function SubscriptionSuccessScreen() {
           <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
         </Pressable>
         <Pressable
-          onPress={toggleTheme}
           style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
           data-testid="button-theme-toggle"
         >

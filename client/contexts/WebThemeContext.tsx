@@ -2,13 +2,13 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 
 type Theme = "light" | "dark";
 
-interface WebThemeContextType {
+interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   isDark: boolean;
 }
 
-const WebThemeContext = createContext<WebThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function WebThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -32,16 +32,16 @@ export function WebThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <WebThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
       {children}
-    </WebThemeContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 
-export function useWebTheme() {
-  const context = useContext(WebThemeContext);
+export function useTheme() {
+  const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error("useWebTheme must be used within a WebThemeProvider");
+    throw new Error("useTheme must be used within a WebThemeProvider");
   }
   return context;
 }

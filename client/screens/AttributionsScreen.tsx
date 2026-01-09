@@ -1,6 +1,6 @@
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -17,7 +17,7 @@ function getThemeColors(isDark: boolean) {
 }
 
 export default function AttributionsPage() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
 
   const navigateTo = (path: string) => {
@@ -39,7 +39,6 @@ export default function AttributionsPage() {
           <Text style={[styles.logoText, { color: colors.brandGreen }]}>ChefSpAIce</Text>
         </Pressable>
         <Pressable
-          onPress={toggleTheme}
           style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
         >
           {isDark ? (

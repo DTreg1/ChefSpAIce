@@ -1,15 +1,17 @@
 import { Colors } from "@/constants/theme";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useTheme as useThemeContext } from "@/contexts/ThemeContext";
 
 export function useTheme() {
-  const { colorScheme, isDark, themePreference, setThemePreference } = useThemeContext();
+  const { colorScheme, isDark, setThemePreference } = useThemeContext();
   const theme = Colors[colorScheme];
 
   return {
     theme,
     isDark,
     colorScheme,
-    themePreference,
     setThemePreference,
+    setTheme: setThemePreference,
   };
 }
+
+export const useAppTheme = useTheme;
