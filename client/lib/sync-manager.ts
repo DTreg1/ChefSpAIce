@@ -95,16 +95,25 @@ class SyncManager {
   private async pingCheck(): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
+      // Increase timeout to 8 seconds - mobile networks can be slow
+      const timeout = setTimeout(() => controller.abort(), 8000);
       
+      // Use GET instead of HEAD - more reliable across proxies/CDNs
       const response = await fetch(`${getApiUrl()}/api/health`, {
-        method: "HEAD",
+        method: "GET",
         signal: controller.signal,
+        // Prevent caching to ensure we actually hit the server
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
       });
       
       clearTimeout(timeout);
       return response.ok;
-    } catch {
+    } catch (error) {
+      // Log the actual error for debugging
+      console.log("[Sync] Ping check failed:", error instanceof Error ? error.message : "Unknown error");
       return false;
     }
   }
