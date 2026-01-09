@@ -218,6 +218,7 @@ export default function InventoryScreen() {
   const [selectedFoodGroups, setSelectedFoodGroups] = useState<FoodGroup[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasLoadedRef = React.useRef(false);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(80);
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
@@ -294,14 +295,17 @@ export default function InventoryScreen() {
     setSelectedFoodGroups([]);
   }, [clearSearch]);
 
-  const loadItems = useCallback(async () => {
+  const loadItems = useCallback(async (isInitialLoad = false) => {
     try {
       const inventoryItems = await storage.getInventory();
       setItems(inventoryItems);
+      hasLoadedRef.current = true;
     } catch (error) {
       console.error("Error loading inventory:", error);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -320,8 +324,11 @@ export default function InventoryScreen() {
   // Use navigation.addListener for more reliable focus events on web
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
-      loadItems();
-      loadStorageLocations();
+      // Only silently refresh if we've already loaded once (no loading state flash)
+      if (hasLoadedRef.current) {
+        loadItems(false);
+        loadStorageLocations();
+      }
     });
     const unsubscribeBlur = navigation.addListener('blur', () => {
       collapseSearch("inventory");
@@ -332,9 +339,9 @@ export default function InventoryScreen() {
     };
   }, [navigation, loadItems, loadStorageLocations, collapseSearch]);
 
-  // Also load on initial mount
+  // Load on initial mount with loading state
   useEffect(() => {
-    loadItems();
+    loadItems(true);
     loadStorageLocations();
   }, []);
 
