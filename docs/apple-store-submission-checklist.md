@@ -128,16 +128,16 @@ Tasks:
 
 | Status | Item | Notes |
 |--------|------|-------|
-| ⬜ | Complete user flow testing | Test all features end-to-end on physical device |
-| ⬜ | Offline mode testing | Verify app works without internet |
-| ⬜ | Authentication flow | Test sign up, sign in, social auth, sign out |
-| ⬜ | Subscription purchase flow | Test with sandbox accounts |
-| ⬜ | Barcode scanning | Test on physical device |
-| ⬜ | Camera functionality | Test food photo capture |
+| ✅ | Complete user flow testing | Test all features end-to-end on physical device |
+| ✅ | Offline mode testing | Verify app works without internet |
+| ✅ | Authentication flow | Test sign up, sign in, social auth, sign out |
+| ⬜ | Subscription purchase flow | Test with sandbox accounts (requires StoreKit) |
+| ✅ | Barcode scanning | Test on physical device |
+| ✅ | Camera functionality | Test food photo capture |
 | ⬜ | Push notifications | Test expiration alerts |
-| ⬜ | Dark mode | Verify all screens support dark mode |
-| ⬜ | Account deletion | Verify data is properly removed |
-| ⬜ | Crash testing | No crashes during normal usage |
+| ✅ | Dark mode | Verify all screens support dark mode |
+| ✅ | Account deletion | Verify data is properly removed |
+| ✅ | Crash testing | No crashes during normal usage |
 
 ---
 
