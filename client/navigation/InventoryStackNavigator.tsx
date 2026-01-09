@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import InventoryScreen from "@/screens/InventoryScreen";
@@ -18,26 +18,23 @@ export type InventoryStackParamList = {
 
 const Stack = createNativeStackNavigator<InventoryStackParamList>();
 
-function InventoryHeaderRight() {
+function ExportButton() {
   const { theme } = useTheme();
   const { handleExport, exporting } = useInventoryExport();
 
   return (
-    <View style={styles.headerRightContainer}>
-      <HeaderSearch screenKey="inventory" placeholder="Search items..." />
-      <Pressable
-        testID="button-export-inventory"
-        onPress={handleExport}
-        disabled={exporting}
-        style={styles.headerButton}
-      >
-        <Feather
-          name="download"
-          size={22}
-          color={exporting ? theme.textSecondary : theme.text}
-        />
-      </Pressable>
-    </View>
+    <Pressable
+      testID="button-export-inventory"
+      onPress={handleExport}
+      disabled={exporting}
+      style={styles.headerButton}
+    >
+      <Feather
+        name="download"
+        size={22}
+        color={exporting ? theme.textSecondary : theme.text}
+      />
+    </Pressable>
   );
 }
 
@@ -52,7 +49,12 @@ export default function InventoryStackNavigator() {
         options={{
           headerTitle: () => <HeaderTitle title="Kitchen" materialIcon="stove" />,
           headerLeft: () => <HamburgerButton />,
-          headerRight: () => <InventoryHeaderRight />,
+          headerRight: () => (
+            <>
+              <HeaderSearch screenKey="inventory" placeholder="Search items..." />
+              <ExportButton />
+            </>
+          ),
         }}
       />
       <Stack.Screen
@@ -67,10 +69,6 @@ export default function InventoryStackNavigator() {
 }
 
 const styles = StyleSheet.create({
-  headerRightContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   headerButton: {
     width: 44,
     height: 44,
