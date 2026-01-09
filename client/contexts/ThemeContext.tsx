@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet } from "react-native";
+import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet, Appearance } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
@@ -48,9 +48,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Use synchronous Appearance.getColorScheme() as fallback when hook returns null
+  // This ensures we get the correct system theme on initial render
+  const effectiveSystemScheme = systemColorScheme ?? Appearance.getColorScheme() ?? "dark";
+  
   const colorScheme: ColorScheme = 
     themePreference === "system" 
-      ? (systemColorScheme ?? "light") 
+      ? effectiveSystemScheme 
       : themePreference;
 
   const isDark = colorScheme === "dark";
