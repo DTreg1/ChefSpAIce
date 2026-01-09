@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
@@ -18,12 +18,15 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useSystemColorScheme();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference | null>(null);
   const [cachedResolvedScheme, setCachedResolvedScheme] = useState<ColorScheme | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const hasPersistedScheme = useRef(false);
-  const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme | null>(null);
+  // Initialize with current appearance - this is our single source of truth for system theme
+  const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme>(() => {
+    const initial = Appearance.getColorScheme();
+    return initial === "light" || initial === "dark" ? initial : "dark";
+  });
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
@@ -91,10 +94,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
   }, []);
 
-  // Calculate the effective system scheme using multiple fallbacks
-  // Prioritize liveSystemScheme (updated on app resume) over the hook value
-  const effectiveSystemScheme: ColorScheme = 
-    liveSystemScheme ?? systemColorScheme ?? Appearance.getColorScheme() ?? cachedResolvedScheme ?? "dark";
+  // liveSystemScheme is now our single source of truth for system theme
+  // It's initialized on mount and only updated when app is active
+  const effectiveSystemScheme: ColorScheme = liveSystemScheme;
 
   // Calculate the final color scheme
   const colorScheme: ColorScheme = 
