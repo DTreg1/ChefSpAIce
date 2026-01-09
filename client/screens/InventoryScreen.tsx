@@ -1036,11 +1036,13 @@ export default function InventoryScreen() {
             >
               <ThemedText
                 type="caption"
+                numberOfLines={1}
                 style={{
                   color: isSelected
                     ? "#FFFFFF"
                     : theme.textSecondary,
                   fontWeight: isSelected ? "600" : "400",
+                  textAlign: "center",
                 }}
               >
                 {group.label}
@@ -1344,9 +1346,11 @@ const styles = StyleSheet.create({
   },
   foodGroupChip: {
     flex: 1,
+    flexBasis: 0,
+    flexShrink: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.sm,
     minHeight: 40,
     borderRadius: GlassEffect.borderRadius.pill,
