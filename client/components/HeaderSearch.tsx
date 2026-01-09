@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
   },
   expandedContainer: {
     position: "absolute",
-    left: -44,
-    top: -22,
+    right: 0,
+    top: 0,
     flexDirection: "row",
     alignItems: "center",
     height: 44,
