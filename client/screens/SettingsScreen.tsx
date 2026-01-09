@@ -44,13 +44,14 @@ import {
 } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -105,7 +106,6 @@ type DeleteConfirmationStep = "none" | "first" | "second";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
@@ -127,6 +127,8 @@ export default function SettingsScreen() {
     zipCode: undefined,
     apiKeyConfigured: false,
   });
+
+  const menuItems: MenuItemConfig[] = [];
 
   const loadData = useCallback(async () => {
     const [prefs, prefsCount, instacart] = await Promise.all([
@@ -469,17 +471,24 @@ export default function SettingsScreen() {
   };
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Spacing.lg,
-          paddingBottom: tabBarHeight + Spacing.xl,
-        },
-      ]}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-    >
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title="Settings"
+        screenKey="settings"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <KeyboardAwareScrollViewCompat
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: tabBarHeight + Spacing.xl,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+      >
       {isAuthenticated ? (
         <GlassCard style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
@@ -1012,11 +1021,15 @@ export default function SettingsScreen() {
         </View>
       </View>
     </KeyboardAwareScrollViewCompat>
-  );
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   content: {

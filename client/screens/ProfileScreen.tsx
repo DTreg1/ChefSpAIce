@@ -14,12 +14,13 @@ import * as ImagePicker from "expo-image-picker";
 import { BlurView } from "expo-blur";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
@@ -47,7 +48,6 @@ import { getApiUrl } from "@/lib/query-client";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark, colorScheme, themePreference, setThemePreference } = useTheme();
   const navigation =
@@ -73,6 +73,8 @@ export default function ProfileScreen() {
   });
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
+
+  const menuItems: MenuItemConfig[] = [];
 
   const loadData = useCallback(async () => {
     const [items, loadedRecipes, status, profile, prefs] = await Promise.all([
@@ -260,17 +262,24 @@ export default function ProfileScreen() {
   });
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Spacing.lg,
-          paddingBottom: tabBarHeight + Spacing.xl,
-        },
-      ]}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-    >
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title="Profile"
+        screenKey="profile"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: tabBarHeight + Spacing.xl,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+      >
       <View style={styles.avatarSection}>
         <Pressable onPress={handlePickAvatar}>
           {Platform.OS === "ios" ? (
@@ -866,12 +875,16 @@ export default function ProfileScreen() {
           <Feather name="chevron-right" size={20} color={theme.textSecondary} />
         </GlassCard>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   content: {

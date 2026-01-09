@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { View, FlatList, StyleSheet, Pressable, Alert, Linking, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
@@ -18,9 +19,10 @@ import { getApiUrl } from "@/lib/query-client";
 
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+
+  const menuItems: MenuItemConfig[] = [];
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,12 +214,18 @@ export default function ShoppingListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-shopping-list">
+      <ExpoGlassHeader
+        title="Shopping"
+        screenKey="shopping"
+        showSearch={false}
+        menuItems={menuItems}
+      />
       <FlatList
         style={styles.list}
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: 56 + insets.top + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing.xl,
           },
         ]}
