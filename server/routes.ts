@@ -64,6 +64,7 @@ import instacartRouter from "./routers/platform/instacart.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
+import recipeImagesRouter from "./routers/recipeImages.router";
 import feedbackRouter from "./routers/feedback.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
@@ -457,6 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/ai", requireAuth, requireSubscription, imageAnalysisRouter);
   app.use("/api/ingredients", requireAuth, requireSubscription, ingredientsRouter);
   app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
+  app.use("/api/recipe-images", requireAuth, requireSubscription, recipeImagesRouter);
 
 
   // =========================================================================
