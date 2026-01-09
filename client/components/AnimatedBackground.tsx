@@ -116,6 +116,7 @@ function GradientBackground({ isDark }: { isDark: boolean }) {
 
   return (
     <LinearGradient
+      key={isDark ? "dark" : "light"}
       colors={[gradientColor, transparentColor]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}

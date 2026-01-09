@@ -51,6 +51,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (nextAppState === "active") {
         // Force a fresh read of the current system color scheme
         const currentScheme = Appearance.getColorScheme();
+        console.log("[Theme] App resumed, system scheme:", currentScheme, "preference:", themePreference);
         if (currentScheme === "light" || currentScheme === "dark") {
           setLiveSystemScheme(currentScheme);
         }
@@ -59,7 +60,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
-  }, []);
+  }, [themePreference]);
 
   // Also listen for Appearance changes directly (handles real-time system theme changes)
   useEffect(() => {
