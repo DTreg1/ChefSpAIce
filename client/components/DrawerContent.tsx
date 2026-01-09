@@ -11,6 +11,7 @@ import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
+import { GlassProvider } from "@/contexts/GlassContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -134,7 +135,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
       <Feather
         name={icon}
         size={22}
-        color={isActive ? AppColors.primary : theme.text}
+        color={isActive ? AppColors.primary : theme.textOnGlass}
         style={styles.drawerItemIcon}
       />
       <ThemedText
@@ -261,27 +262,28 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   return (
     <View style={styles.container}>
       {renderBackground()}
-      <DrawerContentScrollView
-        {...props}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + Spacing.lg },
-        ]}
-      >
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../assets/images/icon.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
+      <GlassProvider>
+        <DrawerContentScrollView
+          {...props}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top + Spacing.lg },
+          ]}
+        >
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
+            </View>
+            <ThemedText type="small" style={styles.tagline}>
+              Reduce waste, eat fresh
+            </ThemedText>
+            <TrialBadge />
           </View>
-          <ThemedText type="small" style={styles.tagline}>
-            Reduce waste, eat fresh
-          </ThemedText>
-          <TrialBadge />
-        </View>
 
         <View
           style={[styles.divider, { backgroundColor: theme.glass.border }]}
@@ -361,44 +363,41 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             }}
           />
         </View>
-      </DrawerContentScrollView>
+        </DrawerContentScrollView>
 
-      <View
-        style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}
-      >
         <View
-          style={[styles.divider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={({ pressed }) => [
-            styles.addItemButton,
-            {
-              backgroundColor: theme.glass.backgroundStrong,
-              borderWidth: 1,
-              borderColor: theme.glass.border,
-            },
-            pressed ? { opacity: 0.8 } : null,
-          ]}
-          onPress={() => {
-            closeDrawer();
-            signOut();
-          }}
-          testID="button-drawer-sign-out"
-          accessibilityLabel="Sign Out"
+          style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}
         >
-          <Feather
-            name="log-out"
-            size={20}
-            color={theme.textSecondary}
-            style={{ marginRight: Spacing.sm }}
+          <View
+            style={[styles.divider, { backgroundColor: theme.glass.border }]}
           />
-          <ThemedText
-            style={[styles.addItemText, { color: theme.textSecondary }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.addItemButton,
+              {
+                backgroundColor: theme.glass.backgroundStrong,
+                borderWidth: 1,
+                borderColor: theme.glass.border,
+              },
+              pressed ? { opacity: 0.8 } : null,
+            ]}
+            onPress={() => {
+              closeDrawer();
+              signOut();
+            }}
+            testID="button-drawer-sign-out"
+            accessibilityLabel="Sign Out"
           >
-            Sign Out
-          </ThemedText>
-        </Pressable>
-      </View>
+            <Feather
+              name="log-out"
+              size={20}
+              color={theme.textSecondaryOnGlass}
+              style={{ marginRight: Spacing.sm }}
+            />
+            <ThemedText type="caption">Sign Out</ThemedText>
+          </Pressable>
+        </View>
+      </GlassProvider>
     </View>
   );
 }
