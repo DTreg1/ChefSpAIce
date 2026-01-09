@@ -16,6 +16,8 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const LIME_950 = "#1a2e05";
 const LIME_900 = "#3d6b1c";
+const LIME_850 = "#2a4a10";
+const LIME_800 = "#4a7a25";
 
 interface BubbleConfig {
   id: number;
@@ -109,19 +111,19 @@ function Bubble({ config }: BubbleProps) {
 }
 
 function GradientBackground({ isDark }: { isDark: boolean }) {
-  const gradientColor = isDark ? LIME_950 : LIME_900;
-  const transparentColor = isDark
-    ? "rgba(61, 107, 28, 0)"
-    : "rgba(26, 46, 5, 0)";
+  const baseColor = isDark ? LIME_950 : LIME_850;
+  const gradientColor = isDark ? LIME_900 : LIME_800;
 
   return (
-    <LinearGradient
-      key={isDark ? "dark" : "light"}
-      colors={[gradientColor, transparentColor]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradient}
-    />
+    <View style={[styles.gradient, { backgroundColor: baseColor }]}>
+      <LinearGradient
+        key={isDark ? "dark" : "light"}
+        colors={[gradientColor, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      />
+    </View>
   );
 }
 
