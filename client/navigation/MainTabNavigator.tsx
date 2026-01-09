@@ -1,7 +1,6 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useIsFocused } from "@react-navigation/native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import InventoryStackNavigator from "@/navigation/InventoryStackNavigator";
@@ -12,11 +11,6 @@ import CookwareStackNavigator from "@/navigation/CookwareStackNavigator";
 import { CustomTabBar } from "@/components/CustomTabBar";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
-
-function UnmountOnBlur({ children }: { children: React.ReactNode }) {
-  const isFocused = useIsFocused();
-  return isFocused ? children : null;
-}
 
 export type MainTabParamList = {
   KitchenTab: undefined;
@@ -50,7 +44,6 @@ export default function MainTabNavigator() {
           backgroundColor: "transparent",
         },
       }}
-      screenLayout={({ children }) => <UnmountOnBlur>{children}</UnmountOnBlur>}
     >
       <Tab.Screen
         name="KitchenTab"
