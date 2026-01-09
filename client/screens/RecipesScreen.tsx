@@ -54,6 +54,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { RecipeGridSkeleton } from "@/components/Skeleton";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
+import { HeaderSearch } from "@/components/HeaderSearch";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -92,22 +93,18 @@ export default function RecipesScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity
-          style={[
-            styles.headerMenuButton,
-            {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
-            },
-          ]}
-          onPress={() => setMenuOpen((prev) => !prev)}
-          testID="button-recipes-menu"
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Recipe options menu"
-        >
-          <Feather name="more-vertical" size={20} color={theme.text} />
-        </TouchableOpacity>
+        <>
+          <HeaderSearch screenKey="recipes" placeholder="Search recipes..." />
+          <Pressable
+            style={styles.headerButton}
+            onPress={() => setMenuOpen((prev) => !prev)}
+            testID="button-recipes-menu"
+            accessibilityRole="button"
+            accessibilityLabel="Recipe options menu"
+          >
+            <Feather name="more-vertical" size={22} color={theme.text} />
+          </Pressable>
+        </>
       ),
     });
   }, [navigation, theme]);
@@ -658,11 +655,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-  headerMenuButton: {
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginRight: Spacing.sm,
+  headerButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuOverlay: {
     position: "absolute",
