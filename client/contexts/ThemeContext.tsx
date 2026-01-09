@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useColorScheme as useSystemColorScheme, View, ActivityIndicator, StyleSheet, Appearance } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
+const RESOLVED_SCHEME_KEY = "@chefspaice/resolved_scheme";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ColorScheme = "light" | "dark";
@@ -19,16 +20,26 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useSystemColorScheme();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference | null>(null);
+  const [cachedResolvedScheme, setCachedResolvedScheme] = useState<ColorScheme | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasPersistedScheme = useRef(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
-      if (stored === "light" || stored === "dark" || stored === "system") {
-        setThemePreferenceState(stored);
+    Promise.all([
+      AsyncStorage.getItem(THEME_STORAGE_KEY),
+      AsyncStorage.getItem(RESOLVED_SCHEME_KEY),
+    ]).then(([storedPref, storedScheme]) => {
+      if (storedPref === "light" || storedPref === "dark" || storedPref === "system") {
+        setThemePreferenceState(storedPref);
       } else {
-        // No stored preference - default to "system"
         setThemePreferenceState("system");
       }
+      
+      // Use cached resolved scheme for initial render to prevent flash
+      if (storedScheme === "light" || storedScheme === "dark") {
+        setCachedResolvedScheme(storedScheme);
+      }
+      
       setIsLoaded(true);
     });
   }, []);
@@ -38,24 +49,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
   }, []);
 
-  // While loading, don't render children to prevent theme flash
+  // Calculate the effective system scheme using multiple fallbacks
+  const effectiveSystemScheme: ColorScheme = 
+    systemColorScheme ?? Appearance.getColorScheme() ?? cachedResolvedScheme ?? "dark";
+
+  // Calculate the final color scheme
+  const colorScheme: ColorScheme = 
+    themePreference === "system" || themePreference === null
+      ? effectiveSystemScheme 
+      : themePreference;
+
+  // Persist the resolved scheme whenever it changes (for next app launch)
+  useEffect(() => {
+    if (isLoaded && colorScheme && !hasPersistedScheme.current) {
+      hasPersistedScheme.current = true;
+      AsyncStorage.setItem(RESOLVED_SCHEME_KEY, colorScheme);
+    } else if (isLoaded && colorScheme) {
+      // Always update when scheme changes
+      AsyncStorage.setItem(RESOLVED_SCHEME_KEY, colorScheme);
+    }
+  }, [isLoaded, colorScheme]);
+
+  // While loading, use cached scheme or dark background
   if (!isLoaded || themePreference === null) {
-    // Show a minimal loading state with a dark background to prevent flash
+    const loadingBg = cachedResolvedScheme === "light" ? "#f5f5f0" : "#1a1a2e";
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: loadingBg }]}>
         <ActivityIndicator size="small" color="#E67E22" />
       </View>
     );
   }
-
-  // Use synchronous Appearance.getColorScheme() as fallback when hook returns null
-  // This ensures we get the correct system theme on initial render
-  const effectiveSystemScheme = systemColorScheme ?? Appearance.getColorScheme() ?? "dark";
-  
-  const colorScheme: ColorScheme = 
-    themePreference === "system" 
-      ? effectiveSystemScheme 
-      : themePreference;
 
   const isDark = colorScheme === "dark";
 
