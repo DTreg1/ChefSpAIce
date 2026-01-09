@@ -16,6 +16,7 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 ### Key Features and Technical Implementations
 - **Navigation:** Root stack navigator for modals, five-tab bottom navigation with individual stack navigators per tab (Inventory, Recipes, Meal Plan, Profile).
 - **Design System:** iOS 26 Liquid Glass Design with blur effects, theme support, and reusable components.
+- **ExpoGlassHeader:** Unified header component providing consistent glass morphism design across all main screens. Features a hamburger menu (left) for drawer navigation, an expandable search icon (center-left) with Reanimated animations, and a three-dot options menu (right) containing screen-specific actions like export and filtering. Each screen renders its own header instance to access local state while maintaining visual consistency. Active menu states show checkmark indicators with primary color highlighting. Export operations include loading states and disabled guards to prevent double-triggering.
 - **State Management:** AsyncStorage for local data, React Query for server state, and component-level React hooks.
 - **Authentication:** Custom username/password with SHA-256 hashing, social login (Apple Sign-In, Google Sign-In), and 30-day session tokens. Two auth patterns are used:
   - **Bearer Tokens:** Used by protected API routes (`/api/user/*`, `/api/admin/*`, `/api/sync/*`) via `Authorization: Bearer <token>` header. The `requireAuth` and `requireAdmin` middleware validate tokens against the `userSessions` table.
