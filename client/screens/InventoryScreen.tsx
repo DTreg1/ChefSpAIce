@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     marginTop: Spacing.sm,
-    justifyContent: "space-between",
+    gap: 6,
   },
   filterSummaryRow: {
     flexDirection: "row",
@@ -1343,12 +1343,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   foodGroupChip: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
-    minHeight: 32,
-    minWidth: 56,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    minHeight: 40,
     borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
