@@ -31,7 +31,12 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Trial Subscription System:** New users receive a 7-day free trial. A background job runs hourly to check for expired trials and automatically downgrade users to Basic tier. When a trial expires, a modal displays the Basic plan limits and Pro features the user will lose, with options to upgrade or dismiss. Dismissed state is persisted in AsyncStorage.
 - **Tiered Subscription Limits:** Basic tier ($4.99/month) includes 25 pantry items, 5 AI recipes/month, and 5 cookware items. Pro tier ($9.99/month) offers unlimited pantry/cookware/AI recipes, plus Recipe Scanning, Bulk Scanning, Live AI Kitchen Assistant, Custom Storage Areas, and Weekly Meal Prepping. Limits are enforced in both UI (disabled states, counters, UpgradePrompt modals) and during onboarding (cookware pre-selection respects tier limits).
 - **Onboarding Flow:** A 6-step sequence for new users to set preferences, define storage areas, select starter foods, and input kitchen equipment. Returning users bypass this flow.
-- **Cloud Sync:** All authenticated user data is synced to PostgreSQL as JSON, managed by a real-time sync manager with retry logic and conflict resolution. **Known Limitations:**
+- **Cloud Sync:** All authenticated user data is synced to PostgreSQL as JSON, managed by a real-time sync manager with retry logic and conflict resolution. **Battery Optimizations:**
+  - AppState-aware sync: Sync operations automatically pause when app goes to background and resume when active, preventing unnecessary network activity
+  - 60-second network polling interval (increased from 30s) with immediate check on resume
+  - 2-second debounced AsyncStorage writes to batch rapid changes
+  - Exponential backoff for failed sync retries to prevent rapid retry loops
+  - **Known Limitations:**
   - Conflict resolution uses timestamp-based "last write wins" strategy. Concurrent edits from multiple devices may result in data loss if changes happen within the same sync interval.
   - Subscription limit checks and sync operations are not transactional; rare race conditions in read-modify-write operations could theoretically occur under high concurrency.
   - Per-field merge logic is not implemented; entire objects are replaced during conflict resolution.
@@ -42,7 +47,7 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Inventory-Only Recipes:** Generates recipes strictly from the user's current inventory, with advanced fuzzy matching and post-generation validation.
 - **Smart Shelf Life:** Automatic expiration date suggestions based on food name, storage location, and an AI fallback for unknown items.
 - **Push Notifications:** Local notifications for expiring food items, configurable by the user.
-- **Scan Hub:** Centralized scanning interface for product barcodes, nutrition labels, recipes from paper, and AI food identification using GPT-4o vision.
+- **Scan Hub:** Centralized scanning interface for product barcodes, nutrition labels, recipes from paper, and AI food identification using GPT-4o vision. **Camera Battery Optimization:** All 4 scanner screens (Barcode, Food, Ingredient, Recipe) suspend camera sensors using dual triggers: AppState changes (app backgrounding) and useFocusEffect (navigation blur). This ensures cameras are only active when the screen is visible and the app is in foreground.
 - **Offline Mode Indicator:** Animated banner indicating network status and pending sync changes.
 - **Stripe Donations:** Integration for secure user donations.
 - **Data Export:** Functionality to export inventory and recipes as CSV or PDF files.
