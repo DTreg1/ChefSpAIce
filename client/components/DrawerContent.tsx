@@ -135,7 +135,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
       <Feather
         name={icon}
         size={22}
-        color={isActive ? AppColors.primary : theme.text}
+        color={isActive ? AppColors.primary : theme.textOnGlass}
         style={styles.drawerItemIcon}
       />
       <ThemedText
@@ -391,7 +391,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <Feather
               name="log-out"
               size={20}
-              color={theme.textSecondary}
+              color={theme.textSecondaryOnGlass}
               style={{ marginRight: Spacing.sm }}
             />
             <ThemedText type="caption">Sign Out</ThemedText>

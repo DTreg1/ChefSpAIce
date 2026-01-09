@@ -19,15 +19,15 @@ export const AppColors = {
 
 export const GlassColors = {
   light: {
-    background: "rgba(255, 255, 255, 0.92)",
-    backgroundStrong: "rgba(255, 255, 255, 0.96)",
-    backgroundSubtle: "rgba(255, 255, 255, 0.88)",
-    border: "rgba(200, 200, 200, 0.5)",
-    borderStrong: "rgba(180, 180, 180, 0.7)",
-    borderSubtle: "rgba(220, 220, 220, 0.4)",
-    overlay: "rgba(255, 255, 255, 0.6)",
+    background: "rgba(255, 255, 255, 0.7)",
+    backgroundStrong: "rgba(255, 255, 255, 0.85)",
+    backgroundSubtle: "rgba(255, 255, 255, 0.6)",
+    border: "rgba(200, 200, 200, 0.4)",
+    borderStrong: "rgba(180, 180, 180, 0.6)",
+    borderSubtle: "rgba(220, 220, 220, 0.3)",
+    overlay: "rgba(255, 255, 255, 0.4)",
     shadowColor: "rgba(31, 38, 135, 0.15)",
-    insetHighlight: "rgba(255, 255, 255, 0.6)",
+    insetHighlight: "rgba(255, 255, 255, 0.5)",
   },
   dark: {
     background: "rgba(0, 0, 0, 0.2)",
@@ -64,8 +64,8 @@ export const Colors = {
   light: {
     text: "#1a3a1a",
     textSecondary: "#3d5a3d",
-    textOnGlass: "#1a3a1a",
-    textSecondaryOnGlass: "#3d5a3d",
+    textOnGlass: "#FFFFFF",
+    textSecondaryOnGlass: "rgba(255, 255, 255, 0.85)",
     buttonText: "#FFFFFF",
     tabIconDefault: "#5a7a5a",
     tabIconSelected: AppColors.primary,
