@@ -10,13 +10,14 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
 export interface MenuItemConfig {
   label: string;
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void | Promise<void>;
   disabled?: boolean;
+  active?: boolean;
 }
 
 interface HeaderMenuProps {
@@ -86,16 +87,25 @@ export function HeaderMenu({ items, testID = "button-header-menu" }: HeaderMenuP
                       <Feather
                         name={item.icon}
                         size={18}
-                        color={item.disabled ? theme.textSecondary : theme.text}
+                        color={item.active ? AppColors.primary : (item.disabled ? theme.textSecondary : theme.text)}
                       />
                       <ThemedText
                         style={[
                           styles.menuItemText,
                           item.disabled && { color: theme.textSecondary },
+                          item.active && { color: AppColors.primary },
                         ]}
                       >
                         {item.label}
                       </ThemedText>
+                      {item.active && (
+                        <Feather
+                          name="check"
+                          size={16}
+                          color={AppColors.primary}
+                          style={styles.activeCheck}
+                        />
+                      )}
                     </View>
                   </Pressable>
                 ))}
@@ -147,5 +157,9 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
+    flex: 1,
+  },
+  activeCheck: {
+    marginLeft: "auto",
   },
 });

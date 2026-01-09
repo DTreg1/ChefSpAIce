@@ -31,7 +31,7 @@
  * @module screens/RecipesScreen
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   FlatList,
@@ -96,12 +96,14 @@ export default function RecipesScreen() {
   const [loading, setLoading] = useState(true);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const menuItems: MenuItemConfig[] = [
+  const menuItems: MenuItemConfig[] = useMemo(() => [
     {
-      label: "Favorites Only",
+      label: showFavoritesOnly ? "Show All" : "Favorites Only",
       icon: "heart",
-      onPress: () => setShowFavoritesOnly(!showFavoritesOnly),
+      onPress: () => setShowFavoritesOnly(prev => !prev),
+      active: showFavoritesOnly,
     },
     {
       label: "Customize",
@@ -109,16 +111,34 @@ export default function RecipesScreen() {
       onPress: () => setShowSettingsModal(true),
     },
     {
-      label: "Export to CSV",
+      label: exporting ? "Exporting..." : "Export to CSV",
       icon: "file-text",
-      onPress: () => exportRecipesToCSV(recipes),
+      onPress: async () => {
+        if (recipes.length === 0 || loading) return;
+        setExporting(true);
+        try {
+          await exportRecipesToCSV(recipes);
+        } finally {
+          setExporting(false);
+        }
+      },
+      disabled: loading || recipes.length === 0 || exporting,
     },
     {
-      label: "Export to PDF",
+      label: exporting ? "Exporting..." : "Export to PDF",
       icon: "file",
-      onPress: () => exportRecipesToPDF(recipes),
+      onPress: async () => {
+        if (recipes.length === 0 || loading) return;
+        setExporting(true);
+        try {
+          await exportRecipesToPDF(recipes);
+        } finally {
+          setExporting(false);
+        }
+      },
+      disabled: loading || recipes.length === 0 || exporting,
     },
-  ];
+  ], [showFavoritesOnly, loading, recipes, exporting]);
 
   const loadData = useCallback(async (showSkeleton = false) => {
     if (showSkeleton) setLoading(true);

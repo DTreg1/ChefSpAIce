@@ -211,15 +211,16 @@ export default function InventoryScreen() {
     useNavigation<NativeStackNavigationProp<InventoryStackParamList>>();
   const queryClient = useQueryClient();
   const { usage, entitlements, isProUser } = useSubscription();
-  const { handleExport } = useInventoryExport();
+  const { handleExport, exporting } = useInventoryExport();
 
   const { getSearchQuery, clearSearch, collapseSearch } = useSearch();
 
   const menuItems: MenuItemConfig[] = [
     {
-      label: "Export to CSV",
+      label: exporting ? "Exporting..." : "Export to CSV",
       icon: "download",
       onPress: handleExport,
+      disabled: exporting,
     },
   ];
   const searchQuery = getSearchQuery("inventory");
