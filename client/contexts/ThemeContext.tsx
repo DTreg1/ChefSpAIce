@@ -9,7 +9,6 @@ export type ThemePreference = "light" | "dark" | "system";
 export type ColorScheme = "light" | "dark";
 
 interface ThemeContextType {
-  themePreference: ThemePreference;
   colorScheme: ColorScheme;
   setThemePreference: (preference: ThemePreference) => void;
   isDark: boolean;
@@ -27,67 +26,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const initial = Appearance.getColorScheme();
     return initial === "light" || initial === "dark" ? initial : "dark";
   });
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-
-  useEffect(() => {
-    Promise.all([
-      AsyncStorage.getItem(THEME_STORAGE_KEY),
-      AsyncStorage.getItem(RESOLVED_SCHEME_KEY),
-    ]).then(([storedPref, storedScheme]) => {
-      if (storedPref === "light" || storedPref === "dark" || storedPref === "system") {
-        setThemePreferenceState(storedPref);
-      } else {
-        setThemePreferenceState("system");
-      }
-      
-      // Use cached resolved scheme for initial render to prevent flash
-      if (storedScheme === "light" || storedScheme === "dark") {
-        setCachedResolvedScheme(storedScheme);
-      }
-      
-      setIsLoaded(true);
-    });
-  }, []);
-
-  // Listen for app state changes to refresh theme when app comes back to foreground
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      const previousState = appStateRef.current;
-      appStateRef.current = nextAppState;
-      
-      // Only update theme when transitioning TO active state
-      if (nextAppState === "active" && previousState !== "active") {
-        // Small delay to let iOS settle and report the correct scheme
-        setTimeout(() => {
-          const currentScheme = Appearance.getColorScheme();
-          console.log("[Theme] App resumed, system scheme:", currentScheme, "preference:", themePreference);
-          if (currentScheme === "light" || currentScheme === "dark") {
-            setLiveSystemScheme(currentScheme);
-          }
-        }, 100);
-      }
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-    return () => subscription.remove();
-  }, [themePreference]);
-
-  // Also listen for Appearance changes directly (handles real-time system theme changes)
-  // BUT only when the app is active - ignore changes while backgrounded
-  useEffect(() => {
-    const listener = Appearance.addChangeListener(({ colorScheme }) => {
-      // Only update if app is currently active
-      if (appStateRef.current === "active") {
-        if (colorScheme === "light" || colorScheme === "dark") {
-          console.log("[Theme] Appearance changed while active:", colorScheme);
-          setLiveSystemScheme(colorScheme);
-        }
-      } else {
-        console.log("[Theme] Ignoring appearance change while backgrounded:", colorScheme);
-      }
-    });
-    return () => listener.remove();
-  }, []);
 
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
@@ -115,22 +53,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isLoaded, colorScheme]);
 
-  // While loading, use cached scheme or dark background
-  if (!isLoaded || themePreference === null) {
-    const loadingBg = cachedResolvedScheme === "light" ? "#f5f5f0" : "#1a1a2e";
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: loadingBg }]}>
-        <ActivityIndicator size="small" color="#E67E22" />
-      </View>
-    );
-  }
 
   const isDark = colorScheme === "dark";
 
   return (
     <ThemeContext.Provider
       value={{
-        themePreference,
         colorScheme,
         setThemePreference,
         isDark,
