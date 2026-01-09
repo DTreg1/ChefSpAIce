@@ -13,7 +13,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { storage, ShoppingListItem, InstacartSettings } from "@/lib/storage";
+import { storage, ShoppingListItem } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 
 
@@ -26,16 +26,10 @@ export default function ShoppingListScreen() {
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [instacartSettings, setInstacartSettings] = useState<InstacartSettings | null>(null);
-  const [sendingToInstacart, setSendingToInstacart] = useState(false);
 
   const loadItems = useCallback(async () => {
-    const [list, instacart] = await Promise.all([
-      storage.getShoppingList(),
-      storage.getInstacartSettings(),
-    ]);
+    const list = await storage.getShoppingList();
     setItems(list);
-    setInstacartSettings(instacart);
     setLoading(false);
   }, []);
 
@@ -79,68 +73,6 @@ export default function ShoppingListScreen() {
         },
       ],
     );
-  };
-
-  const handleSendToInstacart = async () => {
-    if (!instacartSettings?.isConnected) {
-      return;
-    }
-
-    const uncheckedItems = items.filter((i) => !i.isChecked);
-    if (uncheckedItems.length === 0) {
-      Alert.alert("No Items", "Add items to your shopping list first.");
-      return;
-    }
-
-    setSendingToInstacart(true);
-
-    try {
-      const response = await fetch(`${getApiUrl()}api/instacart/status`, {
-        credentials: "include",
-      });
-      const status = await response.json();
-
-      if (!status.configured) {
-        Alert.alert(
-          "Instacart Not Available",
-          "Instacart integration is not yet configured. Please check back later."
-        );
-        setSendingToInstacart(false);
-        return;
-      }
-
-      const listResponse = await fetch(`${getApiUrl()}api/instacart/create-shopping-list`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          title: "ChefSpAIce Shopping List",
-          items: uncheckedItems.map((item) => ({
-            name: item.name,
-            quantity: item.quantity || 1,
-            unit: item.unit || undefined,
-            display_text: `${item.quantity || 1}${item.unit ? ` ${item.unit}` : ""} ${item.name}`,
-          })),
-        }),
-      });
-
-      const result = await listResponse.json();
-
-      if (result.success && result.shoppingListUrl) {
-        if (Platform.OS === "web") {
-          window.open(result.shoppingListUrl, "_blank");
-        } else {
-          await Linking.openURL(result.shoppingListUrl);
-        }
-      } else {
-        Alert.alert("Error", result.message || result.error || "Failed to create Instacart shopping list.");
-      }
-    } catch (error) {
-      console.error("Instacart error:", error);
-      Alert.alert("Error", "Failed to connect to Instacart. Please try again.");
-    } finally {
-      setSendingToInstacart(false);
-    }
   };
 
   const uncheckedItems = items.filter((i) => !i.isChecked);
@@ -268,22 +200,6 @@ export default function ShoppingListScreen() {
         </View>
       ) : null}
 
-      {uncheckedItems.length > 0 ? (
-        <View style={[styles.instacartButtonContainer, { paddingBottom: insets.bottom + Spacing.md }]}>
-          <GlassButton
-            onPress={handleSendToInstacart}
-            loading={sendingToInstacart}
-            disabled={sendingToInstacart}
-            icon={<Feather name="shopping-bag" size={18} color="#FFFFFF" />}
-            style={[styles.instacartButton, { backgroundColor: "#003D29" }]}
-            testID="button-send-to-instacart"
-          >
-            <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>
-              Send to Instacart
-            </ThemedText>
-          </GlassButton>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -360,13 +276,5 @@ const styles = StyleSheet.create({
   completedText: {
     color: "#FFFFFF",
     fontWeight: "600",
-  },
-  instacartButtonContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    backgroundColor: "transparent",
-  },
-  instacartButton: {
-    borderRadius: BorderRadius.md,
   },
 });

@@ -94,10 +94,21 @@ class SyncManager {
     this.isPaused = false;
     console.log("[Sync] Resuming sync (app in foreground)");
     
-    // Restart network check interval (with longer interval for battery)
+    // Clear any existing interval to avoid duplicates
+    if (this.networkCheckInterval) {
+      clearInterval(this.networkCheckInterval);
+      this.networkCheckInterval = null;
+    }
+    
+    // Always reinstate network check interval on resume
     this.networkCheckInterval = setInterval(() => {
-      this.checkNetworkStatus();
-    }, 60000); // 60 seconds when resuming
+      if (!this.isPaused) {
+        this.checkNetworkStatus();
+      }
+    }, 60000); // 60 seconds
+    
+    // Immediately check network status on resume
+    this.checkNetworkStatus();
     
     // Process any pending sync items
     this.processSyncQueue();

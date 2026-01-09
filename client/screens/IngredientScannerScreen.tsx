@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -11,7 +11,7 @@ import {
   AppStateStatus,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Feather } from "@expo/vector-icons";
@@ -74,15 +74,30 @@ export default function IngredientScannerScreen() {
   );
   const cameraRef = useRef<CameraView>(null);
   const [isCameraActive, setIsCameraActive] = useState(true);
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
 
+  // Handle navigation focus/blur - suspend camera when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
+
+  // Handle AppState changes - suspend camera when app goes to background
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      setIsCameraActive(nextAppState === "active");
+      setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
     
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
-  }, []);
+  }, [isScreenFocused]);
+
+  // Update camera active state based on both screen focus and app state
+  useEffect(() => {
+    setIsCameraActive(isScreenFocused && AppState.currentState === "active");
+  }, [isScreenFocused]);
 
   const handleCapture = async () => {
     if (!cameraRef.current || isCapturing) return;

@@ -14,7 +14,6 @@
  * - Cuisine preferences for recipe suggestions
  * - Allergy/dietary restrictions management
  * - Macro nutrient target adjustment
- * - Instacart integration settings
  * - Data management (clear data, reset preferences)
  * - Account deletion with confirmation flow
  * 
@@ -65,7 +64,6 @@ import {
   UserPreferences,
   DEFAULT_MACRO_TARGETS,
   MacroTargets,
-  InstacartSettings,
 } from "@/lib/storage";
 import { MEAL_PLAN_PRESETS, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 
@@ -121,24 +119,16 @@ export default function SettingsScreen() {
   });
   const [learnedPrefsCount, setLearnedPrefsCount] = useState(0);
   const [deleteStep, setDeleteStep] = useState<DeleteConfirmationStep>("none");
-  const [instacartSettings, setInstacartSettings] = useState<InstacartSettings>({
-    isConnected: false,
-    preferredStores: [],
-    zipCode: undefined,
-    apiKeyConfigured: false,
-  });
 
   const menuItems: MenuItemConfig[] = [];
 
   const loadData = useCallback(async () => {
-    const [prefs, prefsCount, instacart] = await Promise.all([
+    const [prefs, prefsCount] = await Promise.all([
       storage.getPreferences(),
       getLearnedPreferencesCount(),
-      storage.getInstacartSettings(),
     ]);
     setPreferences(prefs);
     setLearnedPrefsCount(prefsCount);
-    setInstacartSettings(instacart);
   }, []);
 
   useFocusEffect(
@@ -819,35 +809,6 @@ export default function SettingsScreen() {
             Reset to Default (50/35/15)
           </ThemedText>
         </GlassButton>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Grocery Shopping
-        </ThemedText>
-        <Pressable
-          style={styles.integrationRow}
-          onPress={() => navigation.navigate("InstacartSettings")}
-          testID="button-instacart-settings"
-        >
-          <View style={styles.settingInfo}>
-            <Feather name="shopping-cart" size={20} color={theme.text} />
-            <View style={styles.settingText}>
-              <ThemedText type="body" testID="text-instacart-title">Instacart</ThemedText>
-              <ThemedText type="caption" testID="text-instacart-status">
-                {instacartSettings.isConnected
-                  ? `Connected${instacartSettings.preferredStores.length > 0 ? ` - ${instacartSettings.preferredStores.length} stores` : ""}`
-                  : "Connect to order groceries"}
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.integrationStatus}>
-            {instacartSettings.isConnected && (
-              <View style={[styles.statusDot, { backgroundColor: AppColors.success }]} />
-            )}
-            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-          </View>
-        </Pressable>
       </GlassCard>
 
       <GlassCard style={styles.section}>

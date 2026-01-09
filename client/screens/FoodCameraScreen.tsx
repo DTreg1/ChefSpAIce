@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus } from "react-native";
 import Animated, {
   useSharedValue,
@@ -13,7 +13,7 @@ import Animated, {
   SlideInDown,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -153,15 +153,30 @@ export default function FoodCameraScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [screenState, setScreenState] = useState<ScreenState>("idle");
   const [isCameraActive, setIsCameraActive] = useState(true);
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
 
+  // Handle navigation focus/blur - suspend camera when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
+
+  // Handle AppState changes - suspend camera when app goes to background
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      setIsCameraActive(nextAppState === "active");
+      setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
     
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
-  }, []);
+  }, [isScreenFocused]);
+
+  // Update camera active state based on both screen focus and app state
+  useEffect(() => {
+    setIsCameraActive(isScreenFocused && AppState.currentState === "active");
+  }, [isScreenFocused]);
 
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageUri: string): Promise<AnalysisResult> => {

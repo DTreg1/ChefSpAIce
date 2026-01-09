@@ -21,7 +21,6 @@
  * - /api/suggestions - AI-powered recipe suggestions
  * - /api/recipes - Recipe CRUD and AI generation
  * - /api/nutrition - Nutrition data lookup
- * - /api/instacart - Instacart integration
  * - /api/user/appliances - User's kitchen equipment
  * - /api/voice - Voice command processing
  * - /api/ai - Image analysis for food recognition
@@ -60,7 +59,6 @@ import {
 import voiceRouter from "./routers/platform/voice.router";
 import imageAnalysisRouter from "./routers/platform/ai/image-analysis.router";
 import ingredientsRouter from "./routers/user/ingredients.router";
-import instacartRouter from "./routers/platform/instacart.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
 import syncRouter from "./routers/sync.router";
@@ -452,7 +450,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
   app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);
   app.use("/api/nutrition", requireAuth, requireSubscription, nutritionRouter);
-  app.use("/api/instacart", requireAuth, requireSubscription, instacartRouter);
   app.use("/api/user/appliances", requireAuth, requireSubscription, userAppliancesRouter);
   app.use("/api/voice", requireAuth, requireSubscription, voiceRouter);
   app.use("/api/ai", requireAuth, requireSubscription, imageAnalysisRouter);

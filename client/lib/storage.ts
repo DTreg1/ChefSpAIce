@@ -82,7 +82,6 @@ const STORAGE_KEYS = {
   COOKWARE: "@chefspaice/cookware",
   ONBOARDING: "@chefspaice/onboarding",
   CUSTOM_STORAGE_LOCATIONS: "@chefspaice/custom_storage_locations",
-  INSTACART_SETTINGS: "@chefspaice/instacart_settings",
   ONBOARDING_STEP: "@chefspaice/onboarding_step",
 } as const;
 
@@ -221,19 +220,6 @@ export interface UserPreferences {
   prioritizeExpiring?: boolean;
   cookingLevel?: 'basic' | 'intermediate' | 'professional';
   llmCreativity?: 'basic' | 'special' | 'spicy' | 'wild';
-}
-
-export interface InstacartStore {
-  id: string;
-  name: string;
-  isDefault?: boolean;
-}
-
-export interface InstacartSettings {
-  isConnected: boolean;
-  preferredStores: InstacartStore[];
-  zipCode?: string;
-  apiKeyConfigured?: boolean;
 }
 
 export const DEFAULT_MACRO_TARGETS: MacroTargets = {
@@ -996,49 +982,6 @@ export const storage = {
 
   async clearAuthToken(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-  },
-
-  async getInstacartSettings(): Promise<InstacartSettings> {
-    const settings = await getItem<InstacartSettings>(STORAGE_KEYS.INSTACART_SETTINGS);
-    return settings || {
-      isConnected: false,
-      preferredStores: [],
-      zipCode: undefined,
-      apiKeyConfigured: false,
-    };
-  },
-
-  async setInstacartSettings(settings: InstacartSettings): Promise<void> {
-    await setItem(STORAGE_KEYS.INSTACART_SETTINGS, settings);
-  },
-
-  async updateInstacartZipCode(zipCode: string): Promise<void> {
-    const settings = await this.getInstacartSettings();
-    await this.setInstacartSettings({ ...settings, zipCode });
-  },
-
-  async addInstacartStore(store: InstacartStore): Promise<void> {
-    const settings = await this.getInstacartSettings();
-    const exists = settings.preferredStores.some(s => s.id === store.id);
-    if (!exists) {
-      settings.preferredStores.push(store);
-      await this.setInstacartSettings(settings);
-    }
-  },
-
-  async removeInstacartStore(storeId: string): Promise<void> {
-    const settings = await this.getInstacartSettings();
-    settings.preferredStores = settings.preferredStores.filter(s => s.id !== storeId);
-    await this.setInstacartSettings(settings);
-  },
-
-  async setDefaultInstacartStore(storeId: string): Promise<void> {
-    const settings = await this.getInstacartSettings();
-    settings.preferredStores = settings.preferredStores.map(s => ({
-      ...s,
-      isDefault: s.id === storeId,
-    }));
-    await this.setInstacartSettings(settings);
   },
 
   async syncToCloud(): Promise<{ success: boolean; error?: string }> {

@@ -45,7 +45,6 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Scan Hub:** Centralized scanning interface for product barcodes, nutrition labels, recipes from paper, and AI food identification using GPT-4o vision.
 - **Offline Mode Indicator:** Animated banner indicating network status and pending sync changes.
 - **Stripe Donations:** Integration for secure user donations.
-- **Instacart Integration:** Allows users to send shopping lists and recipe ingredients directly to Instacart.
 - **Data Export:** Functionality to export inventory and recipes as CSV or PDF files.
 - **Inventory Filtering:** Advanced filtering by food group, sort options, and search capabilities.
 - **Feedback & Bug Reporting:** Users can submit feedback or bug reports via the AI chat modal.

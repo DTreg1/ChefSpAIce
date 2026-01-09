@@ -12,7 +12,6 @@ import CookwareScreen from "@/screens/CookwareScreen";
 import DevComponentsScreen from "@/screens/DevComponentsScreen";
 import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
-import InstacartSettingsScreen from "@/screens/InstacartSettingsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { HamburgerButton } from "@/components/HamburgerButton";
@@ -28,7 +27,6 @@ export type ProfileStackParamList = {
   DevComponents: undefined;
   BarcodeTest: undefined;
   StorageLocations: undefined;
-  InstacartSettings: undefined;
   Subscription: undefined;
 };
 
@@ -112,13 +110,6 @@ export default function ProfileStackNavigator() {
         component={StorageLocationsScreen}
         options={{
           headerTitle: "Storage Locations",
-        }}
-      />
-      <Stack.Screen
-        name="InstacartSettings"
-        component={InstacartSettingsScreen}
-        options={{
-          headerTitle: "Instacart",
         }}
       />
       <Stack.Screen

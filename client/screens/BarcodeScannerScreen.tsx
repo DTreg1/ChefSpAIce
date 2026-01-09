@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable, Platform, AppState, AppStateStatus } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   CameraView,
@@ -26,15 +26,30 @@ export default function BarcodeScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(true);
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
 
+  // Handle navigation focus/blur - suspend camera when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
+
+  // Handle AppState changes - suspend camera when app goes to background
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      setIsCameraActive(nextAppState === "active");
+      setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
     
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
-  }, []);
+  }, [isScreenFocused]);
+
+  // Update camera active state based on both screen focus and app state
+  useEffect(() => {
+    setIsCameraActive(isScreenFocused && AppState.currentState === "active");
+  }, [isScreenFocused]);
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult) => {
     if (scanned) return;

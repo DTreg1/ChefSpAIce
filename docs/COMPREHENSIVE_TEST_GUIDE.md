@@ -743,17 +743,6 @@ Test adding recipe ingredients to shopping list:
 6. Verify recipe ingredients appear
 ```
 
-### 9.6 Instacart Integration
-
-**Prompt:**
-```
-Test Instacart integration:
-1. Navigate to Shopping List with items
-2. Tap "Send to Instacart" button
-3. Verify Instacart opens (web or app)
-4. Verify items are transferred to Instacart cart
-```
-
 ---
 
 ## 10. Meal Planning
