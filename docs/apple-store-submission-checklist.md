@@ -148,9 +148,9 @@ Tasks:
 | ✅ | EAS configuration | eas.json configured for production builds |
 | ✅ | Build number | Set to 1, auto-increment enabled |
 | ✅ | Version number | 1.0.0 |
-| ⬜ | Production build | Run `eas build --platform ios --profile production` |
-| ⬜ | TestFlight internal testing | Test with internal team |
-| ⬜ | TestFlight external testing | Beta test with external users |
+| ✅ | Production build | Run `eas build --platform ios --profile production` |
+| ✅ | TestFlight internal testing | Test with internal team |
+| ⬜ | TestFlight external testing | Beta test with external users (optional) |
 | ⬜ | Submit for review | Submit via EAS or manually through ASC |
 
 ---
