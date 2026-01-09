@@ -49,7 +49,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme, setThemePreference } = useTheme();
+  const { theme, isDark, colorScheme, themePreference, setThemePreference } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
@@ -390,21 +390,34 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={styles.themeToggleGroup}>
-            {(["light", "system", "dark"] as ThemePreference[]).map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => setThemePreference(option)}
-                style={[
-                  styles.themeToggleButton,
-                ]}
-                data-testid={`button-theme-${option}`}
-              >
-                <Feather
-                  name={option === "light" ? "sun" : option === "dark" ? "moon" : "monitor"}
-                  size={16}
-                />
-              </Pressable>
-            ))}
+            {(["light", "system", "dark"] as ThemePreference[]).map((option) => {
+              const isSelected = themePreference === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setThemePreference(option)}
+                  style={[
+                    styles.themeToggleButton,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.primary
+                        : theme.glass.background,
+                      borderWidth: 1,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.glass.border,
+                    },
+                  ]}
+                  data-testid={`button-theme-${option}`}
+                >
+                  <Feather
+                    name={option === "light" ? "sun" : option === "dark" ? "moon" : "monitor"}
+                    size={16}
+                    color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                  />
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
