@@ -1,6 +1,9 @@
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "@/hooks/useTheme";
+import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
+import { Spacing } from "@/constants/Spacing";
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -19,6 +22,8 @@ function getThemeColors(isDark: boolean) {
 export default function AttributionsPage() {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
+  const insets = useSafeAreaInsets();
+  const menuItems: MenuItemConfig[] = [];
 
   const navigateTo = (path: string) => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -33,23 +38,21 @@ export default function AttributionsPage() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigateTo("/")} style={styles.logoContainer}>
-          <Text style={[styles.logoText, { color: colors.brandGreen }]}>ChefSpAIce</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-        >
-          {isDark ? (
-            <Feather name="sun" size={20} color={colors.textPrimary} />
-          ) : (
-            <Feather name="moon" size={20} color={colors.textPrimary} />
-          )}
-        </Pressable>
-      </View>
-
-      <View style={styles.main}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ExpoGlassHeader
+        title="Attributions"
+        screenKey="attributions"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingTop: 56 + insets.top + Spacing.lg },
+        ]}
+      >
+        <View style={styles.main}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Attributions</Text>
           <Text style={[styles.intro, { color: colors.textSecondary }]}>
@@ -185,7 +188,8 @@ export default function AttributionsPage() {
           </Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

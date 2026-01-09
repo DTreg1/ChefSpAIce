@@ -9,12 +9,12 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight, HeaderButton } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -106,25 +106,15 @@ function convertToUSDAFormat(item: UnifiedFoodItem): USDAFoodItem {
 
 export default function FoodSearchScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
+  const menuItems: MenuItemConfig[] = [];
 
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<UnifiedFoodItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <HeaderButton onPress={() => navigation.goBack()}>
-          <ThemedText style={{ color: AppColors.error }}>Cancel</ThemedText>
-        </HeaderButton>
-      ),
-    });
-  }, [navigation]);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
@@ -324,12 +314,18 @@ export default function FoodSearchScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title="Food Search"
+        screenKey="foodSearch"
+        showSearch={false}
+        menuItems={menuItems}
+      />
       <View
         style={[
           styles.searchContainer,
           {
-            paddingTop: Spacing.xs,
+            paddingTop: 56 + insets.top + Spacing.lg,
           },
         ]}
       >
@@ -390,7 +386,7 @@ export default function FoodSearchScreen() {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
-    </ThemedView>
+    </View>
   );
 }
 

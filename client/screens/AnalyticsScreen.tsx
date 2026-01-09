@@ -7,12 +7,13 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { subDays, isWithinInterval, parseISO } from "date-fns";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { WasteReductionStats } from "@/components/WasteReductionStats";
@@ -34,9 +35,9 @@ type TimeRange = "week" | "month" | "all";
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const menuItems: MenuItemConfig[] = [];
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
   const [wasteLog, setWasteLog] = useState<WasteLogEntry[]>([]);
@@ -225,17 +226,24 @@ export default function AnalyticsScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Spacing.lg,
-          paddingBottom: tabBarHeight + Spacing.xl,
-        },
-      ]}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+      <ExpoGlassHeader
+        title="Analytics"
+        screenKey="analytics"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: tabBarHeight + Spacing.xl,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+      >
       <View style={styles.timeRangeSelector}>
         {(["week", "month", "all"] as TimeRange[]).map((range) => (
           <Pressable
@@ -567,7 +575,8 @@ export default function AnalyticsScreen() {
           </View>
         </View>
       </GlassCard>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

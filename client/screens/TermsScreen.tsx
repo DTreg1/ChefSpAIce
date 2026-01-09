@@ -1,5 +1,8 @@
 import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
+import { Spacing } from "@/constants/Spacing";
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -16,10 +19,25 @@ function getThemeColors(isDark: boolean) {
 export default function TermsOfServicePage() {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
+  const insets = useSafeAreaInsets();
+  const menuItems: MenuItemConfig[] = [];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.main}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ExpoGlassHeader
+        title="Terms of Service"
+        screenKey="terms"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingTop: 56 + insets.top + Spacing.lg },
+        ]}
+      >
+        <View style={styles.main}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Terms of Service</Text>
           <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
@@ -91,7 +109,8 @@ export default function TermsOfServicePage() {
 
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

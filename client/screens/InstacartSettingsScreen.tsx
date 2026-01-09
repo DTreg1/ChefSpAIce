@@ -8,10 +8,11 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
@@ -23,8 +24,8 @@ import { getApiUrl } from "@/lib/query-client";
 
 export default function InstacartSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const menuItems: MenuItemConfig[] = [];
 
   const [settings, setSettings] = useState<InstacartSettings>({
     isConnected: false,
@@ -80,13 +81,20 @@ export default function InstacartSettingsScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: "transparent" }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: headerHeight + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
-      ]}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+      <ExpoGlassHeader
+        title="Instacart"
+        screenKey="instacart"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 56 + insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+        ]}
+      >
       <GlassCard>
         <View style={styles.section}>
           <View style={styles.headerRow}>
@@ -228,7 +236,8 @@ export default function InstacartSettingsScreen() {
       >
         Open Instacart Website
       </GlassButton>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

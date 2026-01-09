@@ -9,10 +9,11 @@ import {
   Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
@@ -36,9 +37,9 @@ const PRO_FEATURES = [
 
 export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation();
+  const menuItems: MenuItemConfig[] = [];
   const { token } = useAuth();
   const {
     tier,
@@ -200,14 +201,21 @@ export default function SubscriptionScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: headerHeight + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+      <ExpoGlassHeader
+        title="Subscription"
+        screenKey="subscription"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <ScrollView
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 56 + insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
       <GlassCard style={styles.planCard}>
         <View style={styles.planHeader}>
           <View style={styles.planInfo}>
@@ -482,7 +490,8 @@ export default function SubscriptionScreen() {
           Refresh subscription status
         </ThemedText>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

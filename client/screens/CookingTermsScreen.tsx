@@ -12,11 +12,12 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
@@ -42,9 +43,9 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 export default function CookingTermsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const menuItems: MenuItemConfig[] = [];
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -193,11 +194,17 @@ export default function CookingTermsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title="Cooking Terms"
+        screenKey="cookingTerms"
+        showSearch={false}
+        menuItems={menuItems}
+      />
       <View
         style={[
           styles.header,
           {
-            paddingTop: Spacing.xs,
+            paddingTop: 56 + insets.top + Spacing.lg,
             backgroundColor: theme.backgroundRoot,
           },
         ]}

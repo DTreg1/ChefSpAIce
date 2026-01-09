@@ -11,9 +11,10 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { HeaderButton } from "@react-navigation/elements";
+
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -154,10 +155,10 @@ function getConfidenceIcon(
 
 export default function AddItemScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AddItem">>();
+  const menuItems: MenuItemConfig[] = [];
 
   const today = new Date().toISOString().split("T")[0];
   const defaultExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -499,49 +500,6 @@ export default function AddItemScreen() {
         sugar: selectedFood.nutrition.sugar,
       }
     : undefined;
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <HeaderButton onPress={() => navigation.goBack()}>
-          <ThemedText style={{ color: AppColors.error }}>Cancel</ThemedText>
-        </HeaderButton>
-      ),
-      headerRight: () => (
-        <HeaderButton
-          onPress={handleSave}
-          disabled={saving || !hasSelectedFood}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={AppColors.primary} />
-          ) : (
-            <ThemedText
-              style={{
-                color: hasSelectedFood
-                  ? AppColors.primary
-                  : theme.textSecondary,
-                fontWeight: "600",
-              }}
-            >
-              Done
-            </ThemedText>
-          )}
-        </HeaderButton>
-      ),
-    });
-  }, [
-    navigation,
-    name,
-    quantity,
-    unit,
-    category,
-    storageLocation,
-    purchaseDate,
-    expirationDate,
-    notes,
-    saving,
-    hasSelectedFood,
-  ]);
 
   const handleSave = async () => {
     if (!hasSelectedFood) {
@@ -890,17 +848,24 @@ export default function AddItemScreen() {
 
   if (!hasSelectedFood) {
     return (
-      <KeyboardAwareScrollViewCompat
-        style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-        contentContainerStyle={[
-          styles.selectFoodContainer,
-          {
-            paddingTop: headerHeight + Spacing.xl,
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+        <ExpoGlassHeader
+          title="Add Item"
+          screenKey="addItem"
+          showSearch={false}
+          menuItems={menuItems}
+        />
+        <KeyboardAwareScrollViewCompat
+          style={[styles.container, { backgroundColor: "transparent" }]}
+          contentContainerStyle={[
+            styles.selectFoodContainer,
+            {
+              paddingTop: 56 + insets.top + Spacing.lg,
+              paddingBottom: insets.bottom + Spacing.xl,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
         {barcodeLoading ? (
           <View style={styles.selectFoodContent}>
             <ActivityIndicator size="large" color={AppColors.primary} />
@@ -1006,22 +971,30 @@ export default function AddItemScreen() {
             </View>
           </>
         )}
-      </KeyboardAwareScrollViewCompat>
+        </KeyboardAwareScrollViewCompat>
+      </View>
     );
   }
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: headerHeight + Spacing.md,
-          paddingBottom: insets.bottom + Spacing.xl,
-        },
-      ]}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+      <ExpoGlassHeader
+        title="Add Item"
+        screenKey="addItem"
+        showSearch={false}
+        menuItems={menuItems}
+      />
+      <KeyboardAwareScrollViewCompat
+        style={[styles.container, { backgroundColor: "transparent" }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: insets.bottom + Spacing.xl,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+      >
       <GlassCard style={styles.section}>
         <View style={styles.sectionHeaderWithAction}>
           <ThemedText type="h4" style={styles.sectionTitle}>
@@ -1323,7 +1296,8 @@ export default function AddItemScreen() {
           onChange={handleDateChange}
         />
       ) : null}
-    </KeyboardAwareScrollViewCompat>
+      </KeyboardAwareScrollViewCompat>
+    </View>
   );
 }
 
