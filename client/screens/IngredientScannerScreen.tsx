@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -71,6 +73,16 @@ export default function IngredientScannerScreen() {
     new Set(),
   );
   const cameraRef = useRef<CameraView>(null);
+  const [isCameraActive, setIsCameraActive] = useState(true);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      setIsCameraActive(nextAppState === "active");
+    };
+    
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   const handleCapture = async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -469,57 +481,59 @@ export default function IngredientScannerScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: "#000" }]}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back">
-        <View style={[styles.overlay, { paddingTop: insets.top }]}>
-          <View style={styles.header}>
-            <Pressable onPress={handleClose} style={styles.closeButton}>
-              <Feather name="x" size={28} color="#FFFFFF" />
-            </Pressable>
-          </View>
+      {isCameraActive && (
+        <CameraView ref={cameraRef} style={styles.camera} facing="back">
+          <View style={[styles.overlay, { paddingTop: insets.top }]}>
+            <View style={styles.header}>
+              <Pressable onPress={handleClose} style={styles.closeButton}>
+                <Feather name="x" size={28} color="#FFFFFF" />
+              </Pressable>
+            </View>
 
-          <View style={styles.scanFrame}>
-            <View style={styles.scanGuide}>
-              <View style={[styles.corner, styles.topLeft]} />
-              <View style={[styles.corner, styles.topRight]} />
-              <View style={[styles.corner, styles.bottomLeft]} />
-              <View style={[styles.corner, styles.bottomRight]} />
+            <View style={styles.scanFrame}>
+              <View style={styles.scanGuide}>
+                <View style={[styles.corner, styles.topLeft]} />
+                <View style={[styles.corner, styles.topRight]} />
+                <View style={[styles.corner, styles.bottomLeft]} />
+                <View style={[styles.corner, styles.bottomRight]} />
+              </View>
+            </View>
+
+            <View style={styles.instructions}>
+              <ThemedText type="body" style={styles.instructionText}>
+                Position the ingredient label within the frame
+              </ThemedText>
+            </View>
+
+            <View
+              style={[
+                styles.controls,
+                { paddingBottom: insets.bottom + Spacing.xl },
+              ]}
+            >
+              {isProcessing ? (
+                <View style={styles.processingContainer}>
+                  <ActivityIndicator size="large" color="#FFFFFF" />
+                  <ThemedText type="body" style={styles.processingText}>
+                    Scanning label...
+                  </ThemedText>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={handleCapture}
+                  disabled={isCapturing}
+                  style={[
+                    styles.captureButton,
+                    isCapturing && styles.captureButtonDisabled,
+                  ]}
+                >
+                  <View style={styles.captureButtonInner} />
+                </Pressable>
+              )}
             </View>
           </View>
-
-          <View style={styles.instructions}>
-            <ThemedText type="body" style={styles.instructionText}>
-              Position the ingredient label within the frame
-            </ThemedText>
-          </View>
-
-          <View
-            style={[
-              styles.controls,
-              { paddingBottom: insets.bottom + Spacing.xl },
-            ]}
-          >
-            {isProcessing ? (
-              <View style={styles.processingContainer}>
-                <ActivityIndicator size="large" color="#FFFFFF" />
-                <ThemedText type="body" style={styles.processingText}>
-                  Scanning label...
-                </ThemedText>
-              </View>
-            ) : (
-              <Pressable
-                onPress={handleCapture}
-                disabled={isCapturing}
-                style={[
-                  styles.captureButton,
-                  isCapturing && styles.captureButtonDisabled,
-                ]}
-              >
-                <View style={styles.captureButtonInner} />
-              </Pressable>
-            )}
-          </View>
-        </View>
-      </CameraView>
+        </CameraView>
+      )}
     </View>
   );
 }

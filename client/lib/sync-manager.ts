@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 
 const SYNC_KEYS = {
@@ -41,9 +42,65 @@ class SyncManager {
   private networkCheckInterval: ReturnType<typeof setInterval> | null = null;
   private consecutiveFailures = 0;
   private lastSuccessfulRequest = Date.now();
+  private appState: AppStateStatus = "active";
+  private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+  private isPaused = false;
 
   constructor() {
     this.initNetworkListener();
+    this.initAppStateListener();
+  }
+
+  private initAppStateListener() {
+    this.appState = AppState.currentState;
+    this.appStateSubscription = AppState.addEventListener("change", (nextAppState) => {
+      const wasBackground = this.appState === "background" || this.appState === "inactive";
+      const isNowActive = nextAppState === "active";
+      
+      this.appState = nextAppState;
+      
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        // App going to background - pause sync operations to save battery
+        this.pauseSync();
+      } else if (isNowActive && wasBackground) {
+        // App coming back to foreground - resume sync
+        this.resumeSync();
+      }
+    });
+  }
+
+  private pauseSync() {
+    if (this.isPaused) return;
+    
+    this.isPaused = true;
+    console.log("[Sync] Pausing sync (app in background)");
+    
+    // Clear any pending sync timers
+    if (this.syncTimer) {
+      clearTimeout(this.syncTimer);
+      this.syncTimer = null;
+    }
+    
+    // Pause network check interval
+    if (this.networkCheckInterval) {
+      clearInterval(this.networkCheckInterval);
+      this.networkCheckInterval = null;
+    }
+  }
+
+  private resumeSync() {
+    if (!this.isPaused) return;
+    
+    this.isPaused = false;
+    console.log("[Sync] Resuming sync (app in foreground)");
+    
+    // Restart network check interval (with longer interval for battery)
+    this.networkCheckInterval = setInterval(() => {
+      this.checkNetworkStatus();
+    }, 60000); // 60 seconds when resuming
+    
+    // Process any pending sync items
+    this.processSyncQueue();
   }
 
   private async initNetworkListener() {
@@ -52,8 +109,10 @@ class SyncManager {
     
     // Check periodically but with a longer interval since we track API success/failure
     this.networkCheckInterval = setInterval(() => {
-      this.checkNetworkStatus();
-    }, 30000); // Check every 30 seconds instead of 5
+      if (!this.isPaused) {
+        this.checkNetworkStatus();
+      }
+    }, 60000); // Check every 60 seconds (was 30) for better battery
   }
 
   private checkNetworkStatus() {
@@ -194,17 +253,23 @@ class SyncManager {
   }
 
   private scheduleSyncDebounced() {
+    // Don't schedule if app is in background
+    if (this.isPaused) {
+      return;
+    }
+    
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
     }
     
     this.syncTimer = setTimeout(() => {
       this.processSyncQueue();
-    }, 1000);
+    }, 2000); // Increased debounce to 2 seconds for battery
   }
 
   async processSyncQueue(): Promise<void> {
-    if (!this.isOnline || this.isSyncing) {
+    // Don't process if app is in background
+    if (this.isPaused || !this.isOnline || this.isSyncing) {
       return;
     }
 
@@ -439,6 +504,9 @@ class SyncManager {
     }
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
+    }
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
     }
     this.listeners.clear();
   }

@@ -42,17 +42,28 @@ import { syncManager } from "@/lib/sync-manager";
 
 /** Lazy-loaded notification scheduler to avoid circular dependencies */
 let scheduleNotifications: (() => Promise<number>) | null = null;
+let notificationDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function triggerNotificationReschedule() {
-  if (!scheduleNotifications) {
-    const { scheduleExpirationNotifications } = await import("@/lib/notifications");
-    scheduleNotifications = scheduleExpirationNotifications;
+/** Debounced notification rescheduling to avoid excessive CPU/battery usage */
+function triggerNotificationReschedule() {
+  // Debounce notification rescheduling - wait 5 seconds after last change
+  if (notificationDebounceTimer) {
+    clearTimeout(notificationDebounceTimer);
   }
-  try {
-    await scheduleNotifications();
-  } catch (error) {
-    console.error("Failed to reschedule notifications:", error);
-  }
+  
+  notificationDebounceTimer = setTimeout(async () => {
+    notificationDebounceTimer = null;
+    
+    if (!scheduleNotifications) {
+      const { scheduleExpirationNotifications } = await import("@/lib/notifications");
+      scheduleNotifications = scheduleExpirationNotifications;
+    }
+    try {
+      await scheduleNotifications();
+    } catch (error) {
+      console.error("Failed to reschedule notifications:", error);
+    }
+  }, 5000); // 5 second debounce
 }
 
 const STORAGE_KEYS = {
@@ -527,7 +538,7 @@ export const storage = {
       if (imageUri.startsWith("data:image")) {
         base64Data = imageUri;
       } else if (imageUri.startsWith("file://") && Platform.OS !== "web") {
-        const FileSystem = await import("expo-file-system");
+        const FileSystem = await import("expo-file-system/legacy");
         base64Data = await FileSystem.readAsStringAsync(imageUri, {
           encoding: FileSystem.EncodingType.Base64,
         });

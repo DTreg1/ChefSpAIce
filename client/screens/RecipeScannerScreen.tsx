@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -50,6 +52,16 @@ export default function RecipeScannerScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanResult, setScanResult] = useState<ScannedRecipe | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const [isCameraActive, setIsCameraActive] = useState(true);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      setIsCameraActive(nextAppState === "active");
+    };
+    
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   const handleCapture = async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -406,70 +418,72 @@ export default function RecipeScannerScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing="back"
-        mode="picture"
-      >
-        <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
-          <View style={styles.cameraHeader}>
-            <Pressable
-              testID="button-close-recipe-scanner"
-              onPress={handleClose}
-              style={styles.cameraButton}
-            >
-              <Feather name="x" size={24} color="#FFFFFF" />
-            </Pressable>
-            <View style={styles.cameraHeaderCenter}>
-              <ThemedText type="h4" style={styles.cameraTitle}>
-                Scan Recipe
-              </ThemedText>
-              <ThemedText type="caption" style={styles.cameraSubtitle}>
-                Point at a cookbook or printed recipe
-              </ThemedText>
-            </View>
-            <View style={styles.cameraHeaderSpacer} />
-          </View>
-
-          <View style={styles.scanFrame}>
-            <View style={[styles.corner, styles.cornerTL]} />
-            <View style={[styles.corner, styles.cornerTR]} />
-            <View style={[styles.corner, styles.cornerBL]} />
-            <View style={[styles.corner, styles.cornerBR]} />
-          </View>
-
-          <View
-            style={[styles.cameraFooter, { paddingBottom: insets.bottom + 20 }]}
-          >
-            {isProcessing ? (
-              <View style={styles.processingContainer}>
-                <ActivityIndicator size="large" color="#FFFFFF" />
-                <ThemedText type="body" style={styles.processingText}>
-                  Extracting recipe...
+      {isCameraActive && (
+        <CameraView
+          ref={cameraRef}
+          style={styles.camera}
+          facing="back"
+          mode="picture"
+        >
+          <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
+            <View style={styles.cameraHeader}>
+              <Pressable
+                testID="button-close-recipe-scanner"
+                onPress={handleClose}
+                style={styles.cameraButton}
+              >
+                <Feather name="x" size={24} color="#FFFFFF" />
+              </Pressable>
+              <View style={styles.cameraHeaderCenter}>
+                <ThemedText type="h4" style={styles.cameraTitle}>
+                  Scan Recipe
+                </ThemedText>
+                <ThemedText type="caption" style={styles.cameraSubtitle}>
+                  Point at a cookbook or printed recipe
                 </ThemedText>
               </View>
-            ) : (
-              <>
-                <ThemedText type="caption" style={styles.tipText}>
-                  Tip: Make sure the recipe text is clearly visible
-                </ThemedText>
-                <Pressable
-                  testID="button-capture-recipe"
-                  onPress={handleCapture}
-                  disabled={isCapturing}
-                  style={[
-                    styles.captureButton,
-                    isCapturing && styles.captureButtonDisabled,
-                  ]}
-                >
-                  <View style={styles.captureButtonInner} />
-                </Pressable>
-              </>
-            )}
+              <View style={styles.cameraHeaderSpacer} />
+            </View>
+
+            <View style={styles.scanFrame}>
+              <View style={[styles.corner, styles.cornerTL]} />
+              <View style={[styles.corner, styles.cornerTR]} />
+              <View style={[styles.corner, styles.cornerBL]} />
+              <View style={[styles.corner, styles.cornerBR]} />
+            </View>
+
+            <View
+              style={[styles.cameraFooter, { paddingBottom: insets.bottom + 20 }]}
+            >
+              {isProcessing ? (
+                <View style={styles.processingContainer}>
+                  <ActivityIndicator size="large" color="#FFFFFF" />
+                  <ThemedText type="body" style={styles.processingText}>
+                    Extracting recipe...
+                  </ThemedText>
+                </View>
+              ) : (
+                <>
+                  <ThemedText type="caption" style={styles.tipText}>
+                    Tip: Make sure the recipe text is clearly visible
+                  </ThemedText>
+                  <Pressable
+                    testID="button-capture-recipe"
+                    onPress={handleCapture}
+                    disabled={isCapturing}
+                    style={[
+                      styles.captureButton,
+                      isCapturing && styles.captureButtonDisabled,
+                    ]}
+                  >
+                    <View style={styles.captureButtonInner} />
+                  </Pressable>
+                </>
+              )}
+            </View>
           </View>
-        </View>
-      </CameraView>
+        </CameraView>
+      )}
     </View>
   );
 }

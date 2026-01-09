@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, Pressable, Platform, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -152,6 +152,16 @@ export default function FoodCameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [screenState, setScreenState] = useState<ScreenState>("idle");
+  const [isCameraActive, setIsCameraActive] = useState(true);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      setIsCameraActive(nextAppState === "active");
+    };
+    
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageUri: string): Promise<AnalysisResult> => {
@@ -546,34 +556,36 @@ export default function FoodCameraScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
-        <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
-          <View style={styles.cameraHeader}>
-            <View style={styles.headerPlaceholder} />
-            <ThemedText type="h4" style={styles.cameraHeaderTitle}>
-              Scan Food
-            </ThemedText>
-            <Pressable style={styles.headerButton} onPress={handleClose}>
-              <Feather name="x" size={28} color="#FFFFFF" />
-            </Pressable>
-          </View>
+      {isCameraActive && (
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
+          <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
+            <View style={styles.cameraHeader}>
+              <View style={styles.headerPlaceholder} />
+              <ThemedText type="h4" style={styles.cameraHeaderTitle}>
+                Scan Food
+              </ThemedText>
+              <Pressable style={styles.headerButton} onPress={handleClose}>
+                <Feather name="x" size={28} color="#FFFFFF" />
+              </Pressable>
+            </View>
 
-          <View style={styles.frameContainer}>
-            <View style={styles.frameGuide}>
-              <View style={styles.frameCorner} />
-              <View style={[styles.frameCorner, styles.topRight]} />
-              <View style={[styles.frameCorner, styles.bottomLeft]} />
-              <View style={[styles.frameCorner, styles.bottomRight]} />
+            <View style={styles.frameContainer}>
+              <View style={styles.frameGuide}>
+                <View style={styles.frameCorner} />
+                <View style={[styles.frameCorner, styles.topRight]} />
+                <View style={[styles.frameCorner, styles.bottomLeft]} />
+                <View style={[styles.frameCorner, styles.bottomRight]} />
+              </View>
+            </View>
+
+            <View style={styles.hintContainer}>
+              <ThemedText type="body" style={styles.hintText}>
+                Position food items within the frame
+              </ThemedText>
             </View>
           </View>
-
-          <View style={styles.hintContainer}>
-            <ThemedText type="body" style={styles.hintText}>
-              Position food items within the frame
-            </ThemedText>
-          </View>
-        </View>
-      </CameraView>
+        </CameraView>
+      )}
 
       <View
         style={[styles.controls, { paddingBottom: insets.bottom + Spacing.xl }]}
