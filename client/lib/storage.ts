@@ -577,6 +577,7 @@ export const storage = {
     const recipes = await this.getRawRecipes();
     const index = recipes.findIndex((r) => r.id === recipe.id);
     if (index !== -1) {
+      const oldRecipe = recipes[index];
       const updatedRecipe = { ...recipe, updatedAt: new Date().toISOString() };
       // Store large base64 images separately to avoid AsyncStorage size limits
       if (recipe.imageUri?.startsWith("data:image")) {
@@ -590,6 +591,13 @@ export const storage = {
       
       const token = await this.getAuthToken();
       if (token) {
+        // Upload to cloud if image changed
+        const imageChanged = recipe.imageUri !== oldRecipe.imageUri && 
+          (recipe.imageUri?.startsWith("data:image") || recipe.imageUri?.startsWith("file://"));
+        if (imageChanged) {
+          this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(() => {});
+        }
+        
         const recipeForSync = { ...recipes[index], imageUri: undefined };
         syncManager.queueChange("recipes", "update", recipeForSync);
       }
