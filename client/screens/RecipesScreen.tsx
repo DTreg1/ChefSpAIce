@@ -106,9 +106,14 @@ export default function RecipesScreen() {
       active: showFavoritesOnly,
     },
     {
-      label: "Customize",
+      label: "Custom Recipe",
       icon: "sliders",
       onPress: () => setShowSettingsModal(true),
+    },
+    {
+      label: "Quick Recipe",
+      icon: "zap",
+      onPress: () => navigation.navigate("GenerateRecipe"),
     },
     {
       label: exporting ? "Exporting..." : "Export to CSV",
