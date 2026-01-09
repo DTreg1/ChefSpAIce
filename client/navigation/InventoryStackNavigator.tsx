@@ -77,10 +77,14 @@ const styles = StyleSheet.create({
   headerLeftContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    height: 44,
     zIndex: 1000,
   },
   headerButton: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -69,6 +69,8 @@ const styles = StyleSheet.create({
   headerLeftContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    height: 44,
     zIndex: 1000,
   },
 });
