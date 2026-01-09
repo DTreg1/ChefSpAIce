@@ -24,6 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const hasPersistedScheme = useRef(false);
   const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     Promise.all([
@@ -48,13 +49,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Listen for app state changes to refresh theme when app comes back to foreground
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        // Force a fresh read of the current system color scheme
-        const currentScheme = Appearance.getColorScheme();
-        console.log("[Theme] App resumed, system scheme:", currentScheme, "preference:", themePreference);
-        if (currentScheme === "light" || currentScheme === "dark") {
-          setLiveSystemScheme(currentScheme);
-        }
+      const previousState = appStateRef.current;
+      appStateRef.current = nextAppState;
+      
+      // Only update theme when transitioning TO active state
+      if (nextAppState === "active" && previousState !== "active") {
+        // Small delay to let iOS settle and report the correct scheme
+        setTimeout(() => {
+          const currentScheme = Appearance.getColorScheme();
+          console.log("[Theme] App resumed, system scheme:", currentScheme, "preference:", themePreference);
+          if (currentScheme === "light" || currentScheme === "dark") {
+            setLiveSystemScheme(currentScheme);
+          }
+        }, 100);
       }
     };
 
@@ -63,10 +70,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [themePreference]);
 
   // Also listen for Appearance changes directly (handles real-time system theme changes)
+  // BUT only when the app is active - ignore changes while backgrounded
   useEffect(() => {
     const listener = Appearance.addChangeListener(({ colorScheme }) => {
-      if (colorScheme === "light" || colorScheme === "dark") {
-        setLiveSystemScheme(colorScheme);
+      // Only update if app is currently active
+      if (appStateRef.current === "active") {
+        if (colorScheme === "light" || colorScheme === "dark") {
+          console.log("[Theme] Appearance changed while active:", colorScheme);
+          setLiveSystemScheme(colorScheme);
+        }
+      } else {
+        console.log("[Theme] Ignoring appearance change while backgrounded:", colorScheme);
       }
     });
     return () => listener.remove();
