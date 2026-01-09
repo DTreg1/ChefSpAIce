@@ -49,7 +49,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme, themePreference, setThemePreference } = useTheme();
+  const { theme, isDark, colorScheme, setThemePreference } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
@@ -386,11 +386,6 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <ThemedText type="body">Theme</ThemedText>
               <ThemedText type="caption">
-                {themePreference === "system" 
-                  ? `System (${isDark ? "Dark" : "Light"})` 
-                  : themePreference === "dark" 
-                    ? "Dark mode" 
-                    : "Light mode"}
               </ThemedText>
             </View>
           </View>
@@ -401,18 +396,12 @@ export default function ProfileScreen() {
                 onPress={() => setThemePreference(option)}
                 style={[
                   styles.themeToggleButton,
-                  {
-                    backgroundColor: themePreference === option 
-                      ? AppColors.accent 
-                      : theme.backgroundSecondary,
-                  },
                 ]}
                 data-testid={`button-theme-${option}`}
               >
                 <Feather
                   name={option === "light" ? "sun" : option === "dark" ? "moon" : "monitor"}
                   size={16}
-                  color={themePreference === option ? "#FFFFFF" : theme.textSecondary}
                 />
               </Pressable>
             ))}

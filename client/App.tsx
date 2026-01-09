@@ -26,8 +26,7 @@
 
 import React, { useMemo, useState, useCallback, useRef } from "react";
 import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
-import { useColorScheme as useSystemColorScheme } from "react-native";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import {
   NavigationContainer,
@@ -114,8 +113,8 @@ function getActiveRouteName(
  * - Screen identifier overlay (for development)
  */
 function MobileAppContent() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const colorScheme = useTheme();
+  const isDark = colorScheme.isDark;
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
   const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } = useSubscription();

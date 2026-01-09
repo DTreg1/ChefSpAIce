@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Dimensions, View } from "react-native";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/useTheme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -131,8 +131,8 @@ interface AnimatedBackgroundProps {
 export function AnimatedBackground({
   bubbleCount = 15,
 }: AnimatedBackgroundProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const colorScheme = useTheme();
+  const isDark = colorScheme.isDark;
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
