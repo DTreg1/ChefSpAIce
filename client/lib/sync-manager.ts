@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Network from "expo-network";
 import { getApiUrl } from "@/lib/query-client";
 
 const SYNC_KEYS = {
@@ -40,81 +39,66 @@ class SyncManager {
   private isSyncing = false;
   private syncTimer: ReturnType<typeof setTimeout> | null = null;
   private networkCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private consecutiveFailures = 0;
+  private lastSuccessfulRequest = Date.now();
 
   constructor() {
     this.initNetworkListener();
   }
 
   private async initNetworkListener() {
-    await this.checkNetworkStatus();
+    // Assume online by default - expo-network is unreliable in Expo Go
+    this.isOnline = true;
     
-    this.networkCheckInterval = setInterval(async () => {
-      await this.checkNetworkStatus();
-    }, 5000);
+    // Check periodically but with a longer interval since we track API success/failure
+    this.networkCheckInterval = setInterval(() => {
+      this.checkNetworkStatus();
+    }, 30000); // Check every 30 seconds instead of 5
   }
 
-  private async checkNetworkStatus() {
-    try {
-      const networkState = await Network.getNetworkStateAsync();
-      const wasOffline = !this.isOnline;
-      
-      // Use isInternetReachable if available (more reliable than isConnected)
-      // Fall back to isConnected, then default to true
-      let networkOnline = networkState.isInternetReachable ?? networkState.isConnected ?? true;
-      
-      // Log network state for debugging
-      if (!networkOnline) {
-        console.log(`[Sync] Network reports offline (connected: ${networkState.isConnected}, reachable: ${networkState.isInternetReachable})`);
-      }
-      
-      // If expo-network reports offline, do a quick ping check as fallback
-      // expo-network can be unreliable in Expo Go on cellular
-      if (!networkOnline) {
-        console.log("[Sync] Performing ping check fallback...");
-        networkOnline = await this.pingCheck();
-        console.log(`[Sync] Ping check result: ${networkOnline ? "online" : "offline"}`);
-      }
-      
-      this.isOnline = networkOnline;
-      
-      // Log significant state changes
-      if (wasOffline && this.isOnline) {
-        console.log("[Sync] Network restored, processing sync queue");
-        this.processSyncQueue();
-      } else if (!wasOffline && !this.isOnline) {
-        console.log("[Sync] Network connection lost");
-      }
-      
-      this.notifyListeners();
-    } catch (error) {
-      console.log("[Sync] Network check error, assuming online:", error);
+  private checkNetworkStatus() {
+    // Simple heuristic: if we've had recent successful requests, we're online
+    // If we've had 3+ consecutive failures, we're offline
+    const timeSinceLastSuccess = Date.now() - this.lastSuccessfulRequest;
+    const wasOffline = !this.isOnline;
+    
+    if (this.consecutiveFailures >= 3) {
+      this.isOnline = false;
+    } else if (timeSinceLastSuccess < 60000) {
+      // Had success in the last minute - definitely online
       this.isOnline = true;
+    }
+    // Otherwise keep current state
+    
+    if (wasOffline && this.isOnline) {
+      console.log("[Sync] Network restored, processing sync queue");
+      this.processSyncQueue();
+    } else if (!wasOffline && !this.isOnline) {
+      console.log("[Sync] Network appears offline after multiple failures");
+    }
+    
+    this.notifyListeners();
+  }
+
+  // Call this when any API request succeeds
+  markRequestSuccess() {
+    this.consecutiveFailures = 0;
+    this.lastSuccessfulRequest = Date.now();
+    if (!this.isOnline) {
+      this.isOnline = true;
+      console.log("[Sync] Network restored (API request succeeded)");
+      this.notifyListeners();
+      this.processSyncQueue();
     }
   }
 
-  private async pingCheck(): Promise<boolean> {
-    try {
-      const controller = new AbortController();
-      // Increase timeout to 8 seconds - mobile networks can be slow
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      
-      // Use GET instead of HEAD - more reliable across proxies/CDNs
-      const response = await fetch(`${getApiUrl()}/api/health`, {
-        method: "GET",
-        signal: controller.signal,
-        // Prevent caching to ensure we actually hit the server
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-      });
-      
-      clearTimeout(timeout);
-      return response.ok;
-    } catch (error) {
-      // Log the actual error for debugging
-      console.log("[Sync] Ping check failed:", error instanceof Error ? error.message : "Unknown error");
-      return false;
+  // Call this when any API request fails due to network error
+  markRequestFailure() {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= 3 && this.isOnline) {
+      this.isOnline = false;
+      console.log("[Sync] Network appears offline after 3 consecutive failures");
+      this.notifyListeners();
     }
   }
 
@@ -318,18 +302,28 @@ class SyncManager {
     const method = item.operation === "delete" ? "DELETE" : 
                    item.operation === "create" ? "POST" : "PUT";
 
-    const response = await fetch(url.toString(), {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        operation: item.operation,
-        data: item.data,
-        clientTimestamp: item.timestamp,
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          operation: item.operation,
+          data: item.data,
+          clientTimestamp: item.timestamp,
+        }),
+      });
+    } catch (error) {
+      // Network error - mark as failure
+      this.markRequestFailure();
+      throw error;
+    }
+
+    // Got a response - mark as success (even if it's an error status, network worked)
+    this.markRequestSuccess();
 
     if (!response.ok) {
       const error = new Error(`Sync failed: ${response.status}`) as Error & { statusCode: number };
@@ -369,10 +363,7 @@ class SyncManager {
   }
 
   async fullSync(): Promise<{ success: boolean; error?: string }> {
-    if (!this.isOnline) {
-      return { success: false, error: "No internet connection" };
-    }
-
+    // Don't block on offline status - try anyway and let the request determine connectivity
     const token = await this.getAuthToken();
     if (!token) {
       return { success: false, error: "Not authenticated" };
@@ -387,13 +378,21 @@ class SyncManager {
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
       
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      let response: Response;
+      try {
+        response = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        this.markRequestFailure();
+        throw error;
+      }
+
+      this.markRequestSuccess();
 
       if (!response.ok) {
         throw new Error("Failed to fetch from server");
