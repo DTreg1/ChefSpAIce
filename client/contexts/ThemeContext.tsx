@@ -1,65 +1,102 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { View, ActivityIndicator, StyleSheet, Appearance, AppState, AppStateStatus } from "react-native";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { View, ActivityIndicator, StyleSheet, Appearance, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Colors } from "@/constants/theme";
 
 const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
-const RESOLVED_SCHEME_KEY = "@chefspaice/resolved_scheme";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ColorScheme = "light" | "dark";
+export type ThemeColors = typeof Colors.light;
 
 interface ThemeContextType {
+  theme: ThemeColors;
   colorScheme: ColorScheme;
+  themePreference: ThemePreference;
   setThemePreference: (preference: ThemePreference) => void;
   isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+function getSystemScheme(): ColorScheme {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  const scheme = Appearance.getColorScheme();
+  return scheme === "light" || scheme === "dark" ? scheme : "dark";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference | null>(null);
-  const [cachedResolvedScheme, setCachedResolvedScheme] = useState<ColorScheme | null>(null);
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>("system");
+  const [systemScheme, setSystemScheme] = useState<ColorScheme>(getSystemScheme);
   const [isLoaded, setIsLoaded] = useState(false);
-  const hasPersistedScheme = useRef(false);
-  // Initialize with current appearance - this is our single source of truth for system theme
-  const [liveSystemScheme, setLiveSystemScheme] = useState<ColorScheme>(() => {
-    const initial = Appearance.getColorScheme();
-    return initial === "light" || initial === "dark" ? initial : "dark";
-  });
+
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setThemePreferenceState(stored);
+      }
+      setIsLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (e: MediaQueryListEvent) => {
+        setSystemScheme(e.matches ? "dark" : "light");
+      };
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    } else {
+      const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+        if (colorScheme === "light" || colorScheme === "dark") {
+          setSystemScheme(colorScheme);
+        }
+      });
+      return () => subscription.remove();
+    }
+  }, []);
 
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
     AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
+    
+    if (Platform.OS === "web" && typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      localStorage.setItem("chefspaice-theme", preference);
+      const resolved = preference === "system" ? getSystemScheme() : preference;
+      document.documentElement?.classList?.toggle("dark", resolved === "dark");
+    }
   }, []);
 
-  // liveSystemScheme is now our single source of truth for system theme
-  // It's initialized on mount and only updated when app is active
-  const effectiveSystemScheme: ColorScheme = liveSystemScheme;
-
-  // Calculate the final color scheme
   const colorScheme: ColorScheme = 
-    themePreference === "system" || themePreference === null
-      ? effectiveSystemScheme 
-      : themePreference;
+    themePreference === "system" ? systemScheme : themePreference;
 
-  // Persist the resolved scheme whenever it changes (for next app launch)
-  useEffect(() => {
-    if (isLoaded && colorScheme && !hasPersistedScheme.current) {
-      hasPersistedScheme.current = true;
-      AsyncStorage.setItem(RESOLVED_SCHEME_KEY, colorScheme);
-    } else if (isLoaded && colorScheme) {
-      // Always update when scheme changes
-      AsyncStorage.setItem(RESOLVED_SCHEME_KEY, colorScheme);
-    }
-  }, [isLoaded, colorScheme]);
-
-
+  const theme = useMemo(() => Colors[colorScheme], [colorScheme]);
+  
   const isDark = colorScheme === "dark";
+
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof window !== "undefined" && typeof document !== "undefined") {
+      document.documentElement?.classList?.toggle("dark", isDark);
+    }
+  }, [isDark]);
+
+  if (!isLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="small" color="#E67E22" />
+      </View>
+    );
+  }
 
   return (
     <ThemeContext.Provider
       value={{
+        theme,
         colorScheme,
+        themePreference,
         setThemePreference,
         isDark,
       }}
@@ -74,11 +111,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1a1a2e", // Dark background to match app's dark theme
+    backgroundColor: "#1a2e05",
   },
 });
 
-export function useTheme() {
+export function useThemeContext() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error("useThemeContext must be used within a ThemeProvider");
