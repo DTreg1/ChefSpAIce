@@ -40,7 +40,6 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -66,6 +65,8 @@ import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithCon
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { NutritionBadge } from "@/components/NutritionBadge";
 import { NutritionScoreBadge } from "@/components/NutritionScoreBadge";
 import { InventoryListSkeleton } from "@/components/Skeleton";
@@ -91,6 +92,7 @@ import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UsageBadge } from "@/components/UpgradePrompt";
 import { useSearch } from "@/contexts/SearchContext";
+import { useInventoryExport } from "@/hooks/useInventoryExport";
 
 type FoodGroup =
   | "grains"
@@ -203,15 +205,23 @@ const getItemFoodGroup = (item: FoodItem): FoodGroup | null => {
 
 export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<InventoryStackParamList>>();
   const queryClient = useQueryClient();
   const { usage, entitlements, isProUser } = useSubscription();
+  const { handleExport } = useInventoryExport();
 
   const { getSearchQuery, clearSearch, collapseSearch } = useSearch();
+
+  const menuItems: MenuItemConfig[] = [
+    {
+      label: "Export to CSV",
+      icon: "download",
+      onPress: handleExport,
+    },
+  ];
   const searchQuery = getSearchQuery("inventory");
   const [items, setItems] = useState<FoodItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<FoodItem[]>([]);
@@ -980,8 +990,15 @@ export default function InventoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-inventory">
+      <ExpoGlassHeader
+        title="Kitchen"
+        materialIcon="stove"
+        screenKey="inventory"
+        searchPlaceholder="Search items..."
+        menuItems={menuItems}
+      />
       <View 
-        style={styles.searchContainer}
+        style={[styles.searchContainer, { top: 56 + insets.top }]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
         {/* Food Group Row */}
@@ -1038,7 +1055,7 @@ export default function InventoryScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: filterHeaderHeight + Spacing.md,
+            paddingTop: 56 + insets.top + filterHeaderHeight + Spacing.md,
             paddingBottom: tabBarHeight + Spacing.xl,
           },
         ]}

@@ -9,7 +9,6 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -28,6 +27,8 @@ import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
@@ -292,7 +293,6 @@ const CookwareItem = React.memo(function CookwareItem({
 
 export default function CookwareScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const queryClient = useQueryClient();
@@ -300,6 +300,8 @@ export default function CookwareScreen() {
   const { entitlements, checkLimit } = useSubscription();
   const { getSearchQuery } = useSearch();
   const searchQuery = getSearchQuery("cookware");
+
+  const menuItems: MenuItemConfig[] = [];
 
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [showFirstTimeSetup, setShowFirstTimeSetup] = useState<boolean | null>(
@@ -633,13 +635,20 @@ export default function CookwareScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ExpoGlassHeader
+        title="Cookware"
+        materialIcon="silverware-fork-knife"
+        screenKey="cookware"
+        searchPlaceholder="Search cookware..."
+        menuItems={menuItems}
+      />
       {isFirstTimeUser ? (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
             styles.setupContent,
             {
-              paddingTop: Spacing.xs,
+              paddingTop: 56 + insets.top + Spacing.xs,
               paddingBottom: tabBarHeight + Spacing.xl,
             },
           ]}
@@ -654,7 +663,7 @@ export default function CookwareScreen() {
             contentContainerStyle={[
               styles.listContent,
               {
-                paddingTop: filterHeaderHeight + Spacing.md,
+                paddingTop: 56 + insets.top + filterHeaderHeight + Spacing.md,
                 paddingBottom: tabBarHeight + Spacing.xl,
               },
             ]}

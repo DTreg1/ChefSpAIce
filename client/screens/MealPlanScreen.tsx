@@ -9,7 +9,6 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,6 +20,8 @@ import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -40,12 +41,13 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function MealPlanScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
   const { checkFeature } = useSubscription();
+
+  const menuItems: MenuItemConfig[] = [];
 
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date()),
@@ -169,12 +171,18 @@ export default function MealPlanScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title="Meals"
+        screenKey="mealplan"
+        showSearch={false}
+        menuItems={menuItems}
+      />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: 56 + insets.top + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing.xl,
           },
         ]}

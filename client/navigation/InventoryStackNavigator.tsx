@@ -1,15 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
 import InventoryScreen from "@/screens/InventoryScreen";
 import ItemDetailScreen from "@/screens/ItemDetailScreen";
-import { HeaderTitle } from "@/components/HeaderTitle";
-import { HeaderSearch } from "@/components/HeaderSearch";
-import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
-import { useTheme } from "@/hooks/useTheme";
-import { useInventoryExport } from "@/hooks/useInventoryExport";
 
 export type InventoryStackParamList = {
   Inventory: undefined;
@@ -17,26 +10,6 @@ export type InventoryStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<InventoryStackParamList>();
-
-function ExportButton() {
-  const { theme } = useTheme();
-  const { handleExport, exporting } = useInventoryExport();
-
-  return (
-    <Pressable
-      testID="button-export-inventory"
-      onPress={handleExport}
-      disabled={exporting}
-      style={styles.headerButton}
-    >
-      <Feather
-        name="download"
-        size={22}
-        color={exporting ? theme.textSecondary : theme.text}
-      />
-    </Pressable>
-  );
-}
 
 export default function InventoryStackNavigator() {
   const screenOptions = useScreenOptions({ transparent: false });
@@ -47,14 +20,7 @@ export default function InventoryStackNavigator() {
         name="Inventory"
         component={InventoryScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="Kitchen" materialIcon="stove" />,
-          headerLeft: () => <HamburgerButton />,
-          headerRight: () => (
-            <>
-              <HeaderSearch screenKey="inventory" placeholder="Search items..." />
-              <ExportButton />
-            </>
-          ),
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -67,12 +33,3 @@ export default function InventoryStackNavigator() {
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  headerButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

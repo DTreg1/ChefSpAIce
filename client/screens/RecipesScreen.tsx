@@ -31,13 +31,12 @@
  * @module screens/RecipesScreen
  */
 
-import React, { useState, useCallback, useEffect, useLayoutEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   FlatList,
   StyleSheet,
   Pressable,
-  TouchableOpacity,
   RefreshControl,
   Dimensions,
   Alert,
@@ -52,9 +51,10 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { MenuItemConfig } from "@/components/HeaderMenu";
 import { RecipeGridSkeleton } from "@/components/Skeleton";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
-import { HeaderSearch } from "@/components/HeaderSearch";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -64,8 +64,8 @@ import {
   GlassEffect,
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
-import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { getApiUrl } from "@/lib/query-client";
+import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
 
@@ -85,29 +85,9 @@ export default function RecipesScreen() {
   useEffect(() => {
     const unsubscribe = navigation.addListener('blur', () => {
       collapseSearch("recipes");
-      setMenuOpen(false);
     });
     return unsubscribe;
   }, [navigation, collapseSearch]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <>
-          <HeaderSearch screenKey="recipes" placeholder="Search recipes..." />
-          <Pressable
-            style={styles.headerButton}
-            onPress={() => setMenuOpen((prev) => !prev)}
-            testID="button-recipes-menu"
-            accessibilityRole="button"
-            accessibilityLabel="Recipe options menu"
-          >
-            <Feather name="more-vertical" size={22} color={theme.text} />
-          </Pressable>
-        </>
-      ),
-    });
-  }, [navigation, theme]);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -115,49 +95,30 @@ export default function RecipesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  const handleExport = useCallback(() => {
-    if (recipes.length === 0) {
-      Alert.alert("No Data", "There are no recipes to export.");
-      return;
-    }
-    Alert.alert(
-      "Export Recipes",
-      "Choose export format:",
-      [
-        {
-          text: "CSV (Spreadsheet)",
-          onPress: async () => {
-            setExporting(true);
-            try {
-              await exportRecipesToCSV(recipes);
-            } catch (error) {
-              Alert.alert("Export Failed", "Unable to export recipes. Please try again.");
-            } finally {
-              setExporting(false);
-            }
-          },
-        },
-        {
-          text: "PDF (Document)",
-          onPress: async () => {
-            setExporting(true);
-            try {
-              await exportRecipesToPDF(recipes);
-            } catch (error) {
-              Alert.alert("Export Failed", "Unable to export recipes. Please try again.");
-            } finally {
-              setExporting(false);
-            }
-          },
-        },
-        { text: "Cancel", style: "cancel" },
-      ],
-    );
-  }, [recipes]);
+  const menuItems: MenuItemConfig[] = [
+    {
+      label: "Favorites Only",
+      icon: "heart",
+      onPress: () => setShowFavoritesOnly(!showFavoritesOnly),
+    },
+    {
+      label: "Customize",
+      icon: "sliders",
+      onPress: () => setShowSettingsModal(true),
+    },
+    {
+      label: "Export to CSV",
+      icon: "file-text",
+      onPress: () => exportRecipesToCSV(recipes),
+    },
+    {
+      label: "Export to PDF",
+      icon: "file",
+      onPress: () => exportRecipesToPDF(recipes),
+    },
+  ];
 
   const loadData = useCallback(async (showSkeleton = false) => {
     if (showSkeleton) setLoading(true);
@@ -401,92 +362,21 @@ export default function RecipesScreen() {
     );
   };
 
-  const renderMenuDropdown = () => {
-    if (!menuOpen) return null;
-    return (
-      <>
-        <Pressable
-          style={styles.menuOverlay}
-          onPress={() => setMenuOpen(false)}
-        />
-        <View
-          style={[
-            styles.menuDropdown,
-            {
-              backgroundColor: theme.backgroundSecondary,
-              borderColor: theme.glass.border,
-            },
-          ]}
-        >
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              setShowFavoritesOnly(!showFavoritesOnly);
-              setMenuOpen(false);
-            }}
-            testID="button-toggle-favorites"
-          >
-            <View style={styles.menuItemRow}>
-              <Feather
-                name="heart"
-                size={18}
-                color={showFavoritesOnly ? AppColors.primary : theme.text}
-              />
-              <ThemedText type="small" style={{ flex: 1 }}>
-                Favorites Only
-              </ThemedText>
-              {showFavoritesOnly && (
-                <Feather name="check" size={16} color={AppColors.primary} />
-              )}
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              setShowSettingsModal(true);
-              setMenuOpen(false);
-            }}
-            testID="button-customize-recipes"
-          >
-            <View style={styles.menuItemRow}>
-              <Feather name="sliders" size={18} color={theme.text} />
-              <ThemedText type="small" style={{ flex: 1 }}>
-                Customize
-              </ThemedText>
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              handleExport();
-              setMenuOpen(false);
-            }}
-            disabled={exporting}
-            testID="button-export-recipes"
-          >
-            <View style={styles.menuItemRow}>
-              <Feather name="download" size={18} color={theme.text} />
-              <ThemedText type="small" style={{ flex: 1 }}>
-                {exporting ? "Exporting..." : "Export"}
-              </ThemedText>
-            </View>
-          </Pressable>
-        </View>
-      </>
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      {renderMenuDropdown()}
+      <ExpoGlassHeader
+        title="Recipes"
+        materialIcon="notebook-heart-outline"
+        screenKey="recipes"
+        searchPlaceholder="Search recipes..."
+        menuItems={menuItems}
+      />
       <FlatList
         style={styles.list}
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: Spacing.md,
+            paddingTop: 56 + insets.top + Spacing.md,
             paddingBottom: tabBarHeight + 80,
           },
         ]}
@@ -654,42 +544,5 @@ const styles = StyleSheet.create({
   generateButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
-  },
-  menuDropdown: {
-    position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.lg,
-    minWidth: 180,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 1001,
-    zIndex: 1000,
-    overflow: "hidden",
-  },
-  menuItem: {
-    padding: Spacing.md,
-  },
-  menuItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
   },
 });

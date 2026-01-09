@@ -3,8 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import RecipesScreen from "@/screens/RecipesScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import GenerateRecipeScreen from "@/screens/GenerateRecipeScreen";
-import { HeaderTitle } from "@/components/HeaderTitle";
-import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import type { Recipe } from "@/lib/storage";
 
@@ -31,8 +29,7 @@ export default function RecipesStackNavigator() {
         name="Recipes"
         component={RecipesScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="Recipes" materialIcon="notebook-heart-outline" />,
-          headerLeft: () => <HamburgerButton />,
+          headerShown: false,
         }}
       />
       <Stack.Screen
