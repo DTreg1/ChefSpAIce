@@ -426,30 +426,40 @@ export const storage = {
   async getRecipes(): Promise<Recipe[]> {
     const recipes = await this.getRawRecipes();
     // Resolve stored image references (images are stored individually per recipe)
-    // Falls back to cloudImageUri if local image is not available
+    // Falls back to cloudImageUri if local image is permanently unavailable
     const resolvedRecipes = await Promise.all(
       recipes.map(async (recipe) => {
         let resolvedImageUri: string | undefined = recipe.imageUri;
+        let useCloudFallback = false;
         
         if (recipe.imageUri?.startsWith("stored:")) {
           const recipeId = recipe.imageUri.replace("stored:", "");
           const imageUri = await this.getRecipeImage(recipeId);
-          resolvedImageUri = imageUri || undefined;
+          if (imageUri) {
+            resolvedImageUri = imageUri;
+          } else if (recipe.cloudImageUri) {
+            // Local storage doesn't have it, use cloud fallback
+            useCloudFallback = true;
+          }
+          // If no cloud fallback and no local, keep original reference
         } else if (recipe.imageUri?.startsWith("file://")) {
-          // Check if local file exists
-          try {
-            const FileSystem = await import("expo-file-system/legacy");
-            const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
-            if (!fileInfo.exists) {
-              resolvedImageUri = undefined;
+          // Check if local file exists (native only)
+          if (Platform.OS !== "web") {
+            try {
+              const FileSystem = await import("expo-file-system");
+              const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
+              if (!fileInfo.exists && recipe.cloudImageUri) {
+                useCloudFallback = true;
+              }
+              // If no cloud fallback, keep the file:// reference
+            } catch {
+              // On error, keep original reference - don't lose it
             }
-          } catch {
-            resolvedImageUri = undefined;
           }
         }
         
-        // Fallback to cloud image if local is not available
-        if (!resolvedImageUri && recipe.cloudImageUri) {
+        // Use cloud fallback if local is confirmed missing and cloud is available
+        if (useCloudFallback && recipe.cloudImageUri) {
           resolvedImageUri = recipe.cloudImageUri;
         }
         
@@ -473,7 +483,6 @@ export const storage = {
 
     // Store images separately to avoid AsyncStorage size limits
     let recipeToStore = recipe;
-    let cloudImageUri: string | undefined = recipe.cloudImageUri;
     
     if (recipe.imageUri?.startsWith("data:image")) {
       console.log("[storage.addRecipe] Image is data URI, storing separately");
@@ -481,87 +490,85 @@ export const storage = {
       const success = await this.setRecipeImage(recipe.id, recipe.imageUri);
       console.log("[storage.addRecipe] Image storage success:", success);
       
-      // Upload to cloud storage in background
-      if (!cloudImageUri) {
-        try {
-          const token = await this.getAuthToken();
-          if (token) {
-            const { getApiUrl } = await import("@/lib/query-client");
-            const baseUrl = getApiUrl();
-            const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                recipeId: recipe.id,
-                base64Data: recipe.imageUri,
-              }),
-            });
-            if (response.ok) {
-              const result = await response.json();
-              cloudImageUri = result.cloudImageUri;
-              console.log("[storage.addRecipe] Cloud upload success:", cloudImageUri);
-            }
-          }
-        } catch (error) {
-          console.log("[storage.addRecipe] Cloud upload failed:", error);
-        }
-      }
-      
       if (success) {
-        recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}`, cloudImageUri };
+        recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}` };
       } else {
-        // If local storage failed, still keep cloud URI
-        recipeToStore = { ...recipe, imageUri: undefined, cloudImageUri };
+        // If local storage failed, keep original image for display
+        recipeToStore = recipe;
       }
-    } else if (recipe.imageUri?.startsWith("file://")) {
-      // Native file URI - upload to cloud
-      if (!cloudImageUri) {
-        try {
-          const token = await this.getAuthToken();
-          if (token) {
-            const FileSystem = await import("expo-file-system/legacy");
-            const base64 = await FileSystem.readAsStringAsync(recipe.imageUri, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            const { getApiUrl } = await import("@/lib/query-client");
-            const baseUrl = getApiUrl();
-            const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                recipeId: recipe.id,
-                base64Data: base64,
-              }),
-            });
-            if (response.ok) {
-              const result = await response.json();
-              cloudImageUri = result.cloudImageUri;
-              console.log("[storage.addRecipe] Cloud upload success:", cloudImageUri);
-            }
-          }
-        } catch (error) {
-          console.log("[storage.addRecipe] Cloud upload failed:", error);
-        }
-      }
-      recipeToStore = { ...recipe, cloudImageUri };
     }
+    // file:// URIs are kept as-is for native
 
     const recipeWithTimestamp = { ...recipeToStore, updatedAt: new Date().toISOString() };
     recipes.push(recipeWithTimestamp);
     await this.setRecipes(recipes);
-    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri, "cloudImageUri:", recipeWithTimestamp.cloudImageUri);
+    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
     
     const token = await this.getAuthToken();
     if (token) {
-      // Include cloudImageUri in sync, but not local imageUri
+      // Queue cloud upload in background (non-blocking)
+      this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(() => {});
+      
+      // Queue sync change - cloudImageUri will be added after upload completes
       const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
       syncManager.queueChange("recipes", "create", recipeForSync);
+    }
+  },
+  
+  async uploadRecipeImageToCloud(recipeId: string, imageUri?: string): Promise<void> {
+    if (!imageUri) return;
+    
+    try {
+      const token = await this.getAuthToken();
+      if (!token) return;
+      
+      let base64Data: string;
+      
+      if (imageUri.startsWith("data:image")) {
+        base64Data = imageUri;
+      } else if (imageUri.startsWith("file://") && Platform.OS !== "web") {
+        const FileSystem = await import("expo-file-system");
+        base64Data = await FileSystem.readAsStringAsync(imageUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        // Add data URI prefix
+        base64Data = `data:image/jpeg;base64,${base64Data}`;
+      } else {
+        return;
+      }
+      
+      const { getApiUrl } = await import("@/lib/query-client");
+      const baseUrl = getApiUrl();
+      const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          recipeId,
+          base64Data,
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("[storage.uploadRecipeImageToCloud] Success:", result.cloudImageUri);
+        
+        // Update the recipe with cloudImageUri
+        const recipes = await this.getRawRecipes();
+        const index = recipes.findIndex((r) => r.id === recipeId);
+        if (index !== -1) {
+          recipes[index].cloudImageUri = result.cloudImageUri;
+          await this.setRecipes(recipes);
+          
+          // Queue sync update with cloudImageUri
+          const recipeForSync = { ...recipes[index], imageUri: undefined };
+          syncManager.queueChange("recipes", "update", recipeForSync);
+        }
+      }
+    } catch (error) {
+      console.log("[storage.uploadRecipeImageToCloud] Failed:", error);
     }
   },
 
