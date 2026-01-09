@@ -145,59 +145,7 @@ export function ExpoGlassHeader({
       ]}
     >
       <View style={styles.headerContent}>
-        <Pressable
-          style={styles.hamburgerButton}
-          onPress={handleOpenDrawer}
-          testID="button-open-drawer"
-          accessibilityLabel="Open menu"
-        >
-          <Feather name="menu" size={24} color={textColor} />
-        </Pressable>
-
-        {showSearch && (
-          <Animated.View
-            style={[
-              styles.searchContainer,
-              { backgroundColor: glassBg, borderColor: glassBorder },
-              searchContainerStyle,
-            ]}
-          >
-            {!isOpen ? (
-              <Pressable
-                style={styles.searchIconButton}
-                onPress={handleSearchPress}
-                testID="button-header-search"
-              >
-                <Feather name="search" size={22} color={secondaryColor} />
-              </Pressable>
-            ) : (
-              <>
-                <Pressable style={styles.searchCloseButton} onPress={handleCloseSearch}>
-                  <Feather name="arrow-left" size={20} color={secondaryColor} />
-                </Pressable>
-                <Animated.View style={[styles.searchInputWrapper, searchInputStyle]}>
-                  <TextInput
-                    ref={inputRef}
-                    style={[styles.searchInput, { color: textColor }]}
-                    placeholder={searchPlaceholder}
-                    placeholderTextColor={secondaryColor}
-                    value={searchQuery}
-                    onChangeText={handleSearchChange}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="search"
-                  />
-                </Animated.View>
-                {searchQuery.length > 0 && (
-                  <Pressable style={styles.searchClearButton} onPress={handleClearSearch}>
-                    <Feather name="x" size={18} color={secondaryColor} />
-                  </Pressable>
-                )}
-              </>
-            )}
-          </Animated.View>
-        )}
-
+        {/* Title centered absolutely between hamburger and menu */}
         <Animated.View style={[styles.titleContainer, titleContainerStyle]}>
           {materialIcon && (
             <MaterialCommunityIcons
@@ -212,6 +160,63 @@ export function ExpoGlassHeader({
           </ThemedText>
         </Animated.View>
 
+        {/* Left side: hamburger + search */}
+        <View style={styles.leftContainer}>
+          <Pressable
+            style={styles.hamburgerButton}
+            onPress={handleOpenDrawer}
+            testID="button-open-drawer"
+            accessibilityLabel="Open menu"
+          >
+            <Feather name="menu" size={24} color={textColor} />
+          </Pressable>
+
+          {showSearch && (
+            <Animated.View
+              style={[
+                styles.searchContainer,
+                { backgroundColor: glassBg, borderColor: glassBorder },
+                searchContainerStyle,
+              ]}
+            >
+              {!isOpen ? (
+                <Pressable
+                  style={styles.searchIconButton}
+                  onPress={handleSearchPress}
+                  testID="button-header-search"
+                >
+                  <Feather name="search" size={22} color={secondaryColor} />
+                </Pressable>
+              ) : (
+                <>
+                  <Pressable style={styles.searchCloseButton} onPress={handleCloseSearch}>
+                    <Feather name="arrow-left" size={20} color={secondaryColor} />
+                  </Pressable>
+                  <Animated.View style={[styles.searchInputWrapper, searchInputStyle]}>
+                    <TextInput
+                      ref={inputRef}
+                      style={[styles.searchInput, { color: textColor }]}
+                      placeholder={searchPlaceholder}
+                      placeholderTextColor={secondaryColor}
+                      value={searchQuery}
+                      onChangeText={handleSearchChange}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="search"
+                    />
+                  </Animated.View>
+                  {searchQuery.length > 0 && (
+                    <Pressable style={styles.searchClearButton} onPress={handleClearSearch}>
+                      <Feather name="x" size={18} color={secondaryColor} />
+                    </Pressable>
+                  )}
+                </>
+              )}
+            </Animated.View>
+          )}
+        </View>
+
+        {/* Right side: menu */}
         <View style={styles.rightContainer}>
           {showMenu && menuItems.length > 0 && (
             <HeaderMenu items={menuItems} testID={`button-${screenKey}-menu`} />
@@ -237,7 +242,13 @@ const styles = StyleSheet.create({
     height: HEADER_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.md,
+  },
+  leftContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 2,
   },
   hamburgerButton: {
     width: BUTTON_SIZE,
@@ -284,11 +295,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   titleContainer: {
-    flex: 1,
+    position: "absolute",
+    left: BUTTON_SIZE + Spacing.md,
+    right: BUTTON_SIZE + Spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.sm,
+    zIndex: 1,
   },
   titleIcon: {
     marginRight: Spacing.xs,
@@ -300,6 +313,7 @@ const styles = StyleSheet.create({
   rightContainer: {
     flexDirection: "row",
     alignItems: "center",
+    zIndex: 2,
   },
   menuPlaceholder: {
     width: BUTTON_SIZE,
