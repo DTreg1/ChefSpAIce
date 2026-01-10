@@ -1,10 +1,19 @@
 import { Platform } from 'react-native';
-import Purchases, {
-  PurchasesOffering,
-  PurchasesPackage,
-  CustomerInfo,
-  LOG_LEVEL,
-} from 'react-native-purchases';
+
+let Purchases: typeof import('react-native-purchases').default | null = null;
+let LOG_LEVEL: typeof import('react-native-purchases').LOG_LEVEL | null = null;
+
+export type { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+
+if (Platform.OS !== 'web') {
+  try {
+    const RNPurchases = require('react-native-purchases');
+    Purchases = RNPurchases.default;
+    LOG_LEVEL = RNPurchases.LOG_LEVEL;
+  } catch (e) {
+    console.log('StoreKit: react-native-purchases not available (expected in Expo Go)');
+  }
+}
 
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
@@ -27,9 +36,13 @@ class StoreKitService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
     if (Platform.OS === 'web') return;
+    if (!Purchases) {
+      console.log('StoreKit: Native module not available');
+      return;
+    }
 
     try {
-      if (__DEV__) {
+      if (__DEV__ && LOG_LEVEL) {
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       }
 
@@ -53,7 +66,7 @@ class StoreKitService {
   }
 
   async setUserId(userId: string): Promise<void> {
-    if (!this.initialized || Platform.OS === 'web') return;
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) return;
 
     try {
       await Purchases.logIn(userId);
@@ -64,7 +77,7 @@ class StoreKitService {
   }
 
   async logout(): Promise<void> {
-    if (!this.initialized || Platform.OS === 'web') return;
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) return;
 
     try {
       await Purchases.logOut();
@@ -74,8 +87,8 @@ class StoreKitService {
     }
   }
 
-  async getOfferings(): Promise<PurchasesOffering | null> {
-    if (!this.initialized || Platform.OS === 'web') return null;
+  async getOfferings(): Promise<import('react-native-purchases').PurchasesOffering | null> {
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) return null;
 
     try {
       const offerings = await Purchases.getOfferings();
@@ -86,8 +99,8 @@ class StoreKitService {
     }
   }
 
-  async getCustomerInfo(): Promise<CustomerInfo | null> {
-    if (!this.initialized || Platform.OS === 'web') return null;
+  async getCustomerInfo(): Promise<import('react-native-purchases').CustomerInfo | null> {
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) return null;
 
     try {
       return await Purchases.getCustomerInfo();
@@ -98,7 +111,7 @@ class StoreKitService {
   }
 
   async hasActiveSubscription(): Promise<{ isActive: boolean; tier: 'basic' | 'pro' | null }> {
-    if (!this.initialized || Platform.OS === 'web') {
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) {
       return { isActive: false, tier: null };
     }
 
@@ -120,12 +133,12 @@ class StoreKitService {
     }
   }
 
-  async purchasePackage(pkg: PurchasesPackage): Promise<{
+  async purchasePackage(pkg: import('react-native-purchases').PurchasesPackage): Promise<{
     success: boolean;
-    customerInfo?: CustomerInfo;
+    customerInfo?: import('react-native-purchases').CustomerInfo;
     error?: string;
   }> {
-    if (!this.initialized || Platform.OS === 'web') {
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) {
       return { success: false, error: 'StoreKit not available' };
     }
 
@@ -144,10 +157,10 @@ class StoreKitService {
 
   async restorePurchases(): Promise<{
     success: boolean;
-    customerInfo?: CustomerInfo;
+    customerInfo?: import('react-native-purchases').CustomerInfo;
     error?: string;
   }> {
-    if (!this.initialized || Platform.OS === 'web') {
+    if (!this.initialized || Platform.OS === 'web' || !Purchases) {
       return { success: false, error: 'StoreKit not available' };
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
   Linking,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions } from "@react-navigation/native";
@@ -20,6 +21,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useStoreKit } from "@/hooks/useStoreKit";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { MONTHLY_PRICES, ANNUAL_PRICES, SubscriptionTier } from "../../shared/subscription";
@@ -54,8 +56,19 @@ export default function SubscriptionScreen() {
     refetch,
   } = useSubscription();
 
+  const {
+    isAvailable: isStoreKitAvailable,
+    offerings,
+    purchasePackage,
+    restorePurchases,
+    isLoading: isStoreKitLoading,
+  } = useStoreKit();
+
+  const shouldUseStoreKit = (Platform.OS === 'ios' || Platform.OS === 'android') && isStoreKitAvailable;
+
   const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
@@ -133,12 +146,27 @@ export default function SubscriptionScreen() {
   const handleUpgrade = async (plan: 'monthly' | 'annual' = 'annual') => {
     setIsCheckingOut(true);
     try {
+      if (shouldUseStoreKit && offerings) {
+        const packageId = plan === 'monthly' ? '$rc_monthly' : '$rc_annual';
+        const pkg = offerings.availablePackages.find(
+          (p) => p.identifier === packageId || p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL')
+        );
+
+        if (!pkg) {
+          Alert.alert('Error', 'Subscription package not available');
+          return;
+        }
+
+        const success = await purchasePackage(pkg);
+        if (success) {
+          Alert.alert('Success', 'Thank you for subscribing to Pro!');
+          refetch();
+        }
+        return;
+      }
+
       const baseUrl = getApiUrl();
       
-      // Get price ID from env or use appropriate tier
-      const priceIdKey = plan === 'monthly' ? 'STRIPE_PRO_MONTHLY_PRICE_ID' : 'STRIPE_PRO_ANNUAL_PRICE_ID';
-      
-      // First fetch the prices to get the correct price ID
       const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
       const prices = await pricesResponse.json();
       
@@ -184,6 +212,25 @@ export default function SubscriptionScreen() {
       console.error("Error starting checkout:", error);
     } finally {
       setIsCheckingOut(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    if (!shouldUseStoreKit) return;
+    
+    setIsRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert('Success', 'Purchases restored successfully!');
+        refetch();
+      } else {
+        Alert.alert('No Purchases Found', 'No previous purchases were found to restore.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -478,6 +525,24 @@ export default function SubscriptionScreen() {
             {isCheckingOut ? "Loading..." : "Subscribe to Pro"}
           </GlassButton>
         </GlassCard>
+      )}
+
+      {shouldUseStoreKit && (
+        <Pressable
+          onPress={handleRestorePurchases}
+          disabled={isRestoring}
+          style={[styles.refreshButton, { borderColor: theme.border }]}
+          data-testid="button-restore-purchases"
+        >
+          {isRestoring ? (
+            <ActivityIndicator size="small" color={theme.textSecondary} />
+          ) : (
+            <Feather name="rotate-ccw" size={16} color={theme.textSecondary} />
+          )}
+          <ThemedText style={[styles.refreshText, { color: theme.textSecondary }]}>
+            {isRestoring ? "Restoring..." : "Restore Purchases"}
+          </ThemedText>
+        </Pressable>
       )}
 
       <Pressable

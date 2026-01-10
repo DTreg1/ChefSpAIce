@@ -66,6 +66,7 @@ import recipeImagesRouter from "./routers/recipeImages.router";
 import feedbackRouter from "./routers/feedback.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
+import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { db } from "./db";
 import { userSessions, appliances, users } from "../shared/schema";
@@ -378,6 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/feedback", feedbackRouter);   // User feedback submission
   app.use("/api/cooking-terms", cookingTermsRouter); // Cooking definitions
   app.use("/api/appliances", appliancesRouter); // Kitchen appliance catalog
+  app.use("/api/webhooks/revenuecat", revenuecatWebhookRouter); // RevenueCat iOS/Android webhooks
 
   // =========================================================================
   // PRE-REGISTRATION ENDPOINT

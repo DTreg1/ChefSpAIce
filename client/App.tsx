@@ -24,7 +24,7 @@
  * 9. FloatingChatProvider - AI assistant chat modal
  */
 
-import React, { useMemo, useState, useCallback, useRef } from "react";
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -49,6 +49,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
+import { storeKitService } from "@/lib/storekit-service";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -217,6 +218,10 @@ function MobileAppContent() {
  * Also sets the root background color based on theme.
  */
 function RootWrapper() {
+  useEffect(() => {
+    storeKitService.initialize();
+  }, []);
+
   return (
     <ThemeProvider>
       <GestureHandlerRootView>

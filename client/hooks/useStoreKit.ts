@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
-import { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+import type { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { storeKitService, ENTITLEMENTS } from '@/lib/storekit-service';
 
 interface UseStoreKitReturn {
