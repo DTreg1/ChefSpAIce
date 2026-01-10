@@ -3,19 +3,29 @@ import Constants from "expo-constants";
 import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { storage } from "./storage";
 
-// Check if running in Expo Go on Android (notifications not supported in SDK 53+)
-const isExpoGoOnAndroid = Platform.OS === "android" && Constants.appOwnership === "expo";
+// Check if running in Expo Go (notifications have limited functionality in SDK 53+)
+// Android: Remote push notifications completely removed
+// iOS: Some functionality still works but with warnings
+const isExpoGo = Constants.appOwnership === "expo";
 
 // Export for UI to show appropriate message
 export function isNotificationsUnsupported(): boolean {
-  return isExpoGoOnAndroid;
+  // On Android Expo Go, notifications are completely unsupported
+  return Platform.OS === "android" && isExpoGo;
+}
+
+// Check if we should skip importing the module entirely to avoid warnings
+function shouldSkipNotificationsImport(): boolean {
+  // Skip on Android Expo Go (completely unsupported)
+  // On iOS Expo Go, local notifications still work, so we allow import
+  return Platform.OS === "android" && isExpoGo;
 }
 
 // Lazy load notifications module only when supported
 let Notifications: typeof import("expo-notifications") | null = null;
 
 async function getNotificationsModule() {
-  if (isExpoGoOnAndroid) {
+  if (shouldSkipNotificationsImport()) {
     return null;
   }
   if (!Notifications) {
@@ -217,7 +227,7 @@ export async function getExpiringItemsCount(alertDays?: number): Promise<number>
 }
 
 export async function initializeNotifications(): Promise<void> {
-  if (isExpoGoOnAndroid) {
+  if (shouldSkipNotificationsImport()) {
     return;
   }
 
@@ -237,7 +247,7 @@ export async function initializeNotifications(): Promise<void> {
 export function addNotificationReceivedListener(
   callback: (notification: any) => void,
 ): { remove: () => void } {
-  if (isExpoGoOnAndroid) {
+  if (shouldSkipNotificationsImport()) {
     return { remove: () => {} };
   }
   
@@ -261,7 +271,7 @@ export function addNotificationReceivedListener(
 export function addNotificationResponseListener(
   callback: (response: any) => void,
 ): { remove: () => void } {
-  if (isExpoGoOnAndroid) {
+  if (shouldSkipNotificationsImport()) {
     return { remove: () => {} };
   }
   
