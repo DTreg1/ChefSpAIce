@@ -2,7 +2,7 @@ import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-n
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
-import { Spacing } from "@/constants/Spacing";
+import { Spacing } from "@/constants/theme";
 
 function getThemeColors(isDark: boolean) {
   return {

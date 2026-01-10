@@ -20,6 +20,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { HeaderMenu, MenuItemConfig } from "@/components/HeaderMenu";
+export type { MenuItemConfig };
 import { useSearch } from "@/contexts/SearchContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme";
