@@ -1163,7 +1163,7 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   section: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
   sectionTitle: {
     marginBottom: Spacing.xs,
@@ -1191,7 +1191,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: Spacing.sm,
   },
-  dataInfo: {},
+  dataInfo: {
+    marginBottom: Spacing.sm,
+  },
   clearButton: {
     borderColor: AppColors.error,
   },

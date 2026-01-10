@@ -642,14 +642,14 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   section: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
   sectionTitle: {
-    marginBottom: 0,
+    marginBottom: Spacing.xs,
   },
   sectionSubtitle: {
     opacity: 0.7,
-    marginTop: -Spacing.sm,
+    marginTop: -Spacing.xs,
   },
   healthGrid: {
     flexDirection: "row",
