@@ -1,9 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
 import ProfileScreen from "@/screens/ProfileScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import AnalyticsScreen from "@/screens/AnalyticsScreen";
@@ -13,10 +9,6 @@ import DevComponentsScreen from "@/screens/DevComponentsScreen";
 import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
-import { HeaderTitle } from "@/components/HeaderTitle";
-import { HamburgerButton } from "@/components/HamburgerButton";
-import { useScreenOptions } from "@/hooks/useScreenOptions";
-import { useTheme } from "@/hooks/useTheme";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -32,99 +24,24 @@ export type ProfileStackParamList = {
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
-function SettingsButton() {
-  const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  
-  return (
-    <Pressable
-      onPress={() => navigation.navigate("Settings")}
-      style={styles.headerButton}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
-      <Feather name="settings" size={22} color={theme.text} />
-    </Pressable>
-  );
-}
-
 export default function ProfileStackNavigator() {
-  const screenOptions = useScreenOptions({ transparent: false });
-
   return (
-    <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          headerTitle: () => <HeaderTitle title="Profile" icon="user" />,
-          headerLeft: () => <HamburgerButton />,
-          headerRight: () => <SettingsButton />,
-        }}
-      />
-      <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          headerTitle: "Settings",
-        }}
-      />
-      <Stack.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{
-          headerTitle: "Analytics",
-        }}
-      />
-      <Stack.Screen
-        name="CookingTerms"
-        component={CookingTermsScreen}
-        options={{
-          headerTitle: "Cooking Terms",
-        }}
-      />
-      <Stack.Screen
-        name="Cookware"
-        component={CookwareScreen}
-        options={{
-          headerTitle: "My Cookware",
-        }}
-      />
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+      <Stack.Screen name="CookingTerms" component={CookingTermsScreen} />
+      <Stack.Screen name="Cookware" component={CookwareScreen} />
       {__DEV__ ? (
-        <Stack.Screen
-          name="DevComponents"
-          component={DevComponentsScreen}
-          options={{
-            headerTitle: "Component Library",
-          }}
-        />
+        <Stack.Screen name="DevComponents" component={DevComponentsScreen} />
       ) : null}
-      <Stack.Screen
-        name="BarcodeTest"
-        component={BarcodeTestScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="StorageLocations"
-        component={StorageLocationsScreen}
-        options={{
-          headerTitle: "Storage Locations",
-        }}
-      />
-      <Stack.Screen
-        name="Subscription"
-        component={SubscriptionScreen}
-        options={{
-          headerTitle: "Subscription",
-        }}
-      />
+      <Stack.Screen name="BarcodeTest" component={BarcodeTestScreen} />
+      <Stack.Screen name="StorageLocations" component={StorageLocationsScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  headerButton: {
-    padding: 8,
-  },
-});
