@@ -345,15 +345,14 @@ export default function CookwareScreen() {
     try {
       const ids = await storage.getCookware();
       setOwnedCookwareIds(ids);
-      if (showFirstTimeSetup === null) {
-        setShowFirstTimeSetup(ids.length === 0);
-      }
+      // Always update first-time setup status based on current cookware
+      setShowFirstTimeSetup(ids.length === 0);
     } catch (error) {
       console.error("Error loading cookware:", error);
     } finally {
       setLoadingLocal(false);
     }
-  }, [showFirstTimeSetup]);
+  }, []);
 
   useEffect(() => {
     loadCookware();
@@ -361,6 +360,7 @@ export default function CookwareScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Reload cookware every time screen comes into focus
       loadCookware();
     }, [loadCookware])
   );
