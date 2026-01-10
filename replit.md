@@ -50,11 +50,14 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Scan Hub:** Centralized scanning interface for product barcodes, nutrition labels, recipes from paper, and AI food identification using GPT-4o vision. **Camera Battery Optimization:** All 4 scanner screens (Barcode, Food, Ingredient, Recipe) suspend camera sensors using dual triggers: AppState changes (app backgrounding) and useFocusEffect (navigation blur). This ensures cameras are only active when the screen is visible and the app is in foreground.
 - **Offline Mode Indicator:** Animated banner indicating network status and pending sync changes.
 - **Stripe Donations:** Integration for secure user donations (web platform).
-- **Apple StoreKit Integration:** In-app purchases for iOS/Android via RevenueCat SDK (`react-native-purchases`). Platform-specific payment handling: iOS/Android use StoreKit/Google Play, web continues using Stripe. Key files:
-  - `client/lib/storekit-service.ts` - RevenueCat SDK wrapper with initialization, purchase, and restore methods
-  - `client/hooks/useStoreKit.ts` - React hook for subscription state management
-  - `server/routers/revenuecat-webhook.router.ts` - Webhook handler for subscription event processing
-  - **Product IDs:** `com.chefspaice.basic.monthly`, `com.chefspaice.basic.annual`, `com.chefspaice.pro.monthly`, `com.chefspaice.pro.annual`
+- **Apple StoreKit Integration:** In-app purchases for iOS/Android via RevenueCat SDK (`react-native-purchases` and `react-native-purchases-ui`). Platform-specific payment handling: iOS/Android use StoreKit/Google Play with native paywall UI, web continues using Stripe. Key files:
+  - `client/lib/storekit-service.ts` - RevenueCat SDK wrapper with initialization, purchase, restore, paywall, and customer center methods
+  - `client/hooks/useStoreKit.ts` - React hook for subscription state management with paywall/customer center availability tracking
+  - `server/routers/revenuecat-webhook.router.ts` - Webhook handler for subscription event processing (handles lifetime purchases correctly)
+  - **Product IDs:** `com.chefspaice.monthly`, `com.chefspaice.yearly`, `com.chefspaice.lifetime` (all map to PRO tier)
+  - **Entitlements:** `pro` and `ChefSpAIce Pro` - simplified single-tier structure for all subscription types
+  - **Native Paywall:** `presentPaywall()` and `presentPaywallIfNeeded()` for native subscription flow on iOS/Android
+  - **Customer Center:** `presentCustomerCenter()` for self-service subscription management on iOS/Android
   - **Required Environment Variables:** `EXPO_PUBLIC_REVENUECAT_IOS_KEY`, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`, `REVENUECAT_WEBHOOK_SECRET`
   - **Expo Go Compatibility:** Graceful degradation when native module unavailable (falls back to web Stripe)
 - **Data Export:** Functionality to export inventory and recipes as CSV or PDF files.
