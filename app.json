@@ -56,6 +56,7 @@
       "title": "ChefSpAIce - AI-Powered Kitchen Assistant"
     },
     "plugins": [
+      "react-native-purchases",
       [
         "expo-splash-screen",
         {
