@@ -28,6 +28,7 @@ import { useTheme } from "@/hooks/useTheme";
 import type { ThemePreference } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useStoreKit } from "@/hooks/useStoreKit";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import {
   Spacing,
@@ -54,6 +55,7 @@ export default function ProfileScreen() {
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
   const { tier, planType, isActive, isTrialing, trialDaysRemaining } = useSubscription();
+  const { presentCustomerCenter, isCustomerCenterAvailable, presentPaywall, isPaywallAvailable } = useStoreKit();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -172,6 +174,15 @@ export default function ProfileScreen() {
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const handleManageSubscription = async () => {
+    if (isCustomerCenterAvailable) {
+      try {
+        await presentCustomerCenter();
+        return;
+      } catch (error) {
+        console.error("Error opening customer center:", error);
+      }
+    }
+
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
@@ -202,6 +213,21 @@ export default function ProfileScreen() {
   };
 
   const handleUpgradeSubscription = async () => {
+    if (isPaywallAvailable) {
+      setUpgradeLoading(true);
+      try {
+        const result = await presentPaywall();
+        if (result === 'purchased' || result === 'restored') {
+          Alert.alert('Success', 'Thank you for subscribing to ChefSpAIce Pro!');
+        }
+      } catch (error) {
+        console.error("Error presenting paywall:", error);
+      } finally {
+        setUpgradeLoading(false);
+      }
+      return;
+    }
+
     try {
       setUpgradeLoading(true);
       const baseUrl = getApiUrl();

@@ -62,6 +62,10 @@ export default function SubscriptionScreen() {
     purchasePackage,
     restorePurchases,
     isLoading: isStoreKitLoading,
+    presentPaywall,
+    presentCustomerCenter,
+    isPaywallAvailable,
+    isCustomerCenterAvailable,
   } = useStoreKit();
 
   const shouldUseStoreKit = (Platform.OS === 'ios' || Platform.OS === 'android') && isStoreKitAvailable;
@@ -231,6 +235,41 @@ export default function SubscriptionScreen() {
       Alert.alert('Error', 'Failed to restore purchases. Please try again.');
     } finally {
       setIsRestoring(false);
+    }
+  };
+
+  const handlePresentPaywall = async () => {
+    if (!isPaywallAvailable) {
+      Alert.alert('Not Available', 'Paywall is not available on this platform.');
+      return;
+    }
+    
+    setIsCheckingOut(true);
+    try {
+      const result = await presentPaywall();
+      if (result === 'purchased' || result === 'restored') {
+        Alert.alert('Success', 'Thank you for subscribing to ChefSpAIce Pro!');
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error presenting paywall:', error);
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  const handleOpenCustomerCenter = async () => {
+    if (!isCustomerCenterAvailable) {
+      handleManageSubscription();
+      return;
+    }
+    
+    try {
+      await presentCustomerCenter();
+      refetch();
+    } catch (error) {
+      console.error('Error opening customer center:', error);
+      handleManageSubscription();
     }
   };
 
@@ -438,7 +477,7 @@ export default function SubscriptionScreen() {
           </View>
 
           <GlassButton
-            onPress={() => handleUpgrade('annual')}
+            onPress={isPaywallAvailable ? handlePresentPaywall : () => handleUpgrade('annual')}
             disabled={isCheckingOut}
             style={styles.upgradeButton}
             icon={
@@ -463,14 +502,14 @@ export default function SubscriptionScreen() {
           </ThemedText>
 
           <GlassButton
-            onPress={handleManageSubscription}
+            onPress={shouldUseStoreKit ? handleOpenCustomerCenter : handleManageSubscription}
             disabled={isManaging}
             style={styles.manageButton}
             icon={
               isManaging ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Feather name="external-link" size={18} color="#FFFFFF" />
+                <Feather name={shouldUseStoreKit ? "settings" : "external-link"} size={18} color="#FFFFFF" />
               )
             }
             testID="button-manage-subscription"
@@ -511,7 +550,7 @@ export default function SubscriptionScreen() {
           </View>
 
           <GlassButton
-            onPress={() => handleUpgrade('annual')}
+            onPress={isPaywallAvailable ? handlePresentPaywall : () => handleUpgrade('annual')}
             disabled={isCheckingOut}
             style={styles.upgradeButton}
             icon={

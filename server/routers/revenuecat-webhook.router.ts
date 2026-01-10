@@ -48,11 +48,22 @@ function verifyWebhookSecret(req: Request): boolean {
   return providedSecret === REVENUECAT_WEBHOOK_SECRET;
 }
 
-function mapProductIdToTier(productId: string): 'BASIC' | 'PRO' {
-  if (productId.includes('pro')) {
+function mapProductIdToTier(productId: string): 'PRO' {
+  return 'PRO';
+}
+
+function isLifetimeProduct(productId: string): boolean {
+  return productId.toLowerCase().includes('lifetime');
+}
+
+function mapEntitlementToTier(entitlementId: string | undefined): 'PRO' | null {
+  if (!entitlementId) return null;
+  
+  const proEntitlements = ['pro', 'ChefSpAIce Pro'];
+  if (proEntitlements.includes(entitlementId)) {
     return 'PRO';
   }
-  return 'BASIC';
+  return 'PRO';
 }
 
 async function handleSubscriptionUpdate(
@@ -61,7 +72,12 @@ async function handleSubscriptionUpdate(
   keepTier: boolean
 ): Promise<void> {
   const userId = event.app_user_id;
-  const tier = mapProductIdToTier(event.product_id);
+  
+  const entitlementTier = mapEntitlementToTier(event.entitlement_id);
+  const productTier = mapProductIdToTier(event.product_id);
+  const tier = entitlementTier || productTier;
+
+  console.log(`[RevenueCat] Processing: product=${event.product_id}, entitlement=${event.entitlement_id}, resolvedTier=${tier}`);
 
   const [user] = await db
     .select()
@@ -115,7 +131,11 @@ router.post('/', async (req: Request, res: Response) => {
         break;
 
       case 'EXPIRATION':
-        await handleSubscriptionUpdate(event, 'expired', false);
+        if (isLifetimeProduct(event.product_id)) {
+          console.log(`[RevenueCat] Ignoring expiration for lifetime product: ${event.product_id}`);
+        } else {
+          await handleSubscriptionUpdate(event, 'expired', false);
+        }
         break;
 
       case 'TEST':
