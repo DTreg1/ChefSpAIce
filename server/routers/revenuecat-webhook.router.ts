@@ -48,22 +48,32 @@ function verifyWebhookSecret(req: Request): boolean {
   return providedSecret === REVENUECAT_WEBHOOK_SECRET;
 }
 
-function mapProductIdToTier(productId: string): 'PRO' {
-  return 'PRO';
+function mapProductIdToTier(productId: string): 'BASIC' | 'PRO' {
+  const lowerProductId = productId.toLowerCase();
+  if (lowerProductId.includes('pro') || lowerProductId.includes('lifetime')) {
+    return 'PRO';
+  }
+  if (lowerProductId.includes('basic')) {
+    return 'BASIC';
+  }
+  return 'BASIC';
 }
 
 function isLifetimeProduct(productId: string): boolean {
   return productId.toLowerCase().includes('lifetime');
 }
 
-function mapEntitlementToTier(entitlementId: string | undefined): 'PRO' | null {
+function mapEntitlementToTier(entitlementId: string | undefined): 'BASIC' | 'PRO' | null {
   if (!entitlementId) return null;
   
-  const proEntitlements = ['pro', 'ChefSpAIce Pro'];
-  if (proEntitlements.includes(entitlementId)) {
+  const lowerEntitlement = entitlementId.toLowerCase();
+  if (lowerEntitlement === 'pro') {
     return 'PRO';
   }
-  return 'PRO';
+  if (lowerEntitlement === 'basic') {
+    return 'BASIC';
+  }
+  return null;
 }
 
 async function handleSubscriptionUpdate(

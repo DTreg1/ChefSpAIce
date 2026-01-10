@@ -29,13 +29,15 @@ const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
 
 export const ENTITLEMENTS = {
+  BASIC: 'basic',
   PRO: 'pro',
-  CHEFSPAICE_PRO: 'ChefSpAIce Pro',
 } as const;
 
 export const PRODUCT_IDS = {
-  MONTHLY: 'com.chefspaice.monthly',
-  YEARLY: 'com.chefspaice.yearly',
+  BASIC_MONTHLY: 'com.chefspaice.basic.monthly',
+  BASIC_YEARLY: 'com.chefspaice.basic.yearly',
+  PRO_MONTHLY: 'com.chefspaice.pro.monthly',
+  PRO_YEARLY: 'com.chefspaice.pro.yearly',
   LIFETIME: 'com.chefspaice.lifetime',
 } as const;
 
@@ -149,7 +151,7 @@ class StoreKitService {
     }
   }
 
-  async hasActiveSubscription(): Promise<{ isActive: boolean; tier: 'pro' | null }> {
+  async hasActiveSubscription(): Promise<{ isActive: boolean; tier: 'basic' | 'pro' | null }> {
     if (!this.initialized || Platform.OS === 'web' || !Purchases) {
       return { isActive: false, tier: null };
     }
@@ -157,9 +159,12 @@ class StoreKitService {
     try {
       const customerInfo = await Purchases.getCustomerInfo();
       
-      if (customerInfo.entitlements.active[ENTITLEMENTS.PRO] || 
-          customerInfo.entitlements.active[ENTITLEMENTS.CHEFSPAICE_PRO]) {
+      if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
         return { isActive: true, tier: 'pro' };
+      }
+      
+      if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
+        return { isActive: true, tier: 'basic' };
       }
 
       return { isActive: false, tier: null };
