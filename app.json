@@ -87,7 +87,8 @@
         {
           "photosPermission": "ChefSpAIce needs photo library access to select images for your food items."
         }
-      ]
+      ],
+      "react-native-purchases"
     ],
     "experiments": {
       "reactCompiler": true
