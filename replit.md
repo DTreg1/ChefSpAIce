@@ -54,8 +54,10 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
   - `client/lib/storekit-service.ts` - RevenueCat SDK wrapper with initialization, purchase, restore, paywall, and customer center methods
   - `client/hooks/useStoreKit.ts` - React hook for subscription state management with paywall/customer center availability tracking
   - `server/routers/revenuecat-webhook.router.ts` - Webhook handler for subscription event processing (handles lifetime purchases correctly)
-  - **Product IDs:** `com.chefspaice.monthly`, `com.chefspaice.yearly`, `com.chefspaice.lifetime` (all map to PRO tier)
-  - **Entitlements:** `pro` and `ChefSpAIce Pro` - simplified single-tier structure for all subscription types
+  - **Product IDs:** 
+    - Basic tier: `com.chefspaice.basic.monthly` ($4.99/mo), `com.chefspaice.basic.yearly` ($49.90/yr)
+    - Pro tier: `com.chefspaice.pro.monthly` ($9.99/mo), `com.chefspaice.pro.yearly` ($99.90/yr), `com.chefspaice.lifetime` (one-time)
+  - **Entitlements:** `basic` and `pro` - dual-tier structure for subscription management
   - **Native Paywall:** `presentPaywall()` and `presentPaywallIfNeeded()` for native subscription flow on iOS/Android
   - **Customer Center:** `presentCustomerCenter()` for self-service subscription management on iOS/Android
   - **Required Environment Variables:** `EXPO_PUBLIC_REVENUECAT_IOS_KEY`, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`, `REVENUECAT_WEBHOOK_SECRET`

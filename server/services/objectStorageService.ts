@@ -1,48 +1,44 @@
-import { Storage } from "@google-cloud/storage";
-import path from "path";
+import { Client } from "@replit/object-storage";
 
-const BUCKET_ID = process.env.REPLIT_DEFAULT_BUCKET_ID || 
-  process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/')[1] || 
-  'replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc';
+const storageClient = new Client();
 
-const storage = new Storage();
-const bucket = storage.bucket(BUCKET_ID);
+const PUBLIC_PREFIX = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/').slice(2).join('/') || 'public';
 
 export async function uploadRecipeImage(
   recipeId: string,
   base64Data: string,
-  contentType: string = "image/jpeg"
+  _contentType: string = "image/jpeg"
 ): Promise<string> {
   const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/i, "");
   const buffer = Buffer.from(cleanBase64, "base64");
   
-  const objectPath = `recipe-images/${recipeId}.jpg`;
-  const file = bucket.file(objectPath);
+  const objectPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
   
-  await file.save(buffer, {
-    contentType,
-    metadata: {
-      cacheControl: "public, max-age=31536000",
-    },
-  });
+  const result = await storageClient.uploadFromBytes(objectPath, buffer);
   
-  await file.makePublic();
+  if (!result.ok) {
+    console.error(`[ObjectStorage] Upload failed:`, result.error);
+    throw new Error(`Failed to upload image: ${result.error.message}`);
+  }
   
-  const publicUrl = `https://storage.googleapis.com/${BUCKET_ID}/${objectPath}`;
+  const publicUrl = getPublicUrl(objectPath);
   console.log(`[ObjectStorage] Uploaded recipe image: ${publicUrl}`);
   
   return publicUrl;
 }
 
 export async function deleteRecipeImage(recipeId: string): Promise<void> {
-  const objectPath = `recipe-images/${recipeId}.jpg`;
-  const file = bucket.file(objectPath);
+  const objectPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
   
   try {
-    const [exists] = await file.exists();
-    if (exists) {
-      await file.delete();
-      console.log(`[ObjectStorage] Deleted recipe image: ${objectPath}`);
+    const existsResult = await storageClient.exists(objectPath);
+    if (existsResult.ok && existsResult.value) {
+      const deleteResult = await storageClient.delete(objectPath);
+      if (deleteResult.ok) {
+        console.log(`[ObjectStorage] Deleted recipe image: ${objectPath}`);
+      } else {
+        console.error(`[ObjectStorage] Delete failed:`, deleteResult.error);
+      }
     }
   } catch (error) {
     console.error(`[ObjectStorage] Error deleting recipe image:`, error);
@@ -50,17 +46,22 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
 }
 
 export async function getRecipeImageUrl(recipeId: string): Promise<string | null> {
-  const objectPath = `recipe-images/${recipeId}.jpg`;
-  const file = bucket.file(objectPath);
+  const objectPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
   
   try {
-    const [exists] = await file.exists();
-    if (exists) {
-      return `https://storage.googleapis.com/${BUCKET_ID}/${objectPath}`;
+    const result = await storageClient.exists(objectPath);
+    if (result.ok && result.value) {
+      return getPublicUrl(objectPath);
     }
   } catch (error) {
     console.error(`[ObjectStorage] Error checking recipe image:`, error);
   }
   
   return null;
+}
+
+function getPublicUrl(objectPath: string): string {
+  const bucketId = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/')[1] || 
+    process.env.REPLIT_DEFAULT_BUCKET_ID || '';
+  return `https://storage.googleapis.com/${bucketId}/${objectPath}`;
 }
