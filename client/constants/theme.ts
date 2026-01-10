@@ -19,12 +19,12 @@ export const AppColors = {
 
 export const GlassColors = {
   light: {
-    background: "rgba(255, 255, 255, 0.7)",
-    backgroundStrong: "rgba(255, 255, 255, 0.85)",
+    background: "rgba(255, 255, 255, 0.75)",
+    backgroundStrong: "rgba(255, 255, 255, 0.9)",
     backgroundSubtle: "rgba(255, 255, 255, 0.6)",
-    border: "rgba(200, 200, 200, 0.4)",
-    borderStrong: "rgba(180, 180, 180, 0.6)",
-    borderSubtle: "rgba(220, 220, 220, 0.3)",
+    border: "rgba(160, 165, 175, 0.5)",
+    borderStrong: "rgba(140, 145, 155, 0.7)",
+    borderSubtle: "rgba(180, 185, 195, 0.4)",
     overlay: "rgba(255, 255, 255, 0.4)",
     shadowColor: "rgba(31, 38, 135, 0.15)",
     insetHighlight: "rgba(255, 255, 255, 0.5)",
