@@ -36,7 +36,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/native";
 import { useSearch } from "@/contexts/SearchContext";
 
 const BASIC_COOKWARE_LIMIT = 5;
@@ -341,22 +341,29 @@ export default function CookwareScreen() {
     staleTime: 24 * 60 * 60 * 1000,
   });
 
-  useEffect(() => {
-    const loadCookware = async () => {
-      try {
-        const ids = await storage.getCookware();
-        setOwnedCookwareIds(ids);
-        if (showFirstTimeSetup === null) {
-          setShowFirstTimeSetup(ids.length === 0);
-        }
-      } catch (error) {
-        console.error("Error loading cookware:", error);
-      } finally {
-        setLoadingLocal(false);
+  const loadCookware = useCallback(async () => {
+    try {
+      const ids = await storage.getCookware();
+      setOwnedCookwareIds(ids);
+      if (showFirstTimeSetup === null) {
+        setShowFirstTimeSetup(ids.length === 0);
       }
-    };
-    loadCookware();
+    } catch (error) {
+      console.error("Error loading cookware:", error);
+    } finally {
+      setLoadingLocal(false);
+    }
   }, [showFirstTimeSetup]);
+
+  useEffect(() => {
+    loadCookware();
+  }, [loadCookware]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCookware();
+    }, [loadCookware])
+  );
 
   const ownedApplianceIds = useMemo(
     () => new Set(ownedCookwareIds),
