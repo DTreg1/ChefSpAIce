@@ -112,6 +112,7 @@ export const users = pgTable("users", {
   expirationAlertDays: integer("expiration_alert_days").notNull().default(3),
   storageAreasEnabled: text("storage_areas_enabled").array(),
   householdSize: integer("household_size").notNull().default(2),
+  dailyMeals: integer("daily_meals").notNull().default(3),
   cookingSkillLevel: text("cooking_skill_level").notNull().default("beginner"),
   preferredUnits: text("preferred_units").notNull().default("imperial"),
   foodsToAvoid: text("foods_to_avoid").array(),
