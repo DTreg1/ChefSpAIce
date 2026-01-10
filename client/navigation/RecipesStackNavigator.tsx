@@ -36,7 +36,7 @@ export default function RecipesStackNavigator() {
         name="RecipeDetail"
         component={RecipeDetailScreen}
         options={{
-          headerTitle: "Recipe",
+          headerShown: false,
         }}
       />
       <Stack.Screen

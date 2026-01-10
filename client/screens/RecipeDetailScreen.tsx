@@ -19,7 +19,6 @@ import {
   useFocusEffect,
 } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { HeaderButton } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -31,6 +30,7 @@ import { TermTooltip } from "@/components/TermTooltip";
 import { IngredientSwapModal } from "@/components/IngredientSwapModal";
 import { RecipeDetailSkeleton } from "@/components/Skeleton";
 import { NutritionBadge } from "@/components/NutritionBadge";
+import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useRecipeVoiceNavigation } from "@/hooks/useRecipeVoiceNavigation";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -257,49 +257,6 @@ export default function RecipeDetailScreen() {
     },
   });
 
-  useEffect(() => {
-    if (recipe) {
-      navigation.setOptions({
-        headerRight: () => (
-          <View style={styles.headerRight}>
-            <HeaderButton onPress={() => setShowVoiceControls((prev) => !prev)}>
-              <Feather
-                name="mic"
-                size={22}
-                color={showVoiceControls ? AppColors.primary : theme.text}
-                style={{ opacity: showVoiceControls ? 1 : 0.6 }}
-              />
-            </HeaderButton>
-            <HeaderButton onPress={handleToggleFavorite}>
-              <Feather
-                name="heart"
-                size={22}
-                color={recipe.isFavorite ? AppColors.error : theme.text}
-                style={{ opacity: recipe.isFavorite ? 1 : 0.6 }}
-              />
-            </HeaderButton>
-            <HeaderButton onPress={handleShare}>
-              <Feather
-                name="share-2"
-                size={22}
-                color={theme.text}
-                style={{ opacity: 0.6 }}
-              />
-            </HeaderButton>
-            <HeaderButton onPress={handleExportPDF} disabled={exporting}>
-              <Feather
-                name="download"
-                size={22}
-                color={exporting ? theme.textSecondary : theme.text}
-                style={{ opacity: exporting ? 0.3 : 0.6 }}
-              />
-            </HeaderButton>
-          </View>
-        ),
-      });
-    }
-  }, [navigation, recipe, theme, showVoiceControls, exporting]);
-
   const handleToggleFavorite = async () => {
     if (!recipe) return;
     await storage.toggleRecipeFavorite(recipe.id);
@@ -410,17 +367,26 @@ export default function RecipeDetailScreen() {
     }
   };
 
+  const loadingHeaderPadding = 56 + insets.top + Spacing.lg;
+
   if (loading) {
     return (
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
+        <ExpoGlassHeader
+          title="Recipe"
+          screenKey="recipe-detail"
+          showSearch={false}
+          showBackButton={true}
+          menuItems={[]}
+        />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
             styles.content,
             {
-              paddingTop: Spacing.lg,
+              paddingTop: loadingHeaderPadding,
               paddingBottom: tabBarHeight + 100,
             },
           ]}
@@ -436,7 +402,14 @@ export default function RecipeDetailScreen() {
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
-        <View style={styles.notFoundContainer}>
+        <ExpoGlassHeader
+          title="Recipe"
+          screenKey="recipe-detail"
+          showSearch={false}
+          showBackButton={true}
+          menuItems={[]}
+        />
+        <View style={[styles.notFoundContainer, { paddingTop: loadingHeaderPadding }]}>
           <Feather name="alert-circle" size={48} color={theme.textSecondary} />
           <ThemedText type="h3" style={styles.notFoundText}>
             Recipe not found
@@ -454,15 +427,50 @@ export default function RecipeDetailScreen() {
   ).length;
   const totalCount = recipe.ingredients.length;
 
+  const menuItems: MenuItemConfig[] = [
+    {
+      label: showVoiceControls ? "Voice Mode On" : "Voice Mode",
+      icon: "mic",
+      onPress: () => setShowVoiceControls((prev) => !prev),
+      active: showVoiceControls,
+    },
+    {
+      label: recipe.isFavorite ? "Unfavorite" : "Favorite",
+      icon: "heart",
+      onPress: handleToggleFavorite,
+      active: recipe.isFavorite,
+    },
+    {
+      label: "Share",
+      icon: "share-2",
+      onPress: handleShare,
+    },
+    {
+      label: exporting ? "Exporting..." : "Export PDF",
+      icon: "download",
+      onPress: handleExportPDF,
+      disabled: exporting,
+    },
+  ];
+
+  const headerPadding = 56 + insets.top + Spacing.lg;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title={recipe.title}
+        screenKey="recipe-detail"
+        showSearch={false}
+        showBackButton={true}
+        menuItems={menuItems}
+      />
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: headerPadding,
             paddingBottom: tabBarHeight + (showVoiceControls ? 280 : 100),
           },
         ]}
@@ -937,10 +945,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
-  },
-  headerRight: {
-    flexDirection: "row",
-    gap: Spacing.sm,
   },
   heroImage: {
     height: 250,
