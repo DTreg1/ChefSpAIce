@@ -211,7 +211,7 @@ function MobileAppContent() {
           </View>
         </View>
       </NavigationContainer>
-      <StatusBar />
+      <StatusBar style="auto" translucent backgroundColor="transparent" />
     </FloatingChatProvider>
   );
 }

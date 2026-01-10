@@ -443,7 +443,7 @@ export const storage = {
           // Check if local file exists (native only)
           if (Platform.OS !== "web") {
             try {
-              const FileSystem = await import("expo-file-system");
+              const FileSystem = await import("expo-file-system/legacy");
               const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
               if (!fileInfo.exists && recipe.cloudImageUri) {
                 useCloudFallback = true;
