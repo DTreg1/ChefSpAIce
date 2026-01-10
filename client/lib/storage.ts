@@ -428,35 +428,52 @@ export const storage = {
       recipes.map(async (recipe) => {
         let resolvedImageUri: string | undefined = recipe.imageUri;
         let useCloudFallback = false;
+        let localMissing = false;
         
         if (recipe.imageUri?.startsWith("stored:")) {
           const recipeId = recipe.imageUri.replace("stored:", "");
           const imageUri = await this.getRecipeImage(recipeId);
-          if (imageUri) {
+          if (imageUri && imageUri.length > 100) {
+            // Valid image data found in local storage
             resolvedImageUri = imageUri;
-          } else if (recipe.cloudImageUri) {
-            // Local storage doesn't have it, use cloud fallback
-            useCloudFallback = true;
+          } else {
+            // Local storage doesn't have it or data is corrupted
+            localMissing = true;
+            console.log("[getRecipes] Local image missing for recipe:", recipe.id, "cloudImageUri available:", !!recipe.cloudImageUri);
+            if (recipe.cloudImageUri) {
+              useCloudFallback = true;
+            } else {
+              // No cloud fallback available, clear the broken reference
+              resolvedImageUri = undefined;
+            }
           }
-          // If no cloud fallback and no local, keep original reference
         } else if (recipe.imageUri?.startsWith("file://")) {
           // Check if local file exists (native only)
           if (Platform.OS !== "web") {
             try {
               const FileSystem = await import("expo-file-system/legacy");
               const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
-              if (!fileInfo.exists && recipe.cloudImageUri) {
-                useCloudFallback = true;
+              if (!fileInfo.exists) {
+                localMissing = true;
+                console.log("[getRecipes] Local file missing for recipe:", recipe.id);
+                if (recipe.cloudImageUri) {
+                  useCloudFallback = true;
+                } else {
+                  resolvedImageUri = undefined;
+                }
               }
-              // If no cloud fallback, keep the file:// reference
             } catch {
               // On error, keep original reference - don't lose it
             }
           }
+        } else if (!recipe.imageUri && recipe.cloudImageUri) {
+          // No local image but cloud image exists - use it directly
+          useCloudFallback = true;
         }
         
         // Use cloud fallback if local is confirmed missing and cloud is available
         if (useCloudFallback && recipe.cloudImageUri) {
+          console.log("[getRecipes] Using cloud fallback for recipe:", recipe.id);
           resolvedImageUri = recipe.cloudImageUri;
         }
         
