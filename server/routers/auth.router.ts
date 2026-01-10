@@ -9,6 +9,7 @@ import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from 
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
+  dailyMeals: z.coerce.number().int().min(1).max(10).optional(),
   dietaryRestrictions: z.array(z.string().max(100)).max(50).optional(),
   cuisinePreferences: z.array(z.string().max(100)).max(50).optional(),
   storageAreas: z.array(z.string().max(50)).max(20).optional(),
@@ -486,6 +487,9 @@ router.post("/sync", async (req: Request, res: Response) => {
         
         if (prefs.servingSize !== undefined) {
           userUpdate.householdSize = prefs.servingSize;
+        }
+        if (prefs.dailyMeals !== undefined) {
+          userUpdate.dailyMeals = prefs.dailyMeals;
         }
         if (prefs.dietaryRestrictions !== undefined) {
           userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;

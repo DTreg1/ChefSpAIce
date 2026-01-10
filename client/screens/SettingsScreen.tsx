@@ -106,6 +106,13 @@ const STORAGE_AREA_OPTIONS = [
   { id: "pantry", label: "Pantry", icon: "archive" as const },
   { id: "counter", label: "Counter", icon: "coffee" as const },
 ];
+
+const DAILY_MEALS_OPTIONS = [
+  { value: 2, label: "2 meals" },
+  { value: 3, label: "3 meals" },
+  { value: 4, label: "4 meals" },
+  { value: 5, label: "5+ meals" },
+];
 import {
   clearPreferences,
   getLearnedPreferencesCount,
@@ -221,6 +228,12 @@ export default function SettingsScreen() {
 
   const handleServingSizeChange = async (size: number) => {
     const newPrefs = { ...preferences, servingSize: size };
+    setPreferences(newPrefs);
+    await storage.setPreferences(newPrefs);
+  };
+
+  const handleDailyMealsChange = async (meals: number) => {
+    const newPrefs = { ...preferences, dailyMeals: meals };
     setPreferences(newPrefs);
     await storage.setPreferences(newPrefs);
   };
@@ -714,6 +727,43 @@ export default function SettingsScreen() {
                   },
                 ]}
                 data-testid={`button-household-size-${option.value}`}
+              >
+                <ThemedText
+                  type="small"
+                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                >
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassCard>
+
+      <GlassCard style={styles.section}>
+        <ThemedText type="h4" style={styles.sectionTitle}>
+          Daily Meals
+        </ThemedText>
+        <ThemedText type="caption" style={styles.dataInfo}>
+          How many meals do you typically eat per day?
+        </ThemedText>
+        <View style={styles.chipContainer}>
+          {DAILY_MEALS_OPTIONS.map((option) => {
+            const isSelected = (preferences.dailyMeals || 3) === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => handleDailyMealsChange(option.value)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isSelected
+                      ? AppColors.primary
+                      : theme.backgroundSecondary,
+                    borderColor: isSelected ? AppColors.primary : theme.border,
+                  },
+                ]}
+                data-testid={`button-daily-meals-${option.value}`}
               >
                 <ThemedText
                   type="small"
