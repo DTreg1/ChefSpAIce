@@ -253,6 +253,7 @@ export default function SubscriptionScreen() {
         title="Subscription"
         screenKey="subscription"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <ScrollView

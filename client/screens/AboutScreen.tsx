@@ -30,6 +30,7 @@ export default function AboutPage() {
         title="About"
         screenKey="about"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <ScrollView

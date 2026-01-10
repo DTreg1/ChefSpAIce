@@ -198,6 +198,7 @@ export default function CookingTermsScreen() {
         title="Cooking Terms"
         screenKey="cookingTerms"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <View

@@ -231,6 +231,7 @@ export default function AnalyticsScreen() {
         title="Analytics"
         screenKey="analytics"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <ScrollView

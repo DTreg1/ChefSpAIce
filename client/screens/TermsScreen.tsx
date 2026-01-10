@@ -28,6 +28,7 @@ export default function TermsOfServicePage() {
         title="Terms of Service"
         screenKey="terms"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <ScrollView

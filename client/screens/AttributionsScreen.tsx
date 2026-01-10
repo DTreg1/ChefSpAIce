@@ -43,6 +43,7 @@ export default function AttributionsPage() {
         title="Attributions"
         screenKey="attributions"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <ScrollView

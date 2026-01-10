@@ -466,6 +466,7 @@ export default function SettingsScreen() {
         title="Settings"
         screenKey="settings"
         showSearch={false}
+        showBackButton={true}
         menuItems={menuItems}
       />
       <KeyboardAwareScrollViewCompat

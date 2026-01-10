@@ -640,6 +640,7 @@ export default function CookwareScreen() {
         materialIcon="silverware-fork-knife"
         screenKey="cookware"
         searchPlaceholder="Search cookware..."
+        showBackButton={true}
         menuItems={menuItems}
       />
       {isFirstTimeUser ? (

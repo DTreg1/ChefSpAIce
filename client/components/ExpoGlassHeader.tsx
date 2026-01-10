@@ -37,6 +37,7 @@ interface ExpoGlassHeaderProps {
   menuItems?: MenuItemConfig[];
   showSearch?: boolean;
   showMenu?: boolean;
+  showBackButton?: boolean;
 }
 
 export function ExpoGlassHeader({
@@ -47,6 +48,7 @@ export function ExpoGlassHeader({
   menuItems = [],
   showSearch = true,
   showMenu = true,
+  showBackButton = false,
 }: ExpoGlassHeaderProps) {
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -54,6 +56,12 @@ export function ExpoGlassHeader({
   const inputRef = useRef<TextInput>(null);
 
   const { getSearchQuery, setSearchQuery, isSearchOpen, openSearch, closeSearch } = useSearch();
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
   const searchQuery = getSearchQuery(screenKey);
   const isOpen = isSearchOpen(screenKey);
 
@@ -161,16 +169,27 @@ export function ExpoGlassHeader({
           </ThemedText>
         </Animated.View>
 
-        {/* Left side: hamburger + search */}
+        {/* Left side: back/hamburger + search */}
         <View style={styles.leftContainer}>
-          <Pressable
-            style={styles.hamburgerButton}
-            onPress={handleOpenDrawer}
-            testID="button-open-drawer"
-            accessibilityLabel="Open menu"
-          >
-            <Feather name="menu" size={24} color={textColor} />
-          </Pressable>
+          {showBackButton ? (
+            <Pressable
+              style={styles.hamburgerButton}
+              onPress={handleGoBack}
+              testID="button-go-back"
+              accessibilityLabel="Go back"
+            >
+              <Feather name="chevron-left" size={28} color={textColor} />
+            </Pressable>
+          ) : (
+            <Pressable
+              style={styles.hamburgerButton}
+              onPress={handleOpenDrawer}
+              testID="button-open-drawer"
+              accessibilityLabel="Open menu"
+            >
+              <Feather name="menu" size={24} color={textColor} />
+            </Pressable>
+          )}
 
           {showSearch && (
             <Animated.View
