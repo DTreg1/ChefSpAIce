@@ -32,41 +32,57 @@ export const PRODUCT_IDS = {
 
 class StoreKitService {
   private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
     if (Platform.OS === 'web') return;
     if (!Purchases) {
       console.log('StoreKit: Native module not available');
       return;
     }
 
-    try {
-      if (__DEV__ && LOG_LEVEL) {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    this.initPromise = (async () => {
+      try {
+        if (__DEV__ && LOG_LEVEL) {
+          Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        }
+
+        const apiKey = Platform.select({
+          ios: REVENUECAT_IOS_KEY,
+          android: REVENUECAT_ANDROID_KEY,
+          default: '',
+        });
+
+        if (!apiKey) {
+          console.warn('StoreKit: No API key configured');
+          return;
+        }
+
+        await Purchases.configure({ apiKey });
+        this.initialized = true;
+        console.log('StoreKit: Initialized successfully');
+      } catch (error) {
+        console.error('StoreKit: Failed to initialize', error);
       }
+    })();
 
-      const apiKey = Platform.select({
-        ios: REVENUECAT_IOS_KEY,
-        android: REVENUECAT_ANDROID_KEY,
-        default: '',
-      });
-
-      if (!apiKey) {
-        console.warn('StoreKit: No API key configured');
-        return;
-      }
-
-      await Purchases.configure({ apiKey });
-      this.initialized = true;
-      console.log('StoreKit: Initialized successfully');
-    } catch (error) {
-      console.error('StoreKit: Failed to initialize', error);
-    }
+    return this.initPromise;
   }
 
   async setUserId(userId: string): Promise<void> {
-    if (!this.initialized || Platform.OS === 'web' || !Purchases) return;
+    if (Platform.OS === 'web' || !Purchases) return;
+
+    if (!this.initialized && this.initPromise) {
+      await this.initPromise;
+    }
+    
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
+    if (!this.initialized) return;
 
     try {
       await Purchases.logIn(userId);

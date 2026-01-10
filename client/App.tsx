@@ -116,7 +116,7 @@ function getActiveRouteName(
 function MobileAppContent() {
   const colorScheme = useTheme();
   const isDark = colorScheme.isDark;
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user, setSignOutCallback } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
   const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } = useSubscription();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
@@ -126,6 +126,18 @@ function MobileAppContent() {
     useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useExpirationNotifications();
+
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      storeKitService.setUserId(user.id);
+    }
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    setSignOutCallback(() => {
+      storeKitService.logout();
+    });
+  }, [setSignOutCallback]);
 
   const navigationTheme: Theme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;

@@ -55,7 +55,11 @@ function mapProductIdToTier(productId: string): 'BASIC' | 'PRO' {
   return 'BASIC';
 }
 
-async function handleSubscriptionEvent(event: RevenueCatWebhookEvent['event'], isActive: boolean): Promise<void> {
+async function handleSubscriptionUpdate(
+  event: RevenueCatWebhookEvent['event'],
+  status: 'active' | 'canceled' | 'past_due' | 'expired',
+  keepTier: boolean
+): Promise<void> {
   const userId = event.app_user_id;
   const tier = mapProductIdToTier(event.product_id);
 
@@ -73,13 +77,13 @@ async function handleSubscriptionEvent(event: RevenueCatWebhookEvent['event'], i
   await db
     .update(users)
     .set({
-      subscriptionTier: isActive ? tier : 'BASIC',
-      subscriptionStatus: isActive ? 'active' : 'expired',
+      subscriptionTier: keepTier ? tier : 'BASIC',
+      subscriptionStatus: status,
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
 
-  console.log(`[RevenueCat] Updated subscription for user ${userId}: ${tier}, active: ${isActive}`);
+  console.log(`[RevenueCat] Updated subscription for user ${userId}: tier=${keepTier ? tier : 'BASIC'}, status=${status}`);
 }
 
 router.post('/', async (req: Request, res: Response) => {
@@ -99,13 +103,19 @@ router.post('/', async (req: Request, res: Response) => {
       case 'RENEWAL':
       case 'PRODUCT_CHANGE':
       case 'UNCANCELLATION':
-        await handleSubscriptionEvent(event, true);
+        await handleSubscriptionUpdate(event, 'active', true);
         break;
 
       case 'CANCELLATION':
-      case 'EXPIRATION':
+        await handleSubscriptionUpdate(event, 'canceled', true);
+        break;
+
       case 'BILLING_ISSUE':
-        await handleSubscriptionEvent(event, false);
+        await handleSubscriptionUpdate(event, 'past_due', true);
+        break;
+
+      case 'EXPIRATION':
+        await handleSubscriptionUpdate(event, 'expired', false);
         break;
 
       case 'TEST':

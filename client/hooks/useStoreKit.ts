@@ -17,10 +17,9 @@ interface UseStoreKitReturn {
 
 export function useStoreKit(): UseStoreKitReturn {
   const [isLoading, setIsLoading] = useState(true);
+  const [isAvailable, setIsAvailable] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-
-  const isAvailable = Platform.OS !== 'web' && storeKitService.isInitialized();
 
   const isSubscribed = customerInfo?.entitlements?.active
     ? Object.keys(customerInfo.entitlements.active).length > 0
@@ -37,26 +36,35 @@ export function useStoreKit(): UseStoreKitReturn {
   useEffect(() => {
     if (Platform.OS === 'web') {
       setIsLoading(false);
+      setIsAvailable(false);
       return;
     }
 
-    const loadData = async () => {
+    const initAndLoad = async () => {
       setIsLoading(true);
       try {
-        const [fetchedOfferings, fetchedCustomerInfo] = await Promise.all([
-          storeKitService.getOfferings(),
-          storeKitService.getCustomerInfo(),
-        ]);
-        setOfferings(fetchedOfferings);
-        setCustomerInfo(fetchedCustomerInfo);
+        await storeKitService.initialize();
+        
+        const initialized = storeKitService.isInitialized();
+        setIsAvailable(initialized);
+        
+        if (initialized) {
+          const [fetchedOfferings, fetchedCustomerInfo] = await Promise.all([
+            storeKitService.getOfferings(),
+            storeKitService.getCustomerInfo(),
+          ]);
+          setOfferings(fetchedOfferings);
+          setCustomerInfo(fetchedCustomerInfo);
+        }
       } catch (error) {
         console.error('useStoreKit: Failed to load data', error);
+        setIsAvailable(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadData();
+    initAndLoad();
   }, []);
 
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
