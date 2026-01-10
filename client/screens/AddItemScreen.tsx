@@ -1296,6 +1296,27 @@ export default function AddItemScreen() {
           onChange={handleDateChange}
         />
       ) : null}
+
+      <View style={styles.actionButtonsContainer}>
+        <GlassButton
+          variant="outline"
+          onPress={() => navigation.goBack()}
+          style={styles.cancelButton}
+          data-testid="button-cancel-add-item"
+        >
+          Cancel
+        </GlassButton>
+        <GlassButton
+          variant="primary"
+          onPress={handleSave}
+          loading={saving}
+          disabled={saving || !name.trim()}
+          style={styles.saveButton}
+          data-testid="button-save-item"
+        >
+          {saving ? "Saving..." : "Add Item"}
+        </GlassButton>
+      </View>
       </KeyboardAwareScrollViewCompat>
     </View>
   );
@@ -1612,5 +1633,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     justifyContent: "center",
     borderWidth: 1,
+  },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  cancelButton: {
+    flex: 1,
+  },
+  saveButton: {
+    flex: 2,
   },
 });
