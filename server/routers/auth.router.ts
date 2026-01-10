@@ -4,7 +4,17 @@ import { users, userSessions, userSyncData, subscriptions } from "@shared/schema
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
+import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
+
+const syncPreferencesSchema = z.object({
+  servingSize: z.number().int().min(1).max(10).optional(),
+  dietaryRestrictions: z.array(z.string().max(100)).max(50).optional(),
+  cuisinePreferences: z.array(z.string().max(100)).max(50).optional(),
+  storageAreas: z.array(z.string().max(50)).max(20).optional(),
+  cookingLevel: z.enum(["basic", "intermediate", "professional"]).optional(),
+  expirationAlertDays: z.number().int().min(1).max(30).optional(),
+}).passthrough();
 
 const router = Router();
 
@@ -482,6 +492,52 @@ router.post("/sync", async (req: Request, res: Response) => {
         updatedAt: new Date(),
       })
       .where(eq(userSyncData.userId, session.userId));
+
+    if (data.preferences) {
+      const parseResult = syncPreferencesSchema.safeParse(data.preferences);
+      if (parseResult.success) {
+        const prefs = parseResult.data;
+        const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
+        
+        if (prefs.servingSize !== undefined) {
+          userUpdate.householdSize = prefs.servingSize;
+        }
+        if (prefs.dietaryRestrictions !== undefined) {
+          userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;
+        }
+        if (prefs.cuisinePreferences !== undefined) {
+          userUpdate.favoriteCategories = prefs.cuisinePreferences;
+        }
+        if (prefs.storageAreas !== undefined) {
+          userUpdate.storageAreasEnabled = prefs.storageAreas;
+        }
+        if (prefs.cookingLevel !== undefined) {
+          const levelMap: Record<string, string> = {
+            basic: "beginner",
+            intermediate: "intermediate", 
+            professional: "advanced"
+          };
+          userUpdate.cookingSkillLevel = levelMap[prefs.cookingLevel] || "beginner";
+        }
+        if (prefs.expirationAlertDays !== undefined) {
+          userUpdate.expirationAlertDays = prefs.expirationAlertDays;
+        }
+        
+        if (Object.keys(userUpdate).length > 1) {
+          await db
+            .update(users)
+            .set(userUpdate)
+            .where(eq(users.id, session.userId));
+        }
+      }
+    }
+
+    if (data.onboarding && data.onboarding.completedAt) {
+      await db
+        .update(users)
+        .set({ hasCompletedOnboarding: true, updatedAt: new Date() })
+        .where(eq(users.id, session.userId));
+    }
 
     res.json({ success: true, syncedAt: new Date().toISOString() });
   } catch (error) {

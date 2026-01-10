@@ -90,6 +90,22 @@ const COMMON_ALLERGIES = [
   "Fish",
   "Sesame",
 ];
+
+const HOUSEHOLD_SIZE_OPTIONS = [
+  { value: 1, label: "1 person" },
+  { value: 2, label: "2 people" },
+  { value: 3, label: "3 people" },
+  { value: 4, label: "4 people" },
+  { value: 5, label: "5 people" },
+  { value: 6, label: "6+ people" },
+];
+
+const STORAGE_AREA_OPTIONS = [
+  { id: "fridge", label: "Fridge", icon: "thermometer" as const },
+  { id: "freezer", label: "Freezer", icon: "wind" as const },
+  { id: "pantry", label: "Pantry", icon: "archive" as const },
+  { id: "counter", label: "Counter", icon: "coffee" as const },
+];
 import {
   clearPreferences,
   getLearnedPreferencesCount,
@@ -199,6 +215,23 @@ export default function SettingsScreen() {
       ? current.filter((a) => a !== allergy)
       : [...current, allergy];
     const newPrefs = { ...preferences, dietaryRestrictions: updated };
+    setPreferences(newPrefs);
+    await storage.setPreferences(newPrefs);
+  };
+
+  const handleServingSizeChange = async (size: number) => {
+    const newPrefs = { ...preferences, servingSize: size };
+    setPreferences(newPrefs);
+    await storage.setPreferences(newPrefs);
+  };
+
+  const handleToggleStorageArea = async (areaId: string) => {
+    const current = preferences.storageAreas || ["fridge", "freezer", "pantry", "counter"];
+    const updated = current.includes(areaId)
+      ? current.filter((a) => a !== areaId)
+      : [...current, areaId];
+    if (updated.length === 0) return;
+    const newPrefs = { ...preferences, storageAreas: updated };
     setPreferences(newPrefs);
     await storage.setPreferences(newPrefs);
   };
@@ -650,6 +683,87 @@ export default function SettingsScreen() {
                   }}
                 >
                   {preset.description}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassCard>
+
+      <GlassCard style={styles.section}>
+        <ThemedText type="h4" style={styles.sectionTitle}>
+          Household Size
+        </ThemedText>
+        <ThemedText type="caption" style={styles.dataInfo}>
+          Set your household size for personalized portion suggestions
+        </ThemedText>
+        <View style={styles.chipContainer}>
+          {HOUSEHOLD_SIZE_OPTIONS.map((option) => {
+            const isSelected = (preferences.servingSize || 2) === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => handleServingSizeChange(option.value)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isSelected
+                      ? AppColors.primary
+                      : theme.backgroundSecondary,
+                    borderColor: isSelected ? AppColors.primary : theme.border,
+                  },
+                ]}
+                data-testid={`button-household-size-${option.value}`}
+              >
+                <ThemedText
+                  type="small"
+                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                >
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassCard>
+
+      <GlassCard style={styles.section}>
+        <ThemedText type="h4" style={styles.sectionTitle}>
+          Kitchen Storage Areas
+        </ThemedText>
+        <ThemedText type="caption" style={styles.dataInfo}>
+          Select which storage areas you have in your kitchen
+        </ThemedText>
+        <View style={styles.chipContainer}>
+          {STORAGE_AREA_OPTIONS.map((area) => {
+            const currentAreas = preferences.storageAreas || ["fridge", "freezer", "pantry", "counter"];
+            const isSelected = currentAreas.includes(area.id);
+            return (
+              <Pressable
+                key={area.id}
+                onPress={() => handleToggleStorageArea(area.id)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isSelected
+                      ? AppColors.accent
+                      : theme.backgroundSecondary,
+                    borderColor: isSelected ? AppColors.accent : theme.border,
+                  },
+                ]}
+                data-testid={`button-storage-area-${area.id}`}
+              >
+                <Feather
+                  name={area.icon}
+                  size={14}
+                  color={isSelected ? "#FFFFFF" : theme.text}
+                  style={{ marginRight: 4 }}
+                />
+                <ThemedText
+                  type="small"
+                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                >
+                  {area.label}
                 </ThemedText>
               </Pressable>
             );
