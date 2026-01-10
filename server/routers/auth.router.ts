@@ -8,13 +8,13 @@ import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
 
 const syncPreferencesSchema = z.object({
-  servingSize: z.number().int().min(1).max(10).optional(),
+  servingSize: z.coerce.number().int().min(1).max(10).optional(),
   dietaryRestrictions: z.array(z.string().max(100)).max(50).optional(),
   cuisinePreferences: z.array(z.string().max(100)).max(50).optional(),
   storageAreas: z.array(z.string().max(50)).max(20).optional(),
   cookingLevel: z.enum(["basic", "intermediate", "professional"]).optional(),
-  expirationAlertDays: z.number().int().min(1).max(30).optional(),
-}).passthrough();
+  expirationAlertDays: z.coerce.number().int().min(1).max(30).optional(),
+});
 
 const router = Router();
 
@@ -473,30 +473,15 @@ router.post("/sync", async (req: Request, res: Response) => {
       }
     }
 
-    await db
-      .update(userSyncData)
-      .set({
-        inventory: data.inventory ? JSON.stringify(data.inventory) : null,
-        recipes: data.recipes ? JSON.stringify(data.recipes) : null,
-        mealPlans: data.mealPlans ? JSON.stringify(data.mealPlans) : null,
-        shoppingList: data.shoppingList ? JSON.stringify(data.shoppingList) : null,
-        preferences: data.preferences ? JSON.stringify(data.preferences) : null,
-        cookware: data.cookware ? JSON.stringify(data.cookware) : null,
-        wasteLog: data.wasteLog ? JSON.stringify(data.wasteLog) : null,
-        consumedLog: data.consumedLog ? JSON.stringify(data.consumedLog) : null,
-        analytics: data.analytics ? JSON.stringify(data.analytics) : null,
-        onboarding: data.onboarding ? JSON.stringify(data.onboarding) : null,
-        customLocations: data.customLocations ? JSON.stringify(data.customLocations) : null,
-        userProfile: data.userProfile ? JSON.stringify(data.userProfile) : null,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    let prefsSynced = true;
+    let prefsError: string | null = null;
+    let validatedPreferences: string | undefined = undefined;
 
     if (data.preferences) {
       const parseResult = syncPreferencesSchema.safeParse(data.preferences);
       if (parseResult.success) {
         const prefs = parseResult.data;
+        validatedPreferences = JSON.stringify(prefs);
         const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
         
         if (prefs.servingSize !== undefined) {
@@ -529,8 +514,59 @@ router.post("/sync", async (req: Request, res: Response) => {
             .set(userUpdate)
             .where(eq(users.id, session.userId));
         }
+      } else {
+        prefsSynced = false;
+        prefsError = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
+        console.warn(`[Sync] Invalid preferences for user ${session.userId}:`, prefsError);
       }
     }
+
+    const syncUpdate: Record<string, unknown> = {
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (data.inventory !== undefined) {
+      syncUpdate.inventory = data.inventory ? JSON.stringify(data.inventory) : null;
+    }
+    if (data.recipes !== undefined) {
+      syncUpdate.recipes = data.recipes ? JSON.stringify(data.recipes) : null;
+    }
+    if (data.mealPlans !== undefined) {
+      syncUpdate.mealPlans = data.mealPlans ? JSON.stringify(data.mealPlans) : null;
+    }
+    if (data.shoppingList !== undefined) {
+      syncUpdate.shoppingList = data.shoppingList ? JSON.stringify(data.shoppingList) : null;
+    }
+    if (data.cookware !== undefined) {
+      syncUpdate.cookware = data.cookware ? JSON.stringify(data.cookware) : null;
+    }
+    if (data.wasteLog !== undefined) {
+      syncUpdate.wasteLog = data.wasteLog ? JSON.stringify(data.wasteLog) : null;
+    }
+    if (data.consumedLog !== undefined) {
+      syncUpdate.consumedLog = data.consumedLog ? JSON.stringify(data.consumedLog) : null;
+    }
+    if (data.analytics !== undefined) {
+      syncUpdate.analytics = data.analytics ? JSON.stringify(data.analytics) : null;
+    }
+    if (data.onboarding !== undefined) {
+      syncUpdate.onboarding = data.onboarding ? JSON.stringify(data.onboarding) : null;
+    }
+    if (data.customLocations !== undefined) {
+      syncUpdate.customLocations = data.customLocations ? JSON.stringify(data.customLocations) : null;
+    }
+    if (data.userProfile !== undefined) {
+      syncUpdate.userProfile = data.userProfile ? JSON.stringify(data.userProfile) : null;
+    }
+    if (validatedPreferences !== undefined) {
+      syncUpdate.preferences = validatedPreferences;
+    }
+
+    await db
+      .update(userSyncData)
+      .set(syncUpdate)
+      .where(eq(userSyncData.userId, session.userId));
 
     if (data.onboarding && data.onboarding.completedAt) {
       await db
@@ -539,7 +575,12 @@ router.post("/sync", async (req: Request, res: Response) => {
         .where(eq(users.id, session.userId));
     }
 
-    res.json({ success: true, syncedAt: new Date().toISOString() });
+    res.json({ 
+      success: true, 
+      syncedAt: new Date().toISOString(),
+      prefsSynced,
+      ...(prefsError && { prefsError })
+    });
   } catch (error) {
     console.error("Sync save error:", error);
     res.status(500).json({ error: "Failed to save sync data" });
