@@ -38,7 +38,6 @@ export const PRODUCT_IDS = {
   BASIC_YEARLY: 'com.chefspaice.basic.yearly',
   PRO_MONTHLY: 'com.chefspaice.pro.monthly',
   PRO_YEARLY: 'com.chefspaice.pro.yearly',
-  LIFETIME: 'com.chefspaice.lifetime',
 } as const;
 
 export type PaywallResult = 'purchased' | 'restored' | 'cancelled' | 'error' | 'not_presented';

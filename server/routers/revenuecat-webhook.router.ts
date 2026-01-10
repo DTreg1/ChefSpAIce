@@ -50,17 +50,13 @@ function verifyWebhookSecret(req: Request): boolean {
 
 function mapProductIdToTier(productId: string): 'BASIC' | 'PRO' {
   const lowerProductId = productId.toLowerCase();
-  if (lowerProductId.includes('pro') || lowerProductId.includes('lifetime')) {
+  if (lowerProductId.includes('pro')) {
     return 'PRO';
   }
   if (lowerProductId.includes('basic')) {
     return 'BASIC';
   }
   return 'BASIC';
-}
-
-function isLifetimeProduct(productId: string): boolean {
-  return productId.toLowerCase().includes('lifetime');
 }
 
 function mapEntitlementToTier(entitlementId: string | undefined): 'BASIC' | 'PRO' | null {
@@ -141,11 +137,7 @@ router.post('/', async (req: Request, res: Response) => {
         break;
 
       case 'EXPIRATION':
-        if (isLifetimeProduct(event.product_id)) {
-          console.log(`[RevenueCat] Ignoring expiration for lifetime product: ${event.product_id}`);
-        } else {
-          await handleSubscriptionUpdate(event, 'expired', false);
-        }
+        await handleSubscriptionUpdate(event, 'expired', false);
         break;
 
       case 'TEST':
