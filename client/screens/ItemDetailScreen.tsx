@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { HeaderButton } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -20,6 +19,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { NutritionSection } from "@/components/NutritionSection";
+import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, formatDate } from "@/lib/storage";
@@ -75,18 +75,6 @@ export default function ItemDetailScreen() {
     };
     loadItem();
   }, [route.params?.itemId]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <HeaderButton onPress={handleSave} testID="button-save-item">
-          <ThemedText style={{ color: AppColors.primary, fontWeight: "600" }}>
-            Save
-          </ThemedText>
-        </HeaderButton>
-      ),
-    });
-  }, [navigation, item]);
 
   const handleSave = async () => {
     if (!item) return;
@@ -161,28 +149,60 @@ export default function ItemDetailScreen() {
     setShowDatePicker(true);
   };
 
+  const headerPadding = 56 + insets.top + Spacing.lg;
+
+  const menuItems: MenuItemConfig[] = [
+    {
+      label: "Save",
+      icon: "check",
+      onPress: handleSave,
+    },
+    {
+      label: "Delete",
+      icon: "trash-2",
+      onPress: handleDelete,
+    },
+  ];
+
   if (loading || !item) {
     return (
       <View
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
-        <ThemedText>Loading...</ThemedText>
+        <ExpoGlassHeader
+          title="Item Details"
+          screenKey="item-detail"
+          showSearch={false}
+          showBackButton={true}
+          menuItems={[]}
+        />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingTop: headerPadding }}>
+          <ThemedText>Loading...</ThemedText>
+        </View>
       </View>
     );
   }
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Spacing.md,
-          paddingBottom: insets.bottom + 120,
-        },
-      ]}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-    >
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ExpoGlassHeader
+        title={item.name || "Item Details"}
+        screenKey="item-detail"
+        showSearch={false}
+        showBackButton={true}
+        menuItems={menuItems}
+      />
+      <KeyboardAwareScrollViewCompat
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: headerPadding,
+            paddingBottom: insets.bottom + 120,
+          },
+        ]}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+      >
       <GlassCard style={styles.section}>
         <View style={styles.sectionHeader}>
           <ThemedText type="h4">Basic Info</ThemedText>
@@ -501,12 +521,16 @@ export default function ItemDetailScreen() {
           onChange={handleDateChange}
         />
       ) : null}
-    </KeyboardAwareScrollViewCompat>
+      </KeyboardAwareScrollViewCompat>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   content: {

@@ -316,14 +316,14 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Subscription"
         component={SubscriptionScreen}
-        options={{ headerTitle: "Subscription" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="AddItem"
         component={AddItemScreen}
         options={{
           presentation: "fullScreenModal",
-          headerTitle: "Add Item",
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -355,7 +355,7 @@ function AuthGuardedNavigator() {
         component={FoodSearchScreen}
         options={{
           presentation: "fullScreenModal",
-          headerTitle: "Search Foods",
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -363,7 +363,7 @@ function AuthGuardedNavigator() {
         component={AddFoodBatchScreen}
         options={{
           presentation: "fullScreenModal",
-          headerTitle: "Add Items",
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -385,27 +385,27 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="About"
         component={AboutScreen}
-        options={{ headerTitle: "About" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Privacy"
         component={PrivacyScreen}
-        options={{ headerTitle: "Privacy Policy" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Terms"
         component={TermsScreen}
-        options={{ headerTitle: "Terms of Service" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Support"
         component={SupportScreen}
-        options={{ headerTitle: "Support" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Attributions"
         component={AttributionsScreen}
-        options={{ headerTitle: "Attributions" }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

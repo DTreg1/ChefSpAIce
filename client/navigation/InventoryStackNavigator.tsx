@@ -27,7 +27,7 @@ export default function InventoryStackNavigator() {
         name="ItemDetail"
         component={ItemDetailScreen}
         options={{
-          headerTitle: "Item Details",
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

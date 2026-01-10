@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { HeaderButton } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -380,16 +379,6 @@ export default function AddFoodBatchScreen() {
       setSaving(false);
     }
   };
-
-  React.useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <HeaderButton onPress={() => navigation.goBack()}>
-          <ThemedText style={{ color: AppColors.error }}>Cancel</ThemedText>
-        </HeaderButton>
-      ),
-    });
-  }, [navigation]);
 
   if (items.length === 0) {
     return (
