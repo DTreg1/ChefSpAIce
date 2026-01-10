@@ -854,17 +854,16 @@ export default function AddItemScreen() {
           screenKey="addItem"
           showSearch={false}
           menuItems={menuItems}
+          showBackButton
         />
-        <KeyboardAwareScrollViewCompat
-          style={[styles.container, { backgroundColor: "transparent" }]}
-          contentContainerStyle={[
-            styles.selectFoodContainer,
+        <View
+          style={[
+            styles.addItemContainer,
             {
               paddingTop: 56 + insets.top + Spacing.lg,
               paddingBottom: insets.bottom + Spacing.xl,
             },
           ]}
-          keyboardShouldPersistTaps="handled"
         >
         {barcodeLoading ? (
           <View style={styles.selectFoodContent}>
@@ -881,18 +880,58 @@ export default function AddItemScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.searchHeader}>
-              <Feather name="plus-circle" size={32} color={AppColors.primary} />
-              <ThemedText type="h3" style={styles.selectFoodTitle}>
-                Add Food Item
-              </ThemedText>
-              <ThemedText
-                type="small"
-                style={{ color: theme.textSecondary, textAlign: "center" }}
+            <View style={styles.scanButtonRow}>
+              <GlassButton
+                variant="outline"
+                onPress={handleScanBarcode}
+                icon={
+                  <Feather
+                    name="maximize"
+                    size={20}
+                    color={AppColors.primary}
+                  />
+                }
+                style={styles.scanButton}
+                data-testid="button-scan-barcode"
               >
-                Search from USDA and OpenFoodFacts databases for accurate
-                nutrition data
+                Scan Barcode
+              </GlassButton>
+              <GlassButton
+                variant="outline"
+                onPress={handleScanWithAI}
+                icon={
+                  <Feather
+                    name="camera"
+                    size={20}
+                    color={AppColors.secondary}
+                  />
+                }
+                style={[
+                  styles.scanButton,
+                  { borderColor: AppColors.secondary },
+                ]}
+                data-testid="button-ai-scan"
+              >
+                AI Photo Scan
+              </GlassButton>
+            </View>
+
+            <View style={styles.orDivider}>
+              <View
+                style={[styles.dividerLine, { backgroundColor: theme.border }]}
+              />
+              <ThemedText
+                type="caption"
+                style={{
+                  color: theme.textSecondary,
+                  paddingHorizontal: Spacing.md,
+                }}
+              >
+                or search
               </ThemedText>
+              <View
+                style={[styles.dividerLine, { backgroundColor: theme.border }]}
+              />
             </View>
 
             {barcodeError ? (
@@ -917,61 +956,9 @@ export default function AddItemScreen() {
                 placeholder="Search for a food item..."
               />
             </View>
-
-            <View style={styles.orDivider}>
-              <View
-                style={[styles.dividerLine, { backgroundColor: theme.border }]}
-              />
-              <ThemedText
-                type="caption"
-                style={{
-                  color: theme.textSecondary,
-                  paddingHorizontal: Spacing.md,
-                }}
-              >
-                or
-              </ThemedText>
-              <View
-                style={[styles.dividerLine, { backgroundColor: theme.border }]}
-              />
-            </View>
-
-            <View style={styles.scanButtonRow}>
-              <GlassButton
-                variant="outline"
-                onPress={handleScanBarcode}
-                icon={
-                  <Feather
-                    name="maximize"
-                    size={20}
-                    color={AppColors.primary}
-                  />
-                }
-                style={styles.scanButton}
-              >
-                Scan Barcode
-              </GlassButton>
-              <GlassButton
-                variant="outline"
-                onPress={handleScanWithAI}
-                icon={
-                  <Feather
-                    name="camera"
-                    size={20}
-                    color={AppColors.secondary}
-                  />
-                }
-                style={[
-                  styles.scanButton,
-                  { borderColor: AppColors.secondary },
-                ]}
-              >
-                AI Photo Scan
-              </GlassButton>
-            </View>
           </>
         )}
-        </KeyboardAwareScrollViewCompat>
+        </View>
       </View>
     );
   }
@@ -983,6 +970,7 @@ export default function AddItemScreen() {
         screenKey="addItem"
         showSearch={false}
         menuItems={menuItems}
+        showBackButton
       />
       <KeyboardAwareScrollViewCompat
         style={[styles.container, { backgroundColor: "transparent" }]}
@@ -1330,6 +1318,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
   },
+  addItemContainer: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
+  },
   selectFoodContainer: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
@@ -1580,8 +1572,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   searchSection: {
+    flex: 1,
     zIndex: 100,
-    marginBottom: Spacing.lg,
   },
   orDivider: {
     flexDirection: "row",

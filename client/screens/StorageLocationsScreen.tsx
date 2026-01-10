@@ -18,6 +18,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
@@ -153,16 +154,23 @@ export default function StorageLocationsScreen() {
   };
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Spacing.lg,
-          paddingBottom: insets.bottom + Spacing.xl,
-        },
-      ]}
-    >
+    <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
+      <ExpoGlassHeader
+        title="Storage Locations"
+        screenKey="storageLocations"
+        showSearch={false}
+        showBackButton={true}
+      />
+      <KeyboardAwareScrollViewCompat
+        style={styles.container}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: insets.bottom + Spacing.xl,
+          },
+        ]}
+      >
       <ThemedText type="h4" style={styles.sectionTitle}>
         Default Locations
       </ThemedText>
@@ -364,7 +372,8 @@ export default function StorageLocationsScreen() {
           onDismiss={() => setShowUpgradePrompt(false)}
         />
       )}
-    </KeyboardAwareScrollViewCompat>
+      </KeyboardAwareScrollViewCompat>
+    </View>
   );
 }
 

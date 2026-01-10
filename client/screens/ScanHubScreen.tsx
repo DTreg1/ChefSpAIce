@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
@@ -168,45 +169,23 @@ export default function ScanHubScreen() {
     navigation.replace(option.screen as any, option.params);
   };
 
-  const handleClose = () => {
-    navigation.goBack();
-  };
-
   return (
-    <ThemedView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <View style={styles.headerContent}>
-          <Pressable
-            testID="button-close-scan-hub"
-            accessibilityLabel="Close"
-            accessibilityRole="button"
-            onPress={handleClose}
-            style={styles.closeButton}
-          >
-            <Feather
-              name="x"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
-            />
-          </Pressable>
-          <ThemedText type="h2" style={styles.headerTitle}>
-            Choose Scan Type
-          </ThemedText>
-          <View style={styles.headerSpacer} />
-        </View>
-        <ThemedText type="body" style={styles.headerSubtitle}>
-          Select what you want to scan to get the best results
-        </ThemedText>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.xl },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
+    <>
+      <ExpoGlassHeader
+        title="Choose Scan Type"
+        screenKey="scanHub"
+        showSearch={false}
+        showBackButton={true}
+      />
+      <ThemedView style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: 56 + insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
         {SCAN_OPTIONS.map((option) => (
           <ScanOptionCard
             key={option.id}
@@ -218,59 +197,32 @@ export default function ScanHubScreen() {
         ))}
       </ScrollView>
 
-      {upgradePrompt.visible && (
-        <UpgradePrompt
-          type="feature"
-          featureName={upgradePrompt.feature === 'recipeScanning' ? 'Recipe Scanning' : 'Bulk Scanning'}
-          onUpgrade={() => {
-            setUpgradePrompt({ ...upgradePrompt, visible: false });
-            // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
-            navigation.navigate("Main" as any, { 
-              screen: 'Tabs', 
-              params: { 
-                screen: 'ProfileTab', 
-                params: { screen: 'Subscription' } 
-              } 
-            });
-          }}
-          onDismiss={() => setUpgradePrompt({ ...upgradePrompt, visible: false })}
-        />
-      )}
-    </ThemedView>
+        {upgradePrompt.visible && (
+          <UpgradePrompt
+            type="feature"
+            featureName={upgradePrompt.feature === 'recipeScanning' ? 'Recipe Scanning' : 'Bulk Scanning'}
+            onUpgrade={() => {
+              setUpgradePrompt({ ...upgradePrompt, visible: false });
+              // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
+              navigation.navigate("Main" as any, { 
+                screen: 'Tabs', 
+                params: { 
+                  screen: 'ProfileTab', 
+                  params: { screen: 'Subscription' } 
+                } 
+              });
+            }}
+            onDismiss={() => setUpgradePrompt({ ...upgradePrompt, visible: false })}
+          />
+        )}
+      </ThemedView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.sm,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: "center",
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  headerSubtitle: {
-    textAlign: "center",
-    opacity: 0.7,
   },
   scrollView: {
     flex: 1,

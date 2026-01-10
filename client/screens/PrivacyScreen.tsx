@@ -1,5 +1,8 @@
 import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { Spacing } from "@/constants/theme";
 
 function getThemeColors(isDark: boolean) {
   return {
@@ -15,10 +18,19 @@ function getThemeColors(isDark: boolean) {
 
 export default function PrivacyPolicyPage() {
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const colors = getThemeColors(isDark);
+  const headerHeight = 56 + insets.top + Spacing.lg;
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
+    <View style={styles.screenContainer}>
+      <ExpoGlassHeader
+        title="Privacy Policy"
+        screenKey="privacy"
+        showSearch={false}
+        showBackButton={true}
+      />
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight }]}>
       <View style={styles.main}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Privacy Policy</Text>
@@ -96,11 +108,15 @@ export default function PrivacyPolicyPage() {
 
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

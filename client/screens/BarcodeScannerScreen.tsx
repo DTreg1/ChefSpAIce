@@ -185,7 +185,7 @@ export default function BarcodeScannerScreen() {
     <View style={styles.container}>
       {isCameraActive && (
         <CameraView
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, styles.cameraView]}
           facing="back"
           barcodeScannerSettings={{
             barcodeTypes: [
@@ -248,9 +248,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
   },
+  cameraView: {
+    zIndex: 1,
+  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.4)",
+    zIndex: 10,
   },
   header: {
     flexDirection: "row",
@@ -264,6 +268,7 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 11,
   },
   headerTitle: {
     color: "#FFFFFF",

@@ -514,10 +514,12 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+    zIndex: 1,
   },
   cameraOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
+    zIndex: 10,
   },
   cameraHeader: {
     flexDirection: "row",
@@ -525,6 +527,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
+    zIndex: 10,
   },
   cameraButton: {
     width: 44,
@@ -533,6 +536,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 11,
   },
   cameraHeaderCenter: {
     alignItems: "center",
@@ -563,6 +567,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.xl,
     marginVertical: Spacing.lg,
     position: "relative",
+    zIndex: 10,
   },
   corner: {
     position: "absolute",
@@ -601,6 +606,7 @@ const styles = StyleSheet.create({
   cameraFooter: {
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
+    zIndex: 10,
   },
   tipText: {
     color: "rgba(255, 255, 255, 0.8)",

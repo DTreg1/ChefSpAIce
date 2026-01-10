@@ -17,6 +17,7 @@ import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -154,87 +155,103 @@ export default function SelectRecipeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <View style={styles.searchContainer}>
-        {Platform.OS === "ios" ? (
-          <BlurView
-            intensity={40}
-            tint={isDark ? "dark" : "light"}
-            style={[
-              styles.searchBar,
-              { borderColor: theme.glass.border, borderWidth: 1 },
-            ]}
-          >
-            <Feather name="search" size={18} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search recipes..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </BlurView>
-        ) : (
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: theme.glass.background,
-                borderColor: theme.glass.border,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <Feather name="search" size={18} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search recipes..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+      <ExpoGlassHeader
+        title="Select Recipe"
+        screenKey="selectRecipe"
+        showSearch={false}
+        showBackButton={true}
+      />
+      <View
+        style={[
+          styles.contentContainer,
+          { paddingTop: 56 + insets.top + Spacing.lg },
+        ]}
+      >
+        <View style={styles.searchContainer}>
+          {Platform.OS === "ios" ? (
+            <BlurView
+              intensity={40}
+              tint={isDark ? "dark" : "light"}
+              style={[
+                styles.searchBar,
+                { borderColor: theme.glass.border, borderWidth: 1 },
+              ]}
+            >
+              <Feather name="search" size={18} color={theme.textSecondary} />
+              <TextInput
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search recipes..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </BlurView>
+          ) : (
+            <View
+              style={[
+                styles.searchBar,
+                {
+                  backgroundColor: theme.glass.background,
+                  borderColor: theme.glass.border,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <Feather name="search" size={18} color={theme.textSecondary} />
+              <TextInput
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search recipes..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          )}
+        </View>
+
+        {filteredRecipes.length === 0 && !loading ? (
+          <View style={styles.emptyState}>
+            <Feather name="book-open" size={48} color={theme.textSecondary} />
+            <ThemedText type="h4" style={styles.emptyTitle}>
+              No Recipes Found
+            </ThemedText>
+            <ThemedText type="body" style={styles.emptyText}>
+              {recipes.length === 0
+                ? "Generate some recipes first to add them to your meal plan."
+                : "Try a different search term."}
+            </ThemedText>
+            {recipes.length === 0 ? (
+              <GlassButton
+                variant="primary"
+                onPress={() => navigation.goBack()}
+                style={{ marginTop: Spacing.lg }}
+              >
+                Go Back
+              </GlassButton>
+            ) : null}
           </View>
+        ) : (
+          <FlatList
+            data={filteredRecipes}
+            renderItem={renderRecipeItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: insets.bottom + Spacing.xl },
+            ]}
+            showsVerticalScrollIndicator={false}
+          />
         )}
       </View>
-
-      {filteredRecipes.length === 0 && !loading ? (
-        <View style={styles.emptyState}>
-          <Feather name="book-open" size={48} color={theme.textSecondary} />
-          <ThemedText type="h4" style={styles.emptyTitle}>
-            No Recipes Found
-          </ThemedText>
-          <ThemedText type="body" style={styles.emptyText}>
-            {recipes.length === 0
-              ? "Generate some recipes first to add them to your meal plan."
-              : "Try a different search term."}
-          </ThemedText>
-          {recipes.length === 0 ? (
-            <GlassButton
-              variant="primary"
-              onPress={() => navigation.goBack()}
-              style={{ marginTop: Spacing.lg }}
-            >
-              Go Back
-            </GlassButton>
-          ) : null}
-        </View>
-      ) : (
-        <FlatList
-          data={filteredRecipes}
-          renderItem={renderRecipeItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: insets.bottom + Spacing.xl },
-          ]}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  contentContainer: {
     flex: 1,
   },
   searchContainer: {

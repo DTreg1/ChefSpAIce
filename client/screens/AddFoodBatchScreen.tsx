@@ -25,6 +25,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, generateId, DEFAULT_STORAGE_LOCATIONS } from "@/lib/storage";
@@ -419,6 +420,12 @@ export default function AddFoodBatchScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ExpoGlassHeader
+        title="Add Items"
+        screenKey="addFoodBatch"
+        showSearch={false}
+        showBackButton={true}
+      />
       <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
         contentContainerStyle={[

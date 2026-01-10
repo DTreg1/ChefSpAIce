@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { Spacing } from "@/constants/theme";
 
 const BRAND_GREEN = "#27AE60";
 const SUPPORT_EMAIL = "support@chefspaice.com";
@@ -104,6 +107,7 @@ export default function SupportPage() {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const insets = useSafeAreaInsets();
 
   const openEmail = () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -111,9 +115,19 @@ export default function SupportPage() {
     }
   };
 
+  const headerHeight = 56;
+  const topPadding = headerHeight + insets.top + Spacing.lg;
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.main}>
+    <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
+      <ExpoGlassHeader
+        title="Help & Support"
+        screenKey="support"
+        showSearch={false}
+        showBackButton={true}
+      />
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer} scrollIndicatorInsets={{ top: topPadding }}>
+      <View style={[styles.main, { paddingTop: topPadding }]}>
         <View style={styles.content}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]} data-testid="text-support-title">Support</Text>
           <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]} data-testid="text-support-subtitle">
@@ -227,10 +241,14 @@ export default function SupportPage() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

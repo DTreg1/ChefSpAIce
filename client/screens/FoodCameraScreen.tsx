@@ -572,7 +572,7 @@ export default function FoodCameraScreen() {
   return (
     <View style={styles.container}>
       {isCameraActive && (
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
+        <CameraView ref={cameraRef} style={[StyleSheet.absoluteFill, styles.cameraView]} facing="back">
           <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
             <View style={styles.cameraHeader}>
               <View style={styles.headerPlaceholder} />
@@ -630,6 +630,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
   },
+  cameraView: {
+    zIndex: 1,
+  },
   previewContainer: {
     flex: 1,
   },
@@ -647,6 +650,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     backgroundColor: "rgba(0, 0, 0, 0.4)",
+    zIndex: 10,
   },
   previewHeaderTitle: {
     color: "#FFFFFF",
@@ -663,6 +667,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xl,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
+    zIndex: 10,
   },
   previewRetakeButton: {
     flex: 1,
@@ -676,6 +681,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.75)",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 20,
   },
   analyzingContent: {
     alignItems: "center",
@@ -717,6 +723,7 @@ const styles = StyleSheet.create({
   cameraOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
+    zIndex: 10,
   },
   cameraHeader: {
     flexDirection: "row",
@@ -733,6 +740,7 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 11,
   },
   headerPlaceholder: {
     width: 44,
@@ -806,6 +814,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xl,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 10,
   },
   galleryButton: {
     width: 56,

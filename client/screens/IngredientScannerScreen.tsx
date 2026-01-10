@@ -564,15 +564,18 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+    zIndex: 1,
   },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.3)",
+    zIndex: 10,
   },
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
     padding: Spacing.lg,
+    zIndex: 10,
   },
   closeButton: {
     width: 44,
@@ -581,11 +584,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 11,
   },
   scanFrame: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 10,
   },
   scanGuide: {
     width: 280,
@@ -629,6 +634,7 @@ const styles = StyleSheet.create({
   instructions: {
     alignItems: "center",
     padding: Spacing.lg,
+    zIndex: 10,
   },
   instructionText: {
     color: "#FFFFFF",
@@ -637,6 +643,7 @@ const styles = StyleSheet.create({
   controls: {
     alignItems: "center",
     padding: Spacing.xl,
+    zIndex: 10,
   },
   captureButton: {
     width: 72,
