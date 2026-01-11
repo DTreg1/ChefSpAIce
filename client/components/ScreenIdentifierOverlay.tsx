@@ -8,7 +8,6 @@ import {
   Alert,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { useNavigation } from "@react-navigation/native";
 import { storage } from "@/lib/storage";
 import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
@@ -23,15 +22,13 @@ export function ScreenIdentifierOverlay({
 }: ScreenIdentifierOverlayProps) {
   const [copied, setCopied] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const navigation = useNavigation<any>();
 
   // Check environment variable to hide overlay (default: show in dev)
   const showOverlay = process.env.EXPO_PUBLIC_SHOW_DEV_OVERLAY !== "false";
   
-  if (!showOverlay) return null;
+  if (!screenName || !showOverlay) return null;
 
   const handleCopy = async () => {
-    if (!screenName) return;
     try {
       if (Platform.OS === "web") {
         await navigator.clipboard.writeText(screenName);
@@ -102,20 +99,18 @@ export function ScreenIdentifierOverlay({
 
   return (
     <View style={[styles.container, { pointerEvents: "box-none" }]}>
-      {screenName ? (
-        <TouchableOpacity
-          style={styles.overlay}
-          onPress={handleCopy}
-          activeOpacity={0.8}
-          data-testid="button-copy-screen-name"
-        >
-          <Text style={styles.label}>Screen:</Text>
-          <Text style={styles.screenName}>{screenName}</Text>
-          <View style={[styles.copyBadge, copied && styles.copiedBadge]}>
-            <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
-          </View>
-        </TouchableOpacity>
-      ) : null}
+      <TouchableOpacity
+        style={styles.overlay}
+        onPress={handleCopy}
+        activeOpacity={0.8}
+        data-testid="button-copy-screen-name"
+      >
+        <Text style={styles.label}>Screen:</Text>
+        <Text style={styles.screenName}>{screenName}</Text>
+        <View style={[styles.copyBadge, copied && styles.copiedBadge]}>
+          <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity
         style={styles.resetButton}
         onPress={handleReset}
@@ -124,14 +119,6 @@ export function ScreenIdentifierOverlay({
         data-testid="button-reset-storage"
       >
         <Text style={styles.resetText}>{resetting ? "..." : "Reset"}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.leafButton}
-        onPress={() => navigation.navigate("GlassLeaf")}
-        activeOpacity={0.8}
-        data-testid="button-glass-leaf"
-      >
-        <Text style={styles.leafText}>Leaf</Text>
       </TouchableOpacity>
     </View>
   );
@@ -190,17 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   resetText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  leafButton: {
-    backgroundColor: "rgba(34, 139, 34, 0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  leafText: {
     color: "#fff",
     fontSize: 10,
     fontWeight: "600",
