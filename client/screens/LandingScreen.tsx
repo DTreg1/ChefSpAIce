@@ -572,89 +572,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 60 : 16,
   },
   logoContainer: {
-    // LAYOUT - Flexbox
-    flexDirection: "row",        // "row" | "row-reverse" | "column" | "column-reverse"
-    alignItems: "center",        // "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-    justifyContent: "flex-start", // "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly"
-    alignSelf: "auto",           // "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-    flexWrap: "nowrap",          // "wrap" | "nowrap" | "wrap-reverse"
-    flex: 0,                     // number (0 = no grow, 1 = fill available space)
-    flexGrow: 0,                 // number
-    flexShrink: 1,               // number
-    flexBasis: "auto",           // number | "auto"
-    gap: 8,                      // number (spacing between children)
-    rowGap: 0,                   // number
-    columnGap: 0,                // number
-
-    // DIMENSIONS
-    width: "auto",               // number | "auto" | "100%" | etc.
-    height: "auto",              // number | "auto" | "100%" | etc.
-    minWidth: 0,                 // number
-    maxWidth: "100%",            // number | "100%"
-    minHeight: 0,                // number
-    maxHeight: "100%",           // number | "100%"
-    aspectRatio: undefined,      // number (e.g., 1 = square, 16/9 = widescreen)
-
-    // SPACING
-    margin: 0,                   // number (all sides)
-    marginTop: 0,                // number
-    marginBottom: 0,             // number
-    marginLeft: 0,               // number
-    marginRight: 0,              // number
-    marginHorizontal: 0,         // number (left + right)
-    marginVertical: 0,           // number (top + bottom)
-    padding: 0,                  // number (all sides)
-    paddingTop: 0,               // number
-    paddingBottom: 0,            // number
-    paddingLeft: 0,              // number
-    paddingRight: 0,             // number
-    paddingHorizontal: 0,        // number (left + right)
-    paddingVertical: 0,          // number (top + bottom)
-
-    // POSITIONING
-    position: "relative",        // "relative" | "absolute"
-    top: undefined,              // number (use with position: "absolute")
-    bottom: undefined,           // number
-    left: undefined,             // number
-    right: undefined,            // number
-    zIndex: 0,                   // number (stacking order)
-
-    // BACKGROUND
-    backgroundColor: "transparent", // color string (e.g., "#FF0000", "rgba(255,0,0,0.5)", "red")
-    opacity: 1,                  // number 0-1
-
-    // BORDERS
-    borderWidth: 0,              // number (all sides)
-    borderTopWidth: 0,           // number
-    borderBottomWidth: 0,        // number
-    borderLeftWidth: 0,          // number
-    borderRightWidth: 0,         // number
-    borderColor: "transparent",  // color string
-    borderTopColor: undefined,   // color string
-    borderBottomColor: undefined, // color string
-    borderLeftColor: undefined,  // color string
-    borderRightColor: undefined, // color string
-    borderStyle: "solid",        // "solid" | "dotted" | "dashed"
-    borderRadius: 0,             // number (all corners)
-    borderTopLeftRadius: 0,      // number
-    borderTopRightRadius: 0,     // number
-    borderBottomLeftRadius: 0,   // number
-    borderBottomRightRadius: 0,  // number
-
-    // SHADOWS (iOS)
-    shadowColor: "#000",         // color string
-    shadowOffset: { width: 0, height: 0 }, // { width: number, height: number }
-    shadowOpacity: 0,            // number 0-1
-    shadowRadius: 0,             // number
-
-    // SHADOWS (Android)
-    elevation: 0,                // number (0-24)
-
-    // TRANSFORMS
-    transform: [],               // array of transforms, e.g., [{ scale: 1.5 }, { rotate: "45deg" }, { translateX: 10 }]
-
-    // OVERFLOW
-    overflow: "visible",         // "visible" | "hidden" | "scroll"
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   logoText: {
     fontSize: 22,
