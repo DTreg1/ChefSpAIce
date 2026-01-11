@@ -8,8 +8,11 @@ const SIZES = [1024, 512, 180, 167, 152, 120, 87, 80, 60, 58, 40, 29];
 
 function generateSVG(size: number, cornerRadius: number): string {
   const iconScale = size * 0.55;
-  const iconOffsetX = (size - iconScale) / 2;
-  const iconOffsetY = (size - iconScale) / 2 + size * 0.02; // Slight downward adjustment
+  const scale = iconScale / 24;
+  // The chef hat path is visually centered around (12.5, 11.75) in the 24x24 viewBox
+  // Adjust to center it at (12, 12) then position in the icon
+  const iconOffsetX = (size - iconScale) / 2 - 0.5 * scale;
+  const iconOffsetY = (size - iconScale) / 2 + 0.25 * scale;
   
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
@@ -84,7 +87,7 @@ function generateSVG(size: number, cornerRadius: number): string {
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
   <!-- Chef hat icon with shadow (no background) -->
-  <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${iconScale / 24})" filter="url(#iconShadow)">
+  <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})" filter="url(#iconShadow)">
     <path d="${mdiChefHat}" fill="white" fill-rule="evenodd"/>
   </g>
 </svg>`;
