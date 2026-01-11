@@ -77,3 +77,6 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **expo-camera**: For barcode scanning.
 - **date-fns**: For date manipulation.
 - **@react-native-async-storage/async-storage**: Persistent local storage.
+
+## Developer Notes
+- **Logo Export Endpoint:** The logo download page is available at `/api/logo` but requires port 5000 explicitly (e.g., `https://your-domain:5000/api/logo`). This endpoint provides PNG, SVG, and favicon downloads with JavaScript-based file downloads for cross-browser compatibility. The Expo dev server proxies most routes but API endpoints need the explicit port.
