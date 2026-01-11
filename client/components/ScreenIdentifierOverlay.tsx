@@ -28,9 +28,10 @@ export function ScreenIdentifierOverlay({
   // Check environment variable to hide overlay (default: show in dev)
   const showOverlay = process.env.EXPO_PUBLIC_SHOW_DEV_OVERLAY !== "false";
   
-  if (!screenName || !showOverlay) return null;
+  if (!showOverlay) return null;
 
   const handleCopy = async () => {
+    if (!screenName) return;
     try {
       if (Platform.OS === "web") {
         await navigator.clipboard.writeText(screenName);
@@ -101,18 +102,20 @@ export function ScreenIdentifierOverlay({
 
   return (
     <View style={[styles.container, { pointerEvents: "box-none" }]}>
-      <TouchableOpacity
-        style={styles.overlay}
-        onPress={handleCopy}
-        activeOpacity={0.8}
-        data-testid="button-copy-screen-name"
-      >
-        <Text style={styles.label}>Screen:</Text>
-        <Text style={styles.screenName}>{screenName}</Text>
-        <View style={[styles.copyBadge, copied && styles.copiedBadge]}>
-          <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
-        </View>
-      </TouchableOpacity>
+      {screenName ? (
+        <TouchableOpacity
+          style={styles.overlay}
+          onPress={handleCopy}
+          activeOpacity={0.8}
+          data-testid="button-copy-screen-name"
+        >
+          <Text style={styles.label}>Screen:</Text>
+          <Text style={styles.screenName}>{screenName}</Text>
+          <View style={[styles.copyBadge, copied && styles.copiedBadge]}>
+            <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
+          </View>
+        </TouchableOpacity>
+      ) : null}
       <TouchableOpacity
         style={styles.resetButton}
         onPress={handleReset}
