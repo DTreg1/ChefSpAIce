@@ -11,7 +11,8 @@
  * show a streamlined landing experience without the full app navigation stack.
  */
 
-import { StyleSheet, View, Linking, Platform } from "react-native";
+import { useState } from "react";
+import { StyleSheet, View, Linking, Platform, TouchableOpacity, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
+import { GlassLeaf } from "@/components/GlassLeaf";
 import Constants from "expo-constants";
 
 /**
@@ -82,6 +84,24 @@ function handleSupport() {
  * No navigation stack needed - just the landing page.
  */
 function WebLandingContent() {
+  const [showGlassLeaf, setShowGlassLeaf] = useState(false);
+  const showDevOverlay = process.env.EXPO_PUBLIC_SHOW_DEV_OVERLAY !== "false";
+
+  if (showGlassLeaf) {
+    return (
+      <View style={styles.container}>
+        <GlassLeaf />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setShowGlassLeaf(false)}
+          data-testid="button-back-from-leaf"
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <AnimatedBackground bubbleCount={20} />
@@ -95,6 +115,15 @@ function WebLandingContent() {
           onSupport={handleSupport}
         />
       </View>
+      {showDevOverlay ? (
+        <TouchableOpacity
+          style={styles.leafButton}
+          onPress={() => setShowGlassLeaf(true)}
+          data-testid="button-glass-leaf"
+        >
+          <Text style={styles.leafButtonText}>Leaf</Text>
+        </TouchableOpacity>
+      ) : null}
       <StatusBar style="light" />
     </View>
   );
@@ -127,5 +156,35 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  leafButton: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    backgroundColor: 'rgba(34, 139, 34, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    zIndex: 9999,
+  },
+  leafButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    zIndex: 9999,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
