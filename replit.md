@@ -80,10 +80,3 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 
 ## Developer Notes
 - **Logo Export Endpoint:** The logo download page is available at `/api/logo` but requires port 5000 explicitly (e.g., `https://your-domain:5000/api/logo`). This endpoint provides PNG, SVG, and favicon downloads with JavaScript-based file downloads for cross-browser compatibility. The Expo dev server proxies most routes but API endpoints need the explicit port.
-- **Brand Asset Generator:** A comprehensive brand style guide is available at `/api/brand` (requires port 5000). This page extracts colors, typography, spacing, and glass design specs from the app's theme and presents them in a human-readable format with downloadable logo assets. It includes:
-  - Live logo previews (glass style, gradient, icon-only)
-  - Color palette with hex/rgb values and usage notes
-  - Typography scale with font families and sizes
-  - iOS 26 Liquid Glass design specifications
-  - Spacing scale visualization
-  - JSON export of all brand data
