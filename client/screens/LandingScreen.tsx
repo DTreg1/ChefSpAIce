@@ -9,37 +9,12 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import {
-  Feather,
-  MaterialCommunityIcons,
-  FontAwesome,
-} from "@expo/vector-icons";
-import Svg, { Path } from "react-native-svg";
-import QRCode from "react-native-qrcode-svg";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
-import { NavigationContext } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useContext, useState } from "react";
-import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
-
-// Safe navigation hook that returns null when not inside NavigationContainer
-function useSafeNavigation(): NativeStackNavigationProp<any> | null {
-  const navigationContext = useContext(NavigationContext);
-  // Return the navigation object from context or null if not available
-  return navigationContext as NativeStackNavigationProp<any> | null;
-}
-
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  testId: string;
-  isDark: boolean;
-  isWide?: boolean;
-}
 
 function GlassCard({
   children,
@@ -93,303 +68,6 @@ function GlassCard({
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-  testId,
-  isDark,
-  isWide,
-}: FeatureCardProps) {
-  return (
-    <GlassCard
-      style={[styles.featureCard, isWide && styles.featureCardWide]}
-      testId={`card-feature-${testId}`}
-    >
-      <View style={styles.featureIconContainer}>{icon}</View>
-      <Text
-        style={[styles.featureTitle, { color: "#FFFFFF" }]}
-        data-testid={`text-feature-title-${testId}`}
-      >
-        {title}
-      </Text>
-      <Text
-        style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]}
-        data-testid={`text-feature-desc-${testId}`}
-      >
-        {description}
-      </Text>
-    </GlassCard>
-  );
-}
-
-interface StepCardProps {
-  number: string;
-  title: string;
-  description: string;
-  isDark: boolean;
-  isWide?: boolean;
-}
-
-function StepCard({
-  number,
-  title,
-  description,
-  isDark,
-  isWide,
-}: StepCardProps) {
-  return (
-    <GlassCard
-      style={[styles.stepCard, isWide && styles.stepCardWide]}
-      testId={`card-step-${number}`}
-    >
-      <View style={styles.stepNumber}>
-        <Text style={styles.stepNumberText}>{number}</Text>
-      </View>
-      <View style={styles.stepContent}>
-        <Text
-          style={[styles.stepTitle, { color: "#FFFFFF" }]}
-          data-testid={`text-step-title-${number}`}
-        >
-          {title}
-        </Text>
-        <Text
-          style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]}
-          data-testid={`text-step-desc-${number}`}
-        >
-          {description}
-        </Text>
-      </View>
-    </GlassCard>
-  );
-}
-
-interface BenefitCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  testId: string;
-  isWide?: boolean;
-}
-
-function BenefitCard({
-  icon,
-  title,
-  description,
-  testId,
-  isWide,
-}: BenefitCardProps) {
-  return (
-    <View
-      style={[styles.benefitCard, isWide && styles.benefitCardWide]}
-      data-testid={`card-benefit-${testId}`}
-    >
-      <View style={styles.benefitIconContainer}>{icon}</View>
-      <Text
-        style={styles.benefitTitle}
-        data-testid={`text-benefit-title-${testId}`}
-      >
-        {title}
-      </Text>
-      <Text
-        style={styles.benefitDescription}
-        data-testid={`text-benefit-desc-${testId}`}
-      >
-        {description}
-      </Text>
-    </View>
-  );
-}
-
-interface PricingCardProps {
-  tier: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  isPopular?: boolean;
-  buttonText: string;
-  onPress: () => void;
-  testId: string;
-  isWide?: boolean;
-}
-
-function PricingCard({
-  tier,
-  price,
-  period,
-  description,
-  features,
-  isPopular,
-  buttonText,
-  onPress,
-  testId,
-  isWide,
-}: PricingCardProps) {
-  return (
-    <GlassCard
-      style={[
-        styles.pricingCard,
-        isWide && styles.pricingCardWide,
-        isPopular && styles.pricingCardPopular,
-      ]}
-      testId={`card-pricing-${testId}`}
-    >
-      {isPopular && (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularBadgeText}>Most Popular</Text>
-        </View>
-      )}
-      <Text
-        style={styles.pricingTier}
-        data-testid={`text-pricing-tier-${testId}`}
-      >
-        {tier}
-      </Text>
-      <View style={styles.pricingPriceContainer}>
-        <Text
-          style={styles.pricingPrice}
-          data-testid={`text-pricing-price-${testId}`}
-        >
-          {price}
-        </Text>
-        {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
-      </View>
-      <Text
-        style={styles.pricingDescription}
-        data-testid={`text-pricing-desc-${testId}`}
-      >
-        {description}
-      </Text>
-      <View style={styles.pricingFeatures}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.pricingFeatureRow}>
-            <Feather name="check" size={16} color={AppColors.primary} />
-            <Text style={styles.pricingFeatureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
-      <Pressable
-        style={({ pressed }) => [
-          isPopular
-            ? styles.pricingButtonPrimary
-            : styles.pricingButtonSecondary,
-          pressed && styles.buttonPressed,
-        ]}
-        onPress={onPress}
-        data-testid={`button-pricing-${testId}`}
-      >
-        {isPopular ? (
-          <LinearGradient
-            colors={[AppColors.primary, "#1E8449"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.pricingButtonGradient}
-          >
-            <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
-          </LinearGradient>
-        ) : (
-          <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
-        )}
-      </Pressable>
-    </GlassCard>
-  );
-}
-
-interface TestimonialCardProps {
-  name: string;
-  role: string;
-  quote: string;
-  rating: number;
-  testId: string;
-  isWide?: boolean;
-}
-
-function TestimonialCard({
-  name,
-  role,
-  quote,
-  rating,
-  testId,
-  isWide,
-}: TestimonialCardProps) {
-  return (
-    <GlassCard
-      style={[styles.testimonialCard, isWide && styles.testimonialCardWide]}
-      testId={`card-testimonial-${testId}`}
-    >
-      <View style={styles.testimonialStars}>
-        {[...Array(5)].map((_, i) => (
-          <FontAwesome
-            key={i}
-            name={i < rating ? "star" : "star-o"}
-            size={16}
-            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"}
-          />
-        ))}
-      </View>
-      <Text
-        style={styles.testimonialQuote}
-        data-testid={`text-testimonial-quote-${testId}`}
-      >
-        "{quote}"
-      </Text>
-      <View style={styles.testimonialAuthor}>
-        <View style={styles.testimonialAvatar}>
-          <Text style={styles.testimonialAvatarText}>{name.charAt(0)}</Text>
-        </View>
-        <View>
-          <Text
-            style={styles.testimonialName}
-            data-testid={`text-testimonial-name-${testId}`}
-          >
-            {name}
-          </Text>
-          <Text style={styles.testimonialRole}>{role}</Text>
-        </View>
-      </View>
-    </GlassCard>
-  );
-}
-
-interface FAQItemProps {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onToggle: () => void;
-  testId: string;
-}
-
-function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
-  return (
-    <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
-      <GlassCard style={styles.faqCard}>
-        <View style={styles.faqHeader}>
-          <Text
-            style={styles.faqQuestion}
-            data-testid={`text-faq-question-${testId}`}
-          >
-            {question}
-          </Text>
-          <Feather
-            name={isOpen ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="rgba(255,255,255,0.7)"
-          />
-        </View>
-        {isOpen && (
-          <Text
-            style={styles.faqAnswer}
-            data-testid={`text-faq-answer-${testId}`}
-          >
-            {answer}
-          </Text>
-        )}
-      </GlassCard>
-    </Pressable>
-  );
-}
-
 interface LandingScreenProps {
   onGetStarted?: (
     tier?: "basic" | "pro",
@@ -402,135 +80,8 @@ interface LandingScreenProps {
   onSupport?: () => void;
 }
 
-export default function LandingScreen({
-  onGetStarted,
-  onSignIn,
-  onAbout,
-  onPrivacy,
-  onTerms,
-  onSupport,
-}: LandingScreenProps) {
-  const { width } = useWindowDimensions();
+export default function LandingScreen({}: LandingScreenProps) {
   const { isDark } = useTheme();
-  const isWide = width > 768;
-
-  // Use safe navigation that doesn't crash when outside NavigationContainer (web)
-  const navigation = useSafeNavigation();
-
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-  const [isAnnual, setIsAnnual] = useState(false);
-
-  const handleGetStarted = (tier?: "basic" | "pro") => {
-    if (onGetStarted) {
-      onGetStarted(tier, isAnnual ? "annual" : "monthly");
-    }
-  };
-
-  const handleSignIn = () => {
-    if (onSignIn) {
-      onSignIn();
-    }
-  };
-
-  const handleAbout = () => {
-    if (onAbout) {
-      onAbout();
-    }
-  };
-
-  const handlePrivacy = () => {
-    if (onPrivacy) {
-      onPrivacy();
-    }
-  };
-
-  const handleTerms = () => {
-    if (onTerms) {
-      onTerms();
-    }
-  };
-
-  const handleSupport = () => {
-    if (onSupport) {
-      onSupport();
-    }
-  };
-
-  const testimonials = [
-    {
-      name: "Sarah M.",
-      role: "Busy Mom of 3",
-      quote:
-        "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
-      rating: 5,
-    },
-    {
-      name: "James K.",
-      role: "Home Chef",
-      quote:
-        "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
-      rating: 5,
-    },
-    {
-      name: "Emily R.",
-      role: "Sustainability Advocate",
-      quote:
-        "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
-      rating: 5,
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "How does the AI recipe generation work?",
-      answer:
-        "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
-    },
-    {
-      question: "Is there a free trial available?",
-      answer:
-        "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
-    },
-    {
-      question: "Can I use the app on multiple devices?",
-      answer:
-        "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
-    },
-    {
-      question: "How accurate is the expiration tracking?",
-      answer:
-        "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
-    },
-    {
-      question: "Can I cancel my subscription anytime?",
-      answer:
-        "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
-    },
-  ];
-
-  const trustLogos = [
-    { name: "App Store", iconType: "material", icon: "apple" },
-    { name: "Google Play", iconType: "material", icon: "google-play" },
-    { name: "Replit", iconType: "custom", icon: "replit" },
-    { name: "GitHub", iconType: "feather", icon: "github" },
-  ];
-
-  const ReplitLogo = ({
-    size = 24,
-    color = "rgba(255,255,255,0.5)",
-  }: {
-    size?: number;
-    color?: string;
-  }) => {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 50 50">
-        <Path
-          d="M40 32H27V19h13c1.657 0 3 1.343 3 3v7C43 30.657 41.657 32 40 32zM14 6h10c1.657 0 3 1.343 3 3v10H14c-1.657 0-3-1.343-3-3V9C11 7.343 12.343 6 14 6zM14 45h10c1.657 0 3-1.343 3-3V32H14c-1.657 0-3 1.343-3 3v7C11 43.657 12.343 45 14 45z"
-          fill={color}
-        />
-      </Svg>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -543,11 +94,35 @@ export default function LandingScreen({
       />
 
       <View style={styles.logoContainer}>
-        <MaterialCommunityIcons
-          name="chef-hat"
-          size={32}
-          color={AppColors.primary}
-        />
+        {/* Glass Button wrapping the chef hat icon */}
+        {Platform.OS === "ios" && isLiquidGlassAvailable() ? (
+          <GlassView
+            glassEffectStyle="regular"      // "clear" | "regular" - controls glass intensity
+            tintColor={AppColors.primary}   // optional: tints the glass with primary color
+            isInteractive={true}            // enables interactive glass effect
+            style={styles.glassIconButton}
+          >
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={132}
+              color={AppColors.primary}
+            />
+          </GlassView>
+        ) : (
+          <BlurView
+            intensity={40}
+            tint="light"
+            style={styles.glassIconButton}
+          >
+            <View style={styles.glassIconButtonInner}>
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={132}
+                color={AppColors.primary}
+              />
+            </View>
+          </BlurView>
+        )}
       </View>
     </View>
   );
@@ -572,9 +147,23 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 60 : 16,
   },
   logoContainer: {
-    flexDirection: "row",
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+  },
+  glassIconButton: {
+    padding: 24,
+    borderRadius: GlassEffect.borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  glassIconButtonInner: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: GlassEffect.borderRadius.lg,
+    padding: 16,
   },
   logoText: {
     fontSize: 22,
