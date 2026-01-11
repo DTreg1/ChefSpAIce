@@ -209,39 +209,113 @@ router.get("/apple-touch-icon", async (req: Request, res: Response) => {
 router.get("/", (req: Request, res: Response) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   
-  res.json({
-    message: "Logo Export API",
-    endpoints: {
-      svg: {
-        url: `${baseUrl}/api/logo/svg`,
-        params: "?size=512&background=true",
-        description: "Full logo as SVG with glass effect"
-      },
-      iconSvg: {
-        url: `${baseUrl}/api/logo/icon-svg`,
-        params: "?size=512",
-        description: "Chef hat icon only as SVG"
-      },
-      png: {
-        url: `${baseUrl}/api/logo/png`,
-        params: "?size=512&background=true",
-        description: "Full logo as PNG"
-      },
-      favicon: {
-        url: `${baseUrl}/api/logo/favicon.ico`,
-        description: "32x32 favicon"
-      },
-      faviconPng: {
-        url: `${baseUrl}/api/logo/favicon-png`,
-        params: "?size=32 (16, 32, 48, 64, 128, 256)",
-        description: "Favicon as PNG in various sizes"
-      },
-      appleTouchIcon: {
-        url: `${baseUrl}/api/logo/apple-touch-icon`,
-        description: "180x180 Apple touch icon"
-      }
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Downloads</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e; 
+      color: #fff; 
+      padding: 40px; 
+      max-width: 800px;
+      margin: 0 auto;
     }
-  });
+    h1 { margin-bottom: 30px; }
+    .preview { 
+      background: #0d0d1a; 
+      padding: 40px; 
+      border-radius: 16px; 
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .preview img { max-width: 200px; }
+    .downloads { display: grid; gap: 12px; }
+    a.btn { 
+      display: block;
+      background: rgba(255,255,255,0.1); 
+      color: #fff; 
+      padding: 16px 24px; 
+      border-radius: 8px; 
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    a.btn:hover { background: rgba(255,255,255,0.2); }
+    .btn span { opacity: 0.6; font-size: 14px; }
+    h2 { margin-top: 30px; margin-bottom: 15px; font-size: 18px; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <h1>ChefSpAIce Logo Downloads</h1>
+  
+  <div class="preview">
+    <img src="${baseUrl}/api/logo/png?size=256" alt="Logo Preview">
+  </div>
+  
+  <h2>Full Logo (with background)</h2>
+  <div class="downloads">
+    <a class="btn" href="${baseUrl}/api/logo/png?size=1024" download="chefspace-logo-1024.png">
+      PNG 1024x1024 <span>- High resolution</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/png?size=512" download="chefspace-logo-512.png">
+      PNG 512x512 <span>- Standard</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/svg" download="chefspace-logo.svg">
+      SVG <span>- Vector format, scalable</span>
+    </a>
+  </div>
+  
+  <h2>Favicons</h2>
+  <div class="downloads">
+    <a class="btn" href="${baseUrl}/api/logo/favicon.ico" download="favicon.ico">
+      favicon.ico <span>- 32x32</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/favicon-png?size=16" download="favicon-16x16.png">
+      favicon-16x16.png
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/favicon-png?size=32" download="favicon-32x32.png">
+      favicon-32x32.png
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/favicon-png?size=48" download="favicon-48x48.png">
+      favicon-48x48.png
+    </a>
+  </div>
+  
+  <h2>App Icons</h2>
+  <div class="downloads">
+    <a class="btn" href="${baseUrl}/api/logo/apple-touch-icon" download="apple-touch-icon.png">
+      Apple Touch Icon <span>- 180x180</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/png?size=192" download="icon-192x192.png">
+      Android Icon <span>- 192x192</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/png?size=512" download="icon-512x512.png">
+      PWA Icon <span>- 512x512</span>
+    </a>
+  </div>
+  
+  <h2>Icon Only (no background)</h2>
+  <div class="downloads">
+    <a class="btn" href="${baseUrl}/api/logo/icon-svg" download="chefspace-icon.svg">
+      SVG Icon Only <span>- Just the chef hat</span>
+    </a>
+    <a class="btn" href="${baseUrl}/api/logo/png?size=512&background=false" download="chefspace-icon-512.png">
+      PNG Icon Only <span>- Transparent background</span>
+    </a>
+  </div>
+
+  <p style="margin-top: 40px; opacity: 0.5; font-size: 14px;">
+    Right-click and "Save Link As" if downloads don't start automatically.
+  </p>
+</body>
+</html>`;
+
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
 });
 
 export default router;
