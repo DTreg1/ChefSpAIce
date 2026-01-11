@@ -10,6 +10,9 @@ import { GlassView } from "expo-glass-effect";
 const LOGO_SIZE = 240;
 const CORNER_RADIUS = 54; // ~22.37% matches iOS app icon squircle
 const ICON_SIZE = 175;
+// Chef hat glyph is visually centered at (12.5, 11.75) in 24x24 viewBox, not (12, 12)
+const ICON_OFFSET_X = -ICON_SIZE * 0.0208; // Shift left to compensate
+const ICON_OFFSET_Y = ICON_SIZE * 0.0104;  // Shift down to compensate
 
 function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
   if (Platform.OS === "web") {
@@ -206,8 +209,12 @@ const styles = StyleSheet.create({
   },
   iconShadowLayer: {
     position: "absolute",
-    top: 4,
+    top: 0,
     left: 0,
+    transform: [
+      { translateX: ICON_OFFSET_X },
+      { translateY: ICON_OFFSET_Y + 4 }, // +4 for shadow offset
+    ],
     ...Platform.select({
       web: {
         filter: "blur(8px)",
@@ -219,6 +226,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
+    transform: [
+      { translateX: ICON_OFFSET_X },
+      { translateY: ICON_OFFSET_Y },
+    ],
     ...Platform.select({
       web: {
         filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 20px rgba(255,255,255,0.2))",
