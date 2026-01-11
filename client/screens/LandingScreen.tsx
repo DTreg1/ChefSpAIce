@@ -103,19 +103,19 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.iconContainer}>
-                {/* Drop shadow - below the icon */}
+                {/* Base layer - solid white with slight transparency */}
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={140}
-                  color="rgba(0, 0, 0, 0.25)"
-                  style={styles.iconDropShadow}
+                  color="rgba(255, 255, 255, 0.85)"
+                  style={styles.iconBaseLayer}
                 />
-                {/* Main frosted icon - raised above */}
+                {/* Specular highlight - top edge glow */}
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={140}
-                  color="rgba(255, 255, 255, 0.9)"
-                  style={styles.iconMainLayer}
+                  color="rgba(255, 255, 255, 0.4)"
+                  style={styles.iconHighlightLayer}
                 />
               </View>
             </GlassView>
@@ -132,14 +132,14 @@ export default function LandingScreen({}: LandingScreenProps) {
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
-                    color="rgba(0, 0, 0, 0.25)"
-                    style={styles.iconDropShadow}
+                    color="rgba(255, 255, 255, 0.85)"
+                    style={styles.iconBaseLayer}
                   />
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
-                    color="rgba(255, 255, 255, 0.9)"
-                    style={styles.iconMainLayer}
+                    color="rgba(255, 255, 255, 0.4)"
+                    style={styles.iconHighlightLayer}
                   />
                 </View>
               </View>
@@ -204,14 +204,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconDropShadow: {
+  iconBaseLayer: {
     position: "absolute",
-    transform: [{ translateY: 10 }],
   },
-  iconMainLayer: {
+  iconHighlightLayer: {
     position: "absolute",
-    top: 0,
-    left: 0,
+    transform: [{ translateY: -3 }, { scale: 0.92 }],
   },
   logoText: {
     fontSize: 22,
