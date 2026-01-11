@@ -165,7 +165,7 @@ function isMobileUserAgent(userAgent: string | undefined): boolean {
 
 function isWebRoute(pathname: string): boolean {
   const cleanPath = pathname.toLowerCase().split("?")[0];
-  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/subscription-success", "/subscription-canceled", "/onboarding", "/logo-preview"];
+  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/subscription-success", "/subscription-canceled", "/onboarding", "/logo-preview", "/support"];
   return webRoutes.includes(cleanPath);
 }
 
