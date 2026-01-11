@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView } from "expo-glass-effect";
 
 const LOGO_SIZE = 240;
-const CORNER_RADIUS = 60;
+const CORNER_RADIUS = 54; // ~22.37% matches iOS app icon squircle
 const ICON_SIZE = 175;
 
 function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
