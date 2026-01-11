@@ -102,11 +102,13 @@ export default function LandingScreen({}: LandingScreenProps) {
               isInteractive={true}
               style={styles.glassIconButton}
             >
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={56}
-                color="rgba(255, 255, 255, 0.7)"
-              />
+              <View style={styles.iconShadow}>
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={56}
+                  color="rgba(255, 255, 255, 0.7)"
+                />
+              </View>
             </GlassView>
           </View>
         ) : (
@@ -117,11 +119,13 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.glassOverlay}>
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={56}
-                  color="rgba(255, 255, 255, 0.7)"
-                />
+                <View style={styles.iconShadow}>
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={56}
+                    color="rgba(255, 255, 255, 0.7)"
+                  />
+                </View>
               </View>
             </BlurView>
           </View>
@@ -178,7 +182,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
-    logoText: {
+  iconShadow: {
+    shadowColor: "rgba(0, 0, 0, 0.6)",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  logoText: {
     fontSize: 22,
     fontWeight: "700",
     color: "#FFFFFF",
