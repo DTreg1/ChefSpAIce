@@ -1,7 +1,19 @@
-import { StyleSheet, View, Text, Pressable, ScrollView, useWindowDimensions, Platform } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  useWindowDimensions,
+  Platform,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Feather, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import {
+  Feather,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
@@ -29,20 +41,28 @@ interface FeatureCardProps {
   isWide?: boolean;
 }
 
-function GlassCard({ children, style, testId }: { children: React.ReactNode; style?: any; testId?: string }) {
+function GlassCard({
+  children,
+  style,
+  testId,
+}: {
+  children: React.ReactNode;
+  style?: any;
+  testId?: string;
+}) {
   const { isDark } = useTheme();
   const glassColors = isDark ? GlassColors.dark : GlassColors.light;
-  
+
   if (isWeb) {
     return (
-      <View 
+      <View
         style={[
           styles.glassCardWeb,
-          { 
+          {
             backgroundColor: glassColors.background,
             borderColor: glassColors.border,
           },
-          style
+          style,
         ]}
         data-testid={testId}
       >
@@ -50,20 +70,20 @@ function GlassCard({ children, style, testId }: { children: React.ReactNode; sty
       </View>
     );
   }
-  
+
   return (
     <BlurView
       intensity={GlassEffect.blur.regular}
       tint={isDark ? "dark" : "light"}
       style={[styles.glassCard, style]}
     >
-      <View 
+      <View
         style={[
           styles.glassCardInner,
-          { 
+          {
             backgroundColor: glassColors.background,
             borderColor: glassColors.border,
-          }
+          },
         ]}
         data-testid={testId}
       >
@@ -73,14 +93,30 @@ function GlassCard({ children, style, testId }: { children: React.ReactNode; sty
   );
 }
 
-function FeatureCard({ icon, title, description, testId, isDark, isWide }: FeatureCardProps) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+  testId,
+  isDark,
+  isWide,
+}: FeatureCardProps) {
   return (
-    <GlassCard style={[styles.featureCard, isWide && styles.featureCardWide]} testId={`card-feature-${testId}`}>
+    <GlassCard
+      style={[styles.featureCard, isWide && styles.featureCardWide]}
+      testId={`card-feature-${testId}`}
+    >
       <View style={styles.featureIconContainer}>{icon}</View>
-      <Text style={[styles.featureTitle, { color: "#FFFFFF" }]} data-testid={`text-feature-title-${testId}`}>
+      <Text
+        style={[styles.featureTitle, { color: "#FFFFFF" }]}
+        data-testid={`text-feature-title-${testId}`}
+      >
         {title}
       </Text>
-      <Text style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]} data-testid={`text-feature-desc-${testId}`}>
+      <Text
+        style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]}
+        data-testid={`text-feature-desc-${testId}`}
+      >
         {description}
       </Text>
     </GlassCard>
@@ -95,17 +131,32 @@ interface StepCardProps {
   isWide?: boolean;
 }
 
-function StepCard({ number, title, description, isDark, isWide }: StepCardProps) {
+function StepCard({
+  number,
+  title,
+  description,
+  isDark,
+  isWide,
+}: StepCardProps) {
   return (
-    <GlassCard style={[styles.stepCard, isWide && styles.stepCardWide]} testId={`card-step-${number}`}>
+    <GlassCard
+      style={[styles.stepCard, isWide && styles.stepCardWide]}
+      testId={`card-step-${number}`}
+    >
       <View style={styles.stepNumber}>
         <Text style={styles.stepNumberText}>{number}</Text>
       </View>
       <View style={styles.stepContent}>
-        <Text style={[styles.stepTitle, { color: "#FFFFFF" }]} data-testid={`text-step-title-${number}`}>
+        <Text
+          style={[styles.stepTitle, { color: "#FFFFFF" }]}
+          data-testid={`text-step-title-${number}`}
+        >
           {title}
         </Text>
-        <Text style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]} data-testid={`text-step-desc-${number}`}>
+        <Text
+          style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]}
+          data-testid={`text-step-desc-${number}`}
+        >
           {description}
         </Text>
       </View>
@@ -121,12 +172,31 @@ interface BenefitCardProps {
   isWide?: boolean;
 }
 
-function BenefitCard({ icon, title, description, testId, isWide }: BenefitCardProps) {
+function BenefitCard({
+  icon,
+  title,
+  description,
+  testId,
+  isWide,
+}: BenefitCardProps) {
   return (
-    <View style={[styles.benefitCard, isWide && styles.benefitCardWide]} data-testid={`card-benefit-${testId}`}>
+    <View
+      style={[styles.benefitCard, isWide && styles.benefitCardWide]}
+      data-testid={`card-benefit-${testId}`}
+    >
       <View style={styles.benefitIconContainer}>{icon}</View>
-      <Text style={styles.benefitTitle} data-testid={`text-benefit-title-${testId}`}>{title}</Text>
-      <Text style={styles.benefitDescription} data-testid={`text-benefit-desc-${testId}`}>{description}</Text>
+      <Text
+        style={styles.benefitTitle}
+        data-testid={`text-benefit-title-${testId}`}
+      >
+        {title}
+      </Text>
+      <Text
+        style={styles.benefitDescription}
+        data-testid={`text-benefit-desc-${testId}`}
+      >
+        {description}
+      </Text>
     </View>
   );
 }
@@ -144,14 +214,25 @@ interface PricingCardProps {
   isWide?: boolean;
 }
 
-function PricingCard({ tier, price, period, description, features, isPopular, buttonText, onPress, testId, isWide }: PricingCardProps) {
+function PricingCard({
+  tier,
+  price,
+  period,
+  description,
+  features,
+  isPopular,
+  buttonText,
+  onPress,
+  testId,
+  isWide,
+}: PricingCardProps) {
   return (
-    <GlassCard 
+    <GlassCard
       style={[
-        styles.pricingCard, 
+        styles.pricingCard,
         isWide && styles.pricingCardWide,
-        isPopular && styles.pricingCardPopular
-      ]} 
+        isPopular && styles.pricingCardPopular,
+      ]}
       testId={`card-pricing-${testId}`}
     >
       {isPopular && (
@@ -159,12 +240,27 @@ function PricingCard({ tier, price, period, description, features, isPopular, bu
           <Text style={styles.popularBadgeText}>Most Popular</Text>
         </View>
       )}
-      <Text style={styles.pricingTier} data-testid={`text-pricing-tier-${testId}`}>{tier}</Text>
+      <Text
+        style={styles.pricingTier}
+        data-testid={`text-pricing-tier-${testId}`}
+      >
+        {tier}
+      </Text>
       <View style={styles.pricingPriceContainer}>
-        <Text style={styles.pricingPrice} data-testid={`text-pricing-price-${testId}`}>{price}</Text>
+        <Text
+          style={styles.pricingPrice}
+          data-testid={`text-pricing-price-${testId}`}
+        >
+          {price}
+        </Text>
         {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
       </View>
-      <Text style={styles.pricingDescription} data-testid={`text-pricing-desc-${testId}`}>{description}</Text>
+      <Text
+        style={styles.pricingDescription}
+        data-testid={`text-pricing-desc-${testId}`}
+      >
+        {description}
+      </Text>
       <View style={styles.pricingFeatures}>
         {features.map((feature, index) => (
           <View key={index} style={styles.pricingFeatureRow}>
@@ -175,8 +271,10 @@ function PricingCard({ tier, price, period, description, features, isPopular, bu
       </View>
       <Pressable
         style={({ pressed }) => [
-          isPopular ? styles.pricingButtonPrimary : styles.pricingButtonSecondary,
-          pressed && styles.buttonPressed
+          isPopular
+            ? styles.pricingButtonPrimary
+            : styles.pricingButtonSecondary,
+          pressed && styles.buttonPressed,
         ]}
         onPress={onPress}
         data-testid={`button-pricing-${testId}`}
@@ -207,26 +305,46 @@ interface TestimonialCardProps {
   isWide?: boolean;
 }
 
-function TestimonialCard({ name, role, quote, rating, testId, isWide }: TestimonialCardProps) {
+function TestimonialCard({
+  name,
+  role,
+  quote,
+  rating,
+  testId,
+  isWide,
+}: TestimonialCardProps) {
   return (
-    <GlassCard style={[styles.testimonialCard, isWide && styles.testimonialCardWide]} testId={`card-testimonial-${testId}`}>
+    <GlassCard
+      style={[styles.testimonialCard, isWide && styles.testimonialCardWide]}
+      testId={`card-testimonial-${testId}`}
+    >
       <View style={styles.testimonialStars}>
         {[...Array(5)].map((_, i) => (
-          <FontAwesome 
-            key={i} 
-            name={i < rating ? "star" : "star-o"} 
-            size={16} 
-            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"} 
+          <FontAwesome
+            key={i}
+            name={i < rating ? "star" : "star-o"}
+            size={16}
+            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"}
           />
         ))}
       </View>
-      <Text style={styles.testimonialQuote} data-testid={`text-testimonial-quote-${testId}`}>"{quote}"</Text>
+      <Text
+        style={styles.testimonialQuote}
+        data-testid={`text-testimonial-quote-${testId}`}
+      >
+        "{quote}"
+      </Text>
       <View style={styles.testimonialAuthor}>
         <View style={styles.testimonialAvatar}>
           <Text style={styles.testimonialAvatarText}>{name.charAt(0)}</Text>
         </View>
         <View>
-          <Text style={styles.testimonialName} data-testid={`text-testimonial-name-${testId}`}>{name}</Text>
+          <Text
+            style={styles.testimonialName}
+            data-testid={`text-testimonial-name-${testId}`}
+          >
+            {name}
+          </Text>
           <Text style={styles.testimonialRole}>{role}</Text>
         </View>
       </View>
@@ -247,11 +365,25 @@ function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
     <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
       <GlassCard style={styles.faqCard}>
         <View style={styles.faqHeader}>
-          <Text style={styles.faqQuestion} data-testid={`text-faq-question-${testId}`}>{question}</Text>
-          <Feather name={isOpen ? "chevron-up" : "chevron-down"} size={20} color="rgba(255,255,255,0.7)" />
+          <Text
+            style={styles.faqQuestion}
+            data-testid={`text-faq-question-${testId}`}
+          >
+            {question}
+          </Text>
+          <Feather
+            name={isOpen ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="rgba(255,255,255,0.7)"
+          />
         </View>
         {isOpen && (
-          <Text style={styles.faqAnswer} data-testid={`text-faq-answer-${testId}`}>{answer}</Text>
+          <Text
+            style={styles.faqAnswer}
+            data-testid={`text-faq-answer-${testId}`}
+          >
+            {answer}
+          </Text>
         )}
       </GlassCard>
     </Pressable>
@@ -259,7 +391,10 @@ function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
 }
 
 interface LandingScreenProps {
-  onGetStarted?: (tier?: 'basic' | 'pro', billing?: 'monthly' | 'annual') => void;
+  onGetStarted?: (
+    tier?: "basic" | "pro",
+    billing?: "monthly" | "annual",
+  ) => void;
   onSignIn?: () => void;
   onAbout?: () => void;
   onPrivacy?: () => void;
@@ -267,20 +402,27 @@ interface LandingScreenProps {
   onSupport?: () => void;
 }
 
-export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPrivacy, onTerms, onSupport }: LandingScreenProps) {
+export default function LandingScreen({
+  onGetStarted,
+  onSignIn,
+  onAbout,
+  onPrivacy,
+  onTerms,
+  onSupport,
+}: LandingScreenProps) {
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
   const isWide = width > 768;
-  
+
   // Use safe navigation that doesn't crash when outside NavigationContainer (web)
   const navigation = useSafeNavigation();
-  
+
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleGetStarted = (tier?: 'basic' | 'pro') => {
+  const handleGetStarted = (tier?: "basic" | "pro") => {
     if (onGetStarted) {
-      onGetStarted(tier, isAnnual ? 'annual' : 'monthly');
+      onGetStarted(tier, isAnnual ? "annual" : "monthly");
     }
   };
 
@@ -318,19 +460,22 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
     {
       name: "Sarah M.",
       role: "Busy Mom of 3",
-      quote: "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
+      quote:
+        "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
       rating: 5,
     },
     {
       name: "James K.",
       role: "Home Chef",
-      quote: "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
+      quote:
+        "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
       rating: 5,
     },
     {
       name: "Emily R.",
       role: "Sustainability Advocate",
-      quote: "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
+      quote:
+        "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
       rating: 5,
     },
   ];
@@ -338,23 +483,28 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   const faqs = [
     {
       question: "How does the AI recipe generation work?",
-      answer: "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
+      answer:
+        "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
     },
     {
       question: "Is there a free trial available?",
-      answer: "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
+      answer:
+        "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
     },
     {
       question: "Can I use the app on multiple devices?",
-      answer: "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
+      answer:
+        "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
     },
     {
       question: "How accurate is the expiration tracking?",
-      answer: "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
+      answer:
+        "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
     },
     {
       question: "Can I cancel my subscription anytime?",
-      answer: "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
+      answer:
+        "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
     },
   ];
 
@@ -365,7 +515,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
     { name: "GitHub", iconType: "feather", icon: "github" },
   ];
 
-  const ReplitLogo = ({ size = 24, color = "rgba(255,255,255,0.5)" }: { size?: number; color?: string }) => {
+  const ReplitLogo = ({
+    size = 24,
+    color = "rgba(255,255,255,0.5)",
+  }: {
+    size?: number;
+    color?: string;
+  }) => {
     return (
       <Svg width={size} height={size} viewBox="0 0 50 50">
         <Path
@@ -379,23 +535,33 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={isDark ? ["#0A1F0F", "#0F1419", "#0A0F14"] : ["#1A3D2A", "#1E4D35", "#0F2A1A"]}
+        colors={
+          isDark
+            ? ["#0A1F0F", "#0F1419", "#0A0F14"]
+            : ["#1A3D2A", "#1E4D35", "#0F2A1A"]
+        }
       />
-      
-      <ScrollView 
-        style={styles.scrollView} 
+
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color={AppColors.primary} />
-            <Text style={styles.logoText} data-testid="text-logo">ChefSpAIce</Text>
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={32}
+              color={AppColors.primary}
+            />
+            <Text style={styles.logoText} data-testid="text-logo">
+              ChefSpAIce
+            </Text>
           </View>
           <Pressable
             style={({ pressed }) => [
               styles.signInButton,
-              pressed && styles.buttonPressed
+              pressed && styles.buttonPressed,
             ]}
             onPress={handleSignIn}
             data-testid="button-signin-header"
@@ -404,27 +570,36 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
           </Pressable>
         </View>
 
-        <View style={[styles.heroSection, isWide && styles.heroSectionWide]} data-testid="section-hero">
+        <View
+          style={[styles.heroSection, isWide && styles.heroSectionWide]}
+          data-testid="section-hero"
+        >
           <View style={styles.heroContent}>
             <View style={styles.tagline}>
-              <MaterialCommunityIcons name="leaf" size={14} color={AppColors.primary} />
-              <Text style={styles.taglineText} data-testid="text-tagline">Reduce Food Waste, Save Money</Text>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={14}
+                color={AppColors.primary}
+              />
+              <Text style={styles.taglineText} data-testid="text-tagline">
+                Reduce Food Waste, Save Money
+              </Text>
             </View>
-            
+
             <Text style={styles.heroTitle} data-testid="text-hero-title">
               Your AI-Powered{"\n"}Kitchen Assistant
             </Text>
-            
+
             <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
-              Manage your pantry, generate recipes from what you have, plan meals, 
-              and never let food go to waste again.
+              Manage your pantry, generate recipes from what you have, plan
+              meals, and never let food go to waste again.
             </Text>
 
             <View style={styles.heroButtons}>
               <Pressable
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  pressed && styles.buttonPressed
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => handleGetStarted()}
                 data-testid="button-get-started"
@@ -440,8 +615,10 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 </LinearGradient>
               </Pressable>
             </View>
-            
-            <Text style={styles.trialText}>7-day free trial, no credit card required</Text>
+
+            <Text style={styles.trialText}>
+              7-day free trial, no credit card required
+            </Text>
           </View>
         </View>
 
@@ -452,11 +629,19 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               <View key={index} style={styles.trustLogoItem}>
                 <View style={styles.trustLogoIconContainer}>
                   {logo.iconType === "material" ? (
-                    <MaterialCommunityIcons name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                    <MaterialCommunityIcons
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
                   ) : logo.iconType === "custom" && logo.icon === "replit" ? (
                     <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
                   ) : (
-                    <Feather name={logo.icon as any} size={24} color="rgba(255,255,255,0.5)" />
+                    <Feather
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
                   )}
                 </View>
                 <Text style={styles.trustLogoText}>{logo.name}</Text>
@@ -466,37 +651,56 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-benefits">
-          <Text style={styles.sectionTitle} data-testid="text-benefits-title">Why Choose ChefSpAIce?</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-benefits-subtitle">
+          <Text style={styles.sectionTitle} data-testid="text-benefits-title">
+            Why Choose ChefSpAIce?
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-benefits-subtitle"
+          >
             Save money, reduce waste, and eat better
           </Text>
-          
-          <View style={[styles.benefitsGrid, isWide && styles.benefitsGridWide]}>
+
+          <View
+            style={[styles.benefitsGrid, isWide && styles.benefitsGridWide]}
+          >
             <BenefitCard
               testId="save-money"
               isWide={isWide}
-              icon={<Feather name="dollar-sign" size={32} color={AppColors.primary} />}
+              icon={
+                <Feather
+                  name="dollar-sign"
+                  size={32}
+                  color={AppColors.primary}
+                />
+              }
               title="Save $200+/month"
               description="Stop throwing away expired food. Our users save an average of $200 per month on groceries."
             />
             <BenefitCard
               testId="reduce-waste"
               isWide={isWide}
-              icon={<Feather name="trash-2" size={32} color={AppColors.primary} />}
+              icon={
+                <Feather name="trash-2" size={32} color={AppColors.primary} />
+              }
               title="Reduce Waste by 70%"
               description="Smart expiration tracking and AI-powered meal planning means less food in the trash."
             />
             <BenefitCard
               testId="eat-better"
               isWide={isWide}
-              icon={<Feather name="heart" size={32} color={AppColors.primary} />}
+              icon={
+                <Feather name="heart" size={32} color={AppColors.primary} />
+              }
               title="Eat Healthier"
               description="Personalized recipes based on your dietary preferences and what's actually in your kitchen."
             />
             <BenefitCard
               testId="save-time"
               isWide={isWide}
-              icon={<Feather name="clock" size={32} color={AppColors.primary} />}
+              icon={
+                <Feather name="clock" size={32} color={AppColors.primary} />
+              }
               title="Save 5+ Hours/Week"
               description="No more wondering 'what's for dinner?' AI suggests meals in seconds, not hours."
             />
@@ -504,12 +708,19 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-how-it-works">
-          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">How It Works</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-howitworks-subtitle">
+          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">
+            How It Works
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-howitworks-subtitle"
+          >
             Get started in three simple steps
           </Text>
-          
-          <View style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}>
+
+          <View
+            style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}
+          >
             <StepCard
               number="1"
               title="Add Your Food"
@@ -535,17 +746,30 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-features">
-          <Text style={styles.sectionTitle} data-testid="text-features-title">Smart Features</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-features-subtitle">
+          <Text style={styles.sectionTitle} data-testid="text-features-title">
+            Smart Features
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-features-subtitle"
+          >
             Everything you need to run an efficient kitchen
           </Text>
-          
-          <View style={[styles.featuresGrid, isWide && styles.featuresGridWide]}>
+
+          <View
+            style={[styles.featuresGrid, isWide && styles.featuresGridWide]}
+          >
             <FeatureCard
               testId="barcode"
               isDark={isDark}
               isWide={isWide}
-              icon={<MaterialCommunityIcons name="barcode-scan" size={28} color={AppColors.primary} />}
+              icon={
+                <MaterialCommunityIcons
+                  name="barcode-scan"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
               title="Barcode Scanning"
               description="Quickly add items to your inventory by scanning barcodes. Automatic product info lookup."
             />
@@ -553,7 +777,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               testId="ai-recipes"
               isDark={isDark}
               isWide={isWide}
-              icon={<MaterialCommunityIcons name="creation" size={28} color={AppColors.primary} />}
+              icon={
+                <MaterialCommunityIcons
+                  name="creation"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
               title="AI Recipe Generation"
               description="Get personalized recipes based on what's in your pantry. No more wasted ingredients."
             />
@@ -561,7 +791,9 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               testId="expiration"
               isDark={isDark}
               isWide={isWide}
-              icon={<Feather name="clock" size={28} color={AppColors.primary} />}
+              icon={
+                <Feather name="clock" size={28} color={AppColors.primary} />
+              }
               title="Expiration Tracking"
               description="Never forget about food again. Get notifications before items expire."
             />
@@ -569,7 +801,9 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               testId="meal-planning"
               isDark={isDark}
               isWide={isWide}
-              icon={<Feather name="calendar" size={28} color={AppColors.primary} />}
+              icon={
+                <Feather name="calendar" size={28} color={AppColors.primary} />
+              }
               title="Meal Planning"
               description="Plan your week with a beautiful calendar view. Drag and drop recipes to any day."
             />
@@ -577,7 +811,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               testId="shopping"
               isDark={isDark}
               isWide={isWide}
-              icon={<Feather name="shopping-cart" size={28} color={AppColors.primary} />}
+              icon={
+                <Feather
+                  name="shopping-cart"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
               title="Smart Shopping Lists"
               description="Auto-generate shopping lists from recipes. Check off items as you shop."
             />
@@ -585,7 +825,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               testId="analytics"
               isDark={isDark}
               isWide={isWide}
-              icon={<Feather name="bar-chart-2" size={28} color={AppColors.primary} />}
+              icon={
+                <Feather
+                  name="bar-chart-2"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
               title="Waste Analytics"
               description="Track your food waste and savings over time. See your environmental impact."
             />
@@ -593,29 +839,58 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-pricing">
-          <Text style={styles.sectionTitle} data-testid="text-pricing-title">Simple, Transparent Pricing</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-pricing-subtitle">
+          <Text style={styles.sectionTitle} data-testid="text-pricing-title">
+            Simple, Transparent Pricing
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-pricing-subtitle"
+          >
             Choose the plan that works best for you
           </Text>
-          
+
           <View style={styles.billingToggleContainer}>
-            <Pressable 
+            <Pressable
               style={styles.billingToggle}
               onPress={() => setIsAnnual(!isAnnual)}
               data-testid="toggle-billing-period"
             >
-              <View style={[styles.billingOption, !isAnnual && styles.billingOptionActive]}>
-                <Text style={[styles.billingOptionText, !isAnnual && styles.billingOptionTextActive]}>Monthly</Text>
+              <View
+                style={[
+                  styles.billingOption,
+                  !isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    !isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Monthly
+                </Text>
               </View>
-              <View style={[styles.billingOption, isAnnual && styles.billingOptionActive]}>
-                <Text style={[styles.billingOptionText, isAnnual && styles.billingOptionTextActive]}>Annually</Text>
+              <View
+                style={[
+                  styles.billingOption,
+                  isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Annually
+                </Text>
                 <View style={styles.saveBadge}>
                   <Text style={styles.saveBadgeText}>Save 17%</Text>
                 </View>
               </View>
             </Pressable>
           </View>
-          
+
           <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
             <PricingCard
               tier="Basic"
@@ -631,7 +906,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 "Daily meal planning",
               ]}
               buttonText="Start Free Trial"
-              onPress={() => handleGetStarted('basic')}
+              onPress={() => handleGetStarted("basic")}
               testId="basic"
               isWide={isWide}
             />
@@ -650,7 +925,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
               ]}
               isPopular={true}
               buttonText="Start Free Trial"
-              onPress={() => handleGetStarted('pro')}
+              onPress={() => handleGetStarted("pro")}
               testId="pro"
               isWide={isWide}
             />
@@ -658,12 +933,25 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-testimonials">
-          <Text style={styles.sectionTitle} data-testid="text-testimonials-title">Loved by Thousands</Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-testimonials-subtitle">
+          <Text
+            style={styles.sectionTitle}
+            data-testid="text-testimonials-title"
+          >
+            Loved by Thousands
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-testimonials-subtitle"
+          >
             See what our users are saying
           </Text>
-          
-          <View style={[styles.testimonialsGrid, isWide && styles.testimonialsGridWide]}>
+
+          <View
+            style={[
+              styles.testimonialsGrid,
+              isWide && styles.testimonialsGridWide,
+            ]}
+          >
             {testimonials.map((testimonial, index) => (
               <TestimonialCard
                 key={index}
@@ -676,11 +964,13 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         </View>
 
         <View style={styles.section} data-testid="section-faq">
-          <Text style={styles.sectionTitle} data-testid="text-faq-title">Frequently Asked Questions</Text>
+          <Text style={styles.sectionTitle} data-testid="text-faq-title">
+            Frequently Asked Questions
+          </Text>
           <Text style={styles.sectionSubtitle} data-testid="text-faq-subtitle">
             Got questions? We've got answers
           </Text>
-          
+
           <View style={styles.faqContainer}>
             {faqs.map((faq, index) => (
               <FAQItem
@@ -704,7 +994,7 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
             <Pressable
               style={({ pressed }) => [
                 styles.ctaButton,
-                pressed && styles.buttonPressed
+                pressed && styles.buttonPressed,
               ]}
               onPress={() => handleGetStarted()}
               data-testid="button-cta-get-started"
@@ -725,11 +1015,17 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
             <View style={styles.footerLogo}>
-              <MaterialCommunityIcons name="chef-hat" size={24} color={AppColors.primary} />
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={24}
+                color={AppColors.primary}
+              />
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
-            <Text style={styles.footerText}>Your AI-powered kitchen companion</Text>
-            
+            <Text style={styles.footerText}>
+              Your AI-powered kitchen companion
+            </Text>
+
             <View style={styles.qrCodeSection} data-testid="qr-code-section">
               <View style={styles.qrCodeContainer}>
                 <QRCode
@@ -739,10 +1035,14 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                   backgroundColor="transparent"
                 />
               </View>
-              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">Scan to share with a friend</Text>
+              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">
+                Scan to share with a friend
+              </Text>
             </View>
-            
-            <View style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}>
+
+            <View
+              style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
+            >
               <Pressable onPress={handleAbout} data-testid="link-about">
                 <Text style={styles.footerLink}>About</Text>
               </Pressable>
@@ -759,7 +1059,9 @@ export default function LandingScreen({ onGetStarted, onSignIn, onAbout, onPriva
                 <Text style={styles.footerLink}>Support</Text>
               </Pressable>
             </View>
-            <Text style={styles.copyright}>&copy; 2025 ChefSpAIce. All rights reserved.</Text>
+            <Text style={styles.copyright}>
+              &copy; 2025 ChefSpAIce. All rights reserved.
+            </Text>
           </View>
         </View>
       </ScrollView>
