@@ -11,8 +11,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import DropShadow from "react-native-drop-shadow";
 import { useTheme } from "@/hooks/useTheme";
-import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
+import { GlassColors, GlassEffect, AppColors, Shadows } from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
 
@@ -95,57 +96,28 @@ export default function LandingScreen({}: LandingScreenProps) {
 
       <View style={styles.logoContainer}>
         {/* iOS 26 Liquid Glass Button for Logo */}
-        {Platform.OS === "ios" && isLiquidGlassAvailable() ? (
-          <View style={styles.glassButtonShadow}>
+          <View style={styles.glassIconButton}>
             <GlassView
               glassEffectStyle="clear"
               isInteractive={true}
               style={styles.glassIconButton}
             >
-              <View style={styles.iconContainer}>
-                {/* Base layer - solid white with slight transparency */}
+              <DropShadow
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 12,
+                }}
+              >
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={140}
-                  color="rgba(255, 255, 255, 0.85)"
-                  style={styles.iconBaseLayer}
+                  color="rgba(255, 255, 255, 0.9)"
                 />
-                {/* Specular highlight - top edge glow */}
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(255, 255, 255, 0.4)"
-                  style={styles.iconHighlightLayer}
-                />
-              </View>
+              </DropShadow>
             </GlassView>
           </View>
-        ) : (
-          <View style={styles.glassButtonShadow}>
-            <BlurView
-              intensity={20}
-              tint="light"
-              style={styles.glassIconButton}
-            >
-              <View style={styles.glassOverlay}>
-                <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(255, 255, 255, 0.85)"
-                    style={styles.iconBaseLayer}
-                  />
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(255, 255, 255, 0.4)"
-                    style={styles.iconHighlightLayer}
-                  />
-                </View>
-              </View>
-            </BlurView>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -174,13 +146,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  glassButtonShadow: {
-    shadowColor: "rgba(0, 0, 0, 0.35)",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 25,
-    elevation: 18,
-  },
   glassIconButton: {
     width: 240,
     height: 240,
@@ -190,6 +155,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.35)",
+    shadowColor: "rgba(0, 0, 0, 0.35)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 25,
   },
   glassOverlay: {
     flex: 1,
@@ -203,13 +172,6 @@ const styles = StyleSheet.create({
     height: 140,
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconBaseLayer: {
-    position: "absolute",
-  },
-  iconHighlightLayer: {
-    position: "absolute",
-    transform: [{ translateY: -3 }, { scale: 0.92 }],
   },
   logoText: {
     fontSize: 22,
