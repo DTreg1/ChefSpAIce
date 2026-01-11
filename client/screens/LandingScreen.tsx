@@ -1,37 +1,1073 @@
 import {
   StyleSheet,
   View,
+  Text,
+  Pressable,
+  ScrollView,
+  useWindowDimensions,
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { GlassView } from "expo-glass-effect";
+import { BlurView } from "expo-blur";
 import {
-  GlassEffect,
-  AppColors,
-} from "@/constants/theme";
+  Feather,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
+import Svg, { Path } from "react-native-svg";
+import QRCode from "react-native-qrcode-svg";
+import { useTheme } from "@/hooks/useTheme";
+import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
+import { NavigationContext } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useContext, useState } from "react";
+import Constants from "expo-constants";
 
+const isWeb = Platform.OS === "web";
 
-export default function AppLogo() {
-  return (
-    <View style={styles.logoContainer}>
-      {/* iOS 26 Liquid Glass Button for Logo */}
-      <GlassView
-        glassEffectStyle="regular"
-        style={styles.glassIconButton}
+// Safe navigation hook that returns null when not inside NavigationContainer
+function useSafeNavigation(): NativeStackNavigationProp<any> | null {
+  const navigationContext = useContext(NavigationContext);
+  // Return the navigation object from context or null if not available
+  return navigationContext as NativeStackNavigationProp<any> | null;
+}
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  testId: string;
+  isDark: boolean;
+  isWide?: boolean;
+}
+
+function GlassCard({
+  children,
+  style,
+  testId,
+}: {
+  children: React.ReactNode;
+  style?: any;
+  testId?: string;
+}) {
+  const { isDark } = useTheme();
+  const glassColors = isDark ? GlassColors.dark : GlassColors.light;
+
+  if (isWeb) {
+    return (
+      <View
+        style={[
+          styles.glassCardWeb,
+          {
+            backgroundColor: glassColors.background,
+            borderColor: glassColors.border,
+          },
+          style,
+        ]}
+        data-testid={testId}
       >
-        <View
-          style={{
-            filter: "drop-shadow(0px 0px 24px rgba(0, 0, 0, 1))",
-          }}
+        {children}
+      </View>
+    );
+  }
+
+  return (
+    <BlurView
+      intensity={GlassEffect.blur.regular}
+      tint={isDark ? "dark" : "light"}
+      style={[styles.glassCard, style]}
+    >
+      <View
+        style={[
+          styles.glassCardInner,
+          {
+            backgroundColor: glassColors.background,
+            borderColor: glassColors.border,
+          },
+        ]}
+        data-testid={testId}
+      >
+        {children}
+      </View>
+    </BlurView>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+  testId,
+  isDark,
+  isWide,
+}: FeatureCardProps) {
+  return (
+    <GlassCard
+      style={[styles.featureCard, isWide && styles.featureCardWide]}
+      testId={`card-feature-${testId}`}
+    >
+      <View style={styles.featureIconContainer}>{icon}</View>
+      <Text
+        style={[styles.featureTitle, { color: "#FFFFFF" }]}
+        data-testid={`text-feature-title-${testId}`}
+      >
+        {title}
+      </Text>
+      <Text
+        style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]}
+        data-testid={`text-feature-desc-${testId}`}
+      >
+        {description}
+      </Text>
+    </GlassCard>
+  );
+}
+
+interface StepCardProps {
+  number: string;
+  title: string;
+  description: string;
+  isDark: boolean;
+  isWide?: boolean;
+}
+
+function StepCard({
+  number,
+  title,
+  description,
+  isDark,
+  isWide,
+}: StepCardProps) {
+  return (
+    <GlassCard
+      style={[styles.stepCard, isWide && styles.stepCardWide]}
+      testId={`card-step-${number}`}
+    >
+      <View style={styles.stepNumber}>
+        <Text style={styles.stepNumberText}>{number}</Text>
+      </View>
+      <View style={styles.stepContent}>
+        <Text
+          style={[styles.stepTitle, { color: "#FFFFFF" }]}
+          data-testid={`text-step-title-${number}`}
         >
-          <MaterialCommunityIcons
-            name="chef-hat"
-            size={175}
-            color="rgba(255, 255, 255, 0.7)"
+          {title}
+        </Text>
+        <Text
+          style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]}
+          data-testid={`text-step-desc-${number}`}
+        >
+          {description}
+        </Text>
+      </View>
+    </GlassCard>
+  );
+}
+
+interface BenefitCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  testId: string;
+  isWide?: boolean;
+}
+
+function BenefitCard({
+  icon,
+  title,
+  description,
+  testId,
+  isWide,
+}: BenefitCardProps) {
+  return (
+    <View
+      style={[styles.benefitCard, isWide && styles.benefitCardWide]}
+      data-testid={`card-benefit-${testId}`}
+    >
+      <View style={styles.benefitIconContainer}>{icon}</View>
+      <Text
+        style={styles.benefitTitle}
+        data-testid={`text-benefit-title-${testId}`}
+      >
+        {title}
+      </Text>
+      <Text
+        style={styles.benefitDescription}
+        data-testid={`text-benefit-desc-${testId}`}
+      >
+        {description}
+      </Text>
+    </View>
+  );
+}
+
+interface PricingCardProps {
+  tier: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  isPopular?: boolean;
+  buttonText: string;
+  onPress: () => void;
+  testId: string;
+  isWide?: boolean;
+}
+
+function PricingCard({
+  tier,
+  price,
+  period,
+  description,
+  features,
+  isPopular,
+  buttonText,
+  onPress,
+  testId,
+  isWide,
+}: PricingCardProps) {
+  return (
+    <GlassCard
+      style={[
+        styles.pricingCard,
+        isWide && styles.pricingCardWide,
+        isPopular && styles.pricingCardPopular,
+      ]}
+      testId={`card-pricing-${testId}`}
+    >
+      {isPopular && (
+        <View style={styles.popularBadge}>
+          <Text style={styles.popularBadgeText}>Most Popular</Text>
+        </View>
+      )}
+      <Text
+        style={styles.pricingTier}
+        data-testid={`text-pricing-tier-${testId}`}
+      >
+        {tier}
+      </Text>
+      <View style={styles.pricingPriceContainer}>
+        <Text
+          style={styles.pricingPrice}
+          data-testid={`text-pricing-price-${testId}`}
+        >
+          {price}
+        </Text>
+        {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
+      </View>
+      <Text
+        style={styles.pricingDescription}
+        data-testid={`text-pricing-desc-${testId}`}
+      >
+        {description}
+      </Text>
+      <View style={styles.pricingFeatures}>
+        {features.map((feature, index) => (
+          <View key={index} style={styles.pricingFeatureRow}>
+            <Feather name="check" size={16} color={AppColors.primary} />
+            <Text style={styles.pricingFeatureText}>{feature}</Text>
+          </View>
+        ))}
+      </View>
+      <Pressable
+        style={({ pressed }) => [
+          isPopular
+            ? styles.pricingButtonPrimary
+            : styles.pricingButtonSecondary,
+          pressed && styles.buttonPressed,
+        ]}
+        onPress={onPress}
+        data-testid={`button-pricing-${testId}`}
+      >
+        {isPopular ? (
+          <LinearGradient
+            colors={[AppColors.primary, "#1E8449"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.pricingButtonGradient}
+          >
+            <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
+          </LinearGradient>
+        ) : (
+          <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
+        )}
+      </Pressable>
+    </GlassCard>
+  );
+}
+
+interface TestimonialCardProps {
+  name: string;
+  role: string;
+  quote: string;
+  rating: number;
+  testId: string;
+  isWide?: boolean;
+}
+
+function TestimonialCard({
+  name,
+  role,
+  quote,
+  rating,
+  testId,
+  isWide,
+}: TestimonialCardProps) {
+  return (
+    <GlassCard
+      style={[styles.testimonialCard, isWide && styles.testimonialCardWide]}
+      testId={`card-testimonial-${testId}`}
+    >
+      <View style={styles.testimonialStars}>
+        {[...Array(5)].map((_, i) => (
+          <FontAwesome
+            key={i}
+            name={i < rating ? "star" : "star-o"}
+            size={16}
+            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"}
+          />
+        ))}
+      </View>
+      <Text
+        style={styles.testimonialQuote}
+        data-testid={`text-testimonial-quote-${testId}`}
+      >
+        "{quote}"
+      </Text>
+      <View style={styles.testimonialAuthor}>
+        <View style={styles.testimonialAvatar}>
+          <Text style={styles.testimonialAvatarText}>{name.charAt(0)}</Text>
+        </View>
+        <View>
+          <Text
+            style={styles.testimonialName}
+            data-testid={`text-testimonial-name-${testId}`}
+          >
+            {name}
+          </Text>
+          <Text style={styles.testimonialRole}>{role}</Text>
+        </View>
+      </View>
+    </GlassCard>
+  );
+}
+
+interface FAQItemProps {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  testId: string;
+}
+
+function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
+  return (
+    <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
+      <GlassCard style={styles.faqCard}>
+        <View style={styles.faqHeader}>
+          <Text
+            style={styles.faqQuestion}
+            data-testid={`text-faq-question-${testId}`}
+          >
+            {question}
+          </Text>
+          <Feather
+            name={isOpen ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="rgba(255,255,255,0.7)"
           />
         </View>
-      </GlassView>
+        {isOpen && (
+          <Text
+            style={styles.faqAnswer}
+            data-testid={`text-faq-answer-${testId}`}
+          >
+            {answer}
+          </Text>
+        )}
+      </GlassCard>
+    </Pressable>
+  );
+}
+
+interface LandingScreenProps {
+  onGetStarted?: (
+    tier?: "basic" | "pro",
+    billing?: "monthly" | "annual",
+  ) => void;
+  onSignIn?: () => void;
+  onAbout?: () => void;
+  onPrivacy?: () => void;
+  onTerms?: () => void;
+  onSupport?: () => void;
+}
+
+export default function LandingScreen({
+  onGetStarted,
+  onSignIn,
+  onAbout,
+  onPrivacy,
+  onTerms,
+  onSupport,
+}: LandingScreenProps) {
+  const { width } = useWindowDimensions();
+  const { isDark } = useTheme();
+  const isWide = width > 768;
+
+  // Use safe navigation that doesn't crash when outside NavigationContainer (web)
+  const navigation = useSafeNavigation();
+
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [isAnnual, setIsAnnual] = useState(false);
+
+  const handleGetStarted = (tier?: "basic" | "pro") => {
+    if (onGetStarted) {
+      onGetStarted(tier, isAnnual ? "annual" : "monthly");
+    }
+  };
+
+  const handleSignIn = () => {
+    if (onSignIn) {
+      onSignIn();
+    }
+  };
+
+  const handleAbout = () => {
+    if (onAbout) {
+      onAbout();
+    }
+  };
+
+  const handlePrivacy = () => {
+    if (onPrivacy) {
+      onPrivacy();
+    }
+  };
+
+  const handleTerms = () => {
+    if (onTerms) {
+      onTerms();
+    }
+  };
+
+  const handleSupport = () => {
+    if (onSupport) {
+      onSupport();
+    }
+  };
+
+  const testimonials = [
+    {
+      name: "Sarah M.",
+      role: "Busy Mom of 3",
+      quote:
+        "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
+      rating: 5,
+    },
+    {
+      name: "James K.",
+      role: "Home Chef",
+      quote:
+        "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
+      rating: 5,
+    },
+    {
+      name: "Emily R.",
+      role: "Sustainability Advocate",
+      quote:
+        "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
+      rating: 5,
+    },
+  ];
+
+  const faqs = [
+    {
+      question: "How does the AI recipe generation work?",
+      answer:
+        "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
+    },
+    {
+      question: "Is there a free trial available?",
+      answer:
+        "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
+    },
+    {
+      question: "Can I use the app on multiple devices?",
+      answer:
+        "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
+    },
+    {
+      question: "How accurate is the expiration tracking?",
+      answer:
+        "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
+    },
+    {
+      question: "Can I cancel my subscription anytime?",
+      answer:
+        "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
+    },
+  ];
+
+  const trustLogos = [
+    { name: "App Store", iconType: "material", icon: "apple" },
+    { name: "Google Play", iconType: "material", icon: "google-play" },
+    { name: "Replit", iconType: "custom", icon: "replit" },
+    { name: "GitHub", iconType: "feather", icon: "github" },
+  ];
+
+  const ReplitLogo = ({
+    size = 24,
+    color = "rgba(255,255,255,0.5)",
+  }: {
+    size?: number;
+    color?: string;
+  }) => {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 50 50">
+        <Path
+          d="M40 32H27V19h13c1.657 0 3 1.343 3 3v7C43 30.657 41.657 32 40 32zM14 6h10c1.657 0 3 1.343 3 3v10H14c-1.657 0-3-1.343-3-3V9C11 7.343 12.343 6 14 6zM14 45h10c1.657 0 3-1.343 3-3V32H14c-1.657 0-3 1.343-3 3v7C11 43.657 12.343 45 14 45z"
+          fill={color}
+        />
+      </Svg>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={
+          isDark
+            ? ["#0A1F0F", "#0F1419", "#0A0F14"]
+            : ["#1A3D2A", "#1E4D35", "#0F2A1A"]
+        }
+      />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header} data-testid="header">
+          <View style={styles.logoContainer}>
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={32}
+              color={AppColors.primary}
+            />
+            <Text style={styles.logoText} data-testid="text-logo">
+              ChefSpAIce
+            </Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.signInButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleSignIn}
+            data-testid="button-signin-header"
+          >
+            <Text style={styles.signInButtonText}>Sign In</Text>
+          </Pressable>
+        </View>
+
+        <View
+          style={[styles.heroSection, isWide && styles.heroSectionWide]}
+          data-testid="section-hero"
+        >
+          <View style={styles.heroContent}>
+            <View style={styles.tagline}>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={14}
+                color={AppColors.primary}
+              />
+              <Text style={styles.taglineText} data-testid="text-tagline">
+                Reduce Food Waste, Save Money
+              </Text>
+            </View>
+
+            <Text style={styles.heroTitle} data-testid="text-hero-title">
+              Your AI-Powered{"\n"}Kitchen Assistant
+            </Text>
+
+            <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
+              Manage your pantry, generate recipes from what you have, plan
+              meals, and never let food go to waste again.
+            </Text>
+
+            <View style={styles.heroButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => handleGetStarted()}
+                data-testid="button-get-started"
+              >
+                <LinearGradient
+                  colors={[AppColors.primary, "#1E8449"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.primaryButtonGradient}
+                >
+                  <Text style={styles.primaryButtonText}>Get Started Free</Text>
+                  <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                </LinearGradient>
+              </Pressable>
+            </View>
+
+            <Text style={styles.trialText}>
+              7-day free trial, no credit card required
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.trustSection} data-testid="section-trust">
+          <Text style={styles.trustTitle}>Featured On</Text>
+          <View style={[styles.trustLogos, isWide && styles.trustLogosWide]}>
+            {trustLogos.map((logo, index) => (
+              <View key={index} style={styles.trustLogoItem}>
+                <View style={styles.trustLogoIconContainer}>
+                  {logo.iconType === "material" ? (
+                    <MaterialCommunityIcons
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  ) : logo.iconType === "custom" && logo.icon === "replit" ? (
+                    <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
+                  ) : (
+                    <Feather
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  )}
+                </View>
+                <Text style={styles.trustLogoText}>{logo.name}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-benefits">
+          <Text style={styles.sectionTitle} data-testid="text-benefits-title">
+            Why Choose ChefSpAIce?
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-benefits-subtitle"
+          >
+            Save money, reduce waste, and eat better
+          </Text>
+
+          <View
+            style={[styles.benefitsGrid, isWide && styles.benefitsGridWide]}
+          >
+            <BenefitCard
+              testId="save-money"
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="dollar-sign"
+                  size={32}
+                  color={AppColors.primary}
+                />
+              }
+              title="Save $200+/month"
+              description="Stop throwing away expired food. Our users save an average of $200 per month on groceries."
+            />
+            <BenefitCard
+              testId="reduce-waste"
+              isWide={isWide}
+              icon={
+                <Feather name="trash-2" size={32} color={AppColors.primary} />
+              }
+              title="Reduce Waste by 70%"
+              description="Smart expiration tracking and AI-powered meal planning means less food in the trash."
+            />
+            <BenefitCard
+              testId="eat-better"
+              isWide={isWide}
+              icon={
+                <Feather name="heart" size={32} color={AppColors.primary} />
+              }
+              title="Eat Healthier"
+              description="Personalized recipes based on your dietary preferences and what's actually in your kitchen."
+            />
+            <BenefitCard
+              testId="save-time"
+              isWide={isWide}
+              icon={
+                <Feather name="clock" size={32} color={AppColors.primary} />
+              }
+              title="Save 5+ Hours/Week"
+              description="No more wondering 'what's for dinner?' AI suggests meals in seconds, not hours."
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-how-it-works">
+          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">
+            How It Works
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-howitworks-subtitle"
+          >
+            Get started in three simple steps
+          </Text>
+
+          <View
+            style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}
+          >
+            <StepCard
+              number="1"
+              title="Add Your Food"
+              description="Scan barcodes, take photos, or manually add items to your inventory."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="2"
+              title="Get AI Recipes"
+              description="Tell us what you're craving and we'll create recipes using your ingredients."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="3"
+              title="Plan & Cook"
+              description="Add recipes to your meal plan and follow step-by-step instructions."
+              isDark={isDark}
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-features">
+          <Text style={styles.sectionTitle} data-testid="text-features-title">
+            Smart Features
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-features-subtitle"
+          >
+            Everything you need to run an efficient kitchen
+          </Text>
+
+          <View
+            style={[styles.featuresGrid, isWide && styles.featuresGridWide]}
+          >
+            <FeatureCard
+              testId="barcode"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <MaterialCommunityIcons
+                  name="barcode-scan"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Barcode Scanning"
+              description="Quickly add items to your inventory by scanning barcodes. Automatic product info lookup."
+            />
+            <FeatureCard
+              testId="ai-recipes"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <MaterialCommunityIcons
+                  name="creation"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="AI Recipe Generation"
+              description="Get personalized recipes based on what's in your pantry. No more wasted ingredients."
+            />
+            <FeatureCard
+              testId="expiration"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather name="clock" size={28} color={AppColors.primary} />
+              }
+              title="Expiration Tracking"
+              description="Never forget about food again. Get notifications before items expire."
+            />
+            <FeatureCard
+              testId="meal-planning"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather name="calendar" size={28} color={AppColors.primary} />
+              }
+              title="Meal Planning"
+              description="Plan your week with a beautiful calendar view. Drag and drop recipes to any day."
+            />
+            <FeatureCard
+              testId="shopping"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="shopping-cart"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Smart Shopping Lists"
+              description="Auto-generate shopping lists from recipes. Check off items as you shop."
+            />
+            <FeatureCard
+              testId="analytics"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="bar-chart-2"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Waste Analytics"
+              description="Track your food waste and savings over time. See your environmental impact."
+            />
+          </View>
+        </View>
+
+        {/*<View style={styles.section} data-testid="section-pricing">
+          <Text style={styles.sectionTitle} data-testid="text-pricing-title">
+            Simple, Transparent Pricing
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-pricing-subtitle"
+          >
+            Choose the plan that works best for you
+          </Text>
+
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={styles.billingToggle}
+              onPress={() => setIsAnnual(!isAnnual)}
+              data-testid="toggle-billing-period"
+            >
+              <View
+                style={[
+                  styles.billingOption,
+                  !isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    !isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Monthly
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.billingOption,
+                  isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Annually
+                </Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save 17%</Text>
+                </View>
+              </View>
+            </Pressable>
+          </View>
+        {/*
+          <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
+            <PricingCard
+              tier="Basic"
+              price={isAnnual ? "$49.90" : "$4.99"}
+              period={isAnnual ? "year" : "month"}
+              description="Perfect for getting started"
+              features={[
+                "25 pantry items",
+                "5 AI generated recipes per month",
+                "Basic storage areas",
+                "5 cookware items",
+                "Item scanning",
+                "Daily meal planning",
+              ]}
+              buttonText="Start Free Trial"
+              onPress={() => handleGetStarted("basic")}
+              testId="basic"
+              isWide={isWide}
+            />
+            <PricingCard
+              tier="Pro"
+              price={isAnnual ? "$99.90" : "$9.99"}
+              period={isAnnual ? "year" : "month"}
+              description="Best for home cooks"
+              features={[
+                "Unlimited pantry items",
+                "Unlimited AI generated recipes",
+                "Recipe & Bulk Scanning",
+                "Customizable storage areas",
+                "Live AI Kitchen Assistant",
+                "Weekly meal prepping",
+              ]}
+              isPopular={true}
+              buttonText="Start Free Trial"
+              onPress={() => handleGetStarted("pro")}
+              testId="pro"
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
+          <View style={styles.section} data-testid="section-testimonials">
+            <Text
+              style={styles.sectionTitle}
+              data-testid="text-testimonials-title"
+            >
+              Loved by Thousands
+            </Text>
+            <Text
+              style={styles.sectionSubtitle}
+              data-testid="text-testimonials-subtitle"
+            >
+              See what our users are saying
+            </Text>
+
+            <View
+              style={[
+                styles.testimonialsGrid,
+                isWide && styles.testimonialsGridWide,
+              ]}
+            >
+              {testimonials.map((testimonial, index) => (
+                <TestimonialCard
+                  key={index}
+                  {...testimonial}
+                  testId={`${index + 1}`}
+                  isWide={isWide}
+                />
+              ))}
+            </View>
+          </View> 
+        */}
+
+        <View style={styles.section} data-testid="section-faq">
+          <Text style={styles.sectionTitle} data-testid="text-faq-title">
+            Frequently Asked Questions
+          </Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-faq-subtitle">
+            Got questions? We've got answers
+          </Text>
+
+          <View style={styles.faqContainer}>
+            {faqs.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onToggle={() => setOpenFAQ(openFAQ === index ? null : index)}
+                testId={`${index + 1}`}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.ctaSection} data-testid="section-cta">
+          <GlassCard style={styles.ctaCard}>
+            <Text style={styles.ctaTitle}>Ready to reduce food waste?</Text>
+            <Text style={styles.ctaSubtitle}>
+              Join thousands of users saving money and the planet
+            </Text>
+            {/*
+            <Pressable
+              style={({ pressed }) => [
+                styles.ctaButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => handleGetStarted()}
+              data-testid="button-cta-get-started"
+            >
+              <LinearGradient
+                colors={[AppColors.primary, "#1E8449"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.ctaButtonGradient}
+              >
+                <Text style={styles.ctaButtonText}>Start Your Free Trial</Text>
+              </LinearGradient>
+            </Pressable>
+            <Text style={styles.ctaNote}>No credit card required</Text>
+          */}
+          </GlassCard>
+        </View>
+
+        <View style={styles.footer} data-testid="footer">
+          <View style={styles.footerContent}>
+            <View style={styles.footerLogo}>
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={24}
+                color={AppColors.primary}
+              />
+              <Text style={styles.footerLogoText}>ChefSpAIce</Text>
+            </View>
+            <Text style={styles.footerText}>
+              Your AI-powered kitchen companion
+            </Text>
+
+            <View style={styles.qrCodeSection} data-testid="qr-code-section">
+              <View style={styles.qrCodeContainer}>
+                <QRCode
+                  value="https://chefspaice.com"
+                  size={280}
+                  color="#FFFFFF"
+                  backgroundColor="transparent"
+                />
+              </View>
+              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">
+                Scan to share with a friend
+              </Text>
+            </View>
+
+            <View
+              style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
+            >
+              <Pressable onPress={handleAbout} data-testid="link-about">
+                <Text style={styles.footerLink}>About</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handlePrivacy} data-testid="link-privacy">
+                <Text style={styles.footerLink}>Privacy</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handleTerms} data-testid="link-terms">
+                <Text style={styles.footerLink}>Terms</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handleSupport} data-testid="link-support">
+                <Text style={styles.footerLink}>Support</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.copyright}>
+              &copy; 2025 ChefSpAIce. All rights reserved.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -55,36 +1091,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 60 : 16,
   },
   logoContainer: {
-    flex: 1,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-  },
-  glassIconButton: {
-    width: 240,
-    height: 240,
-    borderRadius: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    shadowColor: "rgba(0, 0, 0, 0.5)",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 10,
-    shadowRadius: 25,
-  },
-  glassOverlay: {
-    flex: 1,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: 8,
   },
   logoText: {
     fontSize: 22,

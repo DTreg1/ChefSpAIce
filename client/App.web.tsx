@@ -99,7 +99,7 @@ function WebLandingContent() {
 
   return (
     <View style={styles.container}>
-    {/*<AnimatedBackground bubbleCount={20} />
+    {/*<AnimatedBackground bubbleCount={20} />*/}
       <View style={styles.content}>
         <LandingScreen
           onGetStarted={handleGetStarted}
@@ -109,8 +109,7 @@ function WebLandingContent() {
           onTerms={handleTerms}
           onSupport={handleSupport}
         />
-      </View>*/}
-      <LandingScreen/>
+      </View>
     </View>
   );
 }

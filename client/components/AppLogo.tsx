@@ -1,22 +1,14 @@
 import {
   StyleSheet,
   View,
-  Text,
-  Pressable,
-  ScrollView,
-  useWindowDimensions,
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
-import { useTheme } from "@/hooks/useTheme";
+import { GlassView } from "expo-glass-effect";
 import {
-  GlassColors,
   GlassEffect,
   AppColors,
-  Shadows,
 } from "@/constants/theme";
 
 
@@ -25,8 +17,7 @@ export default function AppLogo() {
     <View style={styles.logoContainer}>
       {/* iOS 26 Liquid Glass Button for Logo */}
       <GlassView
-        glassEffectStyle="clear"
-        isInteractive={true}
+        glassEffectStyle="regular"
         style={styles.glassIconButton}
       >
         <View
