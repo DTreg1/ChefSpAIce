@@ -1,10 +1,8 @@
 import React from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-
-import { GlassLeaf } from "@/components/GlassLeaf";
 
 export default function GlassLeafScreen() {
   const insets = useSafeAreaInsets();
@@ -12,7 +10,7 @@ export default function GlassLeafScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassLeaf />
+      <Text style={styles.devText}>Dev Canvas</Text>
       
       <Pressable
         style={[styles.backButton, { top: insets.top + 16 }]}
@@ -20,7 +18,7 @@ export default function GlassLeafScreen() {
         data-testid="button-back"
       >
         <View style={styles.backButtonInner}>
-          <Feather name="arrow-left" size={24} color="#ffffff" />
+          <Feather name="arrow-left" size={24} color="#333333" />
         </View>
       </Pressable>
     </View>
@@ -30,6 +28,13 @@ export default function GlassLeafScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  devText: {
+    color: "#cccccc",
+    fontSize: 14,
   },
   backButton: {
     position: "absolute",
@@ -40,10 +45,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
 });
