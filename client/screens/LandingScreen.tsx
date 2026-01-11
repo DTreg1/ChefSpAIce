@@ -12,7 +12,12 @@ import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { useTheme } from "@/hooks/useTheme";
-import { GlassColors, GlassEffect, AppColors, Shadows } from "@/constants/theme";
+import {
+  GlassColors,
+  GlassEffect,
+  AppColors,
+  Shadows,
+} from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
 
@@ -81,45 +86,26 @@ interface LandingScreenProps {
 }
 
 export default function LandingScreen({}: LandingScreenProps) {
-  const { isDark } = useTheme();
-
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={
-          isDark
-            ? ["#0A1F0F", "#0F1419", "#0A0F14"]
-            : ["#1A3D2A", "#1E4D35", "#0F2A1A"]
-        }
-      />
-
-      <View style={styles.logoContainer}>
-        {/* iOS 26 Liquid Glass Button for Logo */}
-          <View style={styles.glassIconButton}>
-            <GlassView
-              glassEffectStyle="clear"
-              isInteractive={true}
-              style={styles.glassIconButton}
-            >
-              <View
-                style={isWeb ? {
-                  filter: "drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.4))",
-                } as any : {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 12,
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(255, 255, 255, 0.9)"
-                />
-              </View>
-            </GlassView>
-          </View>
-      </View>
+    <View style={styles.logoContainer}>
+      {/* iOS 26 Liquid Glass Button for Logo */}
+      <GlassView
+        glassEffectStyle="clear"
+        isInteractive={true}
+        style={styles.glassIconButton}
+      >
+        <View
+          style={{
+            filter: "drop-shadow(0px 0px 24px rgba(0, 0, 0, 1))",
+          }}
+        >
+          <MaterialCommunityIcons
+            name="chef-hat"
+            size={175}
+            color="rgba(255, 255, 255, 0.7)"
+          />
+        </View>
+      </GlassView>
     </View>
   );
 }
@@ -155,10 +141,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    shadowColor: "rgba(0, 0, 0, 0.35)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    shadowColor: "rgba(0, 0, 0, 0.5)",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 1,
+    shadowOpacity: 10,
     shadowRadius: 25,
   },
   glassOverlay: {
