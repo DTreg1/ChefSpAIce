@@ -15,9 +15,9 @@ function generateSVG(size: number, cornerRadius: number): string {
   <defs>
     <!-- Green base gradient -->
     <linearGradient id="greenBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4ADE80"/>
-      <stop offset="50%" style="stop-color:#22C55E"/>
-      <stop offset="100%" style="stop-color:#16A34A"/>
+      <stop offset="0%" style="stop-color:#253d0a"/>
+      <stop offset="50%" style="stop-color:#1a2e05"/>
+      <stop offset="100%" style="stop-color:#121f03"/>
     </linearGradient>
     
     <!-- Glass overlay gradient -->
