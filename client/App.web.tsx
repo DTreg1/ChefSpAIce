@@ -99,7 +99,7 @@ function WebLandingContent() {
 
   return (
     <View style={styles.container}>
-      <AnimatedBackground bubbleCount={20} />
+    {/*<AnimatedBackground bubbleCount={20} />
       <View style={styles.content}>
         <LandingScreen
           onGetStarted={handleGetStarted}
@@ -109,8 +109,8 @@ function WebLandingContent() {
           onTerms={handleTerms}
           onSupport={handleSupport}
         />
-      </View>
-      <StatusBar style="light" />
+      </View>*/}
+      <LandingScreen/>
     </View>
   );
 }
@@ -138,7 +138,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1F0F',
+    backgroundColor: '#1a2e05',
   },
   content: {
     flex: 1,
