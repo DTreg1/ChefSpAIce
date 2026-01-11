@@ -233,8 +233,8 @@ router.get("/", (req: Request, res: Response) => {
   <h1>ChefSpAIce Logo Downloads</h1>
   
   <div class="preview">
-    <iframe src="/logo-preview" width="280" height="280" title="Logo Preview"></iframe>
-    <div class="preview-label">Live AppLogo Component Preview</div>
+    ${generateLogoSVG(240, false)}
+    <div class="preview-label">Logo Preview (matches downloaded assets)</div>
   </div>
   
   <h2>Full Logo (with background)</h2>
