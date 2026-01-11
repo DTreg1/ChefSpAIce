@@ -106,14 +106,14 @@ export default function LandingScreen({}: LandingScreenProps) {
                 {/* Shadow icon - offset and blurred behind main icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
-                  size={56}
+                  size={140}
                   color="rgba(0, 0, 0, 0.4)"
                   style={styles.iconShadowLayer}
                 />
                 {/* Main frosted icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
-                  size={56}
+                  size={140}
                   color="rgba(255, 255, 255, 0.7)"
                   style={styles.iconMainLayer}
                 />
@@ -131,13 +131,13 @@ export default function LandingScreen({}: LandingScreenProps) {
                 <View style={styles.iconContainer}>
                   <MaterialCommunityIcons
                     name="chef-hat"
-                    size={56}
+                    size={140}
                     color="rgba(0, 0, 0, 0.4)"
                     style={styles.iconShadowLayer}
                   />
                   <MaterialCommunityIcons
                     name="chef-hat"
-                    size={56}
+                    size={140}
                     color="rgba(255, 255, 255, 0.7)"
                     style={styles.iconMainLayer}
                   />
@@ -182,13 +182,13 @@ const styles = StyleSheet.create({
     elevation: 18,
   },
   glassIconButton: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
+    width: 240,
+    height: 240,
+    borderRadius: 60,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.35)",
   },
   glassOverlay: {
@@ -199,16 +199,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: 140,
+    height: 140,
     alignItems: "center",
     justifyContent: "center",
   },
   iconShadowLayer: {
     position: "absolute",
-    top: -4,
+    top: -12,
     left: 0,
-    opacity: 0.5,
+    opacity: 0.6,
   },
   iconMainLayer: {
     position: "absolute",
