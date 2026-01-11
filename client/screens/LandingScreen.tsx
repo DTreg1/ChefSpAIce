@@ -103,19 +103,31 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.iconContainer}>
-                {/* Shadow icon with blur */}
-                <BlurView
-                  intensity={30}
-                  tint="dark"
-                  style={styles.iconShadowBlur}
-                >
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(0, 0, 0, 0.5)"
-                    style={styles.iconShadowLayer}
-                  />
-                </BlurView>
+                {/* Stacked shadow layers to simulate blur */}
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={140}
+                  color="rgba(0, 0, 0, 0.08)"
+                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.35 }] }]}
+                />
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={140}
+                  color="rgba(0, 0, 0, 0.12)"
+                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.25 }] }]}
+                />
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={140}
+                  color="rgba(0, 0, 0, 0.18)"
+                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.15 }] }]}
+                />
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={140}
+                  color="rgba(0, 0, 0, 0.25)"
+                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.05 }] }]}
+                />
                 {/* Main frosted icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
@@ -135,18 +147,30 @@ export default function LandingScreen({}: LandingScreenProps) {
             >
               <View style={styles.glassOverlay}>
                 <View style={styles.iconContainer}>
-                  <BlurView
-                    intensity={30}
-                    tint="dark"
-                    style={styles.iconShadowBlur}
-                  >
-                    <MaterialCommunityIcons
-                      name="chef-hat"
-                      size={140}
-                      color="rgba(0, 0, 0, 0.5)"
-                      style={styles.iconShadowLayer}
-                    />
-                  </BlurView>
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={140}
+                    color="rgba(0, 0, 0, 0.08)"
+                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.35 }] }]}
+                  />
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={140}
+                    color="rgba(0, 0, 0, 0.12)"
+                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.25 }] }]}
+                  />
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={140}
+                    color="rgba(0, 0, 0, 0.18)"
+                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.15 }] }]}
+                  />
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={140}
+                    color="rgba(0, 0, 0, 0.25)"
+                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.05 }] }]}
+                  />
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
@@ -216,17 +240,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconShadowBlur: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    borderRadius: 90,
-  },
   iconShadowLayer: {
-    transform: [{ scale: 1.15 }],
+    position: "absolute",
   },
   iconMainLayer: {
     position: "absolute",
