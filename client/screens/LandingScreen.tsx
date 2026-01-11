@@ -94,34 +94,41 @@ export default function LandingScreen({}: LandingScreenProps) {
       />
 
       <View style={styles.logoContainer}>
-        {/* Glass Button wrapping the chef hat icon */}
+        {/* iOS 26 Liquid Glass Button for Logo */}
         {Platform.OS === "ios" && isLiquidGlassAvailable() ? (
-          <GlassView
-            glassEffectStyle="regular"      // "clear" | "regular" - controls glass intensity
-            tintColor={AppColors.primary}   // optional: tints the glass with primary color
-            isInteractive={true}            // enables interactive glass effect
-            style={styles.glassIconButton}
-          >
-            <MaterialCommunityIcons
-              name="chef-hat"
-              size={132}
-              color={AppColors.primary}
-            />
-          </GlassView>
+          <View style={styles.glassButtonShadow}>
+            <GlassView
+              glassEffectStyle="regular"
+              isInteractive={true}
+              style={styles.glassIconButton}
+            >
+              <View style={styles.glassInnerHighlight}>
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={56}
+                  color={AppColors.primary}
+                />
+              </View>
+            </GlassView>
+          </View>
         ) : (
-          <BlurView
-            intensity={40}
-            tint="light"
-            style={styles.glassIconButton}
-          >
-            <View style={styles.glassIconButtonInner}>
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={132}
-                color={AppColors.primary}
-              />
-            </View>
-          </BlurView>
+          <View style={styles.glassButtonShadow}>
+            <BlurView
+              intensity={60}
+              tint="light"
+              style={styles.glassIconButton}
+            >
+              <View style={styles.glassOverlay}>
+                <View style={styles.glassInnerHighlight}>
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={56}
+                    color={AppColors.primary}
+                  />
+                </View>
+              </View>
+            </BlurView>
+          </View>
         )}
       </View>
     </View>
@@ -151,19 +158,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  glassButtonShadow: {
+    shadowColor: "rgba(0, 0, 0, 0.35)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 25,
+    elevation: 18,
+  },
   glassIconButton: {
-    padding: 24,
-    borderRadius: GlassEffect.borderRadius.xl,
+    width: 96,
+    height: 96,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.35)",
   },
-  glassIconButtonInner: {
+  glassOverlay: {
+    flex: 1,
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: GlassEffect.borderRadius.lg,
-    padding: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  glassInnerHighlight: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoText: {
     fontSize: 22,
