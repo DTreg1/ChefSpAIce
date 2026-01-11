@@ -11,7 +11,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
-import DropShadow from "react-native-drop-shadow";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors, Shadows } from "@/constants/theme";
 
@@ -102,11 +101,13 @@ export default function LandingScreen({}: LandingScreenProps) {
               isInteractive={true}
               style={styles.glassIconButton}
             >
-              <DropShadow
-                style={{
+              <View
+                style={isWeb ? {
+                  filter: "drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.4))",
+                } as any : {
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.35,
+                  shadowOpacity: 0.4,
                   shadowRadius: 12,
                 }}
               >
@@ -115,7 +116,7 @@ export default function LandingScreen({}: LandingScreenProps) {
                   size={140}
                   color="rgba(255, 255, 255, 0.9)"
                 />
-              </DropShadow>
+              </View>
             </GlassView>
           </View>
       </View>
