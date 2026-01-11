@@ -179,36 +179,51 @@ router.get("/", (req: Request, res: Response) => {
     * { box-sizing: border-box; }
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e; 
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: #fff; 
       padding: 40px; 
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
+      min-height: 100vh;
     }
-    h1 { margin-bottom: 30px; }
+    h1 { margin-bottom: 30px; text-align: center; }
     .preview { 
-      background: #0d0d1a; 
-      padding: 40px; 
-      border-radius: 16px; 
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+      padding: 60px 40px; 
+      border-radius: 24px; 
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    .preview img { max-width: 200px; }
+    .preview iframe {
+      border: none;
+      border-radius: 16px;
+      background: transparent;
+    }
+    .preview-label {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.6;
+    }
     .downloads { display: grid; gap: 12px; }
     button.btn { 
       display: block;
       width: 100%;
       text-align: left;
-      background: rgba(255,255,255,0.1); 
+      background: rgba(255,255,255,0.08); 
       color: #fff; 
       padding: 16px 24px; 
-      border-radius: 8px; 
-      border: none;
+      border-radius: 12px; 
+      border: 1px solid rgba(255,255,255,0.1);
       cursor: pointer;
       font-size: 16px;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
-    button.btn:hover { background: rgba(255,255,255,0.2); }
+    button.btn:hover { 
+      background: rgba(255,255,255,0.15); 
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
     button.btn:disabled { opacity: 0.5; cursor: wait; }
     .btn span { opacity: 0.6; font-size: 14px; }
     h2 { margin-top: 30px; margin-bottom: 15px; font-size: 18px; opacity: 0.8; }
@@ -218,7 +233,8 @@ router.get("/", (req: Request, res: Response) => {
   <h1>ChefSpAIce Logo Downloads</h1>
   
   <div class="preview">
-    <img src="/api/logo/png?size=256" alt="Logo Preview">
+    <iframe src="/logo-preview" width="280" height="280" title="Logo Preview"></iframe>
+    <div class="preview-label">Live AppLogo Component Preview</div>
   </div>
   
   <h2>Full Logo (with background)</h2>

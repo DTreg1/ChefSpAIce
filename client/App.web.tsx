@@ -19,6 +19,7 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
+import LogoPreviewScreen from "@/screens/LogoPreviewScreen";
 import Constants from "expo-constants";
 
 /**
@@ -76,12 +77,26 @@ function handleSupport() {
 }
 
 /**
+ * Check if current path is /logo-preview
+ */
+function isLogoPreviewRoute(): boolean {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.pathname === '/logo-preview';
+  }
+  return false;
+}
+
+/**
  * Web Landing Content
  * 
  * Renders the LandingScreen with animated background.
  * No navigation stack needed - just the landing page.
  */
 function WebLandingContent() {
+  if (isLogoPreviewRoute()) {
+    return <LogoPreviewScreen />;
+  }
+
   return (
     <View style={styles.container}>
       <AnimatedBackground bubbleCount={20} />
