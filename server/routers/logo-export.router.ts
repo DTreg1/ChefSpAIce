@@ -6,85 +6,53 @@ const router = Router();
 const CHEF_HAT_SVG_PATH = `M12,5A2,2 0 0,1 14,3A2,2 0 0,1 16,5V6H17A2,2 0 0,1 19,8V9H20A2,2 0 0,1 22,11V12L21,22H3L2,12V11A2,2 0 0,1 4,9H5V8A2,2 0 0,1 7,6H8V5A2,2 0 0,1 10,3A2,2 0 0,1 12,5M7,18H9V14H7V18M11,18H13V14H11V18M15,18H17V14H15V18Z`;
 
 function generateLogoSVG(size: number = 512, includeBackground: boolean = true): string {
-  const padding = size * 0.15;
-  const iconSize = size - padding * 2;
+  const cornerRadius = size * 0.25;
+  const iconSize = size * 0.73;
   const iconScale = iconSize / 24;
-  const iconOffset = padding;
-  const cornerRadius = size * 0.22;
+  const iconOffset = (size - iconSize) / 2;
 
-  const backgroundGradient = includeBackground ? `
-    <defs>
-      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#1a1a2e"/>
-        <stop offset="100%" style="stop-color:#0d0d1a"/>
-      </linearGradient>
-      <linearGradient id="glassGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:rgba(255,255,255,0.25)"/>
-        <stop offset="50%" style="stop-color:rgba(255,255,255,0.08)"/>
-        <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
-      </linearGradient>
-      <linearGradient id="iconGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#ffffff"/>
-        <stop offset="100%" style="stop-color:#c0c0c0"/>
-      </linearGradient>
-      <filter id="iconShadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.4)"/>
-      </filter>
-      <filter id="glassBlur" x="-10%" y="-10%" width="120%" height="120%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
-      </filter>
-    </defs>
-    <rect x="0" y="0" width="${size}" height="${size}" rx="${cornerRadius}" ry="${cornerRadius}" fill="url(#bgGrad)"/>
-  ` : `
+  const defs = `
     <defs>
       <linearGradient id="glassGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:rgba(255,255,255,0.25)"/>
-        <stop offset="50%" style="stop-color:rgba(255,255,255,0.08)"/>
-        <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
+        <stop offset="0%" style="stop-color:rgba(255,255,255,0.18)"/>
+        <stop offset="50%" style="stop-color:rgba(255,255,255,0.06)"/>
+        <stop offset="100%" style="stop-color:rgba(255,255,255,0.12)"/>
       </linearGradient>
-      <linearGradient id="iconGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#ffffff"/>
-        <stop offset="100%" style="stop-color:#c0c0c0"/>
-      </linearGradient>
-      <filter id="iconShadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.4)"/>
+      <filter id="iconShadow" x="-100%" y="-100%" width="300%" height="300%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${size * 0.05}" flood-color="rgba(0,0,0,1)"/>
+      </filter>
+      <filter id="buttonShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="${size * 0.04}" stdDeviation="${size * 0.05}" flood-color="rgba(0,0,0,0.5)"/>
       </filter>
     </defs>
   `;
 
-  const glassButtonSize = size * 0.7;
-  const glassButtonOffset = (size - glassButtonSize) / 2;
-  const glassCornerRadius = glassButtonSize * 0.25;
+  const background = includeBackground ? `
+    <rect x="0" y="0" width="${size}" height="${size}" fill="#1a1a2e"/>
+  ` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-  ${backgroundGradient}
+  ${defs}
+  ${background}
   
-  <!-- Glass button background -->
+  <!-- Glass button with rounded corners -->
   <rect 
-    x="${glassButtonOffset}" 
-    y="${glassButtonOffset}" 
-    width="${glassButtonSize}" 
-    height="${glassButtonSize}" 
-    rx="${glassCornerRadius}" 
-    ry="${glassCornerRadius}" 
+    x="0" 
+    y="0" 
+    width="${size}" 
+    height="${size}" 
+    rx="${cornerRadius}" 
+    ry="${cornerRadius}" 
     fill="url(#glassGrad)"
-    stroke="rgba(255,255,255,0.3)"
-    stroke-width="1"
+    stroke="rgba(255,255,255,0.12)"
+    stroke-width="${Math.max(2, size * 0.008)}"
+    filter="url(#buttonShadow)"
   />
   
-  <!-- Specular highlight on glass -->
-  <ellipse 
-    cx="${size / 2}" 
-    cy="${glassButtonOffset + glassButtonSize * 0.2}" 
-    rx="${glassButtonSize * 0.35}" 
-    ry="${glassButtonSize * 0.1}" 
-    fill="rgba(255,255,255,0.15)"
-  />
-  
-  <!-- Chef hat icon with shadow -->
+  <!-- Chef hat icon with drop shadow matching AppLogo style -->
   <g transform="translate(${iconOffset}, ${iconOffset}) scale(${iconScale})" filter="url(#iconShadow)">
-    <path d="${CHEF_HAT_SVG_PATH}" fill="url(#iconGrad)"/>
+    <path d="${CHEF_HAT_SVG_PATH}" fill="rgba(255,255,255,0.7)"/>
   </g>
 </svg>`;
 }
@@ -94,14 +62,8 @@ function generateIconOnlySVG(size: number = 512): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-  <defs>
-    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff"/>
-      <stop offset="100%" style="stop-color:#c0c0c0"/>
-    </linearGradient>
-  </defs>
   <g transform="scale(${iconScale})">
-    <path d="${CHEF_HAT_SVG_PATH}" fill="url(#iconGrad)"/>
+    <path d="${CHEF_HAT_SVG_PATH}" fill="rgba(255,255,255,0.7)"/>
   </g>
 </svg>`;
 }
