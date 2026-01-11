@@ -103,13 +103,19 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.iconContainer}>
-                {/* Shadow icon - offset and blurred behind main icon */}
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(0, 0, 0, 0.4)"
-                  style={styles.iconShadowLayer}
-                />
+                {/* Shadow icon with blur */}
+                <BlurView
+                  intensity={30}
+                  tint="dark"
+                  style={styles.iconShadowBlur}
+                >
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={140}
+                    color="rgba(0, 0, 0, 0.5)"
+                    style={styles.iconShadowLayer}
+                  />
+                </BlurView>
                 {/* Main frosted icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
@@ -129,12 +135,18 @@ export default function LandingScreen({}: LandingScreenProps) {
             >
               <View style={styles.glassOverlay}>
                 <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(0, 0, 0, 0.4)"
-                    style={styles.iconShadowLayer}
-                  />
+                  <BlurView
+                    intensity={30}
+                    tint="dark"
+                    style={styles.iconShadowBlur}
+                  >
+                    <MaterialCommunityIcons
+                      name="chef-hat"
+                      size={140}
+                      color="rgba(0, 0, 0, 0.5)"
+                      style={styles.iconShadowLayer}
+                    />
+                  </BlurView>
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
@@ -204,11 +216,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconShadowLayer: {
+  iconShadowBlur: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    opacity: 0.5,
+    width: 180,
+    height: 180,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: 90,
+  },
+  iconShadowLayer: {
     transform: [{ scale: 1.15 }],
   },
   iconMainLayer: {
