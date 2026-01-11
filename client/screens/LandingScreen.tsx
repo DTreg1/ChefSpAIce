@@ -103,36 +103,18 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.iconContainer}>
-                {/* Stacked shadow layers to simulate blur */}
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(0, 0, 0, 0.08)"
-                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.35 }] }]}
-                />
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(0, 0, 0, 0.12)"
-                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.25 }] }]}
-                />
-                <MaterialCommunityIcons
-                  name="chef-hat"
-                  size={140}
-                  color="rgba(0, 0, 0, 0.18)"
-                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.15 }] }]}
-                />
+                {/* Drop shadow - below the icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={140}
                   color="rgba(0, 0, 0, 0.25)"
-                  style={[styles.iconShadowLayer, { transform: [{ scale: 1.05 }] }]}
+                  style={styles.iconDropShadow}
                 />
-                {/* Main frosted icon */}
+                {/* Main frosted icon - raised above */}
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={140}
-                  color="rgba(255, 255, 255, 0.7)"
+                  color="rgba(255, 255, 255, 0.9)"
                   style={styles.iconMainLayer}
                 />
               </View>
@@ -150,31 +132,13 @@ export default function LandingScreen({}: LandingScreenProps) {
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
-                    color="rgba(0, 0, 0, 0.08)"
-                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.35 }] }]}
-                  />
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(0, 0, 0, 0.12)"
-                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.25 }] }]}
-                  />
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
-                    color="rgba(0, 0, 0, 0.18)"
-                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.15 }] }]}
-                  />
-                  <MaterialCommunityIcons
-                    name="chef-hat"
-                    size={140}
                     color="rgba(0, 0, 0, 0.25)"
-                    style={[styles.iconShadowLayer, { transform: [{ scale: 1.05 }] }]}
+                    style={styles.iconDropShadow}
                   />
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={140}
-                    color="rgba(255, 255, 255, 0.7)"
+                    color="rgba(255, 255, 255, 0.9)"
                     style={styles.iconMainLayer}
                   />
                 </View>
@@ -240,8 +204,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconShadowLayer: {
+  iconDropShadow: {
     position: "absolute",
+    transform: [{ translateY: 10 }],
   },
   iconMainLayer: {
     position: "absolute",
