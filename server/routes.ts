@@ -65,6 +65,7 @@ import syncRouter from "./routers/sync.router";
 import recipeImagesRouter from "./routers/recipeImages.router";
 import feedbackRouter from "./routers/feedback.router";
 import logoExportRouter from "./routers/logo-export.router";
+import brandGeneratorRouter from "./routers/brand-generator.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
@@ -382,6 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/appliances", appliancesRouter); // Kitchen appliance catalog
   app.use("/api/webhooks/revenuecat", revenuecatWebhookRouter); // RevenueCat iOS/Android webhooks
   app.use("/api/logo", logoExportRouter); // Logo export (PNG, SVG, favicon)
+  app.use("/api/brand", brandGeneratorRouter); // Brand asset generator
 
   // =========================================================================
   // PRE-REGISTRATION ENDPOINT
