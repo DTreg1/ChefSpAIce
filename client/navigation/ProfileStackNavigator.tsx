@@ -9,6 +9,7 @@ import DevComponentsScreen from "@/screens/DevComponentsScreen";
 import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import GlassLeafScreen from "@/screens/GlassLeafScreen";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -20,6 +21,7 @@ export type ProfileStackParamList = {
   BarcodeTest: undefined;
   StorageLocations: undefined;
   Subscription: undefined;
+  GlassLeaf: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -42,6 +44,7 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="BarcodeTest" component={BarcodeTestScreen} />
       <Stack.Screen name="StorageLocations" component={StorageLocationsScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="GlassLeaf" component={GlassLeafScreen} />
     </Stack.Navigator>
   );
 }
