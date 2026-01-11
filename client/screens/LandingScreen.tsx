@@ -98,7 +98,7 @@ export default function LandingScreen({}: LandingScreenProps) {
         {Platform.OS === "ios" && isLiquidGlassAvailable() ? (
           <View style={styles.glassButtonShadow}>
             <GlassView
-              glassEffectStyle="regular"
+              glassEffectStyle="clear"
               isInteractive={true}
               style={styles.glassIconButton}
             >
@@ -114,7 +114,7 @@ export default function LandingScreen({}: LandingScreenProps) {
         ) : (
           <View style={styles.glassButtonShadow}>
             <BlurView
-              intensity={60}
+              intensity={20}
               tint="light"
               style={styles.glassIconButton}
             >
