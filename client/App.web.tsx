@@ -21,6 +21,7 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
 import LogoPreviewScreen from "@/screens/LogoPreviewScreen";
 import Constants from "expo-constants";
+import AppLogo from "@/components/AppLogo";
 
 /**
  * Get the Expo Go deep link URL for mobile app downloads
@@ -76,15 +77,6 @@ function handleSupport() {
   }
 }
 
-/**
- * Check if current path is /logo-preview
- */
-function isLogoPreviewRoute(): boolean {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.pathname === '/logo-preview';
-  }
-  return false;
-}
 
 /**
  * Web Landing Content
@@ -93,22 +85,12 @@ function isLogoPreviewRoute(): boolean {
  * No navigation stack needed - just the landing page.
  */
 function WebLandingContent() {
-  if (isLogoPreviewRoute()) {
-    return <LogoPreviewScreen />;
-  }
 
   return (
     <View style={styles.container}>
     {/*<AnimatedBackground bubbleCount={20} />*/}
       <View style={styles.content}>
-        <LandingScreen
-          onGetStarted={handleGetStarted}
-          onSignIn={handleSignIn}
-          onAbout={handleAbout}
-          onPrivacy={handlePrivacy}
-          onTerms={handleTerms}
-          onSupport={handleSupport}
-        />
+        <AppLogo/>
       </View>
     </View>
   );
