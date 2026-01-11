@@ -56,6 +56,7 @@ import LandingScreen from "@/screens/LandingScreen";
 import AuthScreen from "@/screens/AuthScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
+import DevCanvasScreen from "@/screens/GlassLeafScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import PrivacyScreen from "@/screens/PrivacyScreen";
 import TermsScreen from "@/screens/TermsScreen";
@@ -71,6 +72,7 @@ import { AppColors } from "@/constants/theme";
 const isWeb = Platform.OS === "web";
 
 export type RootStackParamList = {
+  DevCanvas: undefined;
   SignIn: undefined;
   Auth: { selectedTier?: 'basic' | 'pro'; billingPeriod?: 'monthly' | 'annual' } | undefined;
   Main: undefined;
@@ -251,6 +253,11 @@ function AuthGuardedNavigator() {
   // 4. Authenticated + subscription inactive → Onboarding (to show pricing/resubscribe)
   // 5. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
+    // DEV MODE: Show blank canvas for design work
+    if (__DEV__) {
+      console.log("[Nav] Initial route: DevCanvas (development mode)");
+      return "DevCanvas";
+    }
     // Show landing page for web users who aren't authenticated
     if (isWeb && !isAuthenticated) {
       console.log("[Nav] Initial route: Landing (web, unauthenticated)");
@@ -281,6 +288,11 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
+      <Stack.Screen
+        name="DevCanvas"
+        component={DevCanvasScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Landing"
         options={{ headerShown: false }}
