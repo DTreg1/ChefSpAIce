@@ -206,9 +206,10 @@ const styles = StyleSheet.create({
   },
   iconShadowLayer: {
     position: "absolute",
-    top: -12,
+    top: 0,
     left: 0,
-    opacity: 0.6,
+    opacity: 0.5,
+    transform: [{ scale: 1.15 }],
   },
   iconMainLayer: {
     position: "absolute",
