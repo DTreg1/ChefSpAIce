@@ -542,13 +542,532 @@ export default function LandingScreen({
         }
       />
 
-      <View style={styles.logoContainer}>
-        <MaterialCommunityIcons
-          name="chef-hat"
-          size={32}
-          color={AppColors.primary}
-        />
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header} data-testid="header">
+          <View style={styles.logoContainer}>
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={32}
+              color={AppColors.primary}
+            />
+            <Text style={styles.logoText} data-testid="text-logo">
+              ChefSpAIce
+            </Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.signInButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleSignIn}
+            data-testid="button-signin-header"
+          >
+            <Text style={styles.signInButtonText}>Sign In</Text>
+          </Pressable>
+        </View>
+
+        <View
+          style={[styles.heroSection, isWide && styles.heroSectionWide]}
+          data-testid="section-hero"
+        >
+          <View style={styles.heroContent}>
+            <View style={styles.tagline}>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={14}
+                color={AppColors.primary}
+              />
+              <Text style={styles.taglineText} data-testid="text-tagline">
+                Reduce Food Waste, Save Money
+              </Text>
+            </View>
+
+            <Text style={styles.heroTitle} data-testid="text-hero-title">
+              Your AI-Powered{"\n"}Kitchen Assistant
+            </Text>
+
+            <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
+              Manage your pantry, generate recipes from what you have, plan
+              meals, and never let food go to waste again.
+            </Text>
+
+            <View style={styles.heroButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => handleGetStarted()}
+                data-testid="button-get-started"
+              >
+                <LinearGradient
+                  colors={[AppColors.primary, "#1E8449"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.primaryButtonGradient}
+                >
+                  <Text style={styles.primaryButtonText}>Get Started Free</Text>
+                  <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                </LinearGradient>
+              </Pressable>
+            </View>
+
+            <Text style={styles.trialText}>
+              7-day free trial, no credit card required
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.trustSection} data-testid="section-trust">
+          <Text style={styles.trustTitle}>Featured On</Text>
+          <View style={[styles.trustLogos, isWide && styles.trustLogosWide]}>
+            {trustLogos.map((logo, index) => (
+              <View key={index} style={styles.trustLogoItem}>
+                <View style={styles.trustLogoIconContainer}>
+                  {logo.iconType === "material" ? (
+                    <MaterialCommunityIcons
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  ) : logo.iconType === "custom" && logo.icon === "replit" ? (
+                    <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
+                  ) : (
+                    <Feather
+                      name={logo.icon as any}
+                      size={24}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  )}
+                </View>
+                <Text style={styles.trustLogoText}>{logo.name}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-benefits">
+          <Text style={styles.sectionTitle} data-testid="text-benefits-title">
+            Why Choose ChefSpAIce?
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-benefits-subtitle"
+          >
+            Save money, reduce waste, and eat better
+          </Text>
+
+          <View
+            style={[styles.benefitsGrid, isWide && styles.benefitsGridWide]}
+          >
+            <BenefitCard
+              testId="save-money"
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="dollar-sign"
+                  size={32}
+                  color={AppColors.primary}
+                />
+              }
+              title="Save $200+/month"
+              description="Stop throwing away expired food. Our users save an average of $200 per month on groceries."
+            />
+            <BenefitCard
+              testId="reduce-waste"
+              isWide={isWide}
+              icon={
+                <Feather name="trash-2" size={32} color={AppColors.primary} />
+              }
+              title="Reduce Waste by 70%"
+              description="Smart expiration tracking and AI-powered meal planning means less food in the trash."
+            />
+            <BenefitCard
+              testId="eat-better"
+              isWide={isWide}
+              icon={
+                <Feather name="heart" size={32} color={AppColors.primary} />
+              }
+              title="Eat Healthier"
+              description="Personalized recipes based on your dietary preferences and what's actually in your kitchen."
+            />
+            <BenefitCard
+              testId="save-time"
+              isWide={isWide}
+              icon={
+                <Feather name="clock" size={32} color={AppColors.primary} />
+              }
+              title="Save 5+ Hours/Week"
+              description="No more wondering 'what's for dinner?' AI suggests meals in seconds, not hours."
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-how-it-works">
+          <Text style={styles.sectionTitle} data-testid="text-howitworks-title">
+            How It Works
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-howitworks-subtitle"
+          >
+            Get started in three simple steps
+          </Text>
+
+          <View
+            style={[styles.stepsContainer, isWide && styles.stepsContainerWide]}
+          >
+            <StepCard
+              number="1"
+              title="Add Your Food"
+              description="Scan barcodes, take photos, or manually add items to your inventory."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="2"
+              title="Get AI Recipes"
+              description="Tell us what you're craving and we'll create recipes using your ingredients."
+              isDark={isDark}
+              isWide={isWide}
+            />
+            <StepCard
+              number="3"
+              title="Plan & Cook"
+              description="Add recipes to your meal plan and follow step-by-step instructions."
+              isDark={isDark}
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section} data-testid="section-features">
+          <Text style={styles.sectionTitle} data-testid="text-features-title">
+            Smart Features
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-features-subtitle"
+          >
+            Everything you need to run an efficient kitchen
+          </Text>
+
+          <View
+            style={[styles.featuresGrid, isWide && styles.featuresGridWide]}
+          >
+            <FeatureCard
+              testId="barcode"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <MaterialCommunityIcons
+                  name="barcode-scan"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Barcode Scanning"
+              description="Quickly add items to your inventory by scanning barcodes. Automatic product info lookup."
+            />
+            <FeatureCard
+              testId="ai-recipes"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <MaterialCommunityIcons
+                  name="creation"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="AI Recipe Generation"
+              description="Get personalized recipes based on what's in your pantry. No more wasted ingredients."
+            />
+            <FeatureCard
+              testId="expiration"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather name="clock" size={28} color={AppColors.primary} />
+              }
+              title="Expiration Tracking"
+              description="Never forget about food again. Get notifications before items expire."
+            />
+            <FeatureCard
+              testId="meal-planning"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather name="calendar" size={28} color={AppColors.primary} />
+              }
+              title="Meal Planning"
+              description="Plan your week with a beautiful calendar view. Drag and drop recipes to any day."
+            />
+            <FeatureCard
+              testId="shopping"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="shopping-cart"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Smart Shopping Lists"
+              description="Auto-generate shopping lists from recipes. Check off items as you shop."
+            />
+            <FeatureCard
+              testId="analytics"
+              isDark={isDark}
+              isWide={isWide}
+              icon={
+                <Feather
+                  name="bar-chart-2"
+                  size={28}
+                  color={AppColors.primary}
+                />
+              }
+              title="Waste Analytics"
+              description="Track your food waste and savings over time. See your environmental impact."
+            />
+          </View>
+        </View>
+
+        {/*<View style={styles.section} data-testid="section-pricing">
+          <Text style={styles.sectionTitle} data-testid="text-pricing-title">
+            Simple, Transparent Pricing
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-pricing-subtitle"
+          >
+            Choose the plan that works best for you
+          </Text>
+
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={styles.billingToggle}
+              onPress={() => setIsAnnual(!isAnnual)}
+              data-testid="toggle-billing-period"
+            >
+              <View
+                style={[
+                  styles.billingOption,
+                  !isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    !isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Monthly
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.billingOption,
+                  isAnnual && styles.billingOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.billingOptionText,
+                    isAnnual && styles.billingOptionTextActive,
+                  ]}
+                >
+                  Annually
+                </Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save 17%</Text>
+                </View>
+              </View>
+            </Pressable>
+          </View>
+        {/*
+          <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
+            <PricingCard
+              tier="Basic"
+              price={isAnnual ? "$49.90" : "$4.99"}
+              period={isAnnual ? "year" : "month"}
+              description="Perfect for getting started"
+              features={[
+                "25 pantry items",
+                "5 AI generated recipes per month",
+                "Basic storage areas",
+                "5 cookware items",
+                "Item scanning",
+                "Daily meal planning",
+              ]}
+              buttonText="Start Free Trial"
+              onPress={() => handleGetStarted("basic")}
+              testId="basic"
+              isWide={isWide}
+            />
+            <PricingCard
+              tier="Pro"
+              price={isAnnual ? "$99.90" : "$9.99"}
+              period={isAnnual ? "year" : "month"}
+              description="Best for home cooks"
+              features={[
+                "Unlimited pantry items",
+                "Unlimited AI generated recipes",
+                "Recipe & Bulk Scanning",
+                "Customizable storage areas",
+                "Live AI Kitchen Assistant",
+                "Weekly meal prepping",
+              ]}
+              isPopular={true}
+              buttonText="Start Free Trial"
+              onPress={() => handleGetStarted("pro")}
+              testId="pro"
+              isWide={isWide}
+            />
+          </View>
+        </View>
+
+          <View style={styles.section} data-testid="section-testimonials">
+            <Text
+              style={styles.sectionTitle}
+              data-testid="text-testimonials-title"
+            >
+              Loved by Thousands
+            </Text>
+            <Text
+              style={styles.sectionSubtitle}
+              data-testid="text-testimonials-subtitle"
+            >
+              See what our users are saying
+            </Text>
+  
+            <View
+              style={[
+                styles.testimonialsGrid,
+                isWide && styles.testimonialsGridWide,
+              ]}
+            >
+              {testimonials.map((testimonial, index) => (
+                <TestimonialCard
+                  key={index}
+                  {...testimonial}
+                  testId={`${index + 1}`}
+                  isWide={isWide}
+                />
+              ))}
+            </View>
+          </View> 
+        */}
+
+        <View style={styles.section} data-testid="section-faq">
+          <Text style={styles.sectionTitle} data-testid="text-faq-title">
+            Frequently Asked Questions
+          </Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-faq-subtitle">
+            Got questions? We've got answers
+          </Text>
+
+          <View style={styles.faqContainer}>
+            {faqs.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onToggle={() => setOpenFAQ(openFAQ === index ? null : index)}
+                testId={`${index + 1}`}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.ctaSection} data-testid="section-cta">
+          <GlassCard style={styles.ctaCard}>
+            <Text style={styles.ctaTitle}>Ready to reduce food waste?</Text>
+            <Text style={styles.ctaSubtitle}>
+              Join thousands of users saving money and the planet
+            </Text>
+            {/*
+            <Pressable
+              style={({ pressed }) => [
+                styles.ctaButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => handleGetStarted()}
+              data-testid="button-cta-get-started"
+            >
+              <LinearGradient
+                colors={[AppColors.primary, "#1E8449"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.ctaButtonGradient}
+              >
+                <Text style={styles.ctaButtonText}>Start Your Free Trial</Text>
+              </LinearGradient>
+            </Pressable>
+            <Text style={styles.ctaNote}>No credit card required</Text>
+          */}
+          </GlassCard>
+        </View>
+
+        <View style={styles.footer} data-testid="footer">
+          <View style={styles.footerContent}>
+            <View style={styles.footerLogo}>
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={24}
+                color={AppColors.primary}
+              />
+              <Text style={styles.footerLogoText}>ChefSpAIce</Text>
+            </View>
+            <Text style={styles.footerText}>
+              Your AI-powered kitchen companion
+            </Text>
+
+            <View style={styles.qrCodeSection} data-testid="qr-code-section">
+              <View style={styles.qrCodeContainer}>
+                <QRCode
+                  value="https://chefspaice.com"
+                  size={280}
+                  color="#FFFFFF"
+                  backgroundColor="transparent"
+                />
+              </View>
+              <Text style={styles.qrCodeLabel} data-testid="text-qr-label">
+                Scan to share with a friend
+              </Text>
+            </View>
+
+            <View
+              style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
+            >
+              <Pressable onPress={handleAbout} data-testid="link-about">
+                <Text style={styles.footerLink}>About</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handlePrivacy} data-testid="link-privacy">
+                <Text style={styles.footerLink}>Privacy</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handleTerms} data-testid="link-terms">
+                <Text style={styles.footerLink}>Terms</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable onPress={handleSupport} data-testid="link-support">
+                <Text style={styles.footerLink}>Support</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.copyright}>
+              &copy; 2025 ChefSpAIce. All rights reserved.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -572,89 +1091,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 60 : 16,
   },
   logoContainer: {
-    // LAYOUT - Flexbox
-    flexDirection: "row",        // "row" | "row-reverse" | "column" | "column-reverse"
-    alignItems: "center",        // "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-    justifyContent: "flex-start", // "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly"
-    alignSelf: "auto",           // "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-    flexWrap: "nowrap",          // "wrap" | "nowrap" | "wrap-reverse"
-    flex: 0,                     // number (0 = no grow, 1 = fill available space)
-    flexGrow: 0,                 // number
-    flexShrink: 1,               // number
-    flexBasis: "auto",           // number | "auto"
-    gap: 8,                      // number (spacing between children)
-    rowGap: 0,                   // number
-    columnGap: 0,                // number
-
-    // DIMENSIONS
-    width: "auto",               // number | "auto" | "100%" | etc.
-    height: "auto",              // number | "auto" | "100%" | etc.
-    minWidth: 0,                 // number
-    maxWidth: "100%",            // number | "100%"
-    minHeight: 0,                // number
-    maxHeight: "100%",           // number | "100%"
-    aspectRatio: undefined,      // number (e.g., 1 = square, 16/9 = widescreen)
-
-    // SPACING
-    margin: 0,                   // number (all sides)
-    marginTop: 0,                // number
-    marginBottom: 0,             // number
-    marginLeft: 0,               // number
-    marginRight: 0,              // number
-    marginHorizontal: 0,         // number (left + right)
-    marginVertical: 0,           // number (top + bottom)
-    padding: 0,                  // number (all sides)
-    paddingTop: 0,               // number
-    paddingBottom: 0,            // number
-    paddingLeft: 0,              // number
-    paddingRight: 0,             // number
-    paddingHorizontal: 0,        // number (left + right)
-    paddingVertical: 0,          // number (top + bottom)
-
-    // POSITIONING
-    position: "relative",        // "relative" | "absolute"
-    top: undefined,              // number (use with position: "absolute")
-    bottom: undefined,           // number
-    left: undefined,             // number
-    right: undefined,            // number
-    zIndex: 0,                   // number (stacking order)
-
-    // BACKGROUND
-    backgroundColor: "transparent", // color string (e.g., "#FF0000", "rgba(255,0,0,0.5)", "red")
-    opacity: 1,                  // number 0-1
-
-    // BORDERS
-    borderWidth: 0,              // number (all sides)
-    borderTopWidth: 0,           // number
-    borderBottomWidth: 0,        // number
-    borderLeftWidth: 0,          // number
-    borderRightWidth: 0,         // number
-    borderColor: "transparent",  // color string
-    borderTopColor: undefined,   // color string
-    borderBottomColor: undefined, // color string
-    borderLeftColor: undefined,  // color string
-    borderRightColor: undefined, // color string
-    borderStyle: "solid",        // "solid" | "dotted" | "dashed"
-    borderRadius: 0,             // number (all corners)
-    borderTopLeftRadius: 0,      // number
-    borderTopRightRadius: 0,     // number
-    borderBottomLeftRadius: 0,   // number
-    borderBottomRightRadius: 0,  // number
-
-    // SHADOWS (iOS)
-    shadowColor: "#000",         // color string
-    shadowOffset: { width: 0, height: 0 }, // { width: number, height: number }
-    shadowOpacity: 0,            // number 0-1
-    shadowRadius: 0,             // number
-
-    // SHADOWS (Android)
-    elevation: 0,                // number (0-24)
-
-    // TRANSFORMS
-    transform: [],               // array of transforms, e.g., [{ scale: 1.5 }, { rotate: "45deg" }, { translateX: 10 }]
-
-    // OVERFLOW
-    overflow: "visible",         // "visible" | "hidden" | "scroll"
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   logoText: {
     fontSize: 22,
