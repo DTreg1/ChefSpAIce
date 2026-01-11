@@ -102,11 +102,20 @@ export default function LandingScreen({}: LandingScreenProps) {
               isInteractive={true}
               style={styles.glassIconButton}
             >
-              <View style={styles.iconShadow}>
+              <View style={styles.iconContainer}>
+                {/* Shadow icon - offset and blurred behind main icon */}
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={56}
+                  color="rgba(0, 0, 0, 0.4)"
+                  style={styles.iconShadowLayer}
+                />
+                {/* Main frosted icon */}
                 <MaterialCommunityIcons
                   name="chef-hat"
                   size={56}
                   color="rgba(255, 255, 255, 0.7)"
+                  style={styles.iconMainLayer}
                 />
               </View>
             </GlassView>
@@ -119,11 +128,18 @@ export default function LandingScreen({}: LandingScreenProps) {
               style={styles.glassIconButton}
             >
               <View style={styles.glassOverlay}>
-                <View style={styles.iconShadow}>
+                <View style={styles.iconContainer}>
+                  <MaterialCommunityIcons
+                    name="chef-hat"
+                    size={56}
+                    color="rgba(0, 0, 0, 0.4)"
+                    style={styles.iconShadowLayer}
+                  />
                   <MaterialCommunityIcons
                     name="chef-hat"
                     size={56}
                     color="rgba(255, 255, 255, 0.7)"
+                    style={styles.iconMainLayer}
                   />
                 </View>
               </View>
@@ -182,12 +198,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
-  iconShadow: {
-    shadowColor: "rgba(0, 0, 0, 0.6)",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 20,
+  iconContainer: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconShadowLayer: {
+    position: "absolute",
+    top: -4,
+    left: 0,
+    opacity: 0.5,
+  },
+  iconMainLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
   },
   logoText: {
     fontSize: 22,
