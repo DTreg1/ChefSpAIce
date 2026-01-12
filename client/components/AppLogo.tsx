@@ -17,16 +17,13 @@ const ICON_OFFSET_Y = ICON_SIZE * 0.0104;  // Shift down to compensate
 function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.glassContainer, styles.webGlassContainer]}>
-        {/* Base glass layer with backdrop blur */}
-        <View style={[StyleSheet.absoluteFill, styles.webBackdropBlur]} />
-        
-        {/* Main glass gradient - subtle tint */}
+      <View style={[styles.glassContainer, styles.webGlassContainer, styles.greenBackground]}>
+        {/* Glass overlay gradient - subtle tint on top of green */}
         <LinearGradient
           colors={[
-            "rgba(255, 255, 255, 0.25)",
-            "rgba(255, 255, 255, 0.08)",
-            "rgba(255, 255, 255, 0.12)",
+            "rgba(255, 255, 255, 0.30)",
+            "rgba(255, 255, 255, 0.10)",
+            "rgba(255, 255, 255, 0.15)",
           ]}
           locations={[0, 0.4, 1]}
           start={{ x: 0, y: 0 }}
@@ -40,11 +37,11 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
         {/* Top specular highlight - the key liquid glass feature */}
         <LinearGradient
           colors={[
-            "rgba(255, 255, 255, 0.6)",
-            "rgba(255, 255, 255, 0.25)",
+            "rgba(255, 255, 255, 0.5)",
+            "rgba(255, 255, 255, 0.2)",
             "rgba(255, 255, 255, 0)",
           ]}
-          locations={[0, 0.3, 0.5]}
+          locations={[0, 0.25, 0.5]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={[styles.specularHighlight]}
@@ -60,7 +57,7 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
 
   // Native iOS/Android implementation with green background + glass overlay
   return (
-    <View style={[styles.glassContainer, styles.nativeGreenBackground]}>
+    <View style={[styles.glassContainer, styles.greenBackground]}>
       {/* Glass overlay gradient */}
       <LinearGradient
         colors={[
@@ -159,15 +156,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.35)",
   },
-  nativeGreenBackground: {
-    backgroundColor: "#1a2e05",
-  },
   webGlassContainer: {
     position: "relative",
   } as any,
-  webBackdropBlur: {
-    backgroundColor: "oklch(27.4% 0.072 132.109)",
-  } as any,
+  greenBackground: {
+    backgroundColor: "#1a2e05",
+  },
   webInnerGlow: {
     boxShadow: "inset 0 0 60px 10px rgba(255, 255, 255, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)",
     borderRadius: CORNER_RADIUS,
