@@ -1,3 +1,10 @@
+# Native project folders (use CNG/Prebuild)
+/ios
+/android
+
+# Expo local state
+.expo/
+
 # Server-side code (not needed for mobile build)
 server/
 
