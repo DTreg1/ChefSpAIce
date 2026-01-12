@@ -1,32 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="58" height="58" viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Green base gradient -->
-    <linearGradient id="greenBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#253d0a"/>
-      <stop offset="50%" style="stop-color:#1a2e05"/>
-      <stop offset="100%" style="stop-color:#121f03"/>
-    </linearGradient>
-    
-    <!-- Glass overlay gradient -->
+    <!-- Glass overlay gradient (matches AppLogo) -->
     <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.35)"/>
-      <stop offset="40%" style="stop-color:rgba(255,255,255,0.12)"/>
-      <stop offset="100%" style="stop-color:rgba(255,255,255,0.18)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.30)"/>
+      <stop offset="40%" style="stop-color:rgba(255,255,255,0.10)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Specular highlight gradient -->
+    <!-- Specular highlight gradient (matches AppLogo) -->
     <linearGradient id="specularHighlight" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.7)"/>
-      <stop offset="25%" style="stop-color:rgba(255,255,255,0.3)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="25%" style="stop-color:rgba(255,255,255,0.2)"/>
       <stop offset="50%" style="stop-color:rgba(255,255,255,0)"/>
     </linearGradient>
     
-    <!-- Edge highlight gradient -->
+    <!-- Edge highlight gradient (matches AppLogo border) -->
     <linearGradient id="edgeHighlight" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)"/>
-      <stop offset="50%" style="stop-color:rgba(255,255,255,0.15)"/>
-      <stop offset="100%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
     <!-- Inner glow filter -->
@@ -49,8 +42,8 @@
   
   <!-- Background with green + glass effect -->
   <g clip-path="url(#roundedClip)">
-    <!-- Solid green base -->
-    <rect x="0" y="0" width="58" height="58" fill="url(#greenBase)"/>
+    <!-- Solid green base (matches AppLogo #1a2e05) -->
+    <rect x="0" y="0" width="58" height="58" fill="#1a2e05"/>
     
     <!-- Glass overlay -->
     <rect x="0" y="0" width="58" height="58" fill="url(#glassGradient)"/>
@@ -72,6 +65,6 @@
   
   <!-- Chef hat icon with shadow (no background) -->
   <g transform="translate(12.385416666666666, 13.382291666666665) scale(1.3291666666666668)" filter="url(#iconShadow)">
-    <path d="M12.5,1.5C10.73,1.5 9.17,2.67 8.67,4.37C8.14,4.13 7.58,4 7,4A4,4 0 0,0 3,8C3,9.82 4.24,11.41 6,11.87V19H19V11.87C20.76,11.41 22,9.82 22,8A4,4 0 0,0 18,4C17.42,4 16.86,4.13 16.33,4.37C15.83,2.67 14.27,1.5 12.5,1.5M12,10.5H13V17.5H12V10.5M9,12.5H10V17.5H9V12.5M15,12.5H16V17.5H15V12.5M6,20V21A1,1 0 0,0 7,22H18A1,1 0 0,0 19,21V20H6Z" fill="white" fill-rule="evenodd"/>
+    <path d="M12.5,1.5C10.73,1.5 9.17,2.67 8.67,4.37C8.14,4.13 7.58,4 7,4A4,4 0 0,0 3,8C3,9.82 4.24,11.41 6,11.87V19H19V11.87C20.76,11.41 22,9.82 22,8A4,4 0 0,0 18,4C17.42,4 16.86,4.13 16.33,4.37C15.83,2.67 14.27,1.5 12.5,1.5M12,10.5H13V17.5H12V10.5M9,12.5H10V17.5H9V12.5M15,12.5H16V17.5H15V12.5M6,20V21A1,1 0 0,0 7,22H18A1,1 0 0,0 19,21V20H6Z" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>
 </svg>

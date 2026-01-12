@@ -17,32 +17,25 @@ function generateSVG(size: number, cornerRadius: number): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Green base gradient -->
-    <linearGradient id="greenBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#253d0a"/>
-      <stop offset="50%" style="stop-color:#1a2e05"/>
-      <stop offset="100%" style="stop-color:#121f03"/>
-    </linearGradient>
-    
-    <!-- Glass overlay gradient -->
+    <!-- Glass overlay gradient (matches AppLogo) -->
     <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.35)"/>
-      <stop offset="40%" style="stop-color:rgba(255,255,255,0.12)"/>
-      <stop offset="100%" style="stop-color:rgba(255,255,255,0.18)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.30)"/>
+      <stop offset="40%" style="stop-color:rgba(255,255,255,0.10)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Specular highlight gradient -->
+    <!-- Specular highlight gradient (matches AppLogo) -->
     <linearGradient id="specularHighlight" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.7)"/>
-      <stop offset="25%" style="stop-color:rgba(255,255,255,0.3)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="25%" style="stop-color:rgba(255,255,255,0.2)"/>
       <stop offset="50%" style="stop-color:rgba(255,255,255,0)"/>
     </linearGradient>
     
-    <!-- Edge highlight gradient -->
+    <!-- Edge highlight gradient (matches AppLogo border) -->
     <linearGradient id="edgeHighlight" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)"/>
-      <stop offset="50%" style="stop-color:rgba(255,255,255,0.15)"/>
-      <stop offset="100%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
     <!-- Inner glow filter -->
@@ -65,8 +58,8 @@ function generateSVG(size: number, cornerRadius: number): string {
   
   <!-- Background with green + glass effect -->
   <g clip-path="url(#roundedClip)">
-    <!-- Solid green base -->
-    <rect x="0" y="0" width="${size}" height="${size}" fill="url(#greenBase)"/>
+    <!-- Solid green base (matches AppLogo #1a2e05) -->
+    <rect x="0" y="0" width="${size}" height="${size}" fill="#1a2e05"/>
     
     <!-- Glass overlay -->
     <rect x="0" y="0" width="${size}" height="${size}" fill="url(#glassGradient)"/>
@@ -88,7 +81,7 @@ function generateSVG(size: number, cornerRadius: number): string {
   
   <!-- Chef hat icon with shadow (no background) -->
   <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})" filter="url(#iconShadow)">
-    <path d="${mdiChefHat}" fill="white" fill-rule="evenodd"/>
+    <path d="${mdiChefHat}" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>
 </svg>`;
 }
