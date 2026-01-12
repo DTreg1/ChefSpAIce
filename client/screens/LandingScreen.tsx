@@ -26,7 +26,7 @@ import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
 
-const chefHatDark = require("../../assets/images/transparent/chef-hat-dark-64.png");
+const chefHatDark = require("../../assets/images/transparent/chef-hat-light-256.png");
 
 // Safe navigation hook that returns null when not inside NavigationContainer
 function useSafeNavigation(): NativeStackNavigationProp<any> | null {
@@ -552,7 +552,11 @@ export default function LandingScreen({
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
-            <Image source={chefHatDark} style={{ width: 32, height: 32 }} resizeMode="contain" />
+            <Image
+              source={chefHatDark}
+              style={{ width: 64, height: 64 }}
+              resizeMode="contain"
+            />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
             </Text>
@@ -1017,7 +1021,11 @@ export default function LandingScreen({
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
             <View style={styles.footerLogo}>
-              <Image source={chefHatDark} style={{ width: 24, height: 24 }} resizeMode="contain" />
+              <Image
+                source={chefHatDark}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
             <Text style={styles.footerText}>
