@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, userSessions, userSyncData, subscriptions, userAppliances } from "@shared/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -400,8 +400,19 @@ router.get("/sync", async (req: Request, res: Response) => {
       .where(eq(userSyncData.userId, session.userId))
       .limit(1);
 
+    // Fetch cookware from userAppliances table (source of truth)
+    const userCookware = await db
+      .select({ applianceId: userAppliances.applianceId })
+      .from(userAppliances)
+      .where(eq(userAppliances.userId, session.userId));
+    
+    const cookwareIds = userCookware.map(ua => ua.applianceId);
+
     if (!syncData) {
-      return res.json({ data: null, lastSyncedAt: null });
+      return res.json({ 
+        data: { cookware: cookwareIds }, 
+        lastSyncedAt: null 
+      });
     }
 
     res.json({
@@ -411,7 +422,7 @@ router.get("/sync", async (req: Request, res: Response) => {
         mealPlans: syncData.mealPlans ? JSON.parse(syncData.mealPlans) : null,
         shoppingList: syncData.shoppingList ? JSON.parse(syncData.shoppingList) : null,
         preferences: syncData.preferences ? JSON.parse(syncData.preferences) : null,
-        cookware: syncData.cookware ? JSON.parse(syncData.cookware) : null,
+        cookware: cookwareIds,
         wasteLog: syncData.wasteLog ? JSON.parse(syncData.wasteLog) : null,
         consumedLog: syncData.consumedLog ? JSON.parse(syncData.consumedLog) : null,
         analytics: syncData.analytics ? JSON.parse(syncData.analytics) : null,
@@ -542,8 +553,43 @@ router.post("/sync", async (req: Request, res: Response) => {
     if (data.shoppingList !== undefined) {
       syncUpdate.shoppingList = data.shoppingList ? JSON.stringify(data.shoppingList) : null;
     }
-    if (data.cookware !== undefined) {
-      syncUpdate.cookware = data.cookware ? JSON.stringify(data.cookware) : null;
+    if (data.cookware !== undefined && Array.isArray(data.cookware)) {
+      // Sync cookware to userAppliances table (source of truth)
+      const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
+      
+      // Get current cookware for this user
+      const currentCookware = await db
+        .select({ applianceId: userAppliances.applianceId })
+        .from(userAppliances)
+        .where(eq(userAppliances.userId, session.userId));
+      
+      const currentIds = new Set(currentCookware.map(c => c.applianceId));
+      const newIds = new Set(newCookwareIds);
+      
+      // Find IDs to add and remove
+      const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
+      const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
+      
+      // Remove old cookware
+      if (toRemove.length > 0) {
+        await db
+          .delete(userAppliances)
+          .where(and(
+            eq(userAppliances.userId, session.userId),
+            inArray(userAppliances.applianceId, toRemove)
+          ));
+      }
+      
+      // Add new cookware
+      if (toAdd.length > 0) {
+        await db
+          .insert(userAppliances)
+          .values(toAdd.map(applianceId => ({
+            userId: session.userId,
+            applianceId,
+          })))
+          .onConflictDoNothing();
+      }
     }
     if (data.wasteLog !== undefined) {
       syncUpdate.wasteLog = data.wasteLog ? JSON.stringify(data.wasteLog) : null;

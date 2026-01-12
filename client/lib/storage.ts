@@ -801,8 +801,27 @@ export const storage = {
     return (await getItem<number[]>(STORAGE_KEYS.COOKWARE)) || [];
   },
 
-  async setCookware(applianceIds: number[]): Promise<void> {
+  async setCookware(applianceIds: number[], options?: { skipSync?: boolean }): Promise<void> {
     await setItem(STORAGE_KEYS.COOKWARE, applianceIds);
+    
+    if (options?.skipSync) return;
+    
+    const token = await this.getAuthToken();
+    if (token) {
+      try {
+        const baseUrl = getApiUrl();
+        await fetch(new URL("/api/user/appliances/bulk", baseUrl).toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ applianceIds }),
+        });
+      } catch (error) {
+        console.error("[storage.setCookware] Failed to sync to server:", error);
+      }
+    }
   },
 
   async addCookware(applianceId: number): Promise<void> {
@@ -810,6 +829,23 @@ export const storage = {
     if (!cookware.includes(applianceId)) {
       cookware.push(applianceId);
       await setItem(STORAGE_KEYS.COOKWARE, cookware);
+      
+      const token = await this.getAuthToken();
+      if (token) {
+        try {
+          const baseUrl = getApiUrl();
+          await fetch(new URL("/api/user/appliances", baseUrl).toString(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ applianceId }),
+          });
+        } catch (error) {
+          console.error("[storage.addCookware] Failed to sync to server:", error);
+        }
+      }
     }
   },
 
@@ -817,6 +853,21 @@ export const storage = {
     const cookware = await this.getCookware();
     const updated = cookware.filter((id) => id !== applianceId);
     await setItem(STORAGE_KEYS.COOKWARE, updated);
+    
+    const token = await this.getAuthToken();
+    if (token) {
+      try {
+        const baseUrl = getApiUrl();
+        await fetch(new URL(`/api/user/appliances/${applianceId}`, baseUrl).toString(), {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("[storage.removeCookware] Failed to sync to server:", error);
+      }
+    }
   },
 
   async hasCookwareSetup(): Promise<boolean> {
@@ -1112,7 +1163,7 @@ export const storage = {
         syncData.mealPlans && this.setMealPlans(syncData.mealPlans),
         syncData.shoppingList && this.setShoppingList(syncData.shoppingList),
         syncData.preferences && this.setPreferences(syncData.preferences),
-        syncData.cookware && this.setCookware(syncData.cookware),
+        syncData.cookware && this.setCookware(syncData.cookware, { skipSync: true }),
         syncData.userProfile && this.setUserProfile(syncData.userProfile),
         syncData.onboarding && setItem(STORAGE_KEYS.ONBOARDING, syncData.onboarding),
       ].filter(Boolean));
