@@ -30,8 +30,17 @@
     
     <!-- Icon drop shadow -->
     <filter id="iconShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1.74" stdDeviation="2.1750000000000003" flood-color="rgba(0,0,0,0.35)"/>
-      <feDropShadow dx="0" dy="0.6960000000000001" stdDeviation="1.044" flood-color="rgba(0,0,0,0.25)"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.1750000000000003" result="blur1"/>
+      <feOffset in="blur1" dx="0" dy="1.74" result="offset1"/>
+      <feColorMatrix in="offset1" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0" result="shadow1"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.044" result="blur2"/>
+      <feOffset in="blur2" dx="0" dy="0.6960000000000001" result="offset2"/>
+      <feColorMatrix in="offset2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0" result="shadow2"/>
+      <feMerge>
+        <feMergeNode in="shadow1"/>
+        <feMergeNode in="shadow2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
     
     <!-- Clip path for rounded rectangle -->

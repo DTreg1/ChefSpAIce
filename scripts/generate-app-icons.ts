@@ -46,8 +46,17 @@ function generateSVG(size: number, cornerRadius: number): string {
     
     <!-- Icon drop shadow -->
     <filter id="iconShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="${size * 0.02}" stdDeviation="${size * 0.025}" flood-color="rgba(0,0,0,0.35)"/>
-      <feDropShadow dx="0" dy="${size * 0.008}" stdDeviation="${size * 0.012}" flood-color="rgba(0,0,0,0.25)"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${size * 0.025}" result="blur1"/>
+      <feOffset in="blur1" dx="0" dy="${size * 0.02}" result="offset1"/>
+      <feColorMatrix in="offset1" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0" result="shadow1"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${size * 0.012}" result="blur2"/>
+      <feOffset in="blur2" dx="0" dy="${size * 0.008}" result="offset2"/>
+      <feColorMatrix in="offset2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0" result="shadow2"/>
+      <feMerge>
+        <feMergeNode in="shadow1"/>
+        <feMergeNode in="shadow2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
     
     <!-- Clip path for rounded rectangle -->
