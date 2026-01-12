@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import type { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { storeKitService, ENTITLEMENTS, PaywallResult } from '@/lib/storekit-service';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseStoreKitReturn {
   isLoading: boolean;
@@ -21,12 +22,23 @@ interface UseStoreKitReturn {
 }
 
 export function useStoreKit(): UseStoreKitReturn {
+  const { token, user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isPaywallAvailable, setIsPaywallAvailable] = useState(false);
   const [isCustomerCenterAvailable, setIsCustomerCenterAvailable] = useState(false);
+
+  useEffect(() => {
+    storeKitService.setAuthToken(token);
+  }, [token]);
+
+  useEffect(() => {
+    if (user?.id && Platform.OS !== 'web') {
+      storeKitService.setUserId(user.id);
+    }
+  }, [user?.id]);
 
   const isSubscribed = customerInfo?.entitlements?.active
     ? Object.keys(customerInfo.entitlements.active).length > 0

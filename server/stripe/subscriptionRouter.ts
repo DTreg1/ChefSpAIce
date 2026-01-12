@@ -328,6 +328,58 @@ router.get("/session/:sessionId", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/sync-revenuecat", async (req: Request, res: Response) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { tier, status, productId, expirationDate } = req.body;
+
+    if (!tier || !status) {
+      return res.status(400).json({ error: "tier and status are required" });
+    }
+
+    const validTiers = ['BASIC', 'PRO'];
+    const validStatuses = ['active', 'trialing', 'canceled', 'expired', 'past_due'];
+
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier. Must be BASIC or PRO" });
+    }
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const updateData: Record<string, unknown> = {
+      subscriptionTier: tier,
+      subscriptionStatus: status,
+      updatedAt: new Date(),
+    };
+
+    if (expirationDate) {
+      updateData.trialEndsAt = new Date(expirationDate);
+    }
+
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, user.id));
+
+    console.log(`[Sync RevenueCat] Updated user ${user.id}: tier=${tier}, status=${status}`);
+
+    res.json({ 
+      success: true,
+      tier,
+      status,
+    });
+  } catch (error) {
+    console.error("Error syncing RevenueCat purchase:", error);
+    res.status(500).json({ error: "Failed to sync purchase" });
+  }
+});
+
 router.get("/me", async (req: Request, res: Response) => {
   try {
     const user = await getAuthenticatedUser(req);

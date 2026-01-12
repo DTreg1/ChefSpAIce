@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { getApiUrl } from '@/lib/query-client';
 
 let Purchases: typeof import('react-native-purchases').default | null = null;
 let LOG_LEVEL: typeof import('react-native-purchases').LOG_LEVEL | null = null;
@@ -45,6 +46,69 @@ export type PaywallResult = 'purchased' | 'restored' | 'cancelled' | 'error' | '
 class StoreKitService {
   private initialized = false;
   private initPromise: Promise<void> | null = null;
+  private authToken: string | null = null;
+
+  setAuthToken(token: string | null): void {
+    this.authToken = token;
+  }
+
+  async syncPurchaseWithServer(customerInfo: import('react-native-purchases').CustomerInfo): Promise<boolean> {
+    if (!this.authToken) {
+      console.warn('StoreKit: No auth token set, cannot sync with server');
+      return false;
+    }
+
+    try {
+      let tier: 'BASIC' | 'PRO' = 'BASIC';
+      let status: string = 'active';
+
+      if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
+        tier = 'PRO';
+        const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO];
+        if (entitlement.periodType === 'TRIAL') {
+          status = 'trialing';
+        }
+      } else if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
+        tier = 'BASIC';
+        const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
+        if (entitlement.periodType === 'TRIAL') {
+          status = 'trialing';
+        }
+      } else {
+        status = 'expired';
+      }
+
+      const activeEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO] || 
+                                 customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
+      const expirationDate = activeEntitlement?.expirationDate || null;
+
+      const baseUrl = getApiUrl();
+      const response = await fetch(`${baseUrl}/api/subscriptions/sync-revenuecat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`,
+        },
+        body: JSON.stringify({
+          tier,
+          status,
+          productId: activeEntitlement?.productIdentifier || null,
+          expirationDate,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('StoreKit: Purchase synced with server successfully');
+        return true;
+      } else {
+        console.error('StoreKit: Failed to sync purchase with server', await response.text());
+        return false;
+      }
+    } catch (error) {
+      console.error('StoreKit: Error syncing purchase with server', error);
+      return false;
+    }
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -184,6 +248,9 @@ class StoreKitService {
 
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
+      
+      await this.syncPurchaseWithServer(customerInfo);
+      
       return { success: true, customerInfo };
     } catch (error: unknown) {
       const purchaseError = error as { userCancelled?: boolean; message?: string };
@@ -206,6 +273,9 @@ class StoreKitService {
 
     try {
       const customerInfo = await Purchases.restorePurchases();
+      
+      await this.syncPurchaseWithServer(customerInfo);
+      
       return { success: true, customerInfo };
     } catch (error: unknown) {
       const restoreError = error as { message?: string };
@@ -217,13 +287,18 @@ class StoreKitService {
   async presentPaywall(options?: {
     offering?: import('react-native-purchases').PurchasesOffering;
   }): Promise<PaywallResult> {
-    if (!this.initialized || Platform.OS === 'web' || !RevenueCatUI || !PAYWALL_RESULT) {
+    if (!this.initialized || Platform.OS === 'web' || !RevenueCatUI || !PAYWALL_RESULT || !Purchases) {
       console.log('StoreKit: Paywall not available');
       return 'not_presented';
     }
 
     try {
       const result = await RevenueCatUI.presentPaywall(options);
+      
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        const customerInfo = await Purchases.getCustomerInfo();
+        await this.syncPurchaseWithServer(customerInfo);
+      }
       
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
@@ -245,7 +320,7 @@ class StoreKitService {
   }
 
   async presentPaywallIfNeeded(requiredEntitlementId?: string): Promise<PaywallResult> {
-    if (!this.initialized || Platform.OS === 'web' || !RevenueCatUI || !PAYWALL_RESULT) {
+    if (!this.initialized || Platform.OS === 'web' || !RevenueCatUI || !PAYWALL_RESULT || !Purchases) {
       console.log('StoreKit: Paywall not available');
       return 'not_presented';
     }
@@ -255,6 +330,11 @@ class StoreKitService {
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: entitlementId,
       });
+      
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        const customerInfo = await Purchases.getCustomerInfo();
+        await this.syncPurchaseWithServer(customerInfo);
+      }
       
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:

@@ -150,14 +150,23 @@ export default function SubscriptionScreen() {
   const handleUpgrade = async (plan: 'monthly' | 'annual' = 'annual') => {
     setIsCheckingOut(true);
     try {
-      if (shouldUseStoreKit && offerings) {
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        if (!shouldUseStoreKit || !offerings) {
+          Alert.alert(
+            'Not Available',
+            'In-app purchases are not available. Please try again later or contact support.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
         const packageId = plan === 'monthly' ? '$rc_monthly' : '$rc_annual';
         const pkg = offerings.availablePackages.find(
           (p) => p.identifier === packageId || p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL')
         );
 
         if (!pkg) {
-          Alert.alert('Error', 'Subscription package not available');
+          Alert.alert('Error', 'Subscription package not available. Please try again later.');
           return;
         }
 
@@ -169,51 +178,46 @@ export default function SubscriptionScreen() {
         return;
       }
 
-      const baseUrl = getApiUrl();
-      
-      const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
-      const prices = await pricesResponse.json();
-      
-      const priceId = plan === 'monthly' ? prices.monthly?.id : prices.annual?.id;
-      
-      if (!priceId) {
-        console.error("No price ID available for", plan);
-        return;
-      }
-
-      const response = await fetch(`${baseUrl}/api/subscriptions/create-checkout-session`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          priceId,
-          successUrl: Platform.OS === 'web' 
-            ? `${window.location.origin}/subscription?success=true`
-            : `${baseUrl}/subscription?success=true`,
-          cancelUrl: Platform.OS === 'web'
-            ? `${window.location.origin}/subscription?canceled=true`
-            : `${baseUrl}/subscription?canceled=true`,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.url) {
-          if (Platform.OS === "web") {
-            window.location.href = data.url;
-          } else {
-            await Linking.openURL(data.url);
-          }
+      if (Platform.OS === 'web') {
+        const baseUrl = getApiUrl();
+        
+        const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
+        const prices = await pricesResponse.json();
+        
+        const priceId = plan === 'monthly' ? prices.monthly?.id : prices.annual?.id;
+        
+        if (!priceId) {
+          Alert.alert('Error', 'Subscription pricing not available. Please try again later.');
+          return;
         }
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to create checkout session:", errorData);
+
+        const response = await fetch(`${baseUrl}/api/subscriptions/create-checkout-session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            priceId,
+            successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/subscription-canceled`,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          }
+        } else {
+          const errorData = await response.json();
+          Alert.alert('Error', errorData.error || 'Failed to start checkout. Please try again.');
+        }
       }
     } catch (error) {
       console.error("Error starting checkout:", error);
+      Alert.alert('Error', 'Something went wrong. Please try again later.');
     } finally {
       setIsCheckingOut(false);
     }
