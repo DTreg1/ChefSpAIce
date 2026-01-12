@@ -38,12 +38,6 @@ function generateSVG(size: number, cornerRadius: number): string {
       <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Inner glow filter -->
-    <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="${size * 0.02}" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-    
     <!-- Icon drop shadow -->
     <filter id="iconShadow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="${size * 0.025}" result="blur1"/>
@@ -75,9 +69,6 @@ function generateSVG(size: number, cornerRadius: number): string {
     
     <!-- Specular highlight (top half) -->
     <rect x="0" y="0" width="${size}" height="${size * 0.45}" fill="url(#specularHighlight)"/>
-    
-    <!-- Inner glow overlay -->
-    <rect x="0" y="0" width="${size}" height="${size}" fill="rgba(255,255,255,0.06)" filter="url(#innerGlow)"/>
   </g>
   
   <!-- Border/edge highlight -->
