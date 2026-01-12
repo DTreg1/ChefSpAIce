@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.chefspaice.chefspaice",
       "infoPlist": {
         "NSCameraUsageDescription": "ChefSpAIce needs camera access to scan barcodes and add food items to your inventory.",
-        "NSPhotoLibraryUsageDescription": "ChefSpAIce needs photo library access to select images for your food items.",
+        "NSPhotoLibraryUsageDescription": "ChefSpAIce would like access to your photo library to access select images for your food items.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "config": {
@@ -62,10 +62,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1a2e05",
-          "dark": {
-            "backgroundColor": "#0a1205"
-          }
+          "backgroundColor": "#27AE60",
         }
       ],
       "expo-web-browser",
