@@ -2,10 +2,12 @@ import {
   StyleSheet,
   View,
   Platform,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView } from "expo-glass-effect";
+
+const chefHatLight = require("../../assets/images/transparent/chef-hat-light-512.png");
 
 const LOGO_SIZE = 240;
 const DEFAULT_CORNER_RADIUS = 54; // ~22.37% matches iOS app icon squircle
@@ -125,18 +127,18 @@ export default function AppLogo({ cornerRadius = DEFAULT_CORNER_RADIUS }: AppLog
           <View style={styles.iconWrapper}>
             {/* Icon shadow layer for "raised" effect */}
             <View style={styles.iconShadowLayer}>
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={ICON_SIZE}
-                color="rgba(0, 0, 0, 0.4)"
+              <Image
+                source={chefHatLight}
+                style={[styles.chefHatImage, { opacity: 0.4, tintColor: "#000" }]}
+                resizeMode="contain"
               />
             </View>
             {/* Main icon */}
             <View style={styles.iconMainLayer}>
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={ICON_SIZE}
-                color="rgba(255, 255, 255, 0.85)"
+              <Image
+                source={chefHatLight}
+                style={styles.chefHatImage}
+                resizeMode="contain"
               />
             </View>
           </View>
@@ -267,4 +269,8 @@ const styles = StyleSheet.create({
       },
     }),
   } as any,
+  chefHatImage: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+  },
 });

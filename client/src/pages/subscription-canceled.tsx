@@ -1,7 +1,9 @@
-import { StyleSheet, View, Text, ScrollView, Pressable } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/contexts/ThemeContext";
+
+const chefHatDark = require("../../../assets/images/transparent/chef-hat-dark-64.png");
 
 const BRAND_GREEN = "#27AE60";
 
@@ -27,7 +29,7 @@ export default function SubscriptionCanceledScreen() {
 
       <View style={styles.header}>
         <Pressable style={styles.logoContainer} onPress={() => (window.location.href = "/")} data-testid="link-home-logo">
-          <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
+          <Image source={chefHatDark} style={{ width: 32, height: 32 }} resizeMode="contain" />
           <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
         </Pressable>
         <Pressable

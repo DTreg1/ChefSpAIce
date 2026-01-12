@@ -1,11 +1,15 @@
 import React, { useState } from "react";
-import { StyleSheet, Pressable, Platform, View } from "react-native";
+import { StyleSheet, Pressable, Platform, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
+
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
+
 import { useNavigation } from "@react-navigation/native";
+
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -20,6 +24,8 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AppColors, Spacing } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -71,12 +77,10 @@ export function FloatingChatButton() {
 
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
-  const iconContent = (
-    <MaterialCommunityIcons
-      name={isChatOpen ? "close" : "chef-hat"}
-      size={28}
-      color="#FFFFFF"
-    />
+  const iconContent = isChatOpen ? (
+    <Feather name="x" size={28} color="#FFFFFF" />
+  ) : (
+    <Image source={chefHatLight} style={{ width: 28, height: 28 }} resizeMode="contain" />
   );
 
   const renderInnerContent = () => {

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/contexts/ThemeContext";
+
+const chefHatDark = require("../../../assets/images/transparent/chef-hat-dark-64.png");
 
 const BRAND_GREEN = "#27AE60";
 
@@ -84,7 +86,7 @@ export default function SubscriptionSuccessScreen() {
 
       <View style={styles.header}>
         <Pressable style={styles.logoContainer} onPress={() => (window.location.href = "/")} data-testid="link-home-logo">
-          <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
+          <Image source={chefHatDark} style={{ width: 32, height: 32 }} resizeMode="contain" />
           <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
         </Pressable>
         <Pressable
@@ -168,7 +170,7 @@ export default function SubscriptionSuccessScreen() {
                   <Text style={[styles.featureText, { color: colors.textSecondary }]}>Add items to your inventory</Text>
                 </View>
                 <View style={styles.featureItem} data-testid="feature-item-recipes">
-                  <MaterialCommunityIcons name="chef-hat" size={20} color={BRAND_GREEN} />
+                  <Image source={chefHatDark} style={{ width: 20, height: 20 }} resizeMode="contain" />
                   <Text style={[styles.featureText, { color: colors.textSecondary }]}>Generate AI-powered recipes</Text>
                 </View>
                 <View style={styles.featureItem} data-testid="feature-item-meal-plan">

@@ -10,10 +10,11 @@ import {
   ActivityIndicator,
   Dimensions,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { GlassView } from "@/components/GlassViewWithContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -38,6 +39,8 @@ import {
   UserPreferences,
 } from "@/lib/storage";
 import { getApiUrl, apiRequest } from "@/lib/query-client";
+
+const chefHatDark = require("../../assets/images/transparent/chef-hat-dark-64.png");
 
 const TAB_BAR_HEIGHT = 54;
 const FAB_SIZE = 56;
@@ -359,10 +362,10 @@ export function ChatModal() {
 
   const renderEmptyState = () => (
     <GlassView style={styles.emptyState}>
-      <MaterialCommunityIcons
-        name="chef-hat"
-        size={32}
-        color={theme.textSecondary}
+      <Image
+        source={chefHatDark}
+        style={{ width: 32, height: 32, opacity: 0.7 }}
+        resizeMode="contain"
       />
       <ThemedText type="caption" style={styles.emptyTitle}>
         Ask me anything!
@@ -451,10 +454,10 @@ export function ChatModal() {
     <>
       <GlassView style={styles.header}>
         <GlassView style={styles.headerLeft}>
-          <MaterialCommunityIcons
-            name="chef-hat"
-            size={18}
-            color={AppColors.primary}
+          <Image
+            source={chefHatDark}
+            style={{ width: 18, height: 18 }}
+            resizeMode="contain"
           />
           <ThemedText type="caption" style={styles.headerTitle}>
             Kitchen Chef
