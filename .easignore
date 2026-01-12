@@ -27,10 +27,6 @@ jest.config.js
 # Linting config (not needed for build)
 eslint.config.js
 
-# Git
-.git/
-.gitignore
-
 # IDE/Editor
 .vscode/
 .idea/
