@@ -65,7 +65,12 @@ function generateSVG(size: number, cornerRadius: number): string {
   <rect x="0" y="0" width="${size}" height="${size}" rx="${cornerRadius}" ry="${cornerRadius}" 
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
-  <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
+  <!-- Chef hat shadow (duplicated path, offset and blurred) -->
+  <g transform="translate(${iconOffsetX}, ${iconOffsetY + size * 0.015}) scale(${scale})" style="filter: blur(${size * 0.012}px);">
+    <path d="${mdiChefHat}" fill="rgba(0,0,0,0.3)" fill-rule="evenodd"/>
+  </g>
+  
+  <!-- Chef hat icon -->
   <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})">
     <path d="${mdiChefHat}" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>
