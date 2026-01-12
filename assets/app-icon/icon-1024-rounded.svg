@@ -22,20 +22,6 @@
       <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Icon drop shadow -->
-    <filter id="iconShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="25.6" result="blur1"/>
-      <feOffset in="blur1" dx="0" dy="20.48" result="offset1"/>
-      <feColorMatrix in="offset1" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0" result="shadow1"/>
-      <feGaussianBlur in="SourceAlpha" stdDeviation="12.288" result="blur2"/>
-      <feOffset in="blur2" dx="0" dy="8.192" result="offset2"/>
-      <feColorMatrix in="offset2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0" result="shadow2"/>
-      <feMerge>
-        <feMergeNode in="shadow1"/>
-        <feMergeNode in="shadow2"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
     
     <!-- Clip path for rounded rectangle -->
     <clipPath id="roundedClip">
@@ -63,8 +49,8 @@
   <rect x="0" y="0" width="1024" height="1024" rx="229" ry="229" 
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
-  <!-- Chef hat icon with shadow (no background) -->
-  <g transform="translate(218.66666666666663, 236.26666666666665) scale(23.46666666666667)" filter="url(#iconShadow)">
+  <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
+  <g transform="translate(218.66666666666663, 236.26666666666665) scale(23.46666666666667)">
     <path d="M12.5,1.5C10.73,1.5 9.17,2.67 8.67,4.37C8.14,4.13 7.58,4 7,4A4,4 0 0,0 3,8C3,9.82 4.24,11.41 6,11.87V19H19V11.87C20.76,11.41 22,9.82 22,8A4,4 0 0,0 18,4C17.42,4 16.86,4.13 16.33,4.37C15.83,2.67 14.27,1.5 12.5,1.5M12,10.5H13V17.5H12V10.5M9,12.5H10V17.5H9V12.5M15,12.5H16V17.5H15V12.5M6,20V21A1,1 0 0,0 7,22H18A1,1 0 0,0 19,21V20H6Z" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>
 </svg>
