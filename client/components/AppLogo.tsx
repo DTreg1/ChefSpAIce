@@ -176,16 +176,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: CORNER_RADIUS - 1,
+    borderRadius: CORNER_RADIUS,
     borderWidth: 1,
     borderColor: "transparent",
-    ...Platform.select({
-      web: {
-        borderImage: "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.2) 100%) 1",
-        boxShadow: "inset 0 1px 1px rgba(255, 255, 255, 0.4)",
-      },
-      default: {},
-    }),
   } as any,
   nativeEdgeHighlight: {
     position: "absolute",
