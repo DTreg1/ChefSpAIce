@@ -45,6 +45,10 @@ class SyncManager {
   private appState: AppStateStatus = "active";
   private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
   private isPaused = false;
+  private preferencesSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingPreferences: unknown = null;
+  private userProfileSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingUserProfile: unknown = null;
 
   constructor() {
     this.initNetworkListener();
@@ -81,6 +85,18 @@ class SyncManager {
       this.syncTimer = null;
     }
     
+    // Clear preferences sync timer
+    if (this.preferencesSyncTimer) {
+      clearTimeout(this.preferencesSyncTimer);
+      this.preferencesSyncTimer = null;
+    }
+    
+    // Clear userProfile sync timer
+    if (this.userProfileSyncTimer) {
+      clearTimeout(this.userProfileSyncTimer);
+      this.userProfileSyncTimer = null;
+    }
+    
     // Pause network check interval
     if (this.networkCheckInterval) {
       clearInterval(this.networkCheckInterval);
@@ -112,6 +128,16 @@ class SyncManager {
     
     // Process any pending sync items
     this.processSyncQueue();
+    
+    // Flush any pending preferences sync
+    if (this.pendingPreferences) {
+      this.flushPreferencesSync();
+    }
+    
+    // Flush any pending userProfile sync
+    if (this.pendingUserProfile) {
+      this.flushUserProfileSync();
+    }
   }
 
   private async initNetworkListener() {
@@ -509,12 +535,150 @@ class SyncManager {
     this.notifyListeners();
   }
 
+  async syncPreferences(preferences: unknown): Promise<void> {
+    this.pendingPreferences = preferences;
+    
+    if (this.isPaused) {
+      return;
+    }
+    
+    if (this.preferencesSyncTimer) {
+      clearTimeout(this.preferencesSyncTimer);
+    }
+    
+    this.preferencesSyncTimer = setTimeout(() => {
+      this.flushPreferencesSync();
+    }, 2000);
+  }
+
+  private async flushPreferencesSync(): Promise<void> {
+    if (!this.pendingPreferences || this.isPaused) {
+      return;
+    }
+
+    const preferences = this.pendingPreferences;
+    this.pendingPreferences = null;
+
+    const token = await this.getAuthToken();
+    if (!token) {
+      console.log("[Sync] Cannot sync preferences - not authenticated");
+      return;
+    }
+
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/auth/sync", baseUrl);
+      
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: { preferences } }),
+      });
+
+      if (response.ok) {
+        this.markRequestSuccess();
+        console.log("[Sync] Preferences synced successfully");
+      } else {
+        this.markRequestFailure();
+        console.error("[Sync] Failed to sync preferences:", response.status);
+        if (response.status >= 500) {
+          this.pendingPreferences = preferences;
+          this.preferencesSyncTimer = setTimeout(() => {
+            this.flushPreferencesSync();
+          }, 5000);
+        }
+      }
+    } catch (error) {
+      this.markRequestFailure();
+      console.error("[Sync] Network error syncing preferences:", error);
+      this.pendingPreferences = preferences;
+      this.preferencesSyncTimer = setTimeout(() => {
+        this.flushPreferencesSync();
+      }, 5000);
+    }
+  }
+
+  async syncUserProfile(userProfile: unknown): Promise<void> {
+    this.pendingUserProfile = userProfile;
+    
+    if (this.isPaused) {
+      return;
+    }
+    
+    if (this.userProfileSyncTimer) {
+      clearTimeout(this.userProfileSyncTimer);
+    }
+    
+    this.userProfileSyncTimer = setTimeout(() => {
+      this.flushUserProfileSync();
+    }, 2000);
+  }
+
+  private async flushUserProfileSync(): Promise<void> {
+    if (!this.pendingUserProfile || this.isPaused) {
+      return;
+    }
+
+    const userProfile = this.pendingUserProfile;
+    this.pendingUserProfile = null;
+
+    const token = await this.getAuthToken();
+    if (!token) {
+      console.log("[Sync] Cannot sync userProfile - not authenticated");
+      return;
+    }
+
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/auth/sync", baseUrl);
+      
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: { userProfile } }),
+      });
+
+      if (response.ok) {
+        this.markRequestSuccess();
+        console.log("[Sync] UserProfile synced successfully");
+      } else {
+        this.markRequestFailure();
+        console.error("[Sync] Failed to sync userProfile:", response.status);
+        if (response.status >= 500) {
+          this.pendingUserProfile = userProfile;
+          this.userProfileSyncTimer = setTimeout(() => {
+            this.flushUserProfileSync();
+          }, 5000);
+        }
+      }
+    } catch (error) {
+      this.markRequestFailure();
+      console.error("[Sync] Network error syncing userProfile:", error);
+      this.pendingUserProfile = userProfile;
+      this.userProfileSyncTimer = setTimeout(() => {
+        this.flushUserProfileSync();
+      }, 5000);
+    }
+  }
+
   destroy() {
     if (this.networkCheckInterval) {
       clearInterval(this.networkCheckInterval);
     }
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
+    }
+    if (this.preferencesSyncTimer) {
+      clearTimeout(this.preferencesSyncTimer);
+    }
+    if (this.userProfileSyncTimer) {
+      clearTimeout(this.userProfileSyncTimer);
     }
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();

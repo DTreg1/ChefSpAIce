@@ -771,6 +771,7 @@ export const storage = {
 
   async setPreferences(preferences: UserPreferences): Promise<void> {
     await setItem(STORAGE_KEYS.USER_PREFERENCES, preferences);
+    syncManager.syncPreferences(preferences);
   },
 
   async getWasteLog(): Promise<WasteLogEntry[]> {
@@ -1015,6 +1016,7 @@ export const storage = {
 
   async setUserProfile(profile: UserProfile): Promise<void> {
     await setItem(STORAGE_KEYS.USER_PROFILE, profile);
+    syncManager.syncUserProfile(profile);
   },
 
   async updateDisplayName(displayName: string): Promise<void> {
