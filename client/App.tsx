@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   webContent: {
     flex: 1,
-    maxWidth: Platform.OS === "web" ? 900 : undefined,
+    maxWidth: Platform.OS === "web" ? 800 : undefined,
     position: "relative" as const,
     overflow: "hidden" as const,
   },

@@ -76,16 +76,6 @@ function handleSupport() {
 }
 
 /**
- * Check if current path is /logo-preview
- */
-function isLogoPreviewRoute(): boolean {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.pathname === '/logo-preview';
-  }
-  return false;
-}
-
-/**
  * Web Landing Content
  * 
  * Renders the LandingScreen with animated background.
@@ -134,7 +124,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1F0F',
   },
   content: {
     flex: 1,
