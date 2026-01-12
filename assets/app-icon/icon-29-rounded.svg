@@ -22,15 +22,6 @@
       <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Shadow gradient for chef hat (userSpaceOnUse to follow icon geometry) -->
-    <radialGradient id="hatShadow" gradientUnits="userSpaceOnUse" 
-                    cx="14.5" cy="15.37" 
-                    r="9.57">
-      <stop offset="0%" style="stop-color:rgba(0,0,0,0.4)"/>
-      <stop offset="60%" style="stop-color:rgba(0,0,0,0.2)"/>
-      <stop offset="100%" style="stop-color:rgba(0,0,0,0)"/>
-    </radialGradient>
-    
     
     <!-- Clip path for rounded rectangle -->
     <clipPath id="roundedClip">
@@ -58,12 +49,7 @@
   <rect x="0" y="0" width="29" height="29" rx="6" ry="6" 
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
-  <!-- Chef hat shadow (duplicated path with gradient) -->
-  <g transform="translate(6.192708333333333, 7.416145833333333) scale(0.6978125000000002)">
-    <path d="M12.5,1.5C10.73,1.5 9.17,2.67 8.67,4.37C8.14,4.13 7.58,4 7,4A4,4 0 0,0 3,8C3,9.82 4.24,11.41 6,11.87V19H19V11.87C20.76,11.41 22,9.82 22,8A4,4 0 0,0 18,4C17.42,4 16.86,4.13 16.33,4.37C15.83,2.67 14.27,1.5 12.5,1.5M12,10.5H13V17.5H12V10.5M9,12.5H10V17.5H9V12.5M15,12.5H16V17.5H15V12.5M6,20V21A1,1 0 0,0 7,22H18A1,1 0 0,0 19,21V20H6Z" fill="url(#hatShadow)" fill-rule="evenodd"/>
-  </g>
-  
-  <!-- Chef hat icon -->
+  <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
   <g transform="translate(6.192708333333333, 6.691145833333333) scale(0.6645833333333334)">
     <path d="M12.5,1.5C10.73,1.5 9.17,2.67 8.67,4.37C8.14,4.13 7.58,4 7,4A4,4 0 0,0 3,8C3,9.82 4.24,11.41 6,11.87V19H19V11.87C20.76,11.41 22,9.82 22,8A4,4 0 0,0 18,4C17.42,4 16.86,4.13 16.33,4.37C15.83,2.67 14.27,1.5 12.5,1.5M12,10.5H13V17.5H12V10.5M9,12.5H10V17.5H9V12.5M15,12.5H16V17.5H15V12.5M6,20V21A1,1 0 0,0 7,22H18A1,1 0 0,0 19,21V20H6Z" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>

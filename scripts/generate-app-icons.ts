@@ -38,15 +38,6 @@ function generateSVG(size: number, cornerRadius: number): string {
       <stop offset="100%" style="stop-color:rgba(255,255,255,0.15)"/>
     </linearGradient>
     
-    <!-- Shadow gradient for chef hat (userSpaceOnUse to follow icon geometry) -->
-    <radialGradient id="hatShadow" gradientUnits="userSpaceOnUse" 
-                    cx="${size / 2}" cy="${size / 2 + size * 0.03}" 
-                    r="${iconScale * 0.6}">
-      <stop offset="0%" style="stop-color:rgba(0,0,0,0.4)"/>
-      <stop offset="60%" style="stop-color:rgba(0,0,0,0.2)"/>
-      <stop offset="100%" style="stop-color:rgba(0,0,0,0)"/>
-    </radialGradient>
-    
     
     <!-- Clip path for rounded rectangle -->
     <clipPath id="roundedClip">
@@ -74,12 +65,7 @@ function generateSVG(size: number, cornerRadius: number): string {
   <rect x="0" y="0" width="${size}" height="${size}" rx="${cornerRadius}" ry="${cornerRadius}" 
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
-  <!-- Chef hat shadow (duplicated path with gradient) -->
-  <g transform="translate(${iconOffsetX}, ${iconOffsetY + size * 0.025}) scale(${scale * 1.05})">
-    <path d="${mdiChefHat}" fill="url(#hatShadow)" fill-rule="evenodd"/>
-  </g>
-  
-  <!-- Chef hat icon -->
+  <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
   <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})">
     <path d="${mdiChefHat}" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
   </g>
