@@ -51,17 +51,20 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Offline Mode Indicator:** Animated banner indicating network status and pending sync changes.
 - **Stripe Donations:** Integration for secure user donations (web platform).
 - **Apple StoreKit Integration:** In-app purchases for iOS/Android via RevenueCat SDK (`react-native-purchases` and `react-native-purchases-ui`). Platform-specific payment handling: iOS/Android use StoreKit/Google Play with native paywall UI, web continues using Stripe. Key files:
-  - `client/lib/storekit-service.ts` - RevenueCat SDK wrapper with initialization, purchase, restore, paywall, and customer center methods
+  - `client/lib/storekit-service.ts` - RevenueCat SDK wrapper with initialization, purchase, restore, paywall, customer center methods, and server sync
   - `client/hooks/useStoreKit.ts` - React hook for subscription state management with paywall/customer center availability tracking
   - `server/routers/revenuecat-webhook.router.ts` - Webhook handler for subscription event processing
+  - `server/stripe/subscriptionRouter.ts` - Includes `/api/subscriptions/sync-revenuecat` endpoint for client-initiated purchase sync
   - **Product IDs:** 
     - Basic tier: `com.chefspaice.basic.monthly` ($4.99/mo), `com.chefspaice.basic.yearly` ($49.90/yr)
     - Pro tier: `com.chefspaice.pro.monthly` ($9.99/mo), `com.chefspaice.pro.yearly` ($99.90/yr)
   - **Entitlements:** `basic` and `pro` - dual-tier structure for subscription management
   - **Native Paywall:** `presentPaywall()` and `presentPaywallIfNeeded()` for native subscription flow on iOS/Android
   - **Customer Center:** `presentCustomerCenter()` for self-service subscription management on iOS/Android
+  - **Purchase Server Sync:** After successful purchase, restore, or paywall completion, the StoreKit service automatically syncs subscription status with the server via POST `/api/subscriptions/sync-revenuecat`. This provides immediate database updates without waiting for RevenueCat webhooks, ensuring the user's tier is reflected in real-time.
+  - **App Store Compliance:** The subscription screen strictly separates payment methods by platform - iOS/Android exclusively use RevenueCat StoreKit, with Stripe checkout only available on web. This prevents App Store policy violations.
   - **Required Environment Variables:** `EXPO_PUBLIC_REVENUECAT_IOS_KEY`, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`, `REVENUECAT_WEBHOOK_SECRET`
-  - **Expo Go Compatibility:** Graceful degradation when native module unavailable (falls back to web Stripe)
+  - **Expo Go Compatibility:** Graceful degradation when native module unavailable (shows user-visible error alert on mobile)
 - **Data Export:** Functionality to export inventory and recipes as CSV or PDF files.
 - **Inventory Filtering:** Advanced filtering by food group, sort options, and search capabilities.
 - **Feedback & Bug Reporting:** Users can submit feedback or bug reports via the AI chat modal.
