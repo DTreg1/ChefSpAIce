@@ -1,7 +1,8 @@
 {
   "cli": {
     "version": ">= 13.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "requireCommit": false
   },
   "build": {
     "development": {
@@ -11,7 +12,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "EXPO_NO_DOCTOR": "1"
       }
     },
     "preview": {
@@ -23,7 +25,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "EXPO_NO_DOCTOR": "1"
       }
     },
     "production": {
@@ -35,7 +38,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "EXPO_NO_DOCTOR": "1"
       }
     }
   },
