@@ -58,12 +58,22 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Native iOS/Android implementation with real GlassView blur
+  // Native iOS/Android implementation with green background + glass overlay
   return (
-    <GlassView
-      glassEffectStyle="regular"
-      style={styles.glassContainer}
-    >
+    <View style={[styles.glassContainer, styles.nativeGreenBackground]}>
+      {/* Glass overlay gradient */}
+      <LinearGradient
+        colors={[
+          "rgba(255, 255, 255, 0.35)",
+          "rgba(255, 255, 255, 0.12)",
+          "rgba(255, 255, 255, 0.18)",
+        ]}
+        locations={[0, 0.4, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      
       {/* Top specular highlight overlay */}
       <LinearGradient
         colors={[
@@ -81,7 +91,7 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
       <View style={styles.nativeEdgeHighlight} />
       
       {children}
-    </GlassView>
+    </View>
   );
 }
 
@@ -149,13 +159,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.35)",
   },
+  nativeGreenBackground: {
+    backgroundColor: "#1a2e05",
+  },
   webGlassContainer: {
     position: "relative",
   } as any,
   webBackdropBlur: {
-    backdropFilter: "blur(40px) saturate(180%)",
-    WebkitBackdropFilter: "blur(40px) saturate(180%)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "oklch(27.4% 0.072 132.109)",
   } as any,
   webInnerGlow: {
     boxShadow: "inset 0 0 60px 10px rgba(255, 255, 255, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)",
