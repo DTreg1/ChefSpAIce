@@ -54,7 +54,6 @@ import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
 import AuthScreen from "@/screens/AuthScreen";
-import LogoPreviewScreen from "@/screens/LogoPreviewScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
 import AboutScreen from "@/screens/AboutScreen";
@@ -407,11 +406,6 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Attributions"
         component={AttributionsScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="LogoPreview"
-        component={LogoPreviewScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

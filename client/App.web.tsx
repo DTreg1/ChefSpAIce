@@ -20,7 +20,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
 import Constants from "expo-constants";
-import AppLogo from "@/components/AppLogo";
 
 /**
  * Get the Expo Go deep link URL for mobile app downloads
@@ -76,6 +75,15 @@ function handleSupport() {
   }
 }
 
+/**
+ * Check if current path is /logo-preview
+ */
+function isLogoPreviewRoute(): boolean {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.pathname === '/logo-preview';
+  }
+  return false;
+}
 
 /**
  * Web Landing Content
@@ -84,14 +92,21 @@ function handleSupport() {
  * No navigation stack needed - just the landing page.
  */
 function WebLandingContent() {
+
   return (
     <View style={styles.container}>
+      <AnimatedBackground bubbleCount={20} />
       <View style={styles.content}>
-        <View style={styles.logosRow}>
-          <AppLogo />
-          <AppLogo cornerRadius={0} />
-        </View>
+        <LandingScreen
+          onGetStarted={handleGetStarted}
+          onSignIn={handleSignIn}
+          onAbout={handleAbout}
+          onPrivacy={handlePrivacy}
+          onTerms={handleTerms}
+          onSupport={handleSupport}
+        />
       </View>
+      <StatusBar style="light" />
     </View>
   );
 }
@@ -119,16 +134,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0A1F0F',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logosRow: {
-    flexDirection: 'column',
-    gap: 40,
-    alignItems: 'center',
   },
 });
