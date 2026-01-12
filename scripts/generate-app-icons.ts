@@ -65,14 +65,18 @@ function generateSVG(size: number, cornerRadius: number): string {
   <rect x="0" y="0" width="${size}" height="${size}" rx="${cornerRadius}" ry="${cornerRadius}" 
         fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
   
-  <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
-  <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})">
-    <path d="${mdiChefHat}" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
-    <!-- Dots at top of vertical lines (solid, showing background color) -->
-    <circle cx="12.5" cy="9.5" r="1.2" fill="#1a2e05"/>
-    <circle cx="9.5" cy="11.5" r="1" fill="#1a2e05"/>
-    <circle cx="15.5" cy="11.5" r="0.7" fill="#1a2e05"/>
-  </g>
+  <!-- Chef hat icon with cutout dots -->
+  <defs>
+    <mask id="hatMask">
+      <!-- White = visible, Black = cut out -->
+      <path d="${mdiChefHat}" fill="white" transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})"/>
+      <!-- Cutout circles (lowered slightly) -->
+      <circle cx="${iconOffsetX + 12.5 * scale}" cy="${iconOffsetY + 10.2 * scale}" r="${1.2 * scale}" fill="black"/>
+      <circle cx="${iconOffsetX + 9.5 * scale}" cy="${iconOffsetY + 12.2 * scale}" r="${1 * scale}" fill="black"/>
+      <circle cx="${iconOffsetX + 15.5 * scale}" cy="${iconOffsetY + 12.2 * scale}" r="${0.7 * scale}" fill="black"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="${size}" height="${size}" fill="rgba(255,255,255,0.85)" mask="url(#hatMask)"/>
 </svg>`;
 }
 
