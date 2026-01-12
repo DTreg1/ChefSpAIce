@@ -68,10 +68,10 @@ function generateSVG(size: number, cornerRadius: number): string {
   <!-- Chef hat icon (no shadow to avoid filter artifacts) -->
   <g transform="translate(${iconOffsetX}, ${iconOffsetY}) scale(${scale})">
     <path d="${mdiChefHat}" fill="rgba(255,255,255,0.85)" fill-rule="evenodd"/>
-    <!-- Dots at top of vertical lines -->
-    <circle cx="12.5" cy="10" r="0.7" fill="rgba(255,255,255,0.85)"/>
-    <circle cx="9.5" cy="12" r="0.7" fill="rgba(255,255,255,0.85)"/>
-    <circle cx="15.5" cy="12" r="0.7" fill="rgba(255,255,255,0.85)"/>
+    <!-- Dots at top of vertical lines (hollow, showing background) -->
+    <circle cx="12.5" cy="9.5" r="1.2" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="0.5"/>
+    <circle cx="9.5" cy="11.5" r="1.2" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="0.5"/>
+    <circle cx="15.5" cy="11.5" r="1.2" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="0.5"/>
   </g>
 </svg>`;
 }
