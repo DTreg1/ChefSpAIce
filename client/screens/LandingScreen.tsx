@@ -554,7 +554,7 @@ export default function LandingScreen({
           <View style={styles.logoContainer}>
             <Image
               source={chefHatDark}
-              style={{ width: 64, height: 64 }}
+              style={{ width: 32, height: 32 }}
               resizeMode="contain"
             />
             <Text style={styles.logoText} data-testid="text-logo">
