@@ -13,7 +13,8 @@
       },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
-        "EXPO_NO_DOCTOR": "1"
+        "EXPO_NO_DOCTOR": "1",
+        "EXPO_USE_REACT_COMPILER": "0"
       }
     },
     "preview": {
@@ -26,7 +27,8 @@
       },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
-        "EXPO_NO_DOCTOR": "1"
+        "EXPO_NO_DOCTOR": "1",
+        "EXPO_USE_REACT_COMPILER": "0"
       }
     },
     "production": {
@@ -40,7 +42,8 @@
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
         "EXPO_NO_DOCTOR": "1",
-        "EXPO_UNSTABLE_TREE_SHAKING": "1"
+        "EXPO_UNSTABLE_TREE_SHAKING": "1",
+        "EXPO_USE_REACT_COMPILER": "0"
       }
     }
   },
