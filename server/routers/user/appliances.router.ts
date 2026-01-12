@@ -791,7 +791,8 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
 
     const { applianceIds } = req.body;
 
-    if (!Array.isArray(applianceIds) || applianceIds.length === 0) {
+    // Allow empty array to clear all cookware
+    if (!Array.isArray(applianceIds)) {
       return res.status(400).json({ error: "Appliance IDs array is required" });
     }
 
@@ -799,60 +800,57 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
       (id): id is number => typeof id === "number" && !isNaN(id),
     );
 
-    if (validIds.length === 0) {
-      return res.status(400).json({ error: "No valid appliance IDs provided" });
-    }
-
-    const allAppliances = await getCachedAppliances();
-    const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
-
-    const existingIds = validIds.filter((id) => applianceMap.has(id));
-
-    if (existingIds.length === 0) {
-      return res.status(404).json({ error: "No valid appliances found" });
-    }
-
-    const existingUserAppliances = await db
-      .select()
+    // Get current user appliances
+    const currentUserAppliances = await db
+      .select({ applianceId: userAppliances.applianceId })
       .from(userAppliances)
-      .where(
-        and(
-          eq(userAppliances.userId, userId),
-          inArray(userAppliances.applianceId, existingIds),
-        ),
-      );
+      .where(eq(userAppliances.userId, userId));
 
-    const existingApplianceIds = new Set(
-      existingUserAppliances.map((ua) => ua.applianceId),
-    );
-    const newApplianceIds = existingIds.filter(
-      (id) => !existingApplianceIds.has(id),
-    );
+    const currentIds = new Set(currentUserAppliances.map((ua) => ua.applianceId));
+    const newIds = new Set(validIds);
 
-    if (newApplianceIds.length === 0) {
-      return res.json({
-        added: 0,
-        skipped: existingIds.length,
-        message: "All appliances already in kitchen",
-      });
+    // Find IDs to add and remove
+    const toAdd = validIds.filter((id) => !currentIds.has(id));
+    const toRemove = Array.from(currentIds).filter((id) => !newIds.has(id));
+
+    // Remove old appliances
+    if (toRemove.length > 0) {
+      await db
+        .delete(userAppliances)
+        .where(
+          and(
+            eq(userAppliances.userId, userId),
+            inArray(userAppliances.applianceId, toRemove),
+          ),
+        );
     }
 
-    const valuesToInsert = newApplianceIds.map((applianceId) => ({
-      userId,
-      applianceId,
-      notes: null,
-      brand: null,
-    }));
+    // Add new appliances
+    if (toAdd.length > 0) {
+      const allAppliances = await getCachedAppliances();
+      const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
+      const validToAdd = toAdd.filter((id) => applianceMap.has(id));
 
-    await db.insert(userAppliances).values(valuesToInsert);
+      if (validToAdd.length > 0) {
+        const valuesToInsert = validToAdd.map((applianceId) => ({
+          userId,
+          applianceId,
+          notes: null,
+          brand: null,
+        }));
 
-    res.status(201).json({
-      added: newApplianceIds.length,
-      skipped: existingIds.length - newApplianceIds.length,
-      message: `Added ${newApplianceIds.length} appliances to kitchen`,
+        await db.insert(userAppliances).values(valuesToInsert);
+      }
+    }
+
+    res.json({
+      added: toAdd.length,
+      removed: toRemove.length,
+      total: validIds.length,
+      message: `Synced ${validIds.length} appliances`,
     });
   } catch (error) {
-    console.error("Error bulk adding user appliances:", error);
-    res.status(500).json({ error: "Failed to bulk add appliances" });
+    console.error("Error bulk syncing user appliances:", error);
+    res.status(500).json({ error: "Failed to bulk sync appliances" });
   }
 });
