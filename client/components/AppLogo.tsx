@@ -8,16 +8,35 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassView } from "expo-glass-effect";
 
 const LOGO_SIZE = 240;
-const CORNER_RADIUS = 54; // ~22.37% matches iOS app icon squircle
+const DEFAULT_CORNER_RADIUS = 54; // ~22.37% matches iOS app icon squircle
 const ICON_SIZE = 175;
 // Chef hat glyph is visually centered at (12.5, 11.75) in 24x24 viewBox, not (12, 12)
 const ICON_OFFSET_X = -ICON_SIZE * 0.0208; // Shift left to compensate
 const ICON_OFFSET_Y = ICON_SIZE * 0.0104;  // Shift down to compensate
 
-function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
+interface LiquidGlassContainerProps {
+  children: React.ReactNode;
+  cornerRadius?: number;
+}
+
+function LiquidGlassContainer({ children, cornerRadius = DEFAULT_CORNER_RADIUS }: LiquidGlassContainerProps) {
+  const dynamicContainerStyle = {
+    borderRadius: cornerRadius,
+  };
+  const dynamicSpecularStyle = {
+    borderTopLeftRadius: cornerRadius,
+    borderTopRightRadius: cornerRadius,
+  };
+  const dynamicInnerGlowStyle = {
+    borderRadius: cornerRadius,
+  };
+  const dynamicEdgeStyle = {
+    borderRadius: cornerRadius,
+  };
+
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.glassContainer, styles.webGlassContainer, styles.greenBackground]}>
+      <View style={[styles.glassContainer, styles.webGlassContainer, styles.greenBackground, dynamicContainerStyle]}>
         {/* Glass overlay gradient - subtle tint on top of green */}
         <LinearGradient
           colors={[
@@ -32,7 +51,7 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
         />
         
         {/* Inner glow / light refraction layer */}
-        <View style={[StyleSheet.absoluteFill, styles.webInnerGlow]} />
+        <View style={[StyleSheet.absoluteFill, styles.webInnerGlow, dynamicInnerGlowStyle]} />
         
         {/* Top specular highlight - the key liquid glass feature */}
         <LinearGradient
@@ -44,11 +63,11 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
           locations={[0, 0.25, 0.5]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={[styles.specularHighlight]}
+          style={[styles.specularHighlight, dynamicSpecularStyle]}
         />
         
         {/* Edge highlight for glass border refraction effect */}
-        <View style={styles.edgeHighlight} />
+        <View style={[styles.edgeHighlight, dynamicEdgeStyle]} />
         
         {children}
       </View>
@@ -57,7 +76,7 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
 
   // Native iOS/Android implementation with green background + glass overlay
   return (
-    <View style={[styles.glassContainer, styles.greenBackground]}>
+    <View style={[styles.glassContainer, styles.greenBackground, dynamicContainerStyle]}>
       {/* Glass overlay gradient */}
       <LinearGradient
         colors={[
@@ -81,23 +100,27 @@ function LiquidGlassContainer({ children }: { children: React.ReactNode }) {
         locations={[0, 0.25, 0.45]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={styles.specularHighlight}
+        style={[styles.specularHighlight, dynamicSpecularStyle]}
       />
       
       {/* Edge highlight for native */}
-      <View style={styles.nativeEdgeHighlight} />
+      <View style={[styles.nativeEdgeHighlight, dynamicEdgeStyle]} />
       
       {children}
     </View>
   );
 }
 
-export default function AppLogo() {
+interface AppLogoProps {
+  cornerRadius?: number;
+}
+
+export default function AppLogo({ cornerRadius = DEFAULT_CORNER_RADIUS }: AppLogoProps) {
   return (
-    <View style={styles.logoContainer}>
+    <View style={styles.logoWrapper}>
       {/* Outer glow/ambient shadow */}
-      <View style={styles.outerGlow}>
-        <LiquidGlassContainer>
+      <View style={[styles.outerGlow, { borderRadius: cornerRadius + 4 }]}>
+        <LiquidGlassContainer cornerRadius={cornerRadius}>
           {/* Raised icon with shadow for depth */}
           <View style={styles.iconWrapper}>
             {/* Icon shadow layer for "raised" effect */}
@@ -123,7 +146,7 @@ export default function AppLogo() {
   );
 }
 
-export { LOGO_SIZE, CORNER_RADIUS, ICON_SIZE };
+export { LOGO_SIZE, DEFAULT_CORNER_RADIUS as CORNER_RADIUS, ICON_SIZE };
 
 const styles = StyleSheet.create({
   logoContainer: {
@@ -131,8 +154,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  logoWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   outerGlow: {
-    borderRadius: CORNER_RADIUS + 4,
+    borderRadius: DEFAULT_CORNER_RADIUS + 4,
     ...Platform.select({
       web: {
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
@@ -149,7 +176,7 @@ const styles = StyleSheet.create({
   glassContainer: {
     width: LOGO_SIZE,
     height: LOGO_SIZE,
-    borderRadius: CORNER_RADIUS,
+    borderRadius: DEFAULT_CORNER_RADIUS,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -164,7 +191,7 @@ const styles = StyleSheet.create({
   },
   webInnerGlow: {
     boxShadow: "inset 0 0 60px 10px rgba(255, 255, 255, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)",
-    borderRadius: CORNER_RADIUS,
+    borderRadius: DEFAULT_CORNER_RADIUS,
   } as any,
   specularHighlight: {
     position: "absolute",
@@ -172,8 +199,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: LOGO_SIZE * 0.5,
-    borderTopLeftRadius: CORNER_RADIUS,
-    borderTopRightRadius: CORNER_RADIUS,
+    borderTopLeftRadius: DEFAULT_CORNER_RADIUS,
+    borderTopRightRadius: DEFAULT_CORNER_RADIUS,
   },
   edgeHighlight: {
     position: "absolute",
@@ -181,7 +208,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: CORNER_RADIUS,
+    borderRadius: DEFAULT_CORNER_RADIUS,
     borderWidth: 1,
     borderColor: "transparent",
   } as any,
@@ -191,7 +218,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: CORNER_RADIUS - 1,
+    borderRadius: DEFAULT_CORNER_RADIUS - 1,
     borderWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.5)",
     borderLeftColor: "rgba(255, 255, 255, 0.3)",

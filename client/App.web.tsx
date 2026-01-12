@@ -19,7 +19,6 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
-import LogoPreviewScreen from "@/screens/LogoPreviewScreen";
 import Constants from "expo-constants";
 import AppLogo from "@/components/AppLogo";
 
@@ -85,12 +84,13 @@ function handleSupport() {
  * No navigation stack needed - just the landing page.
  */
 function WebLandingContent() {
-
   return (
     <View style={styles.container}>
-    {/*<AnimatedBackground bubbleCount={20} />*/}
       <View style={styles.content}>
-        <AppLogo/>
+        <View style={styles.logosRow}>
+          <AppLogo />
+          <AppLogo cornerRadius={0} />
+        </View>
       </View>
     </View>
   );
@@ -123,5 +123,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logosRow: {
+    flexDirection: 'row',
+    gap: 40,
+    alignItems: 'center',
   },
 });
