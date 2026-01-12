@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logosRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 40,
     alignItems: 'center',
   },
