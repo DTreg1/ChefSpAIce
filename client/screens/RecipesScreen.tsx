@@ -243,6 +243,7 @@ export default function RecipesScreen() {
       <Animated.View
         entering={FadeIn.delay(index * 50)}
         style={styles.cardWrapper}
+        data-testid={`card-recipe-${recipe.id}`}
       >
         <GlassCard
           style={styles.recipeCard}
@@ -251,12 +252,13 @@ export default function RecipesScreen() {
           }
         >
           {recipe.imageUri ? (
-            <View style={styles.recipeImageContainer}>
+            <View style={styles.recipeImageContainer} data-testid={`container-recipe-image-${recipe.id}`}>
               <Image
                 source={{ uri: recipe.imageUri }}
                 style={styles.recipeImage}
                 contentFit="cover"
                 cachePolicy="memory-disk"
+                data-testid={`img-recipe-${recipe.id}`}
               />
               {hasCookwareData && !hasCookware ? (
                 <View style={styles.cookwareWarning}>

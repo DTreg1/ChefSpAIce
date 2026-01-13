@@ -1254,6 +1254,72 @@ BEHAVIOR GUIDELINES:
   if (process.env.NODE_ENV !== 'production') {
     console.log("[TEST] Registering test endpoints for development mode");
     
+    // Create a test user and establish session for e2e testing
+    app.post("/api/test/create-test-user", async (req: Request, res: Response) => {
+      console.log("[TEST] create-test-user endpoint hit");
+      try {
+        const crypto = await import("crypto");
+        const testId = crypto.randomBytes(4).toString("hex");
+        const email = `test_${testId}@test.chefspaice.com`;
+        const plainPassword = "TestPassword123!";
+        const passwordHash = crypto.createHash("sha256").update(plainPassword).digest("hex");
+        
+        // Create the test user
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            email,
+            password: passwordHash,
+            displayName: `Test User ${testId}`,
+            subscriptionTier: "PRO",
+            subscriptionStatus: "trialing",
+            hasCompletedOnboarding: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+        
+        if (!newUser) {
+          return res.status(500).json({ error: "Failed to create test user" });
+        }
+        
+        // Create a session token
+        const sessionToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        
+        await db.insert(userSessions).values({
+          userId: newUser.id,
+          token: sessionToken,
+          expiresAt,
+          createdAt: new Date(),
+        });
+        
+        // Set the auth cookie
+        res.cookie("chefspaice_auth", sessionToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          path: "/",
+        });
+        
+        console.log(`[TEST] Created test user: ${email} (id: ${newUser.id})`);
+        
+        res.json({
+          success: true,
+          userId: newUser.id,
+          email,
+          password: plainPassword,
+          sessionToken,
+          tier: "PRO",
+          message: "Test user created with PRO trial. Session cookie set.",
+        });
+      } catch (error) {
+        console.error("Error creating test user:", error);
+        res.status(500).json({ error: "Failed to create test user" });
+      }
+    });
+    
     // Version with auth
     app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response) => {
       console.log("[TEST] set-subscription-tier endpoint hit (with auth)");

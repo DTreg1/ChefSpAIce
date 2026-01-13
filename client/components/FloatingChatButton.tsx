@@ -126,6 +126,7 @@ export function FloatingChatButton() {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           style={[styles.buttonWrapper, animatedStyle]}
+          data-testid="button-floating-chat"
         >
           {innerContent}
           {!canUseAiAssistant && (

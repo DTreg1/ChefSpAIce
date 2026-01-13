@@ -588,6 +588,7 @@ export function ChatModal() {
             },
           ]}
           placeholder="Type a message..."
+          data-testid="input-chat-message"
           placeholderTextColor={theme.textSecondary}
           value={inputText}
           onChangeText={setInputText}
@@ -607,6 +608,7 @@ export function ChatModal() {
           ]}
           onPress={handleSend}
           disabled={!inputText.trim() || sending}
+          data-testid="button-chat-send"
         >
           {sending ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
