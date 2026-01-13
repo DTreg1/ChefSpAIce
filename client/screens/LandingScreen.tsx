@@ -6,7 +6,6 @@ import {
   ScrollView,
   useWindowDimensions,
   Platform,
-  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -25,8 +24,6 @@ import { useContext, useState } from "react";
 import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
-
-const chefHatDark = require("../../assets/images/transparent/chef-hat-light-256.png");
 
 // Safe navigation hook that returns null when not inside NavigationContainer
 function useSafeNavigation(): NativeStackNavigationProp<any> | null {
@@ -552,15 +549,15 @@ export default function LandingScreen({
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
-            <Image
-              source={chefHatDark}
-              style={{ width: 32, height: 32 }}
-              resizeMode="contain"
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={32}
+              color={AppColors.primary}
             />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
             </Text>
-          </View>
+          </View>{/*
           <Pressable
             style={({ pressed }) => [
               styles.signInButton,
@@ -570,7 +567,7 @@ export default function LandingScreen({
             data-testid="button-signin-header"
           >
             <Text style={styles.signInButtonText}>Sign In</Text>
-          </Pressable>
+          </Pressable>*/}
         </View>
 
         <View
@@ -598,6 +595,7 @@ export default function LandingScreen({
               meals, and never let food go to waste again.
             </Text>
 
+            {/*
             <View style={styles.heroButtons}>
               <Pressable
                 style={({ pressed }) => [
@@ -622,6 +620,7 @@ export default function LandingScreen({
             <Text style={styles.trialText}>
               7-day free trial, no credit card required
             </Text>
+            */}
           </View>
         </View>
 
@@ -1021,10 +1020,10 @@ export default function LandingScreen({
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
             <View style={styles.footerLogo}>
-              <Image
-                source={chefHatDark}
-                style={{ width: 24, height: 24 }}
-                resizeMode="contain"
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={24}
+                color={AppColors.primary}
               />
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
