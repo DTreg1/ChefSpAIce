@@ -26,6 +26,8 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 
+import { useNavigation } from "@react-navigation/native";
+
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
@@ -73,6 +75,7 @@ export function ChatModal() {
   const insets = useSafeAreaInsets();
   const { theme, colorScheme, isDark } = useTheme();
   const { isChatOpen, closeChat } = useFloatingChat();
+  const navigation = useNavigation<any>();
   const flatListRef = useRef<FlatList>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -268,6 +271,22 @@ export function ChatModal() {
         } catch (syncError) {
           console.error("Failed to sync after chat action:", syncError);
         }
+      }
+
+      // Handle navigation after action (e.g., navigate to RecipeDetail after generating recipe)
+      if (data.navigateTo) {
+        console.log("[Chat] Navigation requested:", data.navigateTo);
+        closeChat();
+        setTimeout(() => {
+          if (data.navigateTo.screen === "RecipeDetail") {
+            navigation.navigate("RecipesTab", {
+              screen: "RecipeDetail",
+              params: data.navigateTo.params,
+            });
+          } else {
+            navigation.navigate(data.navigateTo.screen, data.navigateTo.params);
+          }
+        }, 300);
       }
     } catch (error) {
       console.error("Chat error:", error);

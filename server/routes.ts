@@ -717,10 +717,20 @@ BEHAVIOR GUIDELINES:
         const finalReply = finalCompletion.choices[0]?.message?.content || 
           "I've completed the action for you.";
 
+        // Extract navigation instruction from action results (if any)
+        const navigationResult = actionResults.find(ar => {
+          const result = ar.result as { navigateTo?: { screen: string; params?: Record<string, unknown> } };
+          return result?.navigateTo;
+        });
+        const navigateTo = navigationResult 
+          ? (navigationResult.result as { navigateTo: { screen: string; params?: Record<string, unknown> } }).navigateTo 
+          : undefined;
+
         return res.json({ 
           reply: finalReply,
           actions: actionResults.map(ar => ar.result),
-          refreshData: true
+          refreshData: true,
+          navigateTo,
         });
       }
 

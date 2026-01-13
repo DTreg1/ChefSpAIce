@@ -46,8 +46,9 @@ import {
 
 import { hasSwapsAvailable, IngredientSwap } from "@/lib/ingredient-swaps";
 import { exportSingleRecipeToPDF } from "@/lib/export";
+import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 
-import { getApiUrl } from "@/lib/query-client";
+import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 
 // Helper to get color and icon for availability status
@@ -91,6 +92,7 @@ export default function RecipeDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const stepPositions = useRef<Record<number, number>>({});
   const instructionSectionY = useRef(0);
+  const imageGenerationInProgress = useRef<Set<string>>(new Set());
 
   const scaleQuantity = useCallback(
     (
@@ -208,15 +210,62 @@ export default function RecipeDetailScreen() {
     }, [loadData]),
   );
 
-  // Poll for image updates if recipe exists but has no image (image generating in background)
+  // Generate image if AI recipe has no image, then poll for updates
   useEffect(() => {
     if (!recipe || recipe.imageUri || !recipe.isAIGenerated) {
       return;
     }
 
-    // Check for image updates every 3 seconds for up to 60 seconds
-    let attempts = 0;
-    const maxAttempts = 20;
+    // Prevent duplicate image generation calls
+    if (imageGenerationInProgress.current.has(recipe.id)) {
+      return;
+    }
+
+    let isCancelled = false;
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const generateAndSaveImage = async () => {
+      // Double-check to prevent race conditions
+      if (imageGenerationInProgress.current.has(recipe.id)) {
+        return;
+      }
+      imageGenerationInProgress.current.add(recipe.id);
+
+      try {
+        console.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
+        const imageResponse = await apiRequest(
+          "POST",
+          "/api/recipes/generate-image",
+          {
+            title: recipe.title,
+            description: recipe.description,
+          },
+        );
+
+        if (isCancelled) return;
+
+        const imageData = await imageResponse.json();
+        if (!imageData.success || isCancelled) return;
+
+        let imageUri: string | undefined;
+        if (imageData.imageBase64) {
+          imageUri = await saveRecipeImage(recipe.id, imageData.imageBase64);
+        } else if (imageData.imageUrl) {
+          imageUri = await saveRecipeImageFromUrl(recipe.id, imageData.imageUrl);
+        }
+
+        if (imageUri && !isCancelled) {
+          const updatedRecipe = { ...recipe, imageUri };
+          await storage.updateRecipe(updatedRecipe);
+          setRecipe(updatedRecipe);
+          console.log("[RecipeDetail] Image saved for recipe:", recipe.id);
+        }
+      } catch (error) {
+        console.log("[RecipeDetail] Image generation failed:", error);
+      } finally {
+        imageGenerationInProgress.current.delete(recipe.id);
+      }
+    };
 
     const pollForImage = async () => {
       const recipes = await storage.getRecipes();
@@ -228,15 +277,23 @@ export default function RecipeDetailScreen() {
       return false;
     };
 
-    const intervalId = setInterval(async () => {
+    generateAndSaveImage();
+
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    intervalId = setInterval(async () => {
       attempts++;
       const found = await pollForImage();
-      if (found || attempts >= maxAttempts) {
-        clearInterval(intervalId);
+      if (found || attempts >= maxAttempts || isCancelled) {
+        if (intervalId) clearInterval(intervalId);
       }
     }, 3000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      isCancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [recipe?.id, recipe?.imageUri, recipe?.isAIGenerated]);
 
   const handleStepChange = useCallback((step: number) => {

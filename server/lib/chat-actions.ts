@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { userSyncData, userSessions, feedback } from "../../shared/schema";
 import OpenAI from "openai";
+import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -614,64 +615,47 @@ export async function executeGenerateRecipe(
       };
     }
 
-    const inventoryList = userData.inventory.map((item: FoodItem) => item.name).join(", ");
-    
-    const recipePrompt = `Based on these available ingredients: ${inventoryList}
+    const inventoryForService: InventoryItem[] = userData.inventory.map((item: FoodItem) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      expiryDate: item.expirationDate,
+    }));
 
-Generate a simple, practical recipe with these preferences:
-${args.mealType ? `- Meal type: ${args.mealType}` : ""}
-${args.cuisine ? `- Cuisine style: ${args.cuisine}` : ""}
-${args.maxTime ? `- Max cooking time: ${args.maxTime} minutes` : ""}
-${args.servings ? `- Servings: ${args.servings}` : "- Servings: 4"}
-${args.quickRecipe ? "- This should be a quick recipe (under 20 minutes)" : ""}
-${args.prioritizeExpiring ? "- Prioritize using ingredients that might expire soon" : ""}
+    const validMealType = args.mealType as "breakfast" | "lunch" | "dinner" | "snack" | "late night snack" | undefined;
 
-Return the recipe in this JSON format:
-{
-  "title": "Recipe Name",
-  "description": "Brief appetizing description",
-  "ingredients": [{"name": "ingredient", "quantity": 1, "unit": "cup"}],
-  "instructions": ["Step 1...", "Step 2..."],
-  "prepTime": 10,
-  "cookTime": 20,
-  "servings": 4
-}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful chef assistant. Generate practical, easy-to-follow recipes based on available ingredients. Always respond with valid JSON."
-        },
-        { role: "user", content: recipePrompt }
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1024
+    const result = await generateRecipeService({
+      userId,
+      prioritizeExpiring: args.prioritizeExpiring,
+      quickRecipe: args.quickRecipe,
+      servings: args.servings || 4,
+      maxTime: args.maxTime || 60,
+      cuisine: args.cuisine,
+      mealType: validMealType,
+      inventory: inventoryForService,
     });
 
-    const recipeContent = completion.choices[0]?.message?.content;
-    if (!recipeContent) {
-      throw new Error("No recipe generated");
+    if (!result.success || !result.recipe) {
+      return {
+        success: false,
+        message: result.error || "Failed to generate a recipe. Please try again.",
+        actionType: "generate_recipe"
+      };
     }
 
-    const recipe = JSON.parse(recipeContent);
-    const savedRecipe = {
-      id: generateId(),
-      ...recipe,
-      isFavorite: false,
-      isAIGenerated: true,
-      createdAt: new Date().toISOString()
-    };
-
-    userData.recipes.push(savedRecipe);
+    userData.recipes.push(result.recipe);
     await updateUserSyncData(userId, { recipes: userData.recipes });
 
     return {
       success: true,
-      message: `Generated recipe: ${recipe.title}. ${recipe.description}`,
-      data: savedRecipe,
-      actionType: "generate_recipe"
+      message: `Generated recipe: ${result.recipe.title}. ${result.recipe.description}`,
+      data: result.recipe,
+      actionType: "generate_recipe",
+      navigateTo: {
+        screen: "RecipeDetail",
+        params: { recipeId: result.recipe.id }
+      }
     };
   } catch (error) {
     console.error("Error generating recipe:", error);
