@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useWebTheme } from "@/contexts/WebThemeContext";
+import { useTheme } from "@/hooks/useTheme";
+import { useNavigation } from "@react-navigation/native";
 
 const BRAND_GREEN = "#27AE60";
+const isWeb = Platform.OS === "web";
 
 const DONATION_AMOUNTS = [
   { label: "$5", value: 500 },
@@ -27,13 +29,36 @@ function getThemeColors(isDark: boolean) {
   };
 }
 
+function useNavigationSafe() {
+  try {
+    return useNavigation();
+  } catch {
+    return null;
+  }
+}
+
 export default function SupportScreen() {
-  const { isDark, toggleTheme } = useWebTheme();
+  const { isDark, setThemePreference } = useTheme();
+  const toggleTheme = () => setThemePreference(isDark ? "light" : "dark");
   const colors = getThemeColors(isDark);
+  const navigation = useNavigationSafe();
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const handleGoHome = () => {
+    if (isWeb && typeof window !== "undefined") {
+      window.location.href = "/";
+    } else if (navigation?.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
   const handleDonate = async (amount: number) => {
+    if (!isWeb || typeof window === "undefined") {
+      setError("Donations are only available on the web version.");
+      return;
+    }
+    
     setLoading(amount);
     setError(null);
     
@@ -70,18 +95,20 @@ export default function SupportScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
       <LinearGradient colors={[colors.background, colors.backgroundGradient]} style={StyleSheet.absoluteFillObject} />
       
-      <View style={styles.header}>
-        <Pressable style={styles.logoContainer} onPress={() => window.location.href = "/"}>
-          <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
-          <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
-        </Pressable>
-        <Pressable
-          onPress={toggleTheme}
-          style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-        >
-          {isDark ? <Feather name="sun" size={20} color={colors.textPrimary} /> : <Feather name="moon" size={20} color={colors.textPrimary} />}
-        </Pressable>
-      </View>
+      {isWeb && (
+        <View style={styles.header}>
+          <Pressable style={styles.logoContainer} onPress={handleGoHome}>
+            <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
+            <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
+          </Pressable>
+          <Pressable
+            onPress={toggleTheme}
+            style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+          >
+            {isDark ? <Feather name="sun" size={20} color={colors.textPrimary} /> : <Feather name="moon" size={20} color={colors.textPrimary} />}
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.content}>
         <View style={styles.iconContainer}>
@@ -137,17 +164,19 @@ export default function SupportScreen() {
           </Text>
         </View>
 
-        <Pressable style={styles.backButton} onPress={() => window.location.href = "/"}>
+        <Pressable style={styles.backButton} onPress={handleGoHome}>
           <Feather name="arrow-left" size={20} color="#FFFFFF" />
-          <Text style={styles.backButtonText}>Back to Home</Text>
+          <Text style={styles.backButtonText}>{isWeb ? "Back to Home" : "Go Back"}</Text>
         </Pressable>
       </View>
 
-      <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
-        <Text style={[styles.copyright, { color: colors.textMuted }]}>
-          © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
-        </Text>
-      </View>
+      {isWeb && (
+        <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
+          <Text style={[styles.copyright, { color: colors.textMuted }]}>
+            © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
