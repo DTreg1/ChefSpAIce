@@ -55,11 +55,17 @@ export interface MealPlan {
   meals: Record<string, string | undefined>;
 }
 
+export interface NavigationInstruction {
+  screen: string;
+  params?: Record<string, unknown>;
+}
+
 export interface ActionResult {
   success: boolean;
   message: string;
   data?: unknown;
   actionType: string;
+  navigateTo?: NavigationInstruction;
 }
 
 function generateId(): string {
