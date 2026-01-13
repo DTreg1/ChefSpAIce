@@ -415,17 +415,19 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         tabBarHeight={totalTabBarHeight}
       />
       <View style={[styles.container, { paddingBottom: bottomPadding }]}>
-        <View style={styles.pillContainer}>
-          {renderPillBackground()}
+        <View style={styles.innerContainer}>
+          <View style={styles.pillContainer}>
+            {renderPillBackground()}
 
-          <View style={styles.tabsRow}>
-            {renderSlidingIndicator()}
-            {leftTabs.map((route, index) => renderTab(route, index, true))}
-            <View style={styles.addButtonSpacer} />
-            {rightTabs.map((route, index) => renderTab(route, index, false))}
+            <View style={styles.tabsRow}>
+              {renderSlidingIndicator()}
+              {leftTabs.map((route, index) => renderTab(route, index, true))}
+              <View style={styles.addButtonSpacer} />
+              {rightTabs.map((route, index) => renderTab(route, index, false))}
+            </View>
           </View>
+          <View style={styles.addButtonWrapper}>{renderAddButton()}</View>
         </View>
-        <View style={styles.addButtonWrapper}>{renderAddButton()}</View>
       </View>
     </>
   );
@@ -438,12 +440,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: "center",
+    justifyContent: "center",
     zIndex: 1001,
-    paddingHorizontal: 16,
+  },
+  innerContainer: {
+    width: "100%",
     maxWidth: 500,
-    alignSelf: "center",
-    marginLeft: "auto",
-    marginRight: "auto",
+    paddingHorizontal: 16,
+    alignItems: "center",
   },
   pillContainer: {
     height: TAB_BAR_HEIGHT,
