@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, Dimensions, View, Platform } from "react-native";
+import { StyleSheet, Dimensions, View } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import Animated, {
   useSharedValue,
@@ -31,7 +31,7 @@ interface BubbleProps {
   config: BubbleConfig;
 }
 
-function NativeBubble({ config }: BubbleProps) {
+function Bubble({ config }: BubbleProps) {
   const progress = useSharedValue(0);
   const wobble = useSharedValue(0);
 
@@ -108,33 +108,6 @@ function NativeBubble({ config }: BubbleProps) {
   );
 }
 
-function WebBubble({ config }: BubbleProps) {
-  const animationStyle = {
-    animationName: 'floatUp',
-    animationDuration: `${config.duration}ms`,
-    animationDelay: `${config.delay}ms`,
-    animationIterationCount: 'infinite',
-    animationTimingFunction: 'linear',
-  } as React.CSSProperties;
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        width: config.size,
-        height: config.size,
-        borderRadius: config.size / 2,
-        left: config.startX,
-        bottom: -config.size,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        opacity: config.opacity + 0.1,
-        ...animationStyle,
-      }}
-    />
-  );
-}
-
 function GradientBackground({ isDark }: { isDark: boolean }) {
   const baseColor = isDark ? LIME_950 : LIME_900;
   const highlightColor = isDark ? LIME_900 : "#4a7a25";
@@ -162,73 +135,25 @@ export function AnimatedBackground({
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
-    const screenWidth = Platform.OS === 'web' && typeof window !== 'undefined' 
-      ? window.innerWidth 
-      : SCREEN_WIDTH;
-    
     for (let i = 0; i < bubbleCount; i++) {
       configs.push({
         id: i,
-        size: Math.random() * 20 + 10,
-        startX: Math.random() * screenWidth,
-        delay: Math.random() * 5000,
-        duration: Math.random() * 8000 + 10000,
-        opacity: Math.random() * 0.4 + 0.2,
+        size: Math.random() * 15 + 8,
+        startX: Math.random() * SCREEN_WIDTH,
+        delay: Math.random() * 8000,
+        duration: Math.random() * 6000 + 8000,
+        opacity: Math.random() * 0.3 + 0.1,
         wobbleAmount: Math.random() * 30 + 10,
       });
     }
     return configs;
   }, [bubbleCount]);
 
-  if (Platform.OS === 'web') {
-    return (
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        overflow: 'hidden',
-        pointerEvents: 'none',
-      }}>
-        <style>
-          {`
-            @keyframes floatUp {
-              0% {
-                transform: translateY(0) translateX(0) scale(0.5);
-                opacity: 0;
-              }
-              10% {
-                opacity: 0.4;
-                transform: translateY(-10vh) translateX(-10px) scale(1);
-              }
-              50% {
-                transform: translateY(-50vh) translateX(10px) scale(1);
-              }
-              90% {
-                opacity: 0.4;
-                transform: translateY(-90vh) translateX(-10px) scale(1);
-              }
-              100% {
-                transform: translateY(-110vh) translateX(0) scale(0.5);
-                opacity: 0;
-              }
-            }
-          `}
-        </style>
-        <GradientBackground isDark={isDark} />
-        {bubbles.map((config) => (
-          <WebBubble key={config.id} config={config} />
-        ))}
-      </div>
-    );
-  }
-
   return (
     <View style={[styles.container, styles.noPointerEvents]}>
       <GradientBackground isDark={isDark} />
       {bubbles.map((config) => (
-        <NativeBubble key={config.id} config={config} />
+        <Bubble key={config.id} config={config} />
       ))}
     </View>
   );
