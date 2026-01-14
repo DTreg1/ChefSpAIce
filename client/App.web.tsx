@@ -19,6 +19,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import LandingScreen from "@/screens/LandingScreen";
 import AboutScreen from "@/screens/web/AboutScreen";
 import PrivacyScreen from "@/screens/web/PrivacyScreen";
@@ -107,13 +108,37 @@ function WebRouter() {
 
   switch (route) {
     case "about":
-      return <AboutScreen />;
+      return (
+        <View style={styles.container}>
+          <AnimatedBackground bubbleCount={20} />
+          <AboutScreen />
+          <ScreenIdentifierOverlay screenName="AboutScreen" />
+        </View>
+      );
     case "privacy":
-      return <PrivacyScreen />;
+      return (
+        <View style={styles.container}>
+          <AnimatedBackground bubbleCount={20} />
+          <PrivacyScreen />
+          <ScreenIdentifierOverlay screenName="PrivacyScreen" />
+        </View>
+      );
     case "terms":
-      return <TermsScreen />;
+      return (
+        <View style={styles.container}>
+          <AnimatedBackground bubbleCount={20} />
+          <TermsScreen />
+          <ScreenIdentifierOverlay screenName="TermsScreen" />
+        </View>
+      );
     case "support":
-      return <SupportScreen />;
+      return (
+        <View style={styles.container}>
+          <AnimatedBackground bubbleCount={20} />
+          <SupportScreen />
+          <ScreenIdentifierOverlay screenName="SupportScreen" />
+        </View>
+      );
     default:
       return (
         <View style={styles.container}>
@@ -128,6 +153,7 @@ function WebRouter() {
               onSupport={handleSupport}
             />
           </View>
+          <ScreenIdentifierOverlay screenName="LandingScreen" />
           <StatusBar style="light" />
         </View>
       );
