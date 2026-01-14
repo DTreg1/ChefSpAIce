@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, Dimensions, View, useColorScheme } from "react-native";
+import { StyleSheet, Dimensions, View } from "react-native";
+import { useTheme } from "@/hooks/useTheme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -108,18 +109,18 @@ function Bubble({ config }: BubbleProps) {
 }
 
 function GradientBackground({ isDark }: { isDark: boolean }) {
-  const gradientColor = isDark ? LIME_900 : LIME_950;
-  const transparentColor = isDark
-    ? "rgba(61, 107, 28, 0)"
-    : "rgba(26, 46, 5, 0)";
+  const baseColor = isDark ? LIME_950 : LIME_900;
+  const highlightColor = isDark ? LIME_900 : "#4a7a25";
 
   return (
-    <LinearGradient
-      colors={[gradientColor, transparentColor]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradient}
-    />
+    <View style={[styles.gradient, { backgroundColor: baseColor }]}>
+      <LinearGradient
+        colors={[highlightColor, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      />
+    </View>
   );
 }
 
@@ -130,8 +131,7 @@ interface AnimatedBackgroundProps {
 export function AnimatedBackground({
   bubbleCount = 15,
 }: AnimatedBackgroundProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
