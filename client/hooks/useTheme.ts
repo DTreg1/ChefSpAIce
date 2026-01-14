@@ -1,16 +1,7 @@
-import { useTheme as useThemeFromContext, ThemeColors, ColorScheme, ThemePreference } from "@/contexts/ThemeContext";
+import { useTheme as useThemeContext } from "@/contexts/ThemeContext";
 
-interface ThemeHookReturn {
-  theme: ThemeColors;
-  isDark: boolean;
-  colorScheme: ColorScheme;
-  themePreference: ThemePreference;
-  setThemePreference: (preference: ThemePreference) => void;
-  setTheme: (preference: ThemePreference) => void;
-}
-
-export function useTheme(): ThemeHookReturn {
-  const context = useThemeFromContext();
+export function useTheme() {
+  const context = useThemeContext();
   
   return {
     theme: context.theme,
