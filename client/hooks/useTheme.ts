@@ -1,4 +1,4 @@
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useTheme as useThemeContext } from "@/contexts/ThemeContext";
 
 export function useTheme() {
   const context = useThemeContext();

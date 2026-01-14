@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export function useThemeContext() {
+export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error("useThemeContext must be used within a ThemeProvider");
