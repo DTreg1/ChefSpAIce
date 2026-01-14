@@ -68,6 +68,7 @@ import logoExportRouter from "./routers/logo-export.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
+import instacartRouter from "./routers/instacart.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { db } from "./db";
 import { userSessions, appliances, users } from "../shared/schema";
