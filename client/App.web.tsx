@@ -112,15 +112,15 @@ function WebLandingContent() {
  */
 export default function App() {
   return (
-    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <WebLandingContent />
+          <ErrorBoundary>
+            <WebLandingContent />
+          </ErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
-    </ErrorBoundary>  
   );
 }
 

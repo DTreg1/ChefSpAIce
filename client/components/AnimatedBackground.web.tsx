@@ -1,5 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { LinearGradient } from "expo-linear-gradient";
 
 const LIME_950 = "#1a2e05";
 const LIME_900 = "#3d6b1c";
@@ -8,6 +9,11 @@ interface AnimatedBackgroundProps {
   bubbleCount?: number;
 }
 
+/**
+ * Web version of AnimatedBackground
+ * Uses CSS gradients instead of react-native-reanimated animations
+ * to avoid Worklets compatibility issues on web platform.
+ */
 export function AnimatedBackground({
   bubbleCount: _bubbleCount = 15,
 }: AnimatedBackgroundProps) {
@@ -17,22 +23,12 @@ export function AnimatedBackground({
   const highlightColor = isDark ? LIME_900 : "#4a7a25";
 
   return (
-    <View 
-      style={[
-        styles.container, 
-        { 
-          backgroundColor: baseColor,
-        }
-      ]}
-    >
-      <View 
-        style={[
-          styles.gradient,
-          {
-            // @ts-ignore - web-specific CSS property
-            background: `linear-gradient(135deg, ${highlightColor} 0%, transparent 60%)`,
-          }
-        ]} 
+    <View style={[styles.container, { backgroundColor: baseColor }]}>
+      <LinearGradient
+        colors={[highlightColor, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       />
     </View>
   );
