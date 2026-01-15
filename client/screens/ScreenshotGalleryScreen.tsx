@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, ScrollView, Image, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Image, useWindowDimensions, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -68,7 +68,11 @@ const screenshotNames = [
   "CC2C8439",
 ];
 
-export default function ScreenshotGalleryScreen() {
+interface ScreenshotGalleryScreenProps {
+  onBack?: () => void;
+}
+
+export default function ScreenshotGalleryScreen({ onBack }: ScreenshotGalleryScreenProps) {
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
   
@@ -84,6 +88,14 @@ export default function ScreenshotGalleryScreen() {
       />
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {onBack && (
+          <Pressable
+            onPress={onBack}
+            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.backButtonText}>← Back to Landing</Text>
+          </Pressable>
+        )}
         <Text style={styles.title}>Screenshot Gallery</Text>
         <Text style={styles.subtitle}>
           Copy the screenshots you want to use into the showcase folders:
@@ -126,6 +138,19 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
     paddingBottom: 100,
+  },
+  backButton: {
+    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
   },
   title: {
     fontSize: 32,

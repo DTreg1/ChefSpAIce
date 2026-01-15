@@ -254,6 +254,7 @@ function configureExpoRouting(app: express.Application) {
 
 function configureStaticFiles(app: express.Application) {
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  app.use("/attached_assets", express.static(path.resolve(process.cwd(), "attached_assets")));
 }
 
 function setupErrorHandler(app: express.Application) {
