@@ -397,6 +397,7 @@ interface DeviceMockupProps {
   isWide: boolean;
   index?: number;
   isHovered?: boolean;
+  hoveredIndex?: number | null;
   onHover?: (index: number | null) => void;
   totalCount?: number;
 }
@@ -409,6 +410,7 @@ function DeviceMockup({
   isWide,
   index = 0,
   isHovered = false,
+  hoveredIndex = null,
   onHover,
   totalCount = 4,
 }: DeviceMockupProps) {
@@ -422,17 +424,44 @@ function DeviceMockup({
   // Isometric effect calculations for web
   const centerIndex = (totalCount - 1) / 2;
   const offset = index - centerIndex;
-  const baseRotateY = offset * 12; // Tilt angle based on position
-  const baseTranslateX = offset * -30; // Overlap offset
+  const anyHovered = hoveredIndex !== null;
+  
+  // Calculate transforms based on hover state
+  let transformX: number;
+  let rotateY: number;
+  let translateZ: number;
+  let scale: number;
+  
+  if (isHovered) {
+    // Hovered device: straighten and pop forward
+    transformX = 0;
+    rotateY = 0;
+    translateZ = 80;
+    scale = 1.08;
+  } else if (anyHovered && hoveredIndex !== null) {
+    // Non-hovered devices spread apart when something is hovered
+    const hoveredOffset = hoveredIndex - centerIndex;
+    const distanceFromHovered = index - hoveredIndex;
+    // Push devices away from the hovered one
+    const spreadAmount = distanceFromHovered * 60;
+    transformX = spreadAmount;
+    rotateY = offset * 15; // Slightly more tilt when spread
+    translateZ = -20; // Push back slightly
+    scale = 0.95;
+  } else {
+    // Default isometric fan layout
+    transformX = offset * -30;
+    rotateY = offset * 12;
+    translateZ = 0;
+    scale = 1;
+  }
   
   // Web-specific wrapper with 3D transforms
   const webWrapperStyle: React.CSSProperties = isWeb ? {
     perspective: '1000px',
     transformStyle: 'preserve-3d',
     transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-    transform: isHovered 
-      ? `rotateY(0deg) translateX(0px) translateZ(80px) scale(1.08)`
-      : `rotateY(${baseRotateY}deg) translateX(${baseTranslateX}px) translateZ(0px) scale(1)`,
+    transform: `rotateY(${rotateY}deg) translateX(${transformX}px) translateZ(${translateZ}px) scale(${scale})`,
     zIndex: isHovered ? 100 : 10 - Math.abs(offset),
     cursor: 'pointer',
     marginLeft: index === 0 ? 0 : -40, // Overlap devices
@@ -549,6 +578,7 @@ function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
               isWide={isWide}
               index={index}
               isHovered={hoveredIndex === index}
+              hoveredIndex={hoveredIndex}
               onHover={setHoveredIndex}
               totalCount={showcaseScreenshots.length}
             />
