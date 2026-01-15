@@ -968,7 +968,7 @@ export default function LandingScreen({
             <MaterialCommunityIcons
               name="chef-hat"
               size={32}
-              color="#FFFFFF"
+              color="rgba(255, 255, 255, 0.85)"
             />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
@@ -1501,7 +1501,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   signInButton: {
     paddingHorizontal: 20,
