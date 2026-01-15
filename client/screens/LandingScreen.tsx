@@ -389,6 +389,148 @@ const showcaseScreenshots = [
   },
 ];
 
+const heroScreenshot = {
+  category: 'hero',
+  filename: 'EB0F64E2-5BB7-4CB9-9C62-3AABEAF61B38_1_105_c.jpeg',
+};
+
+// Floating device mockup for hero section
+function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
+  const frameWidth = isWide ? 280 : 200;
+  const frameHeight = frameWidth * 2.16;
+  const screenWidth = frameWidth - 14;
+  const screenHeight = frameHeight - 28;
+  const imageUrl = getShowcaseImageUrl(heroScreenshot.category, heroScreenshot.filename);
+
+  // Floating animation styles for web
+  const floatingStyle: React.CSSProperties = isWeb ? {
+    animation: 'heroFloat 6s ease-in-out infinite',
+    transformStyle: 'preserve-3d',
+    transform: 'rotateY(-8deg) rotateX(2deg)',
+  } : {};
+
+  return (
+    <View style={heroDeviceStyles.container} data-testid="hero-device-mockup">
+      {isWeb && (
+        <style>{`
+          @keyframes heroFloat {
+            0%, 100% { transform: rotateY(-8deg) rotateX(2deg) translateY(0px); }
+            50% { transform: rotateY(-8deg) rotateX(2deg) translateY(-15px); }
+          }
+        `}</style>
+      )}
+      <div style={floatingStyle}>
+        <View
+          style={[
+            heroDeviceStyles.phoneFrame,
+            {
+              width: frameWidth,
+              height: frameHeight,
+              borderRadius: frameWidth * 0.15,
+            },
+          ]}
+        >
+          <View
+            style={[
+              heroDeviceStyles.notch,
+              {
+                width: frameWidth * 0.35,
+                height: 24,
+                borderBottomLeftRadius: 12,
+                borderBottomRightRadius: 12,
+              },
+            ]}
+          />
+          <View
+            style={[
+              heroDeviceStyles.screen,
+              {
+                width: screenWidth,
+                height: screenHeight,
+                borderRadius: (frameWidth * 0.15) - 4,
+              },
+            ]}
+          >
+            {isWeb ? (
+              <img
+                src={imageUrl}
+                alt="ChefSpAIce app preview"
+                style={{
+                  width: screenWidth,
+                  height: screenHeight,
+                  objectFit: 'cover',
+                  borderRadius: (frameWidth * 0.15) - 4,
+                }}
+              />
+            ) : (
+              <View style={{ width: screenWidth, height: screenHeight, backgroundColor: '#1a1a1a' }} />
+            )}
+          </View>
+          <View style={heroDeviceStyles.homeIndicator} />
+        </View>
+      </div>
+      {/* Glow effect behind device */}
+      <View style={heroDeviceStyles.glowEffect} />
+    </View>
+  );
+}
+
+const heroDeviceStyles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  phoneFrame: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 3,
+    borderColor: '#2a2a2a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 80px rgba(39, 174, 96, 0.15)',
+        }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 15 },
+          shadowOpacity: 0.6,
+          shadowRadius: 30,
+          elevation: 30,
+        }),
+  },
+  notch: {
+    backgroundColor: '#1a1a1a',
+    position: 'absolute',
+    top: 0,
+    zIndex: 10,
+  },
+  screen: {
+    overflow: 'hidden',
+    backgroundColor: '#0a0a0a',
+  },
+  homeIndicator: {
+    position: 'absolute',
+    bottom: 10,
+    width: 120,
+    height: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 3,
+  },
+  glowEffect: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(39, 174, 96, 0.15)',
+    ...(Platform.OS === 'web'
+      ? { filter: 'blur(60px)' }
+      : {}),
+    zIndex: -1,
+  },
+});
+
 interface DeviceMockupProps {
   imageUrl: string;
   label: string;
@@ -850,49 +992,55 @@ export default function LandingScreen({
           style={[styles.heroSection, isWide && styles.heroSectionWide]}
           data-testid="section-hero"
         >
-          <View style={styles.heroContent}>
-            <View style={styles.tagline}>
-              <MaterialCommunityIcons name="leaf" size={14} color="#FFFFFF" />
-              <Text style={styles.taglineText} data-testid="text-tagline">
-                Reduce Food Waste, Save Money
+          <View style={[styles.heroInner, isWide && styles.heroInnerWide]}>
+            <View style={[styles.heroContent, isWide && styles.heroContentWide]}>
+              <View style={styles.tagline}>
+                <MaterialCommunityIcons name="leaf" size={14} color="#FFFFFF" />
+                <Text style={styles.taglineText} data-testid="text-tagline">
+                  Reduce Food Waste, Save Money
+                </Text>
+              </View>
+
+              <Text style={styles.heroTitle} data-testid="text-hero-title">
+                Your AI-Powered{"\n"}Kitchen Assistant
               </Text>
-            </View>
 
-            <Text style={styles.heroTitle} data-testid="text-hero-title">
-              Your AI-Powered{"\n"}Kitchen Assistant
-            </Text>
+              <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
+                Manage your pantry, generate recipes from what you have, plan
+                meals, and never let food go to waste again.
+              </Text>
 
-            <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
-              Manage your pantry, generate recipes from what you have, plan
-              meals, and never let food go to waste again.
-            </Text>
-
-            {/*
-            <View style={styles.heroButtons}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed && styles.buttonPressed,
-                ]}
-                onPress={() => handleGetStarted()}
-                data-testid="button-get-started"
-              >
-                <LinearGradient
-                  colors={[AppColors.primary, "#1E8449"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.primaryButtonGradient}
+              {/*
+              <View style={styles.heroButtons}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={() => handleGetStarted()}
+                  data-testid="button-get-started"
                 >
-                  <Text style={styles.primaryButtonText}>Get Started Free</Text>
-                  <Feather name="arrow-right" size={18} color="#FFFFFF" />
-                </LinearGradient>
-              </Pressable>
-            </View>
+                  <LinearGradient
+                    colors={[AppColors.primary, "#1E8449"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.primaryButtonGradient}
+                  >
+                    <Text style={styles.primaryButtonText}>Get Started Free</Text>
+                    <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                  </LinearGradient>
+                </Pressable>
+              </View>
 
-            <Text style={styles.trialText}>
-              7-day free trial, no credit card required
-            </Text>
-            */}
+              <Text style={styles.trialText}>
+                7-day free trial, no credit card required
+              </Text>
+              */}
+            </View>
+            
+            <View style={[styles.heroDeviceContainer, isWide && styles.heroDeviceContainerWide]}>
+              <HeroDeviceMockup isWide={isWide} />
+            </View>
           </View>
         </View>
 
@@ -1380,9 +1528,33 @@ const styles = StyleSheet.create({
   heroSectionWide: {
     paddingVertical: 40,
   },
+  heroInner: {
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 1200,
+    gap: 32,
+  },
+  heroInnerWide: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 40,
+  },
   heroContent: {
     alignItems: "center",
     maxWidth: 600,
+  },
+  heroContentWide: {
+    alignItems: "center",
+  },
+  heroTitleWide: {
+    textAlign: "center",
+  },
+  heroDeviceContainer: {
+    marginTop: 8,
+  },
+  heroDeviceContainerWide: {
+    marginTop: 16,
   },
   tagline: {
     flexDirection: "row",
