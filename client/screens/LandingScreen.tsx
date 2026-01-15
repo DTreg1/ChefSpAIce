@@ -557,7 +557,8 @@ export default function LandingScreen({
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
             </Text>
-          </View>{/*
+          </View>
+          {/*
           <Pressable
             style={({ pressed }) => [
               styles.signInButton,
@@ -576,11 +577,7 @@ export default function LandingScreen({
         >
           <View style={styles.heroContent}>
             <View style={styles.tagline}>
-              <MaterialCommunityIcons
-                name="leaf"
-                size={14}
-                color="#FFFFFF"
-              />
+              <MaterialCommunityIcons name="leaf" size={14} color="#FFFFFF" />
               <Text style={styles.taglineText} data-testid="text-tagline">
                 Reduce Food Waste, Save Money
               </Text>
@@ -840,7 +837,7 @@ export default function LandingScreen({
           </View>
         </View>
 
-        {/*<View style={styles.section} data-testid="section-pricing">
+        <View style={styles.section} data-testid="section-pricing">
           <Text style={styles.sectionTitle} data-testid="text-pricing-title">
             Simple, Transparent Pricing
           </Text>
@@ -892,7 +889,7 @@ export default function LandingScreen({
               </View>
             </Pressable>
           </View>
-        {/*
+
           <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
             <PricingCard
               tier="Basic"
@@ -907,8 +904,8 @@ export default function LandingScreen({
                 "Item scanning",
                 "Daily meal planning",
               ]}
-              buttonText="Start Free Trial"
-              onPress={() => handleGetStarted("basic")}
+              buttonText="7-Day Free Trial"
+              onPress={() => null}
               testId="basic"
               isWide={isWide}
             />
@@ -926,45 +923,44 @@ export default function LandingScreen({
                 "Weekly meal prepping",
               ]}
               isPopular={true}
-              buttonText="Start Free Trial"
-              onPress={() => handleGetStarted("pro")}
+              buttonText="7-Day Free Trial"
+              onPress={() => null}
               testId="pro"
               isWide={isWide}
             />
           </View>
         </View>
 
-          <View style={styles.section} data-testid="section-testimonials">
-            <Text
-              style={styles.sectionTitle}
-              data-testid="text-testimonials-title"
-            >
-              Loved by Thousands
-            </Text>
-            <Text
-              style={styles.sectionSubtitle}
-              data-testid="text-testimonials-subtitle"
-            >
-              See what our users are saying
-            </Text>
+        {/*<View style={styles.section} data-testid="section-testimonials">
+          <Text
+            style={styles.sectionTitle}
+            data-testid="text-testimonials-title"
+          >
+            Loved by Thousands
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-testimonials-subtitle"
+          >
+            See what our users are saying
+          </Text>
 
-            <View
-              style={[
-                styles.testimonialsGrid,
-                isWide && styles.testimonialsGridWide,
-              ]}
-            >
-              {testimonials.map((testimonial, index) => (
-                <TestimonialCard
-                  key={index}
-                  {...testimonial}
-                  testId={`${index + 1}`}
-                  isWide={isWide}
-                />
-              ))}
-            </View>
-          </View> 
-        */}
+          <View
+            style={[
+              styles.testimonialsGrid,
+              isWide && styles.testimonialsGridWide,
+            ]}
+          >
+            {testimonials.map((testimonial, index) => (
+              <TestimonialCard
+                key={index}
+                {...testimonial}
+                testId={`${index + 1}`}
+                isWide={isWide}
+              />
+            ))}
+          </View>
+        </View>*/}
 
         <View style={styles.section} data-testid="section-faq">
           <Text style={styles.sectionTitle} data-testid="text-faq-title">
@@ -994,26 +990,6 @@ export default function LandingScreen({
             <Text style={styles.ctaSubtitle}>
               Join thousands of users saving money and the planet
             </Text>
-            {/*
-            <Pressable
-              style={({ pressed }) => [
-                styles.ctaButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={() => handleGetStarted()}
-              data-testid="button-cta-get-started"
-            >
-              <LinearGradient
-                colors={[AppColors.primary, "#1E8449"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.ctaButtonGradient}
-              >
-                <Text style={styles.ctaButtonText}>Start Your Free Trial</Text>
-              </LinearGradient>
-            </Pressable>
-            <Text style={styles.ctaNote}>No credit card required</Text>
-          */}
           </GlassCard>
         </View>
 
