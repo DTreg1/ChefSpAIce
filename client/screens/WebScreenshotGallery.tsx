@@ -38,7 +38,9 @@ interface WebScreenshotGalleryProps {
 
 function getBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    return window.location.origin;
+    // Use port 5000 where Express API runs, not Metro bundler port
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:5000`;
   }
   return '';
 }
