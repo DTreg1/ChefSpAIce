@@ -352,6 +352,156 @@ function TestimonialCard({
   );
 }
 
+// Helper function to get showcase image URLs
+function getShowcaseImageUrl(category: string, filename: string): string {
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:5000/api/showcase/${category}/${filename}`;
+  }
+  return '';
+}
+
+// Showcase screenshots data
+const showcaseScreenshots = [
+  {
+    category: 'inventory',
+    filename: '338A0B62-F334-41D1-8AE9-F27252F582DC_1_105_c.jpeg',
+    label: 'Inventory',
+    description: 'Track your pantry',
+  },
+  {
+    category: 'recipes',
+    filename: '85633BFE-AEE0-4C16-85F3-EB3E54BDCF22_1_105_c.jpeg',
+    label: 'Recipes',
+    description: 'AI-generated recipes',
+  },
+  {
+    category: 'mealplan',
+    filename: '9923E5F7-BDF1-4437-8DE5-2265D313F287_1_105_c.jpeg',
+    label: 'Meal Plan',
+    description: 'Plan your week',
+  },
+  {
+    category: 'scanning',
+    filename: 'B1DD5F3A-BCFE-4861-9097-6313C695FE20_1_105_c.jpeg',
+    label: 'Scanning',
+    description: 'Add items instantly',
+  },
+];
+
+interface DeviceMockupProps {
+  imageUrl: string;
+  label: string;
+  description: string;
+  testId: string;
+  isWide: boolean;
+}
+
+function DeviceMockup({ imageUrl, label, description, testId, isWide }: DeviceMockupProps) {
+  const frameWidth = isWide ? 220 : 160;
+  const frameHeight = frameWidth * 2.16;
+  const screenWidth = frameWidth - 12;
+  const screenHeight = frameHeight - 24;
+  const notchWidth = frameWidth * 0.35;
+  const notchHeight = 22;
+
+  return (
+    <View style={deviceStyles.mockupContainer} data-testid={`device-mockup-${testId}`}>
+      <View
+        style={[
+          deviceStyles.phoneFrame,
+          {
+            width: frameWidth,
+            height: frameHeight,
+            borderRadius: frameWidth * 0.15,
+          },
+        ]}
+      >
+        <View
+          style={[
+            deviceStyles.notch,
+            {
+              width: notchWidth,
+              height: notchHeight,
+              borderBottomLeftRadius: notchHeight / 2,
+              borderBottomRightRadius: notchHeight / 2,
+            },
+          ]}
+        />
+        <View
+          style={[
+            deviceStyles.screen,
+            {
+              width: screenWidth,
+              height: screenHeight,
+              borderRadius: (frameWidth * 0.15) - 4,
+            },
+          ]}
+        >
+          {isWeb ? (
+            <img
+              src={imageUrl}
+              alt={`${label} screenshot`}
+              style={{
+                width: screenWidth,
+                height: screenHeight,
+                objectFit: 'cover',
+                borderRadius: (frameWidth * 0.15) - 4,
+              }}
+            />
+          ) : (
+            <View style={{ width: screenWidth, height: screenHeight, backgroundColor: '#1a1a1a' }} />
+          )}
+        </View>
+        <View style={deviceStyles.homeIndicator} />
+      </View>
+      <Text style={deviceStyles.mockupLabel} data-testid={`text-mockup-label-${testId}`}>
+        {label}
+      </Text>
+      <Text style={deviceStyles.mockupDescription} data-testid={`text-mockup-desc-${testId}`}>
+        {description}
+      </Text>
+    </View>
+  );
+}
+
+interface ScreenshotShowcaseProps {
+  isWide: boolean;
+}
+
+function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
+  return (
+    <View style={deviceStyles.showcaseSection} data-testid="section-screenshot-showcase">
+      <Text style={deviceStyles.showcaseTitle} data-testid="text-showcase-title">
+        See ChefSpAIce in Action
+      </Text>
+      <Text style={deviceStyles.showcaseSubtitle} data-testid="text-showcase-subtitle">
+        Experience the app that transforms your kitchen
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[
+          deviceStyles.showcaseScrollContent,
+          isWide && deviceStyles.showcaseScrollContentWide,
+        ]}
+        style={deviceStyles.showcaseScroll}
+      >
+        {showcaseScreenshots.map((screenshot, index) => (
+          <DeviceMockup
+            key={index}
+            imageUrl={getShowcaseImageUrl(screenshot.category, screenshot.filename)}
+            label={screenshot.label}
+            description={screenshot.description}
+            testId={screenshot.category}
+            isWide={isWide}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 interface FAQItemProps {
   question: string;
   answer: string;
@@ -623,6 +773,8 @@ export default function LandingScreen({
             */}
           </View>
         </View>
+
+        <ScreenshotShowcase isWide={isWide} />
 
         <View style={styles.trustSection} data-testid="section-trust">
           <Text style={styles.trustTitle}>Featured On</Text>
@@ -1716,5 +1868,92 @@ const styles = StyleSheet.create({
   copyright: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.4)",
+  },
+});
+
+const deviceStyles = StyleSheet.create({
+  showcaseSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+    alignItems: "center",
+  },
+  showcaseTitle: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  showcaseSubtitle: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
+    marginBottom: 32,
+    maxWidth: 500,
+  },
+  showcaseScroll: {
+    width: "100%",
+  },
+  showcaseScrollContent: {
+    paddingHorizontal: 16,
+    gap: 24,
+    justifyContent: "flex-start",
+  },
+  showcaseScrollContentWide: {
+    justifyContent: "center",
+    paddingHorizontal: 0,
+  },
+  mockupContainer: {
+    alignItems: "center",
+    gap: 12,
+  },
+  phoneFrame: {
+    backgroundColor: "#1a1a1a",
+    borderWidth: 3,
+    borderColor: "#2a2a2a",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+        }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.5,
+          shadowRadius: 25,
+          elevation: 25,
+        }),
+  },
+  notch: {
+    backgroundColor: "#1a1a1a",
+    position: "absolute",
+    top: 0,
+    zIndex: 10,
+  },
+  screen: {
+    overflow: "hidden",
+    backgroundColor: "#0a0a0a",
+  },
+  homeIndicator: {
+    position: "absolute",
+    bottom: 8,
+    width: 100,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 2,
+  },
+  mockupLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  mockupDescription: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.6)",
+    textAlign: "center",
   },
 });
