@@ -21,6 +21,10 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
 import { WebScreenshotGallery } from "@/screens/WebScreenshotGallery";
+import AboutScreen from "@/screens/web/AboutScreen";
+import PrivacyScreen from "@/screens/web/PrivacyScreen";
+import TermsScreen from "@/screens/web/TermsScreen";
+import SupportScreen from "@/screens/web/SupportScreen";
 import Constants from "expo-constants";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -54,35 +58,6 @@ function handleSignIn() {
   });
 }
 
-function handleAbout() {
-  if (Platform.OS === 'web') {
-    window.location.href = '/about';
-  }
-}
-
-function handlePrivacy() {
-  if (Platform.OS === 'web') {
-    window.location.href = '/privacy';
-  }
-}
-
-function handleTerms() {
-  if (Platform.OS === 'web') {
-    window.location.href = '/terms';
-  }
-}
-
-function handleSupport() {
-  if (Platform.OS === 'web') {
-    window.location.href = '/support';
-  }
-}
-
-function handleScreenshotGallery() {
-  if (Platform.OS === 'web') {
-    window.location.href = '/gallery';
-  }
-}
 
 
 /**
@@ -114,30 +89,38 @@ function WebLandingContent() {
     }
   };
 
-  if (currentPath === '/gallery') {
-    return (
-      <View style={styles.container}>
-        <AnimatedBackground bubbleCount={20} />
-        <View style={styles.content}>
-          <WebScreenshotGallery onBack={() => navigateTo('/')} />
-        </View>
-      </View>
-    );
-  }
+  const renderScreen = () => {
+    switch (currentPath) {
+      case '/gallery':
+        return <WebScreenshotGallery onBack={() => navigateTo('/')} />;
+      case '/about':
+        return <AboutScreen />;
+      case '/privacy':
+        return <PrivacyScreen />;
+      case '/terms':
+        return <TermsScreen />;
+      case '/support':
+        return <SupportScreen />;
+      default:
+        return (
+          <LandingScreen
+            onGetStarted={handleGetStarted}
+            onSignIn={handleSignIn}
+            onAbout={() => navigateTo('/about')}
+            onPrivacy={() => navigateTo('/privacy')}
+            onTerms={() => navigateTo('/terms')}
+            onSupport={() => navigateTo('/support')}
+            onScreenshotGallery={() => navigateTo('/gallery')}
+          />
+        );
+    }
+  };
 
   return (
     <View style={styles.container}>
       <AnimatedBackground bubbleCount={20} />
       <View style={styles.content}>
-        <LandingScreen
-          onGetStarted={handleGetStarted}
-          onSignIn={handleSignIn}
-          onAbout={handleAbout}
-          onPrivacy={handlePrivacy}
-          onTerms={handleTerms}
-          onSupport={handleSupport}
-          onScreenshotGallery={() => navigateTo('/gallery')}
-        />
+        {renderScreen()}
       </View>
     </View>
   );
