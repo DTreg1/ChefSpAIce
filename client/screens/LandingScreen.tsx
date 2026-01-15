@@ -579,7 +579,7 @@ export default function LandingScreen({
               <MaterialCommunityIcons
                 name="leaf"
                 size={14}
-                color={AppColors.primary}
+                color="#FFFFFF"
               />
               <Text style={styles.taglineText} data-testid="text-tagline">
                 Reduce Food Waste, Save Money
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
   taglineText: {
     fontSize: 14,
     fontWeight: "600",
-    color: AppColors.primary,
+    color: "#FFFFFF",
   },
   heroTitle: {
     fontSize: 40,
