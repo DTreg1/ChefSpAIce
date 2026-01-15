@@ -7,6 +7,7 @@ export type { PurchasesOffering, PurchasesPackage, CustomerInfo };
 
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
+const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || '';
 
 export const ENTITLEMENTS = {
   BASIC: 'basic',
@@ -101,21 +102,42 @@ class StoreKitService {
           Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
         }
 
-        const apiKey = Platform.select({
+        // Try platform-specific key first
+        let apiKey = Platform.select({
           ios: REVENUECAT_IOS_KEY,
           android: REVENUECAT_ANDROID_KEY,
           default: '',
         });
 
-        if (!apiKey) {
-          console.warn('StoreKit: No API key configured for platform:', Platform.OS);
+        // Try to configure with the production key first
+        if (apiKey) {
+          try {
+            console.log('StoreKit: Configuring with production API key for', Platform.OS);
+            await Purchases.configure({ apiKey });
+            this.initialized = true;
+            console.log('StoreKit: Initialized successfully with production key');
+            return;
+          } catch (error: unknown) {
+            const errorMessage = (error as Error)?.message || '';
+            // If it fails due to Expo Go, try the test key
+            if (errorMessage.includes('Expo Go') || errorMessage.includes('Test Store')) {
+              console.log('StoreKit: Production key failed, trying test key...');
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        // Fall back to test key (for Expo Go)
+        if (REVENUECAT_TEST_KEY) {
+          console.log('StoreKit: Configuring with Test Store API key');
+          await Purchases.configure({ apiKey: REVENUECAT_TEST_KEY });
+          this.initialized = true;
+          console.log('StoreKit: Initialized successfully with test key (Expo Go mode)');
           return;
         }
 
-        console.log('StoreKit: Configuring with API key for', Platform.OS);
-        await Purchases.configure({ apiKey });
-        this.initialized = true;
-        console.log('StoreKit: Initialized successfully');
+        console.warn('StoreKit: No valid API key available');
       } catch (error) {
         console.error('StoreKit: Failed to initialize', error);
       }
