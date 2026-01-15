@@ -62,6 +62,7 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import ScreenshotGalleryScreen from "@/screens/ScreenshotGalleryScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -77,6 +78,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Landing: undefined;
   LogoPreview: undefined;
+  ScreenshotGallery: undefined;
   Subscription: { reason?: 'expired' | 'resubscribe' } | undefined;
   About: undefined;
   Privacy: undefined;
@@ -296,6 +298,7 @@ function AuthGuardedNavigator() {
             onPrivacy={() => props.navigation.navigate("Privacy")}
             onTerms={() => props.navigation.navigate("Terms")}
             onSupport={() => props.navigation.navigate("Support")}
+            onScreenshotGallery={() => props.navigation.navigate("ScreenshotGallery")}
           />
         )}
       </Stack.Screen>
@@ -382,6 +385,11 @@ function AuthGuardedNavigator() {
           presentation: "fullScreenModal",
           headerShown: false,
         }}
+      />
+      <Stack.Screen
+        name="ScreenshotGallery"
+        component={ScreenshotGalleryScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="About"
