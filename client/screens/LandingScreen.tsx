@@ -108,7 +108,7 @@ function FeatureCard({
     >
       <View style={styles.featureIconContainer}>{icon}</View>
       <Text
-        style={[styles.featureTitle, { color: "#FFFFFF" }]}
+        style={[styles.featureTitle, { color: "rgba(255, 255, 255, 0.85)" }]}
         data-testid={`text-feature-title-${testId}`}
       >
         {title}
@@ -148,7 +148,7 @@ function StepCard({
       </View>
       <View style={styles.stepContent}>
         <Text
-          style={[styles.stepTitle, { color: "#FFFFFF" }]}
+          style={[styles.stepTitle, { color: "rgba(255, 255, 255, 0.85)" }]}
           data-testid={`text-step-title-${number}`}
         >
           {title}
@@ -1512,7 +1512,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   signInButtonText: {
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -1571,12 +1571,12 @@ const styles = StyleSheet.create({
   taglineText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   heroTitle: {
     fontSize: 40,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 48,
@@ -1609,7 +1609,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   secondaryButton: {
     paddingHorizontal: 24,
@@ -1622,7 +1622,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   trialText: {
     fontSize: 14,
@@ -1675,7 +1675,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 12,
   },
@@ -1717,7 +1717,7 @@ const styles = StyleSheet.create({
   benefitTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 8,
     textAlign: "center",
   },
@@ -1809,7 +1809,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   stepContent: {
     flex: 1,
@@ -1852,7 +1852,7 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.6)",
   },
   billingOptionTextActive: {
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   saveBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -1863,7 +1863,7 @@ const styles = StyleSheet.create({
   saveBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   pricingGrid: {
     flexDirection: "column",
@@ -1899,14 +1899,14 @@ const styles = StyleSheet.create({
     borderRadius: GlassEffect.borderRadius.pill,
   },
   popularBadgeText: {
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     fontSize: 12,
     fontWeight: "700",
   },
   pricingTier: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 8,
     marginTop: 8,
   },
@@ -1918,7 +1918,7 @@ const styles = StyleSheet.create({
   pricingPrice: {
     fontSize: 48,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   pricingPeriod: {
     fontSize: 16,
@@ -1964,12 +1964,12 @@ const styles = StyleSheet.create({
   pricingButtonTextPrimary: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   pricingButtonTextSecondary: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   testimonialsGrid: {
     flexDirection: "column",
@@ -2019,12 +2019,12 @@ const styles = StyleSheet.create({
   testimonialAvatarText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   testimonialName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   testimonialRole: {
     fontSize: 12,
@@ -2046,7 +2046,7 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     flex: 1,
     paddingRight: 16,
   },
@@ -2070,7 +2070,7 @@ const styles = StyleSheet.create({
   ctaTitle: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 12,
   },
@@ -2091,7 +2091,7 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   ctaNote: {
     fontSize: 14,
@@ -2115,7 +2115,7 @@ const styles = StyleSheet.create({
   footerLogoText: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
   },
   footerText: {
     fontSize: 14,
@@ -2174,7 +2174,7 @@ const deviceStyles = StyleSheet.create({
   showcaseTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 12,
   },
@@ -2241,7 +2241,7 @@ const deviceStyles = StyleSheet.create({
   mockupLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginTop: 4,
   },
