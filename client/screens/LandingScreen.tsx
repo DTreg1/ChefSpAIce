@@ -1330,7 +1330,7 @@ export default function LandingScreen({
                 "Daily meal planning",
               ]}
               buttonText="7-Day Free Trial"
-              onPress={() => null}
+              onPress={() => handleGetStarted("basic")}
               testId="basic"
               isWide={isWide}
             />
@@ -1349,7 +1349,7 @@ export default function LandingScreen({
               ]}
               isPopular={true}
               buttonText="7-Day Free Trial"
-              onPress={() => null}
+              onPress={() => handleGetStarted("pro")}
               testId="pro"
               isWide={isWide}
             />
