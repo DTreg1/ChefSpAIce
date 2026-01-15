@@ -66,8 +66,6 @@ export default function AuthScreen() {
   const route = useRoute<AuthScreenRouteProp>();
   const { recheckOnboarding, markOnboardingComplete } = useOnboardingStatus();
   
-  const initialTier = route.params?.selectedTier || 'pro';
-  const initialBilling = route.params?.billingPeriod || 'monthly';
   const {
     signIn,
     signUp,
@@ -84,8 +82,6 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">(initialTier);
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">(initialBilling);
 
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -112,7 +108,7 @@ export default function AuthScreen() {
     try {
       let result;
       if (isSignUp) {
-        result = await signUp(email.trim(), password, undefined, selectedTier);
+        result = await signUp(email.trim(), password, undefined, undefined);
       } else {
         result = await signIn(email.trim(), password);
       }
@@ -182,9 +178,9 @@ export default function AuthScreen() {
     try {
       let result;
       if (provider === "apple") {
-        result = await signInWithApple(selectedTier);
+        result = await signInWithApple(undefined);
       } else {
-        result = await signInWithGoogle(selectedTier);
+        result = await signInWithGoogle(undefined);
       }
 
       if (!result.success) {
@@ -294,57 +290,22 @@ export default function AuthScreen() {
         >
           {isSignUp && (
             <View style={styles.planSelectionContainer}>
-              <ThemedText style={styles.planSelectionTitle}>Choose Your Plan</ThemedText>
-              <ThemedText style={[styles.planSelectionSubtitle, { color: theme.textSecondary }]}>
-                Start with a free 7-day trial. Cancel anytime.
-              </ThemedText>
-
-              <View style={styles.billingToggleContainer}>
-                <Pressable
-                  style={[
-                    styles.billingToggleButton,
-                    billingPeriod === "monthly" && styles.billingToggleButtonActive,
-                  ]}
-                  onPress={() => {
-                    setBillingPeriod("monthly");
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                  data-testid="button-billing-monthly"
-                >
-                  <ThemedText style={[
-                    styles.billingToggleText,
-                    billingPeriod === "monthly" && styles.billingToggleTextActive,
-                  ]}>Monthly</ThemedText>
-                </Pressable>
-                <Pressable
-                  style={[
-                    styles.billingToggleButton,
-                    billingPeriod === "annual" && styles.billingToggleButtonActive,
-                  ]}
-                  onPress={() => {
-                    setBillingPeriod("annual");
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                  data-testid="button-billing-annual"
-                >
-                  <ThemedText style={[
-                    styles.billingToggleText,
-                    billingPeriod === "annual" && styles.billingToggleTextActive,
-                  ]}>Annual</ThemedText>
-                  {billingPeriod === "annual" && (
-                    <View style={styles.saveBadge}>
-                      <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-                    </View>
-                  )}
-                </Pressable>
+              {/* Free Trial Banner */}
+              <View style={[styles.trialBanner, { backgroundColor: `${AppColors.primary}15` }]}>
+                <View style={[styles.trialIconContainer, { backgroundColor: AppColors.primary }]}>
+                  <Feather name="gift" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.trialTextContainer}>
+                  <ThemedText style={styles.trialTitle}>7-Day Free Trial</ThemedText>
+                  <ThemedText style={[styles.trialSubtitle, { color: theme.textSecondary }]}>
+                    Full access to all features. No payment required.
+                  </ThemedText>
+                </View>
               </View>
 
+              {/* Features List */}
               <View style={styles.featuresListContainer}>
-                <ThemedText style={styles.featuresListTitle}>Everything you get:</ThemedText>
+                <ThemedText style={styles.featuresListTitle}>What you'll get:</ThemedText>
                 <View style={styles.featuresGrid}>
                   {[
                     "Unlimited inventory",
@@ -363,91 +324,27 @@ export default function AuthScreen() {
                   ))}
                 </View>
               </View>
-              <View style={styles.planCardsRow}>
-                <Pressable
-                  style={[
-                    styles.planCard,
-                    styles.planCardLeft,
-                    { 
-                      backgroundColor: theme.glass.background,
-                      borderColor: selectedTier === "basic" ? AppColors.primary : theme.glass.border,
-                      borderTopWidth: 2,
-                      borderBottomWidth: 2,
-                      borderLeftWidth: 2,
-                      borderRightWidth: 1,
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedTier("basic");
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                  data-testid="button-tier-basic"
-                >
-                  <View style={styles.planCardContent}>
-                    <ThemedText style={styles.planCardName}>Basic</ThemedText>
-                    <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      ${prices.basic[billingPeriod].toFixed(2)}
-                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/{billingPeriod === "monthly" ? "mo" : "yr"}</ThemedText>
-                    </ThemedText>
-                    {billingPeriod === "annual" && (
-                      <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
-                        ${(prices.basic.annual / 12).toFixed(2)}/mo
-                      </ThemedText>
-                    )}
-                  </View>
-                  <View style={[
-                    styles.planCardRadio,
-                    selectedTier === "basic" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
-                  ]}>
-                    {selectedTier === "basic" && <Feather name="check" size={12} color="#FFFFFF" />}
-                  </View>
-                </Pressable>
 
-                <Pressable
-                  style={[
-                    styles.planCard,
-                    styles.planCardRight,
-                    { 
-                      backgroundColor: theme.glass.background,
-                      borderColor: selectedTier === "pro" ? AppColors.primary : theme.glass.border,
-                      borderTopWidth: 2,
-                      borderBottomWidth: 2,
-                      borderRightWidth: 2,
-                      borderLeftWidth: 1,
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedTier("pro");
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                  data-testid="button-tier-pro"
-                >
-                  <View style={styles.popularBadge}>
-                    <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
-                  </View>
-                  <View style={styles.planCardContent}>
-                    <ThemedText style={styles.planCardName}>Pro</ThemedText>
-                    <ThemedText style={[styles.planCardPrice, { color: AppColors.primary }]}>
-                      ${prices.pro[billingPeriod].toFixed(2)}
-                      <ThemedText style={[styles.planCardInterval, { color: theme.textSecondary }]}>/{billingPeriod === "monthly" ? "mo" : "yr"}</ThemedText>
+              {/* Subscription Options Preview */}
+              <View style={[styles.subscriptionPreview, { backgroundColor: theme.glass.background, borderColor: theme.glass.border }]}>
+                <ThemedText style={[styles.subscriptionPreviewTitle, { color: theme.textSecondary }]}>
+                  After your trial, choose a plan:
+                </ThemedText>
+                <View style={styles.planPreviewRow}>
+                  <View style={styles.planPreviewItem}>
+                    <ThemedText style={styles.planPreviewName}>Basic</ThemedText>
+                    <ThemedText style={[styles.planPreviewPrice, { color: AppColors.primary }]}>
+                      ${prices.basic.monthly.toFixed(2)}/mo
                     </ThemedText>
-                    {billingPeriod === "annual" && (
-                      <ThemedText style={[styles.planCardMonthly, { color: theme.textSecondary }]}>
-                        ${(prices.pro.annual / 12).toFixed(2)}/mo
-                      </ThemedText>
-                    )}
                   </View>
-                  <View style={[
-                    styles.planCardRadio,
-                    selectedTier === "pro" && { backgroundColor: AppColors.primary, borderColor: AppColors.primary }
-                  ]}>
-                    {selectedTier === "pro" && <Feather name="check" size={12} color="#FFFFFF" />}
+                  <View style={[styles.planPreviewDivider, { backgroundColor: theme.glass.border }]} />
+                  <View style={styles.planPreviewItem}>
+                    <ThemedText style={styles.planPreviewName}>Pro</ThemedText>
+                    <ThemedText style={[styles.planPreviewPrice, { color: AppColors.primary }]}>
+                      ${prices.pro.monthly.toFixed(2)}/mo
+                    </ThemedText>
                   </View>
-                </Pressable>
+                </View>
               </View>
             </View>
           )}
@@ -716,60 +613,65 @@ const styles = StyleSheet.create({
   planSelectionContainer: {
     marginBottom: Spacing.lg,
   },
-  planSelectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: Spacing.xs,
-  },
-  planSelectionSubtitle: {
-    fontSize: 14,
-    textAlign: "center",
+  trialBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
   },
-  billingToggleContainer: {
+  trialIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  trialTextContainer: {
+    flex: 1,
+  },
+  trialTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  trialSubtitle: {
+    fontSize: 13,
+  },
+  subscriptionPreview: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginTop: Spacing.sm,
+  },
+  subscriptionPreviewTitle: {
+    fontSize: 12,
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  planPreviewRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.md,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: 24,
-    padding: 4,
-    alignSelf: "center",
   },
-  billingToggleButton: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: 20,
-    flexDirection: "row",
+  planPreviewItem: {
+    flex: 1,
     alignItems: "center",
-    gap: 6,
   },
-  billingToggleButtonActive: {
-    backgroundColor: AppColors.primary,
-  },
-  billingToggleText: {
+  planPreviewName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#666",
+    marginBottom: 2,
   },
-  billingToggleTextActive: {
-    color: "#FFFFFF",
+  planPreviewPrice: {
+    fontSize: 16,
+    fontWeight: "700",
   },
-  saveBadge: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  saveBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  planCardMonthly: {
-    fontSize: 11,
-    marginTop: 2,
+  planPreviewDivider: {
+    width: 1,
+    height: 32,
+    marginHorizontal: Spacing.md,
   },
   featuresListContainer: {
     marginBottom: Spacing.md,
@@ -792,71 +694,6 @@ const styles = StyleSheet.create({
   },
   featureGridItemText: {
     fontSize: 12,
-  },
-  planCardsRow: {
-    flexDirection: "row",
-  },
-  planCard: {
-    flex: 1,
-    padding: Spacing.md,
-    position: "relative",
-  },
-  planCardLeft: {
-    borderTopLeftRadius: BorderRadius.lg,
-    borderBottomLeftRadius: BorderRadius.lg,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  planCardRight: {
-    borderTopRightRadius: BorderRadius.lg,
-    borderBottomRightRadius: BorderRadius.lg,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-  },
-  planCardContent: {
-    flex: 1,
-  },
-  planCardHeader: {
-    marginBottom: Spacing.xs,
-  },
-  planCardName: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  planCardPrice: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  planCardInterval: {
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  planCardRadio: {
-    position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.sm,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#666",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  popularBadge: {
-    position: "absolute",
-    top: -8,
-    right: Spacing.sm,
-    backgroundColor: AppColors.warning,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
-  },
-  popularBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#FFFFFF",
   },
   authTitle: {
     fontSize: 20,
