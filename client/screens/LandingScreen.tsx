@@ -395,9 +395,23 @@ interface DeviceMockupProps {
   description: string;
   testId: string;
   isWide: boolean;
+  index?: number;
+  isHovered?: boolean;
+  onHover?: (index: number | null) => void;
+  totalCount?: number;
 }
 
-function DeviceMockup({ imageUrl, label, description, testId, isWide }: DeviceMockupProps) {
+function DeviceMockup({ 
+  imageUrl, 
+  label, 
+  description, 
+  testId, 
+  isWide,
+  index = 0,
+  isHovered = false,
+  onHover,
+  totalCount = 4,
+}: DeviceMockupProps) {
   const frameWidth = isWide ? 220 : 160;
   const frameHeight = frameWidth * 2.16;
   const screenWidth = frameWidth - 12;
@@ -405,7 +419,26 @@ function DeviceMockup({ imageUrl, label, description, testId, isWide }: DeviceMo
   const notchWidth = frameWidth * 0.35;
   const notchHeight = 22;
 
-  return (
+  // Isometric effect calculations for web
+  const centerIndex = (totalCount - 1) / 2;
+  const offset = index - centerIndex;
+  const baseRotateY = offset * 12; // Tilt angle based on position
+  const baseTranslateX = offset * -30; // Overlap offset
+  
+  // Web-specific wrapper with 3D transforms
+  const webWrapperStyle: React.CSSProperties = isWeb ? {
+    perspective: '1000px',
+    transformStyle: 'preserve-3d',
+    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    transform: isHovered 
+      ? `rotateY(0deg) translateX(0px) translateZ(80px) scale(1.08)`
+      : `rotateY(${baseRotateY}deg) translateX(${baseTranslateX}px) translateZ(0px) scale(1)`,
+    zIndex: isHovered ? 100 : 10 - Math.abs(offset),
+    cursor: 'pointer',
+    marginLeft: index === 0 ? 0 : -40, // Overlap devices
+  } : {};
+
+  const mockupContent = (
     <View style={deviceStyles.mockupContainer} data-testid={`device-mockup-${testId}`}>
       <View
         style={[
@@ -455,14 +488,28 @@ function DeviceMockup({ imageUrl, label, description, testId, isWide }: DeviceMo
         </View>
         <View style={deviceStyles.homeIndicator} />
       </View>
-      <Text style={deviceStyles.mockupLabel} data-testid={`text-mockup-label-${testId}`}>
+      <Text style={[deviceStyles.mockupLabel, { opacity: isHovered || !isWeb ? 1 : 0.7 }]} data-testid={`text-mockup-label-${testId}`}>
         {label}
       </Text>
-      <Text style={deviceStyles.mockupDescription} data-testid={`text-mockup-desc-${testId}`}>
+      <Text style={[deviceStyles.mockupDescription, { opacity: isHovered || !isWeb ? 1 : 0.5 }]} data-testid={`text-mockup-desc-${testId}`}>
         {description}
       </Text>
     </View>
   );
+
+  if (isWeb && onHover) {
+    return (
+      <div
+        style={webWrapperStyle}
+        onMouseEnter={() => onHover(index)}
+        onMouseLeave={() => onHover(null)}
+      >
+        {mockupContent}
+      </div>
+    );
+  }
+
+  return mockupContent;
 }
 
 interface ScreenshotShowcaseProps {
@@ -470,6 +517,51 @@ interface ScreenshotShowcaseProps {
 }
 
 function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // For web with isometric effect, use a centered div instead of ScrollView
+  if (isWeb) {
+    return (
+      <View style={deviceStyles.showcaseSection} data-testid="section-screenshot-showcase">
+        <Text style={deviceStyles.showcaseTitle} data-testid="text-showcase-title">
+          See ChefSpAIce in Action
+        </Text>
+        <Text style={deviceStyles.showcaseSubtitle} data-testid="text-showcase-subtitle">
+          Experience the app that transforms your kitchen
+        </Text>
+        <div 
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            padding: '20px 60px',
+            perspective: '1200px',
+            width: '100%',
+          }}
+        >
+          {showcaseScreenshots.map((screenshot, index) => (
+            <DeviceMockup
+              key={index}
+              imageUrl={getShowcaseImageUrl(screenshot.category, screenshot.filename)}
+              label={screenshot.label}
+              description={screenshot.description}
+              testId={screenshot.category}
+              isWide={isWide}
+              index={index}
+              isHovered={hoveredIndex === index}
+              onHover={setHoveredIndex}
+              totalCount={showcaseScreenshots.length}
+            />
+          ))}
+        </div>
+        <Text style={deviceStyles.hoverHint} data-testid="text-hover-hint">
+          Hover over a screen to explore
+        </Text>
+      </View>
+    );
+  }
+
+  // For native, use horizontal ScrollView
   return (
     <View style={deviceStyles.showcaseSection} data-testid="section-screenshot-showcase">
       <Text style={deviceStyles.showcaseTitle} data-testid="text-showcase-title">
@@ -1955,5 +2047,12 @@ const deviceStyles = StyleSheet.create({
     fontSize: 13,
     color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
+  },
+  hoverHint: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.4)",
+    textAlign: "center",
+    marginTop: 16,
+    fontStyle: "italic",
   },
 });
