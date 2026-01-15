@@ -80,7 +80,7 @@ export function WebScreenshotGallery({ onBack }: WebScreenshotGalleryProps) {
               {data.files.map((filename, index) => (
                 <View key={index} style={[styles.imageContainer, { width: imageWidth }]}>
                   <Image
-                    source={{ uri: `${baseUrl}/assets/showcase/${category}/${filename}` }}
+                    source={{ uri: `${baseUrl}/api/showcase/${category}/${filename}` }}
                     style={[styles.image, { width: imageWidth, height: imageHeight }]}
                     resizeMode="cover"
                   />

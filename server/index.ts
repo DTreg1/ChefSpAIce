@@ -7,6 +7,7 @@ import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
 import { Client } from "pg";
+import { Client as ObjectStorageClient } from "@replit/object-storage";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
@@ -402,6 +403,30 @@ async function initStripe(retries = 3, delay = 2000) {
 
   setupBodyParsing(app);
   setupRequestLogging(app);
+
+  // Serve showcase images from object storage
+  const objectStorageClient = new ObjectStorageClient();
+  app.get("/api/showcase/:category/:filename", async (req, res) => {
+    const { category, filename } = req.params;
+    const objectPath = `public/showcase/${category}/${filename}`;
+    
+    try {
+      const result = await objectStorageClient.downloadAsBytes(objectPath);
+      
+      if (!result.ok) {
+        log(`[Showcase] File not found: ${objectPath}`);
+        return res.status(404).json({ error: "Image not found" });
+      }
+      
+      const buffer = result.value[0];
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.send(buffer);
+    } catch (err) {
+      log(`[Showcase] Error serving ${objectPath}:`, err);
+      res.status(500).json({ error: "Failed to load image" });
+    }
+  });
 
   configureExpoRouting(app);
 
