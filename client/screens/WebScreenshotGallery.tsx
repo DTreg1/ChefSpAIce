@@ -36,8 +36,16 @@ interface WebScreenshotGalleryProps {
   onBack?: () => void;
 }
 
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+}
+
 export function WebScreenshotGallery({ onBack }: WebScreenshotGalleryProps) {
   const { width } = useWindowDimensions();
+  const baseUrl = getBaseUrl();
   
   const columns = width > 1200 ? 5 : width > 900 ? 4 : width > 600 ? 3 : 2;
   const imageWidth = (width - 48 - (columns - 1) * 16) / columns;
@@ -72,7 +80,7 @@ export function WebScreenshotGallery({ onBack }: WebScreenshotGalleryProps) {
               {data.files.map((filename, index) => (
                 <View key={index} style={[styles.imageContainer, { width: imageWidth }]}>
                   <Image
-                    source={{ uri: `/assets/showcase/${category}/${filename}` }}
+                    source={{ uri: `${baseUrl}/assets/showcase/${category}/${filename}` }}
                     style={[styles.image, { width: imageWidth, height: imageHeight }]}
                     resizeMode="cover"
                   />
