@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, ScrollView, Image, useWindowDimensions, Pressable } from "react-native";
+import { StyleSheet, View, Text, ScrollView, useWindowDimensions, Pressable, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 const showcaseCategories = {
@@ -79,10 +79,15 @@ export function WebScreenshotGallery({ onBack }: WebScreenshotGalleryProps) {
             <View style={[styles.grid, { gap: 16 }]}>
               {data.files.map((filename, index) => (
                 <View key={index} style={[styles.imageContainer, { width: imageWidth }]}>
-                  <Image
-                    source={{ uri: `${baseUrl}/api/showcase/${category}/${filename}` }}
-                    style={[styles.image, { width: imageWidth, height: imageHeight }]}
-                    resizeMode="cover"
+                  <img
+                    src={`${baseUrl}/api/showcase/${category}/${filename}`}
+                    alt={`${data.title} screenshot ${index + 1}`}
+                    style={{
+                      width: imageWidth,
+                      height: imageHeight,
+                      objectFit: 'cover',
+                      borderRadius: 12,
+                    }}
                   />
                   <View style={styles.labelContainer}>
                     <Text style={styles.label}>{data.title} #{index + 1}</Text>
