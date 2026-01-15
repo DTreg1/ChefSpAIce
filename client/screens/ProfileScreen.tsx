@@ -171,7 +171,6 @@ export default function ProfileScreen() {
     resetOnboarding();
   };
 
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const handleManageSubscription = async () => {
     if (isCustomerCenterAvailable) {
@@ -212,66 +211,9 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleUpgradeSubscription = async () => {
-    if (isPaywallAvailable) {
-      setUpgradeLoading(true);
-      try {
-        const result = await presentPaywall();
-        if (result === 'purchased' || result === 'restored') {
-          Alert.alert('Success', 'Thank you for subscribing to ChefSpAIce Pro!');
-        }
-      } catch (error) {
-        console.error("Error presenting paywall:", error);
-      } finally {
-        setUpgradeLoading(false);
-      }
-      return;
-    }
-
-    try {
-      setUpgradeLoading(true);
-      const baseUrl = getApiUrl();
-
-      const pricesResponse = await fetch(new URL("/api/subscriptions/prices", baseUrl).toString());
-      if (!pricesResponse.ok) {
-        throw new Error("Failed to fetch prices");
-      }
-      const prices = await pricesResponse.json();
-
-      const priceId = prices.monthly?.id || prices.annual?.id;
-      if (!priceId) {
-        throw new Error("No subscription prices available");
-      }
-
-      const checkoutUrl = new URL("/api/subscriptions/create-checkout-session", baseUrl);
-      const response = await fetch(checkoutUrl.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ priceId }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.url) {
-          if (Platform.OS === "web") {
-            (window as Window).location.href = data.url;
-          } else {
-            const { Linking } = require("react-native");
-            Linking.openURL(data.url);
-          }
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Checkout session error:", errorData);
-      }
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-    } finally {
-      setUpgradeLoading(false);
-    }
+  const handleUpgradeSubscription = () => {
+    // Navigate to SubscriptionScreen where users can choose between Basic and Pro
+    navigation.navigate("Subscription" as any);
   };
 
   const displayName = isAuthenticated && user?.displayName 
@@ -848,13 +790,12 @@ export default function ProfileScreen() {
               <Pressable
                 style={styles.manageSubscriptionButton}
                 onPress={handleUpgradeSubscription}
-                disabled={upgradeLoading}
                 data-testid="button-upgrade-subscription"
               >
                 <ThemedText type="body" style={{ color: AppColors.primary }}>
-                  {upgradeLoading ? "Loading..." : "Upgrade to Pro"}
+                  Choose Plan
                 </ThemedText>
-                {!upgradeLoading && <Feather name="arrow-right" size={16} color={AppColors.primary} />}
+                <Feather name="arrow-right" size={16} color={AppColors.primary} />
               </Pressable>
             )}
           </GlassCard>

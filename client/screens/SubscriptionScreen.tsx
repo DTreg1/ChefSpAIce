@@ -74,6 +74,7 @@ export default function SubscriptionScreen() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [selectedTier, setSelectedTier] = useState<'basic' | 'pro'>('pro');
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -147,8 +148,10 @@ export default function SubscriptionScreen() {
     }
   };
 
-  const handleUpgrade = async (plan: 'monthly' | 'annual' = 'annual') => {
+  const handleUpgrade = async (tier: 'basic' | 'pro' = 'pro', plan: 'monthly' | 'annual' = 'annual') => {
     setIsCheckingOut(true);
+    const tierName = tier === 'pro' ? 'Pro' : 'Basic';
+    
     try {
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         if (!shouldUseStoreKit || !offerings) {
@@ -160,19 +163,33 @@ export default function SubscriptionScreen() {
           return;
         }
 
-        const packageId = plan === 'monthly' ? '$rc_monthly' : '$rc_annual';
+        // Build tier-specific package identifier
+        // RevenueCat packages should be named: basic_monthly, basic_annual, pro_monthly, pro_annual
+        const expectedPackageId = `${tier}_${plan}`;
+        
+        // Find package that matches the specific tier and plan - NO FALLBACK to prevent wrong tier purchase
         const pkg = offerings.availablePackages.find(
-          (p) => p.identifier === packageId || p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL')
+          (p) => {
+            const id = p.identifier.toLowerCase();
+            // Match tier-specific identifiers only
+            return id === expectedPackageId || 
+                   (id.includes(tier) && id.includes(plan)) ||
+                   (id.includes(tier) && p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL'));
+          }
         );
 
         if (!pkg) {
-          Alert.alert('Error', 'Subscription package not available. Please try again later.');
+          Alert.alert(
+            'Package Not Available',
+            `The ${tierName} ${plan} subscription is not yet configured. Please contact support or try a different option.`,
+            [{ text: 'OK' }]
+          );
           return;
         }
 
         const success = await purchasePackage(pkg);
         if (success) {
-          Alert.alert('Success', 'Thank you for subscribing to Pro!');
+          Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
           refetch();
         }
         return;
@@ -184,10 +201,18 @@ export default function SubscriptionScreen() {
         const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
         const prices = await pricesResponse.json();
         
-        const priceId = plan === 'monthly' ? prices.monthly?.id : prices.annual?.id;
+        // Get price ID based on tier and plan - require exact match, no fallback
+        const priceKey = tier === 'pro' 
+          ? (plan === 'monthly' ? 'proMonthly' : 'proAnnual')
+          : (plan === 'monthly' ? 'basicMonthly' : 'basicAnnual');
+        const priceId = prices[priceKey]?.id;
         
         if (!priceId) {
-          Alert.alert('Error', 'Subscription pricing not available. Please try again later.');
+          Alert.alert(
+            'Price Not Available',
+            `The ${tierName} ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
+            [{ text: 'OK' }]
+          );
           return;
         }
 
@@ -200,6 +225,7 @@ export default function SubscriptionScreen() {
           credentials: "include",
           body: JSON.stringify({
             priceId,
+            tier,
             successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/subscription-canceled`,
           }),
@@ -340,7 +366,7 @@ export default function SubscriptionScreen() {
                 Trial expires in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""}
               </ThemedText>
               <ThemedText style={[styles.trialSubtitle, { color: theme.textSecondary }]}>
-                After your trial ends, you'll be moved to the Basic plan with limited features.
+                Choose a plan below to continue using ChefSpAIce after your trial.
               </ThemedText>
             </View>
           </View>
@@ -450,50 +476,125 @@ export default function SubscriptionScreen() {
         })}
       </GlassCard>
 
-      {!isProUser && (
+      {!isProUser && !isTrialing && (
         <GlassCard style={styles.upgradeCard}>
           <View style={styles.upgradeHeader}>
-            <Feather name="trending-up" size={24} color={AppColors.warning} />
-            <ThemedText style={styles.upgradeTitle}>Upgrade to Pro</ThemedText>
+            <Feather name="shopping-bag" size={24} color={AppColors.primary} />
+            <ThemedText style={styles.upgradeTitle}>Choose Your Plan</ThemedText>
           </View>
           <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
-            Unlock unlimited pantry items, AI recipes, and access to all premium features.
+            Select the plan that works best for you.
           </ThemedText>
 
-          <View style={styles.pricingOptions}>
-            <View style={styles.priceOption}>
-              <ThemedText style={styles.priceLabel}>Monthly</ThemedText>
-              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO.toFixed(2)}</ThemedText>
-              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month
-              </ThemedText>
-            </View>
-            <View style={[styles.priceOption, styles.priceOptionHighlight]}>
-              <View style={[styles.savingsBadge, { backgroundColor: AppColors.success }]}>
-                <ThemedText style={styles.savingsText}>Save 17%</ThemedText>
+          {/* Tier Selection */}
+          <View style={styles.tierSelectionContainer}>
+            <Pressable
+              style={[
+                styles.tierCard,
+                { 
+                  backgroundColor: theme.glass.background,
+                  borderColor: selectedTier === 'basic' ? AppColors.primary : theme.glass.border,
+                },
+              ]}
+              onPress={() => setSelectedTier('basic')}
+              data-testid="button-select-basic"
+            >
+              <View style={styles.tierCardHeader}>
+                <ThemedText style={styles.tierCardName}>Basic</ThemedText>
+                {selectedTier === 'basic' && (
+                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.primary }]}>
+                    <Feather name="check" size={12} color="#FFFFFF" />
+                  </View>
+                )}
               </View>
-              <ThemedText style={styles.priceLabel}>Annual</ThemedText>
-              <ThemedText style={styles.priceAmount}>${(ANNUAL_PRICES.PRO / 12).toFixed(2)}</ThemedText>
-              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month (${ANNUAL_PRICES.PRO.toFixed(2)}/year)
+              <ThemedText style={[styles.tierCardPrice, { color: AppColors.primary }]}>
+                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.BASIC.toFixed(2) : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
               </ThemedText>
-            </View>
+              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
+                25 pantry items, 5 AI recipes/mo
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.tierCard,
+                { 
+                  backgroundColor: theme.glass.background,
+                  borderColor: selectedTier === 'pro' ? AppColors.warning : theme.glass.border,
+                },
+              ]}
+              onPress={() => setSelectedTier('pro')}
+              data-testid="button-select-pro"
+            >
+              <View style={[styles.popularBadge, { backgroundColor: AppColors.warning }]}>
+                <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
+              </View>
+              <View style={styles.tierCardHeader}>
+                <ThemedText style={styles.tierCardName}>Pro</ThemedText>
+                {selectedTier === 'pro' && (
+                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.warning }]}>
+                    <Feather name="check" size={12} color="#FFFFFF" />
+                  </View>
+                )}
+              </View>
+              <ThemedText style={[styles.tierCardPrice, { color: AppColors.warning }]}>
+                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.PRO.toFixed(2) : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+              </ThemedText>
+              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
+                Unlimited everything
+              </ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Billing Period Toggle */}
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('monthly')}
+              data-testid="button-billing-monthly"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'monthly' && styles.billingToggleTextActive,
+              ]}>Monthly</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'annual' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('annual')}
+              data-testid="button-billing-annual"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'annual' && styles.billingToggleTextActive,
+              ]}>Annual</ThemedText>
+              <View style={styles.saveBadge}>
+                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+              </View>
+            </Pressable>
           </View>
 
           <GlassButton
-            onPress={isPaywallAvailable ? handlePresentPaywall : () => handleUpgrade('annual')}
+            onPress={() => handleUpgrade(selectedTier, selectedPlan)}
             disabled={isCheckingOut}
             style={styles.upgradeButton}
             icon={
               isCheckingOut ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Feather name="star" size={18} color="#FFFFFF" />
+                <Feather name={selectedTier === 'pro' ? 'star' : 'check-circle'} size={18} color="#FFFFFF" />
               )
             }
-            testID="button-upgrade-pro"
+            testID="button-subscribe"
           >
-            {isCheckingOut ? "Loading..." : "Upgrade to Pro"}
+            {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
           </GlassButton>
         </GlassCard>
       )}
@@ -526,47 +627,122 @@ export default function SubscriptionScreen() {
       {isTrialing && (
         <GlassCard style={styles.upgradeCard}>
           <View style={styles.upgradeHeader}>
-            <Feather name="star" size={24} color={AppColors.warning} />
-            <ThemedText style={styles.upgradeTitle}>Subscribe to Keep Pro</ThemedText>
+            <Feather name="shopping-bag" size={24} color={AppColors.primary} />
+            <ThemedText style={styles.upgradeTitle}>Choose Your Plan</ThemedText>
           </View>
           <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
-            Your trial ends soon. Subscribe now to keep unlimited access to all Pro features.
+            Your trial ends soon. Choose a plan to continue using ChefSpAIce.
           </ThemedText>
 
-          <View style={styles.pricingOptions}>
-            <View style={styles.priceOption}>
-              <ThemedText style={styles.priceLabel}>Monthly</ThemedText>
-              <ThemedText style={styles.priceAmount}>${MONTHLY_PRICES.PRO.toFixed(2)}</ThemedText>
-              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month
-              </ThemedText>
-            </View>
-            <View style={[styles.priceOption, styles.priceOptionHighlight]}>
-              <View style={[styles.savingsBadge, { backgroundColor: AppColors.success }]}>
-                <ThemedText style={styles.savingsText}>Save 17%</ThemedText>
+          {/* Tier Selection */}
+          <View style={styles.tierSelectionContainer}>
+            <Pressable
+              style={[
+                styles.tierCard,
+                { 
+                  backgroundColor: theme.glass.background,
+                  borderColor: selectedTier === 'basic' ? AppColors.primary : theme.glass.border,
+                },
+              ]}
+              onPress={() => setSelectedTier('basic')}
+              data-testid="button-trial-select-basic"
+            >
+              <View style={styles.tierCardHeader}>
+                <ThemedText style={styles.tierCardName}>Basic</ThemedText>
+                {selectedTier === 'basic' && (
+                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.primary }]}>
+                    <Feather name="check" size={12} color="#FFFFFF" />
+                  </View>
+                )}
               </View>
-              <ThemedText style={styles.priceLabel}>Annual</ThemedText>
-              <ThemedText style={styles.priceAmount}>${(ANNUAL_PRICES.PRO / 12).toFixed(2)}</ThemedText>
-              <ThemedText style={[styles.priceFrequency, { color: theme.textSecondary }]}>
-                per month (${ANNUAL_PRICES.PRO.toFixed(2)}/year)
+              <ThemedText style={[styles.tierCardPrice, { color: AppColors.primary }]}>
+                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.BASIC.toFixed(2) : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
               </ThemedText>
-            </View>
+              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
+                25 pantry items, 5 AI recipes/mo
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.tierCard,
+                { 
+                  backgroundColor: theme.glass.background,
+                  borderColor: selectedTier === 'pro' ? AppColors.warning : theme.glass.border,
+                },
+              ]}
+              onPress={() => setSelectedTier('pro')}
+              data-testid="button-trial-select-pro"
+            >
+              <View style={[styles.popularBadge, { backgroundColor: AppColors.warning }]}>
+                <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
+              </View>
+              <View style={styles.tierCardHeader}>
+                <ThemedText style={styles.tierCardName}>Pro</ThemedText>
+                {selectedTier === 'pro' && (
+                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.warning }]}>
+                    <Feather name="check" size={12} color="#FFFFFF" />
+                  </View>
+                )}
+              </View>
+              <ThemedText style={[styles.tierCardPrice, { color: AppColors.warning }]}>
+                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.PRO.toFixed(2) : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
+              </ThemedText>
+              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
+                Unlimited everything
+              </ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Billing Period Toggle */}
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('monthly')}
+              data-testid="button-trial-billing-monthly"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'monthly' && styles.billingToggleTextActive,
+              ]}>Monthly</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'annual' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('annual')}
+              data-testid="button-trial-billing-annual"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'annual' && styles.billingToggleTextActive,
+              ]}>Annual</ThemedText>
+              <View style={styles.saveBadge}>
+                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+              </View>
+            </Pressable>
           </View>
 
           <GlassButton
-            onPress={isPaywallAvailable ? handlePresentPaywall : () => handleUpgrade('annual')}
+            onPress={() => handleUpgrade(selectedTier, selectedPlan)}
             disabled={isCheckingOut}
             style={styles.upgradeButton}
             icon={
               isCheckingOut ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Feather name="credit-card" size={18} color="#FFFFFF" />
+                <Feather name={selectedTier === 'pro' ? 'star' : 'check-circle'} size={18} color="#FFFFFF" />
               )
             }
-            testID="button-subscribe-pro"
+            testID="button-trial-subscribe"
           >
-            {isCheckingOut ? "Loading..." : "Subscribe to Pro"}
+            {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
           </GlassButton>
         </GlassCard>
       )}
@@ -860,5 +1036,98 @@ const styles = StyleSheet.create({
   },
   refreshText: {
     fontSize: 14,
+  },
+  tierSelectionContainer: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  tierCard: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    position: "relative",
+  },
+  tierCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  },
+  tierCardName: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  tierSelectedBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tierCardPrice: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  tierCardInterval: {
+    fontSize: 12,
+    fontWeight: "400",
+  },
+  tierCardFeature: {
+    fontSize: 11,
+    marginTop: Spacing.xs,
+  },
+  popularBadge: {
+    position: "absolute",
+    top: -10,
+    right: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.pill,
+  },
+  popularBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  billingToggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 24,
+    padding: 4,
+  },
+  billingToggleButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  billingToggleButtonActive: {
+    backgroundColor: AppColors.primary,
+  },
+  billingToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  billingToggleTextActive: {
+    color: "#FFFFFF",
+  },
+  saveBadge: {
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  saveBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });
