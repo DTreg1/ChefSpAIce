@@ -87,8 +87,11 @@ export function AnimatedBackground({
             background-color: rgba(255, 255, 255, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 50%;
+            opacity: 0;
+            transform: translateY(${SCREEN_HEIGHT + 50}px);
             animation: floatUp var(--duration) linear infinite, wobble calc(var(--duration) * 0.3) ease-in-out infinite;
             animation-delay: var(--delay);
+            animation-fill-mode: backwards;
           }
         `}
       </style>
