@@ -968,7 +968,7 @@ export default function LandingScreen({
             <MaterialCommunityIcons
               name="chef-hat"
               size={32}
-              color={AppColors.primary}
+              color="#FFFFFF"
             />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
