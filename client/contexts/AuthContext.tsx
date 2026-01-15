@@ -484,12 +484,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (error: unknown) {
-      const errorWithCode = error as { code?: string };
-      if (errorWithCode.code === "ERR_CANCELED") {
-        return { success: false, error: "Sign in cancelled" };
-      }
+      const errorWithCode = error as { code?: string; message?: string };
       console.error("Apple sign in error:", error);
-      return { success: false, error: "Apple sign in failed" };
+      
+      // Handle specific Apple Sign-In error codes
+      switch (errorWithCode.code) {
+        case "ERR_CANCELED":
+        case "ERR_REQUEST_CANCELED":
+          return { success: false, error: "User cancelled" };
+        case "ERR_INVALID_RESPONSE":
+          return { success: false, error: "Invalid response from Apple. Please try again." };
+        case "ERR_REQUEST_NOT_HANDLED":
+          return { success: false, error: "Sign-in request was not handled. Please check your device settings." };
+        case "ERR_NOT_AVAILABLE":
+        case "ERR_MISSING_SCOPE":
+          return { success: false, error: "Apple Sign-In is not properly configured. Please check device settings." };
+        case "ERR_NETWORK":
+          return { success: false, error: "Network error. Please check your connection and try again." };
+        case "ERR_UNKNOWN":
+        default:
+          // Provide more context for iPad-specific issues
+          const errorMessage = errorWithCode.message || "Apple sign in failed";
+          return { 
+            success: false, 
+            error: `Unable to complete sign in: ${errorMessage}. Please ensure you're signed into iCloud with an Apple ID.`
+          };
+      }
     }
   }, []);
 

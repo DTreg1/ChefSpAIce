@@ -25,6 +25,8 @@ import { useStoreKit } from "@/hooks/useStoreKit";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { MONTHLY_PRICES, ANNUAL_PRICES, SubscriptionTier } from "../../shared/subscription";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const PRO_FEATURES = [
   { key: "pantryItems", name: "Pantry Items", basic: "25", pro: "Unlimited" },
@@ -37,12 +39,14 @@ const PRO_FEATURES = [
   { key: "weeklyMealPrep", name: "Weekly Meal Prepping", basic: false, pro: true },
 ];
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const menuItems: MenuItemConfig[] = [];
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const {
     tier,
     status,
@@ -148,6 +152,10 @@ export default function SubscriptionScreen() {
     }
   };
 
+  const handleNavigateToAuth = () => {
+    navigation.navigate('Auth');
+  };
+
   const handleUpgrade = async (tier: 'basic' | 'pro' = 'pro', plan: 'monthly' | 'annual' = 'annual') => {
     setIsCheckingOut(true);
     const tierName = tier === 'pro' ? 'Pro' : 'Basic';
@@ -189,8 +197,29 @@ export default function SubscriptionScreen() {
 
         const success = await purchasePackage(pkg);
         if (success) {
-          Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
-          refetch();
+          // For unauthenticated users, offer to create an account for cross-device sync
+          if (!isAuthenticated) {
+            Alert.alert(
+              'Success!',
+              `Thank you for subscribing to ${tierName}! Would you like to create an account to sync your subscription across devices?`,
+              [
+                { text: 'Start Using App', style: 'cancel', onPress: () => {
+                  // Navigate directly to the main app - unauthenticated users can use the app
+                  // They can create an account later from settings if they want to sync
+                  navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [{ name: 'Main' }],
+                    })
+                  );
+                }},
+                { text: 'Create Account', onPress: handleNavigateToAuth }
+              ]
+            );
+          } else {
+            Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
+            refetch();
+          }
         }
         return;
       }
@@ -476,14 +505,17 @@ export default function SubscriptionScreen() {
         })}
       </GlassCard>
 
-      {!isProUser && !isTrialing && (
+      {/* Show purchase options for: unauthenticated users OR authenticated users without subscription */}
+      {(!isAuthenticated || (!isProUser && !isTrialing)) && (
         <GlassCard style={styles.upgradeCard}>
           <View style={styles.upgradeHeader}>
             <Feather name="shopping-bag" size={24} color={AppColors.primary} />
             <ThemedText style={styles.upgradeTitle}>Choose Your Plan</ThemedText>
           </View>
           <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
-            Select the plan that works best for you.
+            {!isAuthenticated 
+              ? "Subscribe to unlock all features. No account required!" 
+              : "Select the plan that works best for you."}
           </ThemedText>
 
           {/* Tier Selection */}
@@ -765,16 +797,40 @@ export default function SubscriptionScreen() {
         </Pressable>
       )}
 
-      <Pressable
-        onPress={refetch}
-        style={[styles.refreshButton, { borderColor: theme.border }]}
-        data-testid="button-refresh-subscription"
-      >
-        <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
-        <ThemedText style={[styles.refreshText, { color: theme.textSecondary }]}>
-          Refresh subscription status
-        </ThemedText>
-      </Pressable>
+      {isAuthenticated && (
+        <Pressable
+          onPress={refetch}
+          style={[styles.refreshButton, { borderColor: theme.border }]}
+          data-testid="button-refresh-subscription"
+        >
+          <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
+          <ThemedText style={[styles.refreshText, { color: theme.textSecondary }]}>
+            Refresh subscription status
+          </ThemedText>
+        </Pressable>
+      )}
+
+      {/* Sign In option for unauthenticated users */}
+      {!isAuthenticated && (
+        <GlassCard style={styles.signInCard}>
+          <View style={styles.signInHeader}>
+            <Feather name="user" size={24} color={AppColors.primary} />
+            <ThemedText style={styles.signInTitle}>Already have an account?</ThemedText>
+          </View>
+          <ThemedText style={[styles.signInDescription, { color: theme.textSecondary }]}>
+            Sign in to sync your subscription across all your devices.
+          </ThemedText>
+          <GlassButton
+            onPress={handleNavigateToAuth}
+            variant="secondary"
+            style={styles.signInButton}
+            icon={<Feather name="log-in" size={18} color={AppColors.primary} />}
+            testID="button-sign-in"
+          >
+            Sign In
+          </GlassButton>
+        </GlassCard>
+      )}
       </ScrollView>
     </View>
   );
@@ -1129,5 +1185,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  signInCard: {
+    padding: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  signInHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  signInTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  signInDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  signInButton: {
+    marginTop: Spacing.sm,
   },
 });

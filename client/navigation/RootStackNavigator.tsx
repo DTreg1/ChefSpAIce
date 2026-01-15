@@ -135,13 +135,14 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
+  // Set up sign out callback to navigate to Landing (web) or Subscription (mobile)
+  // Per App Store guideline 5.1.1: Allow purchase without registration
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Auth" }],
+          routes: [{ name: isWeb ? "Landing" : "Subscription" }],
         }),
       );
     });
@@ -155,16 +156,17 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Landing (web) or Auth (mobile)
+    // If user was authenticated but now is not, redirect to Landing (web) or Subscription (mobile)
+    // Per App Store guideline 5.1.1: Allow purchase without registration
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to Landing for web, Auth for mobile
+      // Redirect to Landing for web, Subscription for mobile (allows purchase without registration)
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Auth" }],
+          routes: [{ name: isWeb ? "Landing" : "Subscription" }],
         }),
       );
     }
@@ -249,9 +251,9 @@ function AuthGuardedNavigator() {
 
   // Determine initial route:
   // 1. Web + not authenticated → Landing (marketing page)
-  // 2. Mobile + not authenticated → Auth (sign in/sign up)
+  // 2. Mobile + not authenticated → Subscription (allow purchase without auth per App Store guideline 5.1.1)
   // 3. Authenticated + needs onboarding → Onboarding
-  // 4. Authenticated + subscription inactive → Onboarding (to show pricing/resubscribe)
+  // 4. Authenticated + subscription inactive → Subscription (to show pricing/resubscribe)
   // 5. Otherwise → Main
   const getInitialRoute = (): keyof RootStackParamList => {
     // Show landing page for web users who aren't authenticated
@@ -259,10 +261,11 @@ function AuthGuardedNavigator() {
       console.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
-    // Show auth screen for mobile users who aren't authenticated
+    // Show subscription screen for mobile users who aren't authenticated
+    // Per App Store guideline 5.1.1: Users can purchase without registering first
     if (!isAuthenticated) {
-      console.log("[Nav] Initial route: Auth (mobile, unauthenticated)");
-      return "Auth";
+      console.log("[Nav] Initial route: Subscription (mobile, unauthenticated - allows purchase without registration)");
+      return "Subscription";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
     if (needsOnboarding) {
