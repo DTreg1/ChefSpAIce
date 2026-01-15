@@ -230,8 +230,11 @@ function configureExpoRouting(app: express.Application) {
                           req.path.endsWith(".css") ||
                           req.path.endsWith(".json");
 
+    // Check if this is a static asset we serve directly (not Metro)
+    const isStaticAsset = req.path.startsWith("/assets/showcase/");
+
     // Desktop browsers get the React Native web app via Metro (development only)
-    if (isDevelopment && metroProxy) {
+    if (isDevelopment && metroProxy && !isStaticAsset) {
       // Proxy web routes and all potential Metro assets to Metro bundler
       if (isWebRoute(req.path) || isMetroAsset || req.path.startsWith("/assets/")) {
         return metroProxy(req, res, next);
