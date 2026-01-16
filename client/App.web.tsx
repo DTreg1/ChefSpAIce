@@ -14,7 +14,6 @@
 import { useState, useEffect } from "react";
 import { StyleSheet, View, Linking, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -104,8 +103,6 @@ function WebLandingContent() {
       default:
         return (
           <LandingScreen
-            onGetStarted={handleGetStarted}
-            onSignIn={handleSignIn}
             onAbout={() => navigateTo('/about')}
             onPrivacy={() => navigateTo('/privacy')}
             onTerms={() => navigateTo('/terms')}
