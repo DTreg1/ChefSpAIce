@@ -469,7 +469,7 @@ export default function SubscriptionScreen() {
               ]}
             >
               <ThemedText
-                style={[styles.featureName, isUpgradeHighlight && { color: AppColors.primary }]}
+                style={[styles.featureName, { color: theme.textSecondary }]}
                 numberOfLines={2}
               >
                 {feature.name}
