@@ -469,7 +469,7 @@ export default function SubscriptionScreen() {
               ]}
             >
               <ThemedText
-                style={[styles.featureName, { color: theme.textSecondary }]}
+                style={[styles.featureName, { color: theme.textSecondaryOnGlass }]}
                 numberOfLines={2}
               >
                 {feature.name}
