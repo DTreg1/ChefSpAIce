@@ -69,6 +69,7 @@ import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
 import instacartRouter from "./routers/instacart.router";
+import donationsRouter from "./routers/donations.router";
 import { lookupUSDABarcode, mapUSDAToFoodItem } from "./integrations/usda";
 import { db } from "./db";
 import { userSessions, appliances, users } from "../shared/schema";
@@ -384,6 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/webhooks/revenuecat", revenuecatWebhookRouter); // RevenueCat iOS/Android webhooks
   app.use("/api/logo", logoExportRouter); // Logo export (PNG, SVG, favicon)
   app.use("/api/instacart", instacartRouter); // Instacart grocery shopping integration
+  app.use("/api/donations", donationsRouter); // Support donations via Stripe
 
   // =========================================================================
   // PRE-REGISTRATION ENDPOINT
