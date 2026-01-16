@@ -18,8 +18,8 @@ function getThemeColors() {
   return {
     card: "rgba(255, 255, 255, 0.08)",
     cardBorder: "rgba(255, 255, 255, 0.15)",
-    textPrimary: "#FFFFFF",
-    textSecondary: "rgba(255, 255, 255, 0.8)",
+    textPrimary: "rgba(255, 255, 255, 0.5)",
+    textSecondary: "rgba(255, 255, 255, 0.5)",
     textMuted: "rgba(255, 255, 255, 0.5)",
     footerBg: "rgba(0, 0, 0, 0.3)",
   };
