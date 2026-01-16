@@ -1,20 +1,9 @@
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { WebInfoColors } from "@/constants/theme";
 
-const BRAND_GREEN = "#27AE60";
 const isWeb = Platform.OS === "web";
-
-function getThemeColors() {
-  return {
-    card: "rgba(255, 255, 255, 0.08)",
-    cardBorder: "rgba(255, 255, 255, 0.15)",
-    textPrimary: "rgba(255, 255, 255, 0.5)",
-    textSecondary: "rgba(255, 255, 255, 0.5)",
-    textMuted: "rgba(255, 255, 255, 0.5)",
-    footerBg: "rgba(0, 0, 0, 0.3)",
-  };
-}
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
@@ -25,7 +14,7 @@ const NAV_LINKS = [
 ];
 
 export default function AboutScreen() {
-  const colors = getThemeColors();
+  const colors = WebInfoColors;
   const currentPath = "/about";
 
   const navigateTo = (path: string) => {
@@ -42,7 +31,7 @@ export default function AboutScreen() {
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color="rgba(255, 255, 255, 0.5)" />
+            <MaterialCommunityIcons name="chef-hat" size={32} color={colors.iconLight} />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
           </Pressable>
           <View style={styles.navLinks}>
@@ -55,7 +44,7 @@ export default function AboutScreen() {
               >
                 <Text style={[
                   styles.navLinkText,
-                  { color: currentPath === link.path ? BRAND_GREEN : colors.textSecondary }
+                  { color: currentPath === link.path ? colors.brandGreen : colors.textSecondary }
                 ]}>
                   {link.label}
                 </Text>

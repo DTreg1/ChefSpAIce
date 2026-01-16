@@ -2,8 +2,8 @@ import { useState } from "react";
 import { StyleSheet, View, Text, ScrollView, Pressable, ActivityIndicator, Platform } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { WebInfoColors } from "@/constants/theme";
 
-const BRAND_GREEN = "#27AE60";
 const isWeb = Platform.OS === "web";
 
 const DONATION_AMOUNTS = [
@@ -14,17 +14,6 @@ const DONATION_AMOUNTS = [
   { label: "$100", value: 10000 },
 ];
 
-function getThemeColors() {
-  return {
-    card: "rgba(255, 255, 255, 0.08)",
-    cardBorder: "rgba(255, 255, 255, 0.15)",
-    textPrimary: "rgba(255, 255, 255, 0.5)",
-    textSecondary: "rgba(255, 255, 255, 0.5)",
-    textMuted: "rgba(255, 255, 255, 0.5)",
-    footerBg: "rgba(0, 0, 0, 0.3)",
-  };
-}
-
 const NAV_LINKS = [
   { label: "Home", path: "/" },
   { label: "About", path: "/about" },
@@ -34,7 +23,7 @@ const NAV_LINKS = [
 ];
 
 export default function SupportScreen() {
-  const colors = getThemeColors();
+  const colors = WebInfoColors;
   const currentPath = "/support";
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +80,7 @@ export default function SupportScreen() {
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color="rgba(255, 255, 255, 0.5)" />
+            <MaterialCommunityIcons name="chef-hat" size={32} color={colors.iconLight} />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
           </Pressable>
           <View style={styles.navLinks}>
@@ -104,7 +93,7 @@ export default function SupportScreen() {
               >
                 <Text style={[
                   styles.navLinkText,
-                  { color: currentPath === link.path ? BRAND_GREEN : colors.textSecondary }
+                  { color: currentPath === link.path ? colors.brandGreen : colors.textSecondary }
                 ]}>
                   {link.label}
                 </Text>
@@ -116,7 +105,7 @@ export default function SupportScreen() {
 
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Feather name="heart" size={48} color={BRAND_GREEN} />
+          <Feather name="heart" size={48} color={colors.brandGreen} />
         </View>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Support ChefSpAIce</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -135,7 +124,7 @@ export default function SupportScreen() {
                 key={value}
                 style={({ pressed }) => [
                   styles.donationButton,
-                  { backgroundColor: colors.card, borderColor: BRAND_GREEN },
+                  { backgroundColor: colors.card, borderColor: colors.brandGreen },
                   pressed && styles.donationButtonPressed,
                   loading === value && styles.donationButtonLoading,
                 ]}
@@ -143,7 +132,7 @@ export default function SupportScreen() {
                 disabled={loading !== null}
               >
                 {loading === value ? (
-                  <ActivityIndicator size="small" color={BRAND_GREEN} />
+                  <ActivityIndicator size="small" color={colors.brandGreen} />
                 ) : (
                   <Text style={[styles.donationButtonText, { color: colors.textPrimary }]}>{label}</Text>
                 )}

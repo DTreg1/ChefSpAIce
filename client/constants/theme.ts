@@ -236,6 +236,17 @@ export const Shadows = {
   }),
 };
 
+export const WebInfoColors = {
+  card: "rgba(255, 255, 255, 0.08)",
+  cardBorder: "rgba(255, 255, 255, 0.15)",
+  textPrimary: "rgba(255, 255, 255, 0.5)",
+  textSecondary: "rgba(255, 255, 255, 0.5)",
+  textMuted: "rgba(255, 255, 255, 0.5)",
+  footerBg: "rgba(0, 0, 0, 0.3)",
+  iconLight: "rgba(255, 255, 255, 0.5)",
+  brandGreen: "#27AE60",
+};
+
 export const Fonts = Platform.select({
   ios: {
     sans: "system-ui",
