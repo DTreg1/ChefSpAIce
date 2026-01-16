@@ -1,6 +1,5 @@
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
-import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const BRAND_GREEN = "#27AE60";
@@ -17,23 +16,21 @@ function getThemeColors() {
   };
 }
 
-function useNavigationSafe() {
-  try {
-    return useNavigation();
-  } catch {
-    return null;
-  }
-}
+const NAV_LINKS = [
+  { label: "Home", path: "/" },
+  { label: "About", path: "/about" },
+  { label: "Privacy", path: "/privacy" },
+  { label: "Terms", path: "/terms" },
+  { label: "Support", path: "/support" },
+];
 
 export default function AboutScreen() {
   const colors = getThemeColors();
-  const navigation = useNavigationSafe();
+  const currentPath = "/about";
 
-  const handleGoHome = () => {
+  const navigateTo = (path: string) => {
     if (isWeb && typeof window !== "undefined") {
-      window.location.href = "/";
-    } else if (navigation?.canGoBack()) {
-      navigation.goBack();
+      window.location.href = path;
     }
   };
 
@@ -43,10 +40,27 @@ export default function AboutScreen() {
       
       {isWeb && (
         <View style={styles.header}>
-          <Pressable style={styles.logoContainer} onPress={handleGoHome}>
+          <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
             <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
           </Pressable>
+          <View style={styles.navLinks}>
+            {NAV_LINKS.map((link) => (
+              <Pressable
+                key={link.path}
+                onPress={() => navigateTo(link.path)}
+                style={styles.navLink}
+                data-testid={`nav-link-${link.label.toLowerCase()}`}
+              >
+                <Text style={[
+                  styles.navLinkText,
+                  { color: currentPath === link.path ? BRAND_GREEN : colors.textSecondary }
+                ]}>
+                  {link.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       )}
 
@@ -76,11 +90,6 @@ export default function AboutScreen() {
             ChefSpAIce contributes to a more sustainable future. Every item saved from the trash is a small victory for our planet.
           </Text>
         </View>
-
-        <Pressable style={styles.backButton} onPress={handleGoHome}>
-          <Feather name="arrow-left" size={20} color="#FFFFFF" />
-          <Text style={styles.backButtonText}>{isWeb ? "Back to Home" : "Go Back"}</Text>
-        </Pressable>
       </View>
 
       {isWeb && (
@@ -106,24 +115,14 @@ const styles = StyleSheet.create({
   },
   logoContainer: { flexDirection: "row", alignItems: "center", gap: 10, cursor: "pointer" as any },
   logoText: { fontSize: 24, fontWeight: "700" },
+  navLinks: { flexDirection: "row", alignItems: "center", gap: 24 },
+  navLink: { cursor: "pointer" as any },
+  navLinkText: { fontSize: 14, fontWeight: "500" },
   content: { paddingHorizontal: 24, paddingVertical: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
   title: { fontSize: 42, fontWeight: "700", textAlign: "center", marginBottom: 40 },
   card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
   sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },
   paragraph: { fontSize: 16, lineHeight: 26 },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: BRAND_GREEN,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    alignSelf: "center",
-    marginTop: 20,
-  },
-  backButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   footer: { paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" },
   copyright: { fontSize: 12 },
 });
