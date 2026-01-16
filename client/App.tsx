@@ -40,12 +40,16 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AntDesign from "@expo/vector-icons/AntDesign";
+
+SplashScreen.preventAutoHideAsync();
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -261,13 +265,36 @@ function RootWrapper() {
  * - ErrorBoundary for graceful error handling
  * - QueryClientProvider for React Query data fetching
  * - SafeAreaProvider for handling device notches and safe areas
+ * 
+ * Also handles font loading to ensure icons render properly on Android.
  */
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    ...Feather.font,
+    ...MaterialIcons.font,
+    ...MaterialCommunityIcons.font,
+    ...FontAwesome.font,
+    ...Ionicons.font,
+    ...AntDesign.font,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <RootWrapper />
+          <View style={styles.root} onLayout={onLayoutRootView}>
+            <RootWrapper />
+          </View>
         </SafeAreaProvider>
       </QueryClientProvider>
     </ErrorBoundary>
