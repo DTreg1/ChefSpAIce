@@ -181,6 +181,14 @@ function configureExpoRouting(app: express.Application) {
   const appName = getAppName();
   const isDevelopment = process.env.NODE_ENV !== "production";
 
+  // Check if Expo web build exists for production
+  const expoWebBuildPath = path.resolve(process.cwd(), "dist", "web");
+  const expoWebBuildExists = fs.existsSync(path.join(expoWebBuildPath, "index.html"));
+  
+  if (!isDevelopment && expoWebBuildExists) {
+    log(`[Expo] Found web build at ${expoWebBuildPath}`);
+  }
+
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
   
   if (isDevelopment) {
@@ -198,6 +206,18 @@ function configureExpoRouting(app: express.Application) {
         },
       },
     });
+  }
+
+  // In production with Expo web build, serve static files from dist/web
+  if (!isDevelopment && expoWebBuildExists) {
+    // Serve static assets from the Expo web build
+    app.use("/_expo", express.static(path.join(expoWebBuildPath, "_expo"), {
+      maxAge: "1y",
+      immutable: true,
+    }));
+    app.use("/assets", express.static(path.join(expoWebBuildPath, "assets"), {
+      maxAge: "1y",
+    }));
   }
 
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -241,7 +261,11 @@ function configureExpoRouting(app: express.Application) {
         return metroProxy(req, res, next);
       }
     } else if (isWebRoute(req.path)) {
-      // In production, serve the landing page for web routes
+      // In production with Expo web build, serve the built index.html
+      if (expoWebBuildExists) {
+        return res.sendFile(path.join(expoWebBuildPath, "index.html"));
+      }
+      // Fallback to static landing page template if no web build
       return serveLandingPage({
         req,
         res,
@@ -253,7 +277,7 @@ function configureExpoRouting(app: express.Application) {
     next();
   });
 
-  log(`[Expo] Routing ready (${isDevelopment ? "dev: Metro proxy" : "prod: landing page"})`);
+  log(`[Expo] Routing ready (${isDevelopment ? "dev: Metro proxy" : expoWebBuildExists ? "prod: Expo web build" : "prod: landing page fallback"})`);
 }
 
 function configureStaticFiles(app: express.Application) {
