@@ -1,22 +1,19 @@
 import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/useTheme";
 import { useNavigation } from "@react-navigation/native";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const BRAND_GREEN = "#27AE60";
 const isWeb = Platform.OS === "web";
 
-function getThemeColors(isDark: boolean) {
+function getThemeColors() {
   return {
-    background: isDark ? "#0F1419" : "#F8FAFC",
-    backgroundGradient: isDark ? "#0A0F14" : "#EDF2F7",
-    card: isDark ? "#1A1F25" : "#FFFFFF",
-    cardBorder: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.08)",
-    textPrimary: isDark ? "#FFFFFF" : "#1A202C",
-    textSecondary: isDark ? "#A0AEC0" : "#4A5568",
-    textMuted: isDark ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.5)",
-    footerBg: isDark ? "#0A0D10" : "#F1F5F9",
+    card: "rgba(255, 255, 255, 0.08)",
+    cardBorder: "rgba(255, 255, 255, 0.15)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "rgba(255, 255, 255, 0.8)",
+    textMuted: "rgba(255, 255, 255, 0.5)",
+    footerBg: "rgba(0, 0, 0, 0.3)",
   };
 }
 
@@ -29,9 +26,7 @@ function useNavigationSafe() {
 }
 
 export default function TermsScreen() {
-  const { isDark, setThemePreference } = useTheme();
-  const toggleTheme = () => setThemePreference(isDark ? "light" : "dark");
-  const colors = getThemeColors(isDark);
+  const colors = getThemeColors();
   const navigation = useNavigationSafe();
 
   const handleGoHome = () => {
@@ -43,20 +38,14 @@ export default function TermsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <LinearGradient colors={[colors.background, colors.backgroundGradient]} style={StyleSheet.absoluteFillObject} />
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <AnimatedBackground />
       
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={handleGoHome}>
             <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
-          </Pressable>
-          <Pressable
-            onPress={toggleTheme}
-            style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-          >
-            {isDark ? <Feather name="sun" size={20} color={colors.textPrimary} /> : <Feather name="moon" size={20} color={colors.textPrimary} />}
           </Pressable>
         </View>
       )}
@@ -127,7 +116,6 @@ const styles = StyleSheet.create({
   },
   logoContainer: { flexDirection: "row", alignItems: "center", gap: 10, cursor: "pointer" as any },
   logoText: { fontSize: 24, fontWeight: "700" },
-  themeToggle: { padding: 10, borderRadius: 10 },
   content: { paddingHorizontal: 24, paddingVertical: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
   title: { fontSize: 42, fontWeight: "700", textAlign: "center", marginBottom: 8 },
   lastUpdated: { fontSize: 14, textAlign: "center", marginBottom: 40 },
