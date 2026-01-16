@@ -62,18 +62,23 @@ function handleSignIn() {
 /**
  * Web Landing Content
  * 
- * Renders the LandingScreen or ScreenshotGallery based on URL path.
- * Simple client-side routing for the web landing experience.
+ * Renders pages based on URL path with caching.
+ * Once a page is visited, it stays in memory so returning to it is instant.
  */
 function WebLandingContent() {
   const [currentPath, setCurrentPath] = useState('/');
+  const [visitedPages, setVisitedPages] = useState<Set<string>>(new Set(['/']));
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      setCurrentPath(window.location.pathname);
+      const initialPath = window.location.pathname === '' ? '/' : window.location.pathname;
+      setCurrentPath(initialPath);
+      setVisitedPages(prev => new Set([...prev, initialPath]));
       
       const handlePopState = () => {
-        setCurrentPath(window.location.pathname);
+        const newPath = window.location.pathname === '' ? '/' : window.location.pathname;
+        setCurrentPath(newPath);
+        setVisitedPages(prev => new Set([...prev, newPath]));
       };
       
       window.addEventListener('popstate', handlePopState);
@@ -85,38 +90,60 @@ function WebLandingContent() {
     if (Platform.OS === 'web') {
       window.history.pushState({}, '', path);
       setCurrentPath(path);
+      setVisitedPages(prev => new Set([...prev, path]));
     }
   };
 
-  const renderScreen = () => {
-    switch (currentPath) {
-      case '/gallery':
-        return <WebScreenshotGallery onBack={() => navigateTo('/')} />;
-      case '/about':
-        return <AboutScreen />;
-      case '/privacy':
-        return <PrivacyScreen />;
-      case '/terms':
-        return <TermsScreen />;
-      case '/support':
-        return <SupportScreen />;
-      default:
-        return (
+  const isVisible = (path: string) => currentPath === path || (path === '/' && currentPath === '');
+
+  return (
+    <View style={styles.container}>
+      <AnimatedBackground bubbleCount={20} />
+      <View style={styles.content}>
+        {/* Landing page - always loaded */}
+        <View style={[styles.pageContainer, { display: isVisible('/') ? 'flex' : 'none' }]}>
           <LandingScreen
             onAbout={() => navigateTo('/about')}
             onPrivacy={() => navigateTo('/privacy')}
             onTerms={() => navigateTo('/terms')}
             onSupport={() => navigateTo('/support')}
           />
-        );
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <AnimatedBackground bubbleCount={20} />
-      <View style={styles.content}>
-        {renderScreen()}
+        </View>
+        
+        {/* About - loaded when first visited, then cached */}
+        {visitedPages.has('/about') && (
+          <View style={[styles.pageContainer, { display: isVisible('/about') ? 'flex' : 'none' }]}>
+            <AboutScreen />
+          </View>
+        )}
+        
+        {/* Privacy - loaded when first visited, then cached */}
+        {visitedPages.has('/privacy') && (
+          <View style={[styles.pageContainer, { display: isVisible('/privacy') ? 'flex' : 'none' }]}>
+            <PrivacyScreen />
+          </View>
+        )}
+        
+        {/* Terms - loaded when first visited, then cached */}
+        {visitedPages.has('/terms') && (
+          <View style={[styles.pageContainer, { display: isVisible('/terms') ? 'flex' : 'none' }]}>
+            <TermsScreen />
+          </View>
+        )}
+        
+        {/* Support - loaded when first visited, then cached */}
+        {visitedPages.has('/support') && (
+          <View style={[styles.pageContainer, { display: isVisible('/support') ? 'flex' : 'none' }]}>
+            <SupportScreen />
+          </View>
+        )}
+        
+        {/* Gallery - loaded when first visited, then cached */}
+        {visitedPages.has('/gallery') && (
+          <View style={[styles.pageContainer, { display: isVisible('/gallery') ? 'flex' : 'none' }]}>
+            <WebScreenshotGallery onBack={() => navigateTo('/')} />
+          </View>
+        )}
       </View>
     </View>
   );
@@ -150,6 +177,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a2e05',
   },
   content: {
+    flex: 1,
+  },
+  pageContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     flex: 1,
   },
 });
