@@ -30,7 +30,8 @@ export default function AboutScreen() {
 
   const navigateTo = (path: string) => {
     if (isWeb && typeof window !== "undefined") {
-      window.location.href = path;
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
 

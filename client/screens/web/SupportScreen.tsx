@@ -41,7 +41,8 @@ export default function SupportScreen() {
 
   const navigateTo = (path: string) => {
     if (isWeb && typeof window !== "undefined") {
-      window.location.href = path;
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
 
