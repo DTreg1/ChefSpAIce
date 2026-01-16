@@ -42,7 +42,7 @@ export default function AboutScreen() {
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
+            <MaterialCommunityIcons name="chef-hat" size={32} color="rgba(255, 255, 255, 0.5)" />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
           </Pressable>
           <View style={styles.navLinks}>
