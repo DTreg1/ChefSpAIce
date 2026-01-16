@@ -482,7 +482,7 @@ export default function SubscriptionScreen() {
                     color={feature.basic ? AppColors.success : theme.textSecondary}
                   />
                 ) : (
-                  <ThemedText style={[styles.tierValueText, { color: theme.textSecondary }]}>
+                  <ThemedText style={[styles.tierValueText, { color: theme.textSecondary }]} numberOfLines={1}>
                     {feature.basic}
                   </ThemedText>
                 )}
@@ -495,7 +495,7 @@ export default function SubscriptionScreen() {
                     color={feature.pro ? AppColors.success : theme.textSecondary}
                   />
                 ) : (
-                  <ThemedText style={[styles.tierValueText, { color: AppColors.success }]}>
+                  <ThemedText style={[styles.tierValueText, { color: AppColors.success }]} numberOfLines={1}>
                     {feature.pro}
                   </ThemedText>
                 )}
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   tierValue: {
-    width: 60,
+    width: 70,
     alignItems: "center",
   },
   tierValueText: {
