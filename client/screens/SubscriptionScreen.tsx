@@ -787,11 +787,11 @@ export default function SubscriptionScreen() {
           data-testid="button-restore-purchases"
         >
           {isRestoring ? (
-            <ActivityIndicator size="small" color={theme.textSecondary} />
+            <ActivityIndicator size="small" color={theme.textSecondaryOnGlass} />
           ) : (
-            <Feather name="rotate-ccw" size={16} color={theme.textSecondary} />
+            <Feather name="rotate-ccw" size={16} color={theme.textSecondaryOnGlass} />
           )}
-          <ThemedText style={[styles.refreshText, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.refreshText, { color: theme.textSecondaryOnGlass }]}>
             {isRestoring ? "Restoring..." : "Restore Purchases"}
           </ThemedText>
         </Pressable>
