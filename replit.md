@@ -88,3 +88,29 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 
 ## Developer Notes
 - **Logo Export Endpoint:** The logo download page is available at `/api/logo` but requires port 5000 explicitly (e.g., `https://your-domain:5000/api/logo`). This endpoint provides PNG, SVG, and favicon downloads with JavaScript-based file downloads for cross-browser compatibility. The Expo dev server proxies most routes but API endpoints need the explicit port.
+
+## Web Deployment
+The web landing page uses Expo's web export for production. Changes to `client/screens/LandingScreen.tsx` and `client/App.web.tsx` will appear on the published site after following these steps:
+
+### Pre-Publish Steps (Required)
+Before publishing the app, run the Expo web export to build the React web app:
+```bash
+npx expo export --platform web --output-dir dist/web
+```
+Or use the build script:
+```bash
+./scripts/build-all.sh
+```
+
+This exports the Expo web app to `dist/web/`. The server automatically detects and serves this build in production.
+
+### Architecture
+- **Development:** Metro bundler proxies requests → uses `App.web.tsx` → renders `LandingScreen.tsx`
+- **Production with build:** Server serves static files from `dist/web/` (full React app)
+- **Production without build:** Falls back to static `server/templates/landing-page.html`
+
+### Entry Points
+- `client/App.tsx` - Mobile app entry point (full navigation stack)
+- `client/App.web.tsx` - Web entry point (landing page + support pages)
+- `client/index.js` - Mobile entry, imports `App.tsx`
+- `client/index.web.js` - Web entry, imports `App.web.tsx`
