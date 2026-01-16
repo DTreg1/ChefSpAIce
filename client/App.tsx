@@ -41,13 +41,14 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
+import * as Font from "expo-font";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import Entypo from "@expo/vector-icons/Entypo";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -269,14 +270,28 @@ function RootWrapper() {
  * Also handles font loading to ensure icons render properly on Android.
  */
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    ...Feather.font,
-    ...MaterialIcons.font,
-    ...MaterialCommunityIcons.font,
-    ...FontAwesome.font,
-    ...Ionicons.font,
-    ...AntDesign.font,
-  });
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          ...Feather.font,
+          ...MaterialIcons.font,
+          ...MaterialCommunityIcons.font,
+          ...FontAwesome.font,
+          ...Ionicons.font,
+          ...AntDesign.font,
+          ...Entypo.font,
+        });
+      } catch (e) {
+        console.warn("Error loading fonts:", e);
+      } finally {
+        setFontsLoaded(true);
+      }
+    }
+    loadFonts();
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {

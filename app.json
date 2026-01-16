@@ -8,6 +8,7 @@
     "scheme": "chefspaice",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chefspaice.chefspaice",
