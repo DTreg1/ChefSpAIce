@@ -107,7 +107,6 @@ function WebLandingContent() {
             onPrivacy={() => navigateTo('/privacy')}
             onTerms={() => navigateTo('/terms')}
             onSupport={() => navigateTo('/support')}
-            onScreenshotGallery={() => navigateTo('/gallery')}
           />
         );
     }

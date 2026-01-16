@@ -294,7 +294,6 @@ function AuthGuardedNavigator() {
             onPrivacy={() => props.navigation.navigate("Privacy")}
             onTerms={() => props.navigation.navigate("Terms")}
             onSupport={() => props.navigation.navigate("Support")}
-            onScreenshotGallery={() => props.navigation.navigate("ScreenshotGallery")}
           />
         )}
       </Stack.Screen>

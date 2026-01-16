@@ -850,7 +850,6 @@ interface LandingScreenProps {
   onPrivacy?: () => void;
   onTerms?: () => void;
   onSupport?: () => void;
-  onScreenshotGallery?: () => void;
 }
 
 export default function LandingScreen({
@@ -858,7 +857,6 @@ export default function LandingScreen({
   onPrivacy,
   onTerms,
   onSupport,
-  onScreenshotGallery,
 }: LandingScreenProps) {
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
@@ -1003,16 +1001,16 @@ export default function LandingScreen({
               ChefSpAIce
             </Text>
           </View>
-          {onScreenshotGallery && (
+          {onSupport && (
             <Pressable
               style={({ pressed }) => [
                 styles.signInButton,
                 pressed && styles.buttonPressed,
               ]}
-              onPress={onScreenshotGallery}
-              data-testid="button-screenshot-gallery"
+              onPress={onSupport}
+              data-testid="button-support"
             >
-              <Text style={styles.signInButtonText}>Gallery</Text>
+              <Text style={styles.signInButtonText}>Support</Text>
             </Pressable>
           )}
         </View>
