@@ -518,6 +518,39 @@ export default function SubscriptionScreen() {
               : "Select the plan that works best for you."}
           </ThemedText>
 
+          {/* Billing Period Toggle */}
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('monthly')}
+              data-testid="button-billing-monthly"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'monthly' && styles.billingToggleTextActive,
+              ]}>Monthly</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'annual' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('annual')}
+              data-testid="button-billing-annual"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'annual' && styles.billingToggleTextActive,
+              ]}>Annual</ThemedText>
+              <View style={styles.saveBadge}>
+                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+              </View>
+            </Pressable>
+          </View>
+
           {/* Tier Selection */}
           <View style={styles.tierSelectionContainer}>
             <Pressable
@@ -580,39 +613,6 @@ export default function SubscriptionScreen() {
             </Pressable>
           </View>
 
-          {/* Billing Period Toggle */}
-          <View style={styles.billingToggleContainer}>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('monthly')}
-              data-testid="button-billing-monthly"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'monthly' && styles.billingToggleTextActive,
-              ]}>Monthly</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'annual' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('annual')}
-              data-testid="button-billing-annual"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'annual' && styles.billingToggleTextActive,
-              ]}>Annual</ThemedText>
-              <View style={styles.saveBadge}>
-                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-              </View>
-            </Pressable>
-          </View>
-
           <GlassButton
             onPress={() => handleUpgrade(selectedTier, selectedPlan)}
             disabled={isCheckingOut}
@@ -665,6 +665,39 @@ export default function SubscriptionScreen() {
           <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
             Your trial ends soon. Choose a plan to continue using ChefSpAIce.
           </ThemedText>
+
+          {/* Billing Period Toggle */}
+          <View style={styles.billingToggleContainer}>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('monthly')}
+              data-testid="button-trial-billing-monthly"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'monthly' && styles.billingToggleTextActive,
+              ]}>Monthly</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.billingToggleButton,
+                selectedPlan === 'annual' && styles.billingToggleButtonActive,
+              ]}
+              onPress={() => setSelectedPlan('annual')}
+              data-testid="button-trial-billing-annual"
+            >
+              <ThemedText style={[
+                styles.billingToggleText,
+                selectedPlan === 'annual' && styles.billingToggleTextActive,
+              ]}>Annual</ThemedText>
+              <View style={styles.saveBadge}>
+                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+              </View>
+            </Pressable>
+          </View>
 
           {/* Tier Selection */}
           <View style={styles.tierSelectionContainer}>
@@ -725,39 +758,6 @@ export default function SubscriptionScreen() {
               <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
                 Unlimited everything
               </ThemedText>
-            </Pressable>
-          </View>
-
-          {/* Billing Period Toggle */}
-          <View style={styles.billingToggleContainer}>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('monthly')}
-              data-testid="button-trial-billing-monthly"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'monthly' && styles.billingToggleTextActive,
-              ]}>Monthly</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'annual' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('annual')}
-              data-testid="button-trial-billing-annual"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'annual' && styles.billingToggleTextActive,
-              ]}>Annual</ThemedText>
-              <View style={styles.saveBadge}>
-                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-              </View>
             </Pressable>
           </View>
 
