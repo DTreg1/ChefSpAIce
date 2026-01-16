@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   navLinks: { flexDirection: "row", alignItems: "center", gap: 24, flexWrap: "wrap", justifyContent: "center" },
   navLink: { cursor: "pointer" as any },
   navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: { paddingHorizontal: 24, paddingVertical: 60, maxWidth: 800, alignSelf: "center", width: "100%", alignItems: "center" },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60, maxWidth: 800, alignSelf: "center", width: "100%", alignItems: "center" },
   iconContainer: {
     width: 96,
     height: 96,

@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   navLinks: { flexDirection: "row", alignItems: "center", gap: 24, flexWrap: "wrap", justifyContent: "center" },
   navLink: { cursor: "pointer" as any },
   navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: { paddingHorizontal: 24, paddingVertical: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
   title: { fontSize: 42, fontWeight: "700", textAlign: "center", marginBottom: 8 },
   lastUpdated: { fontSize: 14, textAlign: "center", marginBottom: 40 },
   card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
