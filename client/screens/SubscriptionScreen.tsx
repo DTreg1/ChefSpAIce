@@ -403,7 +403,10 @@ export default function SubscriptionScreen() {
       </GlassCard>
 
       <GlassCard style={styles.usageCard}>
-        <ThemedText style={styles.sectionTitle}>Usage Summary</ThemedText>
+        <View style={styles.sectionHeader}>
+          <Feather name="bar-chart-2" size={20} color={theme.textSecondaryOnGlass} />
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Usage Summary</ThemedText>
+        </View>
         <View style={styles.usageGrid}>
           <View style={styles.usageItem}>
             <View style={[styles.usageIconContainer, { backgroundColor: `${AppColors.primary}15` }]}>
@@ -450,7 +453,10 @@ export default function SubscriptionScreen() {
       </GlassCard>
 
       <GlassCard style={styles.featuresCard}>
-        <ThemedText style={styles.sectionTitle}>Feature Comparison</ThemedText>
+        <View style={styles.sectionHeader}>
+          <Feather name="layers" size={20} color={theme.textSecondaryOnGlass} />
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Feature Comparison</ThemedText>
+        </View>
         <View style={styles.comparisonHeader}>
           <ThemedText style={[styles.featureLabel, { flex: 1 }]}>Feature</ThemedText>
           <ThemedText style={[styles.tierLabel, { color: theme.textSecondary }]}>Basic</ThemedText>
@@ -509,10 +515,10 @@ export default function SubscriptionScreen() {
       {(!isAuthenticated || (!isProUser && !isTrialing)) && (
         <GlassCard style={styles.upgradeCard}>
           <View style={styles.upgradeHeader}>
-            <Feather name="shopping-bag" size={24} color={AppColors.primary} />
-            <ThemedText style={styles.upgradeTitle}>Choose Your Plan</ThemedText>
+            <Feather name="shopping-bag" size={20} color={theme.textSecondaryOnGlass} />
+            <ThemedText style={[styles.upgradeTitle, { color: theme.textSecondaryOnGlass }]}>Choose Your Plan</ThemedText>
           </View>
-          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondaryOnGlass }]}>
             {!isAuthenticated 
               ? "Subscribe to unlock all features. No account required!" 
               : "Select the plan that works best for you."}
@@ -633,7 +639,10 @@ export default function SubscriptionScreen() {
 
       {isProUser && isActive && !isTrialing && (
         <GlassCard style={styles.manageCard}>
-          <ThemedText style={styles.sectionTitle}>Manage Subscription</ThemedText>
+          <View style={styles.sectionHeader}>
+            <Feather name="settings" size={20} color={theme.textSecondaryOnGlass} />
+            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Manage Subscription</ThemedText>
+          </View>
           <ThemedText style={[styles.manageDescription, { color: theme.textSecondary }]}>
             Update your payment method, change your billing cycle, or cancel your subscription.
           </ThemedText>
@@ -659,10 +668,10 @@ export default function SubscriptionScreen() {
       {isTrialing && (
         <GlassCard style={styles.upgradeCard}>
           <View style={styles.upgradeHeader}>
-            <Feather name="shopping-bag" size={24} color={AppColors.primary} />
-            <ThemedText style={styles.upgradeTitle}>Choose Your Plan</ThemedText>
+            <Feather name="shopping-bag" size={20} color={theme.textSecondaryOnGlass} />
+            <ThemedText style={[styles.upgradeTitle, { color: theme.textSecondaryOnGlass }]}>Choose Your Plan</ThemedText>
           </View>
-          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondaryOnGlass }]}>
             Your trial ends soon. Choose a plan to continue using ChefSpAIce.
           </ThemedText>
 
@@ -922,10 +931,15 @@ const styles = StyleSheet.create({
   usageCard: {
     padding: Spacing.lg,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: Spacing.md,
   },
   usageGrid: {
     gap: Spacing.md,
