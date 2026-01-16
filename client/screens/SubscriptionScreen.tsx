@@ -363,6 +363,10 @@ export default function SubscriptionScreen() {
         showsVerticalScrollIndicator={false}
       >
       <GlassCard style={styles.planCard}>
+        <View style={styles.sectionHeader}>
+          <Feather name="credit-card" size={20} color={theme.textSecondaryOnGlass} />
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Current Plan</ThemedText>
+        </View>
         <View style={styles.planHeader}>
           <View style={styles.planInfo}>
             <View style={styles.planBadge}>
@@ -822,11 +826,11 @@ export default function SubscriptionScreen() {
       {/* Sign In option for unauthenticated users */}
       {!isAuthenticated && (
         <GlassCard style={styles.signInCard}>
-          <View style={styles.signInHeader}>
-            <Feather name="user" size={24} color={AppColors.primary} />
-            <ThemedText style={styles.signInTitle}>Already have an account?</ThemedText>
+          <View style={styles.sectionHeader}>
+            <Feather name="user" size={20} color={theme.textSecondaryOnGlass} />
+            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Already have an account?</ThemedText>
           </View>
-          <ThemedText style={[styles.signInDescription, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.signInDescription, { color: theme.textSecondaryOnGlass }]}>
             Sign in to sync your subscription across all your devices.
           </ThemedText>
           <GlassButton
