@@ -197,29 +197,8 @@ export default function SubscriptionScreen() {
 
         const success = await purchasePackage(pkg);
         if (success) {
-          // For unauthenticated users, offer to create an account for cross-device sync
-          if (!isAuthenticated) {
-            Alert.alert(
-              'Success!',
-              `Thank you for subscribing to ${tierName}! Would you like to create an account to sync your subscription across devices?`,
-              [
-                { text: 'Start Using App', style: 'cancel', onPress: () => {
-                  // Navigate directly to the main app - unauthenticated users can use the app
-                  // They can create an account later from settings if they want to sync
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'Main' }],
-                    })
-                  );
-                }},
-                { text: 'Create Account', onPress: handleNavigateToAuth }
-              ]
-            );
-          } else {
-            Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
-            refetch();
-          }
+          Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
+          refetch();
         }
         return;
       }
@@ -523,9 +502,7 @@ export default function SubscriptionScreen() {
             <ThemedText style={[styles.upgradeTitle, { color: theme.textSecondaryOnGlass }]}>Choose Your Plan</ThemedText>
           </View>
           <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondaryOnGlass }]}>
-            {!isAuthenticated 
-              ? "Subscribe to unlock all features. No account required!" 
-              : "Select the plan that works best for you."}
+            Select the plan that works best for you.
           </ThemedText>
 
           {/* Billing Period Toggle */}

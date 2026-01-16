@@ -69,7 +69,11 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Inventory Filtering:** Advanced filtering by food group, sort options, and search capabilities.
 - **Feedback & Bug Reporting:** Users can submit feedback or bug reports via the AI chat modal.
 - **AI-Powered Feedback Resolution Manager:** An admin-only feature that uses AI to group similar feedback items, generate implementation prompts, and manage resolution.
-- **Unified Onboarding Architecture:** A single entry point (App.tsx) manages the user flow for web and mobile platforms, routing unauthenticated web users to a marketing LandingScreen and all users through a multi-step OnboardingScreen for signup/signin and initial setup.
+- **Unified Onboarding Architecture:** A single entry point (App.tsx) manages the user flow for web and mobile platforms. Authentication is required before accessing the app:
+  - **Web users:** Unauthenticated → Landing (marketing page) → Auth
+  - **Mobile users:** Unauthenticated → Auth (sign in/sign up required)
+  - **Authenticated users:** Onboarding (if needed) → Subscription (if inactive) → Main app
+  - Since ChefSpAIce stores personal data (inventory, recipes, meal plans), requiring an account is justified and compliant with App Store guideline 5.1.1.
 
 ## External Dependencies
 - **OpenAI API**: For AI-powered recipe generation and conversational kitchen assistance (gpt-4o-mini).

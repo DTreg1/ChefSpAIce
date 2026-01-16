@@ -135,14 +135,13 @@ function AuthGuardedNavigator() {
     checkOnboardingStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Landing (web) or Subscription (mobile)
-  // Per App Store guideline 5.1.1: Allow purchase without registration
+  // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Subscription" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     });
@@ -156,17 +155,15 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Landing (web) or Subscription (mobile)
-    // Per App Store guideline 5.1.1: Allow purchase without registration
+    // If user was authenticated but now is not, redirect to Landing (web) or Auth (mobile)
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      // Redirect to Landing for web, Subscription for mobile (allows purchase without registration)
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Subscription" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     }
@@ -251,7 +248,7 @@ function AuthGuardedNavigator() {
 
   // Determine initial route:
   // 1. Web + not authenticated → Landing (marketing page)
-  // 2. Mobile + not authenticated → Subscription (allow purchase without auth per App Store guideline 5.1.1)
+  // 2. Mobile + not authenticated → Auth (sign in/sign up required)
   // 3. Authenticated + needs onboarding → Onboarding
   // 4. Authenticated + subscription inactive → Subscription (to show pricing/resubscribe)
   // 5. Otherwise → Main
@@ -261,11 +258,11 @@ function AuthGuardedNavigator() {
       console.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
-    // Show subscription screen for mobile users who aren't authenticated
-    // Per App Store guideline 5.1.1: Users can purchase without registering first
+    // Require authentication for mobile users before accessing the app
+    // ChefSpAIce stores personal data (inventory, recipes, meal plans) which justifies requiring an account
     if (!isAuthenticated) {
-      console.log("[Nav] Initial route: Subscription (mobile, unauthenticated - allows purchase without registration)");
-      return "Subscription";
+      console.log("[Nav] Initial route: Auth (mobile, unauthenticated - account required for personal data)");
+      return "Auth";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
     if (needsOnboarding) {
