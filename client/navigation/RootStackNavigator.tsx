@@ -290,10 +290,6 @@ function AuthGuardedNavigator() {
       >
         {(props) => (
           <LandingScreen
-            onGetStarted={(tier?: 'basic' | 'pro', billing?: 'monthly' | 'annual') => 
-              props.navigation.navigate("Auth", { selectedTier: tier, billingPeriod: billing })
-            }
-            onSignIn={() => props.navigation.navigate("Auth")}
             onAbout={() => props.navigation.navigate("About")}
             onPrivacy={() => props.navigation.navigate("Privacy")}
             onTerms={() => props.navigation.navigate("Terms")}

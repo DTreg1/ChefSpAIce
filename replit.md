@@ -70,9 +70,10 @@ The backend utilizes Express.js and Node.js. Data storage uses Drizzle ORM with 
 - **Feedback & Bug Reporting:** Users can submit feedback or bug reports via the AI chat modal.
 - **AI-Powered Feedback Resolution Manager:** An admin-only feature that uses AI to group similar feedback items, generate implementation prompts, and manage resolution.
 - **Unified Onboarding Architecture:** A single entry point (App.tsx) manages the user flow for web and mobile platforms. Authentication is required before accessing the app:
-  - **Web users:** Unauthenticated → Landing (marketing page) → Auth
+  - **Web users:** Unauthenticated → Landing (marketing page with app store download links, no sign-in)
   - **Mobile users:** Unauthenticated → Auth (sign in/sign up required)
   - **Authenticated users:** Onboarding (if needed) → Subscription (if inactive) → Main app
+  - The web version serves as a marketing landing page that directs users to download the mobile app from the App Store or Google Play.
   - Since ChefSpAIce stores personal data (inventory, recipes, meal plans), requiring an account is justified and compliant with App Store guideline 5.1.1.
 
 ## External Dependencies

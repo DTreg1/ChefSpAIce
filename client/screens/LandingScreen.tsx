@@ -6,6 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Platform,
+  Linking,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -24,6 +25,10 @@ import { useContext, useState } from "react";
 import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
+
+// App store URLs - update these when app is published
+const APP_STORE_URL = "https://apps.apple.com/app/chefspaice/id000000000"; // Replace with actual App Store URL
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.chefspaice.app"; // Replace with actual Play Store URL
 
 // Safe navigation hook that returns null when not inside NavigationContainer
 function useSafeNavigation(): NativeStackNavigationProp<any> | null {
@@ -212,6 +217,9 @@ interface PricingCardProps {
   onPress: () => void;
   testId: string;
   isWide?: boolean;
+  showDownloadButtons?: boolean;
+  onDownloadiOS?: () => void;
+  onDownloadAndroid?: () => void;
 }
 
 function PricingCard({
@@ -225,6 +233,9 @@ function PricingCard({
   onPress,
   testId,
   isWide,
+  showDownloadButtons,
+  onDownloadiOS,
+  onDownloadAndroid,
 }: PricingCardProps) {
   return (
     <GlassCard
@@ -269,29 +280,59 @@ function PricingCard({
           </View>
         ))}
       </View>
-      <Pressable
-        style={({ pressed }) => [
-          isPopular
-            ? styles.pricingButtonPrimary
-            : styles.pricingButtonSecondary,
-          pressed && styles.buttonPressed,
-        ]}
-        onPress={onPress}
-        data-testid={`button-pricing-${testId}`}
-      >
-        {isPopular ? (
-          <LinearGradient
-            colors={[AppColors.primary, "#1E8449"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.pricingButtonGradient}
-          >
-            <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
-          </LinearGradient>
-        ) : (
-          <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
-        )}
-      </Pressable>
+      {showDownloadButtons ? (
+        <View style={styles.downloadButtonsContainer}>
+          <Text style={styles.downloadLabel}>Download the app:</Text>
+          <View style={styles.downloadButtons}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.downloadButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={onDownloadiOS}
+              data-testid={`button-download-ios-${testId}`}
+            >
+              <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
+              <Text style={styles.downloadButtonText}>App Store</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.downloadButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={onDownloadAndroid}
+              data-testid={`button-download-android-${testId}`}
+            >
+              <MaterialCommunityIcons name="google-play" size={20} color="#FFFFFF" />
+              <Text style={styles.downloadButtonText}>Google Play</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [
+            isPopular
+              ? styles.pricingButtonPrimary
+              : styles.pricingButtonSecondary,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={onPress}
+          data-testid={`button-pricing-${testId}`}
+        >
+          {isPopular ? (
+            <LinearGradient
+              colors={[AppColors.primary, "#1E8449"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.pricingButtonGradient}
+            >
+              <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
+            </LinearGradient>
+          ) : (
+            <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
+          )}
+        </Pressable>
+      )}
     </GlassCard>
   );
 }
@@ -805,11 +846,6 @@ function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
 }
 
 interface LandingScreenProps {
-  onGetStarted?: (
-    tier?: "basic" | "pro",
-    billing?: "monthly" | "annual",
-  ) => void;
-  onSignIn?: () => void;
   onAbout?: () => void;
   onPrivacy?: () => void;
   onTerms?: () => void;
@@ -818,8 +854,6 @@ interface LandingScreenProps {
 }
 
 export default function LandingScreen({
-  onGetStarted,
-  onSignIn,
   onAbout,
   onPrivacy,
   onTerms,
@@ -836,16 +870,11 @@ export default function LandingScreen({
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleGetStarted = (tier?: "basic" | "pro") => {
-    if (onGetStarted) {
-      onGetStarted(tier, isAnnual ? "annual" : "monthly");
-    }
-  };
-
-  const handleSignIn = () => {
-    if (onSignIn) {
-      onSignIn();
-    }
+  const handleDownloadApp = (store: 'ios' | 'android') => {
+    const url = store === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+    Linking.openURL(url).catch((err) => {
+      console.error('Failed to open app store:', err);
+    });
   };
 
   const handleAbout = () => {
@@ -1329,10 +1358,13 @@ export default function LandingScreen({
                 "Item scanning",
                 "Daily meal planning",
               ]}
-              buttonText="7-Day Free Trial"
-              onPress={() => handleGetStarted("basic")}
+              buttonText="Download App"
+              onPress={() => {}}
               testId="basic"
               isWide={isWide}
+              showDownloadButtons={true}
+              onDownloadiOS={() => handleDownloadApp('ios')}
+              onDownloadAndroid={() => handleDownloadApp('android')}
             />
             <PricingCard
               tier="Pro"
@@ -1348,10 +1380,13 @@ export default function LandingScreen({
                 "Weekly meal prepping",
               ]}
               isPopular={true}
-              buttonText="7-Day Free Trial"
-              onPress={() => handleGetStarted("pro")}
+              buttonText="Download App"
+              onPress={() => {}}
               testId="pro"
               isWide={isWide}
+              showDownloadButtons={true}
+              onDownloadiOS={() => handleDownloadApp('ios')}
+              onDownloadAndroid={() => handleDownloadApp('android')}
             />
           </View>
         </View>
@@ -1970,6 +2005,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "rgba(255, 255, 255, 0.5)",
+  },
+  downloadButtonsContainer: {
+    width: "100%",
+    alignItems: "center",
+    gap: 12,
+  },
+  downloadLabel: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.7)",
+    marginBottom: 4,
+  },
+  downloadButtons: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+    justifyContent: "center",
+  },
+  downloadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: GlassEffect.borderRadius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  downloadButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.9)",
   },
   testimonialsGrid: {
     flexDirection: "column",
