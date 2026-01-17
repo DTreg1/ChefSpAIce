@@ -79,10 +79,6 @@ interface AppleTokenPayload {
   redirectUri?: string; // For web auth: the redirect URI used in the auth request
   user?: {
     email?: string;
-    name?: {
-      firstName?: string;
-      lastName?: string;
-    };
   };
 }
 
@@ -126,8 +122,6 @@ router.post("/apple", async (req: Request, res: Response) => {
 
     const { sub: appleUserId, email: tokenEmail } = verifiedToken;
     const email = tokenEmail || user?.email || null;
-    const firstName = user?.name?.firstName || null;
-    const lastName = user?.name?.lastName || null;
     // Support both selectedPlan (legacy) and selectedTier (new)
     const validPlans = ['monthly', 'annual'];
     const validTiers = ['basic', 'pro'];
@@ -163,44 +157,44 @@ router.post("/apple", async (req: Request, res: Response) => {
             `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
              VALUES ($1, 'apple', $2, $3, false, $4)
              ON CONFLICT (provider, provider_id) DO NOTHING`,
-            [userId, appleUserId, email, JSON.stringify({ firstName, lastName })]
+            [userId, appleUserId, email, JSON.stringify({})]
           );
         } else {
           isNewUser = true;
           const userResult = await client.query(
-            `INSERT INTO users (email, first_name, last_name, primary_provider, primary_provider_id)
-             VALUES ($1, $2, $3, 'apple', $4)
+            `INSERT INTO users (email, primary_provider, primary_provider_id)
+             VALUES ($1, 'apple', $2)
              RETURNING id`,
-            [email, firstName, lastName, appleUserId]
+            [email, appleUserId]
           );
           userId = userResult.rows[0].id;
 
           await client.query(
             `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
              VALUES ($1, 'apple', $2, $3, true, $4)`,
-            [userId, appleUserId, email, JSON.stringify({ firstName, lastName })]
+            [userId, appleUserId, email, JSON.stringify({})]
           );
         }
       } else {
         isNewUser = true;
         const userResult = await client.query(
-          `INSERT INTO users (first_name, last_name, primary_provider, primary_provider_id)
-           VALUES ($1, $2, 'apple', $3)
+          `INSERT INTO users (email, primary_provider, primary_provider_id)
+           VALUES ($1, 'apple', $2)
            RETURNING id`,
-          [firstName, lastName, appleUserId]
+          [appleUserId + '@apple.privaterelay', appleUserId]
         );
         userId = userResult.rows[0].id;
 
         await client.query(
           `INSERT INTO auth_providers (user_id, provider, provider_id, is_primary, metadata)
            VALUES ($1, 'apple', $2, true, $3)`,
-          [userId, appleUserId, JSON.stringify({ firstName, lastName })]
+          [userId, appleUserId, JSON.stringify({})]
         );
       }
     }
 
     const userResult = await client.query(
-      `SELECT id, email, first_name, last_name, profile_image_url, created_at FROM users WHERE id = $1`,
+      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -227,7 +221,7 @@ router.post("/apple", async (req: Request, res: Response) => {
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: [dbUser.first_name, dbUser.last_name].filter(Boolean).join(" ") || undefined,
+        displayName: dbUser.display_name || undefined,
         avatarUrl: dbUser.profile_image_url,
         provider: "apple",
         isNewUser,
@@ -283,8 +277,6 @@ router.post("/google", async (req: Request, res: Response) => {
 
     const googleUserId = payload.sub;
     const email = payload.email || null;
-    const firstName = payload.given_name || null;
-    const lastName = payload.family_name || null;
     const picture = payload.picture || null;
 
     await dbClient.query("BEGIN");
@@ -330,10 +322,10 @@ router.post("/google", async (req: Request, res: Response) => {
         } else {
           isNewUser = true;
           const userResult = await dbClient.query(
-            `INSERT INTO users (email, first_name, last_name, profile_image_url, primary_provider, primary_provider_id)
-             VALUES ($1, $2, $3, $4, 'google', $5)
+            `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
+             VALUES ($1, $2, 'google', $3)
              RETURNING id`,
-            [email, firstName, lastName, picture, googleUserId]
+            [email, picture, googleUserId]
           );
           userId = userResult.rows[0].id;
 
@@ -346,10 +338,10 @@ router.post("/google", async (req: Request, res: Response) => {
       } else {
         isNewUser = true;
         const userResult = await dbClient.query(
-          `INSERT INTO users (first_name, last_name, profile_image_url, primary_provider, primary_provider_id)
-           VALUES ($1, $2, $3, 'google', $4)
+          `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
+           VALUES ($1, $2, 'google', $3)
            RETURNING id`,
-          [firstName, lastName, picture, googleUserId]
+          [googleUserId + '@google.privaterelay', picture, googleUserId]
         );
         userId = userResult.rows[0].id;
 
@@ -362,7 +354,7 @@ router.post("/google", async (req: Request, res: Response) => {
     }
 
     const userResult = await dbClient.query(
-      `SELECT id, email, first_name, last_name, profile_image_url, created_at FROM users WHERE id = $1`,
+      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -389,7 +381,7 @@ router.post("/google", async (req: Request, res: Response) => {
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: [dbUser.first_name, dbUser.last_name].filter(Boolean).join(" ") || payload.name,
+        displayName: dbUser.display_name || payload.name || undefined,
         avatarUrl: dbUser.profile_image_url,
         provider: "google",
         isNewUser,
