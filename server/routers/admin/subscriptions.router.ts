@@ -28,8 +28,6 @@ interface SubscriptionWithUser {
     id: string;
     email: string;
     displayName: string | null;
-    firstName: string | null;
-    lastName: string | null;
     createdAt: Date | null;
   };
 }
@@ -57,8 +55,6 @@ router.get("/", async (req: Request, res: Response) => {
         updatedAt: subscriptions.updatedAt,
         userEmail: users.email,
         userDisplayName: users.displayName,
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
         userCreatedAt: users.createdAt,
       })
       .from(subscriptions)
@@ -90,8 +86,6 @@ router.get("/", async (req: Request, res: Response) => {
         id: row.userId,
         email: row.userEmail || "",
         displayName: row.userDisplayName,
-        firstName: row.userFirstName,
-        lastName: row.userLastName,
         createdAt: row.userCreatedAt,
       },
     }));
@@ -225,8 +219,6 @@ router.get("/:id", async (req: Request, res: Response) => {
         updatedAt: subscriptions.updatedAt,
         userEmail: users.email,
         userDisplayName: users.displayName,
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
         userCreatedAt: users.createdAt,
       })
       .from(subscriptions)
@@ -258,8 +250,6 @@ router.get("/:id", async (req: Request, res: Response) => {
         id: result.userId,
         email: result.userEmail || "",
         displayName: result.userDisplayName,
-        firstName: result.userFirstName,
-        lastName: result.userLastName,
         createdAt: result.userCreatedAt,
       },
     };

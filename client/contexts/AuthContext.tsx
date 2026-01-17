@@ -404,10 +404,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     selectedTier?: 'basic' | 'pro';
     user: {
       email: string | null;
-      name: {
-        firstName?: string | null;
-        lastName?: string | null;
-      };
     };
   }
 
@@ -433,10 +429,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         selectedTier,
         user: {
           email: credential.email,
-          name: {
-            firstName: credential.fullName?.givenName,
-            lastName: credential.fullName?.familyName,
-          },
         },
       };
 
