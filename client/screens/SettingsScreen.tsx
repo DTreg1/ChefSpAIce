@@ -40,6 +40,7 @@ import {
   Alert,
   Pressable,
   Platform,
+  Linking,
 } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -994,6 +995,57 @@ export default function SettingsScreen() {
 
       <GlassCard style={styles.section}>
         <ThemedText type="h4" style={styles.sectionTitle}>
+          Legal & Support
+        </ThemedText>
+
+        <Pressable
+          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+          onPress={() => Linking.openURL("https://chefspaice.com/privacy")}
+          data-testid="button-privacy-policy"
+        >
+          <View style={styles.legalMenuIcon}>
+            <Feather name="shield" size={18} color={theme.text} />
+          </View>
+          <View style={styles.legalMenuText}>
+            <ThemedText type="body">Privacy Policy</ThemedText>
+            <ThemedText type="caption">How we handle your data</ThemedText>
+          </View>
+          <Feather name="external-link" size={16} color={theme.textSecondary} />
+        </Pressable>
+
+        <Pressable
+          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+          onPress={() => Linking.openURL("https://chefspaice.com/terms")}
+          data-testid="button-terms-of-service"
+        >
+          <View style={styles.legalMenuIcon}>
+            <Feather name="file-text" size={18} color={theme.text} />
+          </View>
+          <View style={styles.legalMenuText}>
+            <ThemedText type="body">Terms of Service</ThemedText>
+            <ThemedText type="caption">Usage terms and conditions</ThemedText>
+          </View>
+          <Feather name="external-link" size={16} color={theme.textSecondary} />
+        </Pressable>
+
+        <Pressable
+          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+          onPress={() => Linking.openURL("https://chefspaice.com/support")}
+          data-testid="button-support"
+        >
+          <View style={styles.legalMenuIcon}>
+            <Feather name="help-circle" size={18} color={theme.text} />
+          </View>
+          <View style={styles.legalMenuText}>
+            <ThemedText type="body">Help & Support</ThemedText>
+            <ThemedText type="caption">Get help or contact us</ThemedText>
+          </View>
+          <Feather name="external-link" size={16} color={theme.textSecondary} />
+        </Pressable>
+      </GlassCard>
+
+      <GlassCard style={styles.section}>
+        <ThemedText type="h4" style={styles.sectionTitle}>
           Storage Preferences
         </ThemedText>
 
@@ -1310,6 +1362,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dangerMenuText: {
+    flex: 1,
+    gap: 2,
+  },
+  legalMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.md,
+  },
+  legalMenuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  legalMenuText: {
     flex: 1,
     gap: 2,
   },
