@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { Platform, Alert, Linking } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { SubscriptionTier, TierLimits, TIER_CONFIG } from "../../shared/subscription";
 import { TrialEndedModal } from "@/components/TrialEndedModal";
+import { useStoreKit } from "@/hooks/useStoreKit";
 
 declare global {
   interface Window {
@@ -116,7 +118,7 @@ interface SubscriptionProviderProps {
 }
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, signOut } = useAuth();
   
   const hasFetched = typeof window !== 'undefined' && window.__subscriptionFetched;
   const cachedSub = typeof window !== 'undefined' ? window.__subscriptionCache : null;
@@ -125,7 +127,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
   const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
-  const { signOut } = useAuth();
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  
+  const {
+    isAvailable: isStoreKitAvailable,
+    offerings,
+    purchasePackage,
+  } = useStoreKit();
 
   const fetchSubscription = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -239,17 +247,104 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     }
   }, [isTrialExpired, isLoading, isAuthenticated]);
 
-  // Handle dismiss - sign user out to "archive" their account
-  const handleDismissTrialModal = useCallback(async () => {
-    setShowTrialEndedModal(false);
-    await signOut();
-  }, [signOut]);
+  // Handle plan selection from trial ended modal
+  const handleSelectPlan = useCallback(async (tier: 'basic' | 'pro', plan: 'monthly' | 'annual') => {
+    setIsPurchasing(true);
+    const tierName = tier === 'pro' ? 'Pro' : 'Basic';
+    
+    try {
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        const shouldUseStoreKit = isStoreKitAvailable && offerings;
+        
+        if (!shouldUseStoreKit) {
+          Alert.alert(
+            'Not Available',
+            'In-app purchases are not available. Please try again later or contact support.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
 
-  // Handle upgrade - sign user out so they can upgrade from landing page
-  const handleUpgradePress = useCallback(async () => {
-    setShowTrialEndedModal(false);
-    await signOut();
-  }, [signOut]);
+        const expectedPackageId = `${tier}_${plan}`;
+        const pkg = offerings.availablePackages.find(
+          (p) => {
+            const id = p.identifier.toLowerCase();
+            return id === expectedPackageId || 
+                   (id.includes(tier) && id.includes(plan)) ||
+                   (id.includes(tier) && p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL'));
+          }
+        );
+
+        if (!pkg) {
+          Alert.alert(
+            'Package Not Available',
+            `The ${tierName} ${plan} subscription is not yet configured. Please contact support or try a different option.`,
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        const success = await purchasePackage(pkg);
+        if (success) {
+          Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
+          setShowTrialEndedModal(false);
+          await fetchSubscription();
+        }
+        return;
+      }
+
+      if (Platform.OS === 'web') {
+        const baseUrl = getApiUrl();
+        
+        const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
+        const prices = await pricesResponse.json();
+        
+        const priceKey = tier === 'pro' 
+          ? (plan === 'monthly' ? 'proMonthly' : 'proAnnual')
+          : (plan === 'monthly' ? 'basicMonthly' : 'basicAnnual');
+        const priceId = prices[priceKey]?.id;
+        
+        if (!priceId) {
+          Alert.alert(
+            'Price Not Available',
+            `The ${tierName} ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/api/subscriptions/create-checkout-session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            priceId,
+            tier,
+            successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/subscription-canceled`,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          }
+        } else {
+          const errorData = await response.json();
+          Alert.alert('Error', errorData.error || 'Failed to start checkout. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error("Error starting checkout:", error);
+      Alert.alert('Error', 'Something went wrong. Please try again later.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [isStoreKitAvailable, offerings, purchasePackage, fetchSubscription, token]);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -313,8 +408,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       {children}
       <TrialEndedModal
         visible={showTrialEndedModal}
-        onDismiss={handleDismissTrialModal}
-        onUpgrade={handleUpgradePress}
+        onSelectPlan={handleSelectPlan}
+        isLoading={isPurchasing}
       />
     </SubscriptionContext.Provider>
   );

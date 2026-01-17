@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   Linking,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation, CommonActions, useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
@@ -40,11 +41,13 @@ const PRO_FEATURES = [
 ];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type SubscriptionRouteProp = RouteProp<RootStackParamList, 'Subscription'>;
 
 export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<SubscriptionRouteProp>();
   const menuItems: MenuItemConfig[] = [];
   const { token, isAuthenticated } = useAuth();
   const {
@@ -54,11 +57,30 @@ export default function SubscriptionScreen() {
     isTrialing,
     isActive,
     isLoading,
+    isTrialExpired,
     trialDaysRemaining,
     entitlements,
     usage,
     refetch,
   } = useSubscription();
+  
+  // Check if this is a blocking subscription gate (trial/subscription expired)
+  // Block when: routed with expired reason, trial is expired, or subscription is inactive (but user is authenticated)
+  const reason = route.params?.reason;
+  const subscriptionInactive = !isActive && !isLoading && isAuthenticated;
+  const isBlocking = reason === 'expired' || isTrialExpired || subscriptionInactive;
+  
+  // Block hardware back button when subscription is required
+  useEffect(() => {
+    if (!isBlocking) return;
+    
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Prevent going back when subscription is required
+      return true;
+    });
+    
+    return () => backHandler.remove();
+  }, [isBlocking]);
 
   const {
     isAvailable: isStoreKitAvailable,
@@ -327,10 +349,10 @@ export default function SubscriptionScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
       <ExpoGlassHeader
-        title="Subscription"
+        title={isBlocking ? "Choose Your Plan" : "Subscription"}
         screenKey="subscription"
         showSearch={false}
-        showBackButton={true}
+        showBackButton={!isBlocking}
         menuItems={menuItems}
       />
       <ScrollView
@@ -341,6 +363,20 @@ export default function SubscriptionScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+      {isBlocking && (
+        <GlassCard style={[styles.blockingBanner, { backgroundColor: `${AppColors.warning}15` }]}>
+          <Feather name="alert-circle" size={24} color={AppColors.warning} />
+          <View style={styles.blockingTextContainer}>
+            <ThemedText type="h4" style={{ color: AppColors.warning }}>
+              Subscription Required
+            </ThemedText>
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              Your trial has ended. Choose a plan below to continue using ChefSpAIce.
+            </ThemedText>
+          </View>
+        </GlassCard>
+      )}
+
       <GlassCard style={styles.planCard}>
         <View style={styles.sectionHeader}>
           <Feather name="credit-card" size={20} color={theme.textSecondaryOnGlass} />
@@ -898,6 +934,16 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   trialTextContainer: {
+    flex: 1,
+  },
+  blockingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.md,
+  },
+  blockingTextContainer: {
     flex: 1,
   },
   trialTitle: {
