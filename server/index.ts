@@ -7,7 +7,6 @@ import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
 import { Client } from "pg";
-import { Client as ObjectStorageClient } from "@replit/object-storage";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
@@ -428,72 +427,16 @@ async function initStripe(retries = 3, delay = 2000) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
-  // Serve public files from object storage at /public/* path
-  // PUBLIC_OBJECT_SEARCH_PATHS format: /{bucket-id}/public
-  const publicPrefix = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/').slice(2).join('/') || 'public';
-  const objectStorageClient = new ObjectStorageClient();
-  app.get("/public/*", async (req, res) => {
-    const filePath = req.path.replace(/^\/public\//, ''); // Everything after /public/
-    const objectPath = `${publicPrefix}/${filePath}`;
-    log(`[ObjectStorage] Serving public file: ${objectPath}`);
-    
-    try {
-      const result = await objectStorageClient.downloadAsBytes(objectPath);
-      
-      if (!result.ok) {
-        log(`[ObjectStorage] File not found: ${objectPath}`, result.error);
-        return res.status(404).json({ error: "File not found" });
-      }
-      
-      // result.value is [Buffer] array - access first element
-      const buffer = result.value[0];
-      
-      // Determine content type from extension
-      const ext = filePath.split('.').pop()?.toLowerCase();
-      const contentTypes: Record<string, string> = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp',
-        'svg': 'image/svg+xml',
-        'pdf': 'application/pdf',
-      };
-      const contentType = contentTypes[ext || ''] || 'application/octet-stream';
-      
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", buffer.length);
-      res.setHeader("Cache-Control", "public, max-age=31536000");
-      res.end(buffer);
-    } catch (err) {
-      log(`[ObjectStorage] Error serving ${objectPath}:`, err);
-      res.status(500).json({ error: "Failed to load file" });
-    }
-  });
+  // Serve showcase images from local assets directory
+  app.use("/public/showcase", express.static(path.join(process.cwd(), "assets/showcase"), {
+    maxAge: "1y",
+    immutable: true,
+  }));
 
-  // Legacy showcase route (redirect to new path)
-  app.get("/api/showcase/:category/:filename", async (req, res) => {
+  // Legacy showcase route (redirect to new static path)
+  app.get("/api/showcase/:category/:filename", (req, res) => {
     const { category, filename } = req.params;
-    const objectPath = `public/showcase/${category}/${filename}`;
-    log(`[Showcase] Serving: ${objectPath}`);
-    
-    try {
-      const result = await objectStorageClient.downloadAsBytes(objectPath);
-      
-      if (!result.ok) {
-        log(`[Showcase] File not found: ${objectPath}`);
-        return res.status(404).json({ error: "Image not found" });
-      }
-      
-      const buffer = Buffer.from(result.value[0]);
-      res.setHeader("Content-Type", "image/jpeg");
-      res.setHeader("Content-Length", buffer.length);
-      res.setHeader("Cache-Control", "public, max-age=31536000");
-      res.end(buffer);
-    } catch (err) {
-      log(`[Showcase] Error serving ${objectPath}:`, err);
-      res.status(500).json({ error: "Failed to load image" });
-    }
+    res.redirect(301, `/public/showcase/${category}/${filename}`);
   });
 
   configureExpoRouting(app);
