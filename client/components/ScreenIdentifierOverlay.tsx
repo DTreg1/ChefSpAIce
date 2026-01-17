@@ -46,8 +46,30 @@ export function ScreenIdentifierOverlay({
     const confirmReset = async () => {
       setResetting(true);
       try {
-        // 1. Call logout API to clear server-side session cookie
         const baseUrl = getApiUrl();
+        
+        // 1. Delete account from server (removes all user data)
+        const authToken = await storage.getAuthToken();
+        if (authToken) {
+          try {
+            const deleteResponse = await fetch(`${baseUrl}/api/auth/delete-account`, {
+              method: "DELETE",
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            if (deleteResponse.ok) {
+              console.log("[Reset] Account deleted from server");
+            } else {
+              console.log("[Reset] Could not delete from server, continuing with local reset");
+            }
+          } catch (err) {
+            console.log("[Reset] Server delete failed, continuing with local reset");
+          }
+        }
+
+        // 2. Call logout API to clear server-side session cookie
         const logoutUrl = new URL("/api/auth/logout", baseUrl);
         await fetch(logoutUrl.toString(), {
           method: "POST",
@@ -56,14 +78,14 @@ export function ScreenIdentifierOverlay({
           // Ignore network errors during logout
         });
 
-        // 2. Clear all local storage and caches
+        // 3. Clear all local storage and caches
         await storage.resetAllStorage();
         await syncManager.clearQueue();
         queryClient.clear();
 
         console.log("[Reset] Signed out and cleared all local data");
         
-        // 3. Reload the page to show landing/auth screen
+        // 4. Reload the page to show landing/auth screen
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
@@ -82,16 +104,16 @@ export function ScreenIdentifierOverlay({
     };
 
     if (Platform.OS === "web") {
-      if (confirm("Reset app for testing? This will sign you out and show the landing page.")) {
+      if (confirm("Reset app for testing? This will DELETE your account and show the landing page.")) {
         confirmReset();
       }
     } else {
       Alert.alert(
         "Reset App",
-        "This will sign you out and reset the app to the landing page. Continue?",
+        "This will DELETE your account from the server and reset the app. Continue?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Reset", style: "destructive", onPress: confirmReset },
+          { text: "Delete & Reset", style: "destructive", onPress: confirmReset },
         ]
       );
     }
