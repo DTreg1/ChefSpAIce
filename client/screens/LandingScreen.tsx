@@ -22,7 +22,6 @@ import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
 import { NavigationContext } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useContext, useState } from "react";
-import Constants from "expo-constants";
 
 const isWeb = Platform.OS === "web";
 
@@ -915,19 +914,29 @@ export default function LandingScreen({
     setIsDonating(true);
     
     try {
-      const baseUrl = isWeb 
-        ? window.location.origin 
-        : `https://${Constants.expoConfig?.extra?.domain || 'chefspaice.com'}`;
+      // Get API URL from environment (correctly handles dev vs production)
+      const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+      const apiBaseUrl = expoDomain 
+        ? `https://${expoDomain}` 
+        : (isWeb ? window.location.origin : 'https://chefspaice.com');
       
-      const response = await fetch(`${baseUrl}/api/donations/create-checkout-session`, {
+      // For redirect URLs, use the current window location on web
+      const redirectBaseUrl = isWeb ? window.location.origin : 'https://chefspaice.com';
+      
+      const response = await fetch(`${apiBaseUrl}/api/donations/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount,
-          successUrl: `${baseUrl}/?donation=success`,
-          cancelUrl: `${baseUrl}/?donation=cancelled`,
+          successUrl: `${redirectBaseUrl}/?donation=success`,
+          cancelUrl: `${redirectBaseUrl}/?donation=cancelled`,
         }),
       });
+
+      if (!response.ok) {
+        console.error('Donation API error:', response.status, response.statusText);
+        return;
+      }
 
       const data = await response.json();
       
@@ -937,6 +946,8 @@ export default function LandingScreen({
         } else {
           Linking.openURL(data.url);
         }
+      } else if (data.error) {
+        console.error('Donation error:', data.error);
       }
     } catch (error) {
       console.error('Donation error:', error);
