@@ -441,11 +441,12 @@ async function initStripe(retries = 3, delay = 2000) {
       const result = await objectStorageClient.downloadAsBytes(objectPath);
       
       if (!result.ok) {
-        log(`[ObjectStorage] File not found: ${objectPath}`);
+        log(`[ObjectStorage] File not found: ${objectPath}`, result.error);
         return res.status(404).json({ error: "File not found" });
       }
       
-      const buffer = Buffer.from(result.value[0]);
+      // result.value is [Buffer] array - access first element
+      const buffer = result.value[0];
       
       // Determine content type from extension
       const ext = filePath.split('.').pop()?.toLowerCase();
