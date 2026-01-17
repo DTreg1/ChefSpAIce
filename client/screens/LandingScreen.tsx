@@ -393,16 +393,9 @@ function TestimonialCard({
   );
 }
 
-// Helper function to get showcase image URLs
+// Helper function to get showcase image URLs from public object storage
 function getShowcaseImageUrl(category: string, filename: string): string {
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location;
-    // In production (no port or standard ports), don't append port
-    // In development, append the port
-    const portSuffix = port && port !== '443' && port !== '80' ? `:${port}` : '';
-    return `${protocol}//${hostname}${portSuffix}/api/showcase/${category}/${filename}`;
-  }
-  return '';
+  return `/public/showcase/${category}/${filename}`;
 }
 
 // Showcase screenshots data

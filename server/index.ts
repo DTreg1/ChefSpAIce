@@ -428,11 +428,51 @@ async function initStripe(retries = 3, delay = 2000) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
-  // Serve showcase images from object storage
+  // Serve public files from object storage at /public/* path
   const objectStorageClient = new ObjectStorageClient();
+  app.get("/public/*", async (req, res) => {
+    const filePath = req.path.replace(/^\/public\//, ''); // Everything after /public/
+    const objectPath = `public/${filePath}`;
+    log(`[ObjectStorage] Serving public file: ${objectPath}`);
+    
+    try {
+      const result = await objectStorageClient.downloadAsBytes(objectPath);
+      
+      if (!result.ok) {
+        log(`[ObjectStorage] File not found: ${objectPath}`);
+        return res.status(404).json({ error: "File not found" });
+      }
+      
+      const buffer = Buffer.from(result.value[0]);
+      
+      // Determine content type from extension
+      const ext = filePath.split('.').pop()?.toLowerCase();
+      const contentTypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'svg': 'image/svg+xml',
+        'pdf': 'application/pdf',
+      };
+      const contentType = contentTypes[ext || ''] || 'application/octet-stream';
+      
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Length", buffer.length);
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.end(buffer);
+    } catch (err) {
+      log(`[ObjectStorage] Error serving ${objectPath}:`, err);
+      res.status(500).json({ error: "Failed to load file" });
+    }
+  });
+
+  // Legacy showcase route (redirect to new path)
   app.get("/api/showcase/:category/:filename", async (req, res) => {
     const { category, filename } = req.params;
     const objectPath = `public/showcase/${category}/${filename}`;
+    log(`[Showcase] Serving: ${objectPath}`);
     
     try {
       const result = await objectStorageClient.downloadAsBytes(objectPath);
