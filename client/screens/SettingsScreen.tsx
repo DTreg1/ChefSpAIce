@@ -66,6 +66,7 @@ import {
   DEFAULT_MACRO_TARGETS,
   MacroTargets,
 } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
 import { MEAL_PLAN_PRESETS, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 
 const CUISINE_OPTIONS = [
@@ -445,11 +446,45 @@ export default function SettingsScreen() {
   const handleDeleteAccountStep2 = async () => {
     const message = "This is your final warning. Deleting your account will permanently remove:\n\n- All inventory items\n- All saved recipes\n- Meal plans\n- Chat history\n- All preferences\n\nThis cannot be undone.";
 
+    const performDelete = async () => {
+      try {
+        // Delete from server if authenticated
+        const authToken = await storage.getAuthToken();
+        if (authToken) {
+          const baseUrl = getApiUrl();
+          const response = await fetch(`${baseUrl}/api/auth/delete-account`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to delete account from server');
+          }
+        }
+        
+        // Clear local storage
+        await storage.deleteAccount();
+        return { success: true };
+      } catch (error) {
+        console.error('Delete account error:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    };
+
     if (Platform.OS === "web") {
       if (window.confirm(`Final Confirmation\n\n${message}`)) {
-        await storage.deleteAccount();
-        window.alert("Your account has been deleted. The app will now restart.");
-        window.location.reload();
+        const result = await performDelete();
+        if (result.success) {
+          window.alert("Your account has been deleted. The app will now restart.");
+          window.location.reload();
+        } else {
+          window.alert(`Failed to delete account: ${result.error}`);
+          setDeleteStep("none");
+        }
       } else {
         setDeleteStep("none");
       }
@@ -464,10 +499,15 @@ export default function SettingsScreen() {
           text: "Delete Permanently",
           style: "destructive",
           onPress: async () => {
-            await storage.deleteAccount();
-            Alert.alert("Account Deleted", "Your account has been deleted. The app will now restart.", [
-              { text: "OK", onPress: () => reloadAppAsync() },
-            ]);
+            const result = await performDelete();
+            if (result.success) {
+              Alert.alert("Account Deleted", "Your account has been deleted. The app will now restart.", [
+                { text: "OK", onPress: () => reloadAppAsync() },
+              ]);
+            } else {
+              Alert.alert("Error", `Failed to delete account: ${result.error}`);
+              setDeleteStep("none");
+            }
           },
         },
       ]);
