@@ -908,6 +908,50 @@ export default function LandingScreen({
     }
   };
 
+  const [isDonating, setIsDonating] = useState(false);
+
+  const handleDonate = async (amount: number) => {
+    if (isDonating) return;
+    setIsDonating(true);
+    
+    try {
+      const baseUrl = isWeb 
+        ? window.location.origin 
+        : `https://${Constants.expoConfig?.extra?.domain || 'chefspaice.com'}`;
+      
+      const response = await fetch(`${baseUrl}/api/donations/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          successUrl: `${baseUrl}/?donation=success`,
+          cancelUrl: `${baseUrl}/?donation=cancelled`,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.url) {
+        if (isWeb) {
+          window.location.href = data.url;
+        } else {
+          Linking.openURL(data.url);
+        }
+      }
+    } catch (error) {
+      console.error('Donation error:', error);
+    } finally {
+      setIsDonating(false);
+    }
+  };
+
+  const donationAmounts = [
+    { amount: 500, label: '$5' },
+    { amount: 1000, label: '$10' },
+    { amount: 2500, label: '$25' },
+    { amount: 5000, label: '$50' },
+  ];
+
   const testimonials = [
     {
       name: "Sarah M.",
@@ -1457,6 +1501,48 @@ export default function LandingScreen({
             <Text style={styles.ctaSubtitle}>
               Join thousands of users saving money and the planet
             </Text>
+          </GlassCard>
+        </View>
+
+        <View style={styles.section} data-testid="section-donate">
+          <Text style={styles.sectionTitle} data-testid="text-donate-title">
+            Support ChefSpAIce
+          </Text>
+          <Text style={styles.sectionSubtitle} data-testid="text-donate-subtitle">
+            Help us fight food waste and keep the app free for everyone
+          </Text>
+
+          <GlassCard style={styles.donationCard}>
+            <View style={styles.donationContent}>
+              <MaterialCommunityIcons
+                name="heart"
+                size={32}
+                color={AppColors.primary}
+              />
+              <Text style={styles.donationText}>
+                Your donation helps us maintain and improve ChefSpAIce, keeping it accessible to everyone while we work to reduce global food waste.
+              </Text>
+              <View style={[styles.donationAmounts, isWide && styles.donationAmountsWide]}>
+                {donationAmounts.map((item) => (
+                  <Pressable
+                    key={item.amount}
+                    style={({ pressed }) => [
+                      styles.donationButton,
+                      pressed && styles.donationButtonPressed,
+                      isDonating && styles.donationButtonDisabled,
+                    ]}
+                    onPress={() => handleDonate(item.amount)}
+                    disabled={isDonating}
+                    data-testid={`button-donate-${item.label}`}
+                  >
+                    <Text style={styles.donationButtonText}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.donationNote}>
+                Secure payment powered by Stripe
+              </Text>
+            </View>
           </GlassCard>
         </View>
 
@@ -2171,6 +2257,57 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.5)",
     marginTop: 16,
+  },
+  donationCard: {
+    padding: 32,
+    alignItems: "center",
+    maxWidth: 500,
+    width: "100%",
+  },
+  donationContent: {
+    alignItems: "center",
+    gap: 16,
+  },
+  donationText: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  donationAmounts: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  donationAmountsWide: {
+    gap: 16,
+  },
+  donationButton: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  donationButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  donationButtonDisabled: {
+    opacity: 0.5,
+  },
+  donationButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  donationNote: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.5)",
+    marginTop: 8,
   },
   footer: {
     backgroundColor: "rgba(0, 0, 0, 0.3)",
