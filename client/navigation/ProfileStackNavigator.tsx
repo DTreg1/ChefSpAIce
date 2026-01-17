@@ -10,6 +10,8 @@ import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import GlassLeafScreen from "@/screens/GlassLeafScreen";
+import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -22,6 +24,8 @@ export type ProfileStackParamList = {
   StorageLocations: undefined;
   Subscription: undefined;
   GlassLeaf: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -45,6 +49,8 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="StorageLocations" component={StorageLocationsScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       <Stack.Screen name="GlassLeaf" component={GlassLeafScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
     </Stack.Navigator>
   );
 }

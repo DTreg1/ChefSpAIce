@@ -1040,7 +1040,7 @@ export default function SettingsScreen() {
 
         <Pressable
           style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
-          onPress={() => Linking.openURL("https://chefspaice.com/privacy")}
+          onPress={() => navigation.navigate("PrivacyPolicy")}
           data-testid="button-privacy-policy"
         >
           <View style={styles.legalMenuIcon}>
@@ -1050,12 +1050,12 @@ export default function SettingsScreen() {
             <ThemedText type="body">Privacy Policy</ThemedText>
             <ThemedText type="caption">How we handle your data</ThemedText>
           </View>
-          <Feather name="external-link" size={16} color={theme.textSecondary} />
+          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </Pressable>
 
         <Pressable
           style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
-          onPress={() => Linking.openURL("https://chefspaice.com/terms")}
+          onPress={() => navigation.navigate("TermsOfService")}
           data-testid="button-terms-of-service"
         >
           <View style={styles.legalMenuIcon}>
@@ -1065,7 +1065,7 @@ export default function SettingsScreen() {
             <ThemedText type="body">Terms of Service</ThemedText>
             <ThemedText type="caption">Usage terms and conditions</ThemedText>
           </View>
-          <Feather name="external-link" size={16} color={theme.textSecondary} />
+          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </Pressable>
 
         <Pressable
@@ -1164,24 +1164,26 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
 
-            <Pressable
-              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
-              onPress={handleResetForTesting}
-              testID="button-reset-for-testing"
-              accessibilityRole="button"
-              accessibilityLabel="Reset app for testing"
-              accessibilityHint="Signs out and resets the app to experience it as a new user"
-            >
-              <View style={styles.dangerMenuIcon}>
-                <Feather name="refresh-cw" size={18} color={theme.textSecondary} />
-              </View>
-              <View style={styles.dangerMenuText}>
-                <ThemedText type="body">Reset App (For Testing)</ThemedText>
-                <ThemedText type="caption">
-                  Sign out and reset to test as a new user
-                </ThemedText>
-              </View>
-            </Pressable>
+            {__DEV__ ? (
+              <Pressable
+                style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
+                onPress={handleResetForTesting}
+                testID="button-reset-for-testing"
+                accessibilityRole="button"
+                accessibilityLabel="Reset app for testing"
+                accessibilityHint="Signs out and resets the app to experience it as a new user"
+              >
+                <View style={styles.dangerMenuIcon}>
+                  <Feather name="refresh-cw" size={18} color={theme.textSecondary} />
+                </View>
+                <View style={styles.dangerMenuText}>
+                  <ThemedText type="body">Reset App (For Testing)</ThemedText>
+                  <ThemedText type="caption">
+                    Sign out and reset to test as a new user
+                  </ThemedText>
+                </View>
+              </Pressable>
+            ) : null}
           </>
         ) : (
           <View style={styles.deleteConfirmContainer}>
