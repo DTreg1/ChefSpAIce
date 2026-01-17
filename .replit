@@ -60,5 +60,5 @@ EXPO_PUBLIC_REVENUECAT_ANDROID_KEY = "goog_zqsMaGeUheOVRsqWSVKuNeGjnSK"
 REVENUECAT_WEBHOOK_SECRET = "11017cc95c7a91dd7bc72bd07e37605f1806363794b305123e1be3d9baa9ac95"
 
 [objectStorage]
-defaultBucketID = "replit-objstore-0b011cbe-41a0-407c-8cf9-2db304bad2cc"
+defaultBucketID = "replit-objstore-bb45cfe2-fca6-405a-9fea-bd2b7a4474fb"
 
