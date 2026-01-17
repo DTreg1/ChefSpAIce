@@ -396,11 +396,17 @@ function TestimonialCard({
 // Helper function to get showcase image URLs
 function getShowcaseImageUrl(category: string, filename: string): string {
   if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location;
-    // In production (no port or standard ports), don't append port
-    // In development, append the port
-    const portSuffix = port && port !== '443' && port !== '80' ? `:${port}` : '';
-    return `${protocol}//${hostname}${portSuffix}/public/showcase/${category}/${filename}`;
+    const { protocol, hostname } = window.location;
+    // Use EXPO_PUBLIC_DOMAIN env var for the correct server domain:port
+    // In development, this points to port 5000 where Express serves images
+    // In production, use the same hostname without port (images served via same server)
+    const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+    if (expoDomain) {
+      // Development: EXPO_PUBLIC_DOMAIN contains domain:5000
+      return `${protocol}//${expoDomain}/public/showcase/${category}/${filename}`;
+    }
+    // Production fallback: same host, no port needed
+    return `${protocol}//${hostname}/public/showcase/${category}/${filename}`;
   }
   return '';
 }
