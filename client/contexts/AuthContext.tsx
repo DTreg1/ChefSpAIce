@@ -420,6 +420,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
       
+      // Reset onboarding status so the app treats this as a fresh user
+      // This is important when account is deleted and 401 forces sign out
+      await storage.resetOnboarding();
+      
       // Clear all cached query data for security
       queryClient.clear();
       
