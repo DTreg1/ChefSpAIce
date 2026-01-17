@@ -637,4 +637,113 @@ router.post("/sync", async (req: Request, res: Response) => {
   }
 });
 
+// =============================================================================
+// DELETE ACCOUNT ENDPOINT
+// Apple App Store Guideline 5.1.1(v) and 5.1.1(vi) Compliance
+// =============================================================================
+
+const DEMO_EMAIL = "demo@chefspaice.com";
+
+router.delete("/delete-account", async (req: Request, res: Response) => {
+  try {
+    // Get auth token from header or cookie
+    const authHeader = req.headers.authorization;
+    const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+    const token = authHeader?.replace("Bearer ", "") || cookieToken;
+
+    if (!token) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Validate session
+    const [session] = await db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.token, token))
+      .limit(1);
+
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const userId = session.userId;
+
+    // Get user to check if it's the demo account
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Protect demo account from deletion
+    if (user.email === DEMO_EMAIL) {
+      return res.status(403).json({ 
+        error: "Demo account cannot be deleted. This account is used for App Store review purposes." 
+      });
+    }
+
+    console.log(`[DeleteAccount] Starting deletion for user: ${userId} (${user.email})`);
+
+    // Delete all user data in a transaction
+    // Note: Due to cascade delete on users table, most data will be automatically deleted
+    // But we explicitly delete to ensure everything is removed
+    
+    try {
+      // Delete user appliances
+      await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
+      console.log(`[DeleteAccount] Deleted user appliances`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting appliances:`, e);
+    }
+
+    try {
+      // Delete subscriptions
+      await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+      console.log(`[DeleteAccount] Deleted subscriptions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting subscriptions:`, e);
+    }
+
+    try {
+      // Delete sync data
+      await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
+      console.log(`[DeleteAccount] Deleted sync data`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sync data:`, e);
+    }
+
+    try {
+      // Delete all sessions
+      await db.delete(userSessions).where(eq(userSessions.userId, userId));
+      console.log(`[DeleteAccount] Deleted sessions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sessions:`, e);
+    }
+
+    // Finally, delete the user (this should cascade delete remaining data)
+    await db.delete(users).where(eq(users.id, userId));
+    console.log(`[DeleteAccount] Deleted user record`);
+
+    // Clear auth cookie
+    clearAuthCookie(res);
+
+    console.log(`[DeleteAccount] User ${userId} deleted successfully`);
+
+    res.json({ 
+      success: true, 
+      message: "Account and all associated data have been permanently deleted" 
+    });
+
+  } catch (error) {
+    console.error(`[DeleteAccount] Error:`, error);
+    res.status(500).json({ 
+      error: "Failed to delete account. Please try again or contact support." 
+    });
+  }
+});
+
 export default router;

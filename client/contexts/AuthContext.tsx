@@ -49,6 +49,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as AuthSession from "expo-auth-session";
 import { getApiUrl, queryClient, setAuthErrorCallback, clearAuthErrorCallback } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
+import { storeKitService } from "@/lib/storekit-service";
 
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
@@ -185,6 +186,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedData) {
           const { user, token }: StoredAuthData = JSON.parse(storedData);
           await storage.setAuthToken(token);
+          
+          // Set StoreKit auth token and user ID, sync any pending purchases
+          storeKitService.setAuthToken(token);
+          if (user?.id) {
+            storeKitService.setUserId(String(user.id)).catch(err =>
+              console.warn('[Auth] Failed to set StoreKit user ID:', err)
+            );
+          }
+          storeKitService.syncPendingPurchases().catch(err => 
+            console.warn('[Auth] Failed to sync pending purchases on restore:', err)
+          );
+          
           setState({
             user,
             token,
@@ -222,6 +235,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Store in AsyncStorage for consistency
               await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
               await storage.setAuthToken(data.token);
+              
+              // Set StoreKit auth token and user ID, sync any pending purchases
+              storeKitService.setAuthToken(data.token);
+              if (data.user?.id) {
+                storeKitService.setUserId(String(data.user.id)).catch(err =>
+                  console.warn('[Auth] Failed to set StoreKit user ID:', err)
+                );
+              }
+              storeKitService.syncPendingPurchases().catch(err => 
+                console.warn('[Auth] Failed to sync pending purchases on cookie restore:', err)
+              );
               
               setState({
                 user: data.user,
@@ -285,6 +309,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
       await storage.setAuthToken(data.token);
 
+      // Set StoreKit auth token, user ID, and sync any pending purchases
+      storeKitService.setAuthToken(data.token);
+      if (data.user?.id) {
+        storeKitService.setUserId(String(data.user.id)).catch(err =>
+          console.warn('Failed to set StoreKit user ID:', err)
+        );
+      }
+      storeKitService.syncPendingPurchases().catch(err => 
+        console.warn('Failed to sync pending purchases:', err)
+      );
+
       setState({
         user: data.user,
         token: data.token,
@@ -331,6 +366,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
         await storage.setAuthToken(data.token);
+
+        // Set StoreKit auth token, user ID, and sync any pending purchases
+        storeKitService.setAuthToken(data.token);
+        if (data.user?.id) {
+          storeKitService.setUserId(String(data.user.id)).catch(err =>
+            console.warn('Failed to set StoreKit user ID:', err)
+          );
+        }
+        storeKitService.syncPendingPurchases().catch(err => 
+          console.warn('Failed to sync pending purchases:', err)
+        );
 
         // Reset onboarding status for new users to ensure they see onboarding
         // This prevents stale local data from previous sessions from affecting the new user
@@ -456,6 +502,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
       await storage.setAuthToken(data.token);
 
+      // Set StoreKit auth token, user ID, and sync any pending purchases
+      storeKitService.setAuthToken(data.token);
+      if (data.user?.id) {
+        storeKitService.setUserId(String(data.user.id)).catch(err =>
+          console.warn('Failed to set StoreKit user ID:', err)
+        );
+      }
+      storeKitService.syncPendingPurchases().catch(err => 
+        console.warn('Failed to sync pending purchases:', err)
+      );
+
       // Reset onboarding status for new users to ensure they see onboarding
       if (data.isNewUser) {
         await storage.resetOnboarding();
@@ -553,6 +610,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
       await storage.setAuthToken(data.token);
+
+      // Set StoreKit auth token, user ID, and sync any pending purchases
+      storeKitService.setAuthToken(data.token);
+      if (data.user?.id) {
+        storeKitService.setUserId(String(data.user.id)).catch(err =>
+          console.warn('Failed to set StoreKit user ID:', err)
+        );
+      }
+      storeKitService.syncPendingPurchases().catch(err => 
+        console.warn('Failed to sync pending purchases:', err)
+      );
 
       // Reset onboarding status for new users to ensure they see onboarding
       if (data.isNewUser) {

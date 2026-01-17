@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { getApiUrl } from '@/lib/query-client';
 import Purchases, { LOG_LEVEL, PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { storage } from '@/lib/storage';
 
 export type { PurchasesOffering, PurchasesPackage, CustomerInfo };
 
@@ -33,9 +34,17 @@ class StoreKitService {
   }
 
   async syncPurchaseWithServer(customerInfo: CustomerInfo): Promise<boolean> {
+    // If not authenticated, save purchase for later sync
     if (!this.authToken) {
-      console.warn('StoreKit: No auth token set, cannot sync with server');
-      return false;
+      console.log('StoreKit: No auth token, saving purchase for later sync');
+      try {
+        await storage.savePendingPurchase(customerInfo);
+        console.log('StoreKit: Pending purchase saved successfully');
+        return true; // Return true because purchase is valid, just pending server sync
+      } catch (error) {
+        console.error('StoreKit: Failed to save pending purchase', error);
+        return false;
+      }
     }
 
     try {
@@ -79,6 +88,8 @@ class StoreKitService {
 
       if (response.ok) {
         console.log('StoreKit: Purchase synced with server successfully');
+        // Clear any pending purchase since we've synced
+        await storage.clearPendingPurchase();
         return true;
       } else {
         console.error('StoreKit: Failed to sync purchase with server', await response.text());
@@ -88,6 +99,62 @@ class StoreKitService {
       console.error('StoreKit: Error syncing purchase with server', error);
       return false;
     }
+  }
+
+  /**
+   * Sync any pending purchases after user logs in
+   * Call this after successful authentication
+   */
+  async syncPendingPurchases(): Promise<boolean> {
+    if (!this.authToken) {
+      console.warn('StoreKit: Cannot sync pending purchases without auth token');
+      return false;
+    }
+
+    try {
+      const pending = await storage.getPendingPurchase();
+      if (!pending) {
+        console.log('StoreKit: No pending purchases to sync');
+        return true;
+      }
+
+      console.log('StoreKit: Found pending purchase, syncing...');
+      
+      // Get fresh customer info from RevenueCat (more reliable than stored data)
+      const customerInfo = await this.getCustomerInfo();
+      if (customerInfo) {
+        const success = await this.syncPurchaseWithServer(customerInfo);
+        if (success) {
+          console.log('StoreKit: Pending purchase synced successfully');
+          return true;
+        }
+      }
+
+      // Fall back to stored customer info if fresh fetch fails
+      const storedCustomerInfo = pending.customerInfo as CustomerInfo;
+      if (storedCustomerInfo) {
+        // Temporarily allow sync even with stored data
+        const success = await this.syncPurchaseWithServer(storedCustomerInfo);
+        if (success) {
+          console.log('StoreKit: Pending purchase synced from stored data');
+          return true;
+        }
+      }
+
+      console.warn('StoreKit: Failed to sync pending purchase');
+      return false;
+    } catch (error) {
+      console.error('StoreKit: Error syncing pending purchases', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if there are any pending purchases that need syncing
+   */
+  async hasPendingPurchase(): Promise<boolean> {
+    const pending = await storage.getPendingPurchase();
+    return pending !== null;
   }
 
   async initialize(): Promise<void> {

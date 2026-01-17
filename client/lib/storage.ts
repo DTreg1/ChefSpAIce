@@ -83,6 +83,7 @@ const STORAGE_KEYS = {
   ONBOARDING: "@chefspaice/onboarding",
   CUSTOM_STORAGE_LOCATIONS: "@chefspaice/custom_storage_locations",
   ONBOARDING_STEP: "@chefspaice/onboarding_step",
+  PENDING_PURCHASE: "@chefspaice/pending_purchase",
 } as const;
 
 export const DEFAULT_STORAGE_LOCATIONS = [
@@ -1052,6 +1053,26 @@ export const storage = {
 
   async clearAuthToken(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  },
+
+  // ==========================================================================
+  // PENDING PURCHASE STORAGE
+  // For Apple App Store compliance - allows purchases before account creation
+  // ==========================================================================
+
+  async savePendingPurchase(customerInfo: unknown): Promise<void> {
+    await setItem(STORAGE_KEYS.PENDING_PURCHASE, {
+      customerInfo,
+      timestamp: Date.now(),
+    });
+  },
+
+  async getPendingPurchase(): Promise<{ customerInfo: unknown; timestamp: number } | null> {
+    return await getItem(STORAGE_KEYS.PENDING_PURCHASE);
+  },
+
+  async clearPendingPurchase(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_PURCHASE);
   },
 
   async syncToCloud(): Promise<{ success: boolean; error?: string }> {
