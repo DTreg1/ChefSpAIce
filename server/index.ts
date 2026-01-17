@@ -442,10 +442,11 @@ async function initStripe(retries = 3, delay = 2000) {
         return res.status(404).json({ error: "Image not found" });
       }
       
-      const buffer = result.value[0];
+      const buffer = Buffer.from(result.value[0]);
       res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Content-Length", buffer.length);
       res.setHeader("Cache-Control", "public, max-age=31536000");
-      res.send(buffer);
+      res.end(buffer);
     } catch (err) {
       log(`[Showcase] Error serving ${objectPath}:`, err);
       res.status(500).json({ error: "Failed to load image" });
