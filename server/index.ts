@@ -429,10 +429,12 @@ async function initStripe(retries = 3, delay = 2000) {
   setupRequestLogging(app);
 
   // Serve public files from object storage at /public/* path
+  // PUBLIC_OBJECT_SEARCH_PATHS format: /{bucket-id}/public
+  const publicPrefix = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split('/').slice(2).join('/') || 'public';
   const objectStorageClient = new ObjectStorageClient();
   app.get("/public/*", async (req, res) => {
     const filePath = req.path.replace(/^\/public\//, ''); // Everything after /public/
-    const objectPath = `public/${filePath}`;
+    const objectPath = `${publicPrefix}/${filePath}`;
     log(`[ObjectStorage] Serving public file: ${objectPath}`);
     
     try {
