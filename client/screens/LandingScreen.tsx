@@ -604,13 +604,13 @@ function DeviceMockup({
   const centerIndex = (totalCount - 1) / 2;
   const offset = index - centerIndex;
   const anyHovered = hoveredIndex !== null;
-  
+
   // Calculate transforms based on hover state
   let transformX: number;
   let rotateY: number;
   let translateZ: number;
   let scale: number;
-  
+
   if (isHovered) {
     // Hovered device: straighten and pop forward
     transformX = 0;
@@ -634,7 +634,7 @@ function DeviceMockup({
     translateZ = 0;
     scale = 1;
   }
-  
+
   // Web-specific wrapper with 3D transforms
   const webWrapperStyle: React.CSSProperties = isWeb ? {
     perspective: '1000px',
@@ -1060,7 +1060,7 @@ export default function LandingScreen({
               </Text>
               */}
             </View>
-            
+
             <View style={[styles.heroDeviceContainer, isWide && styles.heroDeviceContainerWide]}>
               <HeroDeviceMockup isWide={isWide} />
             </View>
