@@ -53,7 +53,6 @@ import { z } from "zod";
  * - password: Hashed password for email/password authentication
  * - displayName: User's chosen display name
  * - email: Required unique email address
- * - firstName/lastName: Optional name fields
  * - profileImageUrl: URL to user's profile picture
  * 
  * Preference fields:
@@ -101,8 +100,6 @@ export const users = pgTable("users", {
   password: varchar("password"),
   displayName: varchar("display_name"),
   email: varchar("email").notNull().unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
