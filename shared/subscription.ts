@@ -77,15 +77,6 @@ export function getTierLimits(tier: SubscriptionTier): TierLimits {
   return TIER_CONFIG[tier];
 }
 
-export function isFeatureEnabled(tier: SubscriptionTier, feature: keyof TierLimits): boolean {
-  const limits = getTierLimits(tier);
-  const value = limits[feature];
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  return true;
-}
-
 export function isWithinLimit(
   tier: SubscriptionTier,
   limitKey: 'maxPantryItems' | 'maxAiRecipesPerMonth' | 'maxCookwareItems',
@@ -112,16 +103,3 @@ export function getRemainingQuota(
   return Math.max(0, limit - currentCount);
 }
 
-export const FEATURE_NAMES: Record<string, string> = {
-  canCustomizeStorageAreas: 'Custom Storage Areas',
-  canUseRecipeScanning: 'Recipe Scanning',
-  canUseBulkScanning: 'Bulk Scanning',
-  canUseAiKitchenAssistant: 'Live AI Kitchen Assistant',
-  canUseWeeklyMealPrepping: 'Weekly Meal Prepping',
-};
-
-export const LIMIT_NAMES: Record<string, string> = {
-  maxPantryItems: 'Pantry Items',
-  maxAiRecipesPerMonth: 'AI Generated Recipes',
-  maxCookwareItems: 'Cookware Items',
-};

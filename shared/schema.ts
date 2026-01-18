@@ -29,7 +29,6 @@ import {
   varchar,
   integer,
   timestamp,
-  date,
   index,
   boolean,
   uniqueIndex,
@@ -328,11 +327,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-/** Schema for creating a new cooking term */
-export const insertCookingTermSchema = createInsertSchema(cookingTerms).omit({
-  createdAt: true,
-  updatedAt: true,
-});
 
 // =============================================================================
 // APPLIANCES TABLES
@@ -408,30 +402,6 @@ export const userAppliances = pgTable(
   ],
 );
 
-/** Schema for creating a new appliance */
-export const insertApplianceSchema = createInsertSchema(appliances).omit({
-  createdAt: true,
-  updatedAt: true,
-});
-
-/** Schema for linking a user to an appliance */
-export const insertUserApplianceSchema = createInsertSchema(
-  userAppliances,
-).omit({
-  createdAt: true,
-  updatedAt: true,
-});
-
-/** Schema for creating a new session */
-export const insertSessionSchema = createInsertSchema(userSessions).omit({
-  createdAt: true,
-});
-
-/** Schema for creating/updating sync data */
-export const insertSyncDataSchema = createInsertSchema(userSyncData).omit({
-  lastSyncedAt: true,
-  updatedAt: true,
-});
 
 // =============================================================================
 // TYPE EXPORTS
@@ -442,24 +412,14 @@ export const insertSyncDataSchema = createInsertSchema(userSyncData).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 /** Type for a user retrieved from the database */
 export type User = typeof users.$inferSelect;
-/** Type for inserting a new session */
-export type InsertSession = z.infer<typeof insertSessionSchema>;
 /** Type for a session retrieved from the database */
 export type UserSession = typeof userSessions.$inferSelect;
-/** Type for inserting/updating sync data */
-export type InsertSyncData = z.infer<typeof insertSyncDataSchema>;
 /** Type for sync data retrieved from the database */
 export type UserSyncData = typeof userSyncData.$inferSelect;
-/** Type for inserting a new cooking term */
-export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 /** Type for a cooking term retrieved from the database */
 export type CookingTerm = typeof cookingTerms.$inferSelect;
-/** Type for inserting a new appliance */
-export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
 /** Type for an appliance retrieved from the database */
 export type Appliance = typeof appliances.$inferSelect;
-/** Type for inserting a user-appliance link */
-export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
 /** Type for a user-appliance link retrieved from the database */
 export type UserAppliance = typeof userAppliances.$inferSelect;
 
