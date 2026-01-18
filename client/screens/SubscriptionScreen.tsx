@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, CommonActions, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
@@ -88,10 +88,7 @@ export default function SubscriptionScreen() {
     offerings,
     purchasePackage,
     restorePurchases,
-    isLoading: isStoreKitLoading,
-    presentPaywall,
     presentCustomerCenter,
-    isPaywallAvailable,
     isCustomerCenterAvailable,
   } = useStoreKit();
 
@@ -296,26 +293,6 @@ export default function SubscriptionScreen() {
       Alert.alert('Error', 'Failed to restore purchases. Please try again.');
     } finally {
       setIsRestoring(false);
-    }
-  };
-
-  const handlePresentPaywall = async () => {
-    if (!isPaywallAvailable) {
-      Alert.alert('Not Available', 'Paywall is not available on this platform.');
-      return;
-    }
-    
-    setIsCheckingOut(true);
-    try {
-      const result = await presentPaywall();
-      if (result === 'purchased' || result === 'restored') {
-        Alert.alert('Success', 'Thank you for subscribing to ChefSpAIce Pro!');
-        refetch();
-      }
-    } catch (error) {
-      console.error('Error presenting paywall:', error);
-    } finally {
-      setIsCheckingOut(false);
     }
   };
 
