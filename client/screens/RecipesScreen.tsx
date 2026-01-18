@@ -424,7 +424,9 @@ export default function RecipesScreen() {
       <RecipeSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onGenerate={() => navigation.navigate("GenerateRecipe")}
+        onGenerate={(settings) => navigation.navigate("GenerateRecipe", {
+          customSettings: settings,
+        })}
       />
     </View>
   );

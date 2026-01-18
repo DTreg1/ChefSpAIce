@@ -11,6 +11,8 @@ import {
   useNavigation,
   useFocusEffect,
   CommonActions,
+  useRoute,
+  RouteProp,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -76,6 +78,8 @@ export default function GenerateRecipeScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+  const route = useRoute<RouteProp<RecipesStackParamList, "GenerateRecipe">>();
+  const customSettings = route.params?.customSettings;
   const { checkLimit, usage, entitlements, isProUser, refetch: refetchSubscription } = useSubscription();
 
   const [inventory, setInventory] = useState<InventoryItemWithExpiry[]>([]);
@@ -223,18 +227,25 @@ export default function GenerateRecipeScreen() {
       const macroTargets =
         userPreferences?.macroTargets || DEFAULT_MACRO_TARGETS;
 
+      // Use custom settings if provided, otherwise use defaults
+      const effectiveServings = customSettings?.servings ?? 1;
+      const effectiveMaxTime = customSettings?.maxTime ?? (isQuickRecipe ? 20 : 60);
+      const effectiveMealType = customSettings?.mealType ?? mealType;
+      const effectiveIngredientCount = customSettings?.ingredientCount;
+
       const response = await apiRequest("POST", "/api/recipes/generate", {
         prioritizeExpiring: true,
         quickRecipe: isQuickRecipe,
         inventory: inventoryPayload,
-        servings: 1,
-        maxTime: isQuickRecipe ? 20 : 60,
-        mealType: mealType,
+        servings: effectiveServings,
+        maxTime: effectiveMaxTime,
+        mealType: effectiveMealType,
         cookware: cookware.length > 0 ? cookware : undefined,
         dietaryRestrictions,
         cuisine: cuisinePreference,
         macroTargets,
         previousRecipeTitles: previousRecipeTitles.slice(-5), // Send last 5 for variety
+        ingredientCount: effectiveIngredientCount,
       });
 
       const generatedRecipe = await response.json();

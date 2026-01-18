@@ -221,6 +221,8 @@ export interface UserPreferences {
   prioritizeExpiring?: boolean;
   cookingLevel?: 'basic' | 'intermediate' | 'professional';
   llmCreativity?: 'basic' | 'special' | 'spicy' | 'wild';
+  ingredientCountMin?: number;
+  ingredientCountMax?: number;
 }
 
 export const DEFAULT_MACRO_TARGETS: MacroTargets = {

@@ -14,11 +14,12 @@ import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, UserPreferences, DEFAULT_MACRO_TARGETS } from "@/lib/storage";
+import type { RecipeSettings } from "@/navigation/RecipesStackNavigator";
 
 interface RecipeSettingsModalProps {
   visible: boolean;
   onClose: () => void;
-  onGenerate?: () => void;
+  onGenerate?: (settings: RecipeSettings) => void;
 }
 
 const MEAL_TYPES = [
@@ -43,6 +44,7 @@ const CREATIVITY_LEVELS = [
 
 const SERVING_OPTIONS = [1, 2, 4, 6, 8, 12];
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120];
+const INGREDIENT_COUNT_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const CUISINE_OPTIONS = [
   { id: "american", label: "American" },
@@ -83,6 +85,8 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
   const [prioritizeExpiring, setPrioritizeExpiring] = useState(false);
   const [cookingLevel, setCookingLevel] = useState<string>("intermediate");
   const [creativity, setCreativity] = useState<string>("special");
+  const [ingredientCountMin, setIngredientCountMin] = useState(4);
+  const [ingredientCountMax, setIngredientCountMax] = useState(6);
 
   const toggleDietary = (id: string) => {
     setDietaryRestrictions((prev) => {
@@ -125,6 +129,8 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
       setPrioritizeExpiring(prefs.prioritizeExpiring || false);
       setCookingLevel(prefs.cookingLevel || "intermediate");
       setCreativity(prefs.llmCreativity || "special");
+      setIngredientCountMin(prefs.ingredientCountMin || 4);
+      setIngredientCountMax(prefs.ingredientCountMax || 6);
     }
   };
 
@@ -145,11 +151,19 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
         cookingLevel: cookingLevel as UserPreferences['cookingLevel'],
         llmCreativity: creativity as UserPreferences['llmCreativity'],
         macroTargets: currentPrefs?.macroTargets ?? DEFAULT_MACRO_TARGETS,
+        ingredientCountMin,
+        ingredientCountMax,
       };
       await storage.setPreferences(updatedPrefs);
       onClose();
       if (onGenerate) {
-        onGenerate();
+        const settings: RecipeSettings = {
+          servings,
+          maxTime,
+          mealType: mealType as RecipeSettings['mealType'],
+          ingredientCount: { min: ingredientCountMin, max: ingredientCountMax },
+        };
+        onGenerate(settings);
       }
     } catch (error) {
       console.error("Error saving preferences:", error);
@@ -237,6 +251,41 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
                   />
                 ))}
               </View>
+            </GlassCard>
+
+            <GlassCard style={styles.section}>
+              <ThemedText type="caption" style={styles.sectionTitle}>Number of Ingredients</ThemedText>
+              <View style={styles.ingredientCountRow}>
+                <View style={styles.ingredientCountSection}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>Min</ThemedText>
+                  <View style={styles.optionsRow}>
+                    {INGREDIENT_COUNT_OPTIONS.filter(n => n <= ingredientCountMax).map((num) => (
+                      <OptionChip
+                        key={`min-${num}`}
+                        selected={ingredientCountMin === num}
+                        onPress={() => setIngredientCountMin(num)}
+                        label={String(num)}
+                      />
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.ingredientCountSection}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>Max</ThemedText>
+                  <View style={styles.optionsRow}>
+                    {INGREDIENT_COUNT_OPTIONS.filter(n => n >= ingredientCountMin).map((num) => (
+                      <OptionChip
+                        key={`max-${num}`}
+                        selected={ingredientCountMax === num}
+                        onPress={() => setIngredientCountMax(num)}
+                        label={String(num)}
+                      />
+                    ))}
+                  </View>
+                </View>
+              </View>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                Recipe will use {ingredientCountMin}-{ingredientCountMax} ingredients
+              </ThemedText>
             </GlassCard>
 
             <GlassCard style={styles.section}>
@@ -410,6 +459,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+  },
+  ingredientCountRow: {
+    gap: Spacing.md,
+  },
+  ingredientCountSection: {
+    marginBottom: Spacing.xs,
   },
   optionChip: {
     paddingHorizontal: Spacing.md,

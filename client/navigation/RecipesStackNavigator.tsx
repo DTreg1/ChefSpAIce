@@ -6,6 +6,13 @@ import GenerateRecipeScreen from "@/screens/GenerateRecipeScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import type { Recipe } from "@/lib/storage";
 
+export type RecipeSettings = {
+  servings: number;
+  maxTime: number;
+  mealType: "breakfast" | "lunch" | "dinner" | "snack" | "late night snack";
+  ingredientCount: { min: number; max: number };
+};
+
 export type RecipesStackParamList = {
   Recipes: undefined;
   RecipeDetail: { recipeId: string; initialRecipe?: Recipe };
@@ -13,6 +20,7 @@ export type RecipesStackParamList = {
     | {
         preselectedIngredientNames?: string[];
         prioritizeExpiring?: boolean;
+        customSettings?: RecipeSettings;
       }
     | undefined;
   Chat: undefined;

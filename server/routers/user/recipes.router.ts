@@ -62,6 +62,12 @@ const generateRecipeSchema = z.object({
     })
     .optional(),
   previousRecipeTitles: z.array(z.string()).optional(),
+  ingredientCount: z
+    .object({
+      min: z.number().min(2).max(10).default(4),
+      max: z.number().min(2).max(10).default(6),
+    })
+    .optional(),
 });
 
 export interface InventoryItem {
@@ -181,6 +187,7 @@ export function buildSmartPrompt(params: {
   equipment?: EquipmentItem[];
   macroTargets?: { protein: number; carbs: number; fat: number };
   previousRecipeTitles?: string[];
+  ingredientCount?: { min: number; max: number };
 }): string {
   const {
     expiringItems,
@@ -195,33 +202,34 @@ export function buildSmartPrompt(params: {
     equipment,
     macroTargets = { protein: 50, carbs: 35, fat: 15 },
     previousRecipeTitles = [],
+    ingredientCount = { min: 4, max: 6 },
   } = params;
 
   let prompt = `You are a creative home chef helping reduce food waste.\n\n`;
 
-  prompt += `=== CRITICAL RULE #1 ===\n\n`;
+  prompt += `=== SMART RECIPE CREATION ===\n\n`;
 
-  prompt += `INVENTORY-ONLY RECIPES: Every single ingredient in the recipe MUST come from the user's inventory below. This includes:\n`;
-  prompt += `- Main ingredients (proteins, vegetables, grains)\n`;
-  prompt += `- Cooking fats (oil, butter, lard) - if not in inventory, use a dry cooking method or skip\n`;
-  prompt += `- Seasonings (salt, pepper, spices) - if not in inventory, omit or note "season to taste if available"\n`;
-  prompt += `- Liquids (broth, wine, vinegar) - if not in inventory, use water or omit\n\n`;
+  prompt += `PRIMARY GOAL: Create the BEST possible recipe using the user's inventory. Quality matters most!\n\n`;
 
-  prompt += `ONLY EXCEPTION: Water and ice are always available and can be used freely.\n\n`;
+  prompt += `INVENTORY ITEMS: Start with what the user has available (listed below).\n\n`;
 
-  prompt += `NO OTHER EXCEPTIONS. Do NOT add ANY ingredient that is not explicitly listed in the inventory.\n\n`;
+  prompt += `ALWAYS AVAILABLE: Water and ice are always available and can be used freely.\n\n`;
 
-  prompt += `=== INGREDIENT SELECTION ===\n\n`;
+  prompt += `=== OPTIONAL ENHANCEMENTS ===\n\n`;
 
-  prompt += `When selecting ingredients from the inventory, understand that similar items are the same:\n`;
-  prompt += `- "apples" and "green apples" are both apples\n`;
-  prompt += `- "chicken breast" and "chicken thighs" are both chicken\n`;
-  prompt += `- "extra virgin olive oil" and "olive oil" are both olive oil\n`;
-  prompt += `However, in your output, you MUST use the EXACT name as it appears in the inventory list below.\n\n`;
+  prompt += `For every recipe, suggest optional ingredients that would elevate the dish - things the user might have or could easily get.\n`;
+  prompt += `Include an "optionalIngredients" array with 2-4 suggestions like:\n`;
+  prompt += `- "A squeeze of lemon would brighten this up"\n`;
+  prompt += `- "Fresh herbs like basil or parsley would add freshness"\n\n`;
 
-  prompt += `SUBSTITUTIONS: You MAY suggest substitutes, but ONLY if the substitute is also in the user's inventory.\n\n`;
+  prompt += `=== INGREDIENT NAMING ===\n\n`;
 
-  prompt += `LESS IS MORE: Prefer simpler recipes with fewer ingredients. A focused dish with 4-6 well-chosen ingredients is better than using everything available. Quality over quantity.\n\n`;
+  prompt += `For matching purposes, include an "inventoryMatch" field that maps to the EXACT inventory name.\n`;
+  prompt += `For display purposes, use a clean, appetizing name in the "name" field.\n\n`;
+
+  prompt += `=== INGREDIENT COUNT ===\n\n`;
+  prompt += `Target ${ingredientCount.min} to ${ingredientCount.max} ingredients for this recipe.\n`;
+  prompt += `Focus on quality over quantity - a well-crafted dish with fewer ingredients is better than one that uses everything available.\n\n`;
 
   prompt += UNIT_CONVERSION_PROMPT_ADDITION + `\n`;
 
@@ -421,6 +429,7 @@ router.post("/generate", async (req: Request, res: Response) => {
       equipment,
       macroTargets,
       previousRecipeTitles,
+      ingredientCount,
     } = parseResult.data;
 
     if (!inventory || inventory.length === 0) {
@@ -459,6 +468,7 @@ router.post("/generate", async (req: Request, res: Response) => {
       equipment,
       macroTargets,
       previousRecipeTitles,
+      ingredientCount,
     });
 
     if (process.env.NODE_ENV !== "production") {
@@ -468,19 +478,21 @@ router.post("/generate", async (req: Request, res: Response) => {
       );
     }
 
+    const effectiveIngredientCount = ingredientCount || { min: 4, max: 6 };
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a precision culinary assistant that creates recipes EXCLUSIVELY from user-provided ingredients.
+          content: `You are a creative culinary assistant that creates the BEST possible recipes from user-provided ingredients.
 
-ABSOLUTE RULES:
-1. NEVER add ingredients not in the user's inventory - this includes oils, butter, salt, pepper, and spices
-2. If an ingredient isn't listed, assume the user doesn't have it
-3. Water and ice are the ONLY exceptions (always available)
-4. Use fuzzy matching: "chicken" matches "chicken breast", "apple" matches "green apples"
-5. Create simple, focused dishes with 4-6 ingredients rather than using everything available
+KEY PRINCIPLES:
+1. Start with inventory items - use fuzzy matching ("chicken" matches "chicken breast")
+2. Water and ice are always available
+3. Target ${effectiveIngredientCount.min}-${effectiveIngredientCount.max} ingredients for focused, quality dishes
+4. Suggest optional enhancements that would elevate the dish (e.g., "a squeeze of lemon would brighten this")
+5. Use clean, appetizing ingredient names for display while tracking inventory matches
 6. Always respond with valid JSON matching the exact schema provided`,
         },
         {
