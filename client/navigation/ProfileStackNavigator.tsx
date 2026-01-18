@@ -5,7 +5,6 @@ import SettingsScreen from "@/screens/SettingsScreen";
 import AnalyticsScreen from "@/screens/AnalyticsScreen";
 import CookingTermsScreen from "@/screens/CookingTermsScreen";
 import CookwareScreen from "@/screens/CookwareScreen";
-import DevComponentsScreen from "@/screens/DevComponentsScreen";
 import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
@@ -42,9 +41,6 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       <Stack.Screen name="CookingTerms" component={CookingTermsScreen} />
       <Stack.Screen name="Cookware" component={CookwareScreen} />
-      {__DEV__ ? (
-        <Stack.Screen name="DevComponents" component={DevComponentsScreen} />
-      ) : null}
       <Stack.Screen name="BarcodeTest" component={BarcodeTestScreen} />
       <Stack.Screen name="StorageLocations" component={StorageLocationsScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
