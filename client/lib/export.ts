@@ -739,25 +739,3 @@ async function generateAndSharePDF(html: string, fileName: string): Promise<{ su
   return { success: false, filePath: newUri };
 }
 
-export type ExportFormat = "csv" | "pdf";
-export type ExportType = "inventory" | "recipes";
-
-export async function exportData(
-  type: ExportType,
-  format: ExportFormat,
-  data: FoodItem[] | Recipe[],
-): Promise<void> {
-  if (type === "inventory") {
-    if (format === "csv") {
-      await exportInventoryToCSV(data as FoodItem[]);
-    } else {
-      await exportInventoryToPDF(data as FoodItem[]);
-    }
-  } else {
-    if (format === "csv") {
-      await exportRecipesToCSV(data as Recipe[]);
-    } else {
-      await exportRecipesToPDF(data as Recipe[]);
-    }
-  }
-}

@@ -20,7 +20,7 @@ export interface ItemStorageRecommendation {
   notes: string;
 }
 
-export const ITEM_STORAGE_RECOMMENDATIONS: Record<
+const ITEM_STORAGE_RECOMMENDATIONS: Record<
   string,
   ItemStorageRecommendation
 > = {
@@ -780,58 +780,7 @@ export function getShelfLifeEntry(category: string): ShelfLifeEntry | null {
   );
 }
 
-export function getAllCategories(): string[] {
-  return SHELF_LIFE_DATA.map((entry) => entry.category);
-}
-
-export function getStorageRecommendation(
-  category: string,
-): StorageRecommendation | null {
-  const normalizedCategory = category.toLowerCase().trim();
-
-  if (STORAGE_RECOMMENDATIONS[normalizedCategory]) {
-    return STORAGE_RECOMMENDATIONS[normalizedCategory];
-  }
-
-  const categoryMappings: Record<string, string> = {
-    milk: "dairy",
-    cheese: "dairy",
-    yogurt: "dairy",
-    butter: "dairy",
-    cream: "dairy",
-    beef: "meat",
-    chicken: "meat",
-    pork: "meat",
-    "deli meat": "meat",
-    fish: "seafood",
-    shrimp: "seafood",
-    fruits: "produce",
-    vegetables: "produce",
-    herbs: "produce",
-    bakery: "bread",
-    "canned goods": "canned",
-    "frozen foods": "frozen",
-    pasta: "grains",
-    rice: "grains",
-    juice: "beverages",
-    sauces: "condiments",
-    pickles: "condiments",
-    nuts: "snacks",
-    tofu: "produce",
-  };
-
-  const mappedCategory = categoryMappings[normalizedCategory];
-  if (mappedCategory && STORAGE_RECOMMENDATIONS[mappedCategory]) {
-    return STORAGE_RECOMMENDATIONS[mappedCategory];
-  }
-
-  return null;
-}
-
-/**
- * Aliases for common food names to their category
- */
-export const FOOD_ALIASES: Record<string, string> = {
+const FOOD_ALIASES: Record<string, string> = {
   // Dairy
   "whole milk": "milk",
   "2% milk": "milk",
@@ -1151,35 +1100,3 @@ export function getShelfLifeForFood(
 /**
  * Format days into a human-readable string
  */
-export function formatShelfLife(days: number): string {
-  if (days >= 365) {
-    const years = Math.round(days / 365);
-    return years === 1 ? "1 year" : `${years} years`;
-  }
-  if (days >= 30) {
-    const months = Math.round(days / 30);
-    return months === 1 ? "1 month" : `${months} months`;
-  }
-  if (days >= 7) {
-    const weeks = Math.round(days / 7);
-    return weeks === 1 ? "1 week" : `${weeks} weeks`;
-  }
-  return days === 1 ? "1 day" : `${days} days`;
-}
-
-/**
- * Get suggested expiration date based on food and storage location
- */
-export function getSuggestedExpirationDate(
-  foodName: string,
-  storageLocation: string,
-): Date | null {
-  const result = getShelfLifeForFood(foodName, storageLocation);
-  if (!result) {
-    return null;
-  }
-
-  const date = new Date();
-  date.setDate(date.getDate() + result.days);
-  return date;
-}

@@ -8,12 +8,6 @@ import { storage } from "./storage";
 // iOS: Some functionality still works but with warnings
 const isExpoGo = Constants.appOwnership === "expo";
 
-// Export for UI to show appropriate message
-export function isNotificationsUnsupported(): boolean {
-  // On Android Expo Go, notifications are completely unsupported
-  return Platform.OS === "android" && isExpoGo;
-}
-
 // Check if we should skip importing the module entirely to avoid warnings
 function shouldSkipNotificationsImport(): boolean {
   // Skip on Android Expo Go (completely unsupported)
@@ -77,13 +71,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
   await setupNotificationChannel();
   return true;
-}
-
-export async function getNotificationPermissionStatus(): Promise<string> {
-  const notif = await getNotificationsModule();
-  if (!notif) return "unavailable";
-  const { status } = await notif.getPermissionsAsync();
-  return status;
 }
 
 export async function cancelAllExpirationNotifications(): Promise<void> {
@@ -211,21 +198,6 @@ export async function scheduleExpirationNotifications(): Promise<number> {
   return scheduledCount;
 }
 
-export async function getExpiringItemsCount(alertDays?: number): Promise<number> {
-  const preferences = await storage.getPreferences();
-  const days = alertDays ?? preferences.expirationAlertDays ?? 3;
-
-  const inventory = await storage.getInventory();
-  const today = startOfDay(new Date());
-
-  return inventory.filter((item) => {
-    if (!item.expirationDate) return false;
-    const expirationDate = startOfDay(parseISO(item.expirationDate));
-    const daysUntilExpiration = differenceInDays(expirationDate, today);
-    return daysUntilExpiration >= 0 && daysUntilExpiration <= days;
-  }).length;
-}
-
 export async function initializeNotifications(): Promise<void> {
   if (shouldSkipNotificationsImport()) {
     return;
@@ -242,30 +214,6 @@ export async function initializeNotifications(): Promise<void> {
   } catch (error) {
     console.error("Failed to initialize notifications:", error);
   }
-}
-
-export function addNotificationReceivedListener(
-  callback: (notification: any) => void,
-): { remove: () => void } {
-  if (shouldSkipNotificationsImport()) {
-    return { remove: () => {} };
-  }
-  
-  let subscription: { remove: () => void } | null = null;
-  
-  getNotificationsModule().then((notif) => {
-    if (notif) {
-      subscription = notif.addNotificationReceivedListener(callback);
-    }
-  });
-  
-  return {
-    remove: () => {
-      if (subscription) {
-        subscription.remove();
-      }
-    },
-  };
 }
 
 export function addNotificationResponseListener(

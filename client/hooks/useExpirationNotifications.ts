@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
   initializeNotifications,
-  scheduleExpirationNotifications,
   addNotificationResponseListener,
 } from "@/lib/notifications";
 
@@ -31,6 +30,3 @@ export function useExpirationNotifications() {
   }, []);
 }
 
-export async function refreshExpirationNotifications(): Promise<number> {
-  return scheduleExpirationNotifications();
-}

@@ -208,7 +208,7 @@ function findPartialMatch(category: string): StorageSuggestionResult | null {
   return null;
 }
 
-export function getBaseSuggestion(
+function getBaseSuggestion(
   category: string,
   itemName?: string,
 ): StorageSuggestionResult {
@@ -329,52 +329,4 @@ export function useStorageRecorder() {
   );
 
   return { recordChoice: record };
-}
-
-export function getStorageSuggestion(
-  category: string | undefined,
-  itemName?: string,
-): StorageSuggestionResult | null {
-  if (!category || category.trim() === "") {
-    return null;
-  }
-
-  return getBaseSuggestion(category, itemName);
-}
-
-export async function getStorageSuggestionWithPreference(
-  category: string | undefined,
-  itemName?: string,
-): Promise<StorageSuggestionResult | null> {
-  if (!category || category.trim() === "") {
-    return null;
-  }
-
-  const baseSuggestion = getBaseSuggestion(category, itemName);
-  const prefKey = itemName?.toLowerCase().trim() || category;
-  let userPref = await getUserPreference(prefKey);
-
-  if (!userPref && itemName) {
-    userPref = await getUserPreference(category);
-  }
-
-  if (userPref) {
-    const normalizedUserLoc = normalizeLocation(userPref.location);
-    const alternatives = [
-      baseSuggestion.primary,
-      ...baseSuggestion.alternatives,
-    ].filter((loc) => loc !== normalizedUserLoc && loc !== userPref.location);
-
-    return {
-      primary: normalizedUserLoc,
-      alternatives,
-      notes: `Based on your preferences. ${baseSuggestion.notes}`,
-      confidence: userPref.confidence,
-      isUserPreference: true,
-      originalSuggestion: baseSuggestion.primary,
-      isItemSpecific: baseSuggestion.isItemSpecific,
-    };
-  }
-
-  return baseSuggestion;
 }

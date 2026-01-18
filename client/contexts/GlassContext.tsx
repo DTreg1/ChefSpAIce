@@ -4,7 +4,7 @@ interface GlassContextValue {
   isOnGlass: boolean;
 }
 
-export const GlassContext = createContext<GlassContextValue>({
+const GlassContext = createContext<GlassContextValue>({
   isOnGlass: false,
 });
 

@@ -15,13 +15,6 @@ export const ENTITLEMENTS = {
   PRO: 'pro',
 } as const;
 
-export const PRODUCT_IDS = {
-  BASIC_MONTHLY: 'com.chefspaice.basic.monthly',
-  BASIC_YEARLY: 'com.chefspaice.basic.annual',
-  PRO_MONTHLY: 'com.chefspaice.pro.monthly',
-  PRO_YEARLY: 'com.chefspaice.pro.annual',
-} as const;
-
 export type PaywallResult = 'purchased' | 'restored' | 'cancelled' | 'error' | 'not_presented';
 
 class StoreKitService {

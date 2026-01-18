@@ -47,30 +47,9 @@ export const ANNUAL_PRICES = {
   PRO: 99.90,
 } as const;
 
-export const STRIPE_PRICE_IDS = {
-  BASIC_MONTHLY: 'price_basic_monthly_placeholder',
-  BASIC_ANNUAL: 'price_basic_annual_placeholder',
-  PRO_MONTHLY: 'price_pro_monthly_placeholder',
-  PRO_ANNUAL: 'price_pro_annual_placeholder',
-} as const;
-
 export const TRIAL_CONFIG = {
   TRIAL_DAYS: 7,
   TRIAL_TIER: SubscriptionTier.PRO,
-} as const;
-
-export const ERROR_CODES = {
-  PANTRY_LIMIT_REACHED: 'PANTRY_LIMIT_REACHED',
-  COOKWARE_LIMIT_REACHED: 'COOKWARE_LIMIT_REACHED',
-  AI_RECIPE_LIMIT_REACHED: 'AI_RECIPE_LIMIT_REACHED',
-  FEATURE_NOT_AVAILABLE: 'FEATURE_NOT_AVAILABLE',
-} as const;
-
-export const ERROR_MESSAGES = {
-  [ERROR_CODES.PANTRY_LIMIT_REACHED]: 'Pantry item limit reached. Upgrade to Pro for unlimited items.',
-  [ERROR_CODES.COOKWARE_LIMIT_REACHED]: 'Cookware limit reached. Upgrade to Pro for unlimited cookware.',
-  [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]: 'AI recipe limit reached. Upgrade to Pro for unlimited recipes.',
-  [ERROR_CODES.FEATURE_NOT_AVAILABLE]: 'This feature requires a Pro subscription.',
 } as const;
 
 export function getTierLimits(tier: SubscriptionTier): TierLimits {
@@ -102,4 +81,3 @@ export function getRemainingQuota(
   }
   return Math.max(0, limit - currentCount);
 }
-

@@ -71,12 +71,3 @@ export const DEFAULT_PRESET_ID = "classic";
 export function getPresetById(id: string): MealPlanPreset {
   return MEAL_PLAN_PRESETS.find((p) => p.id === id) || MEAL_PLAN_PRESETS[0];
 }
-
-export function getMealSlotIcon(
-  slotId: string,
-  presetId: string = DEFAULT_PRESET_ID,
-): MealSlot["icon"] {
-  const preset = getPresetById(presetId);
-  const slot = preset.slots.find((s) => s.id === slotId);
-  return slot?.icon || "sun";
-}

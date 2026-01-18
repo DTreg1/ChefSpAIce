@@ -80,42 +80,11 @@ export function updateItemInArray<T extends object>(
   return newItems;
 }
 
-export function getBatchButtonText(selectedCount: number): string {
-  return `Add ${selectedCount} Item${selectedCount !== 1 ? "s" : ""} to Inventory`;
-}
-
 export function shouldShowEmptyState(
   results: AnalysisResult,
   items: unknown[],
 ): boolean {
   return !!results.error || items.length === 0;
-}
-
-export function isSingleItemSelected(selectedCount: number): boolean {
-  return selectedCount === 1;
-}
-
-export function mapStorageLocation(
-  location: string | undefined,
-): "fridge" | "freezer" | "pantry" | "counter" {
-  if (!location) return "fridge";
-  const normalized = location.toLowerCase();
-  if (normalized === "refrigerator") return "fridge";
-  if (normalized === "freezer") return "freezer";
-  if (normalized === "pantry") return "pantry";
-  if (normalized === "counter") return "counter";
-  return "fridge";
-}
-
-export function calculateExpirationDate(shelfLifeDays: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + shelfLifeDays);
-  return date.toISOString().split("T")[0];
-}
-
-export function normalizeCategory(category: string | undefined): string {
-  if (!category) return "Other";
-  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
 }
 
 export const CATEGORIES = [

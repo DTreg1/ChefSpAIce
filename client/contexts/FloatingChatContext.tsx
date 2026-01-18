@@ -54,11 +54,3 @@ export function useFloatingChat() {
   return context;
 }
 
-export function useHideFloatingChat() {
-  const { hideFloatingChat, showFloatingChat } = useFloatingChat();
-
-  React.useEffect(() => {
-    hideFloatingChat();
-    return () => showFloatingChat();
-  }, [hideFloatingChat, showFloatingChat]);
-}

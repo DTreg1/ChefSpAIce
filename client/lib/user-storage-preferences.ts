@@ -199,25 +199,6 @@ export async function getUserPreference(
   };
 }
 
-export async function getCategoryStats(
-  category: string,
-): Promise<{ location: string; count: number; weight: number }[]> {
-  const prefs = await loadPreferences();
-  const categoryPrefs = prefs[category];
-
-  if (!categoryPrefs) {
-    return [];
-  }
-
-  return Object.entries(categoryPrefs)
-    .map(([location, record]) => ({
-      location,
-      count: record.count,
-      weight: calculateWeight(record),
-    }))
-    .sort((a, b) => b.weight - a.weight);
-}
-
 export async function clearPreferences(): Promise<void> {
   cachedPreferences = null;
   try {
@@ -226,19 +207,6 @@ export async function clearPreferences(): Promise<void> {
   } catch (error) {
     console.error("Error clearing storage preferences:", error);
   }
-}
-
-export async function clearCategoryPreference(category: string): Promise<void> {
-  const prefs = await loadPreferences();
-
-  if (prefs[category]) {
-    delete prefs[category];
-    await savePreferences(prefs);
-  }
-}
-
-export async function getAllPreferences(): Promise<UserStoragePreferences> {
-  return loadPreferences();
 }
 
 export async function getLearnedPreferencesCount(): Promise<number> {
@@ -255,6 +223,3 @@ export async function getLearnedPreferencesCount(): Promise<number> {
   return count;
 }
 
-export function invalidateCache(): void {
-  cachedPreferences = null;
-}

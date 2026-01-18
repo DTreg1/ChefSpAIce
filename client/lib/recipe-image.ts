@@ -106,16 +106,3 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
   }
 }
 
-export async function getRecipeImageUri(
-  recipeId: string,
-): Promise<string | null> {
-  if (Platform.OS === "web" || !RECIPE_IMAGES_DIR) {
-    return null;
-  }
-
-  const filename = `recipe-${recipeId}.png`;
-  const fileUri = `${RECIPE_IMAGES_DIR}${filename}`;
-
-  const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  return fileInfo.exists ? fileUri : null;
-}

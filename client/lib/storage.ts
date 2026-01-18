@@ -37,7 +37,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { getApiUrl } from "@/lib/query-client";
 import { syncManager } from "@/lib/sync-manager";
 
 /** Lazy-loaded notification scheduler to avoid circular dependencies */
@@ -431,7 +431,6 @@ export const storage = {
       recipes.map(async (recipe) => {
         let resolvedImageUri: string | undefined = recipe.imageUri;
         let useCloudFallback = false;
-        let localMissing = false;
         
         if (recipe.imageUri?.startsWith("stored:")) {
           const recipeId = recipe.imageUri.replace("stored:", "");
@@ -441,7 +440,6 @@ export const storage = {
             resolvedImageUri = imageUri;
           } else {
             // Local storage doesn't have it or data is corrupted
-            localMissing = true;
             console.log("[getRecipes] Local image missing for recipe:", recipe.id, "cloudImageUri available:", !!recipe.cloudImageUri);
             if (recipe.cloudImageUri) {
               useCloudFallback = true;
@@ -457,7 +455,6 @@ export const storage = {
               const FileSystem = await import("expo-file-system/legacy");
               const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
               if (!fileInfo.exists) {
-                localMissing = true;
                 console.log("[getRecipes] Local file missing for recipe:", recipe.id);
                 if (recipe.cloudImageUri) {
                   useCloudFallback = true;
@@ -1235,37 +1232,4 @@ export function formatDate(dateString: string): string {
   });
 }
 
-const LEGACY_STORAGE_KEYS = [
-  "@freshpantry/inventory",
-  "@freshpantry/recipes",
-  "@freshpantry/meal_plans",
-  "@freshpantry/shopping_list",
-  "@freshpantry/chat_history",
-  "@freshpantry/preferences",
-  "@freshpantry/waste_log",
-  "@freshpantry/consumed_log",
-  "@freshpantry/analytics",
-  "@freshpantry/cookware",
-  "@freshpantry/onboarding",
-];
 
-export async function clearLegacyStorage(): Promise<{
-  cleared: boolean;
-  keysRemoved: string[];
-}> {
-  const keysRemoved: string[] = [];
-
-  for (const key of LEGACY_STORAGE_KEYS) {
-    try {
-      const value = await AsyncStorage.getItem(key);
-      if (value !== null) {
-        await AsyncStorage.removeItem(key);
-        keysRemoved.push(key);
-      }
-    } catch (error) {
-      console.error(`Failed to remove legacy key ${key}:`, error);
-    }
-  }
-
-  return { cleared: keysRemoved.length > 0, keysRemoved };
-}
