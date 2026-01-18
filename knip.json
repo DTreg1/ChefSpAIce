@@ -1,0 +1,18 @@
+{
+  "entry": [
+    "client/**/*.{ts,tsx}",
+    "server/*.ts",
+    "server/**/*.ts",
+    "shared/*.ts"
+  ],
+  "project": [
+    "client/**/*.{ts,tsx}",
+    "server/*.ts",
+    "server/**/*.ts",
+    "shared/*.ts"
+  ],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

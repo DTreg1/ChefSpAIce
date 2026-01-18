@@ -3,7 +3,7 @@ export enum SubscriptionTier {
   PRO = 'PRO',
 }
 
-interface TierLimits {
+export interface TierLimits {
   maxPantryItems: number;
   maxAiRecipesPerMonth: number;
   maxCookwareItems: number;
