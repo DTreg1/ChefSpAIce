@@ -30,6 +30,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { CookPotLoader } from "@/components/CookPotLoader";
 import { StorageSuggestionBadge } from "@/components/StorageSuggestionBadge";
 import { NutritionSection } from "@/components/NutritionSection";
 import { useTheme } from "@/hooks/useTheme";
@@ -867,16 +868,7 @@ export default function AddItemScreen() {
         >
         {barcodeLoading ? (
           <View style={styles.selectFoodContent}>
-            <ActivityIndicator size="large" color={AppColors.primary} />
-            <ThemedText type="h3" style={styles.selectFoodTitle}>
-              Looking Up Product...
-            </ThemedText>
-            <ThemedText
-              type="body"
-              style={{ color: theme.textSecondary, textAlign: "center" }}
-            >
-              Searching for barcode {barcode}
-            </ThemedText>
+            <CookPotLoader size="lg" text={`Looking up barcode ${barcode}...`} />
           </View>
         ) : (
           <>

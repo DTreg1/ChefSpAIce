@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  ActivityIndicator,
   ScrollView,
   Dimensions,
   Platform,
@@ -28,6 +27,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -1168,8 +1168,7 @@ export default function OnboardingScreen() {
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={AppColors.primary} />
-          <ThemedText style={styles.loadingText}>Loading...</ThemedText>
+          <CookPotLoader size="lg" text="Loading..." />
         </View>
       </View>
     );

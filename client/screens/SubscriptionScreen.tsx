@@ -5,10 +5,10 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  ActivityIndicator,
   Linking,
   Alert,
   BackHandler,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions, useRoute, RouteProp } from "@react-navigation/native";
@@ -19,6 +19,7 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -338,10 +339,7 @@ export default function SubscriptionScreen() {
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
-        <ActivityIndicator size="large" color={AppColors.primary} />
-        <ThemedText style={[styles.loadingText, { color: theme.textSecondary }]}>
-          Loading subscription...
-        </ThemedText>
+        <CookPotLoader size="lg" text="Loading subscription..." />
       </View>
     );
   }
