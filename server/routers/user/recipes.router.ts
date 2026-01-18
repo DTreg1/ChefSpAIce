@@ -112,6 +112,7 @@ interface GeneratedRecipe {
   usedExpiringCount?: number;
   requiredEquipment?: string[];
   optionalEquipment?: string[];
+  substitutionNotes?: string[];
 }
 
 export function calculateDaysUntilExpiry(
@@ -215,12 +216,15 @@ export function buildSmartPrompt(params: {
 
   prompt += `ALWAYS AVAILABLE: Water and ice are always available and can be used freely.\n\n`;
 
-  prompt += `=== OPTIONAL ENHANCEMENTS ===\n\n`;
+  prompt += `=== SMART SUBSTITUTIONS ===\n\n`;
 
-  prompt += `For every recipe, suggest optional ingredients that would elevate the dish - things the user might have or could easily get.\n`;
-  prompt += `Include an "optionalIngredients" array with 2-4 suggestions like:\n`;
-  prompt += `- "A squeeze of lemon would brighten this up"\n`;
-  prompt += `- "Fresh herbs like basil or parsley would add freshness"\n\n`;
+  prompt += `When crafting the recipe, use ONLY ingredients from the user's inventory.\n`;
+  prompt += `If an ideal ingredient isn't available but a suitable substitute IS in their inventory, use the substitute and note it subtly.\n`;
+  prompt += `Include a "substitutionNotes" array with helpful hints like:\n`;
+  prompt += `- "Using lime juice here - lemon would also work beautifully"\n`;
+  prompt += `- "Butter adds richness - olive oil is a lighter alternative"\n`;
+  prompt += `- "Greek yogurt makes a great stand-in for sour cream"\n`;
+  prompt += `Only include notes when you're using a substitute - don't suggest ingredients they don't have.\n\n`;
 
   prompt += `=== INGREDIENT NAMING ===\n\n`;
 
@@ -365,7 +369,8 @@ export function buildSmartPrompt(params: {
   "cookTime": ${exampleCookTime},
   "servings": ${servings},
   "nutrition": {"calories": 400, "protein": ${Math.round((400 * macroTargets.protein) / 100 / 4)}, "carbs": ${Math.round((400 * macroTargets.carbs) / 100 / 4)}, "fat": ${Math.round((400 * macroTargets.fat) / 100 / 9)}},
-  "usedExpiringItems": ["item1", "item2"]${
+  "usedExpiringItems": ["item1", "item2"],
+  "substitutionNotes": ["Using lime here - lemon would also work", "Butter adds richness to this dish"]${
     hasEquipment
       ? `,
   "requiredEquipment": ["Pan"],
@@ -376,9 +381,10 @@ export function buildSmartPrompt(params: {
 
   prompt += `=== FINAL CHECKLIST ===\n`;
   prompt += `Before responding, verify:\n`;
-  prompt += `- EVERY ingredient comes from the user's inventory (no exceptions for oil, salt, etc.)\n`;
+  prompt += `- All ingredients come from the user's inventory (no exceptions for oil, salt, etc.)\n`;
   prompt += `- Ingredient names in the JSON array match the inventory names exactly for proper matching\n`;
   prompt += `- All ingredients marked fromInventory: true\n`;
+  prompt += `- Include substitution notes ONLY when using a substitute (empty array if no substitutes used)\n`;
   prompt += `- Title and description use natural, appetizing language (simplified ingredient names)\n`;
   prompt += `- Recipe is different from previous generations if any were listed\n`;
   prompt += `- Total time (prepTime + cookTime) ≤ ${quickRecipe ? 20 : maxTime} minutes\n`;
@@ -488,10 +494,10 @@ router.post("/generate", async (req: Request, res: Response) => {
           content: `You are a creative culinary assistant that creates the BEST possible recipes from user-provided ingredients.
 
 KEY PRINCIPLES:
-1. Start with inventory items - use fuzzy matching ("chicken" matches "chicken breast")
+1. Use ONLY ingredients from the user's inventory - use fuzzy matching ("chicken" matches "chicken breast")
 2. Water and ice are always available
 3. Target ${effectiveIngredientCount.min}-${effectiveIngredientCount.max} ingredients for focused, quality dishes
-4. Suggest optional enhancements that would elevate the dish (e.g., "a squeeze of lemon would brighten this")
+4. When using a substitute ingredient, add a subtle note (e.g., "Using lime here - lemon works too")
 5. Use clean, appetizing ingredient names for display while tracking inventory matches
 6. Always respond with valid JSON matching the exact schema provided`,
         },
