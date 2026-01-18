@@ -40,7 +40,6 @@ import {
   RefreshControl,
   Dimensions,
   Modal,
-  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -57,6 +56,7 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { RecipeGridSkeleton } from "@/components/Skeleton";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import {
@@ -451,16 +451,16 @@ export default function RecipesScreen() {
       >
         <View style={styles.progressModalOverlay}>
           <View style={[styles.progressModalContent, { backgroundColor: theme.glass.background }]}>
-            <ActivityIndicator size="large" color={AppColors.primary} />
-            <ThemedText type="body" style={styles.progressText}>
-              {progressStage === "loading"
+            <CookPotLoader
+              size="lg"
+              text={progressStage === "loading"
                 ? "Loading your kitchen..."
                 : progressStage === "recipe"
                   ? "Creating your recipe..."
                   : progressStage === "image"
                     ? "Generating image..."
                     : "Almost done..."}
-            </ThemedText>
+            />
           </View>
         </View>
       </Modal>

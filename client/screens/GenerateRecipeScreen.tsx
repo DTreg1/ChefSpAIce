@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { View, StyleSheet, Modal, ActivityIndicator, Platform } from "react-native";
+import { View, StyleSheet, Modal, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -24,6 +24,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { ExpiryBadge } from "@/components/ExpiryBadge";
 import { UpgradePrompt, UsageBadge } from "@/components/UpgradePrompt";
+import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -608,14 +609,10 @@ export default function GenerateRecipeScreen() {
       >
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.progressModal}>
-            <ActivityIndicator size="large" color={AppColors.primary} />
-            <ThemedText type="h3" style={styles.modalTitle}>
-              Creating Your{" "}
-              {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
-            </ThemedText>
-            <ThemedText type="body" style={styles.modalSubtitle}>
-              Checking what's in the kitchen...
-            </ThemedText>
+            <CookPotLoader
+              size="lg"
+              text={`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}
+            />
             {expiringItems.length > 0 ? (
               <View style={styles.progressExpiringNote}>
                 <Feather name="clock" size={16} color={AppColors.warning} />
