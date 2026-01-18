@@ -19,7 +19,6 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import LandingScreen from "@/screens/LandingScreen";
-import { WebScreenshotGallery } from "@/screens/WebScreenshotGallery";
 import AboutScreen from "@/screens/web/AboutScreen";
 import PrivacyScreen from "@/screens/web/PrivacyScreen";
 import TermsScreen from "@/screens/web/TermsScreen";
@@ -135,13 +134,6 @@ function WebLandingContent() {
         {visitedPages.has('/support') && (
           <View style={[styles.pageContainer, { display: isVisible('/support') ? 'flex' : 'none' }]}>
             <SupportScreen />
-          </View>
-        )}
-        
-        {/* Gallery - loaded when first visited, then cached */}
-        {visitedPages.has('/gallery') && (
-          <View style={[styles.pageContainer, { display: isVisible('/gallery') ? 'flex' : 'none' }]}>
-            <WebScreenshotGallery onBack={() => navigateTo('/')} />
           </View>
         )}
       </View>
