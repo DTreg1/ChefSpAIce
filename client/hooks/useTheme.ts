@@ -13,3 +13,5 @@ export function useTheme() {
   };
 }
 
+export const useAppTheme = useTheme;
+
