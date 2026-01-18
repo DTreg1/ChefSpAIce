@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import { Platform, Alert, Linking } from "react-native";
+import { Platform, Alert } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
-import { SubscriptionTier, TierLimits, TIER_CONFIG } from "../../shared/subscription";
+import { SubscriptionTier, TIER_CONFIG } from "../../shared/subscription";
 import { TrialEndedModal } from "@/components/TrialEndedModal";
 import { useStoreKit } from "@/hooks/useStoreKit";
 
@@ -118,11 +118,10 @@ interface SubscriptionProviderProps {
 }
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { isAuthenticated, token, signOut } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   
   const hasFetched = typeof window !== 'undefined' && window.__subscriptionFetched;
   const cachedSub = typeof window !== 'undefined' ? window.__subscriptionCache : null;
-  const lastToken = typeof window !== 'undefined' ? window.__subscriptionLastToken : null;
   
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
