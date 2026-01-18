@@ -283,6 +283,11 @@ export function ChatModal() {
               screen: "RecipeDetail",
               params: data.navigateTo.params,
             });
+          } else if (data.navigateTo.screen === "GenerateRecipe") {
+            navigation.navigate("RecipesTab", {
+              screen: "GenerateRecipe",
+              params: data.navigateTo.params || {},
+            });
           } else {
             navigation.navigate(data.navigateTo.screen, data.navigateTo.params);
           }

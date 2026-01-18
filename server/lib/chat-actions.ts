@@ -231,6 +231,18 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "open_recipe_customizer",
+      description: "Open the recipe customization screen where the user can configure all recipe generation options. Use this when the user wants to customize their recipe settings, wants full control over recipe generation, or asks to open the recipe generator.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_meal_plan",
       description: "Create a weekly meal plan for the user. Use this when the user asks for meal planning, wants to plan their week, or asks for a weekly menu.",
       parameters: {
@@ -593,6 +605,18 @@ export async function executeWasteItem(
   }
 }
 
+export function executeOpenRecipeCustomizer(): ActionResult {
+  return {
+    success: true,
+    message: "Opening the recipe customization screen where you can configure all your recipe preferences.",
+    actionType: "open_recipe_customizer",
+    navigateTo: {
+      screen: "GenerateRecipe",
+      params: {}
+    }
+  };
+}
+
 export async function executeGenerateRecipe(
   userId: string,
   args: {
@@ -953,6 +977,8 @@ export async function executeChatAction(
       return executeWasteItem(userId, args as Parameters<typeof executeWasteItem>[1]);
     case "generate_recipe":
       return executeGenerateRecipe(userId, args as Parameters<typeof executeGenerateRecipe>[1]);
+    case "open_recipe_customizer":
+      return executeOpenRecipeCustomizer();
     case "create_meal_plan":
       return executeCreateMealPlan(userId, args as Parameters<typeof executeCreateMealPlan>[1]);
     case "add_to_shopping_list":
