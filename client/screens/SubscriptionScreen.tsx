@@ -649,6 +649,10 @@ export default function SubscriptionScreen() {
           >
             {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
           </GlassButton>
+
+          <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
+            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
+          </ThemedText>
         </GlassCard>
       )}
 
@@ -800,6 +804,10 @@ export default function SubscriptionScreen() {
           >
             {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
           </GlassButton>
+
+          <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
+            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
+          </ThemedText>
         </GlassCard>
       )}
 
@@ -1107,6 +1115,12 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     marginTop: Spacing.sm,
+  },
+  subscriptionTerms: {
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+    marginTop: Spacing.md,
   },
   manageCard: {
     padding: Spacing.lg,
