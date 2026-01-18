@@ -39,7 +39,8 @@ import {
   Pressable,
   RefreshControl,
   Dimensions,
-  Alert,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -55,12 +56,13 @@ import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { RecipeGridSkeleton } from "@/components/Skeleton";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import {
   Spacing,
   BorderRadius,
   AppColors,
-  Shadows,
   GlassEffect,
 } from "@/constants/theme";
 import { storage, Recipe, FoodItem } from "@/lib/storage";
@@ -75,7 +77,7 @@ const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
 
@@ -98,6 +100,16 @@ export default function RecipesScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const {
+    generateQuickRecipe,
+    isGenerating,
+    progressStage,
+    showUpgradePrompt,
+    dismissUpgradePrompt,
+    entitlements,
+    checkLimit,
+  } = useQuickRecipeGeneration();
+
   const menuItems: MenuItemConfig[] = useMemo(() => [
     {
       label: showFavoritesOnly ? "Show All" : "Favorites Only",
@@ -111,9 +123,10 @@ export default function RecipesScreen() {
       onPress: () => setShowSettingsModal(true),
     },
     {
-      label: "Quick Recipe",
+      label: isGenerating ? "Generating..." : "Quick Recipe",
       icon: "zap",
-      onPress: () => navigation.navigate("GenerateRecipe"),
+      onPress: generateQuickRecipe,
+      disabled: isGenerating,
     },
     {
       label: exporting ? "Exporting..." : "Export to CSV",
@@ -143,7 +156,7 @@ export default function RecipesScreen() {
       },
       disabled: loading || recipes.length === 0 || exporting,
     },
-  ], [showFavoritesOnly, loading, recipes, exporting]);
+  ], [showFavoritesOnly, loading, recipes, exporting, isGenerating, generateQuickRecipe]);
 
   const loadData = useCallback(async (showSkeleton = false) => {
     if (showSkeleton) setLoading(true);
@@ -377,12 +390,14 @@ export default function RecipesScreen() {
           style={[
             styles.generateButton,
             { backgroundColor: AppColors.primary },
+            isGenerating && { opacity: 0.7 },
           ]}
-          onPress={() => navigation.navigate("GenerateRecipe")}
+          onPress={generateQuickRecipe}
+          disabled={isGenerating}
         >
           <Feather name="zap" size={18} color="#FFFFFF" />
           <ThemedText type="button" style={styles.generateButtonText}>
-            Generate Recipe
+            {isGenerating ? "Generating..." : "Generate Recipe"}
           </ThemedText>
         </Pressable>
       </View>
@@ -428,6 +443,48 @@ export default function RecipesScreen() {
           customSettings: settings,
         })}
       />
+
+      <Modal
+        visible={isGenerating}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.progressModalOverlay}>
+          <View style={[styles.progressModalContent, { backgroundColor: theme.glass.background }]}>
+            <ActivityIndicator size="large" color={AppColors.primary} />
+            <ThemedText type="body" style={styles.progressText}>
+              {progressStage === "loading"
+                ? "Loading your kitchen..."
+                : progressStage === "recipe"
+                  ? "Creating your recipe..."
+                  : progressStage === "image"
+                    ? "Generating image..."
+                    : "Almost done..."}
+            </ThemedText>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showUpgradePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissUpgradePrompt}
+      >
+        <View style={styles.upgradeModalOverlay}>
+          <UpgradePrompt
+            type="limit"
+            limitName="AI recipes"
+            remaining={(() => { const r = checkLimit("aiRecipes").remaining; return typeof r === 'number' ? r : undefined; })()}
+            max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 3}
+            onUpgrade={() => {
+              dismissUpgradePrompt();
+              navigation.navigate("Pricing" as any);
+            }}
+            onDismiss={dismissUpgradePrompt}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -573,5 +630,27 @@ const styles = StyleSheet.create({
   generateButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  progressModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  progressModalContent: {
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  progressText: {
+    textAlign: "center",
+  },
+  upgradeModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
   },
 });

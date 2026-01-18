@@ -17,42 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing, GlassColors, Colors } from "@/constants/theme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { storage, FoodItem } from "@/lib/storage";
-
-const EXPIRING_THRESHOLD_DAYS = 5;
-
-function calculateDaysUntilExpiry(
-  expiryDate: string | null | undefined,
-): number | null {
-  if (!expiryDate) return null;
-  const expiry = new Date(expiryDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-  const diffTime = expiry.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
-async function getGenerateRecipeParams(): Promise<{
-  preselectedIngredientNames: string[];
-  prioritizeExpiring: boolean;
-}> {
-  const inventory = await storage.getInventory();
-
-  const expiringItems = inventory.filter((item: FoodItem) => {
-    const daysUntilExpiry = calculateDaysUntilExpiry(item.expirationDate);
-    return (
-      daysUntilExpiry !== null && daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS
-    );
-  });
-
-  const expiringItemNames = expiringItems.map((item: FoodItem) => item.name);
-
-  return {
-    preselectedIngredientNames: expiringItemNames,
-    prioritizeExpiring: true,
-  };
-}
+import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,
@@ -222,6 +187,7 @@ export const AddMenu = memo(function AddMenu({
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
   
   const { checkLimit, entitlements } = useSubscription();
+  const { generateQuickRecipe } = useQuickRecipeGeneration();
 
   const p0 = useSharedValue(0);
   const p1 = useSharedValue(0);
@@ -293,12 +259,11 @@ export const AddMenu = memo(function AddMenu({
           onNavigate("ScanHub");
           break;
         case "quick-recipe":
-          const params = await getGenerateRecipeParams();
-          onNavigate("RecipesTab", { screen: "GenerateRecipe", params });
+          generateQuickRecipe();
           break;
       }
     }, 250);
-  }, [checkLimit, onClose, onNavigate]);
+  }, [checkLimit, onClose, onNavigate, generateQuickRecipe]);
 
   const handleUpgrade = useCallback(() => {
     setShowUpgradePrompt(false);
