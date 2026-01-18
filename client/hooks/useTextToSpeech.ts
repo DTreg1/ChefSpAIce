@@ -252,4 +252,3 @@ export function useTextToSpeech(options: TTSOptions = {}) {
   };
 }
 
-export type { TTSOptions, TTSState };

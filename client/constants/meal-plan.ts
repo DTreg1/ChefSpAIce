@@ -1,11 +1,11 @@
-export interface MealSlot {
+interface MealSlot {
   id: string;
   name: string;
   icon: "sunrise" | "sun" | "moon" | "coffee" | "sunset";
   order: number;
 }
 
-export interface MealPlanPreset {
+interface MealPlanPreset {
   id: string;
   name: string;
   description: string;

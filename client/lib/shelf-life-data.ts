@@ -1,6 +1,6 @@
 export type StorageLocation = "refrigerator" | "freezer" | "pantry" | "counter";
 
-export interface StorageRecommendation {
+interface StorageRecommendation {
   primary: StorageLocation;
   alternatives: StorageLocation[];
   notes: string;

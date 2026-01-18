@@ -1,5 +1,4 @@
 import React from "react";
-import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -12,7 +11,7 @@ import { CustomTabBar } from "@/components/CustomTabBar";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
 
-export type MainTabParamList = {
+type MainTabParamList = {
   KitchenTab: undefined;
   RecipesTab: undefined;
   AddTab: undefined;
@@ -111,4 +110,3 @@ export default function MainTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({});

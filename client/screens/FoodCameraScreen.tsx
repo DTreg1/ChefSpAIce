@@ -3,14 +3,11 @@ import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus 
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withRepeat,
   withSequence,
   withTiming,
   Easing,
   FadeIn,
-  FadeOut,
-  SlideInDown,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -40,7 +37,6 @@ import { storage, FoodItem, generateId } from "@/lib/storage";
 
 type StorageLocationValue = "fridge" | "freezer" | "pantry" | "counter";
 
-export type { IdentifiedFood, AnalysisResult };
 
 type ScreenState = "idle" | "preview" | "analyzing" | "results";
 

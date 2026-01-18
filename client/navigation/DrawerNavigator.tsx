@@ -1,12 +1,12 @@
 import React from "react";
-import { Platform, StyleSheet } from "react-native";
+import { Platform } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import { DrawerContent } from "@/components/DrawerContent";
 import { useTheme } from "@/hooks/useTheme";
 
-export type DrawerParamList = {
+type DrawerParamList = {
   Tabs: undefined;
 };
 

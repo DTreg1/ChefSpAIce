@@ -8,12 +8,12 @@ const SYNC_KEYS = {
   SYNC_STATUS: "@chefspaice/sync_status",
 } as const;
 
-export type SyncOperation = "create" | "update" | "delete";
-export type SyncDataType = "inventory" | "recipes" | "mealPlans" | "shoppingList";
+type SyncOperation = "create" | "update" | "delete";
+type SyncDataType = "inventory" | "recipes" | "mealPlans" | "shoppingList";
 
 export type SyncStatus = "idle" | "syncing" | "offline" | "error";
 
-export interface SyncQueueItem {
+interface SyncQueueItem {
   id: string;
   dataType: SyncDataType;
   operation: SyncOperation;

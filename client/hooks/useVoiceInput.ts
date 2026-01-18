@@ -363,4 +363,3 @@ export function useVoiceInput(options: VoiceInputOptions = {}) {
   };
 }
 
-export type { VoiceInputOptions, VoiceInputState };

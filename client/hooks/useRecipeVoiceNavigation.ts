@@ -469,4 +469,3 @@ export function useRecipeVoiceNavigation(
   };
 }
 
-export type { RecipeVoiceState, RecipeVoiceNavigationOptions };

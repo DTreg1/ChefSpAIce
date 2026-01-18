@@ -22,7 +22,7 @@ import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
 
 type GlassButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
-export interface GlassButtonProps {
+interface GlassButtonProps {
   onPress?: () => void;
   children: ReactNode;
   style?: StyleProp<ViewStyle>;

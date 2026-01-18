@@ -6,7 +6,7 @@ export interface IngredientSwap {
   dietaryTags: string[];
 }
 
-export interface SwapCategory {
+interface SwapCategory {
   name: string;
   swaps: IngredientSwap[];
 }

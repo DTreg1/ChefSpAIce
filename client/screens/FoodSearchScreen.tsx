@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -38,7 +37,7 @@ interface FoodNutrition {
   servingSize?: string;
 }
 
-export interface UnifiedFoodItem {
+interface UnifiedFoodItem {
   id: string;
   name: string;
   normalizedName: string;

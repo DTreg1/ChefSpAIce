@@ -23,7 +23,7 @@ export type CommandIntent =
   | "HELP"
   | "UNKNOWN";
 
-export interface CommandResult {
+interface CommandResult {
   success: boolean;
   response: string;
   data?: unknown;

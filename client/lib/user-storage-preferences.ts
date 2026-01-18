@@ -4,17 +4,17 @@ const STORAGE_PREFS_KEY = "@user_storage_preferences";
 const PREFS_VERSION_KEY = "@user_storage_preferences_version";
 const CURRENT_VERSION = 1;
 
-export interface StorageChoiceRecord {
+interface StorageChoiceRecord {
   count: number;
   lastChosen: number;
   wasOverride: boolean;
 }
 
-export interface CategoryPreferences {
+interface CategoryPreferences {
   [location: string]: StorageChoiceRecord;
 }
 
-export interface UserStoragePreferences {
+interface UserStoragePreferences {
   [category: string]: CategoryPreferences;
 }
 

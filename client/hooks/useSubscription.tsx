@@ -14,9 +14,9 @@ declare global {
   }
 }
 
-export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
+type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
 
-export interface Entitlements {
+interface Entitlements {
   maxPantryItems: number | 'unlimited';
   maxAiRecipes: number | 'unlimited';
   maxCookware: number | 'unlimited';
@@ -27,7 +27,7 @@ export interface Entitlements {
   canUseWeeklyMealPrepping: boolean;
 }
 
-export interface Usage {
+interface Usage {
   pantryItemCount: number;
   aiRecipesUsedThisMonth: number;
   cookwareCount: number;
@@ -413,5 +413,3 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     </SubscriptionContext.Provider>
   );
 }
-
-export { SubscriptionContext, SubscriptionTier };

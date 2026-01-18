@@ -12,7 +12,7 @@ import { getApiUrl } from "@/lib/query-client";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
-export interface ShelfLifeSuggestion {
+interface ShelfLifeSuggestion {
   suggestedDate: Date;
   suggestedDays: number;
   confidence: ConfidenceLevel;

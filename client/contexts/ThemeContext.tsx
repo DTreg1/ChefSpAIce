@@ -7,7 +7,7 @@ const THEME_STORAGE_KEY = "@chefspaice/theme_preference";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ColorScheme = "light" | "dark";
-export type ThemeColors = typeof Colors.light;
+type ThemeColors = typeof Colors.light;
 
 interface ThemeContextType {
   theme: ThemeColors;

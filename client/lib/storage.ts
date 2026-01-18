@@ -93,7 +93,7 @@ export const DEFAULT_STORAGE_LOCATIONS = [
   { key: "counter", label: "Counter", icon: "coffee" },
 ] as const;
 
-export interface CustomStorageLocation {
+interface CustomStorageLocation {
   key: string;
   label: string;
   icon: string;

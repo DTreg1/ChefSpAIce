@@ -589,4 +589,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export type { RecipeVoiceControlsProps };

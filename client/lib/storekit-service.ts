@@ -4,7 +4,6 @@ import Purchases, { LOG_LEVEL, PurchasesOffering, PurchasesPackage, CustomerInfo
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { storage } from '@/lib/storage';
 
-export type { PurchasesOffering, PurchasesPackage, CustomerInfo };
 
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';

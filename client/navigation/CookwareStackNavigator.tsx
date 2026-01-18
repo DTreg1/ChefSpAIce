@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CookwareScreen from "@/screens/CookwareScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
-export type CookwareStackParamList = {
+type CookwareStackParamList = {
   Cookware: undefined;
 };
 

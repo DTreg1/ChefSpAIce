@@ -50,7 +50,7 @@ function getMealTypeFromTime(): { mealType: string; greeting: string } {
 
 export type QuickRecipeProgressStage = "loading" | "recipe" | "image" | "done";
 
-export interface QuickRecipeGenerationState {
+interface QuickRecipeGenerationState {
   isGenerating: boolean;
   progressStage: QuickRecipeProgressStage;
   showUpgradePrompt: boolean;

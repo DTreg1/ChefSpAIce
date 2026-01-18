@@ -73,7 +73,7 @@ if (isAndroid) {
 
 const AUTH_STORAGE_KEY = "@chefspaice/auth";
 
-export interface AuthUser {
+interface AuthUser {
   id: string;
   displayName?: string;
   email: string;
