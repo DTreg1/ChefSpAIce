@@ -5,6 +5,7 @@
   "description": "ChefSpAIce - AI-Powered Kitchen Management",
   "author": "Darin Tregloan",
   "scripts": {
+    "knip": "npx knip",
     "expo:clean": "npx expo prebuild --clean",
     "expo:dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_DEV_DOMAIN REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN:5000 npx expo start --localhost",
     "server:dev": "NODE_ENV=development tsx server/index.ts",
@@ -123,6 +124,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "^29.7.0",
     "jest-expo": "^54.0.16",
+    "knip": "^5.82.0",
     "prettier": "3.6.2",
     "supertest": "^7.1.4",
     "typescript": "~5.9.2"
