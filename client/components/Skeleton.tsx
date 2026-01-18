@@ -14,7 +14,7 @@ interface SkeletonProps {
   radius?: number;
 }
 
-export function Skeleton({ width = 100, height = 20, radius = 8 }: SkeletonProps) {
+function Skeleton({ width = 100, height = 20, radius = 8 }: SkeletonProps) {
   const { isDark } = useTheme();
   
   return (
@@ -27,7 +27,7 @@ export function Skeleton({ width = 100, height = 20, radius = 8 }: SkeletonProps
   );
 }
 
-export function RecipeCardSkeleton() {
+function RecipeCardSkeleton() {
   const { isDark, theme } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const cardContentWidth = CARD_WIDTH - Spacing.md * 2;
@@ -61,7 +61,7 @@ export function RecipeGridSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-export function InventoryItemSkeleton() {
+function InventoryItemSkeleton() {
   const { isDark, theme } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   const itemWidth = CONTENT_WIDTH - Spacing.md * 2;
@@ -86,7 +86,7 @@ export function InventoryItemSkeleton() {
   );
 }
 
-export function InventorySectionSkeleton() {
+function InventorySectionSkeleton() {
   const { isDark, theme } = useTheme();
   const colorMode = isDark ? "dark" : "light";
   

@@ -65,5 +65,3 @@ export function getCookwareImage(name: string): ImageSource | null {
   const normalizedName = name.toLowerCase().trim();
   return cookwareImages[normalizedName] || null;
 }
-
-export default cookwareImages;

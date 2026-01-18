@@ -448,5 +448,3 @@ const styles = StyleSheet.create({
     shadowRadius: 60,
   },
 });
-
-export default GlassLeaf;
