@@ -302,10 +302,6 @@ export default function FoodCameraScreen() {
     navigation.goBack();
   };
 
-  const handleManualEntry = () => {
-    navigation.navigate("AddItem", {});
-  };
-
   const mapStorageLocation = (loc: string): StorageLocationValue => {
     const locationMap: Record<string, StorageLocationValue> = {
       refrigerator: "fridge",
@@ -500,7 +496,6 @@ export default function FoodCameraScreen() {
           onConfirm={handleConfirmItems}
           onQuickAdd={handleQuickAdd}
           onScanMore={handleRetake}
-          onManualEntry={handleManualEntry}
         />
       </ThemedView>
     );

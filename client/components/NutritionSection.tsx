@@ -49,7 +49,6 @@ interface NutritionSectionProps {
     servingSize?: string;
   };
   onSearchNutrition?: () => void;
-  onManualEntry?: () => void;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -131,7 +130,6 @@ export function NutritionSection({
   brand,
   nutrition: existingNutrition,
   onSearchNutrition,
-  onManualEntry,
 }: NutritionSectionProps) {
   const { theme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -251,20 +249,6 @@ export function NutritionSection({
               >
                 <ThemedText style={{ color: AppColors.primary }}>
                   Search
-                </ThemedText>
-              </GlassButton>
-            ) : null}
-            {onManualEntry ? (
-              <GlassButton
-                variant="outline"
-                onPress={onManualEntry}
-                style={styles.noDataButton}
-                icon={
-                  <Feather name="edit-2" size={16} color={AppColors.primary} />
-                }
-              >
-                <ThemedText style={{ color: AppColors.primary }}>
-                  Enter Manually
                 </ThemedText>
               </GlassButton>
             ) : null}

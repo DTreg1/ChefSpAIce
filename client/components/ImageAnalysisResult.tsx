@@ -50,7 +50,6 @@ interface ImageAnalysisResultProps {
   onConfirm: (items: IdentifiedFood[], goToSingleItem?: boolean) => void;
   onQuickAdd?: (items: IdentifiedFood[]) => void;
   onScanMore?: () => void;
-  onManualEntry?: () => void;
 }
 
 export function ImageAnalysisResult({
@@ -60,7 +59,6 @@ export function ImageAnalysisResult({
   onConfirm,
   onQuickAdd,
   onScanMore,
-  onManualEntry,
 }: ImageAnalysisResultProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -202,23 +200,6 @@ export function ImageAnalysisResult({
                 style={styles.fullWidthButton}
               >
                 Try Different Photo
-              </GlassButton>
-            ) : null}
-            {onManualEntry ? (
-              <GlassButton
-                variant="ghost"
-                onPress={onManualEntry}
-                style={styles.fullWidthButton}
-              >
-                <View style={styles.manualEntryButton}>
-                  <Feather name="edit-3" size={16} color={AppColors.primary} />
-                  <ThemedText
-                    type="body"
-                    style={{ color: AppColors.primary, marginLeft: 8 }}
-                  >
-                    Add Item Manually
-                  </ThemedText>
-                </View>
               </GlassButton>
             ) : null}
           </View>

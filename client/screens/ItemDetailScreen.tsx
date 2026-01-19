@@ -35,20 +35,6 @@ const STORAGE_OPTIONS: { key: StorageLocation; label: string; icon: string }[] =
     { key: "counter", label: "Counter", icon: "coffee" },
   ];
 
-const CATEGORIES = [
-  "Produce",
-  "Dairy",
-  "Meat",
-  "Seafood",
-  "Bakery",
-  "Frozen",
-  "Canned",
-  "Beverages",
-  "Snacks",
-  "Condiments",
-  "Other",
-];
-
 export default function ItemDetailScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -327,13 +313,6 @@ export default function ItemDetailScreen() {
               { text: "Cancel", style: "cancel" },
               { text: "Search", onPress: () => {} },
             ],
-          );
-        }}
-        onManualEntry={() => {
-          Alert.alert(
-            "Manual Entry",
-            "Manual nutrition entry is coming soon.",
-            [{ text: "OK" }],
           );
         }}
       />
