@@ -1003,8 +1003,19 @@ export default function AddItemScreen() {
             <View style={styles.searchSection}>
               <FoodSearchAutocomplete
                 onSelect={handleFoodSelect}
-                placeholder="Search for a food item..."
+                placeholder="Search food, or brand:product"
               />
+              <ThemedText
+                type="caption"
+                style={{
+                  color: theme.textSecondary,
+                  opacity: 0.7,
+                  marginTop: Spacing.xs,
+                  textAlign: "center",
+                }}
+              >
+                Tip: Use "brand:product" (e.g., h-e-b:cheese)
+              </ThemedText>
             </View>
           </>
         )}

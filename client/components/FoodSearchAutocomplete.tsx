@@ -203,6 +203,8 @@ function ResultItem({
   isSelected: boolean;
 }) {
   const { theme } = useTheme();
+  const searchParts = query.split(":");
+  const productQuery = searchParts.length > 1 ? searchParts[searchParts.length - 1] : query;
 
   return (
     <Pressable
@@ -222,17 +224,20 @@ function ResultItem({
         <View style={styles.resultHeader}>
           <HighlightedText
             text={item.name}
-            highlight={query}
+            highlight={productQuery}
             style={styles.resultName}
           />
           <SourceBadge source={item.source} />
         </View>
-        <View style={styles.resultMeta}>
-          {item.brand ? (
-            <ThemedText type="caption" style={styles.resultBrand}>
+        {item.brand ? (
+          <View style={styles.brandRow}>
+            <Feather name="tag" size={12} color={theme.textSecondary} style={{ opacity: 0.7 }} />
+            <ThemedText type="caption" style={styles.resultBrandName}>
               {item.brand}
             </ThemedText>
-          ) : null}
+          </View>
+        ) : null}
+        <View style={styles.resultMeta}>
           {item.category ? (
             <ThemedText type="caption" style={styles.resultCategory}>
               {item.category}
@@ -605,11 +610,18 @@ const styles = StyleSheet.create({
   resultMeta: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 2,
     gap: Spacing.sm,
   },
-  resultBrand: {
-    opacity: 0.7,
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 4,
+  },
+  resultBrandName: {
+    fontWeight: "600",
+    opacity: 0.85,
   },
   resultCategory: {
     opacity: 0.6,
