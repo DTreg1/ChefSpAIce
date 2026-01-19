@@ -14,6 +14,516 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// server/lib/unit-conversion.ts
+function parseUnit(unit) {
+  if (!unit) return null;
+  const normalized = unit.toLowerCase().trim();
+  return ALL_UNITS[normalized] || null;
+}
+function getUnitType(unit) {
+  const info = parseUnit(unit);
+  return info?.type || "unknown";
+}
+function convertToBase(quantity, unit) {
+  const info = parseUnit(unit);
+  if (!info) return null;
+  return {
+    value: quantity * info.toBase,
+    baseUnit: info.baseUnit,
+    type: info.type
+  };
+}
+function convert(quantity, fromUnit, toUnit) {
+  const fromInfo = parseUnit(fromUnit);
+  const toInfo = parseUnit(toUnit);
+  if (!fromInfo || !toInfo) return null;
+  if (fromInfo.type !== toInfo.type) return null;
+  const baseValue = quantity * fromInfo.toBase;
+  return baseValue / toInfo.toBase;
+}
+function normalizeUnit(unit) {
+  if (!unit) return "";
+  const info = parseUnit(unit);
+  if (!info) return unit;
+  const unitLower = unit.toLowerCase().trim();
+  const canonicalForms = {
+    milliliter: "ml",
+    milliliters: "ml",
+    liter: "L",
+    liters: "L",
+    litre: "L",
+    litres: "L",
+    l: "L",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    tablespoon: "tbsp",
+    tablespoons: "tbsp",
+    "fluid ounce": "fl oz",
+    "fluid ounces": "fl oz",
+    gram: "g",
+    grams: "g",
+    kilogram: "kg",
+    kilograms: "kg",
+    milligram: "mg",
+    milligrams: "mg",
+    ounce: "oz",
+    ounces: "oz",
+    pound: "lb",
+    pounds: "lb",
+    lbs: "lb",
+    piece: "pc",
+    pieces: "pc",
+    pcs: "pc"
+  };
+  return canonicalForms[unitLower] || unit;
+}
+function formatInventoryForPrompt(items) {
+  return items.map((item) => {
+    if (!item.quantity) {
+      return item.name;
+    }
+    if (!item.unit) {
+      return `${item.name}: ${item.quantity}`;
+    }
+    const normalizedUnit = normalizeUnit(item.unit);
+    const unitType = getUnitType(item.unit);
+    let equivalents = "";
+    if (unitType === "weight") {
+      const inGrams = convertToBase(item.quantity, item.unit);
+      if (inGrams && item.unit?.toLowerCase() !== "g") {
+        equivalents = ` (~${Math.round(inGrams.value)}g)`;
+      } else if (item.unit?.toLowerCase() === "g" && item.quantity >= 100) {
+        const inOz = convert(item.quantity, "g", "oz");
+        if (inOz) equivalents = ` (~${Math.round(inOz * 10) / 10} oz)`;
+      }
+    } else if (unitType === "volume") {
+      const inMl = convertToBase(item.quantity, item.unit);
+      if (inMl && !["ml", "milliliter", "milliliters"].includes(
+        item.unit?.toLowerCase() || ""
+      )) {
+        equivalents = ` (~${Math.round(inMl.value)}ml)`;
+      }
+    }
+    return `${item.name}: ${item.quantity} ${normalizedUnit}${equivalents}`;
+  });
+}
+var VOLUME_UNITS, WEIGHT_UNITS, COUNT_UNITS, ALL_UNITS, UNIT_CONVERSION_PROMPT_ADDITION;
+var init_unit_conversion = __esm({
+  "server/lib/unit-conversion.ts"() {
+    "use strict";
+    VOLUME_UNITS = {
+      ml: { type: "volume", baseUnit: "ml", toBase: 1 },
+      milliliter: { type: "volume", baseUnit: "ml", toBase: 1 },
+      milliliters: { type: "volume", baseUnit: "ml", toBase: 1 },
+      l: { type: "volume", baseUnit: "ml", toBase: 1e3 },
+      liter: { type: "volume", baseUnit: "ml", toBase: 1e3 },
+      liters: { type: "volume", baseUnit: "ml", toBase: 1e3 },
+      litre: { type: "volume", baseUnit: "ml", toBase: 1e3 },
+      litres: { type: "volume", baseUnit: "ml", toBase: 1e3 },
+      tsp: { type: "volume", baseUnit: "ml", toBase: 4.929 },
+      teaspoon: { type: "volume", baseUnit: "ml", toBase: 4.929 },
+      teaspoons: { type: "volume", baseUnit: "ml", toBase: 4.929 },
+      tbsp: { type: "volume", baseUnit: "ml", toBase: 14.787 },
+      tablespoon: { type: "volume", baseUnit: "ml", toBase: 14.787 },
+      tablespoons: { type: "volume", baseUnit: "ml", toBase: 14.787 },
+      cup: { type: "volume", baseUnit: "ml", toBase: 236.588 },
+      cups: { type: "volume", baseUnit: "ml", toBase: 236.588 },
+      "fl oz": { type: "volume", baseUnit: "ml", toBase: 29.574 },
+      "fluid ounce": { type: "volume", baseUnit: "ml", toBase: 29.574 },
+      "fluid ounces": { type: "volume", baseUnit: "ml", toBase: 29.574 },
+      pint: { type: "volume", baseUnit: "ml", toBase: 473.176 },
+      pints: { type: "volume", baseUnit: "ml", toBase: 473.176 },
+      pt: { type: "volume", baseUnit: "ml", toBase: 473.176 },
+      quart: { type: "volume", baseUnit: "ml", toBase: 946.353 },
+      quarts: { type: "volume", baseUnit: "ml", toBase: 946.353 },
+      qt: { type: "volume", baseUnit: "ml", toBase: 946.353 },
+      gallon: { type: "volume", baseUnit: "ml", toBase: 3785.41 },
+      gallons: { type: "volume", baseUnit: "ml", toBase: 3785.41 },
+      gal: { type: "volume", baseUnit: "ml", toBase: 3785.41 }
+    };
+    WEIGHT_UNITS = {
+      g: { type: "weight", baseUnit: "g", toBase: 1 },
+      gram: { type: "weight", baseUnit: "g", toBase: 1 },
+      grams: { type: "weight", baseUnit: "g", toBase: 1 },
+      kg: { type: "weight", baseUnit: "g", toBase: 1e3 },
+      kilogram: { type: "weight", baseUnit: "g", toBase: 1e3 },
+      kilograms: { type: "weight", baseUnit: "g", toBase: 1e3 },
+      mg: { type: "weight", baseUnit: "g", toBase: 1e-3 },
+      milligram: { type: "weight", baseUnit: "g", toBase: 1e-3 },
+      milligrams: { type: "weight", baseUnit: "g", toBase: 1e-3 },
+      oz: { type: "weight", baseUnit: "g", toBase: 28.3495 },
+      ounce: { type: "weight", baseUnit: "g", toBase: 28.3495 },
+      ounces: { type: "weight", baseUnit: "g", toBase: 28.3495 },
+      lb: { type: "weight", baseUnit: "g", toBase: 453.592 },
+      lbs: { type: "weight", baseUnit: "g", toBase: 453.592 },
+      pound: { type: "weight", baseUnit: "g", toBase: 453.592 },
+      pounds: { type: "weight", baseUnit: "g", toBase: 453.592 }
+    };
+    COUNT_UNITS = {
+      piece: { type: "count", baseUnit: "piece", toBase: 1 },
+      pieces: { type: "count", baseUnit: "piece", toBase: 1 },
+      pcs: { type: "count", baseUnit: "piece", toBase: 1 },
+      item: { type: "count", baseUnit: "piece", toBase: 1 },
+      items: { type: "count", baseUnit: "piece", toBase: 1 },
+      unit: { type: "count", baseUnit: "piece", toBase: 1 },
+      units: { type: "count", baseUnit: "piece", toBase: 1 },
+      each: { type: "count", baseUnit: "piece", toBase: 1 },
+      whole: { type: "count", baseUnit: "piece", toBase: 1 },
+      slice: { type: "count", baseUnit: "piece", toBase: 1 },
+      slices: { type: "count", baseUnit: "piece", toBase: 1 },
+      clove: { type: "count", baseUnit: "piece", toBase: 1 },
+      cloves: { type: "count", baseUnit: "piece", toBase: 1 },
+      head: { type: "count", baseUnit: "piece", toBase: 1 },
+      heads: { type: "count", baseUnit: "piece", toBase: 1 },
+      bunch: { type: "count", baseUnit: "piece", toBase: 1 },
+      bunches: { type: "count", baseUnit: "piece", toBase: 1 },
+      stalk: { type: "count", baseUnit: "piece", toBase: 1 },
+      stalks: { type: "count", baseUnit: "piece", toBase: 1 },
+      sprig: { type: "count", baseUnit: "piece", toBase: 1 },
+      sprigs: { type: "count", baseUnit: "piece", toBase: 1 },
+      can: { type: "count", baseUnit: "piece", toBase: 1 },
+      cans: { type: "count", baseUnit: "piece", toBase: 1 },
+      bottle: { type: "count", baseUnit: "piece", toBase: 1 },
+      bottles: { type: "count", baseUnit: "piece", toBase: 1 },
+      jar: { type: "count", baseUnit: "piece", toBase: 1 },
+      jars: { type: "count", baseUnit: "piece", toBase: 1 },
+      package: { type: "count", baseUnit: "piece", toBase: 1 },
+      packages: { type: "count", baseUnit: "piece", toBase: 1 },
+      bag: { type: "count", baseUnit: "piece", toBase: 1 },
+      bags: { type: "count", baseUnit: "piece", toBase: 1 },
+      box: { type: "count", baseUnit: "piece", toBase: 1 },
+      boxes: { type: "count", baseUnit: "piece", toBase: 1 },
+      dozen: { type: "count", baseUnit: "piece", toBase: 12 }
+    };
+    ALL_UNITS = {
+      ...VOLUME_UNITS,
+      ...WEIGHT_UNITS,
+      ...COUNT_UNITS
+    };
+    UNIT_CONVERSION_PROMPT_ADDITION = `
+UNIT HANDLING INSTRUCTIONS:
+- The user's inventory may use different units than your recipe (e.g., grams vs cups, ml vs fl oz)
+- When matching inventory items to recipe ingredients, recognize that units can be converted:
+  - VOLUME: 1 cup = 236.6ml, 1 tbsp = 14.8ml, 1 tsp = 4.9ml, 1 fl oz = 29.6ml
+  - WEIGHT: 1 oz = 28.3g, 1 lb = 453.6g, 1 kg = 1000g
+- If the inventory shows "500g flour" and your recipe needs "2 cups flour", these are compatible
+- Use practical, common units in your recipe output (cups, tbsp, g, oz - whatever fits the ingredient best)
+- When the user has enough quantity in a compatible unit, mark the ingredient as "fromInventory": true
+`;
+  }
+});
+
+// server/integrations/usda.ts
+function isSearchCacheValid(timestamp2) {
+  return Date.now() - timestamp2 < SEARCH_CACHE_TTL;
+}
+function findNutrientValue(nutrients, nutrientId) {
+  const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
+  return nutrient?.value;
+}
+function mapUSDAToFoodItem(usdaFood) {
+  const nutrients = usdaFood.foodNutrients || [];
+  const calories = findNutrientValue(nutrients, NUTRIENT_IDS.ENERGY) ?? 0;
+  const protein = findNutrientValue(nutrients, NUTRIENT_IDS.PROTEIN) ?? 0;
+  const carbs = findNutrientValue(nutrients, NUTRIENT_IDS.CARBOHYDRATES) ?? 0;
+  const fat = findNutrientValue(nutrients, NUTRIENT_IDS.FAT) ?? 0;
+  const fiber = findNutrientValue(nutrients, NUTRIENT_IDS.FIBER);
+  const sugar = findNutrientValue(nutrients, NUTRIENT_IDS.SUGARS);
+  const sodium = findNutrientValue(nutrients, NUTRIENT_IDS.SODIUM);
+  let category = "Other";
+  if ("foodCategory" in usdaFood && usdaFood.foodCategory?.description) {
+    category = usdaFood.foodCategory.description;
+  }
+  let servingSize;
+  if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
+    servingSize = `${usdaFood.servingSize} ${usdaFood.servingSizeUnit}`;
+  }
+  return {
+    name: usdaFood.description,
+    category,
+    nutrition: {
+      calories: Math.round(calories),
+      protein: Math.round(protein * 10) / 10,
+      carbs: Math.round(carbs * 10) / 10,
+      fat: Math.round(fat * 10) / 10,
+      fiber: fiber !== void 0 ? Math.round(fiber * 10) / 10 : void 0,
+      sugar: sugar !== void 0 ? Math.round(sugar * 10) / 10 : void 0,
+      sodium: sodium !== void 0 ? Math.round(sodium) : void 0,
+      servingSize
+    },
+    source: "usda",
+    sourceId: usdaFood.fdcId,
+    brandOwner: "brandOwner" in usdaFood ? usdaFood.brandOwner : void 0,
+    ingredients: usdaFood.ingredients
+  };
+}
+async function lookupUSDABarcode(barcode) {
+  if (!USDA_API_KEY) {
+    console.error("USDA_API_KEY is not configured");
+    return null;
+  }
+  const cleanBarcode = barcode.replace(/\D/g, "");
+  const cached = barcodeCache.get(cleanBarcode);
+  if (cached && isSearchCacheValid(cached.timestamp)) {
+    return cached.data;
+  }
+  try {
+    const response = await fetch(
+      `${USDA_BASE_URL}/foods/search?api_key=${USDA_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query: cleanBarcode,
+          dataType: ["Branded"],
+          pageSize: 25
+        })
+      }
+    );
+    if (response.status === 429) {
+      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      return null;
+    }
+    if (!response.ok) {
+      console.error(
+        `USDA API error: ${response.status} ${response.statusText}`
+      );
+      return null;
+    }
+    const data = await response.json();
+    const foods = data.foods || [];
+    const exactMatch = foods.find((food) => {
+      if (food.gtinUpc) {
+        const foodUpc = food.gtinUpc.replace(/\D/g, "");
+        return foodUpc === cleanBarcode || foodUpc.endsWith(cleanBarcode) || cleanBarcode.endsWith(foodUpc);
+      }
+      return false;
+    });
+    if (exactMatch) {
+      barcodeCache.set(cleanBarcode, {
+        data: exactMatch,
+        timestamp: Date.now()
+      });
+      return exactMatch;
+    }
+    if (foods.length > 0) {
+      barcodeCache.set(cleanBarcode, { data: foods[0], timestamp: Date.now() });
+      return foods[0];
+    }
+    barcodeCache.set(cleanBarcode, { data: null, timestamp: Date.now() });
+    return null;
+  } catch (error) {
+    console.error("Error looking up USDA barcode:", error);
+    return null;
+  }
+}
+function normalizeUnitName(unit) {
+  const lower = unit.toLowerCase().trim();
+  for (const [canonical, aliases] of Object.entries(UNIT_ALIASES)) {
+    if (aliases.includes(lower)) {
+      return canonical;
+    }
+  }
+  return lower;
+}
+function unitMatches(portionUnit, searchUnit) {
+  const normPortion = normalizeUnitName(portionUnit);
+  const normSearch = normalizeUnitName(searchUnit);
+  if (normPortion === normSearch) return true;
+  if (normPortion.includes(normSearch) || normSearch.includes(normPortion)) {
+    return true;
+  }
+  return false;
+}
+function findPortionConversion(portions, unit) {
+  const searchUnit = normalizeUnitName(unit);
+  for (const portion of portions) {
+    if (normalizeUnitName(portion.unitName) === searchUnit) {
+      return portion;
+    }
+    if (portion.unitAbbreviation && normalizeUnitName(portion.unitAbbreviation) === searchUnit) {
+      return portion;
+    }
+  }
+  for (const portion of portions) {
+    if (unitMatches(portion.unitName, unit)) {
+      return portion;
+    }
+  }
+  return null;
+}
+function convertToGrams(quantity, unit, portions) {
+  const normalizedUnit = unit.toLowerCase().trim();
+  if (portions && portions.length > 0) {
+    const portionMatch = findPortionConversion(portions, unit);
+    if (portionMatch) {
+      return {
+        grams: quantity * portionMatch.gramsPerUnit,
+        conversionUsed: `${portionMatch.amount} ${portionMatch.unitName} = ${portionMatch.gramWeight}g (USDA)`,
+        isApproximate: false
+      };
+    }
+  }
+  if (STANDARD_WEIGHT_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_WEIGHT_TO_GRAMS[normalizedUnit],
+      conversionUsed: `standard weight conversion`,
+      isApproximate: false
+    };
+  }
+  if (STANDARD_VOLUME_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_VOLUME_TO_GRAMS[normalizedUnit],
+      conversionUsed: `volume approximation (density varies)`,
+      isApproximate: true
+    };
+  }
+  return null;
+}
+function compareQuantities(inventoryQty, inventoryUnit, requiredQty, requiredUnit, portions) {
+  if (!inventoryUnit) {
+    if (inventoryQty >= requiredQty) {
+      return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+    }
+    const pct2 = Math.round(inventoryQty / requiredQty * 100);
+    return {
+      status: pct2 >= 50 ? "partial" : "unavailable",
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: pct2
+    };
+  }
+  const inventoryInGrams = convertToGrams(inventoryQty, inventoryUnit, portions);
+  const requiredInGrams = convertToGrams(requiredQty, requiredUnit, portions);
+  if (!inventoryInGrams || !requiredInGrams) {
+    const normInv = normalizeUnitName(inventoryUnit);
+    const normReq = normalizeUnitName(requiredUnit);
+    if (normInv === normReq || unitMatches(inventoryUnit, requiredUnit)) {
+      if (inventoryQty >= requiredQty) {
+        return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+      }
+      const pct2 = Math.round(inventoryQty / requiredQty * 100);
+      return {
+        status: pct2 >= 50 ? "partial" : "unavailable",
+        inventoryGrams: null,
+        requiredGrams: null,
+        percentAvailable: pct2,
+        conversionNote: `Same unit comparison: ${inventoryQty}/${requiredQty} ${inventoryUnit}`
+      };
+    }
+    return {
+      status: "available",
+      // Assume available if we can't verify
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: null,
+      conversionNote: `Cannot convert between ${inventoryUnit} and ${requiredUnit}`
+    };
+  }
+  const pct = Math.round(inventoryInGrams.grams / requiredInGrams.grams * 100);
+  let status;
+  if (pct >= 100) {
+    status = "available";
+  } else if (pct >= 50) {
+    status = "partial";
+  } else {
+    status = "unavailable";
+  }
+  return {
+    status,
+    inventoryGrams: inventoryInGrams.grams,
+    requiredGrams: requiredInGrams.grams,
+    percentAvailable: Math.min(pct, 100),
+    conversionNote: `${inventoryQty} ${inventoryUnit} = ${Math.round(inventoryInGrams.grams)}g, need ${Math.round(requiredInGrams.grams)}g`
+  };
+}
+var USDA_API_KEY, USDA_BASE_URL, SEARCH_CACHE_TTL, FOOD_CACHE_TTL, NUTRIENT_IDS, barcodeCache, PORTION_CACHE_TTL, UNIT_ALIASES, STANDARD_WEIGHT_TO_GRAMS, STANDARD_VOLUME_TO_GRAMS;
+var init_usda = __esm({
+  "server/integrations/usda.ts"() {
+    "use strict";
+    USDA_API_KEY = process.env.USDA_API_KEY;
+    USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
+    SEARCH_CACHE_TTL = 60 * 60 * 1e3;
+    FOOD_CACHE_TTL = 24 * 60 * 60 * 1e3;
+    NUTRIENT_IDS = {
+      ENERGY: 1008,
+      PROTEIN: 1003,
+      CARBOHYDRATES: 1005,
+      FAT: 1004,
+      FIBER: 1079,
+      SUGARS: 2e3,
+      SODIUM: 1093
+    };
+    barcodeCache = /* @__PURE__ */ new Map();
+    PORTION_CACHE_TTL = 24 * 60 * 60 * 1e3;
+    UNIT_ALIASES = {
+      slice: ["slice", "slices", "sl"],
+      loaf: ["loaf", "loaves"],
+      cup: ["cup", "cups", "c"],
+      tablespoon: ["tablespoon", "tablespoons", "tbsp", "tbs", "tb"],
+      teaspoon: ["teaspoon", "teaspoons", "tsp", "ts"],
+      ounce: ["ounce", "ounces", "oz"],
+      pound: ["pound", "pounds", "lb", "lbs"],
+      gram: ["gram", "grams", "g"],
+      kilogram: ["kilogram", "kilograms", "kg"],
+      piece: ["piece", "pieces", "pc", "pcs", "each", "ea", "whole"],
+      serving: ["serving", "servings", "srv"],
+      can: ["can", "cans"],
+      bottle: ["bottle", "bottles"],
+      package: ["package", "packages", "pkg", "pkgs"],
+      head: ["head", "heads"],
+      clove: ["clove", "cloves"],
+      bunch: ["bunch", "bunches"],
+      stalk: ["stalk", "stalks"],
+      sprig: ["sprig", "sprigs"],
+      large: ["large", "lg"],
+      medium: ["medium", "med", "md"],
+      small: ["small", "sm"]
+    };
+    STANDARD_WEIGHT_TO_GRAMS = {
+      g: 1,
+      gram: 1,
+      grams: 1,
+      kg: 1e3,
+      kilogram: 1e3,
+      kilograms: 1e3,
+      oz: 28.3495,
+      ounce: 28.3495,
+      ounces: 28.3495,
+      lb: 453.592,
+      lbs: 453.592,
+      pound: 453.592,
+      pounds: 453.592,
+      mg: 1e-3,
+      milligram: 1e-3,
+      milligrams: 1e-3
+    };
+    STANDARD_VOLUME_TO_GRAMS = {
+      ml: 1,
+      milliliter: 1,
+      milliliters: 1,
+      l: 1e3,
+      liter: 1e3,
+      liters: 1e3,
+      litre: 1e3,
+      litres: 1e3,
+      cup: 240,
+      cups: 240,
+      tbsp: 15,
+      tablespoon: 15,
+      tablespoons: 15,
+      tsp: 5,
+      teaspoon: 5,
+      teaspoons: 5,
+      "fl oz": 30,
+      "fluid ounce": 30,
+      "fluid ounces": 30
+    };
+  }
+});
+
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
@@ -24,15 +534,10 @@ __export(schema_exports, {
   cookingTerms: () => cookingTerms,
   feedback: () => feedback,
   feedbackBuckets: () => feedbackBuckets,
-  insertApplianceSchema: () => insertApplianceSchema,
-  insertCookingTermSchema: () => insertCookingTermSchema,
   insertFeedbackBucketSchema: () => insertFeedbackBucketSchema,
   insertFeedbackSchema: () => insertFeedbackSchema,
   insertNutritionCorrectionSchema: () => insertNutritionCorrectionSchema,
-  insertSessionSchema: () => insertSessionSchema,
   insertSubscriptionSchema: () => insertSubscriptionSchema,
-  insertSyncDataSchema: () => insertSyncDataSchema,
-  insertUserApplianceSchema: () => insertUserApplianceSchema,
   insertUserSchema: () => insertUserSchema,
   mergeNutrition: () => mergeNutrition,
   nutritionCorrections: () => nutritionCorrections,
@@ -122,7 +627,7 @@ function mergeNutrition(items) {
     potassium: optionalSum(items.map((i) => i.potassium))
   };
 }
-var users, authProviders, userSessions, userSyncData, cookingTerms, insertUserSchema, insertCookingTermSchema, appliances, userAppliances, insertApplianceSchema, insertUserApplianceSchema, insertSessionSchema, insertSyncDataSchema, DAILY_VALUES, nutritionCorrections, insertNutritionCorrectionSchema, feedbackBuckets, insertFeedbackBucketSchema, feedback, insertFeedbackSchema, subscriptions, insertSubscriptionSchema;
+var users, authProviders, userSessions, userSyncData, cookingTerms, insertUserSchema, appliances, userAppliances, DAILY_VALUES, nutritionCorrections, insertNutritionCorrectionSchema, feedbackBuckets, insertFeedbackBucketSchema, feedback, insertFeedbackSchema, subscriptions, insertSubscriptionSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -131,8 +636,6 @@ var init_schema = __esm({
       password: varchar("password"),
       displayName: varchar("display_name"),
       email: varchar("email").notNull().unique(),
-      firstName: varchar("first_name"),
-      lastName: varchar("last_name"),
       profileImageUrl: varchar("profile_image_url"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow(),
@@ -142,6 +645,7 @@ var init_schema = __esm({
       expirationAlertDays: integer("expiration_alert_days").notNull().default(3),
       storageAreasEnabled: text("storage_areas_enabled").array(),
       householdSize: integer("household_size").notNull().default(2),
+      dailyMeals: integer("daily_meals").notNull().default(3),
       cookingSkillLevel: text("cooking_skill_level").notNull().default("beginner"),
       preferredUnits: text("preferred_units").notNull().default("imperial"),
       foodsToAvoid: text("foods_to_avoid").array(),
@@ -160,13 +664,16 @@ var init_schema = __esm({
       stripeSubscriptionId: text("stripe_subscription_id"),
       aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month").notNull().default(0),
       aiRecipesResetDate: timestamp("ai_recipes_reset_date"),
-      trialEndsAt: timestamp("trial_ends_at")
+      trialEndsAt: timestamp("trial_ends_at"),
+      preRegistrationSource: varchar("pre_registration_source"),
+      preRegisteredAt: timestamp("pre_registered_at"),
+      isActivated: boolean("is_activated").notNull().default(true)
     });
     authProviders = pgTable(
       "auth_providers",
       {
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-        userId: varchar("user_id").notNull().references(() => users.id),
+        userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
         provider: varchar("provider").notNull(),
         providerId: varchar("provider_id").notNull(),
         providerEmail: varchar("provider_email"),
@@ -190,7 +697,7 @@ var init_schema = __esm({
       "user_sessions",
       {
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-        userId: varchar("user_id").notNull().references(() => users.id),
+        userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
         token: text("token").notNull().unique(),
         expiresAt: timestamp("expires_at").notNull(),
         createdAt: timestamp("created_at").defaultNow()
@@ -202,7 +709,7 @@ var init_schema = __esm({
     );
     userSyncData = pgTable("user_sync_data", {
       id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      userId: varchar("user_id").notNull().references(() => users.id).unique(),
+      userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
       inventory: text("inventory"),
       recipes: text("recipes"),
       mealPlans: text("meal_plans"),
@@ -248,10 +755,6 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     });
-    insertCookingTermSchema = createInsertSchema(cookingTerms).omit({
-      createdAt: true,
-      updatedAt: true
-    });
     appliances = pgTable(
       "appliances",
       {
@@ -275,8 +778,8 @@ var init_schema = __esm({
       "user_appliances",
       {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: varchar("user_id").notNull().references(() => users.id),
-        applianceId: integer("appliance_id").notNull().references(() => appliances.id),
+        userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+        applianceId: integer("appliance_id").notNull().references(() => appliances.id, { onDelete: "cascade" }),
         notes: text("notes"),
         brand: varchar("brand", { length: 100 }),
         createdAt: timestamp("created_at").defaultNow(),
@@ -289,23 +792,6 @@ var init_schema = __esm({
         )
       ]
     );
-    insertApplianceSchema = createInsertSchema(appliances).omit({
-      createdAt: true,
-      updatedAt: true
-    });
-    insertUserApplianceSchema = createInsertSchema(
-      userAppliances
-    ).omit({
-      createdAt: true,
-      updatedAt: true
-    });
-    insertSessionSchema = createInsertSchema(userSessions).omit({
-      createdAt: true
-    });
-    insertSyncDataSchema = createInsertSchema(userSyncData).omit({
-      lastSyncedAt: true,
-      updatedAt: true
-    });
     DAILY_VALUES = {
       totalFat: 78,
       // grams
@@ -340,7 +826,7 @@ var init_schema = __esm({
       "nutrition_corrections",
       {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: varchar("user_id").references(() => users.id),
+        userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
         productName: text("product_name").notNull(),
         barcode: varchar("barcode", { length: 50 }),
         brand: varchar("brand", { length: 200 }),
@@ -396,8 +882,8 @@ var init_schema = __esm({
       "feedback",
       {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        userId: varchar("user_id").references(() => users.id),
-        bucketId: integer("bucket_id").references(() => feedbackBuckets.id),
+        userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+        bucketId: integer("bucket_id").references(() => feedbackBuckets.id, { onDelete: "set null" }),
         type: varchar("type", { length: 20 }).notNull(),
         category: varchar("category", { length: 50 }),
         message: text("message").notNull(),
@@ -431,7 +917,7 @@ var init_schema = __esm({
       "subscriptions",
       {
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-        userId: varchar("user_id").notNull().references(() => users.id).unique(),
+        userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
         stripeCustomerId: varchar("stripe_customer_id"),
         stripeSubscriptionId: varchar("stripe_subscription_id"),
         stripePriceId: varchar("stripe_price_id"),
@@ -478,6 +964,1521 @@ var init_db = __esm({
   }
 });
 
+// shared/subscription.ts
+function getTierLimits(tier) {
+  return TIER_CONFIG[tier];
+}
+function isWithinLimit(tier, limitKey, currentCount) {
+  const limits = getTierLimits(tier);
+  const limit = limits[limitKey];
+  if (limit === -1) {
+    return true;
+  }
+  return currentCount < limit;
+}
+function getRemainingQuota(tier, limitKey, currentCount) {
+  const limits = getTierLimits(tier);
+  const limit = limits[limitKey];
+  if (limit === -1) {
+    return "unlimited";
+  }
+  return Math.max(0, limit - currentCount);
+}
+var TIER_CONFIG, MONTHLY_PRICES, ANNUAL_PRICES, TRIAL_CONFIG, ERROR_CODES, ERROR_MESSAGES;
+var init_subscription = __esm({
+  "shared/subscription.ts"() {
+    "use strict";
+    TIER_CONFIG = {
+      ["BASIC" /* BASIC */]: {
+        maxPantryItems: 25,
+        maxAiRecipesPerMonth: 5,
+        maxCookwareItems: 5,
+        canCustomizeStorageAreas: false,
+        canUseRecipeScanning: false,
+        canUseBulkScanning: false,
+        canUseAiKitchenAssistant: false,
+        canUseWeeklyMealPrepping: false
+      },
+      ["PRO" /* PRO */]: {
+        maxPantryItems: -1,
+        maxAiRecipesPerMonth: -1,
+        maxCookwareItems: -1,
+        canCustomizeStorageAreas: true,
+        canUseRecipeScanning: true,
+        canUseBulkScanning: true,
+        canUseAiKitchenAssistant: true,
+        canUseWeeklyMealPrepping: true
+      }
+    };
+    MONTHLY_PRICES = {
+      BASIC: 4.99,
+      PRO: 9.99
+    };
+    ANNUAL_PRICES = {
+      BASIC: 49.9,
+      PRO: 99.9
+    };
+    TRIAL_CONFIG = {
+      TRIAL_DAYS: 7,
+      TRIAL_TIER: "PRO" /* PRO */
+    };
+    ERROR_CODES = {
+      PANTRY_LIMIT_REACHED: "PANTRY_LIMIT_REACHED",
+      COOKWARE_LIMIT_REACHED: "COOKWARE_LIMIT_REACHED",
+      AI_RECIPE_LIMIT_REACHED: "AI_RECIPE_LIMIT_REACHED",
+      FEATURE_NOT_AVAILABLE: "FEATURE_NOT_AVAILABLE"
+    };
+    ERROR_MESSAGES = {
+      [ERROR_CODES.PANTRY_LIMIT_REACHED]: "You have reached your pantry item limit. Upgrade to Pro for unlimited items.",
+      [ERROR_CODES.COOKWARE_LIMIT_REACHED]: "You have reached your cookware limit. Upgrade to Pro for unlimited cookware.",
+      [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]: "You have reached your monthly AI recipe generation limit. Upgrade to Pro for unlimited recipes.",
+      [ERROR_CODES.FEATURE_NOT_AVAILABLE]: "This feature is not available on your current plan. Upgrade to Pro to unlock it."
+    };
+  }
+});
+
+// server/services/subscriptionService.ts
+import { eq } from "drizzle-orm";
+function getCachedAiLimit(userId) {
+  const cached = aiLimitCache.get(userId);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.result;
+  }
+  aiLimitCache.delete(userId);
+  return null;
+}
+function setCachedAiLimit(userId, result) {
+  aiLimitCache.set(userId, {
+    result,
+    expiresAt: Date.now() + AI_LIMIT_CACHE_TTL_MS
+  });
+}
+function invalidateAiLimitCache(userId) {
+  aiLimitCache.delete(userId);
+}
+async function getUserById(userId) {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return user;
+}
+async function getUserSyncData(userId) {
+  const [syncData] = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId)).limit(1);
+  return syncData;
+}
+function parseInventoryArray(jsonString) {
+  if (!jsonString) return [];
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return [];
+  }
+}
+function parseCookwareArray(jsonString) {
+  if (!jsonString) return [];
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return [];
+  }
+}
+async function getUserEntitlements(userId) {
+  const [initialUser, syncData] = await Promise.all([
+    getUserById(userId),
+    getUserSyncData(userId)
+  ]);
+  if (!initialUser) {
+    throw new Error("User not found");
+  }
+  const wasReset = await resetMonthlyCountsIfNeededOptimized(userId, initialUser);
+  const user = wasReset ? await getUserById(userId) : initialUser;
+  if (!user) {
+    throw new Error("User not found after refresh");
+  }
+  const tier = user.subscriptionTier || "BASIC" /* BASIC */;
+  const limits = getTierLimits(tier);
+  const inventory = parseInventoryArray(syncData?.inventory || null);
+  const cookware = parseCookwareArray(syncData?.cookware || null);
+  const pantryItemCount = inventory.length;
+  const cookwareCount = cookware.length;
+  const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
+  return {
+    tier,
+    status: user.subscriptionStatus || "trialing",
+    limits,
+    usage: {
+      pantryItemCount,
+      aiRecipesUsedThisMonth,
+      cookwareCount
+    },
+    remaining: {
+      pantryItems: getRemainingQuota(tier, "maxPantryItems", pantryItemCount),
+      aiRecipes: getRemainingQuota(tier, "maxAiRecipesPerMonth", aiRecipesUsedThisMonth),
+      cookware: getRemainingQuota(tier, "maxCookwareItems", cookwareCount)
+    },
+    trialEndsAt: user.trialEndsAt
+  };
+}
+async function checkPantryItemLimit(userId) {
+  const entitlements = await getUserEntitlements(userId);
+  const { tier, usage } = entitlements;
+  const limits = getTierLimits(tier);
+  const limit = limits.maxPantryItems === -1 ? "unlimited" : limits.maxPantryItems;
+  const remaining = getRemainingQuota(tier, "maxPantryItems", usage.pantryItemCount);
+  const allowed = isWithinLimit(tier, "maxPantryItems", usage.pantryItemCount);
+  return { allowed, remaining, limit };
+}
+async function checkAiRecipeLimit(userId) {
+  const cached = getCachedAiLimit(userId);
+  if (cached) {
+    return cached;
+  }
+  await resetMonthlyCountsIfNeeded(userId);
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const tier = user.subscriptionTier || "BASIC" /* BASIC */;
+  const limits = getTierLimits(tier);
+  const currentCount = user.aiRecipesGeneratedThisMonth || 0;
+  const limit = limits.maxAiRecipesPerMonth === -1 ? "unlimited" : limits.maxAiRecipesPerMonth;
+  const remaining = getRemainingQuota(tier, "maxAiRecipesPerMonth", currentCount);
+  const allowed = isWithinLimit(tier, "maxAiRecipesPerMonth", currentCount);
+  const result = { allowed, remaining, limit };
+  setCachedAiLimit(userId, result);
+  return result;
+}
+async function checkCookwareLimit(userId) {
+  const entitlements = await getUserEntitlements(userId);
+  const { tier, usage } = entitlements;
+  const limits = getTierLimits(tier);
+  const limit = limits.maxCookwareItems === -1 ? "unlimited" : limits.maxCookwareItems;
+  const remaining = getRemainingQuota(tier, "maxCookwareItems", usage.cookwareCount);
+  const allowed = isWithinLimit(tier, "maxCookwareItems", usage.cookwareCount);
+  return { allowed, remaining, limit };
+}
+async function checkFeatureAccess(userId, feature) {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const tier = user.subscriptionTier || "BASIC" /* BASIC */;
+  const limits = getTierLimits(tier);
+  const limitKey = featureToLimitKey[feature];
+  if (!limitKey) {
+    return false;
+  }
+  return limits[limitKey];
+}
+async function incrementAiRecipeCount(userId) {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const currentCount = user.aiRecipesGeneratedThisMonth || 0;
+  let resetDate = user.aiRecipesResetDate;
+  if (!resetDate) {
+    const oneMonthFromNow = /* @__PURE__ */ new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    resetDate = oneMonthFromNow;
+  }
+  await db.update(users).set({
+    aiRecipesGeneratedThisMonth: currentCount + 1,
+    aiRecipesResetDate: resetDate,
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq(users.id, userId));
+  invalidateAiLimitCache(userId);
+}
+async function resetMonthlyCountsIfNeeded(userId) {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const resetDate = user.aiRecipesResetDate;
+  if (!resetDate) {
+    return;
+  }
+  const now = /* @__PURE__ */ new Date();
+  if (now >= new Date(resetDate)) {
+    const oneMonthFromNow = /* @__PURE__ */ new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    await db.update(users).set({
+      aiRecipesGeneratedThisMonth: 0,
+      aiRecipesResetDate: oneMonthFromNow,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
+  }
+}
+async function resetMonthlyCountsIfNeededOptimized(userId, user) {
+  const resetDate = user.aiRecipesResetDate;
+  if (!resetDate) {
+    return false;
+  }
+  const now = /* @__PURE__ */ new Date();
+  if (now >= new Date(resetDate)) {
+    const oneMonthFromNow = /* @__PURE__ */ new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    await db.update(users).set({
+      aiRecipesGeneratedThisMonth: 0,
+      aiRecipesResetDate: oneMonthFromNow,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
+    return true;
+  }
+  return false;
+}
+async function ensureTrialSubscription(userId, selectedPlan = "monthly") {
+  const now = /* @__PURE__ */ new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+  const [existing] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+  if (existing) {
+    if (existing.status === "trialing") {
+      await db.update(users).set({
+        subscriptionTier: "PRO" /* PRO */,
+        subscriptionStatus: "trialing",
+        trialEndsAt: existing.trialEnd || trialEnd,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq(users.id, userId));
+      return { created: false, trialEnd: existing.trialEnd || trialEnd };
+    }
+    return { created: false, trialEnd: existing.trialEnd || trialEnd };
+  }
+  try {
+    await db.insert(subscriptions).values({
+      userId,
+      status: "trialing",
+      planType: selectedPlan,
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
+      trialStart: now,
+      trialEnd,
+      cancelAtPeriodEnd: false
+    });
+    await db.update(users).set({
+      subscriptionTier: "PRO" /* PRO */,
+      subscriptionStatus: "trialing",
+      trialEndsAt: trialEnd,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
+    return { created: true, trialEnd };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("unique") || errorMessage.includes("duplicate")) {
+      const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+      if (sub?.status === "trialing") {
+        await db.update(users).set({
+          subscriptionTier: "PRO" /* PRO */,
+          subscriptionStatus: "trialing",
+          trialEndsAt: sub.trialEnd || trialEnd,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(users.id, userId));
+      }
+      return { created: false, trialEnd: sub?.trialEnd || trialEnd };
+    }
+    throw error;
+  }
+}
+async function expireTrialSubscription(userId) {
+  await db.update(subscriptions).set({
+    status: "expired"
+  }).where(eq(subscriptions.userId, userId));
+  await db.update(users).set({
+    subscriptionTier: "BASIC" /* BASIC */,
+    subscriptionStatus: "expired",
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq(users.id, userId));
+}
+var TRIAL_DAYS, aiLimitCache, AI_LIMIT_CACHE_TTL_MS, featureToLimitKey;
+var init_subscriptionService = __esm({
+  "server/services/subscriptionService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_subscription();
+    ({ TRIAL_DAYS } = TRIAL_CONFIG);
+    aiLimitCache = /* @__PURE__ */ new Map();
+    AI_LIMIT_CACHE_TTL_MS = 3e4;
+    featureToLimitKey = {
+      recipeScanning: "canUseRecipeScanning",
+      bulkScanning: "canUseBulkScanning",
+      aiKitchenAssistant: "canUseAiKitchenAssistant",
+      weeklyMealPrepping: "canUseWeeklyMealPrepping",
+      customStorageAreas: "canCustomizeStorageAreas"
+    };
+  }
+});
+
+// server/config/ingredient-substitutions.ts
+function formatSubstitutionsForPrompt() {
+  let text2 = "";
+  for (const group of INGREDIENT_SUBSTITUTIONS) {
+    text2 += `- ${group.category}: ${group.items.slice(0, 5).join(", ")}${group.items.length > 5 ? ", etc." : ""}
+`;
+  }
+  return text2;
+}
+var INGREDIENT_SUBSTITUTIONS;
+var init_ingredient_substitutions = __esm({
+  "server/config/ingredient-substitutions.ts"() {
+    "use strict";
+    INGREDIENT_SUBSTITUTIONS = [
+      {
+        category: "Breads & Wraps",
+        description: "Carb bases that can wrap or hold fillings",
+        items: [
+          "bread",
+          "tortilla",
+          "pita",
+          "naan",
+          "flatbread",
+          "wrap",
+          "lavash",
+          "baguette",
+          "ciabatta",
+          "english muffin",
+          "bagel",
+          "croissant",
+          "rice paper",
+          "lettuce leaves"
+        ]
+      },
+      {
+        category: "Cooking Fats",
+        description: "Fats used for cooking and saut\xE9ing",
+        items: [
+          "olive oil",
+          "vegetable oil",
+          "canola oil",
+          "coconut oil",
+          "butter",
+          "ghee",
+          "avocado oil",
+          "sesame oil",
+          "lard",
+          "bacon fat",
+          "duck fat"
+        ]
+      },
+      {
+        category: "Dairy Milk Alternatives",
+        description: "Liquid milk and plant-based alternatives",
+        items: [
+          "milk",
+          "whole milk",
+          "skim milk",
+          "2% milk",
+          "almond milk",
+          "oat milk",
+          "soy milk",
+          "coconut milk",
+          "cashew milk",
+          "rice milk",
+          "half and half",
+          "heavy cream"
+        ]
+      },
+      {
+        category: "Acidic Liquids",
+        description: "Acids for deglazing, marinades, and brightness",
+        items: [
+          "lemon juice",
+          "lime juice",
+          "white wine vinegar",
+          "apple cider vinegar",
+          "rice vinegar",
+          "balsamic vinegar",
+          "red wine vinegar",
+          "orange juice",
+          "white wine",
+          "red wine"
+        ]
+      },
+      {
+        category: "Leafy Greens",
+        description: "Salad greens and cooking greens",
+        items: [
+          "spinach",
+          "kale",
+          "arugula",
+          "romaine lettuce",
+          "mixed greens",
+          "swiss chard",
+          "collard greens",
+          "butter lettuce",
+          "iceberg lettuce",
+          "watercress",
+          "bok choy"
+        ]
+      },
+      {
+        category: "Pasta & Noodles",
+        description: "Various pasta shapes and noodle types",
+        items: [
+          "spaghetti",
+          "penne",
+          "fettuccine",
+          "linguine",
+          "rigatoni",
+          "fusilli",
+          "farfalle",
+          "angel hair",
+          "rice noodles",
+          "udon noodles",
+          "ramen noodles",
+          "egg noodles",
+          "ziti",
+          "macaroni"
+        ]
+      },
+      {
+        category: "Rice & Grains",
+        description: "Grain bases for meals",
+        items: [
+          "white rice",
+          "brown rice",
+          "jasmine rice",
+          "basmati rice",
+          "quinoa",
+          "couscous",
+          "bulgur",
+          "farro",
+          "barley",
+          "orzo",
+          "wild rice"
+        ]
+      },
+      {
+        category: "Ground Meats",
+        description: "Ground proteins for various dishes",
+        items: [
+          "ground beef",
+          "ground turkey",
+          "ground chicken",
+          "ground pork",
+          "ground lamb",
+          "italian sausage",
+          "chorizo",
+          "plant-based ground",
+          "beyond meat",
+          "impossible meat"
+        ]
+      },
+      {
+        category: "Chicken Cuts",
+        description: "Different cuts of chicken",
+        items: [
+          "chicken breast",
+          "chicken thigh",
+          "chicken thighs",
+          "chicken drumsticks",
+          "chicken wings",
+          "chicken tenders",
+          "whole chicken",
+          "rotisserie chicken"
+        ]
+      },
+      {
+        category: "Fish & Seafood",
+        description: "Mild white fish that cook similarly",
+        items: [
+          "tilapia",
+          "cod",
+          "halibut",
+          "sea bass",
+          "mahi mahi",
+          "snapper",
+          "flounder",
+          "sole",
+          "haddock"
+        ]
+      },
+      {
+        category: "Cheese - Melting",
+        description: "Cheeses good for melting",
+        items: [
+          "cheddar",
+          "mozzarella",
+          "monterey jack",
+          "colby",
+          "gruyere",
+          "fontina",
+          "provolone",
+          "american cheese",
+          "pepper jack",
+          "gouda"
+        ]
+      },
+      {
+        category: "Cheese - Crumbling",
+        description: "Crumbly cheeses for salads and toppings",
+        items: [
+          "feta",
+          "goat cheese",
+          "blue cheese",
+          "gorgonzola",
+          "cotija",
+          "queso fresco",
+          "ricotta salata"
+        ]
+      },
+      {
+        category: "Beans & Legumes",
+        description: "Protein-rich beans and legumes",
+        items: [
+          "black beans",
+          "kidney beans",
+          "pinto beans",
+          "cannellini beans",
+          "chickpeas",
+          "garbanzo beans",
+          "lentils",
+          "navy beans",
+          "great northern beans",
+          "lima beans"
+        ]
+      },
+      {
+        category: "Fresh Herbs",
+        description: "Fresh herbs for finishing dishes",
+        items: [
+          "basil",
+          "parsley",
+          "cilantro",
+          "mint",
+          "dill",
+          "chives",
+          "tarragon",
+          "oregano",
+          "thyme",
+          "rosemary"
+        ]
+      },
+      {
+        category: "Alliums",
+        description: "Onion family aromatics",
+        items: [
+          "yellow onion",
+          "white onion",
+          "red onion",
+          "shallot",
+          "green onion",
+          "scallion",
+          "leek",
+          "chives"
+        ]
+      },
+      {
+        category: "Hot Peppers",
+        description: "Spicy peppers for heat",
+        items: [
+          "jalapeno",
+          "serrano",
+          "habanero",
+          "thai chili",
+          "fresno pepper",
+          "cayenne",
+          "poblano",
+          "anaheim pepper"
+        ]
+      },
+      {
+        category: "Sweeteners",
+        description: "Sugar and natural sweeteners",
+        items: [
+          "sugar",
+          "brown sugar",
+          "honey",
+          "maple syrup",
+          "agave",
+          "molasses",
+          "coconut sugar",
+          "stevia"
+        ]
+      },
+      {
+        category: "Broths & Stocks",
+        description: "Liquid bases for cooking",
+        items: [
+          "chicken broth",
+          "chicken stock",
+          "beef broth",
+          "beef stock",
+          "vegetable broth",
+          "vegetable stock",
+          "bone broth",
+          "mushroom broth"
+        ]
+      },
+      {
+        category: "Soy-Based Sauces",
+        description: "Umami-rich Asian sauces",
+        items: [
+          "soy sauce",
+          "tamari",
+          "coconut aminos",
+          "liquid aminos",
+          "teriyaki sauce"
+        ]
+      },
+      {
+        category: "Creamy Bases",
+        description: "Creamy additions for sauces and dips",
+        items: [
+          "sour cream",
+          "greek yogurt",
+          "plain yogurt",
+          "cream cheese",
+          "creme fraiche",
+          "cottage cheese",
+          "ricotta"
+        ]
+      },
+      {
+        category: "Nut Butters",
+        description: "Nut and seed spreads",
+        items: [
+          "peanut butter",
+          "almond butter",
+          "cashew butter",
+          "sunflower seed butter",
+          "tahini"
+        ]
+      },
+      {
+        category: "Eggs & Egg Substitutes",
+        description: "Eggs and binding alternatives",
+        items: [
+          "eggs",
+          "egg whites",
+          "liquid eggs",
+          "egg substitute",
+          "just egg",
+          "flax egg"
+        ]
+      }
+    ];
+  }
+});
+
+// server/services/recipeGenerationService.ts
+import OpenAI8 from "openai";
+function getChefBackstory(cuisine) {
+  if (!cuisine) {
+    return `You are the Head Chef at ChefSpAIce Kitchen - a creative culinary director who draws from global traditions to create delicious, waste-reducing recipes. You respect all cuisines and adapt techniques to what the home cook has available.`;
+  }
+  const cuisineLower = cuisine.toLowerCase();
+  const chef = CUISINE_CHEF_PERSONAS[cuisineLower];
+  if (!chef) {
+    return `You are the Head Chef at ChefSpAIce Kitchen, and today you're channeling the spirit of ${cuisine} cuisine. Draw on authentic techniques and flavor profiles while adapting to what the home cook has available.`;
+  }
+  let backstory = `You are ${chef.name}, ${chef.title} at ChefSpAIce Kitchen.
+
+`;
+  backstory += `YOUR PHILOSOPHY: "${chef.philosophy}"
+
+`;
+  backstory += `YOUR TECHNIQUES:
+`;
+  chef.techniques.forEach((t) => backstory += `- ${t}
+`);
+  backstory += `
+YOUR SIGNATURE ELEMENTS:
+`;
+  chef.signatureElements.forEach((s) => backstory += `- ${s}
+`);
+  return backstory;
+}
+function calculateDaysUntilExpiry2(expiryDate) {
+  if (!expiryDate) return null;
+  const expiry = new Date(expiryDate);
+  const today = /* @__PURE__ */ new Date();
+  today.setHours(0, 0, 0, 0);
+  expiry.setHours(0, 0, 0, 0);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1e3 * 60 * 60 * 24));
+}
+function organizeInventory2(items, selectedIds) {
+  const EXPIRING_THRESHOLD_DAYS = 3;
+  const filteredItems = selectedIds && selectedIds.length > 0 ? items.filter((item) => {
+    const itemIdStr = String(item.id);
+    return selectedIds.some((selId) => String(selId) === itemIdStr);
+  }) : items;
+  const itemsWithExpiry = filteredItems.map((item) => ({
+    ...item,
+    daysUntilExpiry: calculateDaysUntilExpiry2(item.expiryDate)
+  }));
+  const expiringItems = itemsWithExpiry.filter(
+    (item) => item.daysUntilExpiry !== null && item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS
+  ).map((item) => ({
+    ...item,
+    daysUntilExpiry: item.daysUntilExpiry
+  })).sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+  const otherItems = itemsWithExpiry.filter(
+    (item) => item.daysUntilExpiry === null || item.daysUntilExpiry > EXPIRING_THRESHOLD_DAYS
+  ).map((item) => ({
+    ...item,
+    daysUntilExpiry: item.daysUntilExpiry ?? void 0
+  }));
+  return { expiringItems, otherItems };
+}
+function buildSmartPrompt2(params) {
+  const {
+    expiringItems,
+    otherItems,
+    prioritizeExpiring,
+    quickRecipe,
+    servings,
+    maxTime,
+    dietaryRestrictions,
+    cuisine,
+    mealType,
+    equipment,
+    macroTargets = { protein: 50, carbs: 35, fat: 15 },
+    previousRecipeTitles = [],
+    ingredientCount = { min: 4, max: 6 }
+  } = params;
+  const chefBackstory = getChefBackstory(cuisine);
+  let prompt = `=== YOUR CULINARY IDENTITY ===
+
+${chefBackstory}
+
+`;
+  prompt += `=== MISSION ===
+
+`;
+  prompt += `Help reduce food waste by creating delicious recipes from the user's available ingredients.
+
+`;
+  prompt += `=== SMART RECIPE CREATION ===
+
+`;
+  prompt += `PRIMARY GOAL: Create the BEST possible recipe using the user's inventory. Apply your culinary expertise and techniques!
+
+`;
+  prompt += `INVENTORY ITEMS: Start with what the user has available (listed below).
+
+`;
+  prompt += `ALWAYS AVAILABLE: Water and ice are always available and can be used freely.
+
+`;
+  prompt += `=== SMART SUBSTITUTIONS ===
+
+`;
+  prompt += `When crafting the recipe, use ONLY ingredients from the user's inventory.
+`;
+  prompt += `If an ideal ingredient isn't available but a suitable substitute IS in their inventory, use the substitute and add a subtle note.
+
+`;
+  prompt += `Include a "substitutionNotes" array with helpful hints ONLY when you're using a substitute:
+`;
+  prompt += `- "Using lime juice here - lemon would also work beautifully"
+`;
+  prompt += `- "Butter adds richness - olive oil is a lighter alternative"
+`;
+  prompt += `- "Greek yogurt makes a great stand-in for sour cream"
+`;
+  prompt += `- "Tortillas work perfectly in place of bread for this"
+
+`;
+  prompt += `Only include notes when you're actually using a substitute from their inventory - don't suggest ingredients they don't have.
+
+`;
+  prompt += `Common substitution categories to reference:
+`;
+  prompt += formatSubstitutionsForPrompt();
+  prompt += `
+`;
+  prompt += `=== INGREDIENT NAMING ===
+
+`;
+  prompt += `For matching purposes, include an "inventoryMatch" field that maps to the EXACT inventory name.
+`;
+  prompt += `For display purposes, use a clean, appetizing name in the "name" field.
+`;
+  prompt += `Example: If inventory has "boneless skinless chicken breast", you can display as "chicken breast" but inventoryMatch should be "boneless skinless chicken breast".
+
+`;
+  prompt += `=== INGREDIENT COUNT ===
+
+`;
+  prompt += `Target ${ingredientCount.min} to ${ingredientCount.max} ingredients for this recipe.
+`;
+  prompt += `Focus on quality over quantity - a well-crafted dish with fewer ingredients is better than one that uses everything available.
+
+`;
+  prompt += UNIT_CONVERSION_PROMPT_ADDITION + `
+`;
+  if (previousRecipeTitles.length > 0) {
+    prompt += `=== VARIETY REQUIREMENT ===
+`;
+    prompt += `The user has recently generated these recipes. Create something SIGNIFICANTLY DIFFERENT:
+`;
+    previousRecipeTitles.forEach((title) => {
+      prompt += `- ${title}
+`;
+    });
+    prompt += `Choose a different cooking style, cuisine influence, or main ingredient focus.
+
+`;
+  }
+  if (mealType) {
+    prompt += `MEAL TYPE: ${mealType.toUpperCase()}
+`;
+    if (mealType === "breakfast") {
+      prompt += `- Create a breakfast-appropriate dish (eggs, pancakes, toast, smoothies, oatmeal, etc.)
+`;
+      prompt += `- Focus on morning-friendly flavors and quick preparation
+`;
+    } else if (mealType === "lunch") {
+      prompt += `- Create a satisfying lunch dish (salads, sandwiches, wraps, soups, light mains)
+`;
+      prompt += `- Balance nutrition and convenience
+`;
+    } else if (mealType === "dinner") {
+      prompt += `- Create a hearty dinner dish (mains, pastas, stir-fries, casseroles)
+`;
+      prompt += `- Focus on satisfying, complete meals
+`;
+    } else if (mealType === "snack" || mealType === "late night snack") {
+      prompt += `- Create a quick, light snack
+`;
+      prompt += `- Keep portions smaller and preparation simple
+`;
+    }
+    prompt += `
+`;
+  }
+  if (quickRecipe) {
+    prompt += `IMPORTANT TIME CONSTRAINT: This recipe MUST be completable in under 20 minutes total (prep + cook time combined).
+`;
+    prompt += `- Prioritize quick-cooking methods (stir-fry, saut\xE9ing, no-cook, microwave)
+`;
+    prompt += `- Minimize prep work (use pre-cut, canned, or quick-prep ingredients)
+`;
+    prompt += `- One-pan or simple techniques preferred
+`;
+    prompt += `- No marinating, slow cooking, or extended baking required
+
+`;
+  }
+  prompt += `=== USER'S KITCHEN INVENTORY ===
+
+`;
+  if (expiringItems.length > 0) {
+    prompt += `ITEMS EXPIRING SOON (${expiringItems.length} items):
+`;
+    prompt += `NOTE: These items are expiring soon. Consider using them IF they make sense for a delicious, cohesive ${mealType || "meal"}. `;
+    prompt += `However, a GOOD MEAL is MORE IMPORTANT than using expiring items. `;
+    prompt += `Do NOT force expiring items into a recipe if they don't belong - it's better to skip them than create a bad dish.
+`;
+    const formattedExpiring = formatInventoryForPrompt(expiringItems);
+    expiringItems.forEach((item, index2) => {
+      const urgency = item.daysUntilExpiry <= 1 ? "EXPIRES TODAY/TOMORROW" : `expires in ${item.daysUntilExpiry} days`;
+      prompt += `- ${formattedExpiring[index2]} - ${urgency}
+`;
+    });
+    prompt += `
+`;
+  }
+  if (otherItems.length > 0) {
+    prompt += `ALSO AVAILABLE:
+`;
+    const formattedOther = formatInventoryForPrompt(otherItems);
+    formattedOther.forEach((formatted) => {
+      prompt += `- ${formatted}
+`;
+    });
+    prompt += `
+`;
+  }
+  if (equipment && equipment.length > 0) {
+    prompt += `=== EQUIPMENT AVAILABLE ===
+`;
+    equipment.forEach((item) => {
+      prompt += `- ${item.name}
+`;
+    });
+    prompt += `Only use equipment from this list.
+
+`;
+  } else {
+    prompt += `=== EQUIPMENT ===
+`;
+    prompt += `Assume basic equipment: Pot, Pan, Knife, Cutting board, Mixing bowl, Spoon, Fork
+`;
+    prompt += `Do NOT require specialty equipment like blenders, food processors, stand mixers.
+
+`;
+  }
+  prompt += `=== USER PREFERENCES ===
+`;
+  prompt += `- Servings: ${servings}
+`;
+  if (quickRecipe) {
+    prompt += `- Max TOTAL time: 20 minutes (prep + cook combined)
+`;
+  } else {
+    prompt += `- Max time: ${maxTime} minutes
+`;
+  }
+  if (dietaryRestrictions) {
+    prompt += `- Diet: ${dietaryRestrictions}
+`;
+  }
+  if (cuisine) {
+    prompt += `- Cuisine style: ${cuisine}
+`;
+  }
+  prompt += `
+`;
+  prompt += `=== NUTRITION TARGETS ===
+`;
+  prompt += `Target macro ratio by calories:
+`;
+  prompt += `- Protein: ~${macroTargets.protein}%
+`;
+  prompt += `- Carbohydrates: ~${macroTargets.carbs}%
+`;
+  prompt += `- Fat: ~${macroTargets.fat}%
+`;
+  prompt += `Prioritize lean proteins and whole food carb sources when possible.
+
+`;
+  prompt += `=== MEAL COMPOSITION GUIDELINES ===
+`;
+  prompt += `Create a balanced, satisfying meal that feels complete.
+
+`;
+  const hasEquipment = equipment && equipment.length > 0;
+  const examplePrepTime = quickRecipe ? 5 : 15;
+  const exampleCookTime = quickRecipe ? 10 : 30;
+  prompt += `=== RESPONSE FORMAT ===
+`;
+  prompt += `Respond with ONLY valid JSON matching this exact schema:
+`;
+  prompt += `{
+  "title": "Creative Recipe Name",
+  "description": "One appetizing sentence about the dish",
+  "ingredients": [
+    {"name": "Clean Display Name", "inventoryMatch": "exact inventory item name", "quantity": 2, "unit": "cups", "fromInventory": true}
+  ],
+  "instructions": ["Step 1: Specific action...", "Step 2: ..."],
+  "prepTime": ${examplePrepTime},
+  "cookTime": ${exampleCookTime},
+  "servings": ${servings},
+  "nutrition": {"calories": 400, "protein": ${Math.round(400 * macroTargets.protein / 100 / 4)}, "carbs": ${Math.round(400 * macroTargets.carbs / 100 / 4)}, "fat": ${Math.round(400 * macroTargets.fat / 100 / 9)}},
+  "usedExpiringItems": ["item1", "item2"],
+  "substitutionNotes": ["Using lime here - lemon would also work", "Butter adds richness to this dish"]${hasEquipment ? `,
+  "requiredEquipment": ["Pan"],
+  "optionalEquipment": []` : ""}
+}
+
+`;
+  prompt += `=== FINAL CHECKLIST ===
+`;
+  prompt += `Before responding, verify:
+`;
+  prompt += `- All ingredients come from the user's inventory
+`;
+  prompt += `- Each ingredient has both "name" (display) and "inventoryMatch" (exact inventory name) fields
+`;
+  prompt += `- All inventory ingredients marked fromInventory: true
+`;
+  prompt += `- Include substitution notes ONLY when using a substitute (empty array if no substitutes used)
+`;
+  prompt += `- Title and description use natural, appetizing language
+`;
+  prompt += `- Recipe is different from previous generations if any were listed
+`;
+  prompt += `- Total time (prepTime + cookTime) \u2264 ${quickRecipe ? 20 : maxTime} minutes
+`;
+  prompt += `- Ingredient count is between ${ingredientCount.min} and ${ingredientCount.max}
+`;
+  return prompt;
+}
+function fuzzyMatch(recipeIngredient, inventoryItem) {
+  const normalize = (s) => {
+    let normalized = s.toLowerCase().trim().replace(/[,()]/g, " ").replace(
+      /\b(fresh|organic|raw|cooked|frozen|canned|dried|whole|sliced|diced|chopped|minced|ground|crushed|shredded|grated|peeled|boneless|skinless|lean|extra\s*virgin|light|heavy|low[\s-]?fat|fat[\s-]?free|unsalted|salted|sweetened|unsweetened|plain|greek|regular|large|medium|small|ripe|overripe|unripe|commercially\s*prepared|store[\s-]?bought|homemade|white|wheat|multigrain|enriched)\b/g,
+      ""
+    ).replace(/\b(loaf|loaves|slice|slices|bag|package|can|jar|bottle|box|bunch|head)\s+of\s+/g, "").replace(/\s+/g, " ").trim();
+    const vesWordsToF = {
+      knives: "knife",
+      loaves: "loaf",
+      leaves: "leaf",
+      halves: "half",
+      calves: "calf",
+      shelves: "shelf",
+      wolves: "wolf",
+      selves: "self"
+    };
+    for (const [plural, singular] of Object.entries(vesWordsToF)) {
+      if (normalized.endsWith(plural)) {
+        normalized = normalized.slice(0, -plural.length) + singular;
+        break;
+      }
+    }
+    normalized = normalized.replace(/ies$/, "y");
+    normalized = normalized.replace(/es$/, "");
+    normalized = normalized.replace(/s$/, "");
+    return normalized;
+  };
+  const recipeNorm = normalize(recipeIngredient);
+  const invNorm = normalize(inventoryItem);
+  if (recipeNorm === invNorm) return true;
+  if (recipeNorm.includes(invNorm) || invNorm.includes(recipeNorm)) return true;
+  const recipeWords = recipeNorm.split(" ").filter((w) => w.length > 2);
+  const invWords = invNorm.split(" ").filter((w) => w.length > 2);
+  for (const rw of recipeWords) {
+    for (const iw of invWords) {
+      if (rw === iw) return true;
+      if (rw.includes(iw) || iw.includes(rw)) return true;
+    }
+  }
+  return false;
+}
+function isAllowedUtility(ingredientName) {
+  const normalized = ingredientName.toLowerCase().trim();
+  return ALLOWED_UTILITIES.has(normalized);
+}
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+async function generateRecipe(params) {
+  try {
+    const {
+      userId,
+      prioritizeExpiring = false,
+      quickRecipe = false,
+      selectedIngredientIds,
+      servings = 4,
+      maxTime = 60,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      inventory,
+      equipment,
+      macroTargets = { protein: 50, carbs: 35, fat: 15 },
+      previousRecipeTitles = [],
+      ingredientCount = { min: 4, max: 6 }
+    } = params;
+    const limitCheck = await checkAiRecipeLimit(userId);
+    const remaining = typeof limitCheck.remaining === "number" ? limitCheck.remaining : Infinity;
+    if (remaining < 1) {
+      return {
+        success: false,
+        error: "Monthly AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
+        code: "AI_RECIPE_LIMIT_REACHED"
+      };
+    }
+    if (!inventory || inventory.length === 0) {
+      return {
+        success: false,
+        error: "No ingredients available",
+        details: "Please add items to your inventory first."
+      };
+    }
+    const { expiringItems, otherItems } = organizeInventory2(
+      inventory,
+      selectedIngredientIds
+    );
+    if (expiringItems.length === 0 && otherItems.length === 0) {
+      return {
+        success: false,
+        error: "No ingredients to use",
+        details: "Please add items to your inventory."
+      };
+    }
+    const effectiveMaxTime = quickRecipe ? 20 : maxTime;
+    const prompt = buildSmartPrompt2({
+      expiringItems,
+      otherItems,
+      prioritizeExpiring,
+      quickRecipe,
+      servings,
+      maxTime: effectiveMaxTime,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      equipment,
+      macroTargets,
+      previousRecipeTitles,
+      ingredientCount
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[RecipeService] Smart generation prompt:",
+        prompt.substring(0, 500) + "..."
+      );
+    }
+    const completion = await openai6.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a master chef at ChefSpAIce Kitchen, crafting authentic, delicious recipes using proper culinary techniques.
+
+YOUR CORE PRINCIPLES:
+1. Apply authentic techniques and flavor profiles for the cuisine you're creating
+2. Create the BEST possible recipe using ONLY what the user has available
+3. Use fuzzy matching: "chicken" matches "chicken breast", "apple" matches "green apples"
+4. Water and ice are always available
+5. For each ingredient, provide a clean "name" for display and "inventoryMatch" for the exact inventory item
+6. When using a substitute from their inventory, add a subtle note (e.g., "Using lime here - lemon works too")
+7. Only add substitution notes when you're actually using a substitute - don't suggest ingredients they don't have
+8. Write instructions that teach proper technique, not just steps
+9. Always respond with valid JSON matching the exact schema provided`
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2048
+    });
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("No response from AI");
+    }
+    let recipe = JSON.parse(content);
+    const inventoryItems = [...expiringItems, ...otherItems];
+    const originalIngredientCount = recipe.ingredients?.length || 0;
+    recipe.ingredients = (recipe.ingredients || []).map((ing) => {
+      const matchedInventoryItem = inventoryItems.find(
+        (invItem) => fuzzyMatch(ing.inventoryMatch || ing.name, invItem.name)
+      );
+      if (matchedInventoryItem) {
+        const recipeQty = typeof ing.quantity === "number" ? ing.quantity : parseFloat(String(ing.quantity)) || 1;
+        const recipeUnit = ing.unit || "";
+        const inventoryQty = matchedInventoryItem.quantity || 1;
+        const inventoryUnit = matchedInventoryItem.unit || null;
+        const comparison = compareQuantities(
+          inventoryQty,
+          inventoryUnit,
+          recipeQty,
+          recipeUnit
+        );
+        return {
+          ...ing,
+          fromInventory: true,
+          availabilityStatus: comparison.status,
+          percentAvailable: comparison.percentAvailable ?? 100
+        };
+      }
+      if (isAllowedUtility(ing.name)) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[RecipeService] Allowing utility ingredient: ${ing.name}`);
+        }
+        return {
+          ...ing,
+          fromInventory: false,
+          availabilityStatus: "available",
+          percentAvailable: 100
+        };
+      }
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[RecipeService] Removing ingredient not in inventory: ${ing.name}`);
+      }
+      return null;
+    }).filter((ing) => ing !== null);
+    const inventoryIngredients = recipe.ingredients.filter(
+      (ing) => ing.fromInventory === true
+    );
+    if (inventoryIngredients.length < 2) {
+      return {
+        success: false,
+        error: "Could not generate a valid recipe",
+        details: "Not enough matching ingredients were found. Please try again or add more items to your inventory."
+      };
+    }
+    const validIngredientTerms = recipe.ingredients.flatMap((ing) => {
+      const name = ing.name.toLowerCase();
+      const words = name.split(/\s+/).filter((w) => w.length > 2);
+      return [name, ...words];
+    });
+    const findUnmatchedIngredients = (text2) => {
+      const textLower = text2.toLowerCase();
+      const foodTerms = [
+        "chicken",
+        "beef",
+        "pork",
+        "fish",
+        "salmon",
+        "tuna",
+        "shrimp",
+        "lamb",
+        "bacon",
+        "ham",
+        "turkey",
+        "sausage",
+        "steak",
+        "tofu",
+        "tempeh",
+        "tomato",
+        "tomatoes",
+        "onion",
+        "onions",
+        "garlic",
+        "mushroom",
+        "mushrooms",
+        "carrot",
+        "carrots",
+        "potato",
+        "potatoes",
+        "broccoli",
+        "spinach",
+        "lettuce",
+        "cucumber",
+        "zucchini",
+        "cheese",
+        "cheddar",
+        "mozzarella",
+        "parmesan",
+        "cream",
+        "milk",
+        "yogurt",
+        "butter",
+        "rice",
+        "pasta",
+        "noodle",
+        "bread",
+        "tortilla",
+        "flour",
+        "egg",
+        "eggs",
+        "mayo",
+        "mayonnaise",
+        "ketchup",
+        "mustard",
+        "soy sauce",
+        "vinegar"
+      ];
+      return foodTerms.filter((term) => {
+        if (!textLower.includes(term)) return false;
+        if (ALLOWED_UTILITIES.has(term)) return false;
+        return !validIngredientTerms.some(
+          (valid) => valid.includes(term) || term.includes(valid)
+        );
+      });
+    };
+    const descPhantoms = findUnmatchedIngredients(recipe.description || "");
+    if (descPhantoms.length > 0) {
+      const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
+      recipe.description = `A delicious dish featuring ${ingredientList}.`;
+    }
+    const instructionsText = (recipe.instructions || []).join(" ");
+    const instrPhantoms = findUnmatchedIngredients(instructionsText);
+    if (instrPhantoms.length > 0) {
+      recipe.instructions = (recipe.instructions || []).map((step) => {
+        let cleanStep = step;
+        instrPhantoms.forEach((phantom) => {
+          const regex = new RegExp(`\\b${phantom}s?\\b`, "gi");
+          cleanStep = cleanStep.replace(regex, "ingredients");
+        });
+        return cleanStep;
+      });
+    }
+    recipe.ingredients = recipe.ingredients.map((ing) => ({
+      ...ing,
+      unit: normalizeUnit(ing.unit) || ing.unit
+    }));
+    if (quickRecipe) {
+      const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+      if (totalTime > 20) {
+        const ratio = 20 / totalTime;
+        recipe.prepTime = Math.max(5, Math.floor((recipe.prepTime || 10) * ratio));
+        recipe.cookTime = Math.max(5, 20 - recipe.prepTime);
+      }
+    }
+    const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
+    recipe.usedExpiringCount = usedExpiringCount;
+    console.log(`[RecipeService] Generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`);
+    await incrementAiRecipeCount(userId);
+    const updatedLimit = await checkAiRecipeLimit(userId);
+    const savedRecipe = {
+      id: generateId(),
+      ...recipe,
+      isFavorite: false,
+      isAIGenerated: true,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      totalExpiringItems: expiringItems.length,
+      prioritizedExpiring: prioritizeExpiring
+    };
+    return {
+      success: true,
+      recipe: savedRecipe,
+      subscription: {
+        aiRecipesRemaining: updatedLimit.remaining,
+        aiRecipesLimit: updatedLimit.limit
+      }
+    };
+  } catch (error) {
+    console.error("Recipe generation error:", error);
+    return {
+      success: false,
+      error: "Failed to generate recipe"
+    };
+  }
+}
+var openai6, ALLOWED_UTILITIES, CUISINE_CHEF_PERSONAS;
+var init_recipeGenerationService = __esm({
+  "server/services/recipeGenerationService.ts"() {
+    "use strict";
+    init_unit_conversion();
+    init_usda();
+    init_subscriptionService();
+    init_ingredient_substitutions();
+    openai6 = new OpenAI8({
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+    });
+    ALLOWED_UTILITIES = /* @__PURE__ */ new Set([
+      "water",
+      "tap water",
+      "cold water",
+      "hot water",
+      "warm water",
+      "ice water",
+      "ice",
+      "ice cubes"
+    ]);
+    CUISINE_CHEF_PERSONAS = {
+      italian: {
+        name: "Chef Marco",
+        title: "Italian Culinary Master",
+        philosophy: "In Italian cooking, we let ingredients speak for themselves. Quality over complexity - a few perfect ingredients prepared with respect create magic. We cook with love, season with intuition, and always taste as we go.",
+        techniques: [
+          "Building flavor through proper saut\xE9ing in olive oil",
+          "Al dente pasta cooking with starchy water reserved",
+          "Layering herbs at different cooking stages",
+          "Finishing dishes with high-quality olive oil"
+        ],
+        signatureElements: ["Fresh herbs (basil, oregano, rosemary)", "Garlic and olive oil foundation", "Parmesan and pecorino", "Tomato-based sauces built slowly"]
+      },
+      mexican: {
+        name: "Chef Rosa",
+        title: "Mexican Culinary Tradition Keeper",
+        philosophy: "Mexican cuisine is about bold, layered flavors built through generations of wisdom. We toast our spices, char our peppers, and understand that the best dishes tell stories of family and heritage.",
+        techniques: [
+          "Toasting dried chiles and spices before use",
+          "Building complex salsas with roasted ingredients",
+          "Properly seasoning proteins with citrus and spice",
+          "Layering textures - crispy, creamy, fresh"
+        ],
+        signatureElements: ["Cumin, coriander, and chile powder", "Fresh lime and cilantro", "Layered heat from various peppers", "Corn and bean foundations"]
+      },
+      asian: {
+        name: "Chef Wei",
+        title: "Pan-Asian Culinary Expert",
+        philosophy: "Asian cooking is about balance - sweet, sour, salty, bitter, and umami in harmony. We respect the wok's heat, cut ingredients with precision, and understand that preparation is everything.",
+        techniques: [
+          "High-heat wok cooking for proper 'wok hei'",
+          "Mise en place - everything prepared before cooking",
+          "Balancing the five flavors in every dish",
+          "Proper marinating for tender, flavorful proteins"
+        ],
+        signatureElements: ["Soy sauce and fish sauce for depth", "Fresh ginger and garlic", "Sesame oil as finishing touch", "Rice and noodle foundations"]
+      },
+      mediterranean: {
+        name: "Chef Sophia",
+        title: "Mediterranean Wellness Chef",
+        philosophy: "Mediterranean cooking celebrates the sun, the sea, and the garden. We use olive oil generously, embrace vegetables as stars not sides, and understand that healthy eating should be delicious eating.",
+        techniques: [
+          "Roasting vegetables to caramelize natural sugars",
+          "Building mezze-style small plates",
+          "Marinating with lemon, olive oil, and herbs",
+          "Grilling for smoky depth"
+        ],
+        signatureElements: ["Extra virgin olive oil throughout", "Lemon and garlic brightness", "Fresh herbs like oregano and mint", "Feta, olives, and capers for salt"]
+      },
+      indian: {
+        name: "Chef Priya",
+        title: "Indian Spice Master",
+        philosophy: "Indian cooking is alchemy - transforming humble ingredients through spice and technique into something transcendent. We bloom our spices in oil, build masalas with care, and understand that patience creates depth.",
+        techniques: [
+          "Blooming whole spices in hot oil (tadka)",
+          "Building flavor through onion-tomato-ginger base",
+          "Toasting and grinding fresh spice blends",
+          "Slow cooking for developed, complex flavors"
+        ],
+        signatureElements: ["Cumin, coriander, turmeric foundation", "Fresh ginger and garlic paste", "Garam masala as finishing spice", "Yogurt for marinades and cooling"]
+      },
+      french: {
+        name: "Chef Jean-Pierre",
+        title: "Classical French Cuisine Master",
+        philosophy: "French cooking is the foundation of culinary arts. We build from mother sauces, respect mise en place, and understand that technique creates elegance. Butter is not feared - it is celebrated.",
+        techniques: [
+          "Building fond through proper searing",
+          "Creating pan sauces with deglazing",
+          "Proper emulsification for silky sauces",
+          "Resting meats and finishing with butter"
+        ],
+        signatureElements: ["Butter, shallots, and wine", "Fresh thyme, tarragon, and parsley", "Stocks and reductions for depth", "Classical herb bouquets"]
+      },
+      japanese: {
+        name: "Chef Takeshi",
+        title: "Japanese Culinary Artist",
+        philosophy: "Japanese cooking honors the ingredient's natural essence. We cut with precision, balance presentation with flavor, and understand that simplicity requires the greatest skill. Every element serves a purpose.",
+        techniques: [
+          "Knife skills for uniform, beautiful cuts",
+          "Dashi building for umami foundation",
+          "Quick cooking to preserve freshness",
+          "Presentation as art form"
+        ],
+        signatureElements: ["Soy sauce, mirin, sake balance", "Dashi and miso for umami", "Rice as sacred foundation", "Fresh, seasonal ingredients"]
+      },
+      chinese: {
+        name: "Chef Lin",
+        title: "Chinese Regional Cuisine Expert",
+        philosophy: "Chinese cooking spans thousands of years and dozens of regional styles. We understand the breath of the wok, the importance of texture, and that balance of yin and yang creates perfect dishes.",
+        techniques: [
+          "Velveting proteins for silky texture",
+          "Wok hei - the breath of the wok",
+          "Stir-frying in proper sequence",
+          "Balancing colors and textures"
+        ],
+        signatureElements: ["Soy, rice wine, and sesame oil", "Five-spice and white pepper", "Ginger-scallion aromatics", "Cornstarch for silky sauces"]
+      },
+      thai: {
+        name: "Chef Niran",
+        title: "Thai Flavor Balance Master",
+        philosophy: "Thai cooking is about harmony of opposites - spicy and cooling, sweet and sour, salty and fresh. We build layers of flavor from curry paste foundations and finish with fresh herbs that sing.",
+        techniques: [
+          "Pounding curry pastes for aromatic base",
+          "Balancing fish sauce, lime, sugar, and chile",
+          "Cooking with coconut milk properly",
+          "Finishing with fresh Thai basil and lime"
+        ],
+        signatureElements: ["Fish sauce for savory depth", "Fresh lime and palm sugar balance", "Lemongrass, galangal, kaffir lime", "Thai basil and cilantro finish"]
+      },
+      korean: {
+        name: "Chef Min-jun",
+        title: "Korean Fermentation & Flavor Expert",
+        philosophy: "Korean cooking celebrates fermentation, bold flavors, and communal eating. We understand that gochujang, doenjang, and kimchi aren't just ingredients - they're living traditions that add soul to every dish.",
+        techniques: [
+          "Building ssam (wrap) style presentations",
+          "Marinating with gochujang and soy",
+          "Balancing fermented pastes with fresh elements",
+          "Creating banchan-style accompaniments"
+        ],
+        signatureElements: ["Gochujang and gochugaru for heat", "Sesame oil and seeds", "Fermented elements like kimchi", "Rice and noodle foundations"]
+      },
+      greek: {
+        name: "Chef Dimitris",
+        title: "Greek Taverna Tradition Keeper",
+        philosophy: "Greek cooking is honest food - simple preparations that let quality ingredients shine. We drizzle olive oil generously, squeeze lemon liberally, and understand that the best meals are shared with family.",
+        techniques: [
+          "Slow roasting for tender, flavorful results",
+          "Building layers in baked dishes",
+          "Marinating with lemon, olive oil, oregano",
+          "Charring vegetables for depth"
+        ],
+        signatureElements: ["Olive oil and lemon everywhere", "Oregano, dill, and mint", "Feta cheese crumbled generously", "Garlic and honey accents"]
+      }
+    };
+  }
+});
+
 // server/lib/chat-actions.ts
 var chat_actions_exports = {};
 __export(chat_actions_exports, {
@@ -489,25 +2490,26 @@ __export(chat_actions_exports, {
   executeCreateMealPlan: () => executeCreateMealPlan,
   executeGenerateRecipe: () => executeGenerateRecipe,
   executeGetInventorySummary: () => executeGetInventorySummary,
+  executeOpenRecipeCustomizer: () => executeOpenRecipeCustomizer,
   executeSaveFeedback: () => executeSaveFeedback,
   executeWasteItem: () => executeWasteItem,
   getUserSyncData: () => getUserSyncData2
 });
-import { eq as eq12 } from "drizzle-orm";
-import OpenAI8 from "openai";
-function generateId() {
+import { eq as eq13 } from "drizzle-orm";
+import OpenAI9 from "openai";
+function generateId2() {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 function getDefaultExpirationDate(daysFromNow = 7) {
-  const date2 = /* @__PURE__ */ new Date();
-  date2.setDate(date2.getDate() + daysFromNow);
-  return date2.toISOString().split("T")[0];
+  const date = /* @__PURE__ */ new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date.toISOString().split("T")[0];
 }
 function getTodayDate() {
   return (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
 }
 async function getUserSyncData2(userId) {
-  const existingSyncData = await db.select().from(userSyncData).where(eq12(userSyncData.userId, userId));
+  const existingSyncData = await db.select().from(userSyncData).where(eq13(userSyncData.userId, userId));
   if (existingSyncData.length === 0) {
     return {
       inventory: [],
@@ -533,7 +2535,7 @@ async function getUserSyncData2(userId) {
   };
 }
 async function updateUserSyncData(userId, updates) {
-  const existingSyncData = await db.select().from(userSyncData).where(eq12(userSyncData.userId, userId));
+  const existingSyncData = await db.select().from(userSyncData).where(eq13(userSyncData.userId, userId));
   const updatePayload = {
     lastSyncedAt: /* @__PURE__ */ new Date(),
     updatedAt: /* @__PURE__ */ new Date()
@@ -547,14 +2549,14 @@ async function updateUserSyncData(userId, updates) {
       ...updatePayload
     });
   } else {
-    await db.update(userSyncData).set(updatePayload).where(eq12(userSyncData.userId, userId));
+    await db.update(userSyncData).set(updatePayload).where(eq13(userSyncData.userId, userId));
   }
 }
 async function executeAddInventoryItem(userId, args) {
   try {
     const userData = await getUserSyncData2(userId);
     const newItem = {
-      id: generateId(),
+      id: generateId2(),
       name: args.name,
       quantity: args.quantity,
       unit: args.unit,
@@ -597,7 +2599,7 @@ async function executeConsumeItem(userId, args) {
     }
     const item = userData.inventory[itemIndex];
     const consumedEntry = {
-      id: generateId(),
+      id: generateId2(),
       itemName: item.name,
       quantity: args.quantity || item.quantity,
       unit: args.unit || item.unit,
@@ -645,7 +2647,7 @@ async function executeWasteItem(userId, args) {
     }
     const item = userData.inventory[itemIndex];
     const wasteEntry = {
-      id: generateId(),
+      id: generateId2(),
       itemName: item.name,
       quantity: args.quantity || item.quantity,
       unit: args.unit || item.unit,
@@ -678,6 +2680,17 @@ async function executeWasteItem(userId, args) {
     };
   }
 }
+function executeOpenRecipeCustomizer() {
+  return {
+    success: true,
+    message: "Opening the recipe customization screen where you can configure all your recipe preferences.",
+    actionType: "open_recipe_customizer",
+    navigateTo: {
+      screen: "GenerateRecipe",
+      params: {}
+    }
+  };
+}
 async function executeGenerateRecipe(userId, args) {
   try {
     const userData = await getUserSyncData2(userId);
@@ -688,58 +2701,42 @@ async function executeGenerateRecipe(userId, args) {
         actionType: "generate_recipe"
       };
     }
-    const inventoryList = userData.inventory.map((item) => item.name).join(", ");
-    const recipePrompt = `Based on these available ingredients: ${inventoryList}
-
-Generate a simple, practical recipe with these preferences:
-${args.mealType ? `- Meal type: ${args.mealType}` : ""}
-${args.cuisine ? `- Cuisine style: ${args.cuisine}` : ""}
-${args.maxTime ? `- Max cooking time: ${args.maxTime} minutes` : ""}
-${args.servings ? `- Servings: ${args.servings}` : "- Servings: 4"}
-${args.quickRecipe ? "- This should be a quick recipe (under 20 minutes)" : ""}
-${args.prioritizeExpiring ? "- Prioritize using ingredients that might expire soon" : ""}
-
-Return the recipe in this JSON format:
-{
-  "title": "Recipe Name",
-  "description": "Brief appetizing description",
-  "ingredients": [{"name": "ingredient", "quantity": 1, "unit": "cup"}],
-  "instructions": ["Step 1...", "Step 2..."],
-  "prepTime": 10,
-  "cookTime": 20,
-  "servings": 4
-}`;
-    const completion = await openai7.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful chef assistant. Generate practical, easy-to-follow recipes based on available ingredients. Always respond with valid JSON."
-        },
-        { role: "user", content: recipePrompt }
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1024
+    const inventoryForService = userData.inventory.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      expiryDate: item.expirationDate
+    }));
+    const validMealType = args.mealType;
+    const result = await generateRecipe({
+      userId,
+      prioritizeExpiring: args.prioritizeExpiring,
+      quickRecipe: args.quickRecipe,
+      servings: args.servings || 4,
+      maxTime: args.maxTime || 60,
+      cuisine: args.cuisine,
+      mealType: validMealType,
+      inventory: inventoryForService
     });
-    const recipeContent = completion.choices[0]?.message?.content;
-    if (!recipeContent) {
-      throw new Error("No recipe generated");
+    if (!result.success || !result.recipe) {
+      return {
+        success: false,
+        message: result.error || "Failed to generate a recipe. Please try again.",
+        actionType: "generate_recipe"
+      };
     }
-    const recipe = JSON.parse(recipeContent);
-    const savedRecipe = {
-      id: generateId(),
-      ...recipe,
-      isFavorite: false,
-      isAIGenerated: true,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    userData.recipes.push(savedRecipe);
+    userData.recipes.push(result.recipe);
     await updateUserSyncData(userId, { recipes: userData.recipes });
     return {
       success: true,
-      message: `Generated recipe: ${recipe.title}. ${recipe.description}`,
-      data: savedRecipe,
-      actionType: "generate_recipe"
+      message: `Generated recipe: ${result.recipe.title}. ${result.recipe.description}`,
+      data: result.recipe,
+      actionType: "generate_recipe",
+      navigateTo: {
+        screen: "RecipeDetail",
+        params: { recipeId: result.recipe.id }
+      }
     };
   } catch (error) {
     console.error("Error generating recipe:", error);
@@ -752,6 +2749,13 @@ Return the recipe in this JSON format:
 }
 async function executeCreateMealPlan(userId, args) {
   try {
+    if (!args.planningStyle) {
+      return {
+        success: false,
+        message: "Before I create your meal plan, I need to know your preference! Would you like:\n\n1. **Batch prep** - Cook all meals on one day (like Sunday meal prep) to eat throughout the week\n2. **Daily variety** - Cook fresh meals each day with different recipes\n3. **Mixed** - Some prep-ahead meals and some fresh cooking\n\nWhich style works best for you?",
+        actionType: "create_meal_plan"
+      };
+    }
     const userData = await getUserSyncData2(userId);
     if (userData.inventory.length === 0) {
       return {
@@ -763,12 +2767,46 @@ async function executeCreateMealPlan(userId, args) {
     const inventoryList = userData.inventory.map((item) => item.name).join(", ");
     const daysCount = args.daysCount || 7;
     const mealsPerDay = args.mealsPerDay || ["breakfast", "lunch", "dinner"];
+    const planningStyle = args.planningStyle;
+    let styleInstructions = "";
+    let styleDescription = "";
+    switch (planningStyle) {
+      case "batch_prep":
+        styleInstructions = `- BATCH PREP STYLE: Design meals that can all be cooked on ONE day (like Sunday meal prep) and stored/reheated throughout the week
+- Focus on dishes that reheat well: casseroles, grain bowls, soups, stews, roasted proteins, and sturdy salads
+- Group similar cooking tasks together (e.g., roast multiple proteins at once, cook all grains together)
+- Include prep instructions noting what can be made ahead
+- Avoid dishes that don't hold well (crispy items, delicate salads, etc.)
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "batch prep";
+        break;
+      case "daily_variety":
+        styleInstructions = `- DAILY VARIETY STYLE: Design fresh meals to be cooked each day with maximum variety
+- Each day should have distinct flavors and cuisines
+- Include quick weeknight meals (under 30 min) for busy days
+- Vary cooking methods throughout the week
+- Prioritize freshness and diverse ingredients
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "daily variety";
+        break;
+      case "mixed":
+        styleInstructions = `- MIXED STYLE: Combine some prep-ahead meals with some fresh daily cooking
+- Plan 2-3 meals that can be batch prepped on the weekend
+- Include 2-3 quick fresh meals for variety during the week
+- For EVERY meal, add a tag at the end: [PREP AHEAD] or [COOK FRESH]
+- Balance convenience with variety
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "mixed (prep-ahead + fresh)";
+        break;
+    }
     const mealPlanPrompt = `Create a ${daysCount}-day meal plan using these available ingredients: ${inventoryList}
+
+Planning Style: ${styleDescription.toUpperCase()}
 
 Requirements:
 - Include these meals each day: ${mealsPerDay.join(", ")}
 ${args.dietaryRestrictions ? `- Dietary restrictions: ${args.dietaryRestrictions}` : ""}
-- Focus on variety and balanced nutrition
+${styleInstructions}
 - Use the available ingredients efficiently
 
 Return as JSON:
@@ -777,13 +2815,13 @@ Return as JSON:
     {
       "dayNumber": 1,
       "meals": {
-        "breakfast": "Meal name and brief description",
-        "lunch": "Meal name and brief description",
-        "dinner": "Meal name and brief description"
+        "breakfast": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}",
+        "lunch": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}",
+        "dinner": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}"
       }
     }
   ],
-  "shoppingNeeded": ["any additional items needed"]
+  "shoppingNeeded": ["any additional items needed"]${planningStyle === "batch_prep" ? ',\n  "prepDayInstructions": "Brief overview of batch cooking order and tips"' : ""}
 }`;
     const completion = await openai7.chat.completions.create({
       model: "gpt-4o-mini",
@@ -804,18 +2842,18 @@ Return as JSON:
     const planData = JSON.parse(planContent);
     const startDate = args.startDate || getTodayDate();
     const mealPlans = planData.days.map((day, index2) => {
-      const date2 = new Date(startDate);
-      date2.setDate(date2.getDate() + index2);
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + index2);
       return {
-        id: generateId(),
-        date: date2.toISOString().split("T")[0],
+        id: generateId2(),
+        date: date.toISOString().split("T")[0],
         meals: day.meals
       };
     });
     userData.mealPlans = [...userData.mealPlans, ...mealPlans];
     if (planData.shoppingNeeded && planData.shoppingNeeded.length > 0) {
       const newShoppingItems = planData.shoppingNeeded.map((item) => ({
-        id: generateId(),
+        id: generateId2(),
         name: item,
         quantity: 1,
         unit: "item",
@@ -827,14 +2865,17 @@ Return as JSON:
       mealPlans: userData.mealPlans,
       shoppingList: userData.shoppingList
     });
-    let message = `Created a ${daysCount}-day meal plan for you!`;
+    let message = `Created a ${daysCount}-day ${styleDescription} meal plan for you!`;
+    if (planningStyle === "batch_prep" && planData.prepDayInstructions) {
+      message += ` Prep day tip: ${planData.prepDayInstructions}`;
+    }
     if (planData.shoppingNeeded && planData.shoppingNeeded.length > 0) {
       message += ` Also added ${planData.shoppingNeeded.length} items to your shopping list.`;
     }
     return {
       success: true,
       message,
-      data: { mealPlans, shoppingNeeded: planData.shoppingNeeded },
+      data: { mealPlans, shoppingNeeded: planData.shoppingNeeded, prepDayInstructions: planData.prepDayInstructions },
       actionType: "create_meal_plan"
     };
   } catch (error) {
@@ -850,7 +2891,7 @@ async function executeAddToShoppingList(userId, args) {
   try {
     const userData = await getUserSyncData2(userId);
     const newItems = args.items.map((item) => ({
-      id: generateId(),
+      id: generateId2(),
       name: item.name,
       quantity: item.quantity || 1,
       unit: item.unit || "item",
@@ -963,6 +3004,8 @@ async function executeChatAction(userId, functionName, args) {
       return executeWasteItem(userId, args);
     case "generate_recipe":
       return executeGenerateRecipe(userId, args);
+    case "open_recipe_customizer":
+      return executeOpenRecipeCustomizer();
     case "create_meal_plan":
       return executeCreateMealPlan(userId, args);
     case "add_to_shopping_list":
@@ -985,7 +3028,8 @@ var init_chat_actions = __esm({
     "use strict";
     init_db();
     init_schema();
-    openai7 = new OpenAI8({
+    init_recipeGenerationService();
+    openai7 = new OpenAI9({
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
     });
@@ -1137,8 +3181,20 @@ var init_chat_actions = __esm({
       {
         type: "function",
         function: {
+          name: "open_recipe_customizer",
+          description: "Open the recipe customization screen where the user can configure all recipe generation options. Use this when the user wants to customize their recipe settings, wants full control over recipe generation, or asks to open the recipe generator.",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
           name: "create_meal_plan",
-          description: "Create a weekly meal plan for the user. Use this when the user asks for meal planning, wants to plan their week, or asks for a weekly menu.",
+          description: "Create a weekly meal plan for the user. IMPORTANT: Before calling this function, you MUST first ask the user about their meal planning style if they haven't specified it. Ask if they want: 1) 'Batch prep' - cook all meals on one day to eat throughout the week, 2) 'Daily variety' - cook fresh meals each day with different recipes, or 3) 'Mixed' - some prep-ahead meals and some fresh cooking. Only call this function after you know their preference.",
           parameters: {
             type: "object",
             properties: {
@@ -1161,9 +3217,14 @@ var init_chat_actions = __esm({
               dietaryRestrictions: {
                 type: "string",
                 description: "Any dietary restrictions to consider"
+              },
+              planningStyle: {
+                type: "string",
+                enum: ["batch_prep", "daily_variety", "mixed"],
+                description: "The meal planning style: 'batch_prep' for cooking all meals on one day to reheat throughout the week (meal prep Sunday style), 'daily_variety' for cooking fresh meals each day with different recipes, 'mixed' for a combination of some prep-ahead meals and some fresh cooking."
               }
             },
-            required: []
+            required: ["planningStyle"]
           }
         }
       },
@@ -1265,16 +3326,16 @@ var init_chat_actions = __esm({
 });
 
 // server/index.ts
-import express from "express";
+import express2 from "express";
 import fileUpload from "express-fileupload";
 import cookieParser from "cookie-parser";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
 // server/routes.ts
 import { createServer } from "node:http";
-import OpenAI9 from "openai";
-import { z as z7 } from "zod";
-import { eq as eq13 } from "drizzle-orm";
+import OpenAI10 from "openai";
+import { z as z10 } from "zod";
+import { eq as eq14 } from "drizzle-orm";
 
 // server/lib/shelf-life-data.ts
 var SHELF_LIFE_DATA = [
@@ -1727,11 +3788,12 @@ function parseTips(rawSuggestions) {
       text: typeof tip === "string" ? tip : tip.text || "",
       category: typeof tip === "object" && tip.category || "general"
     };
-    if (baseTip.category === "recipe" && tip.searchQuery) {
+    const tipObj = typeof tip === "object" ? tip : null;
+    if (baseTip.category === "recipe" && tipObj?.searchQuery) {
       baseTip.action = {
         type: "search",
         target: "recipes",
-        params: { query: tip.searchQuery }
+        params: { query: tipObj.searchQuery }
       };
     } else if (baseTip.category === "freeze") {
       baseTip.action = {
@@ -1875,9 +3937,9 @@ router.post("/waste-reduction", async (req, res) => {
     }
     const cached = getFromCache(cacheKey);
     if (cached && !forceRefresh) {
-      console.log(
-        `Waste reduction cache hit for device: ${deviceId}, hash: ${itemsHash}`
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Suggestions] Cache hit for device: ${deviceId}`);
+      }
       return res.json({
         suggestions: cached.suggestions,
         expiringItems: cached.expiringItems
@@ -1950,7 +4012,7 @@ Return JSON:
       const rawSuggestions = parsed.suggestions || [];
       const suggestions = parseTips(rawSuggestions);
       setInCache(cacheKey, { suggestions, expiringItems });
-      console.log(`Waste reduction tips generated for device: ${deviceId}`);
+      console.log(`[Suggestions] Waste reduction tips generated for device: ${deviceId}`);
       return res.json({
         suggestions,
         expiringItems
@@ -2039,969 +4101,12 @@ Return JSON: { "fact": "<your fun fact>" }`;
 var suggestions_router_default = router;
 
 // server/routers/user/recipes.router.ts
+init_unit_conversion();
+init_usda();
+init_subscriptionService();
 import { Router as Router2 } from "express";
 import OpenAI2 from "openai";
 import { z } from "zod";
-
-// server/lib/unit-conversion.ts
-var VOLUME_UNITS = {
-  ml: { type: "volume", baseUnit: "ml", toBase: 1 },
-  milliliter: { type: "volume", baseUnit: "ml", toBase: 1 },
-  milliliters: { type: "volume", baseUnit: "ml", toBase: 1 },
-  l: { type: "volume", baseUnit: "ml", toBase: 1e3 },
-  liter: { type: "volume", baseUnit: "ml", toBase: 1e3 },
-  liters: { type: "volume", baseUnit: "ml", toBase: 1e3 },
-  litre: { type: "volume", baseUnit: "ml", toBase: 1e3 },
-  litres: { type: "volume", baseUnit: "ml", toBase: 1e3 },
-  tsp: { type: "volume", baseUnit: "ml", toBase: 4.929 },
-  teaspoon: { type: "volume", baseUnit: "ml", toBase: 4.929 },
-  teaspoons: { type: "volume", baseUnit: "ml", toBase: 4.929 },
-  tbsp: { type: "volume", baseUnit: "ml", toBase: 14.787 },
-  tablespoon: { type: "volume", baseUnit: "ml", toBase: 14.787 },
-  tablespoons: { type: "volume", baseUnit: "ml", toBase: 14.787 },
-  cup: { type: "volume", baseUnit: "ml", toBase: 236.588 },
-  cups: { type: "volume", baseUnit: "ml", toBase: 236.588 },
-  "fl oz": { type: "volume", baseUnit: "ml", toBase: 29.574 },
-  "fluid ounce": { type: "volume", baseUnit: "ml", toBase: 29.574 },
-  "fluid ounces": { type: "volume", baseUnit: "ml", toBase: 29.574 },
-  pint: { type: "volume", baseUnit: "ml", toBase: 473.176 },
-  pints: { type: "volume", baseUnit: "ml", toBase: 473.176 },
-  pt: { type: "volume", baseUnit: "ml", toBase: 473.176 },
-  quart: { type: "volume", baseUnit: "ml", toBase: 946.353 },
-  quarts: { type: "volume", baseUnit: "ml", toBase: 946.353 },
-  qt: { type: "volume", baseUnit: "ml", toBase: 946.353 },
-  gallon: { type: "volume", baseUnit: "ml", toBase: 3785.41 },
-  gallons: { type: "volume", baseUnit: "ml", toBase: 3785.41 },
-  gal: { type: "volume", baseUnit: "ml", toBase: 3785.41 }
-};
-var WEIGHT_UNITS = {
-  g: { type: "weight", baseUnit: "g", toBase: 1 },
-  gram: { type: "weight", baseUnit: "g", toBase: 1 },
-  grams: { type: "weight", baseUnit: "g", toBase: 1 },
-  kg: { type: "weight", baseUnit: "g", toBase: 1e3 },
-  kilogram: { type: "weight", baseUnit: "g", toBase: 1e3 },
-  kilograms: { type: "weight", baseUnit: "g", toBase: 1e3 },
-  mg: { type: "weight", baseUnit: "g", toBase: 1e-3 },
-  milligram: { type: "weight", baseUnit: "g", toBase: 1e-3 },
-  milligrams: { type: "weight", baseUnit: "g", toBase: 1e-3 },
-  oz: { type: "weight", baseUnit: "g", toBase: 28.3495 },
-  ounce: { type: "weight", baseUnit: "g", toBase: 28.3495 },
-  ounces: { type: "weight", baseUnit: "g", toBase: 28.3495 },
-  lb: { type: "weight", baseUnit: "g", toBase: 453.592 },
-  lbs: { type: "weight", baseUnit: "g", toBase: 453.592 },
-  pound: { type: "weight", baseUnit: "g", toBase: 453.592 },
-  pounds: { type: "weight", baseUnit: "g", toBase: 453.592 }
-};
-var COUNT_UNITS = {
-  piece: { type: "count", baseUnit: "piece", toBase: 1 },
-  pieces: { type: "count", baseUnit: "piece", toBase: 1 },
-  pcs: { type: "count", baseUnit: "piece", toBase: 1 },
-  item: { type: "count", baseUnit: "piece", toBase: 1 },
-  items: { type: "count", baseUnit: "piece", toBase: 1 },
-  unit: { type: "count", baseUnit: "piece", toBase: 1 },
-  units: { type: "count", baseUnit: "piece", toBase: 1 },
-  each: { type: "count", baseUnit: "piece", toBase: 1 },
-  whole: { type: "count", baseUnit: "piece", toBase: 1 },
-  slice: { type: "count", baseUnit: "piece", toBase: 1 },
-  slices: { type: "count", baseUnit: "piece", toBase: 1 },
-  clove: { type: "count", baseUnit: "piece", toBase: 1 },
-  cloves: { type: "count", baseUnit: "piece", toBase: 1 },
-  head: { type: "count", baseUnit: "piece", toBase: 1 },
-  heads: { type: "count", baseUnit: "piece", toBase: 1 },
-  bunch: { type: "count", baseUnit: "piece", toBase: 1 },
-  bunches: { type: "count", baseUnit: "piece", toBase: 1 },
-  stalk: { type: "count", baseUnit: "piece", toBase: 1 },
-  stalks: { type: "count", baseUnit: "piece", toBase: 1 },
-  sprig: { type: "count", baseUnit: "piece", toBase: 1 },
-  sprigs: { type: "count", baseUnit: "piece", toBase: 1 },
-  can: { type: "count", baseUnit: "piece", toBase: 1 },
-  cans: { type: "count", baseUnit: "piece", toBase: 1 },
-  bottle: { type: "count", baseUnit: "piece", toBase: 1 },
-  bottles: { type: "count", baseUnit: "piece", toBase: 1 },
-  jar: { type: "count", baseUnit: "piece", toBase: 1 },
-  jars: { type: "count", baseUnit: "piece", toBase: 1 },
-  package: { type: "count", baseUnit: "piece", toBase: 1 },
-  packages: { type: "count", baseUnit: "piece", toBase: 1 },
-  bag: { type: "count", baseUnit: "piece", toBase: 1 },
-  bags: { type: "count", baseUnit: "piece", toBase: 1 },
-  box: { type: "count", baseUnit: "piece", toBase: 1 },
-  boxes: { type: "count", baseUnit: "piece", toBase: 1 },
-  dozen: { type: "count", baseUnit: "piece", toBase: 12 }
-};
-var ALL_UNITS = {
-  ...VOLUME_UNITS,
-  ...WEIGHT_UNITS,
-  ...COUNT_UNITS
-};
-function parseUnit(unit) {
-  if (!unit) return null;
-  const normalized = unit.toLowerCase().trim();
-  return ALL_UNITS[normalized] || null;
-}
-function getUnitType(unit) {
-  const info = parseUnit(unit);
-  return info?.type || "unknown";
-}
-function convertToBase(quantity, unit) {
-  const info = parseUnit(unit);
-  if (!info) return null;
-  return {
-    value: quantity * info.toBase,
-    baseUnit: info.baseUnit,
-    type: info.type
-  };
-}
-function convert(quantity, fromUnit, toUnit) {
-  const fromInfo = parseUnit(fromUnit);
-  const toInfo = parseUnit(toUnit);
-  if (!fromInfo || !toInfo) return null;
-  if (fromInfo.type !== toInfo.type) return null;
-  const baseValue = quantity * fromInfo.toBase;
-  return baseValue / toInfo.toBase;
-}
-function normalizeUnit(unit) {
-  if (!unit) return "";
-  const info = parseUnit(unit);
-  if (!info) return unit;
-  const unitLower = unit.toLowerCase().trim();
-  const canonicalForms = {
-    milliliter: "ml",
-    milliliters: "ml",
-    liter: "L",
-    liters: "L",
-    litre: "L",
-    litres: "L",
-    l: "L",
-    teaspoon: "tsp",
-    teaspoons: "tsp",
-    tablespoon: "tbsp",
-    tablespoons: "tbsp",
-    "fluid ounce": "fl oz",
-    "fluid ounces": "fl oz",
-    gram: "g",
-    grams: "g",
-    kilogram: "kg",
-    kilograms: "kg",
-    milligram: "mg",
-    milligrams: "mg",
-    ounce: "oz",
-    ounces: "oz",
-    pound: "lb",
-    pounds: "lb",
-    lbs: "lb",
-    piece: "pc",
-    pieces: "pc",
-    pcs: "pc"
-  };
-  return canonicalForms[unitLower] || unit;
-}
-function formatInventoryForPrompt(items) {
-  return items.map((item) => {
-    if (!item.quantity) {
-      return item.name;
-    }
-    if (!item.unit) {
-      return `${item.name}: ${item.quantity}`;
-    }
-    const normalizedUnit = normalizeUnit(item.unit);
-    const unitType = getUnitType(item.unit);
-    let equivalents = "";
-    if (unitType === "weight") {
-      const inGrams = convertToBase(item.quantity, item.unit);
-      if (inGrams && item.unit?.toLowerCase() !== "g") {
-        equivalents = ` (~${Math.round(inGrams.value)}g)`;
-      } else if (item.unit?.toLowerCase() === "g" && item.quantity >= 100) {
-        const inOz = convert(item.quantity, "g", "oz");
-        if (inOz) equivalents = ` (~${Math.round(inOz * 10) / 10} oz)`;
-      }
-    } else if (unitType === "volume") {
-      const inMl = convertToBase(item.quantity, item.unit);
-      if (inMl && !["ml", "milliliter", "milliliters"].includes(
-        item.unit?.toLowerCase() || ""
-      )) {
-        equivalents = ` (~${Math.round(inMl.value)}ml)`;
-      }
-    }
-    return `${item.name}: ${item.quantity} ${normalizedUnit}${equivalents}`;
-  });
-}
-function normalizeUnitForInstacart(unit) {
-  if (!unit) return void 0;
-  const normalized = unit.toLowerCase().trim();
-  const instacartUnitMap = {
-    // Volume - Instacart format
-    ml: "ml",
-    milliliter: "ml",
-    milliliters: "ml",
-    l: "l",
-    liter: "l",
-    liters: "l",
-    litre: "l",
-    litres: "l",
-    tsp: "tsp",
-    teaspoon: "tsp",
-    teaspoons: "tsp",
-    tbsp: "tbsp",
-    tablespoon: "tbsp",
-    tablespoons: "tbsp",
-    cup: "cup",
-    cups: "cup",
-    "fl oz": "fl oz",
-    "fluid ounce": "fl oz",
-    "fluid ounces": "fl oz",
-    pint: "pt",
-    pints: "pt",
-    pt: "pt",
-    quart: "qt",
-    quarts: "qt",
-    qt: "qt",
-    gallon: "gal",
-    gallons: "gal",
-    gal: "gal",
-    // Weight - Instacart format
-    g: "g",
-    gram: "g",
-    grams: "g",
-    kg: "kg",
-    kilogram: "kg",
-    kilograms: "kg",
-    oz: "oz",
-    ounce: "oz",
-    ounces: "oz",
-    lb: "lb",
-    lbs: "lb",
-    pound: "lb",
-    pounds: "lb",
-    // Count - Instacart format
-    piece: "piece",
-    pieces: "piece",
-    pcs: "piece",
-    pc: "piece",
-    item: "each",
-    items: "each",
-    unit: "each",
-    units: "each",
-    each: "each",
-    whole: "each",
-    count: "count",
-    dozen: "dozen",
-    slice: "slice",
-    slices: "slice",
-    clove: "clove",
-    cloves: "clove",
-    head: "head",
-    heads: "head",
-    bunch: "bunch",
-    bunches: "bunch",
-    stalk: "stalk",
-    stalks: "stalk",
-    sprig: "sprig",
-    sprigs: "sprig",
-    can: "can",
-    cans: "can",
-    bottle: "bottle",
-    bottles: "bottle",
-    jar: "jar",
-    jars: "jar",
-    package: "package",
-    packages: "package",
-    pack: "pack",
-    packs: "pack",
-    bag: "bag",
-    bags: "bag",
-    box: "box",
-    boxes: "box",
-    carton: "carton",
-    cartons: "carton",
-    container: "container",
-    containers: "container",
-    loaf: "loaf",
-    loaves: "loaf"
-  };
-  return instacartUnitMap[normalized] || void 0;
-}
-var UNIT_CONVERSION_PROMPT_ADDITION = `
-UNIT HANDLING INSTRUCTIONS:
-- The user's inventory may use different units than your recipe (e.g., grams vs cups, ml vs fl oz)
-- When matching inventory items to recipe ingredients, recognize that units can be converted:
-  - VOLUME: 1 cup = 236.6ml, 1 tbsp = 14.8ml, 1 tsp = 4.9ml, 1 fl oz = 29.6ml
-  - WEIGHT: 1 oz = 28.3g, 1 lb = 453.6g, 1 kg = 1000g
-- If the inventory shows "500g flour" and your recipe needs "2 cups flour", these are compatible
-- Use practical, common units in your recipe output (cups, tbsp, g, oz - whatever fits the ingredient best)
-- When the user has enough quantity in a compatible unit, mark the ingredient as "fromInventory": true
-`;
-
-// server/integrations/usda.ts
-var USDA_API_KEY = process.env.USDA_API_KEY;
-var USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
-var searchCache = /* @__PURE__ */ new Map();
-var foodCache = /* @__PURE__ */ new Map();
-var SEARCH_CACHE_TTL = 60 * 60 * 1e3;
-var FOOD_CACHE_TTL = 24 * 60 * 60 * 1e3;
-function isSearchCacheValid(timestamp2) {
-  return Date.now() - timestamp2 < SEARCH_CACHE_TTL;
-}
-function isFoodCacheValid(timestamp2) {
-  return Date.now() - timestamp2 < FOOD_CACHE_TTL;
-}
-async function searchUSDA(query, pageSize = 25) {
-  if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
-    return [];
-  }
-  const cacheKey = `${query}-${pageSize}`;
-  const cached = searchCache.get(cacheKey);
-  if (cached && isSearchCacheValid(cached.timestamp)) {
-    return cached.data;
-  }
-  try {
-    const params = new URLSearchParams({
-      api_key: USDA_API_KEY,
-      query,
-      pageSize: pageSize.toString()
-    });
-    const response = await fetch(`${USDA_BASE_URL}/foods/search?${params}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-    if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
-      return [];
-    }
-    if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`
-      );
-      return [];
-    }
-    const data = await response.json();
-    const results = data.foods || [];
-    searchCache.set(cacheKey, { data: results, timestamp: Date.now() });
-    return results;
-  } catch (error) {
-    console.error("Error searching USDA API:", error);
-    return [];
-  }
-}
-async function getUSDAFood(fdcId) {
-  if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
-    return null;
-  }
-  const cached = foodCache.get(fdcId);
-  if (cached && isFoodCacheValid(cached.timestamp)) {
-    return cached.data;
-  }
-  try {
-    const params = new URLSearchParams({
-      api_key: USDA_API_KEY
-    });
-    const response = await fetch(`${USDA_BASE_URL}/food/${fdcId}?${params}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-    if (response.status === 404) {
-      foodCache.set(fdcId, { data: null, timestamp: Date.now() });
-      return null;
-    }
-    if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
-      return null;
-    }
-    if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`
-      );
-      return null;
-    }
-    const data = await response.json();
-    foodCache.set(fdcId, { data, timestamp: Date.now() });
-    return data;
-  } catch (error) {
-    console.error("Error fetching USDA food:", error);
-    return null;
-  }
-}
-var NUTRIENT_IDS = {
-  ENERGY: 1008,
-  PROTEIN: 1003,
-  CARBOHYDRATES: 1005,
-  FAT: 1004,
-  FIBER: 1079,
-  SUGARS: 2e3,
-  SODIUM: 1093
-};
-function findNutrientValue(nutrients, nutrientId) {
-  const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
-  return nutrient?.value;
-}
-function mapUSDAToFoodItem(usdaFood) {
-  const nutrients = usdaFood.foodNutrients || [];
-  const calories = findNutrientValue(nutrients, NUTRIENT_IDS.ENERGY) ?? 0;
-  const protein = findNutrientValue(nutrients, NUTRIENT_IDS.PROTEIN) ?? 0;
-  const carbs = findNutrientValue(nutrients, NUTRIENT_IDS.CARBOHYDRATES) ?? 0;
-  const fat = findNutrientValue(nutrients, NUTRIENT_IDS.FAT) ?? 0;
-  const fiber = findNutrientValue(nutrients, NUTRIENT_IDS.FIBER);
-  const sugar = findNutrientValue(nutrients, NUTRIENT_IDS.SUGARS);
-  const sodium = findNutrientValue(nutrients, NUTRIENT_IDS.SODIUM);
-  let category = "Other";
-  if ("foodCategory" in usdaFood && usdaFood.foodCategory?.description) {
-    category = usdaFood.foodCategory.description;
-  }
-  let servingSize;
-  if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
-    servingSize = `${usdaFood.servingSize} ${usdaFood.servingSizeUnit}`;
-  }
-  return {
-    name: usdaFood.description,
-    category,
-    nutrition: {
-      calories: Math.round(calories),
-      protein: Math.round(protein * 10) / 10,
-      carbs: Math.round(carbs * 10) / 10,
-      fat: Math.round(fat * 10) / 10,
-      fiber: fiber !== void 0 ? Math.round(fiber * 10) / 10 : void 0,
-      sugar: sugar !== void 0 ? Math.round(sugar * 10) / 10 : void 0,
-      sodium: sodium !== void 0 ? Math.round(sodium) : void 0,
-      servingSize
-    },
-    source: "usda",
-    sourceId: usdaFood.fdcId,
-    brandOwner: "brandOwner" in usdaFood ? usdaFood.brandOwner : void 0,
-    ingredients: usdaFood.ingredients
-  };
-}
-var barcodeCache = /* @__PURE__ */ new Map();
-async function lookupUSDABarcode(barcode) {
-  if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
-    return null;
-  }
-  const cleanBarcode = barcode.replace(/\D/g, "");
-  const cached = barcodeCache.get(cleanBarcode);
-  if (cached && isSearchCacheValid(cached.timestamp)) {
-    return cached.data;
-  }
-  try {
-    const response = await fetch(
-      `${USDA_BASE_URL}/foods/search?api_key=${USDA_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          query: cleanBarcode,
-          dataType: ["Branded"],
-          pageSize: 25
-        })
-      }
-    );
-    if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
-      return null;
-    }
-    if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`
-      );
-      return null;
-    }
-    const data = await response.json();
-    const foods = data.foods || [];
-    const exactMatch = foods.find((food) => {
-      if (food.gtinUpc) {
-        const foodUpc = food.gtinUpc.replace(/\D/g, "");
-        return foodUpc === cleanBarcode || foodUpc.endsWith(cleanBarcode) || cleanBarcode.endsWith(foodUpc);
-      }
-      return false;
-    });
-    if (exactMatch) {
-      barcodeCache.set(cleanBarcode, {
-        data: exactMatch,
-        timestamp: Date.now()
-      });
-      return exactMatch;
-    }
-    if (foods.length > 0) {
-      barcodeCache.set(cleanBarcode, { data: foods[0], timestamp: Date.now() });
-      return foods[0];
-    }
-    barcodeCache.set(cleanBarcode, { data: null, timestamp: Date.now() });
-    return null;
-  } catch (error) {
-    console.error("Error looking up USDA barcode:", error);
-    return null;
-  }
-}
-var PORTION_CACHE_TTL = 24 * 60 * 60 * 1e3;
-var UNIT_ALIASES = {
-  slice: ["slice", "slices", "sl"],
-  loaf: ["loaf", "loaves"],
-  cup: ["cup", "cups", "c"],
-  tablespoon: ["tablespoon", "tablespoons", "tbsp", "tbs", "tb"],
-  teaspoon: ["teaspoon", "teaspoons", "tsp", "ts"],
-  ounce: ["ounce", "ounces", "oz"],
-  pound: ["pound", "pounds", "lb", "lbs"],
-  gram: ["gram", "grams", "g"],
-  kilogram: ["kilogram", "kilograms", "kg"],
-  piece: ["piece", "pieces", "pc", "pcs", "each", "ea", "whole"],
-  serving: ["serving", "servings", "srv"],
-  can: ["can", "cans"],
-  bottle: ["bottle", "bottles"],
-  package: ["package", "packages", "pkg", "pkgs"],
-  head: ["head", "heads"],
-  clove: ["clove", "cloves"],
-  bunch: ["bunch", "bunches"],
-  stalk: ["stalk", "stalks"],
-  sprig: ["sprig", "sprigs"],
-  large: ["large", "lg"],
-  medium: ["medium", "med", "md"],
-  small: ["small", "sm"]
-};
-function normalizeUnitName(unit) {
-  const lower = unit.toLowerCase().trim();
-  for (const [canonical, aliases] of Object.entries(UNIT_ALIASES)) {
-    if (aliases.includes(lower)) {
-      return canonical;
-    }
-  }
-  return lower;
-}
-function unitMatches(portionUnit, searchUnit) {
-  const normPortion = normalizeUnitName(portionUnit);
-  const normSearch = normalizeUnitName(searchUnit);
-  if (normPortion === normSearch) return true;
-  if (normPortion.includes(normSearch) || normSearch.includes(normPortion)) {
-    return true;
-  }
-  return false;
-}
-function findPortionConversion(portions, unit) {
-  const searchUnit = normalizeUnitName(unit);
-  for (const portion of portions) {
-    if (normalizeUnitName(portion.unitName) === searchUnit) {
-      return portion;
-    }
-    if (portion.unitAbbreviation && normalizeUnitName(portion.unitAbbreviation) === searchUnit) {
-      return portion;
-    }
-  }
-  for (const portion of portions) {
-    if (unitMatches(portion.unitName, unit)) {
-      return portion;
-    }
-  }
-  return null;
-}
-var STANDARD_WEIGHT_TO_GRAMS = {
-  g: 1,
-  gram: 1,
-  grams: 1,
-  kg: 1e3,
-  kilogram: 1e3,
-  kilograms: 1e3,
-  oz: 28.3495,
-  ounce: 28.3495,
-  ounces: 28.3495,
-  lb: 453.592,
-  lbs: 453.592,
-  pound: 453.592,
-  pounds: 453.592,
-  mg: 1e-3,
-  milligram: 1e-3,
-  milligrams: 1e-3
-};
-var STANDARD_VOLUME_TO_GRAMS = {
-  ml: 1,
-  milliliter: 1,
-  milliliters: 1,
-  l: 1e3,
-  liter: 1e3,
-  liters: 1e3,
-  litre: 1e3,
-  litres: 1e3,
-  cup: 240,
-  cups: 240,
-  tbsp: 15,
-  tablespoon: 15,
-  tablespoons: 15,
-  tsp: 5,
-  teaspoon: 5,
-  teaspoons: 5,
-  "fl oz": 30,
-  "fluid ounce": 30,
-  "fluid ounces": 30
-};
-function convertToGrams(quantity, unit, portions) {
-  const normalizedUnit = unit.toLowerCase().trim();
-  if (portions && portions.length > 0) {
-    const portionMatch = findPortionConversion(portions, unit);
-    if (portionMatch) {
-      return {
-        grams: quantity * portionMatch.gramsPerUnit,
-        conversionUsed: `${portionMatch.amount} ${portionMatch.unitName} = ${portionMatch.gramWeight}g (USDA)`,
-        isApproximate: false
-      };
-    }
-  }
-  if (STANDARD_WEIGHT_TO_GRAMS[normalizedUnit]) {
-    return {
-      grams: quantity * STANDARD_WEIGHT_TO_GRAMS[normalizedUnit],
-      conversionUsed: `standard weight conversion`,
-      isApproximate: false
-    };
-  }
-  if (STANDARD_VOLUME_TO_GRAMS[normalizedUnit]) {
-    return {
-      grams: quantity * STANDARD_VOLUME_TO_GRAMS[normalizedUnit],
-      conversionUsed: `volume approximation (density varies)`,
-      isApproximate: true
-    };
-  }
-  return null;
-}
-function compareQuantities(inventoryQty, inventoryUnit, requiredQty, requiredUnit, portions) {
-  if (!inventoryUnit) {
-    if (inventoryQty >= requiredQty) {
-      return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
-    }
-    const pct2 = Math.round(inventoryQty / requiredQty * 100);
-    return {
-      status: pct2 >= 50 ? "partial" : "unavailable",
-      inventoryGrams: null,
-      requiredGrams: null,
-      percentAvailable: pct2
-    };
-  }
-  const inventoryInGrams = convertToGrams(inventoryQty, inventoryUnit, portions);
-  const requiredInGrams = convertToGrams(requiredQty, requiredUnit, portions);
-  if (!inventoryInGrams || !requiredInGrams) {
-    const normInv = normalizeUnitName(inventoryUnit);
-    const normReq = normalizeUnitName(requiredUnit);
-    if (normInv === normReq || unitMatches(inventoryUnit, requiredUnit)) {
-      if (inventoryQty >= requiredQty) {
-        return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
-      }
-      const pct2 = Math.round(inventoryQty / requiredQty * 100);
-      return {
-        status: pct2 >= 50 ? "partial" : "unavailable",
-        inventoryGrams: null,
-        requiredGrams: null,
-        percentAvailable: pct2,
-        conversionNote: `Same unit comparison: ${inventoryQty}/${requiredQty} ${inventoryUnit}`
-      };
-    }
-    return {
-      status: "available",
-      // Assume available if we can't verify
-      inventoryGrams: null,
-      requiredGrams: null,
-      percentAvailable: null,
-      conversionNote: `Cannot convert between ${inventoryUnit} and ${requiredUnit}`
-    };
-  }
-  const pct = Math.round(inventoryInGrams.grams / requiredInGrams.grams * 100);
-  let status;
-  if (pct >= 100) {
-    status = "available";
-  } else if (pct >= 50) {
-    status = "partial";
-  } else {
-    status = "unavailable";
-  }
-  return {
-    status,
-    inventoryGrams: inventoryInGrams.grams,
-    requiredGrams: requiredInGrams.grams,
-    percentAvailable: Math.min(pct, 100),
-    conversionNote: `${inventoryQty} ${inventoryUnit} = ${Math.round(inventoryInGrams.grams)}g, need ${Math.round(requiredInGrams.grams)}g`
-  };
-}
-
-// server/services/subscriptionService.ts
-init_db();
-init_schema();
-import { eq } from "drizzle-orm";
-
-// shared/subscription.ts
-var TIER_CONFIG = {
-  ["BASIC" /* BASIC */]: {
-    maxPantryItems: 25,
-    maxAiRecipesPerMonth: 5,
-    maxCookwareItems: 5,
-    canCustomizeStorageAreas: false,
-    canUseRecipeScanning: false,
-    canUseBulkScanning: false,
-    canUseAiKitchenAssistant: false,
-    canUseWeeklyMealPrepping: false
-  },
-  ["PRO" /* PRO */]: {
-    maxPantryItems: -1,
-    maxAiRecipesPerMonth: -1,
-    maxCookwareItems: -1,
-    canCustomizeStorageAreas: true,
-    canUseRecipeScanning: true,
-    canUseBulkScanning: true,
-    canUseAiKitchenAssistant: true,
-    canUseWeeklyMealPrepping: true
-  }
-};
-var MONTHLY_PRICES = {
-  BASIC: 4.99,
-  PRO: 9.99
-};
-var ANNUAL_PRICES = {
-  BASIC: 49.9,
-  PRO: 99.9
-};
-var TRIAL_CONFIG = {
-  TRIAL_DAYS: 7,
-  TRIAL_TIER: "PRO" /* PRO */
-};
-var ERROR_CODES = {
-  PANTRY_LIMIT_REACHED: "PANTRY_LIMIT_REACHED",
-  COOKWARE_LIMIT_REACHED: "COOKWARE_LIMIT_REACHED",
-  AI_RECIPE_LIMIT_REACHED: "AI_RECIPE_LIMIT_REACHED",
-  FEATURE_NOT_AVAILABLE: "FEATURE_NOT_AVAILABLE"
-};
-var ERROR_MESSAGES = {
-  [ERROR_CODES.PANTRY_LIMIT_REACHED]: "Pantry item limit reached. Upgrade to Pro for unlimited items.",
-  [ERROR_CODES.COOKWARE_LIMIT_REACHED]: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
-  [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]: "AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
-  [ERROR_CODES.FEATURE_NOT_AVAILABLE]: "This feature requires a Pro subscription."
-};
-function getTierLimits(tier) {
-  return TIER_CONFIG[tier];
-}
-function isWithinLimit(tier, limitKey, currentCount) {
-  const limits = getTierLimits(tier);
-  const limit = limits[limitKey];
-  if (limit === -1) {
-    return true;
-  }
-  return currentCount < limit;
-}
-function getRemainingQuota(tier, limitKey, currentCount) {
-  const limits = getTierLimits(tier);
-  const limit = limits[limitKey];
-  if (limit === -1) {
-    return "unlimited";
-  }
-  return Math.max(0, limit - currentCount);
-}
-
-// server/services/subscriptionService.ts
-var { TRIAL_DAYS } = TRIAL_CONFIG;
-async function getUserById(userId) {
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  return user;
-}
-async function getUserSyncData(userId) {
-  const [syncData] = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId)).limit(1);
-  return syncData;
-}
-function parseJsonArray(jsonString) {
-  if (!jsonString) return [];
-  try {
-    return JSON.parse(jsonString);
-  } catch {
-    return [];
-  }
-}
-async function getUserEntitlements(userId) {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  await resetMonthlyCountsIfNeeded(userId);
-  const refreshedUser = await getUserById(userId);
-  if (!refreshedUser) {
-    throw new Error("User not found after refresh");
-  }
-  const syncData = await getUserSyncData(userId);
-  const tier = refreshedUser.subscriptionTier || "BASIC" /* BASIC */;
-  const limits = getTierLimits(tier);
-  const inventory = parseJsonArray(syncData?.inventory || null);
-  const cookware = parseJsonArray(syncData?.cookware || null);
-  const pantryItemCount = inventory.length;
-  const cookwareCount = cookware.length;
-  const aiRecipesUsedThisMonth = refreshedUser.aiRecipesGeneratedThisMonth || 0;
-  return {
-    tier,
-    status: refreshedUser.subscriptionStatus || "trialing",
-    limits,
-    usage: {
-      pantryItemCount,
-      aiRecipesUsedThisMonth,
-      cookwareCount
-    },
-    remaining: {
-      pantryItems: getRemainingQuota(tier, "maxPantryItems", pantryItemCount),
-      aiRecipes: getRemainingQuota(tier, "maxAiRecipesPerMonth", aiRecipesUsedThisMonth),
-      cookware: getRemainingQuota(tier, "maxCookwareItems", cookwareCount)
-    },
-    trialEndsAt: refreshedUser.trialEndsAt
-  };
-}
-async function checkPantryItemLimit(userId) {
-  const entitlements = await getUserEntitlements(userId);
-  const { tier, usage } = entitlements;
-  const limits = getTierLimits(tier);
-  const limit = limits.maxPantryItems === -1 ? "unlimited" : limits.maxPantryItems;
-  const remaining = getRemainingQuota(tier, "maxPantryItems", usage.pantryItemCount);
-  const allowed = isWithinLimit(tier, "maxPantryItems", usage.pantryItemCount);
-  return { allowed, remaining, limit };
-}
-async function checkAiRecipeLimit(userId) {
-  await resetMonthlyCountsIfNeeded(userId);
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const tier = user.subscriptionTier || "BASIC" /* BASIC */;
-  const limits = getTierLimits(tier);
-  const currentCount = user.aiRecipesGeneratedThisMonth || 0;
-  const limit = limits.maxAiRecipesPerMonth === -1 ? "unlimited" : limits.maxAiRecipesPerMonth;
-  const remaining = getRemainingQuota(tier, "maxAiRecipesPerMonth", currentCount);
-  const allowed = isWithinLimit(tier, "maxAiRecipesPerMonth", currentCount);
-  return { allowed, remaining, limit };
-}
-async function checkCookwareLimit(userId) {
-  const entitlements = await getUserEntitlements(userId);
-  const { tier, usage } = entitlements;
-  const limits = getTierLimits(tier);
-  const limit = limits.maxCookwareItems === -1 ? "unlimited" : limits.maxCookwareItems;
-  const remaining = getRemainingQuota(tier, "maxCookwareItems", usage.cookwareCount);
-  const allowed = isWithinLimit(tier, "maxCookwareItems", usage.cookwareCount);
-  return { allowed, remaining, limit };
-}
-var featureToLimitKey = {
-  recipeScanning: "canUseRecipeScanning",
-  bulkScanning: "canUseBulkScanning",
-  aiKitchenAssistant: "canUseAiKitchenAssistant",
-  weeklyMealPrepping: "canUseWeeklyMealPrepping",
-  customStorageAreas: "canCustomizeStorageAreas"
-};
-async function checkFeatureAccess(userId, feature) {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const tier = user.subscriptionTier || "BASIC" /* BASIC */;
-  const limits = getTierLimits(tier);
-  const limitKey = featureToLimitKey[feature];
-  if (!limitKey) {
-    return false;
-  }
-  return limits[limitKey];
-}
-async function incrementAiRecipeCount(userId) {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const currentCount = user.aiRecipesGeneratedThisMonth || 0;
-  let resetDate = user.aiRecipesResetDate;
-  if (!resetDate) {
-    const oneMonthFromNow = /* @__PURE__ */ new Date();
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-    resetDate = oneMonthFromNow;
-  }
-  await db.update(users).set({
-    aiRecipesGeneratedThisMonth: currentCount + 1,
-    aiRecipesResetDate: resetDate,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq(users.id, userId));
-}
-async function resetMonthlyCountsIfNeeded(userId) {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const resetDate = user.aiRecipesResetDate;
-  if (!resetDate) {
-    return;
-  }
-  const now = /* @__PURE__ */ new Date();
-  if (now >= new Date(resetDate)) {
-    const oneMonthFromNow = /* @__PURE__ */ new Date();
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-    await db.update(users).set({
-      aiRecipesGeneratedThisMonth: 0,
-      aiRecipesResetDate: oneMonthFromNow,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq(users.id, userId));
-  }
-}
-async function ensureTrialSubscription(userId, selectedPlan = "monthly") {
-  const now = /* @__PURE__ */ new Date();
-  const trialEnd = new Date(now);
-  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-  const [existing] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
-  if (existing) {
-    if (existing.status === "trialing") {
-      await db.update(users).set({
-        subscriptionTier: "PRO" /* PRO */,
-        subscriptionStatus: "trialing",
-        trialEndsAt: existing.trialEnd || trialEnd,
-        updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq(users.id, userId));
-      return { created: false, trialEnd: existing.trialEnd || trialEnd };
-    }
-    return { created: false, trialEnd: existing.trialEnd || trialEnd };
-  }
-  try {
-    await db.insert(subscriptions).values({
-      userId,
-      status: "trialing",
-      planType: selectedPlan,
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-      trialStart: now,
-      trialEnd,
-      cancelAtPeriodEnd: false
-    });
-    await db.update(users).set({
-      subscriptionTier: "PRO" /* PRO */,
-      subscriptionStatus: "trialing",
-      trialEndsAt: trialEnd,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq(users.id, userId));
-    return { created: true, trialEnd };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes("unique") || errorMessage.includes("duplicate")) {
-      const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
-      if (sub?.status === "trialing") {
-        await db.update(users).set({
-          subscriptionTier: "PRO" /* PRO */,
-          subscriptionStatus: "trialing",
-          trialEndsAt: sub.trialEnd || trialEnd,
-          updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, userId));
-      }
-      return { created: false, trialEnd: sub?.trialEnd || trialEnd };
-    }
-    throw error;
-  }
-}
-async function expireTrialSubscription(userId) {
-  await db.update(subscriptions).set({
-    status: "expired"
-  }).where(eq(subscriptions.userId, userId));
-  await db.update(users).set({
-    subscriptionTier: "BASIC" /* BASIC */,
-    subscriptionStatus: "expired",
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq(users.id, userId));
-}
-
-// server/routers/user/recipes.router.ts
 var router2 = Router2();
 var openai2 = new OpenAI2({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -3010,7 +4115,7 @@ var openai2 = new OpenAI2({
 var generateRecipeSchema = z.object({
   prioritizeExpiring: z.boolean().default(false),
   quickRecipe: z.boolean().default(false),
-  ingredients: z.array(z.number()).optional(),
+  ingredients: z.array(z.union([z.number(), z.string()])).optional(),
   servings: z.number().min(1).max(20).default(4),
   maxTime: z.number().min(5).max(480).default(60),
   dietaryRestrictions: z.string().optional(),
@@ -3018,7 +4123,7 @@ var generateRecipeSchema = z.object({
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack", "late night snack"]).optional(),
   inventory: z.array(
     z.object({
-      id: z.number(),
+      id: z.union([z.number(), z.string()]),
       name: z.string(),
       quantity: z.number().optional(),
       unit: z.string().optional(),
@@ -3027,7 +4132,7 @@ var generateRecipeSchema = z.object({
   ).optional(),
   equipment: z.array(
     z.object({
-      id: z.number(),
+      id: z.union([z.number(), z.string()]),
       name: z.string(),
       alternatives: z.array(z.string()).optional()
     })
@@ -3037,7 +4142,11 @@ var generateRecipeSchema = z.object({
     carbs: z.number().min(5).max(80).default(35),
     fat: z.number().min(5).max(80).default(15)
   }).optional(),
-  previousRecipeTitles: z.array(z.string()).optional()
+  previousRecipeTitles: z.array(z.string()).optional(),
+  ingredientCount: z.object({
+    min: z.number().min(2).max(10).default(4),
+    max: z.number().min(2).max(10).default(6)
+  }).optional()
 });
 function calculateDaysUntilExpiry(expiryDate) {
   if (!expiryDate) return null;
@@ -3050,7 +4159,10 @@ function calculateDaysUntilExpiry(expiryDate) {
 }
 function organizeInventory(items, selectedIds) {
   const EXPIRING_THRESHOLD_DAYS = 3;
-  const filteredItems = selectedIds && selectedIds.length > 0 ? items.filter((item) => selectedIds.includes(item.id)) : items;
+  const filteredItems = selectedIds && selectedIds.length > 0 ? items.filter((item) => {
+    const itemIdStr = String(item.id);
+    return selectedIds.some((selId) => String(selId) === itemIdStr);
+  }) : items;
   const itemsWithExpiry = filteredItems.map((item) => ({
     ...item,
     daysUntilExpiry: calculateDaysUntilExpiry(item.expiryDate)
@@ -3082,49 +4194,56 @@ function buildSmartPrompt(params) {
     mealType,
     equipment,
     macroTargets = { protein: 50, carbs: 35, fat: 15 },
-    previousRecipeTitles = []
+    previousRecipeTitles = [],
+    ingredientCount = { min: 4, max: 6 }
   } = params;
   let prompt = `You are a creative home chef helping reduce food waste.
 
 `;
-  prompt += `=== CRITICAL RULE #1 ===
+  prompt += `=== SMART RECIPE CREATION ===
 
 `;
-  prompt += `INVENTORY-ONLY RECIPES: Every single ingredient in the recipe MUST come from the user's inventory below. This includes:
-`;
-  prompt += `- Main ingredients (proteins, vegetables, grains)
-`;
-  prompt += `- Cooking fats (oil, butter, lard) - if not in inventory, use a dry cooking method or skip
-`;
-  prompt += `- Seasonings (salt, pepper, spices) - if not in inventory, omit or note "season to taste if available"
-`;
-  prompt += `- Liquids (broth, wine, vinegar) - if not in inventory, use water or omit
+  prompt += `PRIMARY GOAL: Create the BEST possible recipe using the user's inventory. Quality matters most!
 
 `;
-  prompt += `ONLY EXCEPTION: Water and ice are always available and can be used freely.
+  prompt += `INVENTORY ITEMS: Start with what the user has available (listed below).
 
 `;
-  prompt += `NO OTHER EXCEPTIONS. Do NOT add ANY ingredient that is not explicitly listed in the inventory.
+  prompt += `ALWAYS AVAILABLE: Water and ice are always available and can be used freely.
 
 `;
-  prompt += `=== INGREDIENT SELECTION ===
+  prompt += `=== SMART SUBSTITUTIONS ===
 
 `;
-  prompt += `When selecting ingredients from the inventory, understand that similar items are the same:
+  prompt += `When crafting the recipe, use ONLY ingredients from the user's inventory.
 `;
-  prompt += `- "apples" and "green apples" are both apples
+  prompt += `If an ideal ingredient isn't available but a suitable substitute IS in their inventory, use the substitute and note it subtly.
 `;
-  prompt += `- "chicken breast" and "chicken thighs" are both chicken
+  prompt += `Include a "substitutionNotes" array with helpful hints like:
 `;
-  prompt += `- "extra virgin olive oil" and "olive oil" are both olive oil
+  prompt += `- "Using lime juice here - lemon would also work beautifully"
 `;
-  prompt += `However, in your output, you MUST use the EXACT name as it appears in the inventory list below.
+  prompt += `- "Butter adds richness - olive oil is a lighter alternative"
+`;
+  prompt += `- "Greek yogurt makes a great stand-in for sour cream"
+`;
+  prompt += `Only include notes when you're using a substitute - don't suggest ingredients they don't have.
 
 `;
-  prompt += `SUBSTITUTIONS: You MAY suggest substitutes, but ONLY if the substitute is also in the user's inventory.
+  prompt += `=== INGREDIENT NAMING ===
 
 `;
-  prompt += `LESS IS MORE: Prefer simpler recipes with fewer ingredients. A focused dish with 4-6 well-chosen ingredients is better than using everything available. Quality over quantity.
+  prompt += `For matching purposes, include an "inventoryMatch" field that maps to the EXACT inventory name.
+`;
+  prompt += `For display purposes, use a clean, appetizing name in the "name" field.
+
+`;
+  prompt += `=== INGREDIENT COUNT ===
+
+`;
+  prompt += `Target ${ingredientCount.min} to ${ingredientCount.max} ingredients for this recipe.
+`;
+  prompt += `Focus on quality over quantity - a well-crafted dish with fewer ingredients is better than one that uses everything available.
 
 `;
   prompt += UNIT_CONVERSION_PROMPT_ADDITION + `
@@ -3316,7 +4435,8 @@ function buildSmartPrompt(params) {
   "cookTime": ${exampleCookTime},
   "servings": ${servings},
   "nutrition": {"calories": 400, "protein": ${Math.round(400 * macroTargets.protein / 100 / 4)}, "carbs": ${Math.round(400 * macroTargets.carbs / 100 / 4)}, "fat": ${Math.round(400 * macroTargets.fat / 100 / 9)}},
-  "usedExpiringItems": ["item1", "item2"]${hasEquipment ? `,
+  "usedExpiringItems": ["item1", "item2"],
+  "substitutionNotes": ["Using lime here - lemon would also work", "Butter adds richness to this dish"]${hasEquipment ? `,
   "requiredEquipment": ["Pan"],
   "optionalEquipment": []` : ""}
 }
@@ -3326,11 +4446,13 @@ function buildSmartPrompt(params) {
 `;
   prompt += `Before responding, verify:
 `;
-  prompt += `- EVERY ingredient comes from the user's inventory (no exceptions for oil, salt, etc.)
+  prompt += `- All ingredients come from the user's inventory (no exceptions for oil, salt, etc.)
 `;
   prompt += `- Ingredient names in the JSON array match the inventory names exactly for proper matching
 `;
   prompt += `- All ingredients marked fromInventory: true
+`;
+  prompt += `- Include substitution notes ONLY when using a substitute (empty array if no substitutes used)
 `;
   prompt += `- Title and description use natural, appetizing language (simplified ingredient names)
 `;
@@ -3377,7 +4499,8 @@ router2.post("/generate", async (req, res) => {
       inventory,
       equipment,
       macroTargets,
-      previousRecipeTitles
+      previousRecipeTitles,
+      ingredientCount
     } = parseResult.data;
     if (!inventory || inventory.length === 0) {
       if (selectedIngredientIds && selectedIngredientIds.length === 0) {
@@ -3410,25 +4533,29 @@ router2.post("/generate", async (req, res) => {
       mealType,
       equipment,
       macroTargets,
-      previousRecipeTitles
+      previousRecipeTitles,
+      ingredientCount
     });
-    console.log(
-      "Smart recipe generation prompt:",
-      prompt.substring(0, 500) + "..."
-    );
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[Recipe] Smart generation prompt:",
+        prompt.substring(0, 500) + "..."
+      );
+    }
+    const effectiveIngredientCount = ingredientCount || { min: 4, max: 6 };
     const completion = await openai2.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a precision culinary assistant that creates recipes EXCLUSIVELY from user-provided ingredients.
+          content: `You are a creative culinary assistant that creates the BEST possible recipes from user-provided ingredients.
 
-ABSOLUTE RULES:
-1. NEVER add ingredients not in the user's inventory - this includes oils, butter, salt, pepper, and spices
-2. If an ingredient isn't listed, assume the user doesn't have it
-3. Water and ice are the ONLY exceptions (always available)
-4. Use fuzzy matching: "chicken" matches "chicken breast", "apple" matches "green apples"
-5. Create simple, focused dishes with 4-6 ingredients rather than using everything available
+KEY PRINCIPLES:
+1. Use ONLY ingredients from the user's inventory - use fuzzy matching ("chicken" matches "chicken breast")
+2. Water and ice are always available
+3. Target ${effectiveIngredientCount.min}-${effectiveIngredientCount.max} ingredients for focused, quality dishes
+4. When using a substitute ingredient, add a subtle note (e.g., "Using lime here - lemon works too")
+5. Use clean, appetizing ingredient names for display while tracking inventory matches
 6. Always respond with valid JSON matching the exact schema provided`
         },
         {
@@ -3444,7 +4571,7 @@ ABSOLUTE RULES:
       throw new Error("No response from AI");
     }
     let recipe = JSON.parse(content);
-    const ALLOWED_UTILITIES = /* @__PURE__ */ new Set([
+    const ALLOWED_UTILITIES2 = /* @__PURE__ */ new Set([
       "water",
       "tap water",
       "cold water",
@@ -3454,7 +4581,7 @@ ABSOLUTE RULES:
       "ice",
       "ice cubes"
     ]);
-    const fuzzyMatch = (recipeIngredient, inventoryItem) => {
+    const fuzzyMatch2 = (recipeIngredient, inventoryItem) => {
       const normalize = (s) => {
         let normalized = s.toLowerCase().trim().replace(/[,()]/g, " ").replace(
           /\b(fresh|organic|raw|cooked|frozen|canned|dried|whole|sliced|diced|chopped|minced|ground|crushed|shredded|grated|peeled|boneless|skinless|lean|extra\s*virgin|light|heavy|low[\s-]?fat|fat[\s-]?free|unsalted|salted|sweetened|unsweetened|plain|greek|regular|large|medium|small|ripe|overripe|unripe|commercially\s*prepared|store[\s-]?bought|homemade|white|wheat|multigrain|enriched)\b/g,
@@ -3550,15 +4677,15 @@ ABSOLUTE RULES:
       }
       return false;
     };
-    const isAllowedUtility = (ingredientName) => {
+    const isAllowedUtility2 = (ingredientName) => {
       const normalized = ingredientName.toLowerCase().trim();
-      return ALLOWED_UTILITIES.has(normalized);
+      return ALLOWED_UTILITIES2.has(normalized);
     };
     const inventoryItems = [...expiringItems, ...otherItems];
     const originalIngredientCount = recipe.ingredients?.length || 0;
     recipe.ingredients = (recipe.ingredients || []).map((ing) => {
       const matchedInventoryItem = inventoryItems.find(
-        (invItem) => fuzzyMatch(ing.name, invItem.name)
+        (invItem) => fuzzyMatch2(ing.name, invItem.name)
       );
       if (matchedInventoryItem) {
         const recipeQty = typeof ing.quantity === "number" ? ing.quantity : parseFloat(String(ing.quantity)) || 1;
@@ -3578,8 +4705,10 @@ ABSOLUTE RULES:
           percentAvailable: comparison.percentAvailable ?? 100
         };
       }
-      if (isAllowedUtility(ing.name)) {
-        console.log(`Allowing utility ingredient: ${ing.name}`);
+      if (isAllowedUtility2(ing.name)) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[Recipe] Allowing utility ingredient: ${ing.name}`);
+        }
         return {
           ...ing,
           fromInventory: false,
@@ -3587,7 +4716,9 @@ ABSOLUTE RULES:
           percentAvailable: 100
         };
       }
-      console.log(`Removing ingredient not in inventory: ${ing.name}`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Recipe] Removing ingredient not in inventory: ${ing.name}`);
+      }
       return null;
     }).filter((ing) => ing !== null);
     const inventoryIngredients = recipe.ingredients.filter(
@@ -3771,7 +4902,7 @@ ABSOLUTE RULES:
       ];
       return foodTerms.filter((term) => {
         if (!textLower.includes(term)) return false;
-        if (ALLOWED_UTILITIES.has(term)) return false;
+        if (ALLOWED_UTILITIES2.has(term)) return false;
         return !validIngredientTerms.some(
           (valid) => valid.includes(term) || term.includes(valid)
         );
@@ -3779,18 +4910,18 @@ ABSOLUTE RULES:
     };
     const descPhantoms = findUnmatchedIngredients(recipe.description || "");
     if (descPhantoms.length > 0) {
-      console.log(
-        `Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Recipe] Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`);
+      }
       const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
       recipe.description = `A delicious dish featuring ${ingredientList}.`;
     }
     const instructionsText = (recipe.instructions || []).join(" ");
     const instrPhantoms = findUnmatchedIngredients(instructionsText);
     if (instrPhantoms.length > 0) {
-      console.log(
-        `Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`
-      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Recipe] Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`);
+      }
       recipe.instructions = (recipe.instructions || []).map((step) => {
         let cleanStep = step;
         instrPhantoms.forEach((phantom) => {
@@ -3805,15 +4936,15 @@ ABSOLUTE RULES:
       unit: normalizeUnit(ing.unit) || ing.unit
     }));
     const filteredCount = originalIngredientCount - recipe.ingredients.length;
-    if (filteredCount > 0) {
-      console.log(`Filtered out ${filteredCount} ingredients not in inventory`);
+    if (filteredCount > 0 && process.env.NODE_ENV !== "production") {
+      console.log(`[Recipe] Filtered out ${filteredCount} ingredients not in inventory`);
     }
     if (quickRecipe) {
       const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       if (totalTime > 20) {
-        console.log(
-          `Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`
-        );
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[Recipe] Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`);
+        }
         const ratio = 20 / totalTime;
         recipe.prepTime = Math.max(
           5,
@@ -3824,9 +4955,7 @@ ABSOLUTE RULES:
     }
     const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
     recipe.usedExpiringCount = usedExpiringCount;
-    console.log(
-      `Smart recipe generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`
-    );
+    console.log(`[Recipe] Generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`);
     await incrementAiRecipeCount(req.userId);
     const updatedLimit = await checkAiRecipeLimit(req.userId);
     return res.json({
@@ -3876,15 +5005,15 @@ router2.post("/generate-image", async (req, res) => {
     const safeTitle = sanitizeForPrompt(title, 80);
     const safeDescription = description ? sanitizeForPrompt(description, 150) : "";
     const safeCuisine = cuisine && ALLOWED_CUISINES.includes(cuisine.toLowerCase()) ? cuisine.toLowerCase() : "";
-    let imagePrompt = `Professional food photography of a dish called ${safeTitle}`;
+    let imagePrompt = `Stunning professional food photography of "${safeTitle}"`;
     if (safeDescription) {
-      imagePrompt += `. The dish features ${safeDescription}`;
+      imagePrompt += `, featuring ${safeDescription}`;
     }
     if (safeCuisine) {
-      imagePrompt += `, ${safeCuisine} cuisine style`;
+      imagePrompt += `. Authentic ${safeCuisine} cuisine presentation with traditional plating style`;
     }
-    imagePrompt += `. Beautifully plated on a ceramic dish, natural lighting, shallow depth of field, appetizing colors, restaurant quality presentation, overhead shot, clean background, high resolution, photorealistic. No text or words in the image.`;
-    console.log(`Generating recipe image for: "${safeTitle}"`);
+    imagePrompt += `. Hero shot composition with dramatic lighting from the side creating beautiful shadows and highlights. Rich, saturated colors that make the food look irresistible. Steam or fresh garnishes add life to the dish. Artfully arranged on a beautiful plate or bowl that complements the cuisine. Rustic wooden table or marble surface background with subtle props like fresh herbs, spices, or ingredients scattered artistically. Bokeh background effect. Magazine-quality food styling, Michelin-star presentation. Warm color temperature. Shot with a 50mm lens at f/2.8. Ultra high definition, photorealistic, no text or watermarks.`;
+    console.log(`[Recipe] Generating image for: "${safeTitle}"`);
     const response = await openai2.images.generate({
       model: "gpt-image-1",
       prompt: imagePrompt,
@@ -3998,9 +5127,7 @@ router2.post("/scan", async (req, res) => {
     }
     const mimeType = detectMimeType(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    console.log(
-      `Scanning recipe: ${(base64Image.length / 1024).toFixed(1)}KB`
-    );
+    console.log(`[Recipe] Scanning image: ${(base64Image.length / 1024).toFixed(1)}KB`);
     const completion = await openai2.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -4049,7 +5176,7 @@ router2.post("/scan", async (req, res) => {
         suggestion: result.suggestion
       });
     }
-    console.log(`Recipe scan complete: "${result.title}"`);
+    console.log(`[Recipe] Scan complete: "${result.title}"`);
     return res.json({
       title: result.title || "Untitled Recipe",
       description: result.description || "",
@@ -4071,546 +5198,12 @@ router2.post("/scan", async (req, res) => {
 var recipes_router_default = router2;
 
 // server/routers/user/nutrition.router.ts
-import { Router as Router3 } from "express";
-import OpenAI3 from "openai";
-import { z as z2 } from "zod";
-import { desc, eq as eq2 } from "drizzle-orm";
-
-// server/integrations/openFoodFacts.ts
-var OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
-var OFF_PRODUCT_URL = "https://world.openfoodfacts.org/api/v0/product";
-var USER_AGENT = "ChefSpAIce/1.0 (contact@chefspaice.app)";
-var lastRequestTime = 0;
-var MIN_REQUEST_INTERVAL = 100;
-async function respectRateLimit() {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await new Promise(
-      (resolve2) => setTimeout(resolve2, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
-    );
-  }
-  lastRequestTime = Date.now();
-}
-async function searchOpenFoodFacts(searchTerms, pageSize = 24) {
-  try {
-    await respectRateLimit();
-    const params = new URLSearchParams({
-      search_terms: searchTerms,
-      json: "true",
-      page_size: pageSize.toString(),
-      search_simple: "1",
-      action: "process"
-    });
-    const response = await fetch(`${OFF_SEARCH_URL}?${params}`, {
-      method: "GET",
-      headers: {
-        "User-Agent": USER_AGENT,
-        Accept: "application/json"
-      }
-    });
-    if (!response.ok) {
-      console.error(
-        `OpenFoodFacts search error: ${response.status} ${response.statusText}`
-      );
-      return [];
-    }
-    const data = await response.json();
-    return data.products || [];
-  } catch (error) {
-    console.error("Error searching OpenFoodFacts:", error);
-    return [];
-  }
-}
-async function lookupBarcode(barcode) {
-  try {
-    await respectRateLimit();
-    const cleanBarcode = barcode.replace(/\D/g, "");
-    const response = await fetch(`${OFF_PRODUCT_URL}/${cleanBarcode}.json`, {
-      method: "GET",
-      headers: {
-        "User-Agent": USER_AGENT,
-        Accept: "application/json"
-      }
-    });
-    if (!response.ok) {
-      console.error(
-        `OpenFoodFacts lookup error: ${response.status} ${response.statusText}`
-      );
-      return null;
-    }
-    const data = await response.json();
-    if (data.status !== 1 || !data.product) {
-      return null;
-    }
-    return data.product;
-  } catch (error) {
-    console.error("Error looking up barcode:", error);
-    return null;
-  }
-}
-function getProductName(product) {
-  return product.product_name || product.product_name_en || product.generic_name || "Unknown Product";
-}
-function parseCategories(categoriesString) {
-  if (!categoriesString) return "Other";
-  const categories = categoriesString.split(",").map((c) => c.trim());
-  const firstCategory = categories[0] || "Other";
-  const cleanCategory = firstCategory.replace(/^en:/, "").replace(/-/g, " ");
-  return cleanCategory.charAt(0).toUpperCase() + cleanCategory.slice(1);
-}
-function getCalories(nutriments) {
-  if (!nutriments) return 0;
-  return Math.round(
-    nutriments.energy_kcal_100g || nutriments["energy-kcal_100g"] || 0
-  );
-}
-function getSodiumMg(nutriments) {
-  if (!nutriments) return void 0;
-  if (nutriments.sodium_100g !== void 0) {
-    return Math.round(nutriments.sodium_100g * 1e3);
-  }
-  if (nutriments.salt_100g !== void 0) {
-    return Math.round(nutriments.salt_100g * 400);
-  }
-  return void 0;
-}
-function mapOFFToFoodItem(product) {
-  const nutriments = product.nutriments;
-  return {
-    name: getProductName(product),
-    category: parseCategories(product.categories),
-    brand: product.brands?.split(",")[0]?.trim(),
-    imageUrl: product.image_url || product.image_front_url || product.image_small_url,
-    nutrition: {
-      calories: getCalories(nutriments),
-      protein: Math.round((nutriments?.proteins_100g || 0) * 10) / 10,
-      carbs: Math.round((nutriments?.carbohydrates_100g || 0) * 10) / 10,
-      fat: Math.round((nutriments?.fat_100g || 0) * 10) / 10,
-      fiber: nutriments?.fiber_100g !== void 0 ? Math.round(nutriments.fiber_100g * 10) / 10 : void 0,
-      sugar: nutriments?.sugars_100g !== void 0 ? Math.round(nutriments.sugars_100g * 10) / 10 : void 0,
-      sodium: getSodiumMg(nutriments),
-      servingSize: product.serving_size
-    },
-    source: "openfoodfacts",
-    sourceId: product.code,
-    nutriscoreGrade: product.nutriscore_grade,
-    novaGroup: product.nova_group
-  };
-}
-function hasCompleteNutritionData(product) {
-  const n = product.nutriments;
-  if (!n) return false;
-  const hasCalories = n.energy_kcal_100g !== void 0 || n["energy-kcal_100g"] !== void 0;
-  const hasProtein = n.proteins_100g !== void 0;
-  const hasCarbs = n.carbohydrates_100g !== void 0;
-  const hasFat = n.fat_100g !== void 0;
-  return hasCalories && hasProtein && hasCarbs && hasFat;
-}
-
-// server/routers/user/nutrition.router.ts
 init_schema();
 init_db();
+import { Router as Router3 } from "express";
+import { z as z2 } from "zod";
+import { desc, eq as eq2 } from "drizzle-orm";
 var router3 = Router3();
-var openai3 = new OpenAI3({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-});
-var nutritionCache = /* @__PURE__ */ new Map();
-var CACHE_TTL_MS3 = 30 * 24 * 60 * 60 * 1e3;
-var USDA_NUTRIENT_IDS = {
-  ENERGY: 1008,
-  PROTEIN: 1003,
-  TOTAL_FAT: 1004,
-  SATURATED_FAT: 1258,
-  TRANS_FAT: 1257,
-  CHOLESTEROL: 1253,
-  SODIUM: 1093,
-  CARBOHYDRATES: 1005,
-  FIBER: 1079,
-  SUGARS_TOTAL: 2e3,
-  ADDED_SUGARS: 1235,
-  VITAMIN_D: 1114,
-  CALCIUM: 1087,
-  IRON: 1089,
-  POTASSIUM: 1092
-};
-function getCacheKey(foodId, source) {
-  return `${source}:${foodId}`;
-}
-function getFromCache2(key) {
-  const cached = nutritionCache.get(key);
-  if (!cached) return null;
-  if (Date.now() > cached.expiresAt) {
-    nutritionCache.delete(key);
-    return null;
-  }
-  return cached;
-}
-function setInCache2(key, nutrition, source, sourceId, incomplete = false) {
-  const now = Date.now();
-  nutritionCache.set(key, {
-    nutrition,
-    source,
-    sourceId,
-    incomplete,
-    timestamp: now,
-    expiresAt: now + CACHE_TTL_MS3
-  });
-}
-function findNutrientValue2(nutrients, nutrientId) {
-  const nutrient = nutrients.find(
-    (n) => n.nutrientId === nutrientId || n.nutrient?.id === nutrientId
-  );
-  if (!nutrient) return void 0;
-  return nutrient.value ?? nutrient.amount;
-}
-function mapUSDAToNutritionFacts(usdaFood) {
-  const nutrients = usdaFood.foodNutrients || [];
-  const calories = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.ENERGY);
-  const protein = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.PROTEIN);
-  const totalFat = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.TOTAL_FAT);
-  const saturatedFat = findNutrientValue2(
-    nutrients,
-    USDA_NUTRIENT_IDS.SATURATED_FAT
-  );
-  const transFat = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.TRANS_FAT);
-  const cholesterol = findNutrientValue2(
-    nutrients,
-    USDA_NUTRIENT_IDS.CHOLESTEROL
-  );
-  const sodium = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.SODIUM);
-  const carbs = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.CARBOHYDRATES);
-  const fiber = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.FIBER);
-  const sugars = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.SUGARS_TOTAL);
-  const addedSugars = findNutrientValue2(
-    nutrients,
-    USDA_NUTRIENT_IDS.ADDED_SUGARS
-  );
-  const vitaminD = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.VITAMIN_D);
-  const calcium = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.CALCIUM);
-  const iron = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.IRON);
-  const potassium = findNutrientValue2(nutrients, USDA_NUTRIENT_IDS.POTASSIUM);
-  let servingSize = "100g";
-  if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
-    servingSize = `${usdaFood.servingSize}${usdaFood.servingSizeUnit}`;
-  }
-  const incomplete = calories === void 0 || protein === void 0 || totalFat === void 0 || carbs === void 0;
-  return {
-    nutrition: {
-      servingSize,
-      servingsPerContainer: void 0,
-      calories: Math.round(calories ?? 0),
-      totalFat: Math.round((totalFat ?? 0) * 10) / 10,
-      saturatedFat: saturatedFat !== void 0 ? Math.round(saturatedFat * 10) / 10 : void 0,
-      transFat: transFat !== void 0 ? Math.round(transFat * 10) / 10 : void 0,
-      cholesterol: cholesterol !== void 0 ? Math.round(cholesterol) : void 0,
-      sodium: Math.round(sodium ?? 0),
-      totalCarbohydrates: Math.round((carbs ?? 0) * 10) / 10,
-      dietaryFiber: fiber !== void 0 ? Math.round(fiber * 10) / 10 : void 0,
-      totalSugars: sugars !== void 0 ? Math.round(sugars * 10) / 10 : void 0,
-      addedSugars: addedSugars !== void 0 ? Math.round(addedSugars * 10) / 10 : void 0,
-      protein: Math.round((protein ?? 0) * 10) / 10,
-      vitaminD: vitaminD !== void 0 ? Math.round(vitaminD * 10) / 10 : void 0,
-      calcium: calcium !== void 0 ? Math.round(calcium) : void 0,
-      iron: iron !== void 0 ? Math.round(iron * 10) / 10 : void 0,
-      potassium: potassium !== void 0 ? Math.round(potassium) : void 0
-    },
-    incomplete
-  };
-}
-function mapOFFToNutritionFacts(product) {
-  const n = product.nutriments;
-  const calories = n?.energy_kcal_100g ?? n?.["energy-kcal_100g"] ?? 0;
-  const protein = n?.proteins_100g ?? 0;
-  const fat = n?.fat_100g ?? 0;
-  const carbs = n?.carbohydrates_100g ?? 0;
-  const fiber = n?.fiber_100g;
-  const sugars = n?.sugars_100g;
-  let sodium;
-  if (n?.sodium_100g !== void 0) {
-    sodium = Math.round(n.sodium_100g * 1e3);
-  } else if (n?.salt_100g !== void 0) {
-    sodium = Math.round(n.salt_100g * 400);
-  }
-  const incomplete = !hasCompleteNutritionData(product);
-  return {
-    nutrition: {
-      servingSize: product.serving_size || "100g",
-      servingsPerContainer: void 0,
-      calories: Math.round(calories),
-      totalFat: Math.round(fat * 10) / 10,
-      saturatedFat: void 0,
-      transFat: void 0,
-      cholesterol: void 0,
-      sodium: sodium ?? 0,
-      totalCarbohydrates: Math.round(carbs * 10) / 10,
-      dietaryFiber: fiber !== void 0 ? Math.round(fiber * 10) / 10 : void 0,
-      totalSugars: sugars !== void 0 ? Math.round(sugars * 10) / 10 : void 0,
-      addedSugars: void 0,
-      protein: Math.round(protein * 10) / 10,
-      vitaminD: void 0,
-      calcium: void 0,
-      iron: void 0,
-      potassium: void 0
-    },
-    incomplete
-  };
-}
-async function estimateNutritionWithAI(foodName) {
-  const prompt = `Estimate the nutrition facts for: "${foodName}"
-
-Return a JSON object with these fields (per 100g serving):
-{
-  "calories": number,
-  "totalFat": number (grams),
-  "saturatedFat": number (grams),
-  "sodium": number (mg),
-  "totalCarbohydrates": number (grams),
-  "dietaryFiber": number (grams),
-  "totalSugars": number (grams),
-  "protein": number (grams)
-}
-
-Use typical nutritional values for this food. Be accurate but conservative.`;
-  try {
-    const completion = await openai3.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a nutrition database. Provide accurate nutritional estimates based on USDA data. Always respond with valid JSON."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 256
-    });
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from AI");
-    }
-    const parsed = JSON.parse(content);
-    return {
-      nutrition: {
-        servingSize: "100g (estimated)",
-        servingsPerContainer: void 0,
-        calories: Math.round(parsed.calories || 0),
-        totalFat: Math.round((parsed.totalFat || 0) * 10) / 10,
-        saturatedFat: parsed.saturatedFat !== void 0 ? Math.round(parsed.saturatedFat * 10) / 10 : void 0,
-        transFat: void 0,
-        cholesterol: void 0,
-        sodium: Math.round(parsed.sodium || 0),
-        totalCarbohydrates: Math.round((parsed.totalCarbohydrates || 0) * 10) / 10,
-        dietaryFiber: parsed.dietaryFiber !== void 0 ? Math.round(parsed.dietaryFiber * 10) / 10 : void 0,
-        totalSugars: parsed.totalSugars !== void 0 ? Math.round(parsed.totalSugars * 10) / 10 : void 0,
-        addedSugars: void 0,
-        protein: Math.round((parsed.protein || 0) * 10) / 10,
-        vitaminD: void 0,
-        calcium: void 0,
-        iron: void 0,
-        potassium: void 0
-      },
-      incomplete: true
-    };
-  } catch (error) {
-    console.error("AI nutrition estimation error:", error);
-    throw error;
-  }
-}
-router3.get("/:foodId", async (req, res) => {
-  try {
-    const { foodId } = req.params;
-    const source = req.query.source || "usda";
-    if (!foodId) {
-      return res.status(400).json({ error: "Food ID is required" });
-    }
-    const cacheKey = getCacheKey(foodId, source);
-    const cached = getFromCache2(cacheKey);
-    if (cached) {
-      console.log(`Nutrition cache hit for: ${foodId}`);
-      return res.json({
-        nutrition: cached.nutrition,
-        source: "cache",
-        originalSource: cached.source,
-        sourceId: cached.sourceId,
-        incomplete: cached.incomplete,
-        cached: true
-      });
-    }
-    if (source === "usda") {
-      const fdcId = parseInt(foodId, 10);
-      if (isNaN(fdcId)) {
-        return res.status(400).json({ error: "Invalid USDA food ID" });
-      }
-      const usdaFood = await getUSDAFood(fdcId);
-      if (usdaFood) {
-        const { nutrition, incomplete } = mapUSDAToNutritionFacts(usdaFood);
-        setInCache2(cacheKey, nutrition, "usda", fdcId, incomplete);
-        return res.json({
-          nutrition,
-          source: "usda",
-          sourceId: fdcId,
-          foodName: usdaFood.description,
-          incomplete,
-          cached: false
-        });
-      }
-    } else if (source === "openfoodfacts" || source === "barcode") {
-      const product = await lookupBarcode(foodId);
-      if (product) {
-        const { nutrition, incomplete } = mapOFFToNutritionFacts(product);
-        setInCache2(cacheKey, nutrition, "openfoodfacts", foodId, incomplete);
-        return res.json({
-          nutrition,
-          source: "openfoodfacts",
-          sourceId: foodId,
-          foodName: product.product_name || product.product_name_en,
-          incomplete,
-          cached: false
-        });
-      }
-    }
-    return res.status(404).json({
-      error: "Nutrition data not found",
-      foodId,
-      source
-    });
-  } catch (error) {
-    console.error("Nutrition fetch error:", error);
-    return res.status(500).json({ error: "Failed to fetch nutrition data" });
-  }
-});
-router3.get("/search", async (req, res) => {
-  try {
-    const query = req.query.q;
-    const limit = parseInt(req.query.limit || "10", 10);
-    if (!query || query.length < 2) {
-      return res.status(400).json({ error: "Search query must be at least 2 characters" });
-    }
-    const results = [];
-    const usdaResults = await searchUSDA(query, Math.min(limit, 15));
-    for (const item of usdaResults.slice(0, Math.ceil(limit * 0.7))) {
-      const mapped = mapUSDAToFoodItem(item);
-      results.push({
-        id: `usda:${item.fdcId}`,
-        name: item.description,
-        brand: item.brandOwner,
-        source: "usda",
-        nutrition: {
-          calories: mapped.nutrition.calories,
-          protein: mapped.nutrition.protein,
-          carbs: mapped.nutrition.carbs,
-          fat: mapped.nutrition.fat
-        }
-      });
-    }
-    if (results.length < limit) {
-      const offResults = await searchOpenFoodFacts(
-        query,
-        limit - results.length
-      );
-      for (const product of offResults) {
-        if (hasCompleteNutritionData(product)) {
-          const mapped = mapOFFToFoodItem(product);
-          results.push({
-            id: `off:${product.code}`,
-            name: mapped.name,
-            brand: mapped.brand,
-            source: "openfoodfacts",
-            nutrition: {
-              calories: mapped.nutrition.calories,
-              protein: mapped.nutrition.protein,
-              carbs: mapped.nutrition.carbs,
-              fat: mapped.nutrition.fat
-            }
-          });
-        }
-      }
-    }
-    return res.json({
-      results: results.slice(0, limit),
-      totalResults: results.length,
-      query
-    });
-  } catch (error) {
-    console.error("Nutrition search error:", error);
-    return res.status(500).json({ error: "Failed to search nutrition data" });
-  }
-});
-router3.post("/estimate", async (req, res) => {
-  try {
-    const { foodName } = req.body;
-    if (!foodName || typeof foodName !== "string") {
-      return res.status(400).json({ error: "Food name is required" });
-    }
-    const cacheKey = getCacheKey(foodName.toLowerCase(), "ai");
-    const cached = getFromCache2(cacheKey);
-    if (cached) {
-      return res.json({
-        nutrition: cached.nutrition,
-        source: "cache",
-        originalSource: "ai",
-        incomplete: true,
-        cached: true
-      });
-    }
-    const usdaResults = await searchUSDA(foodName, 1);
-    if (usdaResults.length > 0) {
-      const { nutrition: nutrition2, incomplete: incomplete2 } = mapUSDAToNutritionFacts(usdaResults[0]);
-      setInCache2(cacheKey, nutrition2, "usda", usdaResults[0].fdcId, incomplete2);
-      return res.json({
-        nutrition: nutrition2,
-        source: "usda",
-        sourceId: usdaResults[0].fdcId,
-        foodName: usdaResults[0].description,
-        incomplete: incomplete2,
-        cached: false
-      });
-    }
-    const offResults = await searchOpenFoodFacts(foodName, 1);
-    if (offResults.length > 0 && hasCompleteNutritionData(offResults[0])) {
-      const { nutrition: nutrition2, incomplete: incomplete2 } = mapOFFToNutritionFacts(offResults[0]);
-      setInCache2(
-        cacheKey,
-        nutrition2,
-        "openfoodfacts",
-        offResults[0].code,
-        incomplete2
-      );
-      return res.json({
-        nutrition: nutrition2,
-        source: "openfoodfacts",
-        sourceId: offResults[0].code,
-        foodName: offResults[0].product_name || offResults[0].product_name_en,
-        incomplete: incomplete2,
-        cached: false
-      });
-    }
-    const { nutrition, incomplete } = await estimateNutritionWithAI(foodName);
-    setInCache2(cacheKey, nutrition, "ai", void 0, incomplete);
-    return res.json({
-      nutrition,
-      source: "ai",
-      foodName,
-      incomplete: true,
-      cached: false,
-      warning: "Nutrition estimated by AI - may not be accurate"
-    });
-  } catch (error) {
-    console.error("Nutrition estimation error:", error);
-    return res.status(500).json({ error: "Failed to estimate nutrition" });
-  }
-});
-router3.delete("/cache", async (req, res) => {
-  const sizeBefore = nutritionCache.size;
-  nutritionCache.clear();
-  console.log(`Nutrition cache cleared: ${sizeBefore} entries removed`);
-  return res.json({ message: "Cache cleared", entriesRemoved: sizeBefore });
-});
 var correctionSubmitSchema = z2.object({
   productName: z2.string().min(1, "Product name is required"),
   barcode: z2.string().optional(),
@@ -4646,7 +5239,7 @@ router3.post("/corrections", async (req, res) => {
       notes: data.notes || null,
       status: "pending"
     }).returning();
-    console.log(`Nutrition correction submitted for: ${data.productName}`);
+    console.log(`[Nutrition] Correction submitted for: ${data.productName}`);
     return res.status(201).json({
       message: "Correction submitted successfully",
       id: correction.id
@@ -4707,9 +5300,9 @@ init_schema();
 import { Router as Router4 } from "express";
 var router4 = Router4();
 var termsCache = null;
-var CACHE_TTL_MS4 = 24 * 60 * 60 * 1e3;
+var CACHE_TTL_MS3 = 24 * 60 * 60 * 1e3;
 async function getCachedTerms() {
-  if (termsCache && Date.now() - termsCache.timestamp < CACHE_TTL_MS4) {
+  if (termsCache && Date.now() - termsCache.timestamp < CACHE_TTL_MS3) {
     return termsCache.data;
   }
   const terms = await db.select().from(cookingTerms);
@@ -5389,9 +5982,9 @@ var FALLBACK_APPLIANCES = [
   }
 ];
 var appliancesCache = null;
-var CACHE_TTL_MS5 = 24 * 60 * 60 * 1e3;
+var CACHE_TTL_MS4 = 24 * 60 * 60 * 1e3;
 async function getCachedAppliances() {
-  if (appliancesCache && Date.now() - appliancesCache.timestamp < CACHE_TTL_MS5) {
+  if (appliancesCache && Date.now() - appliancesCache.timestamp < CACHE_TTL_MS4) {
     return appliancesCache.data;
   }
   try {
@@ -5404,7 +5997,9 @@ async function getCachedAppliances() {
       return allAppliances;
     }
   } catch (error) {
-    console.log("Database not available, using fallback appliances");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Appliances] Database not available, using fallback");
+    }
   }
   appliancesCache = {
     data: FALLBACK_APPLIANCES,
@@ -5545,64 +6140,57 @@ userAppliancesRouter.post("/bulk", async (req, res) => {
   try {
     const userId = req.userId;
     const { applianceIds } = req.body;
-    if (!Array.isArray(applianceIds) || applianceIds.length === 0) {
+    if (!Array.isArray(applianceIds)) {
       return res.status(400).json({ error: "Appliance IDs array is required" });
     }
     const validIds = applianceIds.filter(
       (id) => typeof id === "number" && !isNaN(id)
     );
-    if (validIds.length === 0) {
-      return res.status(400).json({ error: "No valid appliance IDs provided" });
+    const currentUserAppliances = await db.select({ applianceId: userAppliances.applianceId }).from(userAppliances).where(eq4(userAppliances.userId, userId));
+    const currentIds = new Set(currentUserAppliances.map((ua) => ua.applianceId));
+    const newIds = new Set(validIds);
+    const toAdd = validIds.filter((id) => !currentIds.has(id));
+    const toRemove = Array.from(currentIds).filter((id) => !newIds.has(id));
+    if (toRemove.length > 0) {
+      await db.delete(userAppliances).where(
+        and(
+          eq4(userAppliances.userId, userId),
+          inArray(userAppliances.applianceId, toRemove)
+        )
+      );
     }
-    const allAppliances = await getCachedAppliances();
-    const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
-    const existingIds = validIds.filter((id) => applianceMap.has(id));
-    if (existingIds.length === 0) {
-      return res.status(404).json({ error: "No valid appliances found" });
+    if (toAdd.length > 0) {
+      const allAppliances = await getCachedAppliances();
+      const applianceMap = new Map(allAppliances.map((a) => [a.id, a]));
+      const validToAdd = toAdd.filter((id) => applianceMap.has(id));
+      if (validToAdd.length > 0) {
+        const valuesToInsert = validToAdd.map((applianceId) => ({
+          userId,
+          applianceId,
+          notes: null,
+          brand: null
+        }));
+        await db.insert(userAppliances).values(valuesToInsert);
+      }
     }
-    const existingUserAppliances = await db.select().from(userAppliances).where(
-      and(
-        eq4(userAppliances.userId, userId),
-        inArray(userAppliances.applianceId, existingIds)
-      )
-    );
-    const existingApplianceIds = new Set(
-      existingUserAppliances.map((ua) => ua.applianceId)
-    );
-    const newApplianceIds = existingIds.filter(
-      (id) => !existingApplianceIds.has(id)
-    );
-    if (newApplianceIds.length === 0) {
-      return res.json({
-        added: 0,
-        skipped: existingIds.length,
-        message: "All appliances already in kitchen"
-      });
-    }
-    const valuesToInsert = newApplianceIds.map((applianceId) => ({
-      userId,
-      applianceId,
-      notes: null,
-      brand: null
-    }));
-    await db.insert(userAppliances).values(valuesToInsert);
-    res.status(201).json({
-      added: newApplianceIds.length,
-      skipped: existingIds.length - newApplianceIds.length,
-      message: `Added ${newApplianceIds.length} appliances to kitchen`
+    res.json({
+      added: toAdd.length,
+      removed: toRemove.length,
+      total: validIds.length,
+      message: `Synced ${validIds.length} appliances`
     });
   } catch (error) {
-    console.error("Error bulk adding user appliances:", error);
-    res.status(500).json({ error: "Failed to bulk add appliances" });
+    console.error("Error bulk syncing user appliances:", error);
+    res.status(500).json({ error: "Failed to bulk sync appliances" });
   }
 });
 
 // server/routers/platform/voice.router.ts
 import { Router as Router6 } from "express";
-import OpenAI4 from "openai";
+import OpenAI3 from "openai";
 import { z as z3 } from "zod";
 var router5 = Router6();
-var openai4 = new OpenAI4({
+var openai3 = new OpenAI3({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 });
@@ -5679,7 +6267,7 @@ router5.post("/transcribe", async (req, res) => {
           });
         }
         const file2 = new File([audioBuffer], filename2, { type: mimeType2 });
-        const response2 = await openai4.audio.transcriptions.create({
+        const response2 = await openai3.audio.transcriptions.create({
           file: file2,
           model: "whisper-1",
           language: language2,
@@ -5726,15 +6314,13 @@ router5.post("/transcribe", async (req, res) => {
     const mimeType = getAudioMimeType(filename) || "audio/m4a";
     const audioFile = new File([fileData], filename, { type: mimeType });
     const language = req.body?.language || "en";
-    const response = await openai4.audio.transcriptions.create({
+    const response = await openai3.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
       language,
       response_format: "json"
     });
-    console.log(
-      `Voice transcription completed: "${response.text.substring(0, 50)}..."`
-    );
+    console.log(`[Voice] Transcription completed: "${response.text.substring(0, 50)}..."`);
     return res.json({
       transcript: response.text,
       language
@@ -5816,7 +6402,7 @@ Return ONLY valid JSON in this format:
 "${text2}"
 
 Return JSON only.`;
-    const completion = await openai4.chat.completions.create({
+    const completion = await openai3.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
@@ -5851,9 +6437,7 @@ Return JSON only.`;
       parsed.confidence = 0;
     }
     parsed.confidence = Math.max(0, Math.min(1, parsed.confidence));
-    console.log(
-      `Voice command parsed: "${text2}" -> ${parsed.intent} (confidence: ${parsed.confidence})`
-    );
+    console.log(`[Voice] Command parsed: "${text2}" -> ${parsed.intent} (confidence: ${parsed.confidence})`);
     return res.json({
       ...parsed,
       rawText: text2
@@ -5883,7 +6467,7 @@ var voice_router_default = router5;
 
 // server/routers/platform/ai/image-analysis.router.ts
 import { Router as Router7 } from "express";
-import OpenAI5 from "openai";
+import OpenAI4 from "openai";
 
 // server/lib/food-analysis-parser.ts
 import { z as z4 } from "zod";
@@ -6068,7 +6652,7 @@ var router6 = Router7();
 var openaiClient = null;
 function getOpenAIClient() {
   if (!openaiClient) {
-    openaiClient = new OpenAI5({
+    openaiClient = new OpenAI4({
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
     });
@@ -6161,9 +6745,7 @@ router6.post("/analyze-food", async (req, res) => {
     }
     const base64Image = fileData.toString("base64");
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    console.log(
-      `Analyzing food image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`
-    );
+    console.log(`[ImageAnalysis] Analyzing food image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`);
     const openai9 = getOpenAIClient();
     const completion = await openai9.chat.completions.create({
       model: "gpt-4o",
@@ -6201,9 +6783,7 @@ router6.post("/analyze-food", async (req, res) => {
         error: parseResult.error || "Failed to parse AI response"
       });
     }
-    console.log(
-      `Food analysis complete: ${parseResult.data.items.length} items identified`
-    );
+    console.log(`[ImageAnalysis] Complete: ${parseResult.data.items.length} items identified`);
     return res.json(parseResult.data);
   } catch (error) {
     console.error("Image analysis error:", error);
@@ -6241,12 +6821,268 @@ router6.get("/health", (_req, res) => {
 });
 var image_analysis_router_default = router6;
 
-// server/routers/user/ingredients.router.ts
+// server/routers/platform/ai/receipt-analysis.router.ts
 import { Router as Router8 } from "express";
+import OpenAI5 from "openai";
+init_usda();
+var router7 = Router8();
+var openaiClient2 = null;
+function getOpenAIClient2() {
+  if (!openaiClient2) {
+    openaiClient2 = new OpenAI5({
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+    });
+  }
+  return openaiClient2;
+}
+var RECEIPT_ANALYSIS_PROMPT = `Analyze this grocery receipt image and extract all food items purchased.
+
+For each food item found on the receipt, extract:
+- name: The full product name (interpret abbreviations, e.g., "ORG BAN" = "Organic Bananas", "GALA APL" = "Gala Apples")
+- category: One of: produce, dairy, meat, seafood, bread, canned, frozen, beverages, condiments, snacks, grains, spices, other
+- quantity: The quantity purchased (default to 1 if not specified)
+- quantityUnit: One of: items, lbs, oz, kg, g, bunch, container, bag, box, bottle, can, pack
+- storageLocation: Recommended storage - one of: refrigerator, freezer, pantry, counter
+- shelfLifeDays: Estimated days of freshness from purchase (1-365)
+- confidence: Your confidence in this identification from 0.0 to 1.0
+- price: The price if visible (as a number, no currency symbol)
+- upc: The UPC/barcode if visible on the receipt (12-13 digit number)
+- originalText: The exact text from the receipt for this item
+
+Guidelines:
+- INTERPRET ABBREVIATIONS: Receipts often use shortened names. Expand them to full readable names.
+  Examples: "ORG BAN" \u2192 "Organic Bananas", "WHL MLK GAL" \u2192 "Whole Milk Gallon", "GRN ONION" \u2192 "Green Onions"
+- Skip non-food items (cleaning supplies, paper products, etc.)
+- If weight is shown (e.g., "2.5 lb"), use that as quantity with "lbs" as unit
+- Read prices accurately from the receipt
+- If you see UPC codes, include them
+- Be conservative with shelf life estimates
+
+Also extract store information:
+- storeName: The store name if visible at top of receipt
+- purchaseDate: The date of purchase if visible (YYYY-MM-DD format)
+- totalAmount: The total amount paid if visible
+
+Return valid JSON in this exact format:
+{
+  "items": [
+    {
+      "name": "Organic Bananas",
+      "category": "produce",
+      "quantity": 3,
+      "quantityUnit": "lbs",
+      "storageLocation": "counter",
+      "shelfLifeDays": 5,
+      "confidence": 0.9,
+      "price": 4.99,
+      "upc": "012345678901",
+      "originalText": "ORG BAN 3LB @1.99/LB"
+    }
+  ],
+  "storeName": "Kroger",
+  "purchaseDate": "2025-01-19",
+  "totalAmount": 87.42,
+  "notes": "Any additional observations"
+}
+
+If no food items are found, return:
+{
+  "items": [],
+  "error": "No food items detected on this receipt"
+}`;
+function parseReceiptResponse(content) {
+  if (!content) {
+    return { success: false, error: "No response content" };
+  }
+  try {
+    const parsed = JSON.parse(content);
+    if (!parsed.items || !Array.isArray(parsed.items)) {
+      return { success: false, error: "Invalid response structure: missing items array" };
+    }
+    const validCategories = ["produce", "dairy", "meat", "seafood", "bread", "canned", "frozen", "beverages", "condiments", "snacks", "grains", "spices", "other"];
+    const validUnits = ["items", "lbs", "oz", "kg", "g", "bunch", "container", "bag", "box", "bottle", "can", "pack"];
+    const validLocations = ["refrigerator", "freezer", "pantry", "counter"];
+    const items = parsed.items.map((item) => ({
+      name: String(item.name || "Unknown Item"),
+      category: validCategories.includes(item.category) ? item.category : "other",
+      quantity: Number(item.quantity) || 1,
+      quantityUnit: validUnits.includes(item.quantityUnit) ? item.quantityUnit : "items",
+      storageLocation: validLocations.includes(item.storageLocation) ? item.storageLocation : "refrigerator",
+      shelfLifeDays: Math.max(1, Math.min(365, Number(item.shelfLifeDays) || 7)),
+      confidence: Math.max(0, Math.min(1, Number(item.confidence) || 0.7)),
+      price: item.price ? Number(item.price) : void 0,
+      upc: item.upc ? String(item.upc).replace(/\D/g, "") : void 0,
+      originalText: item.originalText ? String(item.originalText) : void 0
+    }));
+    return {
+      success: true,
+      data: {
+        items,
+        storeName: parsed.storeName ? String(parsed.storeName) : void 0,
+        purchaseDate: parsed.purchaseDate ? String(parsed.purchaseDate) : void 0,
+        totalAmount: parsed.totalAmount ? Number(parsed.totalAmount) : void 0,
+        notes: parsed.notes ? String(parsed.notes) : void 0,
+        error: parsed.error ? String(parsed.error) : void 0
+      }
+    };
+  } catch (e) {
+    return { success: false, error: `Failed to parse JSON: ${e}` };
+  }
+}
+router7.post("/analyze-receipt", async (req, res) => {
+  try {
+    const contentType = req.headers["content-type"] || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return res.status(400).json({
+        items: [],
+        error: "Expected multipart/form-data with image file"
+      });
+    }
+    const files = req.files;
+    const file = files?.image || files?.file;
+    if (!file) {
+      return res.status(400).json({
+        items: [],
+        error: "No image file provided. Please upload an image with field name 'image' or 'file'"
+      });
+    }
+    const filename = file.name || file.originalname || "receipt.jpg";
+    const fileData = file.data || file.buffer;
+    if (!fileData || fileData.length === 0) {
+      return res.status(400).json({
+        items: [],
+        error: "The uploaded image file appears to be empty"
+      });
+    }
+    if (fileData.length > MAX_FILE_SIZE2) {
+      return res.status(400).json({
+        items: [],
+        error: `Image file too large. Maximum size is ${MAX_FILE_SIZE2 / 1024 / 1024}MB`
+      });
+    }
+    let mimeType = detectMimeTypeFromBuffer(fileData);
+    if (!mimeType) {
+      if (isValidImageFormat(filename)) {
+        mimeType = getImageMimeType(filename);
+      }
+    }
+    if (!mimeType) {
+      return res.status(400).json({
+        items: [],
+        error: `Invalid image format. Supported formats: ${SUPPORTED_IMAGE_FORMATS.join(", ")}`
+      });
+    }
+    const base64Image = fileData.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    console.log(`[ReceiptAnalysis] Analyzing receipt image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`);
+    const openai9 = getOpenAIClient2();
+    const completion = await openai9.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert at reading and interpreting grocery store receipts. You excel at expanding abbreviated product names into their full, readable forms. Always respond with valid JSON."
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: RECEIPT_ANALYSIS_PROMPT
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: dataUrl,
+                detail: "high"
+              }
+            }
+          ]
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 4096
+    });
+    const content = completion.choices[0]?.message?.content;
+    const parseResult = parseReceiptResponse(content);
+    if (!parseResult.success || !parseResult.data) {
+      console.error("[ReceiptAnalysis] Failed to parse response:", parseResult.error);
+      return res.status(500).json({
+        items: [],
+        error: parseResult.error || "Failed to parse AI response"
+      });
+    }
+    const itemsWithUSDA = await Promise.all(
+      parseResult.data.items.map(async (item) => {
+        if (item.upc) {
+          try {
+            const usdaResult = await lookupUSDABarcode(item.upc);
+            if (usdaResult) {
+              const mapped = mapUSDAToFoodItem(usdaResult);
+              console.log(`[ReceiptAnalysis] UPC ${item.upc} matched: ${mapped.name}`);
+              return {
+                ...item,
+                name: mapped.name || item.name,
+                category: mapped.category?.toLowerCase() || item.category,
+                nutrition: mapped.nutrition
+              };
+            }
+          } catch (e) {
+            console.log(`[ReceiptAnalysis] UPC lookup failed for ${item.upc}:`, e);
+          }
+        }
+        return item;
+      })
+    );
+    const result = {
+      ...parseResult.data,
+      items: itemsWithUSDA
+    };
+    console.log(`[ReceiptAnalysis] Complete: ${result.items.length} food items extracted from receipt`);
+    return res.json(result);
+  } catch (error) {
+    console.error("[ReceiptAnalysis] Error:", error);
+    if (error.status === 429) {
+      return res.status(429).json({
+        items: [],
+        error: "Too many requests. Please try again in a moment."
+      });
+    }
+    if (error.code === "invalid_api_key") {
+      return res.status(500).json({
+        items: [],
+        error: "AI service configuration error"
+      });
+    }
+    if (error.message?.includes("Could not process image")) {
+      return res.status(400).json({
+        items: [],
+        error: "Could not process the image. Please try a clearer photo of the receipt."
+      });
+    }
+    return res.status(500).json({
+      items: [],
+      error: "An unexpected error occurred while analyzing the receipt"
+    });
+  }
+});
+router7.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    supportedFormats: SUPPORTED_IMAGE_FORMATS,
+    maxFileSize: `${MAX_FILE_SIZE2 / 1024 / 1024}MB`,
+    model: "gpt-4o"
+  });
+});
+var receipt_analysis_router_default = router7;
+
+// server/routers/user/ingredients.router.ts
+import { Router as Router9 } from "express";
 import OpenAI6 from "openai";
 import { z as z5 } from "zod";
-var router7 = Router8();
-var openai5 = new OpenAI6({
+var router8 = Router9();
+var openai4 = new OpenAI6({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 });
@@ -6333,7 +7169,7 @@ var scanResultSchema = z5.object({
   error: z5.string().optional(),
   suggestion: z5.string().optional()
 });
-router7.post("/scan", async (req, res) => {
+router8.post("/scan", async (req, res) => {
   try {
     const contentType = req.headers["content-type"] || "";
     let base64Image;
@@ -6378,10 +7214,8 @@ router7.post("/scan", async (req, res) => {
     }
     const mimeType = detectMimeType2(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    console.log(
-      `Scanning ingredient label: ${(base64Image.length / 1024).toFixed(1)}KB`
-    );
-    const completion = await openai5.chat.completions.create({
+    console.log(`[Ingredients] Scanning label: ${(base64Image.length / 1024).toFixed(1)}KB`);
+    const completion = await openai4.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -6438,9 +7272,7 @@ router7.post("/scan", async (req, res) => {
         suggestion: result.suggestion
       });
     }
-    console.log(
-      `Ingredient scan complete: ${result.ingredients.length} ingredients found`
-    );
+    console.log(`[Ingredients] Scan complete: ${result.ingredients.length} items found`);
     return res.json({
       productName: result.productName,
       ingredients: result.ingredients,
@@ -6464,284 +7296,26 @@ function detectMimeType2(base64) {
   if (base64.startsWith("UklGR")) return "image/webp";
   return "image/jpeg";
 }
-var ingredients_router_default = router7;
-
-// server/routers/platform/instacart.router.ts
-import { Router as Router9 } from "express";
-var router8 = Router9();
-function getAlternateMeasurements(quantity, unit) {
-  if (!unit || !quantity) return [];
-  const instacartUnit = normalizeUnitForInstacart(unit);
-  if (!instacartUnit) return [];
-  const measurements = [{ quantity, unit: instacartUnit }];
-  const unitType = getUnitType(unit);
-  if (unitType === "weight") {
-    if (["oz", "lb"].includes(instacartUnit)) {
-      const grams = convert(quantity, unit, "g");
-      if (grams && grams >= 1) {
-        measurements.push({ quantity: Math.round(grams), unit: "g" });
-      }
-    } else if (["g", "kg"].includes(instacartUnit)) {
-      const oz = convert(quantity, unit, "oz");
-      if (oz && oz >= 0.1) {
-        measurements.push({ quantity: Math.round(oz * 10) / 10, unit: "oz" });
-      }
-    }
-  } else if (unitType === "volume") {
-    if (["fl oz", "cup", "tbsp", "tsp", "pt", "qt", "gal"].includes(instacartUnit)) {
-      const ml = convert(quantity, unit, "ml");
-      if (ml && ml >= 1) {
-        measurements.push({ quantity: Math.round(ml), unit: "ml" });
-      }
-    } else if (["ml", "l"].includes(instacartUnit)) {
-      const floz = convert(quantity, unit, "fl oz");
-      if (floz && floz >= 0.1) {
-        measurements.push({ quantity: Math.round(floz * 10) / 10, unit: "fl oz" });
-      }
-    }
-  }
-  return measurements;
-}
-var INSTACART_BASE_URL = process.env.NODE_ENV === "production" ? "https://connect.instacart.com" : "https://connect.instacart.com";
-var INSTACART_API_CONFIGURED = !!process.env.INSTACART_API_KEY;
-router8.get("/status", (_req, res) => {
-  res.json({
-    configured: INSTACART_API_CONFIGURED,
-    message: INSTACART_API_CONFIGURED ? "Instacart API is configured and ready" : "Instacart API key not configured. Please set INSTACART_API_KEY environment variable."
-  });
-});
-router8.post("/create-shopping-list", async (req, res) => {
-  const { title, items, imageUrl, partnerLinkbackUrl } = req.body;
-  if (!INSTACART_API_CONFIGURED) {
-    return res.status(503).json({
-      error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to create shopping lists."
-    });
-  }
-  if (!title) {
-    return res.status(400).json({ error: "Title is required" });
-  }
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: "At least one item is required" });
-  }
-  try {
-    const result = await createInstacartShoppingList(title, items, imageUrl, partnerLinkbackUrl);
-    res.json(result);
-  } catch (error) {
-    console.error("Instacart shopping list creation error:", error);
-    res.status(500).json({
-      error: "Failed to create shopping list",
-      message: error.message || "Unknown error occurred"
-    });
-  }
-});
-router8.post("/create-recipe", async (req, res) => {
-  const { title, ingredients, instructions, imageUrl, partnerLinkbackUrl, author, source_url } = req.body;
-  if (!INSTACART_API_CONFIGURED) {
-    return res.status(503).json({
-      error: "Instacart API not configured",
-      message: "Please configure the Instacart API key to create recipe lists."
-    });
-  }
-  if (!title) {
-    return res.status(400).json({ error: "Title is required" });
-  }
-  if (!ingredients || ingredients.length === 0) {
-    return res.status(400).json({ error: "At least one ingredient is required" });
-  }
-  try {
-    const result = await createInstacartRecipe(
-      title,
-      ingredients,
-      instructions,
-      imageUrl,
-      partnerLinkbackUrl,
-      author,
-      source_url
-    );
-    res.json(result);
-  } catch (error) {
-    console.error("Instacart recipe creation error:", error);
-    res.status(500).json({
-      error: "Failed to create recipe list",
-      message: error.message || "Unknown error occurred"
-    });
-  }
-});
-router8.get("/retailers", async (_req, res) => {
-  const retailers = [
-    { id: "heb", name: "H-E-B", logo: "heb" },
-    { id: "randalls", name: "Randall's", logo: "randalls" },
-    { id: "kroger", name: "Kroger", logo: "kroger" },
-    { id: "walmart", name: "Walmart", logo: "walmart" },
-    { id: "target", name: "Target", logo: "target" },
-    { id: "costco", name: "Costco", logo: "costco" },
-    { id: "safeway", name: "Safeway", logo: "safeway" },
-    { id: "albertsons", name: "Albertsons", logo: "albertsons" },
-    { id: "publix", name: "Publix", logo: "publix" },
-    { id: "sprouts", name: "Sprouts", logo: "sprouts" },
-    { id: "whole-foods", name: "Whole Foods", logo: "whole-foods" },
-    { id: "aldi", name: "ALDI", logo: "aldi" }
-  ];
-  res.json({ retailers });
-});
-async function createInstacartShoppingList(title, items, imageUrl, partnerLinkbackUrl) {
-  const apiKey = process.env.INSTACART_API_KEY;
-  if (!apiKey) {
-    throw new Error("Instacart API key not configured");
-  }
-  const lineItems = items.map((item) => {
-    const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
-    const baseItem = {
-      name: item.name,
-      ...item.display_text && { display_text: item.display_text },
-      ...item.product_ids && item.product_ids.length > 0 && { product_ids: item.product_ids },
-      ...item.upcs && item.upcs.length > 0 && { upcs: item.upcs },
-      ...item.filters && { filters: item.filters }
-    };
-    if (measurements.length > 0) {
-      return {
-        ...baseItem,
-        line_item_measurements: measurements
-      };
-    }
-    const instacartUnit = normalizeUnitForInstacart(item.unit);
-    return {
-      ...baseItem,
-      ...item.quantity && { quantity: item.quantity },
-      ...instacartUnit && { unit: instacartUnit }
-    };
-  });
-  const requestBody = {
-    title,
-    line_items: lineItems,
-    landing_page_configuration: {
-      enable_pantry_items: true,
-      ...partnerLinkbackUrl && { partner_linkback_url: partnerLinkbackUrl }
-    }
-  };
-  if (imageUrl) {
-    requestBody.image_url = imageUrl;
-  }
-  console.log(`[Instacart] Creating shopping list: "${title}" with ${items.length} items`);
-  const response = await fetch(`${INSTACART_BASE_URL}/idp/v1/products/products_link`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(requestBody)
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[Instacart] API error (${response.status}):`, errorText);
-    if (response.status === 401) {
-      throw new Error("Invalid Instacart API key");
-    } else if (response.status === 429) {
-      throw new Error("Rate limit exceeded. Please try again later.");
-    } else {
-      throw new Error(`Instacart API error: ${response.status}`);
-    }
-  }
-  const data = await response.json();
-  if (!data.products_link_url) {
-    throw new Error("No shopping list URL returned from Instacart");
-  }
-  console.log(`[Instacart] Shopping list created: ${data.products_link_url}`);
-  return {
-    shoppingListUrl: data.products_link_url,
-    success: true
-  };
-}
-async function createInstacartRecipe(title, ingredients, instructions, imageUrl, partnerLinkbackUrl, author, sourceUrl) {
-  const apiKey = process.env.INSTACART_API_KEY;
-  if (!apiKey) {
-    throw new Error("Instacart API key not configured");
-  }
-  const lineItems = ingredients.map((item) => {
-    const measurements = getAlternateMeasurements(item.quantity || 0, item.unit);
-    const baseItem = {
-      name: item.name,
-      ...item.display_text && { display_text: item.display_text },
-      ...item.product_ids && item.product_ids.length > 0 && { product_ids: item.product_ids },
-      ...item.upcs && item.upcs.length > 0 && { upcs: item.upcs },
-      ...item.filters && { filters: item.filters }
-    };
-    if (measurements.length > 0) {
-      return {
-        ...baseItem,
-        line_item_measurements: measurements
-      };
-    }
-    const instacartUnit = normalizeUnitForInstacart(item.unit);
-    return {
-      ...baseItem,
-      ...item.quantity && { quantity: item.quantity },
-      ...instacartUnit && { unit: instacartUnit }
-    };
-  });
-  const requestBody = {
-    title,
-    line_items: lineItems,
-    landing_page_configuration: {
-      enable_pantry_items: true,
-      ...partnerLinkbackUrl && { partner_linkback_url: partnerLinkbackUrl }
-    }
-  };
-  if (imageUrl) {
-    requestBody.image_url = imageUrl;
-  }
-  if (instructions && instructions.length > 0) {
-    requestBody.instructions = instructions;
-  }
-  if (author) {
-    requestBody.author = author;
-  }
-  if (sourceUrl) {
-    requestBody.source_url = sourceUrl;
-  }
-  console.log(`[Instacart] Creating recipe: "${title}" with ${ingredients.length} ingredients`);
-  const response = await fetch(`${INSTACART_BASE_URL}/idp/v1/products/recipe`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(requestBody)
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[Instacart] API error (${response.status}):`, errorText);
-    if (response.status === 401) {
-      throw new Error("Invalid Instacart API key");
-    } else if (response.status === 429) {
-      throw new Error("Rate limit exceeded. Please try again later.");
-    } else {
-      throw new Error(`Instacart API error: ${response.status}`);
-    }
-  }
-  const data = await response.json();
-  const recipeUrl = data.recipe_link_url || data.products_link_url;
-  if (!recipeUrl) {
-    throw new Error("No recipe URL returned from Instacart");
-  }
-  console.log(`[Instacart] Recipe created: ${recipeUrl}`);
-  return {
-    recipeUrl,
-    success: true
-  };
-}
-var instacart_router_default = router8;
+var ingredients_router_default = router8;
 
 // server/routers/auth.router.ts
 init_db();
 init_schema();
+init_subscriptionService();
 import { Router as Router10 } from "express";
-import { eq as eq5 } from "drizzle-orm";
+import { eq as eq5, and as and2, inArray as inArray2 } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
+import { z as z6 } from "zod";
+var syncPreferencesSchema = z6.object({
+  servingSize: z6.coerce.number().int().min(1).max(10).optional(),
+  dailyMeals: z6.coerce.number().int().min(1).max(10).optional(),
+  dietaryRestrictions: z6.array(z6.string().max(100)).max(50).optional(),
+  cuisinePreferences: z6.array(z6.string().max(100)).max(50).optional(),
+  storageAreas: z6.array(z6.string().max(50)).max(20).optional(),
+  cookingLevel: z6.enum(["basic", "intermediate", "professional"]).optional(),
+  expirationAlertDays: z6.coerce.number().int().min(1).max(30).optional()
+});
 var router9 = Router10();
 async function evaluateAndUpdateSubscriptionStatus(subscription) {
   const now = /* @__PURE__ */ new Date();
@@ -6786,9 +7360,9 @@ function generateToken() {
   return randomBytes(32).toString("hex");
 }
 function getExpiryDate() {
-  const date2 = /* @__PURE__ */ new Date();
-  date2.setDate(date2.getDate() + 30);
-  return date2;
+  const date = /* @__PURE__ */ new Date();
+  date.setDate(date.getDate() + 30);
+  return date;
 }
 var AUTH_COOKIE_NAME = "chefspaice_auth";
 var COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1e3;
@@ -6992,8 +7566,13 @@ router9.get("/sync", async (req, res) => {
       return res.status(401).json({ error: "Session expired" });
     }
     const [syncData] = await db.select().from(userSyncData).where(eq5(userSyncData.userId, session.userId)).limit(1);
+    const userCookware = await db.select({ applianceId: userAppliances.applianceId }).from(userAppliances).where(eq5(userAppliances.userId, session.userId));
+    const cookwareIds = userCookware.map((ua) => ua.applianceId);
     if (!syncData) {
-      return res.json({ data: null, lastSyncedAt: null });
+      return res.json({
+        data: { cookware: cookwareIds },
+        lastSyncedAt: null
+      });
     }
     res.json({
       data: {
@@ -7002,7 +7581,7 @@ router9.get("/sync", async (req, res) => {
         mealPlans: syncData.mealPlans ? JSON.parse(syncData.mealPlans) : null,
         shoppingList: syncData.shoppingList ? JSON.parse(syncData.shoppingList) : null,
         preferences: syncData.preferences ? JSON.parse(syncData.preferences) : null,
-        cookware: syncData.cookware ? JSON.parse(syncData.cookware) : null,
+        cookware: cookwareIds,
         wasteLog: syncData.wasteLog ? JSON.parse(syncData.wasteLog) : null,
         consumedLog: syncData.consumedLog ? JSON.parse(syncData.consumedLog) : null,
         analytics: syncData.analytics ? JSON.parse(syncData.analytics) : null,
@@ -7052,26 +7631,183 @@ router9.post("/sync", async (req, res) => {
         });
       }
     }
-    await db.update(userSyncData).set({
-      inventory: data.inventory ? JSON.stringify(data.inventory) : null,
-      recipes: data.recipes ? JSON.stringify(data.recipes) : null,
-      mealPlans: data.mealPlans ? JSON.stringify(data.mealPlans) : null,
-      shoppingList: data.shoppingList ? JSON.stringify(data.shoppingList) : null,
-      preferences: data.preferences ? JSON.stringify(data.preferences) : null,
-      cookware: data.cookware ? JSON.stringify(data.cookware) : null,
-      wasteLog: data.wasteLog ? JSON.stringify(data.wasteLog) : null,
-      consumedLog: data.consumedLog ? JSON.stringify(data.consumedLog) : null,
-      analytics: data.analytics ? JSON.stringify(data.analytics) : null,
-      onboarding: data.onboarding ? JSON.stringify(data.onboarding) : null,
-      customLocations: data.customLocations ? JSON.stringify(data.customLocations) : null,
-      userProfile: data.userProfile ? JSON.stringify(data.userProfile) : null,
+    let prefsSynced = true;
+    let prefsError = null;
+    let validatedPreferences = void 0;
+    if (data.preferences) {
+      const parseResult = syncPreferencesSchema.safeParse(data.preferences);
+      if (parseResult.success) {
+        const prefs = parseResult.data;
+        validatedPreferences = JSON.stringify(prefs);
+        const userUpdate = { updatedAt: /* @__PURE__ */ new Date() };
+        if (prefs.servingSize !== void 0) {
+          userUpdate.householdSize = prefs.servingSize;
+        }
+        if (prefs.dailyMeals !== void 0) {
+          userUpdate.dailyMeals = prefs.dailyMeals;
+        }
+        if (prefs.dietaryRestrictions !== void 0) {
+          userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;
+        }
+        if (prefs.cuisinePreferences !== void 0) {
+          userUpdate.favoriteCategories = prefs.cuisinePreferences;
+        }
+        if (prefs.storageAreas !== void 0) {
+          userUpdate.storageAreasEnabled = prefs.storageAreas;
+        }
+        if (prefs.cookingLevel !== void 0) {
+          const levelMap = {
+            basic: "beginner",
+            intermediate: "intermediate",
+            professional: "advanced"
+          };
+          userUpdate.cookingSkillLevel = levelMap[prefs.cookingLevel] || "beginner";
+        }
+        if (prefs.expirationAlertDays !== void 0) {
+          userUpdate.expirationAlertDays = prefs.expirationAlertDays;
+        }
+        if (Object.keys(userUpdate).length > 1) {
+          await db.update(users).set(userUpdate).where(eq5(users.id, session.userId));
+        }
+      } else {
+        prefsSynced = false;
+        prefsError = parseResult.error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+        console.warn(`[Sync] Invalid preferences for user ${session.userId}:`, prefsError);
+      }
+    }
+    const syncUpdate = {
       lastSyncedAt: /* @__PURE__ */ new Date(),
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq5(userSyncData.userId, session.userId));
-    res.json({ success: true, syncedAt: (/* @__PURE__ */ new Date()).toISOString() });
+    };
+    if (data.inventory !== void 0) {
+      syncUpdate.inventory = data.inventory ? JSON.stringify(data.inventory) : null;
+    }
+    if (data.recipes !== void 0) {
+      syncUpdate.recipes = data.recipes ? JSON.stringify(data.recipes) : null;
+    }
+    if (data.mealPlans !== void 0) {
+      syncUpdate.mealPlans = data.mealPlans ? JSON.stringify(data.mealPlans) : null;
+    }
+    if (data.shoppingList !== void 0) {
+      syncUpdate.shoppingList = data.shoppingList ? JSON.stringify(data.shoppingList) : null;
+    }
+    if (data.cookware !== void 0 && Array.isArray(data.cookware)) {
+      const newCookwareIds = data.cookware.filter((id) => typeof id === "number");
+      const currentCookware = await db.select({ applianceId: userAppliances.applianceId }).from(userAppliances).where(eq5(userAppliances.userId, session.userId));
+      const currentIds = new Set(currentCookware.map((c) => c.applianceId));
+      const newIds = new Set(newCookwareIds);
+      const toAdd = newCookwareIds.filter((id) => !currentIds.has(id));
+      const toRemove = Array.from(currentIds).filter((id) => !newIds.has(id));
+      if (toRemove.length > 0) {
+        await db.delete(userAppliances).where(and2(
+          eq5(userAppliances.userId, session.userId),
+          inArray2(userAppliances.applianceId, toRemove)
+        ));
+      }
+      if (toAdd.length > 0) {
+        await db.insert(userAppliances).values(toAdd.map((applianceId) => ({
+          userId: session.userId,
+          applianceId
+        }))).onConflictDoNothing();
+      }
+    }
+    if (data.wasteLog !== void 0) {
+      syncUpdate.wasteLog = data.wasteLog ? JSON.stringify(data.wasteLog) : null;
+    }
+    if (data.consumedLog !== void 0) {
+      syncUpdate.consumedLog = data.consumedLog ? JSON.stringify(data.consumedLog) : null;
+    }
+    if (data.analytics !== void 0) {
+      syncUpdate.analytics = data.analytics ? JSON.stringify(data.analytics) : null;
+    }
+    if (data.onboarding !== void 0) {
+      syncUpdate.onboarding = data.onboarding ? JSON.stringify(data.onboarding) : null;
+    }
+    if (data.customLocations !== void 0) {
+      syncUpdate.customLocations = data.customLocations ? JSON.stringify(data.customLocations) : null;
+    }
+    if (data.userProfile !== void 0) {
+      syncUpdate.userProfile = data.userProfile ? JSON.stringify(data.userProfile) : null;
+    }
+    if (validatedPreferences !== void 0) {
+      syncUpdate.preferences = validatedPreferences;
+    }
+    await db.update(userSyncData).set(syncUpdate).where(eq5(userSyncData.userId, session.userId));
+    if (data.onboarding && data.onboarding.completedAt) {
+      await db.update(users).set({ hasCompletedOnboarding: true, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(users.id, session.userId));
+    }
+    res.json({
+      success: true,
+      syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      prefsSynced,
+      ...prefsError && { prefsError }
+    });
   } catch (error) {
     console.error("Sync save error:", error);
     res.status(500).json({ error: "Failed to save sync data" });
+  }
+});
+var DEMO_EMAIL = "demo@chefspaice.com";
+router9.delete("/delete-account", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+    const token = authHeader?.replace("Bearer ", "") || cookieToken;
+    if (!token) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const [session] = await db.select().from(userSessions).where(eq5(userSessions.token, token)).limit(1);
+    if (!session || new Date(session.expiresAt) < /* @__PURE__ */ new Date()) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    const userId = session.userId;
+    const [user] = await db.select().from(users).where(eq5(users.id, userId)).limit(1);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (user.email === DEMO_EMAIL) {
+      return res.status(403).json({
+        error: "Demo account cannot be deleted. This account is used for App Store review purposes."
+      });
+    }
+    console.log(`[DeleteAccount] Starting deletion for user: ${userId} (${user.email})`);
+    try {
+      await db.delete(userAppliances).where(eq5(userAppliances.userId, userId));
+      console.log(`[DeleteAccount] Deleted user appliances`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting appliances:`, e);
+    }
+    try {
+      await db.delete(subscriptions).where(eq5(subscriptions.userId, userId));
+      console.log(`[DeleteAccount] Deleted subscriptions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting subscriptions:`, e);
+    }
+    try {
+      await db.delete(userSyncData).where(eq5(userSyncData.userId, userId));
+      console.log(`[DeleteAccount] Deleted sync data`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sync data:`, e);
+    }
+    try {
+      await db.delete(userSessions).where(eq5(userSessions.userId, userId));
+      console.log(`[DeleteAccount] Deleted sessions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sessions:`, e);
+    }
+    await db.delete(users).where(eq5(users.id, userId));
+    console.log(`[DeleteAccount] Deleted user record`);
+    clearAuthCookie(res);
+    console.log(`[DeleteAccount] User ${userId} deleted successfully`);
+    res.json({
+      success: true,
+      message: "Account and all associated data have been permanently deleted"
+    });
+  } catch (error) {
+    console.error(`[DeleteAccount] Error:`, error);
+    res.status(500).json({
+      error: "Failed to delete account. Please try again or contact support."
+    });
   }
 });
 var auth_router_default = router9;
@@ -7079,6 +7815,7 @@ var auth_router_default = router9;
 // server/routers/social-auth.router.ts
 init_db();
 init_schema();
+init_subscriptionService();
 import { Router as Router11 } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
@@ -7092,9 +7829,9 @@ function generateToken2() {
   return randomBytes2(32).toString("hex");
 }
 function getExpiryDate2() {
-  const date2 = /* @__PURE__ */ new Date();
-  date2.setDate(date2.getDate() + 30);
-  return date2;
+  const date = /* @__PURE__ */ new Date();
+  date.setDate(date.getDate() + 30);
+  return date;
 }
 var AUTH_COOKIE_NAME2 = "chefspaice_auth";
 var COOKIE_MAX_AGE2 = 30 * 24 * 60 * 60 * 1e3;
@@ -7135,33 +7872,38 @@ function getGoogleClientIds() {
   return clientIds.filter((id, index2, self) => id && self.indexOf(id) === index2);
 }
 router10.post("/apple", async (req, res) => {
+  console.log("[Auth] Apple sign-in request received");
   const client = await pool2.connect();
   try {
     const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth, redirectUri } = req.body;
+    console.log("[Auth] Apple auth payload - hasIdentityToken:", !!identityToken, "hasAuthCode:", !!authorizationCode, "isWebAuth:", isWebAuth);
     let verifiedToken = null;
     if (isWebAuth && authorizationCode && !identityToken) {
       try {
         const tokenResponse = await exchangeAppleAuthCode(authorizationCode, redirectUri);
         if (!tokenResponse) {
-          return res.status(401).json({ error: "Failed to exchange Apple authorization code" });
+          console.error("[Auth] Apple web auth failed: authorization code exchange returned null");
+          return res.status(401).json({ error: "Failed to exchange Apple authorization code. Please try again." });
         }
         verifiedToken = tokenResponse;
       } catch (error) {
-        console.error("Apple web auth code exchange error:", error);
-        return res.status(401).json({ error: "Apple web authentication failed" });
+        console.error("[Auth] Apple web auth code exchange error:", error);
+        return res.status(401).json({ error: "Apple web authentication failed. Please try again." });
       }
     } else if (identityToken) {
+      console.log("[Auth] Verifying native iOS Apple token...");
       verifiedToken = await verifyAppleToken(identityToken);
     } else {
-      return res.status(400).json({ error: "Identity token or authorization code is required" });
+      console.error("[Auth] Apple auth failed: missing both identityToken and authorizationCode");
+      return res.status(400).json({ error: "Sign-in incomplete. Please try again." });
     }
     if (!verifiedToken || !verifiedToken.sub) {
-      return res.status(401).json({ error: "Invalid Apple token" });
+      console.error("[Auth] Apple token verification failed - verifiedToken:", verifiedToken);
+      return res.status(401).json({ error: "Unable to verify Apple credentials. Please try signing in again." });
     }
+    console.log("[Auth] Apple token verified successfully for sub:", verifiedToken.sub.substring(0, 8) + "...");
     const { sub: appleUserId, email: tokenEmail } = verifiedToken;
     const email = tokenEmail || user?.email || null;
-    const firstName = user?.name?.firstName || null;
-    const lastName = user?.name?.lastName || null;
     const validPlans = ["monthly", "annual"];
     const validTiers = ["basic", "pro"];
     const plan = validPlans.includes(selectedPlan || "") ? selectedPlan : validTiers.includes(selectedTier || "") ? "monthly" : "monthly";
@@ -7186,41 +7928,41 @@ router10.post("/apple", async (req, res) => {
             `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
              VALUES ($1, 'apple', $2, $3, false, $4)
              ON CONFLICT (provider, provider_id) DO NOTHING`,
-            [userId, appleUserId, email, JSON.stringify({ firstName, lastName })]
+            [userId, appleUserId, email, JSON.stringify({})]
           );
         } else {
           isNewUser = true;
           const userResult2 = await client.query(
-            `INSERT INTO users (email, first_name, last_name, primary_provider, primary_provider_id)
-             VALUES ($1, $2, $3, 'apple', $4)
+            `INSERT INTO users (email, primary_provider, primary_provider_id)
+             VALUES ($1, 'apple', $2)
              RETURNING id`,
-            [email, firstName, lastName, appleUserId]
+            [email, appleUserId]
           );
           userId = userResult2.rows[0].id;
           await client.query(
             `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
              VALUES ($1, 'apple', $2, $3, true, $4)`,
-            [userId, appleUserId, email, JSON.stringify({ firstName, lastName })]
+            [userId, appleUserId, email, JSON.stringify({})]
           );
         }
       } else {
         isNewUser = true;
         const userResult2 = await client.query(
-          `INSERT INTO users (first_name, last_name, primary_provider, primary_provider_id)
-           VALUES ($1, $2, 'apple', $3)
+          `INSERT INTO users (email, primary_provider, primary_provider_id)
+           VALUES ($1, 'apple', $2)
            RETURNING id`,
-          [firstName, lastName, appleUserId]
+          [appleUserId + "@apple.privaterelay", appleUserId]
         );
         userId = userResult2.rows[0].id;
         await client.query(
           `INSERT INTO auth_providers (user_id, provider, provider_id, is_primary, metadata)
            VALUES ($1, 'apple', $2, true, $3)`,
-          [userId, appleUserId, JSON.stringify({ firstName, lastName })]
+          [userId, appleUserId, JSON.stringify({})]
         );
       }
     }
     const userResult = await client.query(
-      `SELECT id, email, first_name, last_name, profile_image_url, created_at FROM users WHERE id = $1`,
+      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
       [userId]
     );
     if (userResult.rows.length === 0) {
@@ -7239,7 +7981,7 @@ router10.post("/apple", async (req, res) => {
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: [dbUser.first_name, dbUser.last_name].filter(Boolean).join(" ") || void 0,
+        displayName: dbUser.display_name || void 0,
         avatarUrl: dbUser.profile_image_url,
         provider: "apple",
         isNewUser,
@@ -7288,8 +8030,6 @@ router10.post("/google", async (req, res) => {
     }
     const googleUserId = payload.sub;
     const email = payload.email || null;
-    const firstName = payload.given_name || null;
-    const lastName = payload.family_name || null;
     const picture = payload.picture || null;
     await dbClient.query("BEGIN");
     const existingProviderResult = await dbClient.query(
@@ -7327,10 +8067,10 @@ router10.post("/google", async (req, res) => {
         } else {
           isNewUser = true;
           const userResult2 = await dbClient.query(
-            `INSERT INTO users (email, first_name, last_name, profile_image_url, primary_provider, primary_provider_id)
-             VALUES ($1, $2, $3, $4, 'google', $5)
+            `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
+             VALUES ($1, $2, 'google', $3)
              RETURNING id`,
-            [email, firstName, lastName, picture, googleUserId]
+            [email, picture, googleUserId]
           );
           userId = userResult2.rows[0].id;
           await dbClient.query(
@@ -7342,10 +8082,10 @@ router10.post("/google", async (req, res) => {
       } else {
         isNewUser = true;
         const userResult2 = await dbClient.query(
-          `INSERT INTO users (first_name, last_name, profile_image_url, primary_provider, primary_provider_id)
-           VALUES ($1, $2, $3, 'google', $4)
+          `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
+           VALUES ($1, $2, 'google', $3)
            RETURNING id`,
-          [firstName, lastName, picture, googleUserId]
+          [googleUserId + "@google.privaterelay", picture, googleUserId]
         );
         userId = userResult2.rows[0].id;
         await dbClient.query(
@@ -7356,7 +8096,7 @@ router10.post("/google", async (req, res) => {
       }
     }
     const userResult = await dbClient.query(
-      `SELECT id, email, first_name, last_name, profile_image_url, created_at FROM users WHERE id = $1`,
+      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
       [userId]
     );
     if (userResult.rows.length === 0) {
@@ -7375,7 +8115,7 @@ router10.post("/google", async (req, res) => {
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: [dbUser.first_name, dbUser.last_name].filter(Boolean).join(" ") || payload.name,
+        displayName: dbUser.display_name || payload.name || void 0,
         avatarUrl: dbUser.profile_image_url,
         provider: "google",
         isNewUser,
@@ -7415,7 +8155,9 @@ async function exchangeAppleAuthCode(authorizationCode, clientRedirectUri) {
       const domain = process.env.REPLIT_DEV_DOMAIN || "localhost:5000";
       redirectUri = domain.includes("localhost") ? "https://localhost:5000/auth/callback/apple" : `https://${domain}/auth/callback/apple`;
     }
-    console.log("Apple auth code exchange with redirectUri:", redirectUri);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Auth] Apple auth code exchange with redirectUri:", redirectUri);
+    }
     const tokenResponse = await appleSignin.getAuthorizationToken(authorizationCode, {
       clientID: clientId,
       clientSecret,
@@ -7447,6 +8189,8 @@ async function verifyAppleToken(identityToken) {
   const serviceId = process.env.APPLE_CLIENT_ID || `service.${bundleId}`;
   const expoGoBundleId = "host.exp.Exponent";
   const validAudiences = [bundleId, serviceId, expoGoBundleId];
+  console.log("[Auth] Verifying Apple token with audiences:", validAudiences);
+  const errors = [];
   try {
     for (const audience of validAudiences) {
       try {
@@ -7455,20 +8199,22 @@ async function verifyAppleToken(identityToken) {
           ignoreExpiration: false
         });
         if (payload && payload.sub) {
-          console.log(`Apple token verified with audience: ${audience}`);
+          console.log(`[Auth] Apple token verified successfully with audience: ${audience}`);
           return {
             sub: payload.sub,
             email: payload.email
           };
         }
       } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
+        errors.push({ audience, error: errMessage });
         continue;
       }
     }
-    console.warn("Apple token verification failed: no valid audience matched");
+    console.error("[Auth] Apple token verification failed - no valid audience matched. Errors:", JSON.stringify(errors));
     return null;
   } catch (error) {
-    console.error("Apple token JWKS verification failed:", error);
+    console.error("[Auth] Apple token JWKS verification failed:", error);
     return null;
   }
 }
@@ -7477,9 +8223,114 @@ var social_auth_router_default = router10;
 // server/routers/sync.router.ts
 init_db();
 init_schema();
+init_subscriptionService();
+init_subscription();
 import { Router as Router12 } from "express";
 import { eq as eq6 } from "drizzle-orm";
+import { z as z7 } from "zod";
 var router11 = Router12();
+var syncOperationSchema = z7.enum(["create", "update", "delete"]);
+var inventoryItemSchema = z7.object({
+  id: z7.union([z7.string(), z7.number()]),
+  name: z7.string(),
+  barcode: z7.string().optional(),
+  quantity: z7.number(),
+  unit: z7.string(),
+  storageLocation: z7.string(),
+  purchaseDate: z7.string(),
+  expirationDate: z7.string(),
+  category: z7.string(),
+  usdaCategory: z7.string().optional(),
+  nutrition: z7.object({
+    calories: z7.number(),
+    protein: z7.number(),
+    carbs: z7.number(),
+    fat: z7.number(),
+    fiber: z7.number().optional(),
+    sugar: z7.number().optional()
+  }).optional(),
+  notes: z7.string().optional(),
+  imageUri: z7.string().optional(),
+  fdcId: z7.number().optional(),
+  updatedAt: z7.string().optional()
+});
+var recipeSchema = z7.object({
+  id: z7.union([z7.string(), z7.number()]),
+  title: z7.string(),
+  description: z7.string().optional(),
+  ingredients: z7.array(z7.object({
+    name: z7.string(),
+    quantity: z7.union([z7.number(), z7.string()]),
+    unit: z7.string(),
+    fromInventory: z7.boolean().optional()
+  })),
+  instructions: z7.array(z7.string()),
+  prepTime: z7.number().optional(),
+  cookTime: z7.number().optional(),
+  servings: z7.number().optional(),
+  imageUri: z7.string().optional(),
+  cloudImageUri: z7.string().optional(),
+  nutrition: z7.object({
+    calories: z7.number(),
+    protein: z7.number(),
+    carbs: z7.number(),
+    fat: z7.number()
+  }).optional(),
+  isFavorite: z7.boolean().optional(),
+  updatedAt: z7.string().optional()
+}).passthrough();
+var mealPlanSchema = z7.object({
+  id: z7.union([z7.string(), z7.number()]),
+  date: z7.string(),
+  meals: z7.array(z7.object({
+    type: z7.string(),
+    recipeId: z7.string().optional(),
+    customMeal: z7.string().optional()
+  })).optional(),
+  updatedAt: z7.string().optional()
+}).passthrough();
+var cookwareSchema = z7.object({
+  id: z7.union([z7.number(), z7.string()]),
+  name: z7.string().optional(),
+  category: z7.string().optional(),
+  alternatives: z7.array(z7.string()).optional(),
+  updatedAt: z7.string().optional()
+}).passthrough();
+var shoppingListItemSchema = z7.object({
+  id: z7.union([z7.string(), z7.number()]),
+  name: z7.string(),
+  quantity: z7.number(),
+  unit: z7.string(),
+  isChecked: z7.boolean(),
+  category: z7.string().optional(),
+  recipeId: z7.string().optional(),
+  updatedAt: z7.string().optional()
+}).passthrough();
+var inventorySyncRequestSchema = z7.object({
+  operation: syncOperationSchema,
+  data: inventoryItemSchema,
+  clientTimestamp: z7.string().optional()
+});
+var recipeSyncRequestSchema = z7.object({
+  operation: syncOperationSchema,
+  data: recipeSchema,
+  clientTimestamp: z7.string().optional()
+});
+var mealPlanSyncRequestSchema = z7.object({
+  operation: syncOperationSchema,
+  data: mealPlanSchema,
+  clientTimestamp: z7.string().optional()
+});
+var cookwareSyncRequestSchema = z7.object({
+  operation: syncOperationSchema,
+  data: cookwareSchema,
+  clientTimestamp: z7.string().optional()
+});
+var shoppingListSyncRequestSchema = z7.object({
+  operation: syncOperationSchema,
+  data: shoppingListItemSchema,
+  clientTimestamp: z7.string().optional()
+});
 async function getSessionFromToken(token) {
   if (!token) return null;
   const sessions = await db.select().from(userSessions).where(eq6(userSessions.token, token));
@@ -7507,7 +8358,14 @@ router11.post("/inventory", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { operation, data, clientTimestamp } = req.body;
+    const parseResult = inventorySyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { operation, data } = parseResult.data;
     if (operation === "create") {
       const limitCheck = await checkPantryItemLimit(session.userId);
       const remaining = typeof limitCheck.remaining === "number" ? limitCheck.remaining : Infinity;
@@ -7525,11 +8383,12 @@ router11.post("/inventory", async (req, res) => {
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
       currentInventory = JSON.parse(existingSyncData[0].inventory);
     }
+    const dataIdStr = String(data.id);
     if (operation === "create") {
       currentInventory.push(data);
     } else if (operation === "update") {
       const index2 = currentInventory.findIndex(
-        (item) => item.id === data.id
+        (item) => String(item.id) === dataIdStr
       );
       if (index2 !== -1) {
         currentInventory[index2] = data;
@@ -7548,7 +8407,7 @@ router11.post("/inventory", async (req, res) => {
       }
     } else if (operation === "delete") {
       currentInventory = currentInventory.filter(
-        (item) => item.id !== data.id
+        (item) => String(item.id) !== dataIdStr
       );
     }
     const finalLimitCheck = await checkPantryItemLimit(session.userId);
@@ -7577,7 +8436,7 @@ router11.post("/inventory", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation,
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Inventory sync error:", error);
@@ -7594,31 +8453,42 @@ router11.put("/inventory", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data, clientTimestamp } = req.body;
-    if (!data || !data.id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z7.object({
+      data: inventoryItemSchema,
+      clientTimestamp: z7.string().optional()
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
     }
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentInventory = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
       currentInventory = JSON.parse(existingSyncData[0].inventory);
     }
     const index2 = currentInventory.findIndex(
-      (item) => item.id === data.id
+      (item) => String(item.id) === dataIdStr
     );
     if (index2 !== -1) {
       const existingItem = currentInventory[index2];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = data.updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString();
       if (newTimestamp >= existingTimestamp) {
-        currentInventory[index2] = { ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() };
+        currentInventory[index2] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: data.id
+          itemId: dataIdStr
         });
       }
     } else {
@@ -7632,7 +8502,8 @@ router11.put("/inventory", async (req, res) => {
           remaining: 0
         });
       }
-      currentInventory.push({ ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
+      const dataUpdatedAt = data.updatedAt;
+      currentInventory.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
     }
     const finalLimitCheck = await checkPantryItemLimit(session.userId);
     const maxLimit = typeof finalLimitCheck.limit === "number" ? finalLimitCheck.limit : Infinity;
@@ -7653,7 +8524,7 @@ router11.put("/inventory", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "update",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Inventory update sync error:", error);
@@ -7670,14 +8541,25 @@ router11.delete("/inventory", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data } = req.body;
+    const deleteSchema = z7.object({
+      data: z7.object({ id: z7.union([z7.string(), z7.number()]) })
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentInventory = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
       currentInventory = JSON.parse(existingSyncData[0].inventory);
     }
     currentInventory = currentInventory.filter(
-      (item) => item.id !== data.id
+      (item) => String(item.id) !== dataIdStr
     );
     await db.update(userSyncData).set({
       inventory: JSON.stringify(currentInventory),
@@ -7688,7 +8570,7 @@ router11.delete("/inventory", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "delete",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Inventory delete sync error:", error);
@@ -7705,7 +8587,15 @@ router11.post("/recipes", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { operation, data } = req.body;
+    const parseResult = recipeSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentRecipes = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
@@ -7715,7 +8605,7 @@ router11.post("/recipes", async (req, res) => {
       currentRecipes.push(data);
     } else if (operation === "update") {
       const index2 = currentRecipes.findIndex(
-        (item) => item.id === data.id
+        (item) => String(item.id) === dataIdStr
       );
       if (index2 !== -1) {
         currentRecipes[index2] = data;
@@ -7724,7 +8614,7 @@ router11.post("/recipes", async (req, res) => {
       }
     } else if (operation === "delete") {
       currentRecipes = currentRecipes.filter(
-        (item) => item.id !== data.id
+        (item) => String(item.id) !== dataIdStr
       );
     }
     if (existingSyncData.length === 0) {
@@ -7743,7 +8633,7 @@ router11.post("/recipes", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation,
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Recipes sync error:", error);
@@ -7760,35 +8650,47 @@ router11.put("/recipes", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data, clientTimestamp } = req.body;
-    if (!data || !data.id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z7.object({
+      data: recipeSchema,
+      clientTimestamp: z7.string().optional()
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
     }
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentRecipes = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
       currentRecipes = JSON.parse(existingSyncData[0].recipes);
     }
     const index2 = currentRecipes.findIndex(
-      (item) => item.id === data.id
+      (item) => String(item.id) === dataIdStr
     );
     if (index2 !== -1) {
       const existingItem = currentRecipes[index2];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = data.updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString();
       if (newTimestamp >= existingTimestamp) {
-        currentRecipes[index2] = { ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() };
+        currentRecipes[index2] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: data.id
+          itemId: dataIdStr
         });
       }
     } else {
-      currentRecipes.push({ ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
+      const dataUpdatedAt = data.updatedAt;
+      currentRecipes.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
     }
     await db.update(userSyncData).set({
       recipes: JSON.stringify(currentRecipes),
@@ -7799,7 +8701,7 @@ router11.put("/recipes", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "update",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Recipes update sync error:", error);
@@ -7816,14 +8718,25 @@ router11.delete("/recipes", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data } = req.body;
+    const deleteSchema = z7.object({
+      data: z7.object({ id: z7.union([z7.string(), z7.number()]) })
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentRecipes = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
       currentRecipes = JSON.parse(existingSyncData[0].recipes);
     }
     currentRecipes = currentRecipes.filter(
-      (item) => item.id !== data.id
+      (item) => String(item.id) !== dataIdStr
     );
     await db.update(userSyncData).set({
       recipes: JSON.stringify(currentRecipes),
@@ -7834,7 +8747,7 @@ router11.delete("/recipes", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "delete",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Recipes delete sync error:", error);
@@ -7851,7 +8764,15 @@ router11.post("/mealPlans", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { operation, data } = req.body;
+    const parseResult = mealPlanSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentMealPlans = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
@@ -7861,7 +8782,7 @@ router11.post("/mealPlans", async (req, res) => {
       currentMealPlans.push(data);
     } else if (operation === "update") {
       const index2 = currentMealPlans.findIndex(
-        (item) => item.id === data.id
+        (item) => String(item.id) === dataIdStr
       );
       if (index2 !== -1) {
         currentMealPlans[index2] = data;
@@ -7870,7 +8791,7 @@ router11.post("/mealPlans", async (req, res) => {
       }
     } else if (operation === "delete") {
       currentMealPlans = currentMealPlans.filter(
-        (item) => item.id !== data.id
+        (item) => String(item.id) !== dataIdStr
       );
     }
     if (existingSyncData.length === 0) {
@@ -7889,7 +8810,7 @@ router11.post("/mealPlans", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation,
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Meal plans sync error:", error);
@@ -7906,35 +8827,47 @@ router11.put("/mealPlans", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data, clientTimestamp } = req.body;
-    if (!data || !data.id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z7.object({
+      data: mealPlanSchema,
+      clientTimestamp: z7.string().optional()
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
     }
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentMealPlans = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
       currentMealPlans = JSON.parse(existingSyncData[0].mealPlans);
     }
     const index2 = currentMealPlans.findIndex(
-      (item) => item.id === data.id
+      (item) => String(item.id) === dataIdStr
     );
     if (index2 !== -1) {
       const existingItem = currentMealPlans[index2];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = data.updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString();
       if (newTimestamp >= existingTimestamp) {
-        currentMealPlans[index2] = { ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() };
+        currentMealPlans[index2] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: data.id
+          itemId: dataIdStr
         });
       }
     } else {
-      currentMealPlans.push({ ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
+      const dataUpdatedAt = data.updatedAt;
+      currentMealPlans.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
     }
     await db.update(userSyncData).set({
       mealPlans: JSON.stringify(currentMealPlans),
@@ -7945,7 +8878,7 @@ router11.put("/mealPlans", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "update",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Meal plans update sync error:", error);
@@ -7962,14 +8895,25 @@ router11.delete("/mealPlans", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data } = req.body;
+    const deleteSchema = z7.object({
+      data: z7.object({ id: z7.union([z7.string(), z7.number()]) })
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentMealPlans = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
       currentMealPlans = JSON.parse(existingSyncData[0].mealPlans);
     }
     currentMealPlans = currentMealPlans.filter(
-      (item) => item.id !== data.id
+      (item) => String(item.id) !== dataIdStr
     );
     await db.update(userSyncData).set({
       mealPlans: JSON.stringify(currentMealPlans),
@@ -7980,7 +8924,7 @@ router11.delete("/mealPlans", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "delete",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Meal plans delete sync error:", error);
@@ -7997,14 +8941,22 @@ router11.post("/cookware", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { operation, data } = req.body;
+    const parseResult = cookwareSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentCookware = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
       currentCookware = JSON.parse(existingSyncData[0].cookware);
     }
     const isAddingNewItem = operation === "create" || operation === "update" && currentCookware.findIndex(
-      (item) => item.id === data.id
+      (item) => String(item.id) === dataIdStr
     ) === -1;
     if (isAddingNewItem) {
       const limitCheck = await checkCookwareLimit(session.userId);
@@ -8023,7 +8975,7 @@ router11.post("/cookware", async (req, res) => {
       currentCookware.push(data);
     } else if (operation === "update") {
       const index2 = currentCookware.findIndex(
-        (item) => item.id === data.id
+        (item) => String(item.id) === dataIdStr
       );
       if (index2 !== -1) {
         currentCookware[index2] = data;
@@ -8032,7 +8984,7 @@ router11.post("/cookware", async (req, res) => {
       }
     } else if (operation === "delete") {
       currentCookware = currentCookware.filter(
-        (item) => item.id !== data.id
+        (item) => String(item.id) !== dataIdStr
       );
     }
     if (existingSyncData.length === 0) {
@@ -8051,7 +9003,7 @@ router11.post("/cookware", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation,
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Cookware sync error:", error);
@@ -8068,17 +9020,26 @@ router11.put("/cookware", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data, clientTimestamp } = req.body;
-    if (!data || !data.id) {
-      return res.status(400).json({ error: "Invalid data: missing id" });
+    const updateSchema = z7.object({
+      data: cookwareSchema,
+      clientTimestamp: z7.string().optional()
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
     }
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentCookware = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
       currentCookware = JSON.parse(existingSyncData[0].cookware);
     }
     const index2 = currentCookware.findIndex(
-      (item) => item.id === data.id
+      (item) => String(item.id) === dataIdStr
     );
     if (index2 === -1) {
       const limitCheck = await checkCookwareLimit(session.userId);
@@ -8092,20 +9053,23 @@ router11.put("/cookware", async (req, res) => {
           count: currentCookware.length
         });
       }
-      currentCookware.push({ ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
+      const dataUpdatedAt = data.updatedAt;
+      currentCookware.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
     } else {
       const existingItem = currentCookware[index2];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const newTimestamp = clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const dataUpdatedAt = data.updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString();
       if (newTimestamp >= existingTimestamp) {
-        currentCookware[index2] = { ...data, updatedAt: clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() };
+        currentCookware[index2] = { ...data, updatedAt: finalTimestamp };
       } else {
         return res.json({
           success: true,
           syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
           operation: "skipped",
           reason: "stale_update",
-          itemId: data.id
+          itemId: dataIdStr
         });
       }
     }
@@ -8125,7 +9089,7 @@ router11.put("/cookware", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "update",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Cookware update sync error:", error);
@@ -8142,14 +9106,25 @@ router11.delete("/cookware", async (req, res) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
-    const { data } = req.body;
+    const deleteSchema = z7.object({
+      data: z7.object({ id: z7.union([z7.string(), z7.number()]) })
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
     const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
     let currentCookware = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
       currentCookware = JSON.parse(existingSyncData[0].cookware);
     }
     currentCookware = currentCookware.filter(
-      (item) => item.id !== data.id
+      (item) => String(item.id) !== dataIdStr
     );
     await db.update(userSyncData).set({
       cookware: JSON.stringify(currentCookware),
@@ -8160,44 +9135,313 @@ router11.delete("/cookware", async (req, res) => {
       success: true,
       syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
       operation: "delete",
-      itemId: data.id
+      itemId: dataIdStr
     });
   } catch (error) {
     console.error("Cookware delete sync error:", error);
     res.status(500).json({ error: "Failed to sync cookware deletion" });
   }
 });
+router11.post("/shoppingList", async (req, res) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    const parseResult = shoppingListSyncRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
+    const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
+    let currentShoppingList = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+    if (operation === "create") {
+      currentShoppingList.push(data);
+    } else if (operation === "update") {
+      const index2 = currentShoppingList.findIndex(
+        (item) => String(item.id) === dataIdStr
+      );
+      if (index2 !== -1) {
+        currentShoppingList[index2] = data;
+      } else {
+        currentShoppingList.push(data);
+      }
+    } else if (operation === "delete") {
+      currentShoppingList = currentShoppingList.filter(
+        (item) => String(item.id) !== dataIdStr
+      );
+    }
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        shoppingList: JSON.stringify(currentShoppingList)
+      });
+    } else {
+      await db.update(userSyncData).set({
+        shoppingList: JSON.stringify(currentShoppingList),
+        lastSyncedAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq6(userSyncData.userId, session.userId));
+    }
+    res.json({
+      success: true,
+      syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      operation,
+      itemId: dataIdStr
+    });
+  } catch (error) {
+    console.error("Shopping list sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list" });
+  }
+});
+router11.put("/shoppingList", async (req, res) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    const updateSchema = z7.object({
+      data: shoppingListItemSchema,
+      clientTimestamp: z7.string().optional()
+    });
+    const parseResult = updateSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data, clientTimestamp } = parseResult.data;
+    const dataIdStr = String(data.id);
+    const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
+    let currentShoppingList = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+    const index2 = currentShoppingList.findIndex(
+      (item) => String(item.id) === dataIdStr
+    );
+    if (index2 !== -1) {
+      const existingItem = currentShoppingList[index2];
+      const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
+      const dataUpdatedAt = data.updatedAt;
+      const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
+      const finalTimestamp = dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString();
+      if (newTimestamp >= existingTimestamp) {
+        currentShoppingList[index2] = { ...data, updatedAt: finalTimestamp };
+      } else {
+        return res.json({
+          success: true,
+          syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          operation: "skipped",
+          reason: "stale_update",
+          itemId: dataIdStr
+        });
+      }
+    } else {
+      const dataUpdatedAt = data.updatedAt;
+      currentShoppingList.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || (/* @__PURE__ */ new Date()).toISOString() });
+    }
+    if (existingSyncData.length === 0) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        shoppingList: JSON.stringify(currentShoppingList)
+      });
+    } else {
+      await db.update(userSyncData).set({
+        shoppingList: JSON.stringify(currentShoppingList),
+        lastSyncedAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq6(userSyncData.userId, session.userId));
+    }
+    res.json({
+      success: true,
+      syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      operation: "update",
+      itemId: dataIdStr
+    });
+  } catch (error) {
+    console.error("Shopping list update sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list update" });
+  }
+});
+router11.delete("/shoppingList", async (req, res) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    const deleteSchema = z7.object({
+      data: z7.object({ id: z7.union([z7.string(), z7.number()]) })
+    });
+    const parseResult = deleteSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { data } = parseResult.data;
+    const dataIdStr = String(data.id);
+    const existingSyncData = await db.select().from(userSyncData).where(eq6(userSyncData.userId, session.userId));
+    let currentShoppingList = [];
+    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
+      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+    }
+    currentShoppingList = currentShoppingList.filter(
+      (item) => String(item.id) !== dataIdStr
+    );
+    await db.update(userSyncData).set({
+      shoppingList: JSON.stringify(currentShoppingList),
+      lastSyncedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq6(userSyncData.userId, session.userId));
+    res.json({
+      success: true,
+      syncedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      operation: "delete",
+      itemId: dataIdStr
+    });
+  } catch (error) {
+    console.error("Shopping list delete sync error:", error);
+    res.status(500).json({ error: "Failed to sync shopping list deletion" });
+  }
+});
 var sync_router_default = router11;
+
+// server/routers/recipeImages.router.ts
+import { Router as Router13 } from "express";
+import { z as z8 } from "zod";
+
+// server/services/objectStorageService.ts
+import { Client } from "@replit/object-storage";
+var storageClient = new Client();
+var PUBLIC_PREFIX = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split("/").slice(2).join("/") || "public";
+async function uploadRecipeImage(recipeId, base64Data, _contentType = "image/jpeg") {
+  const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/i, "");
+  const buffer = Buffer.from(cleanBase64, "base64");
+  const objectPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
+  const result = await storageClient.uploadFromBytes(objectPath, buffer);
+  if (!result.ok) {
+    console.error(`[ObjectStorage] Upload failed:`, result.error);
+    throw new Error(`Failed to upload image: ${result.error.message}`);
+  }
+  const publicUrl = getPublicUrl(objectPath);
+  console.log(`[ObjectStorage] Uploaded recipe image: ${publicUrl}`);
+  return publicUrl;
+}
+async function deleteRecipeImage(recipeId) {
+  const objectPath = `${PUBLIC_PREFIX}/recipe-images/${recipeId}.jpg`;
+  try {
+    const existsResult = await storageClient.exists(objectPath);
+    if (existsResult.ok && existsResult.value) {
+      const deleteResult = await storageClient.delete(objectPath);
+      if (deleteResult.ok) {
+        console.log(`[ObjectStorage] Deleted recipe image: ${objectPath}`);
+      } else {
+        console.error(`[ObjectStorage] Delete failed:`, deleteResult.error);
+      }
+    }
+  } catch (error) {
+    console.error(`[ObjectStorage] Error deleting recipe image:`, error);
+  }
+}
+function getPublicUrl(objectPath) {
+  const bucketId = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split("/")[1] || process.env.REPLIT_DEFAULT_BUCKET_ID || "";
+  return `https://storage.googleapis.com/${bucketId}/${objectPath}`;
+}
+
+// server/routers/recipeImages.router.ts
+var router12 = Router13();
+var uploadSchema = z8.object({
+  recipeId: z8.string(),
+  base64Data: z8.string(),
+  contentType: z8.string().optional()
+});
+router12.post("/upload", async (req, res) => {
+  try {
+    const parseResult = uploadSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map((e) => e.message).join(", ")
+      });
+    }
+    const { recipeId, base64Data, contentType } = parseResult.data;
+    const cloudUrl = await uploadRecipeImage(recipeId, base64Data, contentType || "image/jpeg");
+    res.json({
+      success: true,
+      cloudImageUri: cloudUrl,
+      recipeId
+    });
+  } catch (error) {
+    console.error("[RecipeImages] Upload error:", error);
+    res.status(500).json({ error: "Failed to upload recipe image" });
+  }
+});
+router12.delete("/:recipeId", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+    await deleteRecipeImage(recipeId);
+    res.json({
+      success: true,
+      recipeId
+    });
+  } catch (error) {
+    console.error("[RecipeImages] Delete error:", error);
+    res.status(500).json({ error: "Failed to delete recipe image" });
+  }
+});
+var recipeImages_router_default = router12;
 
 // server/routers/feedback.router.ts
 init_db();
 init_schema();
-import { Router as Router13 } from "express";
-import { z as z6 } from "zod";
+import { Router as Router14 } from "express";
+import { z as z9 } from "zod";
 import { eq as eq7, desc as desc2, isNull } from "drizzle-orm";
 import OpenAI7 from "openai";
-var router12 = Router13();
-var openai6 = new OpenAI7({
+var router13 = Router14();
+var openai5 = new OpenAI7({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
 });
-var feedbackRequestSchema = z6.object({
-  type: z6.enum(["feedback", "bug"]),
-  category: z6.string().optional(),
-  message: z6.string().min(1, "Message is required"),
-  userEmail: z6.string().email().optional().nullable(),
-  deviceInfo: z6.string().optional(),
-  screenContext: z6.string().optional(),
-  stepsToReproduce: z6.string().optional(),
-  severity: z6.enum(["minor", "major", "critical"]).optional()
+var feedbackRequestSchema = z9.object({
+  type: z9.enum(["feedback", "bug"]),
+  category: z9.string().optional(),
+  message: z9.string().min(1, "Message is required"),
+  userEmail: z9.string().email().optional().nullable(),
+  deviceInfo: z9.string().optional(),
+  screenContext: z9.string().optional(),
+  stepsToReproduce: z9.string().optional(),
+  severity: z9.enum(["minor", "major", "critical"]).optional()
 });
-var updateFeedbackSchema = z6.object({
-  status: z6.enum(["new", "reviewed", "in_progress", "resolved", "closed"]).optional(),
-  priority: z6.enum(["low", "medium", "high", "urgent"]).optional(),
-  adminNotes: z6.string().optional().nullable(),
-  resolutionPrompt: z6.string().optional().nullable(),
-  assignedTo: z6.string().optional().nullable(),
-  bucketId: z6.number().optional().nullable()
+var updateFeedbackSchema = z9.object({
+  status: z9.enum(["new", "reviewed", "in_progress", "resolved", "closed"]).optional(),
+  priority: z9.enum(["low", "medium", "high", "urgent"]).optional(),
+  adminNotes: z9.string().optional().nullable(),
+  resolutionPrompt: z9.string().optional().nullable(),
+  assignedTo: z9.string().optional().nullable(),
+  bucketId: z9.number().optional().nullable()
 });
 async function getAuthenticatedAdmin(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) {
@@ -8230,7 +9474,7 @@ async function categorizeFeedback(feedbackItem) {
     type: b.bucketType
   }));
   try {
-    const response = await openai6.chat.completions.create({
+    const response = await openai5.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -8290,7 +9534,7 @@ async function createNewBucket(feedbackItem) {
   }).returning();
   return bucketResult[0];
 }
-router12.post("/", async (req, res) => {
+router13.post("/", async (req, res) => {
   try {
     const validatedData = feedbackRequestSchema.parse(req.body);
     let userId = null;
@@ -8331,13 +9575,13 @@ router12.post("/", async (req, res) => {
     });
   } catch (error) {
     console.error("Feedback submission error:", error);
-    if (error instanceof z6.ZodError) {
+    if (error instanceof z9.ZodError) {
       return res.status(400).json({ error: "Invalid feedback data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to submit feedback" });
   }
 });
-router12.get("/", async (req, res) => {
+router13.get("/", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8361,7 +9605,7 @@ router12.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch feedback" });
   }
 });
-router12.get("/stats", async (req, res) => {
+router13.get("/stats", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8396,7 +9640,7 @@ router12.get("/stats", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch feedback stats" });
   }
 });
-router12.get("/buckets", async (req, res) => {
+router13.get("/buckets", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8419,7 +9663,7 @@ router12.get("/buckets", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch buckets" });
   }
 });
-router12.post("/buckets/:id/generate-prompt", async (req, res) => {
+router13.post("/buckets/:id/generate-prompt", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8449,7 +9693,7 @@ ${item.severity ? `- **Severity:** ${item.severity}` : ""}
 ${item.deviceInfo ? `- **Device Info:** ${item.deviceInfo}` : ""}`
     ).join("\n\n");
     try {
-      const response = await openai6.chat.completions.create({
+      const response = await openai5.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
@@ -8512,7 +9756,7 @@ ${items.map((item, idx) => `${idx + 1}. Address: ${item.message.substring(0, 100
     res.status(500).json({ error: "Failed to generate prompt" });
   }
 });
-router12.post("/buckets/:id/complete", async (req, res) => {
+router13.post("/buckets/:id/complete", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8540,7 +9784,7 @@ router12.post("/buckets/:id/complete", async (req, res) => {
     res.status(500).json({ error: "Failed to complete bucket" });
   }
 });
-router12.post("/categorize-uncategorized", async (req, res) => {
+router13.post("/categorize-uncategorized", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8568,7 +9812,7 @@ router12.post("/categorize-uncategorized", async (req, res) => {
     res.status(500).json({ error: "Failed to categorize feedback" });
   }
 });
-router12.get("/:id", async (req, res) => {
+router13.get("/:id", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8588,7 +9832,7 @@ router12.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch feedback" });
   }
 });
-router12.patch("/:id", async (req, res) => {
+router13.patch("/:id", async (req, res) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -8631,18 +9875,305 @@ router12.patch("/:id", async (req, res) => {
     res.json(result[0]);
   } catch (error) {
     console.error("Feedback update error:", error);
-    if (error instanceof z6.ZodError) {
+    if (error instanceof z9.ZodError) {
       return res.status(400).json({ error: "Invalid update data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to update feedback" });
   }
 });
-var feedback_router_default = router12;
+var feedback_router_default = router13;
+
+// server/routers/logo-export.router.ts
+import { Router as Router15 } from "express";
+import sharp from "sharp";
+var router14 = Router15();
+var CHEF_HAT_SVG_PATH = `M12,5A2,2 0 0,1 14,3A2,2 0 0,1 16,5V6H17A2,2 0 0,1 19,8V9H20A2,2 0 0,1 22,11V12L21,22H3L2,12V11A2,2 0 0,1 4,9H5V8A2,2 0 0,1 7,6H8V5A2,2 0 0,1 10,3A2,2 0 0,1 12,5M7,18H9V14H7V18M11,18H13V14H11V18M15,18H17V14H15V18Z`;
+function generateLogoSVG(size = 512, includeBackground = true) {
+  const cornerRadius = size * 0.25;
+  const iconSize = size * 0.73;
+  const iconScale = iconSize / 24;
+  const iconOffset = (size - iconSize) / 2;
+  const defs = `
+    <defs>
+      <linearGradient id="glassGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:rgba(255,255,255,0.18)"/>
+        <stop offset="50%" style="stop-color:rgba(255,255,255,0.06)"/>
+        <stop offset="100%" style="stop-color:rgba(255,255,255,0.12)"/>
+      </linearGradient>
+      <filter id="iconShadow" x="-100%" y="-100%" width="300%" height="300%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${size * 0.05}" flood-color="rgba(0,0,0,1)"/>
+      </filter>
+      <filter id="buttonShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="${size * 0.04}" stdDeviation="${size * 0.05}" flood-color="rgba(0,0,0,0.5)"/>
+      </filter>
+    </defs>
+  `;
+  const background = includeBackground ? `
+    <rect x="0" y="0" width="${size}" height="${size}" fill="#1a1a2e"/>
+  ` : "";
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+  ${defs}
+  ${background}
+  
+  <!-- Glass button with rounded corners -->
+  <rect 
+    x="0" 
+    y="0" 
+    width="${size}" 
+    height="${size}" 
+    rx="${cornerRadius}" 
+    ry="${cornerRadius}" 
+    fill="url(#glassGrad)"
+    stroke="rgba(255,255,255,0.12)"
+    stroke-width="${Math.max(2, size * 8e-3)}"
+    filter="url(#buttonShadow)"
+  />
+  
+  <!-- Chef hat icon with drop shadow matching AppLogo style -->
+  <g transform="translate(${iconOffset}, ${iconOffset}) scale(${iconScale})" filter="url(#iconShadow)">
+    <path d="${CHEF_HAT_SVG_PATH}" fill="rgba(255,255,255,0.7)"/>
+  </g>
+</svg>`;
+}
+function generateIconOnlySVG(size = 512) {
+  const iconScale = size / 24;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+  <g transform="scale(${iconScale})">
+    <path d="${CHEF_HAT_SVG_PATH}" fill="rgba(255,255,255,0.7)"/>
+  </g>
+</svg>`;
+}
+router14.get("/svg", (req, res) => {
+  const size = parseInt(req.query.size) || 512;
+  const withBg = req.query.background !== "false";
+  const svg = generateLogoSVG(size, withBg);
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Content-Disposition", `attachment; filename="chefspace-logo-${size}.svg"`);
+  res.send(svg);
+});
+router14.get("/icon-svg", (req, res) => {
+  const size = parseInt(req.query.size) || 512;
+  const svg = generateIconOnlySVG(size);
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Content-Disposition", `attachment; filename="chefspace-icon-${size}.svg"`);
+  res.send(svg);
+});
+router14.get("/png", async (req, res) => {
+  try {
+    const size = parseInt(req.query.size) || 512;
+    const withBg = req.query.background !== "false";
+    const svg = generateLogoSVG(size, withBg);
+    const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", `attachment; filename="chefspace-logo-${size}.png"`);
+    res.send(pngBuffer);
+  } catch (error) {
+    console.error("Error generating PNG:", error);
+    res.status(500).json({ error: "Failed to generate PNG" });
+  }
+});
+router14.get("/favicon.ico", async (req, res) => {
+  try {
+    const svg = generateLogoSVG(32, true);
+    const pngBuffer = await sharp(Buffer.from(svg)).resize(32, 32).png().toBuffer();
+    res.setHeader("Content-Type", "image/x-icon");
+    res.setHeader("Content-Disposition", 'attachment; filename="favicon.ico"');
+    res.send(pngBuffer);
+  } catch (error) {
+    console.error("Error generating favicon:", error);
+    res.status(500).json({ error: "Failed to generate favicon" });
+  }
+});
+router14.get("/favicon-png", async (req, res) => {
+  try {
+    const sizes = [16, 32, 48, 64, 128, 256];
+    const requestedSize = parseInt(req.query.size);
+    const size = sizes.includes(requestedSize) ? requestedSize : 32;
+    const svg = generateLogoSVG(size, true);
+    const pngBuffer = await sharp(Buffer.from(svg)).resize(size, size).png().toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", `attachment; filename="favicon-${size}x${size}.png"`);
+    res.send(pngBuffer);
+  } catch (error) {
+    console.error("Error generating favicon PNG:", error);
+    res.status(500).json({ error: "Failed to generate favicon PNG" });
+  }
+});
+router14.get("/apple-touch-icon", async (req, res) => {
+  try {
+    const size = 180;
+    const svg = generateLogoSVG(size, true);
+    const pngBuffer = await sharp(Buffer.from(svg)).resize(size, size).png().toBuffer();
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", 'attachment; filename="apple-touch-icon.png"');
+    res.send(pngBuffer);
+  } catch (error) {
+    console.error("Error generating Apple touch icon:", error);
+    res.status(500).json({ error: "Failed to generate Apple touch icon" });
+  }
+});
+router14.get("/", (req, res) => {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Downloads</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff; 
+      padding: 40px; 
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+    h1 { margin-bottom: 30px; text-align: center; }
+    .preview { 
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+      padding: 60px 40px; 
+      border-radius: 24px; 
+      text-align: center;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .preview iframe {
+      border: none;
+      border-radius: 16px;
+      background: transparent;
+    }
+    .preview-label {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+    .downloads { display: grid; gap: 12px; }
+    button.btn { 
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: rgba(255,255,255,0.08); 
+      color: #fff; 
+      padding: 16px 24px; 
+      border-radius: 12px; 
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    button.btn:hover { 
+      background: rgba(255,255,255,0.15); 
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+    button.btn:disabled { opacity: 0.5; cursor: wait; }
+    .btn span { opacity: 0.6; font-size: 14px; }
+    h2 { margin-top: 30px; margin-bottom: 15px; font-size: 18px; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <h1>ChefSpAIce Logo Downloads</h1>
+  
+  <div class="preview">
+    <iframe src="/logo-preview" width="280" height="280" title="Logo Preview"></iframe>
+    <div class="preview-label">Live AppLogo Component</div>
+  </div>
+  
+  <h2>Full Logo (with background)</h2>
+  <div class="downloads">
+    <button class="btn" onclick="download('/api/logo/png?size=1024', 'chefspace-logo-1024.png')">
+      PNG 1024x1024 <span>- High resolution</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/png?size=512', 'chefspace-logo-512.png')">
+      PNG 512x512 <span>- Standard</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/svg', 'chefspace-logo.svg')">
+      SVG <span>- Vector format, scalable</span>
+    </button>
+  </div>
+  
+  <h2>Favicons</h2>
+  <div class="downloads">
+    <button class="btn" onclick="download('/api/logo/favicon.ico', 'favicon.ico')">
+      favicon.ico <span>- 32x32</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/favicon-png?size=16', 'favicon-16x16.png')">
+      favicon-16x16.png
+    </button>
+    <button class="btn" onclick="download('/api/logo/favicon-png?size=32', 'favicon-32x32.png')">
+      favicon-32x32.png
+    </button>
+    <button class="btn" onclick="download('/api/logo/favicon-png?size=48', 'favicon-48x48.png')">
+      favicon-48x48.png
+    </button>
+  </div>
+  
+  <h2>App Icons</h2>
+  <div class="downloads">
+    <button class="btn" onclick="download('/api/logo/apple-touch-icon', 'apple-touch-icon.png')">
+      Apple Touch Icon <span>- 180x180</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/png?size=192', 'icon-192x192.png')">
+      Android Icon <span>- 192x192</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/png?size=512', 'icon-512x512.png')">
+      PWA Icon <span>- 512x512</span>
+    </button>
+  </div>
+  
+  <h2>Icon Only (no background)</h2>
+  <div class="downloads">
+    <button class="btn" onclick="download('/api/logo/icon-svg', 'chefspace-icon.svg')">
+      SVG Icon Only <span>- Just the chef hat</span>
+    </button>
+    <button class="btn" onclick="download('/api/logo/png?size=512&background=false', 'chefspace-icon-512.png')">
+      PNG Icon Only <span>- Transparent background</span>
+    </button>
+  </div>
+
+  <script>
+    async function download(url, filename) {
+      const btn = event.target.closest('button');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Downloading...';
+      
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        URL.revokeObjectURL(objectUrl);
+        btn.innerHTML = 'Downloaded!';
+        setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500);
+      } catch (err) {
+        btn.innerHTML = 'Error - try again';
+        setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+      }
+    }
+  </script>
+</body>
+</html>`;
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
+});
+var logo_export_router_default = router14;
 
 // server/stripe/subscriptionRouter.ts
 init_db();
 init_schema();
-import { Router as Router14 } from "express";
+import { Router as Router16 } from "express";
 import { eq as eq8 } from "drizzle-orm";
 
 // server/stripe/stripeClient.ts
@@ -8708,7 +10239,9 @@ async function getStripeSync() {
 }
 
 // server/stripe/subscriptionRouter.ts
-var router13 = Router14();
+init_subscriptionService();
+init_subscription();
+var router15 = Router16();
 var pricesCache = {
   data: null,
   timestamp: 0
@@ -8727,7 +10260,7 @@ async function getAuthenticatedUser(req) {
   const [user] = await db.select().from(users).where(eq8(users.id, session.userId)).limit(1);
   return user ? { id: user.id, email: user.email } : null;
 }
-router13.get("/prices", async (_req, res) => {
+router15.get("/prices", async (_req, res) => {
   try {
     if (pricesCache.data && Date.now() - pricesCache.timestamp < PRICES_CACHE_TTL_MS) {
       return res.json(pricesCache.data);
@@ -8777,7 +10310,7 @@ router13.get("/prices", async (_req, res) => {
     res.status(500).json({ error: "Failed to fetch subscription prices" });
   }
 });
-router13.post("/create-checkout-session", async (req, res) => {
+router15.post("/create-checkout-session", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -8840,7 +10373,7 @@ router13.post("/create-checkout-session", async (req, res) => {
     res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
-router13.post("/create-portal-session", async (req, res) => {
+router15.post("/create-portal-session", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -8862,7 +10395,7 @@ router13.post("/create-portal-session", async (req, res) => {
     res.status(500).json({ error: "Failed to create billing portal session" });
   }
 });
-router13.get("/status", async (req, res) => {
+router15.get("/status", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -8893,7 +10426,7 @@ router13.get("/status", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch subscription status" });
   }
 });
-router13.get("/publishable-key", async (_req, res) => {
+router15.get("/publishable-key", async (_req, res) => {
   try {
     const publishableKey = await getStripePublishableKey();
     res.json({ publishableKey });
@@ -8902,7 +10435,7 @@ router13.get("/publishable-key", async (_req, res) => {
     res.status(500).json({ error: "Failed to get Stripe publishable key" });
   }
 });
-router13.get("/session/:sessionId", async (req, res) => {
+router15.get("/session/:sessionId", async (req, res) => {
   try {
     const { sessionId } = req.params;
     if (!sessionId) {
@@ -8929,7 +10462,45 @@ router13.get("/session/:sessionId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch session details" });
   }
 });
-router13.get("/me", async (req, res) => {
+router15.post("/sync-revenuecat", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const { tier, status, productId, expirationDate } = req.body;
+    if (!tier || !status) {
+      return res.status(400).json({ error: "tier and status are required" });
+    }
+    const validTiers = ["BASIC", "PRO"];
+    const validStatuses = ["active", "trialing", "canceled", "expired", "past_due"];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier. Must be BASIC or PRO" });
+    }
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const updateData = {
+      subscriptionTier: tier,
+      subscriptionStatus: status,
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    if (expirationDate) {
+      updateData.trialEndsAt = new Date(expirationDate);
+    }
+    await db.update(users).set(updateData).where(eq8(users.id, user.id));
+    console.log(`[Sync RevenueCat] Updated user ${user.id}: tier=${tier}, status=${status}`);
+    res.json({
+      success: true,
+      tier,
+      status
+    });
+  } catch (error) {
+    console.error("Error syncing RevenueCat purchase:", error);
+    res.status(500).json({ error: "Failed to sync purchase" });
+  }
+});
+router15.get("/me", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -8953,7 +10524,7 @@ router13.get("/me", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch subscription info" });
   }
 });
-router13.get("/check-limit/:limitType", async (req, res) => {
+router15.get("/check-limit/:limitType", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -8980,7 +10551,7 @@ router13.get("/check-limit/:limitType", async (req, res) => {
     res.status(500).json({ error: "Failed to check limit" });
   }
 });
-router13.get("/check-feature/:feature", async (req, res) => {
+router15.get("/check-feature/:feature", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -9012,7 +10583,7 @@ router13.get("/check-feature/:feature", async (req, res) => {
     res.status(500).json({ error: "Failed to check feature access" });
   }
 });
-router13.post("/upgrade", async (req, res) => {
+router15.post("/upgrade", async (req, res) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
@@ -9106,13 +10677,13 @@ router13.post("/upgrade", async (req, res) => {
     res.status(500).json({ error: "Failed to create upgrade session" });
   }
 });
-var subscriptionRouter_default = router13;
+var subscriptionRouter_default = router15;
 
 // server/routers/admin/subscriptions.router.ts
 init_db();
 init_schema();
-import { Router as Router15 } from "express";
-import { eq as eq10, sql as sql2, and as and3, count } from "drizzle-orm";
+import { Router as Router17 } from "express";
+import { eq as eq10, sql as sql2, and as and4, count } from "drizzle-orm";
 
 // server/middleware/requireAdmin.ts
 init_db();
@@ -9146,9 +10717,9 @@ async function requireAdmin(req, res, next) {
 }
 
 // server/routers/admin/subscriptions.router.ts
-var router14 = Router15();
-router14.use(requireAdmin);
-router14.get("/", async (req, res) => {
+var router16 = Router17();
+router16.use(requireAdmin);
+router16.get("/", async (req, res) => {
   try {
     const { status } = req.query;
     let query = db.select({
@@ -9169,8 +10740,6 @@ router14.get("/", async (req, res) => {
       updatedAt: subscriptions.updatedAt,
       userEmail: users.email,
       userDisplayName: users.displayName,
-      userFirstName: users.firstName,
-      userLastName: users.lastName,
       userCreatedAt: users.createdAt
     }).from(subscriptions).leftJoin(users, eq10(subscriptions.userId, users.id));
     if (status && typeof status === "string" && status !== "all") {
@@ -9197,8 +10766,6 @@ router14.get("/", async (req, res) => {
         id: row.userId,
         email: row.userEmail || "",
         displayName: row.userDisplayName,
-        firstName: row.userFirstName,
-        lastName: row.userLastName,
         createdAt: row.userCreatedAt
       }
     }));
@@ -9208,7 +10775,7 @@ router14.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch subscriptions" });
   }
 });
-router14.get("/stats", async (_req, res) => {
+router16.get("/stats", async (_req, res) => {
   try {
     const [totalActiveResult] = await db.select({ count: count() }).from(subscriptions).where(eq10(subscriptions.status, "active"));
     const [totalTrialingResult] = await db.select({ count: count() }).from(subscriptions).where(eq10(subscriptions.status, "trialing"));
@@ -9216,19 +10783,19 @@ router14.get("/stats", async (_req, res) => {
     const [totalCanceledResult] = await db.select({ count: count() }).from(subscriptions).where(eq10(subscriptions.status, "canceled"));
     const [totalSubscriptionsResult] = await db.select({ count: count() }).from(subscriptions);
     const monthlyActiveResults = await db.select({ count: count() }).from(subscriptions).where(
-      and3(
+      and4(
         eq10(subscriptions.status, "active"),
         eq10(subscriptions.planType, "monthly")
       )
     );
     const annualActiveResults = await db.select({ count: count() }).from(subscriptions).where(
-      and3(
+      and4(
         eq10(subscriptions.status, "active"),
         eq10(subscriptions.planType, "annual")
       )
     );
     const [convertedFromTrialResult] = await db.select({ count: count() }).from(subscriptions).where(
-      and3(
+      and4(
         eq10(subscriptions.status, "active"),
         sql2`${subscriptions.trialStart} IS NOT NULL`
       )
@@ -9265,7 +10832,7 @@ router14.get("/stats", async (_req, res) => {
     res.status(500).json({ error: "Failed to fetch subscription stats" });
   }
 });
-router14.get("/:id", async (req, res) => {
+router16.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await db.select({
@@ -9286,8 +10853,6 @@ router14.get("/:id", async (req, res) => {
       updatedAt: subscriptions.updatedAt,
       userEmail: users.email,
       userDisplayName: users.displayName,
-      userFirstName: users.firstName,
-      userLastName: users.lastName,
       userCreatedAt: users.createdAt
     }).from(subscriptions).leftJoin(users, eq10(subscriptions.userId, users.id)).where(eq10(subscriptions.id, id)).limit(1);
     if (!result) {
@@ -9313,8 +10878,6 @@ router14.get("/:id", async (req, res) => {
         id: result.userId,
         email: result.userEmail || "",
         displayName: result.userDisplayName,
-        firstName: result.userFirstName,
-        lastName: result.userLastName,
         createdAt: result.userCreatedAt
       }
     };
@@ -9324,16 +10887,290 @@ router14.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch subscription details" });
   }
 });
-var subscriptions_router_default = router14;
+var subscriptions_router_default = router16;
+
+// server/routers/revenuecat-webhook.router.ts
+init_db();
+init_schema();
+import express from "express";
+import { eq as eq11 } from "drizzle-orm";
+var router17 = express.Router();
+var REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET || "";
+function verifyWebhookSecret(req) {
+  if (!REVENUECAT_WEBHOOK_SECRET) {
+    console.warn("[RevenueCat] No webhook secret configured");
+    return true;
+  }
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return false;
+  }
+  const providedSecret = authHeader.slice(7);
+  return providedSecret === REVENUECAT_WEBHOOK_SECRET;
+}
+function mapProductIdToTier(productId) {
+  const lowerProductId = productId.toLowerCase();
+  if (lowerProductId.includes("pro")) {
+    return "PRO";
+  }
+  if (lowerProductId.includes("basic")) {
+    return "BASIC";
+  }
+  return "BASIC";
+}
+function mapEntitlementToTier(entitlementId) {
+  if (!entitlementId) return null;
+  const lowerEntitlement = entitlementId.toLowerCase();
+  if (lowerEntitlement === "pro") {
+    return "PRO";
+  }
+  if (lowerEntitlement === "basic") {
+    return "BASIC";
+  }
+  return null;
+}
+async function handleSubscriptionUpdate(event, status, keepTier) {
+  const userId = event.app_user_id;
+  const entitlementTier = mapEntitlementToTier(event.entitlement_id);
+  const productTier = mapProductIdToTier(event.product_id);
+  const tier = entitlementTier || productTier;
+  console.log(`[RevenueCat] Processing: product=${event.product_id}, entitlement=${event.entitlement_id}, resolvedTier=${tier}`);
+  const [user] = await db.select().from(users).where(eq11(users.id, userId)).limit(1);
+  if (!user) {
+    console.log(`[RevenueCat] User not found: ${userId}`);
+    return;
+  }
+  await db.update(users).set({
+    subscriptionTier: keepTier ? tier : "BASIC",
+    subscriptionStatus: status,
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq11(users.id, userId));
+  console.log(`[RevenueCat] Updated subscription for user ${userId}: tier=${keepTier ? tier : "BASIC"}, status=${status}`);
+}
+router17.post("/", async (req, res) => {
+  try {
+    if (!verifyWebhookSecret(req)) {
+      console.warn("[RevenueCat] Invalid webhook secret");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const webhookData = req.body;
+    const { event } = webhookData;
+    console.log(`[RevenueCat] Received event: ${event.type} for user ${event.app_user_id}`);
+    switch (event.type) {
+      case "INITIAL_PURCHASE":
+      case "RENEWAL":
+      case "PRODUCT_CHANGE":
+      case "UNCANCELLATION":
+        await handleSubscriptionUpdate(event, "active", true);
+        break;
+      case "CANCELLATION":
+        await handleSubscriptionUpdate(event, "canceled", true);
+        break;
+      case "BILLING_ISSUE":
+        await handleSubscriptionUpdate(event, "past_due", true);
+        break;
+      case "EXPIRATION":
+        await handleSubscriptionUpdate(event, "expired", false);
+        break;
+      case "TEST":
+        console.log("[RevenueCat] Test event received");
+        break;
+      default:
+        console.log(`[RevenueCat] Unhandled event type: ${event.type}`);
+    }
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("[RevenueCat] Webhook error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+var revenuecat_webhook_router_default = router17;
+
+// server/routers/instacart.router.ts
+import { Router as Router18 } from "express";
+var router18 = Router18();
+function getInstacartBaseUrl() {
+  return process.env.NODE_ENV === "production" ? "https://connect.instacart.com" : "https://connect.dev.instacart.tools";
+}
+function getInstacartApiKey() {
+  return process.env.INSTACART_API_KEY || null;
+}
+function isInstacartConfigured() {
+  return !!getInstacartApiKey();
+}
+router18.get("/status", (_req, res) => {
+  const configured = isInstacartConfigured();
+  res.json({
+    configured,
+    message: configured ? "Instacart API is configured and ready" : "Instacart API key not configured"
+  });
+});
+router18.post("/products-link", async (req, res) => {
+  const apiKey = getInstacartApiKey();
+  if (!apiKey) {
+    return res.status(503).json({
+      error: "Instacart integration not configured",
+      code: "INSTACART_NOT_CONFIGURED"
+    });
+  }
+  try {
+    const { products, title, linkbackUrl } = req.body;
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products array is required" });
+    }
+    const lineItems = products.map((p) => ({
+      name: p.name,
+      quantity: p.quantity || 1,
+      unit: p.unit || "each",
+      display_text: `${p.quantity || 1} ${p.unit || ""} ${p.name}`.trim()
+    }));
+    const requestBody = {
+      title: title || "Shopping List",
+      link_type: "shopping_list",
+      line_items: lineItems
+    };
+    if (linkbackUrl) {
+      requestBody.landing_page_configuration = {
+        partner_linkback_url: linkbackUrl
+      };
+    }
+    const response = await fetch(`${getInstacartBaseUrl()}/idp/v1/products/products_link`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Instacart] Products link error:", response.status, errorText);
+      return res.status(response.status).json({
+        error: "Failed to create Instacart shopping link",
+        details: errorText
+      });
+    }
+    const data = await response.json();
+    return res.json(data);
+  } catch (error) {
+    console.error("[Instacart] Products link exception:", error);
+    return res.status(500).json({ error: "Failed to create shopping link" });
+  }
+});
+router18.post("/recipe", async (req, res) => {
+  const apiKey = getInstacartApiKey();
+  if (!apiKey) {
+    return res.status(503).json({
+      error: "Instacart integration not configured",
+      code: "INSTACART_NOT_CONFIGURED"
+    });
+  }
+  try {
+    const { title, ingredients, imageUrl, linkbackUrl } = req.body;
+    if (!title || !ingredients || !Array.isArray(ingredients)) {
+      return res.status(400).json({
+        error: "Recipe title and ingredients array are required"
+      });
+    }
+    const lineItems = ingredients.map((i) => ({
+      name: i.name,
+      quantity: i.quantity || 1,
+      unit: i.unit || "each",
+      display_text: `${i.quantity || 1} ${i.unit || ""} ${i.name}`.trim()
+    }));
+    const requestBody = {
+      title,
+      link_type: "recipe",
+      line_items: lineItems
+    };
+    if (imageUrl) {
+      requestBody.image_url = imageUrl;
+    }
+    if (linkbackUrl) {
+      requestBody.landing_page_configuration = {
+        partner_linkback_url: linkbackUrl
+      };
+    }
+    const response = await fetch(`${getInstacartBaseUrl()}/idp/v1/products/products_link`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Instacart] Recipe link error:", response.status, errorText);
+      return res.status(response.status).json({
+        error: "Failed to create Instacart recipe link",
+        details: errorText
+      });
+    }
+    const data = await response.json();
+    return res.json(data);
+  } catch (error) {
+    console.error("[Instacart] Recipe link exception:", error);
+    return res.status(500).json({ error: "Failed to create recipe shopping link" });
+  }
+});
+var instacart_router_default = router18;
+
+// server/routers/donations.router.ts
+import { Router as Router19 } from "express";
+var router19 = Router19();
+router19.post("/create-checkout-session", async (req, res) => {
+  try {
+    const { amount, anonymous, successUrl, cancelUrl } = req.body;
+    if (!amount || typeof amount !== "number" || amount < 100) {
+      return res.status(400).json({ error: "Invalid donation amount" });
+    }
+    if (!successUrl || !cancelUrl) {
+      return res.status(400).json({ error: "Success and cancel URLs are required" });
+    }
+    const stripe = await getUncachableStripeClient();
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "ChefSpAIce Donation",
+              description: "Support ChefSpAIce's mission to reduce food waste"
+            },
+            unit_amount: amount
+          },
+          quantity: 1
+        }
+      ],
+      mode: "payment",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        type: "donation",
+        anonymous: anonymous ? "true" : "false"
+      }
+    });
+    return res.json({ url: session.url });
+  } catch (error) {
+    console.error("Donation checkout error:", error);
+    return res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+var donations_router_default = router19;
 
 // server/routes.ts
+init_usda();
 init_db();
 init_schema();
 
 // server/middleware/requireSubscription.ts
 init_db();
 init_schema();
-import { eq as eq11 } from "drizzle-orm";
+import { eq as eq12 } from "drizzle-orm";
 var ACTIVE_STATUSES = ["active", "trialing"];
 async function requireSubscription(req, res, next) {
   try {
@@ -9341,7 +11178,7 @@ async function requireSubscription(req, res, next) {
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    const [subscription] = await db.select().from(subscriptions).where(eq11(subscriptions.userId, userId)).limit(1);
+    const [subscription] = await db.select().from(subscriptions).where(eq12(subscriptions.userId, userId)).limit(1);
     if (!subscription) {
       return res.status(403).json({
         error: "subscription_required",
@@ -9362,41 +11199,44 @@ async function requireSubscription(req, res, next) {
 }
 
 // server/routes.ts
-import { inArray as inArray2 } from "drizzle-orm";
-var openai8 = new OpenAI9({
+init_subscriptionService();
+import { inArray as inArray3 } from "drizzle-orm";
+var openai8 = new OpenAI10({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 });
-var shelfLifeRequestSchema = z7.object({
-  foodName: z7.string().min(1, "Food name is required"),
-  category: z7.string().optional(),
-  storageLocation: z7.string().optional()
+var shelfLifeRequestSchema = z10.object({
+  foodName: z10.string().min(1, "Food name is required"),
+  category: z10.string().optional(),
+  storageLocation: z10.string().optional()
 });
 var aiSuggestionCache = /* @__PURE__ */ new Map();
-var CACHE_TTL_MS6 = 24 * 60 * 60 * 1e3;
-function getCacheKey2(foodName, storageLocation) {
+var CACHE_TTL_MS5 = 24 * 60 * 60 * 1e3;
+function getCacheKey(foodName, storageLocation) {
   return `${foodName.toLowerCase().trim()}:${(storageLocation || "refrigerator").toLowerCase().trim()}`;
 }
-function getFromCache3(key) {
+function getFromCache2(key) {
   const entry = aiSuggestionCache.get(key);
   if (!entry) return null;
-  if (Date.now() - entry.timestamp > CACHE_TTL_MS6) {
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS5) {
     aiSuggestionCache.delete(key);
     return null;
   }
   return entry.response;
 }
-function setInCache3(key, response) {
+function setInCache2(key, response) {
   aiSuggestionCache.set(key, {
     response,
     timestamp: Date.now()
   });
 }
 async function getAIShelfLifeSuggestion(foodName, category, storageLocation) {
-  const cacheKey = getCacheKey2(foodName, storageLocation);
-  const cached = getFromCache3(cacheKey);
+  const cacheKey = getCacheKey(foodName, storageLocation);
+  const cached = getFromCache2(cacheKey);
   if (cached) {
-    console.log(`Shelf life cache hit for: ${foodName}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[ShelfLife] Cache hit for: ${foodName}`);
+    }
     return cached;
   }
   const prompt = `As a food safety expert, estimate how long this food item will stay fresh:
@@ -9443,8 +11283,10 @@ Return JSON: {
       notes: parsed.notes || void 0,
       signsOfSpoilage: parsed.signs_of_spoilage || void 0
     };
-    setInCache3(cacheKey, response);
-    console.log(`Shelf life AI response cached for: ${foodName}`);
+    setInCache2(cacheKey, response);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[ShelfLife] AI response cached for: ${foodName}`);
+    }
     return response;
   } catch (error) {
     console.error("AI shelf life estimation error:", error);
@@ -9495,25 +11337,74 @@ function mapFoodCategory(usdaCategory) {
   return "Pantry Staples";
 }
 async function registerRoutes(app2) {
+  app2.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  });
+  app2.head("/api/health", (_req, res) => {
+    res.status(200).end();
+  });
   app2.use("/api/auth", auth_router_default);
   app2.use("/api/auth/social", social_auth_router_default);
   app2.use("/api/subscriptions", subscriptionRouter_default);
   app2.use("/api/feedback", feedback_router_default);
   app2.use("/api/cooking-terms", cooking_terms_router_default);
   app2.use("/api/appliances", appliancesRouter);
+  app2.use("/api/webhooks/revenuecat", revenuecat_webhook_router_default);
+  app2.use("/api/logo", logo_export_router_default);
+  app2.use("/api/instacart", instacart_router_default);
+  app2.use("/api/donations", donations_router_default);
+  app2.post("/api/pre-register", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      const normalizedEmail = email.toLowerCase().trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return res.status(400).json({ error: "Please enter a valid email address" });
+      }
+      const [existingUser] = await db.select().from(users).where(eq14(users.email, normalizedEmail)).limit(1);
+      if (existingUser) {
+        return res.json({
+          success: true,
+          message: "Thanks! We'll notify you when the app is available in the App Store and Google Play."
+        });
+      }
+      const now = /* @__PURE__ */ new Date();
+      await db.insert(users).values({
+        email: normalizedEmail,
+        displayName: normalizedEmail.split("@")[0],
+        hasCompletedOnboarding: false,
+        isActivated: false,
+        preRegistrationSource: "landing",
+        preRegisteredAt: now,
+        subscriptionStatus: "none",
+        subscriptionTier: "BASIC"
+      });
+      return res.json({
+        success: true,
+        message: "Thanks! We'll notify you when the app is available in the App Store and Google Play."
+      });
+    } catch (error) {
+      console.error("Pre-registration error:", error);
+      return res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
   app2.use("/api/admin/subscriptions", requireAdmin, subscriptions_router_default);
   app2.use("/api/suggestions", requireAuth, requireSubscription, suggestions_router_default);
   app2.use("/api/recipes", requireAuth, requireSubscription, recipes_router_default);
   app2.use("/api/nutrition", requireAuth, requireSubscription, nutrition_router_default);
-  app2.use("/api/instacart", requireAuth, requireSubscription, instacart_router_default);
   app2.use("/api/user/appliances", requireAuth, requireSubscription, userAppliancesRouter);
   app2.use("/api/voice", requireAuth, requireSubscription, voice_router_default);
   app2.use("/api/ai", requireAuth, requireSubscription, image_analysis_router_default);
+  app2.use("/api/receipt", requireAuth, requireSubscription, receipt_analysis_router_default);
   app2.use("/api/ingredients", requireAuth, requireSubscription, ingredients_router_default);
   app2.use("/api/sync", requireAuth, requireSubscription, sync_router_default);
+  app2.use("/api/recipe-images", requireAuth, requireSubscription, recipeImages_router_default);
   app2.post("/api/chat", async (req, res) => {
     try {
-      const { message, context, history, inventory, preferences, equipment, userId } = req.body;
+      const { message, context, history, inventory, preferences, equipment } = req.body;
       if (!message) {
         return res.status(400).json({ error: "Message is required" });
       }
@@ -9522,7 +11413,7 @@ async function registerRoutes(app2) {
       let authenticatedUserId = null;
       if (authHeader?.startsWith("Bearer ")) {
         const token = authHeader.slice(7);
-        const sessions = await db.select().from(userSessions).where(eq13(userSessions.token, token));
+        const sessions = await db.select().from(userSessions).where(eq14(userSessions.token, token));
         if (sessions.length > 0 && new Date(sessions[0].expiresAt) > /* @__PURE__ */ new Date()) {
           authenticatedUserId = sessions[0].userId;
         }
@@ -9588,7 +11479,7 @@ ${prefParts.join("\n")}`;
             return NaN;
           }).filter((id) => !isNaN(id));
           if (equipmentIds.length > 0) {
-            const applianceRecords = await db.select({ id: appliances.id, name: appliances.name }).from(appliances).where(inArray2(appliances.id, equipmentIds));
+            const applianceRecords = await db.select({ id: appliances.id, name: appliances.name }).from(appliances).where(inArray3(appliances.id, equipmentIds));
             if (applianceRecords.length > 0) {
               const applianceNames = applianceRecords.map((a) => a.name);
               equipmentContext = `
@@ -9686,10 +11577,16 @@ BEHAVIOR GUIDELINES:
           max_completion_tokens: 1024
         });
         const finalReply = finalCompletion.choices[0]?.message?.content || "I've completed the action for you.";
+        const navigationResult = actionResults.find((ar) => {
+          const result = ar.result;
+          return result?.navigateTo;
+        });
+        const navigateTo = navigationResult ? navigationResult.result.navigateTo : void 0;
         return res.json({
           reply: finalReply,
           actions: actionResults.map((ar) => ar.result),
-          refreshData: true
+          refreshData: true,
+          navigateTo
         });
       }
       const reply = responseMessage?.content || "I'm sorry, I couldn't process that request.";
@@ -9844,9 +11741,7 @@ BEHAVIOR GUIDELINES:
           ingredients: mapped.ingredients || null,
           source: "usda"
         };
-        console.log(
-          `Found USDA product for barcode ${cleanCode}: ${product2.name}`
-        );
+        console.log(`[Barcode] Found USDA product for ${cleanCode}: ${product2.name}`);
         return res.json({ product: product2 });
       }
       const response = await fetch(
@@ -9858,14 +11753,12 @@ BEHAVIOR GUIDELINES:
         }
       );
       if (!response.ok) {
-        console.log(
-          `OpenFoodFacts API error for barcode ${cleanCode}: ${response.status}`
-        );
+        console.log(`[Barcode] OpenFoodFacts API error for ${cleanCode}: ${response.status}`);
         return res.json({ product: null, message: "Product not found" });
       }
       const data = await response.json();
       if (data.status !== 1 || !data.product) {
-        console.log(`Product not found for barcode ${cleanCode}`);
+        console.log(`[Barcode] Product not found for ${cleanCode}`);
         return res.json({
           product: null,
           message: "Product not found in database"
@@ -9896,9 +11789,7 @@ BEHAVIOR GUIDELINES:
         ingredients: p.ingredients_text || null,
         source: "openfoodfacts"
       };
-      console.log(
-        `Found OpenFoodFacts product for barcode ${cleanCode}: ${product.name}`
-      );
+      console.log(`[Barcode] Found OpenFoodFacts product for ${cleanCode}: ${product.name}`);
       res.json({ product });
     } catch (error) {
       console.error("Barcode lookup error:", error);
@@ -9934,9 +11825,9 @@ BEHAVIOR GUIDELINES:
           mappedLocation
         );
         if (directMatch) {
-          console.log(
-            `Shelf life direct match for: ${foodName} in ${mappedLocation}`
-          );
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[ShelfLife] Direct match for: ${foodName} in ${mappedLocation}`);
+          }
           return res.json({
             suggestedDays: directMatch.days,
             confidence: "high",
@@ -9950,9 +11841,9 @@ BEHAVIOR GUIDELINES:
             mappedLocation
           );
           if (categoryMatch) {
-            console.log(
-              `Shelf life category match for: ${foodName} (${category}) in ${mappedLocation}`
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(`[ShelfLife] Category match for: ${foodName} (${category}) in ${mappedLocation}`);
+            }
             return res.json({
               suggestedDays: categoryMatch.days,
               confidence: "high",
@@ -9968,9 +11859,9 @@ BEHAVIOR GUIDELINES:
             mappedLocation
           );
           if (matchedEntry) {
-            console.log(
-              `Shelf life partial match for: ${foodName} -> ${partialMatch.matchedCategory} in ${mappedLocation}`
-            );
+            if (process.env.NODE_ENV !== "production") {
+              console.log(`[ShelfLife] Partial match for: ${foodName} -> ${partialMatch.matchedCategory} in ${mappedLocation}`);
+            }
             return res.json({
               suggestedDays: matchedEntry.days,
               confidence: "medium",
@@ -9978,9 +11869,9 @@ BEHAVIOR GUIDELINES:
               notes: matchedEntry.notes
             });
           }
-          console.log(
-            `Shelf life partial match (default location) for: ${foodName} -> ${partialMatch.matchedCategory}`
-          );
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[ShelfLife] Partial match (default location) for: ${foodName} -> ${partialMatch.matchedCategory}`);
+          }
           return res.json({
             suggestedDays: partialMatch.days,
             confidence: "medium",
@@ -9989,7 +11880,7 @@ BEHAVIOR GUIDELINES:
           });
         }
         try {
-          console.log(`Shelf life AI fallback for: ${foodName}`);
+          console.log(`[ShelfLife] AI fallback for: ${foodName}`);
           const aiSuggestion = await getAIShelfLifeSuggestion(
             foodName,
             category,
@@ -10104,6 +11995,57 @@ BEHAVIOR GUIDELINES:
   });
   if (process.env.NODE_ENV !== "production") {
     console.log("[TEST] Registering test endpoints for development mode");
+    app2.post("/api/test/create-test-user", async (req, res) => {
+      console.log("[TEST] create-test-user endpoint hit");
+      try {
+        const crypto = await import("crypto");
+        const testId = crypto.randomBytes(4).toString("hex");
+        const email = `test_${testId}@test.chefspaice.com`;
+        const plainPassword = "TestPassword123!";
+        const passwordHash = crypto.createHash("sha256").update(plainPassword).digest("hex");
+        const [newUser] = await db.insert(users).values({
+          email,
+          password: passwordHash,
+          displayName: `Test User ${testId}`,
+          subscriptionTier: "PRO",
+          subscriptionStatus: "trialing",
+          hasCompletedOnboarding: true,
+          createdAt: /* @__PURE__ */ new Date(),
+          updatedAt: /* @__PURE__ */ new Date()
+        }).returning();
+        if (!newUser) {
+          return res.status(500).json({ error: "Failed to create test user" });
+        }
+        const sessionToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
+        await db.insert(userSessions).values({
+          userId: newUser.id,
+          token: sessionToken,
+          expiresAt,
+          createdAt: /* @__PURE__ */ new Date()
+        });
+        res.cookie("chefspaice_auth", sessionToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 30 * 24 * 60 * 60 * 1e3,
+          path: "/"
+        });
+        console.log(`[TEST] Created test user: ${email} (id: ${newUser.id})`);
+        res.json({
+          success: true,
+          userId: newUser.id,
+          email,
+          password: plainPassword,
+          sessionToken,
+          tier: "PRO",
+          message: "Test user created with PRO trial. Session cookie set."
+        });
+      } catch (error) {
+        console.error("Error creating test user:", error);
+        res.status(500).json({ error: "Failed to create test user" });
+      }
+    });
     app2.post("/api/test/set-subscription-tier", requireAuth, async (req, res) => {
       console.log("[TEST] set-subscription-tier endpoint hit (with auth)");
       try {
@@ -10121,12 +12063,12 @@ BEHAVIOR GUIDELINES:
           subscriptionTier: tier,
           subscriptionStatus: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq13(users.id, userId));
+        }).where(eq14(users.id, userId));
         const { subscriptions: subscriptions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
         await db.update(subscriptions2).set({
           status: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq13(subscriptions2.userId, userId));
+        }).where(eq14(subscriptions2.userId, userId));
         console.log(`[TEST] Set user ${userId} to tier: ${tier}, status: ${newStatus}`);
         res.json({
           success: true,
@@ -10149,7 +12091,7 @@ BEHAVIOR GUIDELINES:
         if (!tier || !["BASIC", "PRO"].includes(tier)) {
           return res.status(400).json({ error: "Invalid tier. Must be 'BASIC' or 'PRO'" });
         }
-        const [user] = await db.select().from(users).where(eq13(users.email, email)).limit(1);
+        const [user] = await db.select().from(users).where(eq14(users.email, email)).limit(1);
         if (!user) {
           return res.status(404).json({ error: "User not found" });
         }
@@ -10159,12 +12101,12 @@ BEHAVIOR GUIDELINES:
           subscriptionTier: tier,
           subscriptionStatus: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq13(users.id, user.id));
+        }).where(eq14(users.id, user.id));
         const { subscriptions: subscriptions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
         await db.update(subscriptions2).set({
           status: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq13(subscriptions2.userId, user.id));
+        }).where(eq14(subscriptions2.userId, user.id));
         console.log(`[TEST] Set user ${user.id} (${email}) to tier: ${tier}, status: ${newStatus}`);
         res.json({
           success: true,
@@ -10223,15 +12165,16 @@ BEHAVIOR GUIDELINES:
 // server/index.ts
 import * as fs from "fs";
 import * as path from "path";
-import { Client } from "pg";
+import { Client as Client2 } from "pg";
 import { runMigrations } from "stripe-replit-sync";
 
 // server/stripe/webhookHandlers.ts
 init_db();
 init_schema();
-import { eq as eq14 } from "drizzle-orm";
+import { eq as eq15 } from "drizzle-orm";
 
 // server/stripe/subscriptionConfig.ts
+init_subscription();
 var SUBSCRIPTION_CONFIG = {
   TRIAL_DAYS: TRIAL_CONFIG.TRIAL_DAYS,
   BASIC_MONTHLY: {
@@ -10331,6 +12274,7 @@ async function getTierFromPriceId(priceId, stripe) {
 }
 
 // server/stripe/webhookHandlers.ts
+init_subscription();
 var WebhookHandlers = class {
   static async processWebhook(payload, signature, uuid) {
     if (!Buffer.isBuffer(payload)) {
@@ -10374,7 +12318,7 @@ async function processSubscriptionEvent(event) {
   }
 }
 async function findUserByStripeCustomerId(stripeCustomerId) {
-  const [subscription] = await db.select().from(subscriptions).where(eq14(subscriptions.stripeCustomerId, stripeCustomerId)).limit(1);
+  const [subscription] = await db.select().from(subscriptions).where(eq15(subscriptions.stripeCustomerId, stripeCustomerId)).limit(1);
   return subscription?.userId || null;
 }
 async function findUserIdFromCustomerMetadata(stripeCustomerId) {
@@ -10403,7 +12347,7 @@ async function updateUserSubscriptionTier(userId, tier, status, stripeCustomerId
   if (trialEnd) {
     updateData.trialEndsAt = trialEnd;
   }
-  await db.update(users).set(updateData).where(eq14(users.id, userId));
+  await db.update(users).set(updateData).where(eq15(users.id, userId));
   console.log(`[Webhook] Updated user ${userId} tier to ${tier}, status to ${status}`);
 }
 async function handleCheckoutSessionCompleted(session) {
@@ -10573,7 +12517,7 @@ async function handleSubscriptionUpdated(subscription) {
     cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
     canceledAt,
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq14(subscriptions.stripeCustomerId, stripeCustomerId));
+  }).where(eq15(subscriptions.stripeCustomerId, stripeCustomerId));
   const statusStr = subscription.status === "trialing" ? "trialing" : subscription.status === "active" ? "active" : subscription.status;
   await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, void 0, trialEnd);
   console.log("[Webhook] Subscription updated for user:", userId, "Tier:", tier, "Status:", subscription.status);
@@ -10592,7 +12536,7 @@ async function handleSubscriptionDeleted(subscription) {
     status: finalStatus,
     canceledAt,
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq14(subscriptions.stripeCustomerId, stripeCustomerId));
+  }).where(eq15(subscriptions.stripeCustomerId, stripeCustomerId));
   const userId = await findUserByStripeCustomerId(stripeCustomerId);
   if (userId) {
     await updateUserSubscriptionTier(userId, "BASIC" /* BASIC */, finalStatus);
@@ -10622,7 +12566,7 @@ async function handleInvoicePaid(invoice) {
     currentPeriodStart,
     currentPeriodEnd,
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq14(subscriptions.stripeCustomerId, stripeCustomerId));
+  }).where(eq15(subscriptions.stripeCustomerId, stripeCustomerId));
   console.log("[Webhook] Subscription confirmed active for customer:", stripeCustomerId);
 }
 async function handleInvoicePaymentFailed(invoice) {
@@ -10640,14 +12584,15 @@ async function handleInvoicePaymentFailed(invoice) {
   await db.update(subscriptions).set({
     status: "past_due",
     updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq14(subscriptions.stripeCustomerId, stripeCustomerId));
+  }).where(eq15(subscriptions.stripeCustomerId, stripeCustomerId));
   console.log("[Webhook] Subscription marked as past_due for customer:", stripeCustomerId);
 }
 
 // server/jobs/trialExpirationJob.ts
 init_db();
 init_schema();
-import { eq as eq15, and as and4, lt } from "drizzle-orm";
+init_subscriptionService();
+import { eq as eq16, and as and5, lt } from "drizzle-orm";
 async function checkExpiredTrials() {
   const now = /* @__PURE__ */ new Date();
   const errors = [];
@@ -10658,24 +12603,24 @@ async function checkExpiredTrials() {
       trialEnd: subscriptions.trialEnd,
       status: subscriptions.status
     }).from(subscriptions).where(
-      and4(
-        eq15(subscriptions.status, "trialing"),
+      and5(
+        eq16(subscriptions.status, "trialing"),
         lt(subscriptions.trialEnd, now)
       )
     );
-    console.log(`[TrialJob] Found ${expiredTrials.length} expired trials to process`);
     for (const trial of expiredTrials) {
       try {
         await expireTrialSubscription(trial.userId);
         expiredCount++;
-        console.log(`[TrialJob] Expired trial for user ${trial.userId}`);
       } catch (error) {
         const msg = `Failed to expire trial for user ${trial.userId}: ${error}`;
         errors.push(msg);
         console.error(`[TrialJob] ${msg}`);
       }
     }
-    console.log(`[TrialJob] Successfully expired ${expiredCount} trials`);
+    if (expiredCount > 0) {
+      console.log(`[TrialJob] Expired ${expiredCount} trial(s)`);
+    }
   } catch (error) {
     const msg = `Error querying expired trials: ${error}`;
     errors.push(msg);
@@ -10689,16 +12634,16 @@ function startTrialExpirationJob(intervalMs = 60 * 60 * 1e3) {
     console.log("[TrialJob] Job already running");
     return;
   }
-  console.log(`[TrialJob] Starting trial expiration job (interval: ${intervalMs}ms)`);
+  const intervalHours = Math.round(intervalMs / (60 * 60 * 1e3));
+  console.log(`[TrialJob] Started (interval: ${intervalHours}h)`);
   checkExpiredTrials();
   jobInterval = setInterval(async () => {
-    console.log("[TrialJob] Running scheduled trial expiration check...");
     await checkExpiredTrials();
   }, intervalMs);
 }
 
 // server/index.ts
-var app = express();
+var app = express2();
 var log = console.log;
 function setupCors(app2) {
   app2.use((req, res, next) => {
@@ -10734,13 +12679,13 @@ function setupCors(app2) {
 function setupBodyParsing(app2) {
   app2.use(cookieParser());
   app2.use(
-    express.json({
+    express2.json({
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       }
     })
   );
-  app2.use(express.urlencoded({ extended: false }));
+  app2.use(express2.urlencoded({ extended: false }));
   app2.use(
     fileUpload({
       limits: { fileSize: 10 * 1024 * 1024 },
@@ -10808,7 +12753,7 @@ function isMobileUserAgent(userAgent) {
 }
 function isWebRoute(pathname) {
   const cleanPath = pathname.toLowerCase().split("?")[0];
-  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/subscription-success", "/subscription-canceled", "/onboarding"];
+  const webRoutes = ["/", "/about", "/privacy", "/terms", "/attributions", "/subscription-success", "/subscription-canceled", "/onboarding", "/logo-preview", "/support"];
   return webRoutes.includes(cleanPath);
 }
 function configureExpoRouting(app2) {
@@ -10821,8 +12766,11 @@ function configureExpoRouting(app2) {
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
   const isDevelopment = process.env.NODE_ENV !== "production";
-  log("Configuring Expo routing");
-  log(`Environment: ${isDevelopment ? "development" : "production"}`);
+  const expoWebBuildPath = path.resolve(process.cwd(), "dist", "web");
+  const expoWebBuildExists = fs.existsSync(path.join(expoWebBuildPath, "index.html"));
+  if (!isDevelopment && expoWebBuildExists) {
+    log(`[Expo] Found web build at ${expoWebBuildPath}`);
+  }
   let metroProxy = null;
   if (isDevelopment) {
     metroProxy = createProxyMiddleware({
@@ -10831,7 +12779,7 @@ function configureExpoRouting(app2) {
       ws: true,
       on: {
         error: (err, req, res) => {
-          log(`Metro proxy error: ${err.message}`);
+          log(`[Expo] Metro proxy error: ${err.message}`);
           if (res && !res.headersSent && res.writeHead) {
             res.writeHead(502, { "Content-Type": "text/html" });
             res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
@@ -10839,6 +12787,15 @@ function configureExpoRouting(app2) {
         }
       }
     });
+  }
+  if (!isDevelopment && expoWebBuildExists) {
+    app2.use("/_expo", express2.static(path.join(expoWebBuildPath, "_expo"), {
+      maxAge: "1y",
+      immutable: true
+    }));
+    app2.use("/assets", express2.static(path.join(expoWebBuildPath, "assets"), {
+      maxAge: "1y"
+    }));
   }
   app2.use((req, res, next) => {
     if (req.path.startsWith("/api/test")) {
@@ -10857,12 +12814,21 @@ function configureExpoRouting(app2) {
         appName
       });
     }
-    const isMetroAsset = req.path.startsWith("/_expo") || req.path.startsWith("/node_modules") || req.path.endsWith(".bundle") || req.path.endsWith(".map");
-    if (isDevelopment && metroProxy) {
-      if (isWebRoute(req.path) || isMetroAsset) {
+    const isMetroAsset = req.path.startsWith("/_expo") || req.path.startsWith("/node_modules") || req.path.endsWith(".bundle") || req.path.endsWith(".map") || req.path.endsWith(".js") || req.path.endsWith(".css") || req.path.endsWith(".json");
+    const isStaticAsset = req.path.startsWith("/assets/showcase/");
+    if (isDevelopment && metroProxy && !isStaticAsset) {
+      if (isWebRoute(req.path) || isMetroAsset || req.path.startsWith("/assets/")) {
         return metroProxy(req, res, next);
       }
     } else if (isWebRoute(req.path)) {
+      if (expoWebBuildExists) {
+        res.set({
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        });
+        return res.sendFile(path.join(expoWebBuildPath, "index.html"));
+      }
       return serveLandingPage({
         req,
         res,
@@ -10872,10 +12838,11 @@ function configureExpoRouting(app2) {
     }
     next();
   });
-  log(`Expo routing: ${isDevelopment ? "Desktop browsers proxied to Metro" : "Serving landing page"}, mobile browsers get QR page`);
+  log(`[Expo] Routing ready (${isDevelopment ? "dev: Metro proxy" : expoWebBuildExists ? "prod: Expo web build" : "prod: landing page fallback"})`);
 }
 function configureStaticFiles(app2) {
-  app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  app2.use("/assets", express2.static(path.resolve(process.cwd(), "assets")));
+  app2.use("/attached_assets", express2.static(path.resolve(process.cwd(), "attached_assets")));
 }
 function setupErrorHandler(app2) {
   app2.use((err, _req, res, _next) => {
@@ -10888,16 +12855,15 @@ function setupErrorHandler(app2) {
 }
 async function warmupDatabase(databaseUrl, retries = 3, delay = 2e3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
-    const client = new Client({
+    const client = new Client2({
       connectionString: databaseUrl,
       connectionTimeoutMillis: 5e3
     });
     try {
-      log(`Warming up database connection... (attempt ${attempt}/${retries})`);
       await client.connect();
       await client.query("SELECT 1");
       await client.end();
-      log("Database connection ready");
+      log(`[Database] Connected (attempt ${attempt}/${retries})`);
       return true;
     } catch (error) {
       try {
@@ -10908,7 +12874,7 @@ async function warmupDatabase(databaseUrl, retries = 3, delay = 2e3) {
         console.error("Failed to connect to database after retries:", error);
         return false;
       }
-      log(`Database warmup attempt ${attempt} failed, retrying in ${delay}ms...`);
+      log(`[Database] Connection failed (attempt ${attempt}/${retries}), retrying...`);
       await new Promise((resolve2) => setTimeout(resolve2, delay));
     }
   }
@@ -10917,40 +12883,37 @@ async function warmupDatabase(databaseUrl, retries = 3, delay = 2e3) {
 async function initStripe(retries = 3, delay = 2e3) {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    log("DATABASE_URL not found, skipping Stripe initialization");
+    log("[Stripe] DATABASE_URL not found, skipping Stripe initialization");
     return;
   }
   const dbReady = await warmupDatabase(databaseUrl);
   if (!dbReady) {
-    log("Database not available, skipping Stripe initialization");
+    log("[Stripe] Database not available, skipping Stripe initialization");
     return;
   }
   try {
-    log("Initializing Stripe schema...");
     await runMigrations({
       databaseUrl
     });
-    log("Stripe schema ready");
   } catch (migrationError) {
     console.error("Failed to initialize Stripe schema:", migrationError);
     return;
   }
   try {
     const stripeSync2 = await getStripeSync();
-    log("Setting up managed webhook...");
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
-    const { webhook, uuid } = await stripeSync2.findOrCreateManagedWebhook(
+    const { uuid } = await stripeSync2.findOrCreateManagedWebhook(
       `${webhookBaseUrl}/api/stripe/webhook`,
       {
         enabled_events: ["*"],
         description: "Managed webhook for Stripe sync"
       }
     );
-    log(`Webhook configured: ${webhook.url} (UUID: ${uuid})`);
+    log(`[Stripe] Ready (webhook: ${uuid.slice(0, 8)}...)`);
     stripeSync2.syncBackfill({
       include: ["checkout_sessions"]
     }).then(() => {
-      log("Stripe checkout sessions synced");
+      log("[Stripe] Sessions synced");
     }).catch((err) => {
       console.error("Error syncing Stripe data:", err);
     });
@@ -10965,7 +12928,7 @@ async function initStripe(retries = 3, delay = 2e3) {
   setupCors(app);
   app.post(
     "/api/stripe/webhook/:uuid",
-    express.raw({ type: "application/json" }),
+    express2.raw({ type: "application/json" }),
     async (req, res) => {
       const signature = req.headers["stripe-signature"];
       if (!signature) {
@@ -10988,6 +12951,14 @@ async function initStripe(retries = 3, delay = 2e3) {
   );
   setupBodyParsing(app);
   setupRequestLogging(app);
+  app.use("/public/showcase", express2.static(path.join(process.cwd(), "assets/showcase"), {
+    maxAge: "1y",
+    immutable: true
+  }));
+  app.get("/api/showcase/:category/:filename", (req, res) => {
+    const { category, filename } = req.params;
+    res.redirect(301, `/public/showcase/${category}/${filename}`);
+  });
   configureExpoRouting(app);
   const server = await registerRoutes(app);
   configureStaticFiles(app);
@@ -11000,7 +12971,7 @@ async function initStripe(retries = 3, delay = 2e3) {
       reusePort: true
     },
     () => {
-      log(`express server serving on port ${port}`);
+      log(`[Server] Express server serving on port ${port}`);
       initStripe().catch((err) => {
         console.error("Background Stripe init failed:", err);
       });

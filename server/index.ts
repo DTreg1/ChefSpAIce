@@ -262,6 +262,12 @@ function configureExpoRouting(app: express.Application) {
     } else if (isWebRoute(req.path)) {
       // In production with Expo web build, serve the built index.html
       if (expoWebBuildExists) {
+        // Prevent caching of index.html so users always get the latest version
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
         return res.sendFile(path.join(expoWebBuildPath, "index.html"));
       }
       // Fallback to static landing page template if no web build
