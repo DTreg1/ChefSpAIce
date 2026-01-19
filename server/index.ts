@@ -358,7 +358,7 @@ async function initStripe(retries = 3, delay = 2000) {
     const stripeSync = await getStripeSync();
 
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
-    const { webhook, uuid } = await stripeSync.findOrCreateManagedWebhook(
+    const { uuid } = await stripeSync.findOrCreateManagedWebhook(
       `${webhookBaseUrl}/api/stripe/webhook`,
       {
         enabled_events: ["*"],

@@ -43,8 +43,6 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import {
-  getShelfLife,
-  getShelfLifeEntry,
   findPartialMatch,
   getShelfLifeForLocation,
 } from "./lib/shelf-life-data";
@@ -489,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-      const { message, context, history, inventory, preferences, equipment, userId } = req.body;
+      const { message, context, history, inventory, preferences, equipment } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "Message is required" });

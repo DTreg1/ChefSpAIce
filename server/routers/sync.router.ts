@@ -167,7 +167,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
       });
     }
 
-    const { operation, data, clientTimestamp } = parseResult.data;
+    const { operation, data } = parseResult.data;
 
     if (operation === "create") {
       const limitCheck = await checkPantryItemLimit(session.userId);
