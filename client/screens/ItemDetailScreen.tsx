@@ -305,16 +305,6 @@ export default function ItemDetailScreen() {
         foodName={item.name}
         defaultQuantity={item.quantity}
         nutrition={item.nutrition}
-        onSearchNutrition={() => {
-          Alert.alert(
-            "Search Nutrition",
-            `Search for nutrition information for "${item.name}"?`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Search", onPress: () => {} },
-            ],
-          );
-        }}
       />
 
       <GlassCard style={styles.section}>

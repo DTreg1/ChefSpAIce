@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import {
   searchUSDA,
-  getUSDAFood,
   mapUSDAToFoodItem,
   lookupUSDABarcode,
 } from "../../integrations/usda";

@@ -6,7 +6,7 @@ import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, AppColors } from "@/constants/theme";
 import type { NutritionInfo } from "@/lib/storage";
-import { calculateNutritionScore, getScoreDescription, NutritionScoreResult } from "@/lib/nutrition-score";
+import { calculateNutritionScore, getScoreDescription } from "@/lib/nutrition-score";
 
 interface NutritionScoreBadgeProps {
   nutrition: NutritionInfo;
@@ -21,7 +21,6 @@ export function NutritionScoreBadge({
   showLabel = false,
   onPress,
 }: NutritionScoreBadgeProps) {
-  const { theme } = useTheme();
   const scoreResult = calculateNutritionScore(nutrition);
 
   const badgeSize = size === "large" ? 36 : size === "medium" ? 28 : 22;
