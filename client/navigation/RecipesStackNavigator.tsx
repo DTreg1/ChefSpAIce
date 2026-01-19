@@ -11,6 +11,7 @@ export type RecipeSettings = {
   maxTime: number;
   mealType: "breakfast" | "lunch" | "dinner" | "snack" | "late night snack";
   ingredientCount: { min: number; max: number };
+  cuisine?: string;
 };
 
 export type RecipesStackParamList = {

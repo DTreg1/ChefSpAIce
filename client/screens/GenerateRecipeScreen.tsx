@@ -220,13 +220,20 @@ export default function GenerateRecipeScreen() {
       const dietaryRestrictions = userPreferences?.dietaryRestrictions?.length
         ? userPreferences.dietaryRestrictions.join(", ")
         : undefined;
-      const cuisinePreference = userPreferences?.cuisinePreferences?.length
-        ? userPreferences.cuisinePreferences[
-            Math.floor(
-              Math.random() * userPreferences.cuisinePreferences.length,
-            )
-          ]
-        : undefined;
+      
+      // Use custom cuisine if specified, otherwise random from preferences
+      const cuisinePreference = customSettings?.cuisine
+        ? customSettings.cuisine
+        : userPreferences?.cuisinePreferences?.length
+          ? userPreferences.cuisinePreferences[
+              Math.floor(
+                Math.random() * userPreferences.cuisinePreferences.length,
+              )
+            ]
+          : undefined;
+      
+      // Track if cuisine was randomly selected for UI feedback
+      const cuisineWasRandom = !customSettings?.cuisine && !!cuisinePreference;
 
       const macroTargets =
         userPreferences?.macroTargets || DEFAULT_MACRO_TARGETS;
