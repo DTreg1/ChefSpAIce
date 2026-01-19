@@ -244,7 +244,7 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "create_meal_plan",
-      description: "Create a weekly meal plan for the user. Use this when the user asks for meal planning, wants to plan their week, or asks for a weekly menu.",
+      description: "Create a weekly meal plan for the user. IMPORTANT: Before calling this function, you MUST first ask the user about their meal planning style if they haven't specified it. Ask if they want: 1) 'Batch prep' - cook all meals on one day to eat throughout the week, 2) 'Daily variety' - cook fresh meals each day with different recipes, or 3) 'Mixed' - some prep-ahead meals and some fresh cooking. Only call this function after you know their preference.",
       parameters: {
         type: "object",
         properties: {
@@ -267,9 +267,14 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
           dietaryRestrictions: {
             type: "string",
             description: "Any dietary restrictions to consider"
+          },
+          planningStyle: {
+            type: "string",
+            enum: ["batch_prep", "daily_variety", "mixed"],
+            description: "The meal planning style: 'batch_prep' for cooking all meals on one day to reheat throughout the week (meal prep Sunday style), 'daily_variety' for cooking fresh meals each day with different recipes, 'mixed' for a combination of some prep-ahead meals and some fresh cooking."
           }
         },
-        required: []
+        required: ["planningStyle"]
       }
     }
   },
@@ -698,9 +703,19 @@ export async function executeCreateMealPlan(
     daysCount?: number;
     mealsPerDay?: string[];
     dietaryRestrictions?: string;
+    planningStyle: "batch_prep" | "daily_variety" | "mixed";
   }
 ): Promise<ActionResult> {
   try {
+    // Runtime validation: require planningStyle
+    if (!args.planningStyle) {
+      return {
+        success: false,
+        message: "Before I create your meal plan, I need to know your preference! Would you like:\n\n1. **Batch prep** - Cook all meals on one day (like Sunday meal prep) to eat throughout the week\n2. **Daily variety** - Cook fresh meals each day with different recipes\n3. **Mixed** - Some prep-ahead meals and some fresh cooking\n\nWhich style works best for you?",
+        actionType: "create_meal_plan"
+      };
+    }
+
     const userData = await getUserSyncData(userId);
     
     if (userData.inventory.length === 0) {
@@ -714,13 +729,49 @@ export async function executeCreateMealPlan(
     const inventoryList = userData.inventory.map((item: FoodItem) => item.name).join(", ");
     const daysCount = args.daysCount || 7;
     const mealsPerDay = args.mealsPerDay || ["breakfast", "lunch", "dinner"];
+    const planningStyle = args.planningStyle;
+    
+    // Build style-specific instructions
+    let styleInstructions = "";
+    let styleDescription = "";
+    switch (planningStyle) {
+      case "batch_prep":
+        styleInstructions = `- BATCH PREP STYLE: Design meals that can all be cooked on ONE day (like Sunday meal prep) and stored/reheated throughout the week
+- Focus on dishes that reheat well: casseroles, grain bowls, soups, stews, roasted proteins, and sturdy salads
+- Group similar cooking tasks together (e.g., roast multiple proteins at once, cook all grains together)
+- Include prep instructions noting what can be made ahead
+- Avoid dishes that don't hold well (crispy items, delicate salads, etc.)
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "batch prep";
+        break;
+      case "daily_variety":
+        styleInstructions = `- DAILY VARIETY STYLE: Design fresh meals to be cooked each day with maximum variety
+- Each day should have distinct flavors and cuisines
+- Include quick weeknight meals (under 30 min) for busy days
+- Vary cooking methods throughout the week
+- Prioritize freshness and diverse ingredients
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "daily variety";
+        break;
+      case "mixed":
+        styleInstructions = `- MIXED STYLE: Combine some prep-ahead meals with some fresh daily cooking
+- Plan 2-3 meals that can be batch prepped on the weekend
+- Include 2-3 quick fresh meals for variety during the week
+- For EVERY meal, add a tag at the end: [PREP AHEAD] or [COOK FRESH]
+- Balance convenience with variety
+- Focus on balanced nutrition throughout the week`;
+        styleDescription = "mixed (prep-ahead + fresh)";
+        break;
+    }
     
     const mealPlanPrompt = `Create a ${daysCount}-day meal plan using these available ingredients: ${inventoryList}
+
+Planning Style: ${styleDescription.toUpperCase()}
 
 Requirements:
 - Include these meals each day: ${mealsPerDay.join(", ")}
 ${args.dietaryRestrictions ? `- Dietary restrictions: ${args.dietaryRestrictions}` : ""}
-- Focus on variety and balanced nutrition
+${styleInstructions}
 - Use the available ingredients efficiently
 
 Return as JSON:
@@ -729,13 +780,13 @@ Return as JSON:
     {
       "dayNumber": 1,
       "meals": {
-        "breakfast": "Meal name and brief description",
-        "lunch": "Meal name and brief description",
-        "dinner": "Meal name and brief description"
+        "breakfast": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}",
+        "lunch": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}",
+        "dinner": "Meal name and brief description${planningStyle === "mixed" ? " [PREP AHEAD or COOK FRESH]" : ""}"
       }
     }
   ],
-  "shoppingNeeded": ["any additional items needed"]
+  "shoppingNeeded": ["any additional items needed"]${planningStyle === "batch_prep" ? ',\n  "prepDayInstructions": "Brief overview of batch cooking order and tips"' : ""}
 }`;
 
     const completion = await openai.chat.completions.create({
@@ -787,7 +838,10 @@ Return as JSON:
       shoppingList: userData.shoppingList
     });
 
-    let message = `Created a ${daysCount}-day meal plan for you!`;
+    let message = `Created a ${daysCount}-day ${styleDescription} meal plan for you!`;
+    if (planningStyle === "batch_prep" && planData.prepDayInstructions) {
+      message += ` Prep day tip: ${planData.prepDayInstructions}`;
+    }
     if (planData.shoppingNeeded && planData.shoppingNeeded.length > 0) {
       message += ` Also added ${planData.shoppingNeeded.length} items to your shopping list.`;
     }
@@ -795,7 +849,7 @@ Return as JSON:
     return {
       success: true,
       message,
-      data: { mealPlans, shoppingNeeded: planData.shoppingNeeded },
+      data: { mealPlans, shoppingNeeded: planData.shoppingNeeded, prepDayInstructions: planData.prepDayInstructions },
       actionType: "create_meal_plan"
     };
   } catch (error) {
