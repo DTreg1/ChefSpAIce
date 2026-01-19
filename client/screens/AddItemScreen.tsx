@@ -1124,7 +1124,9 @@ export default function AddItemScreen() {
           defaultQuantity={parseInt(quantity) || 1}
           nutrition={nutrition}
         />
-      ) : hasSelectedFood ? (
+      ) : hasSelectedFood && barcode ? (
+        /* Only show scan nutrition option for barcode-scanned items
+           to avoid mismatch with keyword search + wrong physical product */
         <GlassCard style={styles.section}>
           <View style={styles.noNutritionContainer}>
             <Feather name="file-text" size={32} color={theme.textSecondary} />
