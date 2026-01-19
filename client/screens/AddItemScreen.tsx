@@ -524,6 +524,42 @@ export default function AddItemScreen() {
     });
   };
 
+  const handleSaveAndScanNext = async () => {
+    if (!hasSelectedFood || !name.trim()) {
+      Alert.alert("Error", "Please complete the item details first");
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const newItem: FoodItem = {
+        id: generateId(),
+        name: name.trim(),
+        barcode: barcode || undefined,
+        quantity: parseInt(quantity) || 1,
+        unit: unit || "pcs",
+        storageLocation,
+        purchaseDate,
+        expirationDate: expirationDate || defaultExpiration,
+        category,
+        usdaCategory: selectedFood?.usdaCategory,
+        notes: notes || undefined,
+        nutrition,
+        fdcId: selectedFood?.fdcId,
+      };
+
+      await storage.addItem(newItem);
+      
+      // Navigate to barcode scanner to scan next item
+      navigation.replace("IngredientScanner", { mode: "barcode" });
+    } catch (error) {
+      console.error("Error saving item:", error);
+      Alert.alert("Error", "Failed to save item. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!hasSelectedFood) {
       Alert.alert(
@@ -1136,18 +1172,32 @@ export default function AddItemScreen() {
             <ThemedText type="caption" style={styles.noNutritionHint}>
               Scan the nutrition label on the packaging to add nutrition info
             </ThemedText>
-            <GlassButton
-              onPress={handleScanNutritionLabel}
-              variant="outline"
-              style={styles.scanNutritionButton}
-            >
-              <View style={styles.scanButtonContent}>
-                <Feather name="camera" size={18} color={AppColors.primary} />
-                <ThemedText style={{ color: AppColors.primary, marginLeft: Spacing.sm }}>
-                  Scan Nutrition Label
-                </ThemedText>
-              </View>
-            </GlassButton>
+            <View style={styles.nutritionActionButtons}>
+              <GlassButton
+                onPress={handleScanNutritionLabel}
+                variant="outline"
+                style={styles.nutritionActionButton}
+              >
+                <View style={styles.scanButtonContent}>
+                  <Feather name="camera" size={18} color={AppColors.primary} />
+                  <ThemedText style={{ color: AppColors.primary, marginLeft: Spacing.sm }}>
+                    Scan Label
+                  </ThemedText>
+                </View>
+              </GlassButton>
+              <GlassButton
+                onPress={handleSaveAndScanNext}
+                variant="secondary"
+                style={styles.nutritionActionButton}
+              >
+                <View style={styles.scanButtonContent}>
+                  <Feather name="maximize" size={18} color={theme.text} />
+                  <ThemedText style={{ marginLeft: Spacing.sm }}>
+                    Scan Next
+                  </ThemedText>
+                </View>
+              </GlassButton>
+            </View>
           </View>
         </GlassCard>
       ) : null}
@@ -1695,5 +1745,13 @@ const styles = StyleSheet.create({
   scanButtonContent: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  nutritionActionButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  nutritionActionButton: {
+    flex: 1,
   },
 });
