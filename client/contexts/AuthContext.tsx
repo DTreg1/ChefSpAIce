@@ -485,17 +485,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/social/apple", baseUrl);
 
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(authPayload),
-      });
+      // Add timeout to prevent hanging requests during Apple review
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const data = await response.json();
+      let response: Response;
+      let data: { error?: string; user?: { id: string }; token?: string; isNewUser?: boolean };
+      
+      try {
+        response = await fetch(url.toString(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(authPayload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        
+        data = await response.json();
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId);
+        const fetchErr = fetchError as { name?: string; message?: string };
+        if (fetchErr.name === 'AbortError') {
+          console.error("Apple auth request timed out");
+          return { success: false, error: "Request timed out. Please check your connection and try again." };
+        }
+        console.error("Apple auth fetch error:", fetchError);
+        return { success: false, error: "Unable to connect to server. Please check your internet connection." };
+      }
 
       if (!response.ok) {
-        return { success: false, error: data.error || "Apple sign in failed" };
+        console.error("Apple auth server error:", response.status, data);
+        return { success: false, error: data.error || "Apple sign in failed. Please try again." };
       }
 
       const authData: StoredAuthData = {

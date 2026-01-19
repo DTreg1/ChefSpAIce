@@ -5,7 +5,6 @@ import { randomBytes } from "crypto";
 import pg from "pg";
 import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
-import { eq } from "drizzle-orm";
 import { ensureTrialSubscription } from "../services/subscriptionService";
 
 const router = Router();
@@ -89,9 +88,12 @@ interface GoogleTokenPayload {
 }
 
 router.post("/apple", async (req: Request, res: Response) => {
+  console.log("[Auth] Apple sign-in request received");
   const client = await pool.connect();
   try {
     const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
+
+    console.log("[Auth] Apple auth payload - hasIdentityToken:", !!identityToken, "hasAuthCode:", !!authorizationCode, "isWebAuth:", isWebAuth);
 
     let verifiedToken: { sub: string; email?: string } | null = null;
     
@@ -100,25 +102,31 @@ router.post("/apple", async (req: Request, res: Response) => {
       try {
         const tokenResponse = await exchangeAppleAuthCode(authorizationCode, redirectUri);
         if (!tokenResponse) {
-          return res.status(401).json({ error: "Failed to exchange Apple authorization code" });
+          console.error("[Auth] Apple web auth failed: authorization code exchange returned null");
+          return res.status(401).json({ error: "Failed to exchange Apple authorization code. Please try again." });
         }
         verifiedToken = tokenResponse;
       } catch (error) {
-        console.error("Apple web auth code exchange error:", error);
-        return res.status(401).json({ error: "Apple web authentication failed" });
+        console.error("[Auth] Apple web auth code exchange error:", error);
+        return res.status(401).json({ error: "Apple web authentication failed. Please try again." });
       }
     }
     // Handle native iOS flow - verify identity token directly
     else if (identityToken) {
+      console.log("[Auth] Verifying native iOS Apple token...");
       verifiedToken = await verifyAppleToken(identityToken);
     }
     else {
-      return res.status(400).json({ error: "Identity token or authorization code is required" });
+      console.error("[Auth] Apple auth failed: missing both identityToken and authorizationCode");
+      return res.status(400).json({ error: "Sign-in incomplete. Please try again." });
     }
 
     if (!verifiedToken || !verifiedToken.sub) {
-      return res.status(401).json({ error: "Invalid Apple token" });
+      console.error("[Auth] Apple token verification failed - verifiedToken:", verifiedToken);
+      return res.status(401).json({ error: "Unable to verify Apple credentials. Please try signing in again." });
     }
+    
+    console.log("[Auth] Apple token verified successfully for sub:", verifiedToken.sub.substring(0, 8) + "...");
 
     const { sub: appleUserId, email: tokenEmail } = verifiedToken;
     const email = tokenEmail || user?.email || null;
@@ -475,6 +483,10 @@ async function verifyAppleToken(identityToken: string): Promise<{ sub: string; e
   const expoGoBundleId = "host.exp.Exponent"; // Expo Go bundle ID for development
   const validAudiences = [bundleId, serviceId, expoGoBundleId];
   
+  console.log("[Auth] Verifying Apple token with audiences:", validAudiences);
+  
+  const errors: Array<{ audience: string; error: string }> = [];
+  
   try {
     // Try each audience - native iOS tokens use bundle ID, web tokens use service ID
     for (const audience of validAudiences) {
@@ -485,24 +497,24 @@ async function verifyAppleToken(identityToken: string): Promise<{ sub: string; e
         });
         
         if (payload && payload.sub) {
-          if (process.env.NODE_ENV !== "production") {
-            console.log(`[Auth] Apple token verified with audience: ${audience}`);
-          }
+          console.log(`[Auth] Apple token verified successfully with audience: ${audience}`);
           return {
             sub: payload.sub,
             email: payload.email,
           };
         }
       } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
+        errors.push({ audience, error: errMessage });
         // Try next audience
         continue;
       }
     }
     
-    console.warn("Apple token verification failed: no valid audience matched");
+    console.error("[Auth] Apple token verification failed - no valid audience matched. Errors:", JSON.stringify(errors));
     return null;
   } catch (error) {
-    console.error("Apple token JWKS verification failed:", error);
+    console.error("[Auth] Apple token JWKS verification failed:", error);
     return null;
   }
 }
