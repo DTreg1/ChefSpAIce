@@ -101,18 +101,6 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
     });
   };
 
-  const toggleCuisine = (id: string) => {
-    setCuisines((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   useEffect(() => {
     if (visible) {
       loadPreferences();
@@ -142,7 +130,7 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
       const updatedPrefs: UserPreferences = {
         ...currentPrefs,
         dietaryRestrictions: Array.from(dietaryRestrictions),
-        cuisinePreferences: Array.from(cuisines),
+        cuisinePreferences: currentPrefs?.cuisinePreferences || [],
         notificationsEnabled: currentPrefs?.notificationsEnabled ?? true,
         expirationAlertDays: currentPrefs?.expirationAlertDays ?? 3,
         servingSize: servings,
@@ -346,44 +334,23 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
               </View>
             </GlassCard>
 
-            <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Cuisine for This Recipe</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
-                Pick a specific cuisine or leave as "Random" to choose from your preferences
-              </ThemedText>
-              <View style={styles.optionsRow}>
-                <OptionChip
-                  selected={selectedCuisineForRecipe === undefined}
-                  onPress={() => setSelectedCuisineForRecipe(undefined)}
-                  label="Random"
-                />
-                {CUISINE_OPTIONS.map((option) => (
-                  <OptionChip
-                    key={option.id}
-                    selected={selectedCuisineForRecipe === option.id}
-                    onPress={() => setSelectedCuisineForRecipe(option.id)}
-                    label={option.label}
-                  />
-                ))}
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Saved Cuisine Preferences</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
-                These are your saved preferences used when "Random" is selected
-              </ThemedText>
-              <View style={styles.optionsRow}>
-                {CUISINE_OPTIONS.map((option) => (
-                  <OptionChip
-                    key={option.id}
-                    selected={cuisines.has(option.id)}
-                    onPress={() => toggleCuisine(option.id)}
-                    label={option.label}
-                  />
-                ))}
-              </View>
-            </GlassCard>
+            {cuisines.size > 0 && (
+              <GlassCard style={styles.section}>
+                <ThemedText type="caption" style={styles.sectionTitle}>Cuisine</ThemedText>
+                <View style={styles.optionsRow}>
+                  {CUISINE_OPTIONS.filter((option) => cuisines.has(option.id)).map((option) => (
+                    <OptionChip
+                      key={option.id}
+                      selected={selectedCuisineForRecipe === option.id}
+                      onPress={() => setSelectedCuisineForRecipe(
+                        selectedCuisineForRecipe === option.id ? undefined : option.id
+                      )}
+                      label={option.label}
+                    />
+                  ))}
+                </View>
+              </GlassCard>
+            )}
 
             <GlassCard style={styles.section}>
               <Pressable
