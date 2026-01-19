@@ -27,7 +27,8 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
 - **Inventory-Only Recipes:** Generates recipes strictly from current inventory with fuzzy matching and post-generation validation.
 - **Smart Shelf Life:** Automatic expiration date suggestions based on food name, storage location, and AI fallback.
 - **Push Notifications:** Local notifications for expiring food items.
-- **Scan Hub:** Centralized scanning interface for barcodes, nutrition labels, recipes from paper, and AI food identification (GPT-4o vision), with camera battery optimizations.
+- **Scan Hub:** Centralized scanning interface for barcodes, nutrition labels, recipes from paper, AI food identification (GPT-4o vision), and grocery receipt scanning, with camera battery optimizations.
+- **Receipt Scanning:** Universal grocery receipt scanning that works with any store. Uses OpenAI Vision (GPT-4o) to extract food items with quantities, prices, and UPC barcodes. Automatically enriches items with USDA nutrition data via UPC lookups. Feeds into the batch add flow for easy inventory import. Pro feature gated via `canUseBulkScanning`.
 - **Offline Mode Indicator:** Animated banner for network status and pending sync changes.
 - **Stripe Donations:** Integration for web donations.
 - **Apple StoreKit Integration:** In-app purchases for iOS/Android via RevenueCat SDK, with server sync for subscription status and platform-specific payment handling.
