@@ -156,6 +156,47 @@ function deduplicateResults(results: SearchResult[]): SearchResult[] {
   return Array.from(seen.values());
 }
 
+interface ParsedSearchQuery {
+  store?: string;
+  brand?: string;
+  product: string;
+}
+
+function parseAdvancedQuery(rawQuery: string): ParsedSearchQuery {
+  const trimmed = rawQuery.trim();
+  const parts = trimmed.split(":");
+  
+  if (parts.length === 3) {
+    return {
+      store: parts[0].trim().toLowerCase() || undefined,
+      brand: parts[1].trim().toLowerCase() || undefined,
+      product: parts[2].trim(),
+    };
+  } else if (parts.length === 2) {
+    return {
+      brand: parts[0].trim().toLowerCase() || undefined,
+      product: parts[1].trim(),
+    };
+  }
+  
+  return { product: trimmed };
+}
+
+function matchesBrandFilter(itemBrand: string | undefined, filterBrand: string | undefined, filterStore: string | undefined): boolean {
+  if (!filterBrand && !filterStore) return true;
+  if (!itemBrand) return false;
+  
+  const normalizedItemBrand = itemBrand.toLowerCase();
+  
+  if (filterStore && !normalizedItemBrand.includes(filterStore)) {
+    return false;
+  }
+  if (filterBrand && !normalizedItemBrand.includes(filterBrand)) {
+    return false;
+  }
+  return true;
+}
+
 router.get("/search", async (req: Request, res: Response) => {
   try {
     const query = req.query.query as string;
@@ -165,6 +206,9 @@ router.get("/search", async (req: Request, res: Response) => {
     if (!query || query.trim().length === 0) {
       return res.status(400).json({ error: "Query parameter is required" });
     }
+
+    const parsedQuery = parseAdvancedQuery(query);
+    const searchTerm = parsedQuery.product;
 
     let sources: FoodSource[] = ["usda", "openfoodfacts", "local"];
     if (sourcesParam) {
@@ -187,13 +231,15 @@ router.get("/search", async (req: Request, res: Response) => {
       return res.json(cached);
     }
 
+    const fetchLimit = (parsedQuery.brand || parsedQuery.store) ? limit * 3 : Math.ceil(limit / 2);
+
     const searchPromises: Promise<SearchResult[]>[] = [];
     const usedSources: FoodSource[] = [];
 
     if (sources.includes("usda")) {
       usedSources.push("usda");
       searchPromises.push(
-        searchUSDA(query, Math.ceil(limit / 2))
+        searchUSDA(searchTerm, fetchLimit)
           .then((results) =>
             results.map((item) => {
               const mapped = mapUSDAToFoodItem(item);
@@ -210,7 +256,7 @@ router.get("/search", async (req: Request, res: Response) => {
                 sourceId: String(item.fdcId),
                 relevanceScore: calculateRelevanceScore(
                   mapped.name,
-                  query,
+                  searchTerm,
                   "usda",
                 ),
                 dataCompleteness: calculateDataCompleteness(mapped.nutrition),
@@ -228,7 +274,7 @@ router.get("/search", async (req: Request, res: Response) => {
     if (sources.includes("openfoodfacts")) {
       usedSources.push("openfoodfacts");
       searchPromises.push(
-        searchOpenFoodFacts(query, Math.ceil(limit / 2))
+        searchOpenFoodFacts(searchTerm, fetchLimit)
           .then((results) =>
             results
               .filter((p) => p.product_name || p.product_name_en)
@@ -246,7 +292,7 @@ router.get("/search", async (req: Request, res: Response) => {
                   sourceId: item.code,
                   relevanceScore: calculateRelevanceScore(
                     mapped.name,
-                    query,
+                    searchTerm,
                     "openfoodfacts",
                   ),
                   dataCompleteness: calculateDataCompleteness(mapped.nutrition),
@@ -267,11 +313,24 @@ router.get("/search", async (req: Request, res: Response) => {
     }
 
     const allResults = await Promise.all(searchPromises);
-    const flatResults = allResults.flat();
+    let flatResults = allResults.flat();
+
+    if (parsedQuery.brand || parsedQuery.store) {
+      flatResults = flatResults.filter((item) =>
+        matchesBrandFilter(item.brand, parsedQuery.brand, parsedQuery.store)
+      );
+    }
 
     const deduplicated = deduplicateResults(flatResults);
 
     deduplicated.sort((a, b) => {
+      if (parsedQuery.brand || parsedQuery.store) {
+        const aHasBrand = a.brand ? 1 : 0;
+        const bHasBrand = b.brand ? 1 : 0;
+        if (bHasBrand !== aHasBrand) {
+          return bHasBrand - aHasBrand;
+        }
+      }
       if (b.relevanceScore !== a.relevanceScore) {
         return b.relevanceScore - a.relevanceScore;
       }
