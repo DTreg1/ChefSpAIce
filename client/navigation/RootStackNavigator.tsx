@@ -89,12 +89,27 @@ export type RootStackParamList = {
         productName?: string;
         usdaFood?: USDAFoodItem;
         identifiedFoods?: IdentifiedFood[];
+        scannedNutrition?: {
+          calories?: number;
+          protein?: number;
+          carbs?: number;
+          fat?: number;
+          fiber?: number;
+          sugar?: number;
+          sodium?: number;
+          servingSize?: string;
+        };
       }
     | undefined;
   AddFoodBatch: { items: IdentifiedFood[] };
   ScanHub: undefined;
   BarcodeScanner: undefined;
-  IngredientScanner: { mode?: "nutrition" | "recipe" } | undefined;
+  IngredientScanner: { 
+    mode?: "nutrition" | "recipe"; 
+    returnTo?: "AddItem";
+    existingBarcode?: string;
+    existingProductName?: string;
+  } | undefined;
   RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
   FoodSearch: undefined;

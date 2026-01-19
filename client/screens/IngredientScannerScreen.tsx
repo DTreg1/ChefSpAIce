@@ -11,7 +11,7 @@ import {
   AppStateStatus,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Feather } from "@expo/vector-icons";
@@ -65,6 +65,11 @@ export default function IngredientScannerScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, "IngredientScanner">>();
+  const returnTo = route.params?.returnTo;
+  const existingBarcode = route.params?.existingBarcode;
+  const existingProductName = route.params?.existingProductName;
+  const isNutritionOnlyMode = returnTo === "AddItem";
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -268,6 +273,29 @@ export default function IngredientScannerScreen() {
   const handleRetake = () => {
     setScanResult(null);
     setSelectedIngredients(new Set());
+  };
+
+  const handleUseNutrition = async () => {
+    if (!scanResult?.nutrition) return;
+
+    if (Platform.OS !== "web") {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    navigation.replace("AddItem", {
+      barcode: existingBarcode,
+      productName: existingProductName,
+      scannedNutrition: {
+        calories: scanResult.nutrition.calories,
+        protein: scanResult.nutrition.protein,
+        carbs: scanResult.nutrition.carbs,
+        fat: scanResult.nutrition.fat,
+        fiber: scanResult.nutrition.fiber,
+        sugar: scanResult.nutrition.sugar,
+        sodium: scanResult.nutrition.sodium,
+        servingSize: scanResult.nutrition.servingSize,
+      },
+    });
   };
 
   if (!permission) {
@@ -481,14 +509,24 @@ export default function IngredientScannerScreen() {
             { paddingBottom: insets.bottom + Spacing.md },
           ]}
         >
-          <GlassButton
-            onPress={handleAddSelected}
-            disabled={selectedIngredients.size === 0}
-            style={styles.addButton}
-          >
-            Add {selectedIngredients.size} Item
-            {selectedIngredients.size !== 1 ? "s" : ""} to Inventory
-          </GlassButton>
+          {isNutritionOnlyMode ? (
+            <GlassButton
+              onPress={handleUseNutrition}
+              disabled={!scanResult.nutrition}
+              style={styles.addButton}
+            >
+              {scanResult.nutrition ? "Use This Nutrition Data" : "No Nutrition Found"}
+            </GlassButton>
+          ) : (
+            <GlassButton
+              onPress={handleAddSelected}
+              disabled={selectedIngredients.size === 0}
+              style={styles.addButton}
+            >
+              Add {selectedIngredients.size} Item
+              {selectedIngredients.size !== 1 ? "s" : ""} to Inventory
+            </GlassButton>
+          )}
         </View>
       </ThemedView>
     );

@@ -168,6 +168,7 @@ export default function AddItemScreen() {
 
   const usdaFood = route.params?.usdaFood;
   const identifiedFood = route.params?.identifiedFoods?.[0];
+  const scannedNutrition = route.params?.scannedNutrition;
 
   const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([...DEFAULT_STORAGE_LOCATIONS]);
 
@@ -491,16 +492,37 @@ export default function AddItemScreen() {
     lookupBarcode();
   }, [barcode, handleFoodSelect]);
 
-  const nutrition: NutritionInfo | undefined = selectedFood
+  const nutrition: NutritionInfo | undefined = scannedNutrition
     ? {
-        calories: selectedFood.nutrition.calories,
-        protein: selectedFood.nutrition.protein,
-        carbs: selectedFood.nutrition.carbs,
-        fat: selectedFood.nutrition.fat,
-        fiber: selectedFood.nutrition.fiber,
-        sugar: selectedFood.nutrition.sugar,
+        calories: scannedNutrition.calories || 0,
+        protein: scannedNutrition.protein || 0,
+        carbs: scannedNutrition.carbs || 0,
+        fat: scannedNutrition.fat || 0,
+        fiber: scannedNutrition.fiber,
+        sugar: scannedNutrition.sugar,
+        servingSize: scannedNutrition.servingSize,
       }
-    : undefined;
+    : selectedFood?.nutrition
+      ? {
+          calories: selectedFood.nutrition.calories,
+          protein: selectedFood.nutrition.protein,
+          carbs: selectedFood.nutrition.carbs,
+          fat: selectedFood.nutrition.fat,
+          fiber: selectedFood.nutrition.fiber,
+          sugar: selectedFood.nutrition.sugar,
+        }
+      : undefined;
+  
+  const hasNutrition = nutrition && (nutrition.calories > 0 || nutrition.protein > 0);
+
+  const handleScanNutritionLabel = () => {
+    navigation.navigate("IngredientScanner", {
+      mode: "nutrition",
+      returnTo: "AddItem",
+      existingBarcode: barcode,
+      existingProductName: name,
+    });
+  };
 
   const handleSave = async () => {
     if (!hasSelectedFood) {
@@ -1095,13 +1117,37 @@ export default function AddItemScreen() {
         </View>
       </GlassCard>
 
-      {nutrition ? (
+      {hasNutrition ? (
         <NutritionSection
           foodId={sourceId || generateId()}
           foodName={name}
           defaultQuantity={parseInt(quantity) || 1}
           nutrition={nutrition}
         />
+      ) : hasSelectedFood ? (
+        <GlassCard style={styles.section}>
+          <View style={styles.noNutritionContainer}>
+            <Feather name="file-text" size={32} color={theme.textSecondary} />
+            <ThemedText type="body" style={styles.noNutritionText}>
+              No nutrition data available
+            </ThemedText>
+            <ThemedText type="caption" style={styles.noNutritionHint}>
+              Scan the nutrition label on the packaging to add nutrition info
+            </ThemedText>
+            <GlassButton
+              onPress={handleScanNutritionLabel}
+              variant="outline"
+              style={styles.scanNutritionButton}
+            >
+              <View style={styles.scanButtonContent}>
+                <Feather name="camera" size={18} color={AppColors.primary} />
+                <ThemedText style={{ color: AppColors.primary, marginLeft: Spacing.sm }}>
+                  Scan Nutrition Label
+                </ThemedText>
+              </View>
+            </GlassButton>
+          </View>
+        </GlassCard>
       ) : null}
 
       <GlassCard style={styles.section}>
@@ -1628,5 +1674,24 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 2,
+  },
+  noNutritionContainer: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
+    gap: Spacing.md,
+  },
+  noNutritionText: {
+    textAlign: "center",
+  },
+  noNutritionHint: {
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  scanNutritionButton: {
+    marginTop: Spacing.md,
+  },
+  scanButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });
