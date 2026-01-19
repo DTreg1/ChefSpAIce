@@ -540,7 +540,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Reset all local data for new users to ensure they see onboarding
       // This clears any leftover data from previous accounts
-      if (data.isNewUser) {
+      // Note: isNewUser is returned inside data.user from the server
+      const isNewUser = data.user?.isNewUser === true;
+      console.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
+      
+      if (isNewUser) {
         await storage.resetForNewUser();
       }
 
@@ -550,7 +554,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      if (data.isNewUser) {
+      if (isNewUser) {
         // Sync fresh state to cloud (with onboarding reset)
         await storage.syncToCloud();
       } else {
@@ -650,7 +654,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Reset all local data for new users to ensure they see onboarding
       // This clears any leftover data from previous accounts
-      if (data.isNewUser) {
+      // Note: isNewUser is returned inside data.user from the server
+      const isNewUser = data.user?.isNewUser === true;
+      console.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
+      
+      if (isNewUser) {
         await storage.resetForNewUser();
       }
 
@@ -660,7 +668,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      if (data.isNewUser) {
+      if (isNewUser) {
         // Sync fresh state to cloud (with onboarding reset)
         await storage.syncToCloud();
       } else {
