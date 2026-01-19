@@ -46,6 +46,7 @@ export default function AttributionsScreen() {
     { name: "Expo", description: "React Native development platform", url: "https://expo.dev" },
     { name: "OpenAI", description: "AI-powered recipe generation", url: "https://openai.com" },
     { name: "Stripe", description: "Secure payment processing", url: "https://stripe.com" },
+    { name: "Instacart", description: "Grocery ordering and delivery", url: "https://instacart.com" },
     { name: "React Navigation", description: "Navigation framework", url: "https://reactnavigation.org" },
     { name: "Lucide Icons", description: "Beautiful open-source icons", url: "https://lucide.dev" },
     { name: "Open Food Facts", description: "Food product database", url: "https://openfoodfacts.org" },
