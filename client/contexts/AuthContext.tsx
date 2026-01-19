@@ -538,9 +538,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('Failed to sync pending purchases:', err)
       );
 
-      // Reset onboarding status for new users to ensure they see onboarding
+      // Reset all local data for new users to ensure they see onboarding
+      // This clears any leftover data from previous accounts
       if (data.isNewUser) {
-        await storage.resetOnboarding();
+        await storage.resetForNewUser();
       }
 
       setState({
@@ -647,9 +648,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('Failed to sync pending purchases:', err)
       );
 
-      // Reset onboarding status for new users to ensure they see onboarding
+      // Reset all local data for new users to ensure they see onboarding
+      // This clears any leftover data from previous accounts
       if (data.isNewUser) {
-        await storage.resetOnboarding();
+        await storage.resetForNewUser();
       }
 
       setState({

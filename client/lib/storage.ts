@@ -953,6 +953,24 @@ export const storage = {
     await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP);
   },
 
+  async resetForNewUser(): Promise<void> {
+    // Clear all user data to ensure new users see onboarding
+    // This is called when isNewUser is true from social sign-in
+    console.log("[Storage] Resetting for new user - clearing all local data");
+    await Promise.all([
+      AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING),
+      AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP),
+      AsyncStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES),
+      AsyncStorage.removeItem(STORAGE_KEYS.INVENTORY),
+      AsyncStorage.removeItem(STORAGE_KEYS.RECIPES),
+      AsyncStorage.removeItem(STORAGE_KEYS.MEAL_PLANS),
+      AsyncStorage.removeItem(STORAGE_KEYS.SHOPPING_LIST),
+      AsyncStorage.removeItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS),
+      AsyncStorage.removeItem(STORAGE_KEYS.COOKWARE),
+    ]);
+    console.log("[Storage] New user reset complete");
+  },
+
   async resetAllStorage(): Promise<void> {
     const allKeys = await AsyncStorage.getAllKeys();
     const appKeys = allKeys.filter((key) => 
