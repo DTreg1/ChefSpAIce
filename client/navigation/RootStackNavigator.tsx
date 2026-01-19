@@ -49,13 +49,15 @@ import AddItemScreen from "@/screens/AddItemScreen";
 import AddFoodBatchScreen from "@/screens/AddFoodBatchScreen";
 import BarcodeScannerScreen from "@/screens/BarcodeScannerScreen";
 import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
-import FoodCameraScreen, { IdentifiedFood } from "@/screens/FoodCameraScreen";
+import FoodCameraScreen from "@/screens/FoodCameraScreen";
+import { IdentifiedFood } from "@/components/ImageAnalysisResult";
 import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
 import AuthScreen from "@/screens/AuthScreen";
 import ScanHubScreen from "@/screens/ScanHubScreen";
 import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
+import ReceiptScanScreen from "@/screens/ReceiptScanScreen";
 import AboutScreen from "@/screens/web/AboutScreen";
 import PrivacyScreen from "@/screens/web/PrivacyScreen";
 import TermsScreen from "@/screens/web/TermsScreen";
@@ -113,6 +115,7 @@ export type RootStackParamList = {
   RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
   FoodSearch: undefined;
+  ReceiptScan: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -389,6 +392,14 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="RecipeScanner"
         component={RecipeScannerScreen}
+        options={{
+          presentation: "fullScreenModal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="ReceiptScan"
+        component={ReceiptScanScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,

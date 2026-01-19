@@ -58,6 +58,7 @@ import {
 } from "./routers/user/appliances.router";
 import voiceRouter from "./routers/platform/voice.router";
 import imageAnalysisRouter from "./routers/platform/ai/image-analysis.router";
+import receiptAnalysisRouter from "./routers/platform/ai/receipt-analysis.router";
 import ingredientsRouter from "./routers/user/ingredients.router";
 import authRouter from "./routers/auth.router";
 import socialAuthRouter from "./routers/social-auth.router";
@@ -461,6 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/user/appliances", requireAuth, requireSubscription, userAppliancesRouter);
   app.use("/api/voice", requireAuth, requireSubscription, voiceRouter);
   app.use("/api/ai", requireAuth, requireSubscription, imageAnalysisRouter);
+  app.use("/api/receipt", requireAuth, requireSubscription, receiptAnalysisRouter);
   app.use("/api/ingredients", requireAuth, requireSubscription, ingredientsRouter);
   app.use("/api/sync", requireAuth, requireSubscription, syncRouter);
   app.use("/api/recipe-images", requireAuth, requireSubscription, recipeImagesRouter);

@@ -64,6 +64,15 @@ const SCAN_OPTIONS: ScanOption[] = [
     color: AppColors.primary,
     screen: "FoodCamera",
   },
+  {
+    id: "receipt",
+    icon: "shopping-bag",
+    title: "Grocery Receipt",
+    subtitle: "Import purchases to inventory",
+    description: "Scan any grocery store receipt to automatically extract items and add them to your inventory. Works with any store.",
+    color: AppColors.success,
+    screen: "ReceiptScan",
+  },
 ];
 
 function ScanOptionCard({
@@ -145,7 +154,7 @@ export default function ScanHubScreen() {
     if (optionId === 'recipe') {
       return !checkFeature('canUseRecipeScanning');
     }
-    if (optionId === 'food') {
+    if (optionId === 'food' || optionId === 'receipt') {
       return !checkFeature('canUseBulkScanning');
     }
     return false;
@@ -161,7 +170,7 @@ export default function ScanHubScreen() {
       setUpgradePrompt({ visible: true, feature: 'recipeScanning' });
       return;
     }
-    if (option.id === 'food' && !checkFeature('canUseBulkScanning')) {
+    if ((option.id === 'food' || option.id === 'receipt') && !checkFeature('canUseBulkScanning')) {
       setUpgradePrompt({ visible: true, feature: 'bulkScanning' });
       return;
     }
