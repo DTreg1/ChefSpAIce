@@ -232,9 +232,6 @@ export default function GenerateRecipeScreen() {
             ]
           : undefined;
       
-      // Track if cuisine was randomly selected for UI feedback
-      const cuisineWasRandom = !customSettings?.cuisine && !!cuisinePreference;
-
       const macroTargets =
         userPreferences?.macroTargets || DEFAULT_MACRO_TARGETS;
 
