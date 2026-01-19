@@ -164,6 +164,9 @@ export default function GenerateRecipeScreen() {
           } catch (err) {
             console.error("Error loading cookware:", err);
           }
+        } else {
+          // Reset cookware if user removed all selections
+          setCookware([]);
         }
 
         setDataLoaded(true);
