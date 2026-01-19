@@ -47,6 +47,7 @@ import {
 import { hasSwapsAvailable, IngredientSwap } from "@/lib/ingredient-swaps";
 import { exportSingleRecipeToPDF } from "@/lib/export";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
+import { useInstacart } from "@/hooks/useInstacart";
 
 import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
@@ -88,6 +89,8 @@ export default function RecipeDetailScreen() {
   const [selectedIngredient, setSelectedIngredient] =
     useState<RecipeIngredient | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  const { isConfigured: instacartConfigured, isLoading: instacartLoading, openRecipeLink } = useInstacart();
 
   const scrollViewRef = useRef<ScrollView>(null);
   const stepPositions = useRef<Record<number, number>>({});
@@ -382,6 +385,40 @@ export default function RecipeDetailScreen() {
       "Added to Shopping List",
       `${missingIngredients.length} ingredients added to your shopping list.`,
     );
+  };
+
+  const handleOrderMissingOnInstacart = async () => {
+    if (!recipe) return;
+
+    const missingIngredients = recipe.ingredients.filter(
+      (ing) => !isIngredientAvailable(ing.name),
+    );
+
+    if (missingIngredients.length === 0) {
+      Alert.alert("All Set!", "You have all the ingredients for this recipe.");
+      return;
+    }
+
+    const baseServings = recipe.servings || 1;
+    const ingredients = missingIngredients.map((ing) => {
+      const numQuantity =
+        typeof ing.quantity === "string"
+          ? parseFloat(ing.quantity)
+          : ing.quantity;
+      const scaledNum = isNaN(numQuantity)
+        ? 1
+        : (numQuantity * selectedServings) / baseServings;
+      return {
+        name: ing.name,
+        quantity: Math.round(scaledNum * 100) / 100,
+        unit: ing.unit || "each",
+      };
+    });
+
+    const publicImageUrl = recipe.imageUri && recipe.imageUri.startsWith('http') 
+      ? recipe.imageUri 
+      : undefined;
+    await openRecipeLink(recipe.title, ingredients, publicImageUrl);
   };
 
   const handleShare = async () => {
@@ -819,20 +856,39 @@ export default function RecipeDetailScreen() {
           })}
 
           {availableCount < totalCount ? (
-            <GlassButton
-              variant="outline"
-              onPress={handleAddMissingToShoppingList}
-              style={styles.addMissingButton}
-              icon={
-                <Feather
-                  name="shopping-cart"
-                  size={18}
-                  color={AppColors.primary}
-                />
-              }
-            >
-              Add Missing to List
-            </GlassButton>
+            <View style={styles.missingActionsContainer}>
+              <GlassButton
+                variant="outline"
+                onPress={handleAddMissingToShoppingList}
+                style={styles.addMissingButton}
+                icon={
+                  <Feather
+                    name="shopping-cart"
+                    size={18}
+                    color={AppColors.primary}
+                  />
+                }
+              >
+                Add Missing to List
+              </GlassButton>
+              {instacartConfigured ? (
+                <GlassButton
+                  onPress={handleOrderMissingOnInstacart}
+                  disabled={instacartLoading}
+                  style={styles.instacartButton}
+                  icon={
+                    <Feather
+                      name="shopping-bag"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                  }
+                  testID="button-order-instacart-recipe"
+                >
+                  {instacartLoading ? "Loading..." : "Order on Instacart"}
+                </GlassButton>
+              ) : null}
+            </View>
           ) : null}
         </GlassCard>
 
@@ -1087,7 +1143,16 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   addMissingButton: {
+    flex: 1,
+  },
+  missingActionsContainer: {
+    flexDirection: "row",
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
+  },
+  instacartButton: {
+    flex: 1,
+    backgroundColor: "#43B02A",
   },
   instructionRow: {
     flexDirection: "row",

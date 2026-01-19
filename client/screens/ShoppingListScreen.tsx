@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, FlatList, StyleSheet, Pressable, Alert, Linking, Platform } from "react-native";
+import { View, FlatList, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
@@ -12,15 +12,16 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
+import { useInstacart } from "@/hooks/useInstacart";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem } from "@/lib/storage";
-import { getApiUrl } from "@/lib/query-client";
 
 
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { isConfigured: instacartConfigured, isLoading: instacartLoading, openShoppingLink } = useInstacart();
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -73,6 +74,22 @@ export default function ShoppingListScreen() {
         },
       ],
     );
+  };
+
+  const handleOrderOnInstacart = async () => {
+    const itemsToOrder = items.filter((i) => !i.isChecked);
+    if (itemsToOrder.length === 0) {
+      Alert.alert("No Items", "Add items to your shopping list to order on Instacart.");
+      return;
+    }
+
+    const products = itemsToOrder.map((item) => ({
+      name: item.name,
+      quantity: item.quantity || 1,
+      unit: item.unit || "each",
+    }));
+
+    await openShoppingLink(products, "ChefSpAIce Shopping List");
   };
 
   const uncheckedItems = items.filter((i) => !i.isChecked);
@@ -200,6 +217,28 @@ export default function ShoppingListScreen() {
         </View>
       ) : null}
 
+      {uncheckedItems.length > 0 && instacartConfigured ? (
+        <View style={[styles.instacartContainer, { paddingBottom: insets.bottom + Spacing.md }]}>
+          <GlassButton
+            onPress={handleOrderOnInstacart}
+            disabled={instacartLoading}
+            style={styles.instacartButton}
+            testID="button-order-instacart"
+          >
+            <View style={styles.instacartButtonContent}>
+              {instacartLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Feather name="shopping-bag" size={20} color="#FFFFFF" />
+              )}
+              <ThemedText type="body" style={styles.instacartButtonText}>
+                {instacartLoading ? "Creating Link..." : "Order on Instacart"}
+              </ThemedText>
+            </View>
+          </GlassButton>
+        </View>
+      ) : null}
+
     </View>
   );
 }
@@ -274,6 +313,27 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
   },
   completedText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  instacartContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    backgroundColor: "transparent",
+  },
+  instacartButton: {
+    backgroundColor: "#43B02A",
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  instacartButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  instacartButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
   },

@@ -1,0 +1,199 @@
+/**
+ * =============================================================================
+ * INSTACART INTEGRATION HOOK
+ * =============================================================================
+ * 
+ * Provides integration with Instacart for ordering groceries.
+ * 
+ * KEY EXPORTS:
+ * - useInstacart: Hook for Instacart API interactions
+ * - checkInstacartStatus: Check if Instacart is configured
+ * - createShoppingLink: Create a shopping list link
+ * - createRecipeLink: Create a recipe shopping link
+ * 
+ * @module hooks/useInstacart
+ */
+
+import { useState, useCallback, useEffect } from "react";
+import { Linking, Alert } from "react-native";
+import { apiRequest, getApiUrl } from "@/lib/query-client";
+
+interface InstacartProduct {
+  name: string;
+  quantity?: number;
+  unit?: string;
+}
+
+interface InstacartStatus {
+  configured: boolean;
+  message: string;
+}
+
+interface InstacartLinkResponse {
+  products_link_url?: string;
+  error?: string;
+}
+
+export function useInstacart() {
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+
+  const checkStatus = useCallback(async () => {
+    try {
+      setIsCheckingStatus(true);
+      const baseUrl = getApiUrl();
+      const response = await fetch(`${baseUrl}/api/instacart/status`, {
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        const data: InstacartStatus = await response.json();
+        setIsConfigured(data.configured);
+      } else {
+        setIsConfigured(false);
+      }
+    } catch (error) {
+      console.error("[Instacart] Status check failed:", error);
+      setIsConfigured(false);
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
+
+  const createShoppingLink = useCallback(async (
+    products: InstacartProduct[],
+    title?: string,
+  ): Promise<string | null> => {
+    if (!isConfigured) {
+      Alert.alert(
+        "Instacart Not Available",
+        "Instacart integration is not configured. Please contact support.",
+      );
+      return null;
+    }
+
+    if (products.length === 0) {
+      Alert.alert("No Items", "There are no items to order.");
+      return null;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const response = await apiRequest("POST", "/api/instacart/products-link", {
+        products,
+        title: title || "ChefSpAIce Shopping List",
+      });
+
+      const data: InstacartLinkResponse = await response.json();
+
+      if (data.products_link_url) {
+        return data.products_link_url;
+      } else {
+        throw new Error(data.error || "Failed to create shopping link");
+      }
+    } catch (error) {
+      console.error("[Instacart] Create shopping link failed:", error);
+      Alert.alert(
+        "Error",
+        "Failed to create Instacart shopping link. Please try again.",
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isConfigured]);
+
+  const createRecipeLink = useCallback(async (
+    title: string,
+    ingredients: InstacartProduct[],
+    imageUrl?: string,
+  ): Promise<string | null> => {
+    if (!isConfigured) {
+      Alert.alert(
+        "Instacart Not Available",
+        "Instacart integration is not configured. Please contact support.",
+      );
+      return null;
+    }
+
+    if (ingredients.length === 0) {
+      Alert.alert("No Ingredients", "There are no ingredients to order.");
+      return null;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const response = await apiRequest("POST", "/api/instacart/recipe", {
+        title,
+        ingredients,
+        imageUrl,
+      });
+
+      const data: InstacartLinkResponse = await response.json();
+
+      if (data.products_link_url) {
+        return data.products_link_url;
+      } else {
+        throw new Error(data.error || "Failed to create recipe link");
+      }
+    } catch (error) {
+      console.error("[Instacart] Create recipe link failed:", error);
+      Alert.alert(
+        "Error",
+        "Failed to create Instacart shopping link. Please try again.",
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isConfigured]);
+
+  const openShoppingLink = useCallback(async (
+    products: InstacartProduct[],
+    title?: string,
+  ) => {
+    const url = await createShoppingLink(products, title);
+    if (url) {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Unable to open Instacart. Please try again.");
+      }
+    }
+  }, [createShoppingLink]);
+
+  const openRecipeLink = useCallback(async (
+    title: string,
+    ingredients: InstacartProduct[],
+    imageUrl?: string,
+  ) => {
+    const url = await createRecipeLink(title, ingredients, imageUrl);
+    if (url) {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Unable to open Instacart. Please try again.");
+      }
+    }
+  }, [createRecipeLink]);
+
+  return {
+    isConfigured,
+    isCheckingStatus,
+    isLoading,
+    checkStatus,
+    createShoppingLink,
+    createRecipeLink,
+    openShoppingLink,
+    openRecipeLink,
+  };
+}

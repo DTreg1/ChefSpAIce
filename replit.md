@@ -35,6 +35,7 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
 - **Inventory Filtering:** Advanced filtering, sorting, and search capabilities.
 - **Feedback & Bug Reporting:** Users can submit feedback via the AI chat modal.
 - **Unified Onboarding Architecture:** Single entry point (`App.tsx`) managing user flow across web and mobile, requiring authentication before app access. The web version serves as a marketing landing page.
+- **Instacart Integration:** Users can order missing ingredients directly from Instacart. Available in ShoppingListScreen (order all unchecked items) and RecipeDetailScreen (order missing ingredients scaled to selected servings). Uses `useInstacart` hook for API calls and link handling.
 
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation and conversational assistance (gpt-4o-mini).
@@ -42,6 +43,7 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
 - **OpenFoodFacts API**: Open-source product information.
 - **PostgreSQL**: Primary relational database.
 - **Replit Object Storage**: Cloud file storage.
+- **Instacart Connect API**: Grocery shopping integration for ordering ingredients.
 - **expo-camera**: Barcode scanning.
 - **date-fns**: Date manipulation.
 - **@react-native-async-storage/async-storage**: Persistent local storage.
