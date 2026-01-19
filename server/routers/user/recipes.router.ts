@@ -1079,19 +1079,19 @@ router.post("/generate-image", async (req: Request, res: Response) => {
         ? cuisine.toLowerCase()
         : "";
 
-    // Build a constrained prompt for food photography
-    let imagePrompt = `Professional food photography of a dish called ${safeTitle}`;
+    // Build an enhanced prompt for vibrant, appetizing food photography
+    let imagePrompt = `Stunning professional food photography of "${safeTitle}"`;
 
     if (safeDescription) {
-      imagePrompt += `. The dish features ${safeDescription}`;
+      imagePrompt += `, featuring ${safeDescription}`;
     }
 
     if (safeCuisine) {
-      imagePrompt += `, ${safeCuisine} cuisine style`;
+      imagePrompt += `. Authentic ${safeCuisine} cuisine presentation with traditional plating style`;
     }
 
-    // Fixed suffix that cannot be overridden by user input
-    imagePrompt += `. Beautifully plated on a ceramic dish, natural lighting, shallow depth of field, appetizing colors, restaurant quality presentation, overhead shot, clean background, high resolution, photorealistic. No text or words in the image.`;
+    // Enhanced styling for more vibrant, appetizing images
+    imagePrompt += `. Hero shot composition with dramatic lighting from the side creating beautiful shadows and highlights. Rich, saturated colors that make the food look irresistible. Steam or fresh garnishes add life to the dish. Artfully arranged on a beautiful plate or bowl that complements the cuisine. Rustic wooden table or marble surface background with subtle props like fresh herbs, spices, or ingredients scattered artistically. Bokeh background effect. Magazine-quality food styling, Michelin-star presentation. Warm color temperature. Shot with a 50mm lens at f/2.8. Ultra high definition, photorealistic, no text or watermarks.`;
 
     console.log(`[Recipe] Generating image for: "${safeTitle}"`);
 
