@@ -7,7 +7,7 @@ import {
   Platform,
   StyleProp,
 } from "react-native";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/lib/glass-effect-safe";
 
 /*
  * ============================================

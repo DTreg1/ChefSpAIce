@@ -1,16 +1,21 @@
 import React from "react";
-import { GlassView as ExpoGlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView as SafeGlassView, isLiquidGlassAvailable } from "@/lib/glass-effect-safe";
 import { GlassProvider } from "@/contexts/GlassContext";
+import { ViewProps } from "react-native";
 
-type GlassViewProps = React.ComponentProps<typeof ExpoGlassView>;
+type GlassViewProps = ViewProps & {
+  glassEffectStyle?: "clear" | "regular";
+  tintColor?: string;
+  isInteractive?: boolean;
+};
 
 export function GlassView({ children, ...props }: GlassViewProps) {
   return (
-    <ExpoGlassView {...props}>
+    <SafeGlassView {...props}>
       <GlassProvider>
         {children}
       </GlassProvider>
-    </ExpoGlassView>
+    </SafeGlassView>
   );
 }
 

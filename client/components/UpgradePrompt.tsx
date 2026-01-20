@@ -1,6 +1,6 @@
 import { StyleSheet, View, Pressable, Platform } from "react-native";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, isLiquidGlassAvailable } from "@/lib/glass-effect-safe";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
