@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
 import { Platform } from "react-native";
+import { logger } from "@/lib/logger";
 
 const RECIPE_IMAGES_DIR = FileSystem.documentDirectory
   ? `${FileSystem.documentDirectory}recipe-images/`
@@ -32,12 +33,12 @@ async function compressImage(base64Data: string): Promise<string> {
     );
     
     if (result.base64) {
-      console.log("[compressImage] Compressed from", cleanBase64.length, "to", result.base64.length);
+      logger.log("[compressImage] Compressed from", cleanBase64.length, "to", result.base64.length);
       return result.base64;
     }
     return cleanBase64;
   } catch (error) {
-    console.log("[compressImage] Compression failed, using original:", error);
+    logger.log("[compressImage] Compression failed, using original:", error);
     return base64Data.replace(/^data:image\/[a-z]+;base64,/i, "");
   }
 }
@@ -46,15 +47,15 @@ export async function saveRecipeImage(
   recipeId: string,
   base64Data: string,
 ): Promise<string> {
-  console.log("[saveRecipeImage] Starting save for recipe:", recipeId);
-  console.log("[saveRecipeImage] Base64 data length:", base64Data?.length || 0);
+  logger.log("[saveRecipeImage] Starting save for recipe:", recipeId);
+  logger.log("[saveRecipeImage] Base64 data length:", base64Data?.length || 0);
   
   const compressedBase64 = await compressImage(base64Data);
-  console.log("[saveRecipeImage] Compressed base64 length:", compressedBase64?.length || 0);
+  logger.log("[saveRecipeImage] Compressed base64 length:", compressedBase64?.length || 0);
 
   if (Platform.OS === "web" || !RECIPE_IMAGES_DIR) {
     const dataUri = `data:image/jpeg;base64,${compressedBase64}`;
-    console.log("[saveRecipeImage] Web platform - returning data URI, length:", dataUri.length);
+    logger.log("[saveRecipeImage] Web platform - returning data URI, length:", dataUri.length);
     return dataUri;
   }
 
@@ -62,13 +63,13 @@ export async function saveRecipeImage(
 
   const filename = `recipe-${recipeId}.png`;
   const fileUri = `${RECIPE_IMAGES_DIR}${filename}`;
-  console.log("[saveRecipeImage] Saving to:", fileUri);
+  logger.log("[saveRecipeImage] Saving to:", fileUri);
 
   await FileSystem.writeAsStringAsync(fileUri, compressedBase64, {
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  console.log("[saveRecipeImage] File saved successfully:", fileUri);
+  logger.log("[saveRecipeImage] File saved successfully:", fileUri);
   return fileUri;
 }
 

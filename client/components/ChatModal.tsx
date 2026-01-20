@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   Image,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { GlassView } from "@/components/GlassViewWithContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -258,7 +259,7 @@ export function ChatModal() {
 
       // If actions were performed, refresh local data from server
       if (data.refreshData && authToken) {
-        console.log("[Chat] Actions performed, refreshing local data...");
+        logger.log("[Chat] Actions performed, refreshing local data...");
         try {
           // Trigger a full sync to get updated data
           const syncResult = await storage.syncFromCloud();
@@ -275,7 +276,7 @@ export function ChatModal() {
 
       // Handle navigation after action (e.g., navigate to RecipeDetail after generating recipe)
       if (data.navigateTo) {
-        console.log("[Chat] Navigation requested:", data.navigateTo);
+        logger.log("[Chat] Navigation requested:", data.navigateTo);
         closeChat();
         setTimeout(() => {
           if (data.navigateTo.screen === "RecipeDetail") {

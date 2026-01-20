@@ -10,6 +10,7 @@ import {
   Animated as RNAnimated,
   Modal,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
@@ -277,7 +278,7 @@ export default function AddItemScreen() {
         const allLocations = await storage.getAllStorageLocations();
         setStorageLocations(allLocations);
       } catch (e) {
-        console.log("Error loading storage locations:", e);
+        logger.log("Error loading storage locations:", e);
       }
     };
     loadStorageLocations();
@@ -297,7 +298,7 @@ export default function AddItemScreen() {
           }
         }
       } catch (e) {
-        console.log("Error loading storage preferences:", e);
+        logger.log("Error loading storage preferences:", e);
       }
 
       if (storageSuggestion && !userOverrodeStorage) {
@@ -322,7 +323,7 @@ export default function AddItemScreen() {
       prefs[cat] = loc;
       await AsyncStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(prefs));
     } catch (e) {
-      console.log("Error saving storage preference:", e);
+      logger.log("Error saving storage preference:", e);
     }
   };
 
@@ -337,7 +338,7 @@ export default function AddItemScreen() {
       recent = recent.slice(0, 10);
       await AsyncStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(recent));
     } catch (e) {
-      console.log("Error saving recent food:", e);
+      logger.log("Error saving recent food:", e);
     }
   }, []);
 

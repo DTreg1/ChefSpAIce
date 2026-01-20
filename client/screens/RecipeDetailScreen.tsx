@@ -51,6 +51,7 @@ import { useInstacart } from "@/hooks/useInstacart";
 
 import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import { logger } from "@/lib/logger";
 
 // Helper to get color and icon for availability status
 function getAvailabilityIndicator(status?: IngredientAvailability): {
@@ -235,7 +236,7 @@ export default function RecipeDetailScreen() {
       imageGenerationInProgress.current.add(recipe.id);
 
       try {
-        console.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
+        logger.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
         const imageResponse = await apiRequest(
           "POST",
           "/api/recipes/generate-image",
@@ -261,10 +262,10 @@ export default function RecipeDetailScreen() {
           const updatedRecipe = { ...recipe, imageUri };
           await storage.updateRecipe(updatedRecipe);
           setRecipe(updatedRecipe);
-          console.log("[RecipeDetail] Image saved for recipe:", recipe.id);
+          logger.log("[RecipeDetail] Image saved for recipe:", recipe.id);
         }
       } catch (error) {
-        console.log("[RecipeDetail] Image generation failed:", error);
+        logger.log("[RecipeDetail] Image generation failed:", error);
       } finally {
         imageGenerationInProgress.current.delete(recipe.id);
       }
@@ -313,7 +314,7 @@ export default function RecipeDetailScreen() {
     recipe,
     onStepChange: handleStepChange,
     onCommandExecuted: (cmd) => {
-      console.log("Voice command executed:", cmd);
+      logger.log("Voice command executed:", cmd);
     },
   });
 

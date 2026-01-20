@@ -44,6 +44,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CommonActions, useNavigation } from "@react-navigation/native";
+import { logger } from "@/lib/logger";
 import DrawerNavigator from "@/navigation/DrawerNavigator";
 import AddItemScreen from "@/screens/AddItemScreen";
 import AddFoodBatchScreen from "@/screens/AddFoodBatchScreen";
@@ -209,7 +210,7 @@ function AuthGuardedNavigator() {
     // This allows users to resubscribe instead of being stuck in an auth loop
     if (isAuthenticated && wasActive && !isActive) {
       const target = needsOnboarding ? "Onboarding" : "Subscription";
-      console.log(`[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`);
+      logger.log(`[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`);
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -223,7 +224,7 @@ function AuthGuardedNavigator() {
       // Only redirect to Main if onboarding is complete
       // This prevents bypassing onboarding for new users who just activated their trial
       if (!needsOnboarding) {
-        console.log("[Nav] Subscription gained, redirecting to Main");
+        logger.log("[Nav] Subscription gained, redirecting to Main");
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
@@ -231,7 +232,7 @@ function AuthGuardedNavigator() {
           }),
         );
       } else {
-        console.log("[Nav] Subscription gained but needs onboarding, staying in current flow");
+        logger.log("[Nav] Subscription gained but needs onboarding, staying in current flow");
       }
     }
 
@@ -249,7 +250,7 @@ function AuthGuardedNavigator() {
   const checkOnboardingStatus = async () => {
     try {
       const needs = await storage.needsOnboarding();
-      console.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
+      logger.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
       setNeedsOnboarding(needs);
     } catch (err) {
       console.error("[Nav] Error checking onboarding status:", err);
@@ -271,27 +272,27 @@ function AuthGuardedNavigator() {
   const getInitialRoute = (): keyof RootStackParamList => {
     // Show landing page for web users who aren't authenticated
     if (isWeb && !isAuthenticated) {
-      console.log("[Nav] Initial route: Landing (web, unauthenticated)");
+      logger.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
     // Require authentication for mobile users before accessing the app
     // ChefSpAIce stores personal data (inventory, recipes, meal plans) which justifies requiring an account
     if (!isAuthenticated) {
-      console.log("[Nav] Initial route: Auth (mobile, unauthenticated - account required for personal data)");
+      logger.log("[Nav] Initial route: Auth (mobile, unauthenticated - account required for personal data)");
       return "Auth";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
     if (needsOnboarding) {
-      console.log("[Nav] Initial route: Onboarding (needsOnboarding=true)");
+      logger.log("[Nav] Initial route: Onboarding (needsOnboarding=true)");
       return "Onboarding";
     }
     // User has completed onboarding but has no active subscription - send to Subscription
     // so they can see pricing and resubscribe (instead of going through onboarding again)
     if (!isActive) {
-      console.log("[Nav] Initial route: Subscription (inactive subscription)");
+      logger.log("[Nav] Initial route: Subscription (inactive subscription)");
       return "Subscription";
     }
-    console.log("[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)");
+    logger.log("[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)");
     return "Main";
   };
 

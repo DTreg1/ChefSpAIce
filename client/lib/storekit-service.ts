@@ -3,6 +3,7 @@ import { getApiUrl } from '@/lib/query-client';
 import Purchases, { LOG_LEVEL, PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { storage } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
@@ -28,10 +29,10 @@ class StoreKitService {
   async syncPurchaseWithServer(customerInfo: CustomerInfo): Promise<boolean> {
     // If not authenticated, save purchase for later sync
     if (!this.authToken) {
-      console.log('StoreKit: No auth token, saving purchase for later sync');
+      logger.log('StoreKit: No auth token, saving purchase for later sync');
       try {
         await storage.savePendingPurchase(customerInfo);
-        console.log('StoreKit: Pending purchase saved successfully');
+        logger.log('StoreKit: Pending purchase saved successfully');
         return true; // Return true because purchase is valid, just pending server sync
       } catch (error) {
         console.error('StoreKit: Failed to save pending purchase', error);
@@ -79,7 +80,7 @@ class StoreKitService {
       });
 
       if (response.ok) {
-        console.log('StoreKit: Purchase synced with server successfully');
+        logger.log('StoreKit: Purchase synced with server successfully');
         // Clear any pending purchase since we've synced
         await storage.clearPendingPurchase();
         return true;
@@ -106,18 +107,18 @@ class StoreKitService {
     try {
       const pending = await storage.getPendingPurchase();
       if (!pending) {
-        console.log('StoreKit: No pending purchases to sync');
+        logger.log('StoreKit: No pending purchases to sync');
         return true;
       }
 
-      console.log('StoreKit: Found pending purchase, syncing...');
+      logger.log('StoreKit: Found pending purchase, syncing...');
       
       // Get fresh customer info from RevenueCat (more reliable than stored data)
       const customerInfo = await this.getCustomerInfo();
       if (customerInfo) {
         const success = await this.syncPurchaseWithServer(customerInfo);
         if (success) {
-          console.log('StoreKit: Pending purchase synced successfully');
+          logger.log('StoreKit: Pending purchase synced successfully');
           return true;
         }
       }
@@ -128,7 +129,7 @@ class StoreKitService {
         // Temporarily allow sync even with stored data
         const success = await this.syncPurchaseWithServer(storedCustomerInfo);
         if (success) {
-          console.log('StoreKit: Pending purchase synced from stored data');
+          logger.log('StoreKit: Pending purchase synced from stored data');
           return true;
         }
       }
@@ -171,16 +172,16 @@ class StoreKitService {
         // Try to configure with the production key first
         if (apiKey) {
           try {
-            console.log('StoreKit: Configuring with production API key for', Platform.OS);
+            logger.log('StoreKit: Configuring with production API key for', Platform.OS);
             await Purchases.configure({ apiKey });
             this.initialized = true;
-            console.log('StoreKit: Initialized successfully with production key');
+            logger.log('StoreKit: Initialized successfully with production key');
             return;
           } catch (error: unknown) {
             const errorMessage = (error as Error)?.message || '';
             // If it fails due to Expo Go, try the test key
             if (errorMessage.includes('Expo Go') || errorMessage.includes('Test Store')) {
-              console.log('StoreKit: Production key failed, trying test key...');
+              logger.log('StoreKit: Production key failed, trying test key...');
             } else {
               throw error;
             }
@@ -189,10 +190,10 @@ class StoreKitService {
 
         // Fall back to test key (for Expo Go)
         if (REVENUECAT_TEST_KEY) {
-          console.log('StoreKit: Configuring with Test Store API key');
+          logger.log('StoreKit: Configuring with Test Store API key');
           await Purchases.configure({ apiKey: REVENUECAT_TEST_KEY });
           this.initialized = true;
-          console.log('StoreKit: Initialized successfully with test key (Expo Go mode)');
+          logger.log('StoreKit: Initialized successfully with test key (Expo Go mode)');
           return;
         }
 
@@ -220,7 +221,7 @@ class StoreKitService {
 
     try {
       await Purchases.logIn(userId);
-      console.log('StoreKit: User ID set', userId);
+      logger.log('StoreKit: User ID set', userId);
     } catch (error) {
       console.error('StoreKit: Failed to set user ID', error);
     }
@@ -231,7 +232,7 @@ class StoreKitService {
 
     try {
       await Purchases.logOut();
-      console.log('StoreKit: User logged out');
+      logger.log('StoreKit: User logged out');
     } catch (error) {
       console.error('StoreKit: Failed to logout', error);
     }
@@ -346,7 +347,7 @@ class StoreKitService {
     offering?: PurchasesOffering;
   }): Promise<PaywallResult> {
     if (!this.initialized || Platform.OS === 'web') {
-      console.log('StoreKit: Paywall not available');
+      logger.log('StoreKit: Paywall not available');
       return 'not_presented';
     }
 
@@ -379,7 +380,7 @@ class StoreKitService {
 
   async presentPaywallIfNeeded(requiredEntitlementId?: string): Promise<PaywallResult> {
     if (!this.initialized || Platform.OS === 'web') {
-      console.log('StoreKit: Paywall not available');
+      logger.log('StoreKit: Paywall not available');
       return 'not_presented';
     }
 
@@ -415,7 +416,7 @@ class StoreKitService {
 
   async presentCustomerCenter(): Promise<void> {
     if (!this.initialized || Platform.OS === 'web') {
-      console.log('StoreKit: Customer Center not available');
+      logger.log('StoreKit: Customer Center not available');
       return;
     }
 
@@ -423,28 +424,28 @@ class StoreKitService {
       await RevenueCatUI.presentCustomerCenter({
         callbacks: {
           onFeedbackSurveyCompleted: ({ feedbackSurveyOptionId }) => {
-            console.log('StoreKit: Feedback survey completed', feedbackSurveyOptionId);
+            logger.log('StoreKit: Feedback survey completed', feedbackSurveyOptionId);
           },
           onShowingManageSubscriptions: () => {
-            console.log('StoreKit: Showing manage subscriptions');
+            logger.log('StoreKit: Showing manage subscriptions');
           },
           onRestoreStarted: () => {
-            console.log('StoreKit: Restore started from Customer Center');
+            logger.log('StoreKit: Restore started from Customer Center');
           },
           onRestoreCompleted: ({ customerInfo }) => {
-            console.log('StoreKit: Restore completed from Customer Center', customerInfo);
+            logger.log('StoreKit: Restore completed from Customer Center', customerInfo);
           },
           onRestoreFailed: ({ error }) => {
             console.error('StoreKit: Restore failed from Customer Center', error);
           },
           onRefundRequestStarted: ({ productIdentifier }) => {
-            console.log('StoreKit: Refund request started', productIdentifier);
+            logger.log('StoreKit: Refund request started', productIdentifier);
           },
           onRefundRequestCompleted: ({ productIdentifier, refundRequestStatus }) => {
-            console.log('StoreKit: Refund request completed', productIdentifier, refundRequestStatus);
+            logger.log('StoreKit: Refund request completed', productIdentifier, refundRequestStatus);
           },
           onManagementOptionSelected: ({ option, url }) => {
-            console.log('StoreKit: Management option selected', option, url);
+            logger.log('StoreKit: Management option selected', option, url);
           },
         },
       });

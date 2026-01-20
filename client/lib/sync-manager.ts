@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 
 const SYNC_KEYS = {
   SYNC_QUEUE: "@chefspaice/sync_queue",
@@ -77,7 +78,7 @@ class SyncManager {
     if (this.isPaused) return;
     
     this.isPaused = true;
-    console.log("[Sync] Pausing sync (app in background)");
+    logger.log("[Sync] Pausing sync (app in background)");
     
     // Clear any pending sync timers
     if (this.syncTimer) {
@@ -108,7 +109,7 @@ class SyncManager {
     if (!this.isPaused) return;
     
     this.isPaused = false;
-    console.log("[Sync] Resuming sync (app in foreground)");
+    logger.log("[Sync] Resuming sync (app in foreground)");
     
     // Clear any existing interval to avoid duplicates
     if (this.networkCheckInterval) {
@@ -167,10 +168,10 @@ class SyncManager {
     // Otherwise keep current state
     
     if (wasOffline && this.isOnline) {
-      console.log("[Sync] Network restored, processing sync queue");
+      logger.log("[Sync] Network restored, processing sync queue");
       this.processSyncQueue();
     } else if (!wasOffline && !this.isOnline) {
-      console.log("[Sync] Network appears offline after multiple failures");
+      logger.log("[Sync] Network appears offline after multiple failures");
     }
     
     this.notifyListeners();
@@ -182,7 +183,7 @@ class SyncManager {
     this.lastSuccessfulRequest = Date.now();
     if (!this.isOnline) {
       this.isOnline = true;
-      console.log("[Sync] Network restored (API request succeeded)");
+      logger.log("[Sync] Network restored (API request succeeded)");
       this.notifyListeners();
       this.processSyncQueue();
     }
@@ -193,7 +194,7 @@ class SyncManager {
     this.consecutiveFailures++;
     if (this.consecutiveFailures >= 3 && this.isOnline) {
       this.isOnline = false;
-      console.log("[Sync] Network appears offline after 3 consecutive failures");
+      logger.log("[Sync] Network appears offline after 3 consecutive failures");
       this.notifyListeners();
     }
   }
@@ -561,7 +562,7 @@ class SyncManager {
 
     const token = await this.getAuthToken();
     if (!token) {
-      console.log("[Sync] Cannot sync preferences - not authenticated");
+      logger.log("[Sync] Cannot sync preferences - not authenticated");
       return;
     }
 
@@ -580,7 +581,7 @@ class SyncManager {
 
       if (response.ok) {
         this.markRequestSuccess();
-        console.log("[Sync] Preferences synced successfully");
+        logger.log("[Sync] Preferences synced successfully");
       } else {
         this.markRequestFailure();
         console.error("[Sync] Failed to sync preferences:", response.status);
@@ -627,7 +628,7 @@ class SyncManager {
 
     const token = await this.getAuthToken();
     if (!token) {
-      console.log("[Sync] Cannot sync userProfile - not authenticated");
+      logger.log("[Sync] Cannot sync userProfile - not authenticated");
       return;
     }
 
@@ -646,7 +647,7 @@ class SyncManager {
 
       if (response.ok) {
         this.markRequestSuccess();
-        console.log("[Sync] UserProfile synced successfully");
+        logger.log("[Sync] UserProfile synced successfully");
       } else {
         this.markRequestFailure();
         console.error("[Sync] Failed to sync userProfile:", response.status);

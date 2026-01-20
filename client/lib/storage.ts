@@ -39,6 +39,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 import { syncManager } from "@/lib/sync-manager";
+import { logger } from "@/lib/logger";
 
 /** Lazy-loaded notification scheduler to avoid circular dependencies */
 let scheduleNotifications: (() => Promise<number>) | null = null;
@@ -440,7 +441,7 @@ export const storage = {
             resolvedImageUri = imageUri;
           } else {
             // Local storage doesn't have it or data is corrupted
-            console.log("[getRecipes] Local image missing for recipe:", recipe.id, "cloudImageUri available:", !!recipe.cloudImageUri);
+            logger.log("[getRecipes] Local image missing for recipe:", recipe.id, "cloudImageUri available:", !!recipe.cloudImageUri);
             if (recipe.cloudImageUri) {
               useCloudFallback = true;
             } else {
@@ -455,7 +456,7 @@ export const storage = {
               const FileSystem = await import("expo-file-system/legacy");
               const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
               if (!fileInfo.exists) {
-                console.log("[getRecipes] Local file missing for recipe:", recipe.id);
+                logger.log("[getRecipes] Local file missing for recipe:", recipe.id);
                 if (recipe.cloudImageUri) {
                   useCloudFallback = true;
                 } else {
@@ -473,7 +474,7 @@ export const storage = {
         
         // Use cloud fallback if local is confirmed missing and cloud is available
         if (useCloudFallback && recipe.cloudImageUri) {
-          console.log("[getRecipes] Using cloud fallback for recipe:", recipe.id);
+          logger.log("[getRecipes] Using cloud fallback for recipe:", recipe.id);
           resolvedImageUri = recipe.cloudImageUri;
         }
         
@@ -491,18 +492,18 @@ export const storage = {
     // Use raw recipes to avoid re-resolving images (which would bloat storage)
     const recipes = await this.getRawRecipes();
 
-    console.log("[storage.addRecipe] Adding recipe:", recipe.id);
-    console.log("[storage.addRecipe] Has imageUri:", !!recipe.imageUri);
-    console.log("[storage.addRecipe] Platform:", Platform.OS);
+    logger.log("[storage.addRecipe] Adding recipe:", recipe.id);
+    logger.log("[storage.addRecipe] Has imageUri:", !!recipe.imageUri);
+    logger.log("[storage.addRecipe] Platform:", Platform.OS);
 
     // Store images separately to avoid AsyncStorage size limits
     let recipeToStore = recipe;
     
     if (recipe.imageUri?.startsWith("data:image")) {
-      console.log("[storage.addRecipe] Image is data URI, storing separately");
+      logger.log("[storage.addRecipe] Image is data URI, storing separately");
       // Store image separately (works on both web and native)
       const success = await this.setRecipeImage(recipe.id, recipe.imageUri);
-      console.log("[storage.addRecipe] Image storage success:", success);
+      logger.log("[storage.addRecipe] Image storage success:", success);
       
       if (success) {
         recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}` };
@@ -516,7 +517,7 @@ export const storage = {
     const recipeWithTimestamp = { ...recipeToStore, updatedAt: new Date().toISOString() };
     recipes.push(recipeWithTimestamp);
     await this.setRecipes(recipes);
-    console.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
+    logger.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
     
     const token = await this.getAuthToken();
     if (token) {
@@ -567,7 +568,7 @@ export const storage = {
       
       if (response.ok) {
         const result = await response.json();
-        console.log("[storage.uploadRecipeImageToCloud] Success:", result.cloudImageUri);
+        logger.log("[storage.uploadRecipeImageToCloud] Success:", result.cloudImageUri);
         
         // Update the recipe with cloudImageUri
         const recipes = await this.getRawRecipes();
@@ -582,7 +583,7 @@ export const storage = {
         }
       }
     } catch (error) {
-      console.log("[storage.uploadRecipeImageToCloud] Failed:", error);
+      logger.log("[storage.uploadRecipeImageToCloud] Failed:", error);
     }
   },
 
@@ -623,10 +624,10 @@ export const storage = {
       // Store each image in its own key to avoid size limits
       const key = `${STORAGE_KEYS.RECIPE_IMAGES}:${recipeId}`;
       const image = await getItem<string>(key);
-      console.log("[storage.getRecipeImage] Retrieved for:", recipeId, "found:", !!image);
+      logger.log("[storage.getRecipeImage] Retrieved for:", recipeId, "found:", !!image);
       return image;
     } catch (error) {
-      console.log("[storage.getRecipeImage] Failed:", error);
+      logger.log("[storage.getRecipeImage] Failed:", error);
       return null;
     }
   },
@@ -635,13 +636,13 @@ export const storage = {
     try {
       // Store each image in its own key to avoid size limits
       const key = `${STORAGE_KEYS.RECIPE_IMAGES}:${recipeId}`;
-      console.log("[storage.setRecipeImage] Storing image for:", recipeId);
-      console.log("[storage.setRecipeImage] Image size:", imageUri?.length || 0);
+      logger.log("[storage.setRecipeImage] Storing image for:", recipeId);
+      logger.log("[storage.setRecipeImage] Image size:", imageUri?.length || 0);
       await setItem(key, imageUri);
-      console.log("[storage.setRecipeImage] Success");
+      logger.log("[storage.setRecipeImage] Success");
       return true;
     } catch (error) {
-      console.log("[storage.setRecipeImage] Failed:", error);
+      logger.log("[storage.setRecipeImage] Failed:", error);
       return false;
     }
   },
@@ -917,7 +918,7 @@ export const storage = {
       
       // If onboarding was explicitly completed or skipped, respect that
       if (status.cookwareSetupCompleted || status.cookwareSetupSkipped) {
-        console.log(`[Storage] needsOnboarding: false (explicitly ${status.cookwareSetupCompleted ? 'completed' : 'skipped'})`);
+        logger.log(`[Storage] needsOnboarding: false (explicitly ${status.cookwareSetupCompleted ? 'completed' : 'skipped'})`);
         return false;
       }
       
@@ -931,13 +932,13 @@ export const storage = {
       
       const hasExistingData = recipes.length > 0 || inventory.length > 0 || preferences !== null;
       if (hasExistingData) {
-        console.log(`[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`);
+        logger.log(`[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`);
         // Auto-fix: Mark onboarding as completed since user has data
         await this.setOnboardingCompleted().catch(() => {});
         return false;
       }
       
-      console.log(`[Storage] needsOnboarding: true (no completion flag, no existing data)`);
+      logger.log(`[Storage] needsOnboarding: true (no completion flag, no existing data)`);
       return true;
     } catch (error) {
       // On any error, default to NOT needing onboarding to prevent redirect loops
@@ -956,7 +957,7 @@ export const storage = {
   async resetForNewUser(): Promise<void> {
     // Clear all user data to ensure new users see onboarding
     // This is called when isNewUser is true from social sign-in
-    console.log("[Storage] Resetting for new user - clearing all local data");
+    logger.log("[Storage] Resetting for new user - clearing all local data");
     await Promise.all([
       AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING),
       AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_STEP),
@@ -968,7 +969,7 @@ export const storage = {
       AsyncStorage.removeItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS),
       AsyncStorage.removeItem(STORAGE_KEYS.COOKWARE),
     ]);
-    console.log("[Storage] New user reset complete");
+    logger.log("[Storage] New user reset complete");
   },
 
   async resetAllStorage(): Promise<void> {
@@ -981,7 +982,7 @@ export const storage = {
     if (appKeys.length > 0) {
       await AsyncStorage.multiRemove(appKeys);
     }
-    console.log("[Storage] Reset all storage, cleared keys:", appKeys.length);
+    logger.log("[Storage] Reset all storage, cleared keys:", appKeys.length);
   },
 
   async getCustomStorageLocations(): Promise<CustomStorageLocation[]> {

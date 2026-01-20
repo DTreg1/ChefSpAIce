@@ -93,6 +93,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UsageBadge } from "@/components/UpgradePrompt";
 import { useSearch } from "@/contexts/SearchContext";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
+import { logger } from "@/lib/logger";
 
 type FoodGroup =
   | "grains"
@@ -372,16 +373,16 @@ export default function InventoryScreen() {
 
     // Food group filter (multi-select: show items matching ANY selected group)
     if (selectedFoodGroups.length > 0) {
-      console.log('[Filter] Filtering by food groups:', selectedFoodGroups);
+      logger.log('[Filter] Filtering by food groups:', selectedFoodGroups);
       filtered = filtered.filter((item) => {
         const itemFoodGroup = getItemFoodGroup(item);
         const passes = itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
         if (!passes) {
-          console.log(`[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`);
+          logger.log(`[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`);
         }
         return passes;
       });
-      console.log('[Filter] After filtering:', filtered.length, 'items');
+      logger.log('[Filter] After filtering:', filtered.length, 'items');
     }
 
     // Apply sorting (alphabetically by name)
@@ -1029,7 +1030,7 @@ export default function InventoryScreen() {
                   const newSelection = isSelected
                     ? prev.filter((g) => g !== group.key)
                     : [...prev, group.key];
-                  console.log('[Filter] Selected food groups:', newSelection);
+                  logger.log('[Filter] Selected food groups:', newSelection);
                   return newSelection;
                 });
               }}

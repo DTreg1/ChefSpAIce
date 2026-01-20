@@ -7,6 +7,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -72,7 +73,7 @@ export default function StorageLocationsScreen() {
       const locations = await storage.getCustomStorageLocations();
       setCustomLocations(locations);
     } catch (e) {
-      console.log("Error loading custom locations:", e);
+      logger.log("Error loading custom locations:", e);
     }
   }, []);
 
@@ -116,7 +117,7 @@ export default function StorageLocationsScreen() {
       setIsAdding(false);
       loadCustomLocations();
     } catch (e) {
-      console.log("Error adding location:", e);
+      logger.log("Error adding location:", e);
       Alert.alert("Error", "Failed to add storage location.");
     }
   };
@@ -144,7 +145,7 @@ export default function StorageLocationsScreen() {
                 );
               }
             } catch (e) {
-              console.log("Error removing location:", e);
+              logger.log("Error removing location:", e);
               Alert.alert("Error", "Failed to remove storage location.");
             }
           },

@@ -6,6 +6,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -273,7 +274,7 @@ export default function BarcodeTestScreen() {
                 try {
                   await Linking.openSettings();
                 } catch (err) {
-                  console.log("Could not open settings");
+                  logger.log("Could not open settings");
                 }
               }}
               style={styles.permissionButton}

@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { logger } from "@/lib/logger";
 import { storage } from "@/lib/storage";
 import { syncManager } from "@/lib/sync-manager";
 import { queryClient } from "@/lib/query-client";
@@ -60,12 +61,12 @@ export function ScreenIdentifierOverlay({
               },
             });
             if (deleteResponse.ok) {
-              console.log("[Reset] Account deleted from server");
+              logger.log("[Reset] Account deleted from server");
             } else {
-              console.log("[Reset] Could not delete from server, continuing with local reset");
+              logger.log("[Reset] Could not delete from server, continuing with local reset");
             }
           } catch (err) {
-            console.log("[Reset] Server delete failed, continuing with local reset");
+            logger.log("[Reset] Server delete failed, continuing with local reset");
           }
         }
 
@@ -83,7 +84,7 @@ export function ScreenIdentifierOverlay({
         await syncManager.clearQueue();
         queryClient.clear();
 
-        console.log("[Reset] Signed out and cleared all local data");
+        logger.log("[Reset] Signed out and cleared all local data");
         
         // 4. Reload the page to show landing/auth screen
         if (Platform.OS === "web") {

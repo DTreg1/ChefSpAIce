@@ -3,6 +3,7 @@ import {
   initializeNotifications,
   addNotificationResponseListener,
 } from "@/lib/notifications";
+import { logger } from "@/lib/logger";
 
 export function useExpirationNotifications() {
   const initialized = useRef(false);
@@ -20,7 +21,7 @@ export function useExpirationNotifications() {
       };
 
       if (data?.type === "expiration-alert" && data?.itemId) {
-        console.log("Notification tapped for item:", data.itemId);
+        logger.log("Notification tapped for item:", data.itemId);
       }
     });
 

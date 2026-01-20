@@ -40,6 +40,7 @@ import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { apiRequest, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
+import { logger } from "@/lib/logger";
 
 const EXPIRING_THRESHOLD_DAYS = 3;
 
@@ -318,12 +319,12 @@ export default function GenerateRecipeScreen() {
           },
         );
 
-        console.log("[GenerateRecipe] Image response status:", imageResponse.ok);
+        logger.log("[GenerateRecipe] Image response status:", imageResponse.ok);
         if (imageResponse.ok) {
           const imageData = await imageResponse.json();
-          console.log("[GenerateRecipe] Image data success:", imageData.success);
-          console.log("[GenerateRecipe] Has base64:", !!imageData.imageBase64);
-          console.log("[GenerateRecipe] Has URL:", !!imageData.imageUrl);
+          logger.log("[GenerateRecipe] Image data success:", imageData.success);
+          logger.log("[GenerateRecipe] Has base64:", !!imageData.imageBase64);
+          logger.log("[GenerateRecipe] Has URL:", !!imageData.imageUrl);
           if (imageData.success) {
             let imageUri: string | undefined;
             if (imageData.imageBase64) {
@@ -331,22 +332,22 @@ export default function GenerateRecipeScreen() {
                 newRecipe.id,
                 imageData.imageBase64,
               );
-              console.log("[GenerateRecipe] Saved base64 image, URI:", imageUri?.substring(0, 50));
+              logger.log("[GenerateRecipe] Saved base64 image, URI:", imageUri?.substring(0, 50));
             } else if (imageData.imageUrl) {
               imageUri = await saveRecipeImageFromUrl(
                 newRecipe.id,
                 imageData.imageUrl,
               );
-              console.log("[GenerateRecipe] Saved URL image, URI:", imageUri);
+              logger.log("[GenerateRecipe] Saved URL image, URI:", imageUri);
             }
             if (imageUri) {
               newRecipe.imageUri = imageUri;
-              console.log("[GenerateRecipe] Recipe imageUri set:", !!newRecipe.imageUri);
+              logger.log("[GenerateRecipe] Recipe imageUri set:", !!newRecipe.imageUri);
             }
           }
         }
       } catch (imgError) {
-        console.log("Image generation failed:", imgError);
+        logger.log("Image generation failed:", imgError);
       }
 
       // Save the complete recipe (with image if available)

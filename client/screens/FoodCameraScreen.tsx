@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus } from "react-native";
+import { logger } from "@/lib/logger";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -406,7 +407,7 @@ export default function FoodCameraScreen() {
                 try {
                   await Linking.openSettings();
                 } catch (error) {
-                  console.log("Could not open settings");
+                  logger.log("Could not open settings");
                 }
               }}
               style={styles.permissionButton}

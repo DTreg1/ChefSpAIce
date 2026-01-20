@@ -10,6 +10,7 @@ import {
   AppState,
   AppStateStatus,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -254,7 +255,7 @@ export default function RecipeScannerScreen() {
                 try {
                   await Linking.openSettings();
                 } catch (error) {
-                  console.log("Could not open settings");
+                  logger.log("Could not open settings");
                 }
               }}
               style={styles.permissionButton}

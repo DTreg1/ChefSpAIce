@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Alert } from "react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { logger } from "@/lib/logger";
 import {
   storage,
   FoodItem,
@@ -248,7 +249,7 @@ export function useQuickRecipeGeneration() {
           }
         }
       } catch (imgError) {
-        console.log("Image generation failed:", imgError);
+        logger.log("Image generation failed:", imgError);
       }
 
       await storage.addRecipe(newRecipe);

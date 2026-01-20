@@ -50,6 +50,7 @@ import * as AuthSession from "expo-auth-session";
 import { getApiUrl, queryClient, setAuthErrorCallback, clearAuthErrorCallback } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 import { storeKitService } from "@/lib/storekit-service";
+import { logger } from "@/lib/logger";
 
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
@@ -207,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Automatically sync from cloud when app loads with stored auth
           storage.syncFromCloud().then((result) => {
             if (result.success) {
-              console.log("[Auth] Auto-synced data from cloud on app load");
+              logger.log("[Auth] Auto-synced data from cloud on app load");
             }
           }).catch((err) => {
             console.error("[Auth] Failed to auto-sync from cloud:", err);
@@ -253,12 +254,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoading: false,
               });
               
-              console.log("[Auth] Restored session from cookie");
+              logger.log("[Auth] Restored session from cookie");
               
               // Sync from cloud
               storage.syncFromCloud().then((result) => {
                 if (result.success) {
-                  console.log("[Auth] Auto-synced data from cloud after cookie restore");
+                  logger.log("[Auth] Auto-synced data from cloud after cookie restore");
                 }
               }).catch((err) => {
                 console.error("[Auth] Failed to auto-sync from cloud:", err);
@@ -266,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return;
             }
           } catch (cookieError) {
-            console.log("[Auth] No cookie session to restore");
+            logger.log("[Auth] No cookie session to restore");
           }
         }
         
@@ -338,11 +339,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string, displayName?: string, selectedTier?: 'basic' | 'pro') => {
       try {
-        console.log("[SignUp] Starting registration...", { email, selectedTier });
+        logger.log("[SignUp] Starting registration...", { email, selectedTier });
         const baseUrl = getApiUrl();
-        console.log("[SignUp] API URL:", baseUrl);
+        logger.log("[SignUp] API URL:", baseUrl);
         const url = new URL("/api/auth/register", baseUrl);
-        console.log("[SignUp] Full URL:", url.toString());
+        logger.log("[SignUp] Full URL:", url.toString());
         
         const response = await fetch(url.toString(), {
           method: "POST",
@@ -350,10 +351,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           credentials: "include",
           body: JSON.stringify({ email, password, displayName, selectedPlan: selectedTier === 'basic' ? 'monthly' : selectedTier === 'pro' ? 'annual' : 'monthly' }),
         });
-        console.log("[SignUp] Response status:", response.status);
+        logger.log("[SignUp] Response status:", response.status);
 
         const data = await response.json();
-        console.log("[SignUp] Response data:", data);
+        logger.log("[SignUp] Response data:", data);
         
         if (!response.ok) {
           return { success: false, error: data.error || "Registration failed" };
@@ -542,7 +543,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // This clears any leftover data from previous accounts
       // Note: isNewUser is returned inside data.user from the server
       const isNewUser = data.user?.isNewUser === true;
-      console.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
+      logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
       
       if (isNewUser) {
         await storage.resetForNewUser();
@@ -656,7 +657,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // This clears any leftover data from previous accounts
       // Note: isNewUser is returned inside data.user from the server
       const isNewUser = data.user?.isNewUser === true;
-      console.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
+      logger.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
       
       if (isNewUser) {
         await storage.resetForNewUser();

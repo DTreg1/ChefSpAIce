@@ -7,6 +7,7 @@ import {
   Platform,
   TextInput,
 } from "react-native";
+import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
@@ -541,7 +542,7 @@ function EditModal({
         const allLocations = await storage.getAllStorageLocations();
         setStorageLocations(allLocations);
       } catch (e) {
-        console.log("Error loading storage locations:", e);
+        logger.log("Error loading storage locations:", e);
       }
     };
     loadStorageLocations();
