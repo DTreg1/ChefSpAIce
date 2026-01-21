@@ -858,7 +858,6 @@ interface LandingScreenProps {
   onPrivacy?: () => void;
   onTerms?: () => void;
   onSupport?: () => void;
-  onDemo?: () => void;
 }
 
 export default function LandingScreen({
@@ -866,7 +865,6 @@ export default function LandingScreen({
   onPrivacy,
   onTerms,
   onSupport,
-  onDemo,
 }: LandingScreenProps) {
   const { width } = useWindowDimensions();
   const { isDark } = useTheme();
@@ -1101,33 +1099,6 @@ export default function LandingScreen({
               <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
                 Manage your pantry, generate recipes from what you have, plan
                 meals, and never let food go to waste again.
-              </Text>
-
-              {onDemo && (
-                <View style={styles.heroButtons}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.primaryButton,
-                      pressed && styles.buttonPressed,
-                    ]}
-                    onPress={onDemo}
-                    data-testid="button-try-demo"
-                  >
-                    <LinearGradient
-                      colors={[AppColors.primary, "#1E8449"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.primaryButtonGradient}
-                    >
-                      <MaterialCommunityIcons name="play-circle-outline" size={20} color="#FFFFFF" />
-                      <Text style={styles.primaryButtonText}>Try Demo</Text>
-                    </LinearGradient>
-                  </Pressable>
-                </View>
-              )}
-
-              <Text style={styles.trialText} data-testid="text-demo-hint">
-                No sign-up required - explore with sample data
               </Text>
 
               {/*
