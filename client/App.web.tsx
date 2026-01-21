@@ -23,6 +23,7 @@ import AboutScreen from "@/screens/web/AboutScreen";
 import PrivacyScreen from "@/screens/web/PrivacyScreen";
 import TermsScreen from "@/screens/web/TermsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
+import DemoScreen from "@/screens/web/DemoScreen";
 import Constants from "expo-constants";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -106,8 +107,19 @@ function WebLandingContent() {
             onPrivacy={() => navigateTo('/privacy')}
             onTerms={() => navigateTo('/terms')}
             onSupport={() => navigateTo('/support')}
+            onDemo={() => navigateTo('/demo')}
           />
         </View>
+        
+        {/* Demo - loaded when first visited, then cached */}
+        {visitedPages.has('/demo') && (
+          <View style={[styles.pageContainer, { display: isVisible('/demo') ? 'flex' : 'none' }]}>
+            <DemoScreen 
+              onBack={() => navigateTo('/')}
+              onSignUp={handleSignIn}
+            />
+          </View>
+        )}
         
         {/* About - loaded when first visited, then cached */}
         {visitedPages.has('/about') && (
