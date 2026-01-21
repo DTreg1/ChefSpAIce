@@ -58,7 +58,7 @@
     <key>NSCameraUsageDescription</key>
     <string>ChefSpAIce needs camera access to scan barcodes and add food items to your inventory.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>ChefSpAIce needs microphone access for voice commands to navigate recipes hands-free while cooking.</string>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>ChefSpAIce needs photo library access to select images for your food items.</string>
     <key>RCTNewArchEnabled</key>
