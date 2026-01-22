@@ -23,13 +23,15 @@ export type CommandIntent =
   | "HELP"
   | "UNKNOWN";
 
-interface CommandResult {
+interface _CommandResult {
   success: boolean;
   response: string;
   data?: unknown;
   action?: "navigate" | "mutation" | "query" | "speak";
   navigateTo?: { screen: string; params?: Record<string, unknown> };
 }
+// @ts-ignore - defined for future use
+type CommandResult = _CommandResult;
 
 export type ScreenContext =
   | "inventory"

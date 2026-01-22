@@ -140,7 +140,6 @@ function AuthGuardedNavigator() {
   const {
     isActive,
     isLoading: subscriptionLoading,
-    refetch: refreshSubscription,
   } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);

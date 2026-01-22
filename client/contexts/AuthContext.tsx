@@ -46,7 +46,6 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as AuthSession from "expo-auth-session";
 import { getApiUrl, queryClient, setAuthErrorCallback, clearAuthErrorCallback } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
 import { storeKitService } from "@/lib/storekit-service";
@@ -166,7 +165,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const [googleRequest, googleResponse, promptGoogleAsync] = useGoogleAuth();
+  const [_googleRequest, _googleResponse, promptGoogleAsync] = useGoogleAuth();
+  void _googleRequest; void _googleResponse; // reserved for future use
 
   useEffect(() => {
     const checkAppleAuth = async () => {

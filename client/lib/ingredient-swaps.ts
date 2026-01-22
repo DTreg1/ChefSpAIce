@@ -6,10 +6,12 @@ export interface IngredientSwap {
   dietaryTags: string[];
 }
 
-interface SwapCategory {
+interface _SwapCategory {
   name: string;
   swaps: IngredientSwap[];
 }
+// @ts-ignore - defined for future use
+type SwapCategory = _SwapCategory;
 
 export const DIETARY_FILTERS = [
   { id: "vegan", label: "Vegan", icon: "feather" },

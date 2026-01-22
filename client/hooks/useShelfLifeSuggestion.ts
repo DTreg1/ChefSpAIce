@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addDays } from "date-fns";
 import {
@@ -256,8 +256,6 @@ function getLocalSuggestion(
     };
   }
 
-  const normalizedCategory = normalizeString(category);
-
   // Try exact category match
   const exactDays = getDaysForLocation(category, storageLocation);
   const entry = getShelfLifeEntry(category);
@@ -355,7 +353,6 @@ export function useShelfLifeSuggestion({
   const {
     data: aiData,
     isLoading: isAILoading,
-    isFetched: isAIFetched,
   } = useQuery<AIShelfLifeResponse>({
     queryKey: [
       "/api/suggestions/shelf-life",

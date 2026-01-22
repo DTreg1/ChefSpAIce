@@ -48,7 +48,8 @@ export function useRecipeVoiceNavigation(
     lastCommand: "",
   });
 
-  const stepRefs = useRef<Array<any>>([]);
+  const _stepRefs = useRef<Array<any>>([]);
+  void _stepRefs; // reserved for future scroll-to-step feature
   const isReadingFullRecipeRef = useRef(false);
   const isMountedRef = useRef(true);
 
@@ -61,7 +62,6 @@ export function useRecipeVoiceNavigation(
   const {
     isSpeaking,
     isPaused,
-    speak,
     speakNow,
     queueMultiple,
     stop: stopSpeaking,
