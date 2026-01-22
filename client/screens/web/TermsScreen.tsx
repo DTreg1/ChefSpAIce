@@ -1,9 +1,9 @@
-import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { StyleSheet, View, Text, ScrollView, Pressable, Platform, Image } from "react-native";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
+const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
@@ -31,7 +31,7 @@ export default function TermsScreen() {
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color={colors.iconLight} />
+            <Image source={chefHatLight} style={{ width: 32, height: 32 }} resizeMode="contain" />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
           </Pressable>
           <View style={styles.navLinks}>

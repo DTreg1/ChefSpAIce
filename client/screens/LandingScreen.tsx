@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
   Platform,
   Linking,
-  Image as RNImage,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -966,7 +966,7 @@ export default function LandingScreen({
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
-            <RNImage source={logoImage} style={{ width: 28, height: 28 }} />
+            <Image source={logoImage} style={{ width: 28, height: 28 }} />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
             </Text>
