@@ -966,7 +966,7 @@ export default function LandingScreen({
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
-            <RNImage source={logoImage} style={{ width: 32, height: 32 }} />
+            <RNImage source={logoImage} style={{ width: 28, height: 28 }} />
             <Text style={styles.logoText} data-testid="text-logo">
               ChefSpAIce
             </Text>
@@ -1465,12 +1465,7 @@ export default function LandingScreen({
 
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
-            <View style={styles.footerLogo}>
-              <MaterialCommunityIcons
-                name="chef-hat"
-                size={24}
-                color={AppColors.primary}
-              />
+            <View style={styles.footerLogo}>logoImage
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
             <Text style={styles.footerText}>

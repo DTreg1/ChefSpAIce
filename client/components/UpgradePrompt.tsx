@@ -255,7 +255,6 @@ interface UsageBadgeProps {
 }
 
 export function UsageBadge({ current, max, onPress }: UsageBadgeProps) {
-  const { theme } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
