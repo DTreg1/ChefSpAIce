@@ -30,7 +30,6 @@ jest.mock("@expo/vector-icons", () => ({
 
 import {
   FoodSearchAutocomplete,
-  FoodSearchResult,
 } from "@/components/FoodSearchAutocomplete";
 
 const mockFetch = jest.fn();
@@ -173,7 +172,7 @@ describe("FoodSearchAutocomplete", () => {
       mockFetch.mockReturnValue(pendingPromise);
 
       const onSelect = jest.fn();
-      const { getByPlaceholderText, queryByTestId } = renderWithProviders(
+      const { getByPlaceholderText } = renderWithProviders(
         <FoodSearchAutocomplete onSelect={onSelect} />,
       );
 
@@ -352,7 +351,7 @@ describe("FoodSearchAutocomplete", () => {
   describe("Clear Functionality", () => {
     it("should clear input when clear button is pressed", async () => {
       const onSelect = jest.fn();
-      const { getByPlaceholderText, getByTestId } = renderWithProviders(
+      const { getByPlaceholderText } = renderWithProviders(
         <FoodSearchAutocomplete onSelect={onSelect} />,
       );
 

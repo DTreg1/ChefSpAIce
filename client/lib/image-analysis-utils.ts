@@ -129,3 +129,37 @@ export function formatCategoryDisplay(category: string): string {
 export function formatStorageLocationDisplay(location: string): string {
   return location.charAt(0).toUpperCase() + location.slice(1).toLowerCase();
 }
+
+export function getBatchButtonText(count: number): string {
+  return `Add ${count} Item${count === 1 ? "" : "s"} to Inventory`;
+}
+
+export function isSingleItemSelected(count: number): boolean {
+  return count === 1;
+}
+
+export type StorageLocationValue = "fridge" | "freezer" | "pantry" | "counter";
+
+export function mapStorageLocation(location: string | undefined): StorageLocationValue {
+  if (!location) return "fridge";
+  const loc = location.toLowerCase();
+  const locationMap: Record<string, StorageLocationValue> = {
+    refrigerator: "fridge",
+    fridge: "fridge",
+    freezer: "freezer",
+    pantry: "pantry",
+    counter: "counter",
+  };
+  return locationMap[loc] || "fridge";
+}
+
+export function calculateExpirationDate(shelfLifeDays: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + shelfLifeDays);
+  return date.toISOString().split("T")[0];
+}
+
+export function normalizeCategory(category: string | undefined): string {
+  if (!category) return "Other";
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+}
