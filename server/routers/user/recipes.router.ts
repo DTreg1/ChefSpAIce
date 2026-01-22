@@ -193,7 +193,7 @@ export function buildSmartPrompt(params: {
   const {
     expiringItems,
     otherItems,
-    prioritizeExpiring,
+    prioritizeExpiring: _prioritizeExpiring,
     quickRecipe,
     servings,
     maxTime,
@@ -205,6 +205,7 @@ export function buildSmartPrompt(params: {
     previousRecipeTitles = [],
     ingredientCount = { min: 4, max: 6 },
   } = params;
+  void _prioritizeExpiring; // reserved for future use
 
   let prompt = `You are a creative home chef helping reduce food waste.\n\n`;
 

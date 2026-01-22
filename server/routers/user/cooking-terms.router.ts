@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "../../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
-import { eq, ilike, or, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -107,7 +106,6 @@ router.get("/detect", async (req: Request, res: Response) => {
     );
 
     const foundTerms: CookingTerm[] = [];
-    const textLower = text.toLowerCase();
 
     for (const term of sortedTerms) {
       const termLower = term.term.toLowerCase();

@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { feedback, feedbackBuckets, userSessions, users } from "../../shared/schema";
-import { eq, desc, isNull, and } from "drizzle-orm";
+import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 
 const router = Router();

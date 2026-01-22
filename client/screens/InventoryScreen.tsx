@@ -33,7 +33,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  TextInput,
   Pressable,
   RefreshControl,
   Alert,
@@ -50,18 +49,15 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  runOnJS,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useQueryClient } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/query-client";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import { GlassView } from "@/components/GlassViewWithContext";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -89,8 +85,6 @@ import {
   DEFAULT_STORAGE_LOCATIONS,
 } from "@/lib/storage";
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
-import { useSubscription } from "@/hooks/useSubscription";
-import { UsageBadge } from "@/components/UpgradePrompt";
 import { useSearch } from "@/contexts/SearchContext";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
 import { logger } from "@/lib/logger";
@@ -207,14 +201,13 @@ const getItemFoodGroup = (item: FoodItem): FoodGroup | null => {
 export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<InventoryStackParamList>>();
   const queryClient = useQueryClient();
-  const { usage, entitlements, isProUser } = useSubscription();
   const { handleExport, exporting } = useInventoryExport();
 
-  const { getSearchQuery, clearSearch, collapseSearch } = useSearch();
+  const { getSearchQuery, collapseSearch } = useSearch();
 
   const menuItems: MenuItemConfig[] = [
     {
@@ -239,33 +232,12 @@ export default function InventoryScreen() {
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map(loc => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
-  const [filterRowWidth, setFilterRowWidth] = useState(0);
-  const [buttonWidths, setButtonWidths] = useState<number[]>([]);
   const [funFact, setFunFact] = useState<string | null>(null);
   const [funFactLoading, setFunFactLoading] = useState(false);
   const [funFactTimestamp, setFunFactTimestamp] = useState<number | null>(null);
   const [funFactTimeRemaining, setFunFactTimeRemaining] = useState<string>("");
 
   const FUN_FACT_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-  const calculatedGap = useMemo(() => {
-    if (filterRowWidth === 0 || buttonWidths.length !== FOOD_GROUPS.length) {
-      return Spacing.sm; // Default gap while measuring
-    }
-    const totalButtonsWidth = buttonWidths.reduce((sum, w) => sum + w, 0);
-    const remainingSpace = filterRowWidth - totalButtonsWidth;
-    const numberOfGaps = FOOD_GROUPS.length - 1; // 5 gaps for 6 buttons
-    const gap = Math.max(0, remainingSpace / numberOfGaps);
-    return gap;
-  }, [filterRowWidth, buttonWidths]);
-
-  const handleButtonLayout = useCallback((index: number, width: number) => {
-    setButtonWidths(prev => {
-      const newWidths = [...prev];
-      newWidths[index] = width;
-      return newWidths;
-    });
-  }, []);
 
   const calculateNutritionTotals = useCallback((itemList: FoodItem[]) => {
     let totalCalories = 0;
@@ -294,18 +266,6 @@ export default function InventoryScreen() {
   }, []);
 
   const nutritionTotals = calculateNutritionTotals(filteredItems);
-
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (searchQuery.trim()) count++;
-    if (selectedFoodGroups.length > 0) count += selectedFoodGroups.length;
-    return count;
-  }, [searchQuery, selectedFoodGroups]);
-
-  const clearAllFilters = useCallback(() => {
-    clearSearch("inventory");
-    setSelectedFoodGroups([]);
-  }, [clearSearch]);
 
   const loadItems = useCallback(async (isInitialLoad = false) => {
     try {
@@ -1024,7 +984,6 @@ export default function InventoryScreen() {
                     : theme.glass.border,
                 },
               ]}
-              onLayout={(e) => handleButtonLayout(index, e.nativeEvent.layout.width)}
               onPress={() => {
                 setSelectedFoodGroups((prev) => {
                   const newSelection = isSelected

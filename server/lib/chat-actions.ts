@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { userSyncData, userSessions, feedback } from "../../shared/schema";
+import { userSyncData, feedback } from "../../shared/schema";
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 

@@ -2,7 +2,7 @@ import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { db } from "../db";
 import { subscriptions, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { getPlanTypeFromPriceId, getTierFromPriceId, getTierFromProductName } from "./subscriptionConfig";
+import { getPlanTypeFromPriceId, getTierFromPriceId } from "./subscriptionConfig";
 import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
 

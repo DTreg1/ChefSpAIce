@@ -8,7 +8,6 @@ import {
   searchOpenFoodFacts,
   lookupBarcode,
   mapOFFToFoodItem,
-  hasCompleteNutritionData,
 } from "../../integrations/openFoodFacts";
 
 const router = Router();

@@ -27,7 +27,6 @@ import { eq } from "drizzle-orm";
 import {
   SubscriptionTier,
   TierLimits,
-  TIER_CONFIG,
   TRIAL_CONFIG,
   getTierLimits,
   isWithinLimit,

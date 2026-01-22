@@ -118,7 +118,7 @@ interface NutritionInfo {
   sodium?: number;
 }
 
-interface ScanResult {
+interface _ScanResult {
   productName: string | null;
   ingredients: ScannedIngredient[];
   nutrition: NutritionInfo | null;
@@ -128,6 +128,8 @@ interface ScanResult {
   error?: string;
   suggestion?: string;
 }
+// @ts-ignore - defined for future use
+type ScanResult = _ScanResult;
 
 router.post("/scan", async (req: Request, res: Response) => {
   try {

@@ -4,8 +4,6 @@ import {
   generateItemsHash,
   parseTips,
   isCacheValid,
-  CACHE_TTL_MS,
-  type WasteTip,
   type ExpiringItem,
   type WasteReductionCacheEntry,
 } from "../../lib/waste-reduction-utils";

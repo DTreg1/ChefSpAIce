@@ -10,7 +10,7 @@ import {
   checkCookwareLimit,
   checkFeatureAccess,
 } from "../services/subscriptionService";
-import { SubscriptionTier, STRIPE_PRICE_IDS } from "@shared/subscription";
+import { SubscriptionTier } from "@shared/subscription";
 
 const router = Router();
 
@@ -335,7 +335,7 @@ router.post("/sync-revenuecat", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { tier, status, productId, expirationDate } = req.body;
+    const { tier, status, expirationDate } = req.body;
 
     if (!tier || !status) {
       return res.status(400).json({ error: "tier and status are required" });
