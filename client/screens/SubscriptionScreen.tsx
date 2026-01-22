@@ -176,6 +176,22 @@ export default function SubscriptionScreen() {
     navigation.navigate('Auth');
   };
 
+  const handleOpenPrivacyPolicy = () => {
+    if (Platform.OS === 'web') {
+      window.open('/privacy', '_blank');
+    } else {
+      navigation.navigate('Privacy' as any);
+    }
+  };
+
+  const handleOpenTermsOfUse = () => {
+    if (Platform.OS === 'web') {
+      window.open('/terms', '_blank');
+    } else {
+      navigation.navigate('Terms' as any);
+    }
+  };
+
   const handleUpgrade = async (tier: 'basic' | 'pro' = 'pro', plan: 'monthly' | 'annual' = 'annual') => {
     setIsCheckingOut(true);
     const tierName = tier === 'pro' ? 'Pro' : 'Basic';
@@ -630,6 +646,15 @@ export default function SubscriptionScreen() {
           <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
             Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
           </ThemedText>
+          <View style={styles.legalLinksContainer}>
+            <Pressable onPress={handleOpenPrivacyPolicy} data-testid="link-privacy-policy">
+              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Privacy Policy</ThemedText>
+            </Pressable>
+            <ThemedText style={[styles.legalSeparator, { color: theme.textSecondary }]}>|</ThemedText>
+            <Pressable onPress={handleOpenTermsOfUse} data-testid="link-terms-of-use">
+              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Terms of Use</ThemedText>
+            </Pressable>
+          </View>
         </GlassCard>
       )}
 
@@ -785,6 +810,15 @@ export default function SubscriptionScreen() {
           <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
             Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
           </ThemedText>
+          <View style={styles.legalLinksContainer}>
+            <Pressable onPress={handleOpenPrivacyPolicy} data-testid="link-trial-privacy-policy">
+              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Privacy Policy</ThemedText>
+            </Pressable>
+            <ThemedText style={[styles.legalSeparator, { color: theme.textSecondary }]}>|</ThemedText>
+            <Pressable onPress={handleOpenTermsOfUse} data-testid="link-trial-terms-of-use">
+              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Terms of Use</ThemedText>
+            </Pressable>
+          </View>
         </GlassCard>
       )}
 
@@ -1237,5 +1271,20 @@ const styles = StyleSheet.create({
   },
   signInButton: {
     marginTop: Spacing.sm,
+  },
+  legalLinksContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  legalLink: {
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  legalSeparator: {
+    fontSize: 14,
   },
 });
