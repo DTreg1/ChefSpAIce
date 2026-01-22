@@ -95,7 +95,7 @@ export default function GenerateRecipeScreen() {
   );
   const [generating, setGenerating] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
-  const [progressStage, setProgressStage] = useState<"recipe" | "image">(
+  const [_progressStage, setProgressStage] = useState<"recipe" | "image">(
     "recipe",
   );
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -104,7 +104,7 @@ export default function GenerateRecipeScreen() {
 
   const { mealType, greeting } = useMemo(() => getMealTypeFromTime(), []);
 
-  const { expiringItems, otherItems } = useMemo(() => {
+  const { expiringItems, otherItems: _otherItems } = useMemo(() => {
     const expiring: InventoryItemWithExpiry[] = [];
     const other: InventoryItemWithExpiry[] = [];
 

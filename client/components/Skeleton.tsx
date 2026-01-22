@@ -8,25 +8,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - Spacing.lg * 3) / 2;
 const CONTENT_WIDTH = SCREEN_WIDTH - Spacing.lg * 2;
 
-interface SkeletonProps {
-  width?: number;
-  height?: number;
-  radius?: number;
-}
-
-function Skeleton({ width = 100, height = 20, radius = 8 }: SkeletonProps) {
-  const { isDark } = useTheme();
-  
-  return (
-    <MotiSkeleton
-      colorMode={isDark ? "dark" : "light"}
-      width={width}
-      height={height}
-      radius={radius}
-    />
-  );
-}
-
 function RecipeCardSkeleton() {
   const { isDark, theme } = useTheme();
   const colorMode = isDark ? "dark" : "light";

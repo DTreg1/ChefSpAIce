@@ -82,26 +82,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     "NotificationsTab",
   ];
   
-  const visibleRoutes = state.routes.filter(
-    (route) => !hiddenRoutes.includes(route.name),
-  );
   const leftTabs = state.routes.filter((_, i) => i < 2);
   const rightTabs = state.routes.filter(
     (route, i) => i > 2 && !hiddenRoutes.includes(route.name),
   );
-
-  const getVisibleTabIndex = useCallback(
-    (routeName: string) => {
-      return visibleRoutes.findIndex((r) => r.name === routeName);
-    },
-    [visibleRoutes],
-  );
-
-  const getCurrentVisibleIndex = useCallback(() => {
-    const currentRoute = state.routes[state.index];
-    if (hiddenRoutes.includes(currentRoute.name)) return -1;
-    return getVisibleTabIndex(currentRoute.name);
-  }, [state.index, state.routes, getVisibleTabIndex]);
 
   useEffect(() => {
     const currentRoute = state.routes[state.index];

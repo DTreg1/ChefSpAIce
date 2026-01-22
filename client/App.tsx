@@ -25,7 +25,7 @@
  */
 
 import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
-import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import {

@@ -7,7 +7,7 @@ import {
 import { DrawerActions } from "@react-navigation/native";
 import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -20,7 +20,6 @@ import {
   AppColors,
   Spacing,
   BorderRadius,
-  GlassEffect,
 } from "@/constants/theme";
 
 function TrialBadge() {
@@ -185,11 +184,6 @@ export function DrawerContent(props: DrawerContentComponentProps) {
 
   const closeDrawer = () => {
     navigation.dispatch(DrawerActions.closeDrawer());
-  };
-
-  const navigateToTab = (tabName: string) => {
-    closeDrawer();
-    navigation.navigate("Tabs", { screen: tabName });
   };
 
   const menuItems: {

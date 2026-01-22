@@ -40,7 +40,6 @@ interface BarcodeRawData {
 }
 
 function RenderValue({ value, depth = 0 }: { value: any; depth?: number }) {
-  const { theme } = useTheme();
   const indent = depth * 12;
 
   if (value === null || value === undefined) {

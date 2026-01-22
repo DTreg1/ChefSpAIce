@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Dimensions,
   Platform,
   Image,
   TextInput,
@@ -15,17 +14,12 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useNavigation, useRoute, CommonActions, RouteProp } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
-
 import { ThemedText } from "@/components/ThemedText";
-import { GlassCard } from "@/components/GlassCard";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-
-const AppIcon = require("../../assets/images/icon.png");
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
@@ -34,36 +28,12 @@ import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-const FEATURES = [
-  {
-    icon: "package" as keyof typeof Feather.glyphMap,
-    title: "Track Your Food",
-    description: "Never forget what's in your fridge, freezer, or pantry",
-    color: "#3B82F6",
-  },
-  {
-    icon: "clock" as keyof typeof Feather.glyphMap,
-    title: "Reduce Waste",
-    description: "Get alerts before food expires so nothing goes bad",
-    color: "#F59E0B",
-  },
-  {
-    icon: "book-open" as keyof typeof Feather.glyphMap,
-    title: "Smart Recipes",
-    description: "AI generates recipes from ingredients you already have",
-    color: "#8B5CF6",
-  },
-];
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<AuthScreenRouteProp>();
   const { recheckOnboarding, markOnboardingComplete } = useOnboardingStatus();
   
   const {
@@ -240,23 +210,6 @@ export default function AuthScreen() {
       setAuthError("An unexpected error occurred");
     } finally {
       setAuthLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      // For web users, go back to Landing; for mobile users who can't go back,
-      // Auth is already the entry point so just stay here (this case is rare)
-      if (Platform.OS === "web") {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Landing" }],
-          }),
-        );
-      }
     }
   };
 

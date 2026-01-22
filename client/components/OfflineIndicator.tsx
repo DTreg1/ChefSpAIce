@@ -3,7 +3,6 @@ import { View, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useAnimatedStyle,
-  withTiming,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";

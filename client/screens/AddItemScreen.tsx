@@ -218,7 +218,7 @@ export default function AddItemScreen() {
       route.params?.productName ||
       "",
   );
-  const [barcode, setBarcode] = useState(route.params?.barcode || "");
+  const [barcode, _setBarcode] = useState(route.params?.barcode || "");
   const [quantity, setQuantity] = useState(
     usdaFood
       ? String(usdaFood.servingSize)
@@ -247,11 +247,11 @@ export default function AddItemScreen() {
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [foodSource, setFoodSource] = useState<FoodSource>("local");
   const [sourceId, setSourceId] = useState<string>("");
-  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [_isManualEntry, setIsManualEntry] = useState(false);
 
   const [userOverrodeDate, setUserOverrodeDate] = useState(false);
   const [showSuggestionNotes, setShowSuggestionNotes] = useState(false);
-  const [suggestionAccepted, setSuggestionAccepted] = useState(false);
+  const [_suggestionAccepted, setSuggestionAccepted] = useState(false);
   const [userOverrodeStorage, setUserOverrodeStorage] = useState(false);
 
   const suggestionOpacity = useRef(new RNAnimated.Value(1)).current;
@@ -549,7 +549,7 @@ export default function AddItemScreen() {
         fdcId: selectedFood?.fdcId,
       };
 
-      await storage.addItem(newItem);
+      await storage.addInventoryItem(newItem);
       
       // Navigate to barcode scanner to scan next item
       navigation.replace("IngredientScanner", { mode: "barcode" });
@@ -660,12 +660,6 @@ export default function AddItemScreen() {
     setShowDatePicker(true);
   };
 
-  const handleCategoryChange = (newCategory: string) => {
-    setCategory(newCategory);
-    setUserOverrodeDate(false);
-    setUserOverrodeStorage(false);
-  };
-
   const handleStorageChange = (newStorage: StorageLocation) => {
     setStorageLocation(newStorage);
     setUserOverrodeDate(false);
@@ -706,10 +700,6 @@ export default function AddItemScreen() {
 
   const handleScanWithAI = () => {
     navigation.navigate("FoodCamera");
-  };
-
-  const handleSearchFood = () => {
-    navigation.navigate("FoodSearch");
   };
 
   const renderSuggestionHelper = () => {

@@ -6,6 +6,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -36,7 +37,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
-import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSearch } from "@/contexts/SearchContext";
 
 const BASIC_COOKWARE_LIMIT = 5;
@@ -52,14 +53,6 @@ interface Appliance {
   alternatives: string[];
 }
 
-interface UserAppliance {
-  id: number;
-  applianceId: number;
-  createdAt: string;
-  notes?: string;
-  brand?: string;
-  appliance: Appliance;
-}
 
 const CATEGORIES = [
   { id: "all", label: "All", icon: "grid" },
@@ -297,13 +290,13 @@ export default function CookwareScreen() {
   const { theme, isDark } = useTheme();
   const queryClient = useQueryClient();
   const navigation = useNavigation();
-  const { entitlements, checkLimit } = useSubscription();
+  const { entitlements } = useSubscription();
   const { getSearchQuery } = useSearch();
   const searchQuery = getSearchQuery("cookware");
 
   const menuItems: MenuItemConfig[] = [];
 
-  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+  const [showOwnedOnly, _setShowOwnedOnly] = useState(false);
   const [showFirstTimeSetup, setShowFirstTimeSetup] = useState<boolean | null>(
     null,
   );
@@ -316,7 +309,6 @@ export default function CookwareScreen() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const isPro = entitlements.maxCookware === 'unlimited';
-  const cookwareLimit = isPro ? Infinity : BASIC_COOKWARE_LIMIT;
   const isAtLimit = !isPro && ownedCookwareIds.length >= BASIC_COOKWARE_LIMIT;
 
   const toggleSection = useCallback((key: string) => {
@@ -370,7 +362,6 @@ export default function CookwareScreen() {
     [ownedCookwareIds],
   );
 
-  const ownedCount = ownedApplianceIds.size;
   const loading = loadingAppliances || loadingLocal;
   const isFirstTimeUser = showFirstTimeSetup === true;
 
@@ -527,16 +518,6 @@ export default function CookwareScreen() {
       />
     );
   }, [collapsedSections, toggleSection, ownedApplianceIds, togglingIds, toggleAppliance, isAtLimit]);
-
-  const renderCookwareItem = ({ item }: { item: Appliance }) => (
-    <CookwareItem
-      appliance={item}
-      isOwned={ownedApplianceIds.has(item.id)}
-      onToggle={toggleAppliance}
-      isToggling={togglingIds.has(item.id)}
-      isAtLimit={isAtLimit}
-    />
-  );
 
   const renderFirstTimeSetup = () => (
     <GlassCard style={styles.setupCard}>

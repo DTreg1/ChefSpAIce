@@ -23,7 +23,6 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
-  GlassEffect,
 } from "@/constants/theme";
 import { storage, Recipe, MealPlan } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
@@ -150,8 +149,6 @@ export default function SelectRecipeScreen() {
       </Pressable>
     );
   };
-
-  const mealTypeLabel = mealType.charAt(0).toUpperCase() + mealType.slice(1);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>

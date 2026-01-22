@@ -12,7 +12,6 @@ import {
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { BlurView } from "expo-blur";
-import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -55,7 +54,7 @@ export default function ProfileScreen() {
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
   const { tier, planType, isActive, isTrialing, trialDaysRemaining } = useSubscription();
-  const { presentCustomerCenter, isCustomerCenterAvailable, presentPaywall, isPaywallAvailable } = useStoreKit();
+  const { presentCustomerCenter, isCustomerCenterAvailable } = useStoreKit();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -216,10 +215,6 @@ export default function ProfileScreen() {
     navigation.navigate("Subscription" as any);
   };
 
-  const displayName = isAuthenticated && user?.displayName 
-    ? user.displayName 
-    : userProfile.displayName;
-  
   const accountCreatedDate = isAuthenticated && user?.createdAt
     ? new Date(user.createdAt)
     : new Date(userProfile.createdAt);

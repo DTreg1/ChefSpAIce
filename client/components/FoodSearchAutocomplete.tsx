@@ -16,7 +16,6 @@ import Animated, {
   useSharedValue,
   withTiming,
   FadeIn,
-  FadeOut,
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -51,11 +50,6 @@ export interface FoodSearchResult {
   dataCompleteness: number;
 }
 
-interface SearchResponse {
-  results: FoodSearchResult[];
-  sources: FoodSource[];
-  totalCount: number;
-}
 
 interface FoodSearchAutocompleteProps {
   onSelect: (item: FoodSearchResult) => void;

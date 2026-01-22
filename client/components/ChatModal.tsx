@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Dimensions,
   useWindowDimensions,
   Image,
 } from "react-native";
@@ -17,12 +16,8 @@ import { GlassView } from "@/components/GlassViewWithContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
-  FadeIn,
-  FadeOut,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  withTiming,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
@@ -74,7 +69,7 @@ const TIP_COLORS: Record<string, string> = {
 export function ChatModal() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { theme, colorScheme, isDark } = useTheme();
+  const { theme, isDark } = useTheme();
   const { isChatOpen, closeChat } = useFloatingChat();
   const navigation = useNavigation<any>();
   const flatListRef = useRef<FlatList>(null);

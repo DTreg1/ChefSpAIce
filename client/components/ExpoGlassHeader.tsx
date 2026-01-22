@@ -23,7 +23,7 @@ import { HeaderMenu, MenuItemConfig } from "@/components/HeaderMenu";
 export type { MenuItemConfig };
 import { useSearch } from "@/contexts/SearchContext";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BUTTON_SIZE = 44;

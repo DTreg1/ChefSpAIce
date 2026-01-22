@@ -7,13 +7,12 @@ import Animated, {
   withSequence,
   withTiming,
   useSharedValue,
-  withDelay,
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
-import { Spacing, GlassEffect } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 
 interface SyncStatusIndicatorProps {
   showLabel?: boolean;

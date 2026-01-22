@@ -13,7 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { WasteReductionStats as StatsType, Badge } from "@/lib/storage";
+import { WasteReductionStats as StatsType } from "@/lib/storage";
 import { analytics } from "@/lib/analytics";
 
 interface WasteReductionStatsProps {

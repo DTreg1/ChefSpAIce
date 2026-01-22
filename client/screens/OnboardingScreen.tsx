@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Dimensions,
   Platform,
   Image,
 } from "react-native";
@@ -21,8 +20,7 @@ import Animated, {
   SlideOutLeft,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useNavigation, useRoute, CommonActions, RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -491,8 +489,6 @@ const EQUIPMENT_CATEGORIES = [
   },
 ] as const;
 
-type CategoryId = (typeof EQUIPMENT_CATEGORIES)[number]["id"];
-
 const ICON_MAP: Record<string, keyof typeof Feather.glyphMap> = {
   thermometer: "thermometer",
   box: "box",
@@ -586,100 +582,6 @@ const DEFAULT_STORAGE_AREAS = [
   { id: "pantry", label: "Pantry", icon: "box" as const, description: "For dry goods & canned items" },
   { id: "counter", label: "Counter", icon: "home" as const, description: "For fruits & daily items" },
 ];
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-function EquipmentItem({
-  appliance,
-  isSelected,
-  onToggle,
-}: {
-  appliance: Appliance;
-  isSelected: boolean;
-  onToggle: () => void;
-}) {
-  const { theme } = useTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, springConfig);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
-  };
-
-  const handlePress = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    onToggle();
-  };
-
-  const iconName = ICON_MAP[appliance.icon] || ICON_MAP.default;
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={[
-          styles.equipmentItem,
-          {
-            backgroundColor: isSelected
-              ? `${AppColors.primary}20`
-              : theme.backgroundSecondary,
-            borderColor: isSelected ? AppColors.primary : theme.border,
-          },
-        ]}
-      >
-        <View style={styles.itemContent}>
-          <View
-            style={[
-              styles.itemIcon,
-              {
-                backgroundColor: isSelected
-                  ? AppColors.primary
-                  : theme.backgroundTertiary,
-              },
-            ]}
-          >
-            <Feather
-              name={iconName}
-              size={18}
-              color={isSelected ? "#FFFFFF" : theme.textSecondary}
-            />
-          </View>
-          <View style={styles.itemText}>
-            <ThemedText style={styles.itemName} numberOfLines={1}>
-              {appliance.name}
-            </ThemedText>
-          </View>
-          <View
-            style={[
-              styles.checkbox,
-              {
-                backgroundColor: isSelected ? AppColors.primary : "transparent",
-                borderColor: isSelected
-                  ? AppColors.primary
-                  : theme.textSecondary,
-              },
-            ]}
-          >
-            {isSelected ? (
-              <Feather name="check" size={14} color="#FFFFFF" />
-            ) : null}
-          </View>
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
-}
 
 function FoodItemRow({
   food,
@@ -807,12 +709,10 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<RootStackParamList, "Onboarding">>();
   const { markOnboardingComplete } = useOnboardingStatus();
   const { entitlements } = useSubscription();
-
+  
   const isPro = entitlements.maxCookware === 'unlimited';
-  const cookwareLimit = isPro ? Infinity : BASIC_COOKWARE_LIMIT;
 
   const [step, setStep] = useState<OnboardingStep>("preferences");
   const [stepLoaded, setStepLoaded] = useState(false);
@@ -1045,13 +945,6 @@ export default function OnboardingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setStep("preferences");
-  };
-
-  const handleBackToStorage = () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setStep("storage");
   };
 
   const handleBackToFoods = () => {
@@ -1848,19 +1741,6 @@ export default function OnboardingScreen() {
   };
 
   const renderCompleteStep = () => {
-    const selectedAppliances = appliances.filter((a) =>
-      selectedEquipmentIds.has(a.id),
-    );
-    const selectedFoods = STARTER_FOODS.filter((f) =>
-      selectedFoodIds.has(f.id),
-    );
-    const categoryCounts = EQUIPMENT_CATEGORIES.map((cat) => ({
-      ...cat,
-      count: selectedAppliances.filter(
-        (a) => a.category.toLowerCase() === cat.id.toLowerCase(),
-      ).length,
-    }));
-
     return (
       <Animated.View
         entering={FadeIn.duration(300)}

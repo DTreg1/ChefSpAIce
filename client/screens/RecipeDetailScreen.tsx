@@ -6,9 +6,6 @@ import {
   Pressable,
   Alert,
   Share,
-  LayoutChangeEvent,
-  Linking,
-  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -330,22 +327,6 @@ export default function RecipeDetailScreen() {
       (name) =>
         name.includes(ingredientName.toLowerCase()) ||
         ingredientName.toLowerCase().includes(name),
-    );
-  };
-
-  const handleAddToMealPlan = () => {
-    Alert.alert(
-      "Add to Meal Plan",
-      "This recipe will be added to your meal plan. You can organize it in the Meal Plan tab.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Add",
-          onPress: async () => {
-            Alert.alert("Added", "Recipe added to your meal plan!");
-          },
-        },
-      ],
     );
   };
 

@@ -5,12 +5,11 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  Alert,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -19,7 +18,6 @@ import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { GlassButton } from "@/components/GlassButton";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -29,13 +27,11 @@ import {
   Spacing,
   BorderRadius,
   AppColors,
-  Shadows,
   GlassEffect,
 } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -164,10 +160,6 @@ export default function MealPlanScreen() {
       date: new Date(),
     });
   };
-
-  const selectedDayPlan = mealPlans.find(
-    (p) => p.date === format(selectedDay, "yyyy-MM-dd"),
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>

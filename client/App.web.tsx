@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { StyleSheet, View, Linking, Platform } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -36,25 +36,8 @@ function getExpoDeepLink(): string {
   return `exp://exp.host/@${owner}/${slug}`;
 }
 
-/**
- * Handle navigation actions from the LandingScreen
- */
-function handleGetStarted(tier?: 'basic' | 'pro', billing?: 'monthly' | 'annual') {
-  // On web, direct to app store or Expo Go
-  const deepLink = getExpoDeepLink();
-  Linking.openURL(deepLink).catch(() => {
-    // Fallback to App Store if Expo link fails
-    Linking.openURL('https://apps.apple.com/app/id982107779');
-  });
-}
-
-function handleSignIn() {
-  // Direct to Expo Go for sign in
-  const deepLink = getExpoDeepLink();
-  Linking.openURL(deepLink).catch(() => {
-    Linking.openURL('https://apps.apple.com/app/id982107779');
-  });
-}
+// Navigation handlers reserved for future mobile web support
+void getExpoDeepLink; // suppress unused warning
 
 
 
