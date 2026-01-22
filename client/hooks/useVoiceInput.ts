@@ -362,4 +362,3 @@ export function useVoiceInput(options: VoiceInputOptions = {}) {
     isNativeAvailable: Platform.OS !== "web",
   };
 }
-

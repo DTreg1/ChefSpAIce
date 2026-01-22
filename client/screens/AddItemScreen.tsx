@@ -171,7 +171,9 @@ export default function AddItemScreen() {
   const identifiedFood = route.params?.identifiedFoods?.[0];
   const scannedNutrition = route.params?.scannedNutrition;
 
-  const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([...DEFAULT_STORAGE_LOCATIONS]);
+  const [storageLocations, setStorageLocations] = useState<
+    StorageLocationOption[]
+  >([...DEFAULT_STORAGE_LOCATIONS]);
 
   const mapStorageLocationFromAI = (loc: string): string => {
     const locationMap: Record<string, string> = {
@@ -306,7 +308,7 @@ export default function AddItemScreen() {
           storageSuggestion.primary === "refrigerator"
             ? "fridge"
             : storageSuggestion.primary;
-        const validKeys = storageLocations.map(loc => loc.key);
+        const validKeys = storageLocations.map((loc) => loc.key);
         if (validKeys.includes(suggestedLoc)) {
           setStorageLocation(suggestedLoc);
         }
@@ -513,8 +515,9 @@ export default function AddItemScreen() {
           sugar: selectedFood.nutrition.sugar,
         }
       : undefined;
-  
-  const hasNutrition = nutrition && (nutrition.calories > 0 || nutrition.protein > 0);
+
+  const hasNutrition =
+    nutrition && (nutrition.calories > 0 || nutrition.protein > 0);
 
   const handleScanNutritionLabel = () => {
     navigation.navigate("IngredientScanner", {
@@ -530,7 +533,7 @@ export default function AddItemScreen() {
       Alert.alert("Error", "Please complete the item details first");
       return;
     }
-    
+
     setSaving(true);
     try {
       const newItem: FoodItem = {
@@ -550,7 +553,7 @@ export default function AddItemScreen() {
       };
 
       await storage.addInventoryItem(newItem);
-      
+
       // Navigate to barcode scanner to scan next item
       navigation.replace("IngredientScanner", { mode: "barcode" });
     } catch (error) {
@@ -915,101 +918,110 @@ export default function AddItemScreen() {
             },
           ]}
         >
-        {barcodeLoading ? (
-          <View style={styles.selectFoodContent}>
-            <CookPotLoader size="lg" text={`Looking up barcode ${barcode}...`} />
-          </View>
-        ) : (
-          <>
-            <View style={styles.scanButtonRow}>
-              <GlassButton
-                variant="outline"
-                onPress={handleScanBarcode}
-                icon={
-                  <Feather
-                    name="maximize"
-                    size={20}
-                    color={AppColors.primary}
-                  />
-                }
-                style={styles.scanButton}
-                data-testid="button-scan-barcode"
-              >
-                Scan Barcode
-              </GlassButton>
-              <GlassButton
-                variant="outline"
-                onPress={handleScanWithAI}
-                icon={
-                  <Feather
-                    name="camera"
-                    size={20}
-                    color={AppColors.secondary}
-                  />
-                }
-                style={[
-                  styles.scanButton,
-                  { borderColor: AppColors.secondary },
-                ]}
-                data-testid="button-ai-scan"
-              >
-                AI Photo Scan
-              </GlassButton>
-            </View>
-
-            <View style={styles.orDivider}>
-              <View
-                style={[styles.dividerLine, { backgroundColor: theme.border }]}
-              />
-              <ThemedText
-                type="caption"
-                style={{
-                  color: theme.textSecondary,
-                  paddingHorizontal: Spacing.md,
-                }}
-              >
-                or search
-              </ThemedText>
-              <View
-                style={[styles.dividerLine, { backgroundColor: theme.border }]}
+          {barcodeLoading ? (
+            <View style={styles.selectFoodContent}>
+              <CookPotLoader
+                size="lg"
+                text={`Looking up barcode ${barcode}...`}
               />
             </View>
+          ) : (
+            <>
+              <View style={styles.scanButtonRow}>
+                <GlassButton
+                  variant="outline"
+                  onPress={handleScanBarcode}
+                  icon={
+                    <Feather
+                      name="maximize"
+                      size={20}
+                      color={AppColors.primary}
+                    />
+                  }
+                  style={styles.scanButton}
+                  data-testid="button-scan-barcode"
+                >
+                  Scan Barcode
+                </GlassButton>
+                <GlassButton
+                  variant="outline"
+                  onPress={handleScanWithAI}
+                  icon={
+                    <Feather
+                      name="camera"
+                      size={20}
+                      color={AppColors.secondary}
+                    />
+                  }
+                  style={[
+                    styles.scanButton,
+                    { borderColor: AppColors.secondary },
+                  ]}
+                  data-testid="button-ai-scan"
+                >
+                  AI Photo Scan
+                </GlassButton>
+              </View>
 
-            {barcodeError ? (
-              <View style={styles.barcodeErrorContainer}>
-                <Feather
-                  name="alert-circle"
-                  size={16}
-                  color={AppColors.warning}
+              <View style={styles.orDivider}>
+                <View
+                  style={[
+                    styles.dividerLine,
+                    { backgroundColor: theme.border },
+                  ]}
                 />
                 <ThemedText
                   type="caption"
-                  style={{ color: AppColors.warning, marginLeft: Spacing.xs }}
+                  style={{
+                    color: theme.textSecondary,
+                    paddingHorizontal: Spacing.md,
+                  }}
                 >
-                  {barcodeError}
+                  or search
+                </ThemedText>
+                <View
+                  style={[
+                    styles.dividerLine,
+                    { backgroundColor: theme.border },
+                  ]}
+                />
+              </View>
+
+              {barcodeError ? (
+                <View style={styles.barcodeErrorContainer}>
+                  <Feather
+                    name="alert-circle"
+                    size={16}
+                    color={AppColors.warning}
+                  />
+                  <ThemedText
+                    type="caption"
+                    style={{ color: AppColors.warning, marginLeft: Spacing.xs }}
+                  >
+                    {barcodeError}
+                  </ThemedText>
+                </View>
+              ) : null}
+
+              <View style={styles.searchSection}>
+                <FoodSearchAutocomplete
+                  onSelect={handleFoodSelect}
+                  placeholder="Search food, or brand:product"
+                />
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: theme.textSecondary,
+                    opacity: 0.7,
+                    marginTop: Spacing.xs,
+                    textAlign: "center",
+                  }}
+                >
+                  Tip: Use "brand:product" (e.g., h-e-b:cheese)
                 </ThemedText>
               </View>
-            ) : null}
-
-            <View style={styles.searchSection}>
-              <FoodSearchAutocomplete
-                onSelect={handleFoodSelect}
-                placeholder="Search food, or brand:product"
-              />
-              <ThemedText
-                type="caption"
-                style={{
-                  color: theme.textSecondary,
-                  opacity: 0.7,
-                  marginTop: Spacing.xs,
-                  textAlign: "center",
-                }}
-              >
-                Tip: Use "brand:product" (e.g., h-e-b:cheese)
-              </ThemedText>
-            </View>
-          </>
-        )}
+            </>
+          )}
         </View>
       </View>
     );
@@ -1035,368 +1047,385 @@ export default function AddItemScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-      <GlassCard style={styles.section}>
-        <View style={styles.sectionHeaderWithAction}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
-            Basic Info
-          </ThemedText>
-          <Pressable onPress={handleClearSelection} style={styles.changePill}>
-            <ThemedText type="caption" style={{ color: AppColors.primary }}>
-              Change
+        <GlassCard style={styles.section}>
+          <View style={styles.sectionHeaderWithAction}>
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Basic Info
             </ThemedText>
-          </Pressable>
-        </View>
+            <Pressable onPress={handleClearSelection} style={styles.changePill}>
+              <ThemedText type="caption" style={{ color: AppColors.primary }}>
+                Change
+              </ThemedText>
+            </Pressable>
+          </View>
 
-        <View
-          style={[
-            styles.sourceBadge,
-            { backgroundColor: SOURCE_BADGE_COLORS[foodSource].bg },
-          ]}
-        >
-          <ThemedText
-            type="caption"
-            style={{ color: SOURCE_BADGE_COLORS[foodSource].text }}
+          <View
+            style={[
+              styles.sourceBadge,
+              { backgroundColor: SOURCE_BADGE_COLORS[foodSource].bg },
+            ]}
           >
-            Data from {SOURCE_LABELS[foodSource]}
-          </ThemedText>
-        </View>
+            <ThemedText
+              type="caption"
+              style={{ color: SOURCE_BADGE_COLORS[foodSource].text }}
+            >
+              Data from {SOURCE_LABELS[foodSource]}
+            </ThemedText>
+          </View>
 
-        <View style={styles.inputGroup}>
-          <ThemedText type="small" style={styles.label}>
-            Name
+          <View style={styles.inputGroup}>
+            <ThemedText type="small" style={styles.label}>
+              Name
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  color: theme.text,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+              value={name}
+              onChangeText={setName}
+              placeholder="Item name"
+              placeholderTextColor={theme.textSecondary}
+            />
+          </View>
+
+          {barcode ? (
+            <View style={styles.barcodeContainer}>
+              <Feather name="tag" size={16} color={theme.textSecondary} />
+              <ThemedText type="caption" style={styles.barcodeText}>
+                Barcode: {barcode}
+              </ThemedText>
+            </View>
+          ) : null}
+
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Quantity
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    color: theme.text,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+                value={quantity}
+                onChangeText={setQuantity}
+                keyboardType="numeric"
+                placeholder="1"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Unit
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    color: theme.text,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+                value={unit}
+                onChangeText={setUnit}
+                placeholder="pcs"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 2 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Category
+              </ThemedText>
+              <View
+                style={[
+                  styles.readOnlyField,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+              >
+                <ThemedText
+                  type="body"
+                  style={{ color: theme.text }}
+                  numberOfLines={1}
+                >
+                  {selectedFood?.usdaCategory || category || "Not specified"}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
+        {hasNutrition ? (
+          <NutritionSection
+            foodId={sourceId || generateId()}
+            foodName={name}
+            defaultQuantity={parseInt(quantity) || 1}
+            nutrition={nutrition}
+          />
+        ) : hasSelectedFood && barcode ? (
+          /* Only show scan nutrition option for barcode-scanned items
+           to avoid mismatch with keyword search + wrong physical product */
+          <GlassCard style={styles.section}>
+            <View style={styles.noNutritionContainer}>
+              <Feather name="file-text" size={32} color={theme.textSecondary} />
+              <ThemedText type="body" style={styles.noNutritionText}>
+                No nutrition data available
+              </ThemedText>
+              <ThemedText type="caption" style={styles.noNutritionHint}>
+                Scan the nutrition label on the packaging to add nutrition info
+              </ThemedText>
+              <View style={styles.nutritionActionButtons}>
+                <GlassButton
+                  onPress={handleScanNutritionLabel}
+                  variant="outline"
+                  style={styles.nutritionActionButton}
+                >
+                  <View style={styles.scanButtonContent}>
+                    <Feather
+                      name="camera"
+                      size={18}
+                      color={AppColors.primary}
+                    />
+                    <ThemedText
+                      style={{
+                        color: AppColors.primary,
+                        marginLeft: Spacing.sm,
+                      }}
+                    >
+                      Scan Label
+                    </ThemedText>
+                  </View>
+                </GlassButton>
+                <GlassButton
+                  onPress={handleSaveAndScanNext}
+                  variant="secondary"
+                  style={styles.nutritionActionButton}
+                >
+                  <View style={styles.scanButtonContent}>
+                    <Feather name="maximize" size={18} color={theme.text} />
+                    <ThemedText style={{ marginLeft: Spacing.sm }}>
+                      Scan Next
+                    </ThemedText>
+                  </View>
+                </GlassButton>
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
+        <GlassCard style={styles.section}>
+          <StorageSuggestionBadge
+            suggestedLocation={storageSuggestion?.primary || "refrigerator"}
+            alternatives={storageSuggestion?.alternatives || []}
+            onSelect={handleStorageSuggestionSelect}
+            selectedLocation={
+              storageLocation === "fridge" ? "refrigerator" : storageLocation
+            }
+            confidence={storageSuggestion?.confidence}
+            shelfLifeDays={suggestion?.suggestedDays}
+          />
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Dates
+          </ThemedText>
+
+          <View style={styles.row}>
+            <Pressable
+              style={[
+                styles.dateButtonCompact,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  borderColor: theme.glass.border,
+                  flex: 1,
+                },
+              ]}
+              onPress={() => openDatePicker("purchase")}
+            >
+              <ThemedText type="small" style={styles.label}>
+                Purchase
+              </ThemedText>
+              <View style={styles.dateValueRow}>
+                <ThemedText type="body" numberOfLines={1}>
+                  {formatDate(purchaseDate)}
+                </ThemedText>
+                <Feather
+                  name="calendar"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.dateButtonCompact,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  borderColor: theme.glass.border,
+                  flex: 1,
+                },
+              ]}
+              onPress={() => openDatePicker("expiration")}
+            >
+              <View style={styles.dateLabelRow}>
+                <ThemedText type="small" style={styles.label}>
+                  Expiration
+                </ThemedText>
+                {suggestion && !userOverrodeDate ? (
+                  <View
+                    style={[
+                      styles.suggestionBadgeSmall,
+                      {
+                        backgroundColor:
+                          getConfidenceColor(suggestion.confidence) + "20",
+                      },
+                    ]}
+                  >
+                    <Feather
+                      name={getConfidenceIcon(suggestion.confidence)}
+                      size={10}
+                      color={getConfidenceColor(suggestion.confidence)}
+                    />
+                  </View>
+                ) : null}
+              </View>
+              <View style={styles.dateValueRow}>
+                <ThemedText type="body" numberOfLines={1}>
+                  {expirationDate ? formatDate(expirationDate) : "Not set"}
+                </ThemedText>
+                <Feather
+                  name="calendar"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </View>
+            </Pressable>
+          </View>
+
+          {renderSuggestionHelper()}
+          {renderNoDateReminder()}
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Notes
           </ThemedText>
           <TextInput
             style={[
               styles.input,
+              styles.textArea,
               {
                 backgroundColor: theme.glass.backgroundSubtle,
                 color: theme.text,
                 borderColor: theme.glass.border,
               },
             ]}
-            value={name}
-            onChangeText={setName}
-            placeholder="Item name"
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Add notes..."
             placeholderTextColor={theme.textSecondary}
+            multiline
+            numberOfLines={4}
           />
-        </View>
-
-        {barcode ? (
-          <View style={styles.barcodeContainer}>
-            <Feather name="tag" size={16} color={theme.textSecondary} />
-            <ThemedText type="caption" style={styles.barcodeText}>
-              Barcode: {barcode}
-            </ThemedText>
-          </View>
-        ) : null}
-
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Quantity
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  color: theme.text,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              placeholder="1"
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Unit
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  color: theme.text,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-              value={unit}
-              onChangeText={setUnit}
-              placeholder="pcs"
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 2 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Category
-            </ThemedText>
-            <View
-              style={[
-                styles.readOnlyField,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-            >
-              <ThemedText
-                type="body"
-                style={{ color: theme.text }}
-                numberOfLines={1}
-              >
-                {selectedFood?.usdaCategory || category || "Not specified"}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-      </GlassCard>
-
-      {hasNutrition ? (
-        <NutritionSection
-          foodId={sourceId || generateId()}
-          foodName={name}
-          defaultQuantity={parseInt(quantity) || 1}
-          nutrition={nutrition}
-        />
-      ) : hasSelectedFood && barcode ? (
-        /* Only show scan nutrition option for barcode-scanned items
-           to avoid mismatch with keyword search + wrong physical product */
-        <GlassCard style={styles.section}>
-          <View style={styles.noNutritionContainer}>
-            <Feather name="file-text" size={32} color={theme.textSecondary} />
-            <ThemedText type="body" style={styles.noNutritionText}>
-              No nutrition data available
-            </ThemedText>
-            <ThemedText type="caption" style={styles.noNutritionHint}>
-              Scan the nutrition label on the packaging to add nutrition info
-            </ThemedText>
-            <View style={styles.nutritionActionButtons}>
-              <GlassButton
-                onPress={handleScanNutritionLabel}
-                variant="outline"
-                style={styles.nutritionActionButton}
-              >
-                <View style={styles.scanButtonContent}>
-                  <Feather name="camera" size={18} color={AppColors.primary} />
-                  <ThemedText style={{ color: AppColors.primary, marginLeft: Spacing.sm }}>
-                    Scan Label
-                  </ThemedText>
-                </View>
-              </GlassButton>
-              <GlassButton
-                onPress={handleSaveAndScanNext}
-                variant="secondary"
-                style={styles.nutritionActionButton}
-              >
-                <View style={styles.scanButtonContent}>
-                  <Feather name="maximize" size={18} color={theme.text} />
-                  <ThemedText style={{ marginLeft: Spacing.sm }}>
-                    Scan Next
-                  </ThemedText>
-                </View>
-              </GlassButton>
-            </View>
-          </View>
         </GlassCard>
-      ) : null}
 
-      <GlassCard style={styles.section}>
-        <StorageSuggestionBadge
-          suggestedLocation={storageSuggestion?.primary || "refrigerator"}
-          alternatives={storageSuggestion?.alternatives || []}
-          onSelect={handleStorageSuggestionSelect}
-          selectedLocation={
-            storageLocation === "fridge" ? "refrigerator" : storageLocation
-          }
-          confidence={storageSuggestion?.confidence}
-          shelfLifeDays={suggestion?.suggestedDays}
-        />
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Dates
-        </ThemedText>
-
-        <View style={styles.row}>
-          <Pressable
-            style={[
-              styles.dateButtonCompact,
-              {
-                backgroundColor: theme.glass.backgroundSubtle,
-                borderColor: theme.glass.border,
-                flex: 1,
-              },
-            ]}
-            onPress={() => openDatePicker("purchase")}
-          >
-            <ThemedText type="small" style={styles.label}>
-              Purchase
-            </ThemedText>
-            <View style={styles.dateValueRow}>
-              <ThemedText type="body" numberOfLines={1}>
-                {formatDate(purchaseDate)}
-              </ThemedText>
-              <Feather name="calendar" size={16} color={theme.textSecondary} />
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.dateButtonCompact,
-              {
-                backgroundColor: theme.glass.backgroundSubtle,
-                borderColor: theme.glass.border,
-                flex: 1,
-              },
-            ]}
-            onPress={() => openDatePicker("expiration")}
-          >
-            <View style={styles.dateLabelRow}>
-              <ThemedText type="small" style={styles.label}>
-                Expiration
-              </ThemedText>
-              {suggestion && !userOverrodeDate ? (
-                <View
-                  style={[
-                    styles.suggestionBadgeSmall,
-                    {
-                      backgroundColor:
-                        getConfidenceColor(suggestion.confidence) + "20",
-                    },
-                  ]}
-                >
-                  <Feather
-                    name={getConfidenceIcon(suggestion.confidence)}
-                    size={10}
-                    color={getConfidenceColor(suggestion.confidence)}
-                  />
-                </View>
-              ) : null}
-            </View>
-            <View style={styles.dateValueRow}>
-              <ThemedText type="body" numberOfLines={1}>
-                {expirationDate ? formatDate(expirationDate) : "Not set"}
-              </ThemedText>
-              <Feather name="calendar" size={16} color={theme.textSecondary} />
-            </View>
-          </Pressable>
-        </View>
-
-        {renderSuggestionHelper()}
-        {renderNoDateReminder()}
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Notes
-        </ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            styles.textArea,
-            {
-              backgroundColor: theme.glass.backgroundSubtle,
-              color: theme.text,
-              borderColor: theme.glass.border,
-            },
-          ]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Add notes..."
-          placeholderTextColor={theme.textSecondary}
-          multiline
-          numberOfLines={4}
-        />
-      </GlassCard>
-
-      {Platform.OS === "ios" ? (
-        <Modal
-          visible={showDatePicker}
-          transparent
-          animationType="slide"
-          onRequestClose={handleDatePickerDone}
-        >
-          <Pressable
-            style={styles.datePickerOverlay}
-            onPress={handleDatePickerDone}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={handleDatePickerDone}
           >
             <Pressable
-              style={[
-                styles.datePickerContainer,
-                { backgroundColor: theme.backgroundDefault },
-              ]}
-              onPress={(e) => e.stopPropagation()}
+              style={styles.datePickerOverlay}
+              onPress={handleDatePickerDone}
             >
-              <View style={styles.datePickerHeader}>
-                <ThemedText type="h4">
-                  {datePickerField === "expiration"
-                    ? "Expiration Date"
-                    : "Purchase Date"}
-                </ThemedText>
-                <Pressable onPress={handleDatePickerDone}>
-                  <ThemedText
-                    style={{ color: AppColors.primary, fontWeight: "600" }}
-                  >
-                    Done
+              <Pressable
+                style={[
+                  styles.datePickerContainer,
+                  { backgroundColor: theme.backgroundDefault },
+                ]}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <View style={styles.datePickerHeader}>
+                  <ThemedText type="h4">
+                    {datePickerField === "expiration"
+                      ? "Expiration Date"
+                      : "Purchase Date"}
                   </ThemedText>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={
-                  new Date(
-                    datePickerField === "expiration"
-                      ? expirationDate || today
-                      : purchaseDate,
-                  )
-                }
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                style={styles.datePicker}
-              />
+                  <Pressable onPress={handleDatePickerDone}>
+                    <ThemedText
+                      style={{ color: AppColors.primary, fontWeight: "600" }}
+                    >
+                      Done
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                <DateTimePicker
+                  value={
+                    new Date(
+                      datePickerField === "expiration"
+                        ? expirationDate || today
+                        : purchaseDate,
+                    )
+                  }
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  style={styles.datePicker}
+                />
+              </Pressable>
             </Pressable>
-          </Pressable>
-        </Modal>
-      ) : showDatePicker ? (
-        <DateTimePicker
-          value={
-            new Date(
-              datePickerField === "expiration"
-                ? expirationDate || today
-                : purchaseDate,
-            )
-          }
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      ) : null}
+          </Modal>
+        ) : showDatePicker ? (
+          <DateTimePicker
+            value={
+              new Date(
+                datePickerField === "expiration"
+                  ? expirationDate || today
+                  : purchaseDate,
+              )
+            }
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        ) : null}
 
-      <View style={styles.actionButtonsContainer}>
-        <GlassButton
-          variant="outline"
-          onPress={() => navigation.goBack()}
-          style={styles.cancelButton}
-          data-testid="button-cancel-add-item"
-        >
-          Cancel
-        </GlassButton>
-        <GlassButton
-          variant="primary"
-          onPress={handleSave}
-          loading={saving}
-          disabled={saving || !name.trim()}
-          style={styles.saveButton}
-          data-testid="button-save-item"
-        >
-          {saving ? "Saving..." : "Add Item"}
-        </GlassButton>
-      </View>
+        <View style={styles.actionButtonsContainer}>
+          <GlassButton
+            variant="outline"
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+            data-testid="button-cancel-add-item"
+          >
+            Cancel
+          </GlassButton>
+          <GlassButton
+            variant="primary"
+            onPress={handleSave}
+            loading={saving}
+            disabled={saving || !name.trim()}
+            style={styles.saveButton}
+            data-testid="button-save-item"
+          >
+            {saving ? "Saving..." : "Add Item"}
+          </GlassButton>
+        </View>
       </KeyboardAwareScrollViewCompat>
     </View>
   );

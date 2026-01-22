@@ -140,7 +140,9 @@ export function isSingleItemSelected(count: number): boolean {
 
 export type StorageLocationValue = "fridge" | "freezer" | "pantry" | "counter";
 
-export function mapStorageLocation(location: string | undefined): StorageLocationValue {
+export function mapStorageLocation(
+  location: string | undefined,
+): StorageLocationValue {
   if (!location) return "fridge";
   const loc = location.toLowerCase();
   const locationMap: Record<string, StorageLocationValue> = {

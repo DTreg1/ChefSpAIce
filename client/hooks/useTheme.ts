@@ -2,7 +2,7 @@ import { useTheme as useThemeContext } from "@/contexts/ThemeContext";
 
 export function useTheme() {
   const context = useThemeContext();
-  
+
   return {
     theme: context.theme,
     isDark: context.isDark,
@@ -14,4 +14,3 @@ export function useTheme() {
 }
 
 export const useAppTheme = useTheme;
-

@@ -88,7 +88,11 @@ export default function RecipeDetailScreen() {
     useState<RecipeIngredient | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  const { isConfigured: instacartConfigured, isLoading: instacartLoading, openRecipeLink } = useInstacart();
+  const {
+    isConfigured: instacartConfigured,
+    isLoading: instacartLoading,
+    openRecipeLink,
+  } = useInstacart();
 
   const scrollViewRef = useRef<ScrollView>(null);
   const stepPositions = useRef<Record<number, number>>({});
@@ -252,7 +256,10 @@ export default function RecipeDetailScreen() {
         if (imageData.imageBase64) {
           imageUri = await saveRecipeImage(recipe.id, imageData.imageBase64);
         } else if (imageData.imageUrl) {
-          imageUri = await saveRecipeImageFromUrl(recipe.id, imageData.imageUrl);
+          imageUri = await saveRecipeImageFromUrl(
+            recipe.id,
+            imageData.imageUrl,
+          );
         }
 
         if (imageUri && !isCancelled) {
@@ -397,9 +404,10 @@ export default function RecipeDetailScreen() {
       };
     });
 
-    const publicImageUrl = recipe.imageUri && recipe.imageUri.startsWith('http') 
-      ? recipe.imageUri 
-      : undefined;
+    const publicImageUrl =
+      recipe.imageUri && recipe.imageUri.startsWith("http")
+        ? recipe.imageUri
+        : undefined;
     await openRecipeLink(recipe.title, ingredients, publicImageUrl);
   };
 
@@ -437,7 +445,10 @@ export default function RecipeDetailScreen() {
       await exportSingleRecipeToPDF(recipe);
     } catch (error) {
       console.error("Error exporting recipe:", error);
-      Alert.alert("Export Error", "Failed to export the recipe. Please try again.");
+      Alert.alert(
+        "Export Error",
+        "Failed to export the recipe. Please try again.",
+      );
     } finally {
       setExporting(false);
     }
@@ -485,7 +496,12 @@ export default function RecipeDetailScreen() {
           showBackButton={true}
           menuItems={[]}
         />
-        <View style={[styles.notFoundContainer, { paddingTop: loadingHeaderPadding }]}>
+        <View
+          style={[
+            styles.notFoundContainer,
+            { paddingTop: loadingHeaderPadding },
+          ]}
+        >
           <Feather name="alert-circle" size={48} color={theme.textSecondary} />
           <ThemedText type="h3" style={styles.notFoundText}>
             Recipe not found
@@ -792,14 +808,18 @@ export default function RecipeDetailScreen() {
           </View>
 
           {recipe.ingredients.map((ingredient, index) => {
-            const availability = getAvailabilityIndicator(ingredient.availabilityStatus);
+            const availability = getAvailabilityIndicator(
+              ingredient.availabilityStatus,
+            );
             const canSwap = hasSwapsAvailable(ingredient.name);
             const scaledQty = scaleQuantity(
               ingredient.quantity,
               recipe.servings || 1,
               selectedServings,
             );
-            const isLowOrMissing = ingredient.availabilityStatus === "partial" || ingredient.availabilityStatus === "unavailable";
+            const isLowOrMissing =
+              ingredient.availabilityStatus === "partial" ||
+              ingredient.availabilityStatus === "unavailable";
             return (
               <View key={index} style={styles.ingredientRow}>
                 <Feather
@@ -807,7 +827,14 @@ export default function RecipeDetailScreen() {
                   size={20}
                   color={availability.color}
                 />
-                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+                <View
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: Spacing.xs,
+                  }}
+                >
                   <ThemedText
                     type="body"
                     style={[
@@ -818,8 +845,12 @@ export default function RecipeDetailScreen() {
                     {scaledQty} {ingredient.unit} {ingredient.name}
                     {ingredient.isOptional ? " (optional)" : ""}
                   </ThemedText>
-                  {ingredient.availabilityStatus === "partial" && ingredient.percentAvailable ? (
-                    <ThemedText type="caption" style={{ color: AppColors.warning }}>
+                  {ingredient.availabilityStatus === "partial" &&
+                  ingredient.percentAvailable ? (
+                    <ThemedText
+                      type="caption"
+                      style={{ color: AppColors.warning }}
+                    >
                       ({ingredient.percentAvailable}%)
                     </ThemedText>
                   ) : null}
@@ -859,11 +890,7 @@ export default function RecipeDetailScreen() {
                   disabled={instacartLoading}
                   style={styles.instacartButton}
                   icon={
-                    <Feather
-                      name="shopping-bag"
-                      size={18}
-                      color="#FFFFFF"
-                    />
+                    <Feather name="shopping-bag" size={18} color="#FFFFFF" />
                   }
                   testID="button-order-instacart-recipe"
                 >

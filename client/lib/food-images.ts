@@ -20,4 +20,3 @@ export const STARTER_FOOD_IMAGES: Record<string, ImageSourcePropType> = {
   broccoli: require("@/assets/food-images/green_broccoli_icon.png"),
   orange_juice: require("@/assets/food-images/orange_juice_glass_icon.png"),
 };
-

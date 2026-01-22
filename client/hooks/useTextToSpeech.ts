@@ -251,4 +251,3 @@ export function useTextToSpeech(options: TTSOptions = {}) {
     canPause: Platform.OS === "ios",
   };
 }
-

@@ -2,16 +2,16 @@
  * =============================================================================
  * SAFE GLASS EFFECT WRAPPER
  * =============================================================================
- * 
+ *
  * This module provides a safe wrapper around expo-glass-effect that handles
  * iPad compatibility issues. The expo-glass-effect native module can crash
  * on iPad devices due to pointer authentication failures during TurboModule
  * initialization.
- * 
+ *
  * IMPORTANT: All usage of expo-glass-effect in this app MUST go through this
  * wrapper. Direct imports from expo-glass-effect will cause iPad crashes.
  * Do NOT import from "expo-glass-effect" directly anywhere else in the codebase.
- * 
+ *
  * This wrapper:
  * 1. Uses Platform.constants.interfaceIdiom for reliable iPhone detection
  * 2. NEVER loads expo-glass-effect on iPad or any non-iPhone device
@@ -30,14 +30,14 @@ let cachedIsIPhone: boolean | null = null;
 /**
  * Strictly detect if device is an iPhone (NOT iPad, NOT Mac Catalyst, NOT tvOS)
  * Uses Platform.constants.interfaceIdiom which is the definitive iOS device type
- * 
+ *
  * interfaceIdiom values:
  * - "phone" = iPhone
  * - "pad" = iPad
  * - "tv" = Apple TV
  * - "carplay" = CarPlay
  * - "mac" = Mac Catalyst
- * 
+ *
  * Only returns true for "phone" to ensure we never load glass effects on iPad
  */
 function isDefinitelyIPhone(): boolean {
@@ -45,33 +45,33 @@ function isDefinitelyIPhone(): boolean {
   if (cachedIsIPhone !== null) {
     return cachedIsIPhone;
   }
-  
+
   // Must be iOS platform
   if (Platform.OS !== "ios") {
     cachedIsIPhone = false;
     return false;
   }
-  
+
   // Use interfaceIdiom from Platform.constants - this is the definitive check
   // This value comes from UIDevice.current.userInterfaceIdiom on iOS
   const platformConstants = Platform.constants as {
     interfaceIdiom?: string;
     [key: string]: unknown;
   };
-  
+
   if (platformConstants.interfaceIdiom) {
     // Only allow "phone" - anything else (pad, tv, carplay, mac) is not an iPhone
     cachedIsIPhone = platformConstants.interfaceIdiom === "phone";
     return cachedIsIPhone;
   }
-  
+
   // Fallback: Check Platform.isPad if interfaceIdiom is unavailable
   // If isPad is true, this is definitely NOT an iPhone
   if ((Platform as any).isPad === true) {
     cachedIsIPhone = false;
     return false;
   }
-  
+
   // If we can't determine device type definitively, be safe and assume NOT iPhone
   // This prevents the glass effect from loading on unknown iOS device types
   cachedIsIPhone = false;
@@ -88,14 +88,14 @@ function tryLoadGlassModule(): boolean {
   if (moduleLoadAttempted) {
     return GlassViewNative !== null;
   }
-  
+
   moduleLoadAttempted = true;
-  
+
   // Final safety check - NEVER load on non-iPhone
   if (!isDefinitelyIPhone()) {
     return false;
   }
-  
+
   try {
     const module = require("expo-glass-effect");
     isLiquidGlassAvailableNative = module.isLiquidGlassAvailable;
@@ -116,12 +116,12 @@ export function isLiquidGlassAvailable(): boolean {
   if (!isDefinitelyIPhone()) {
     return false;
   }
-  
+
   // Ensure module is loaded
   if (!tryLoadGlassModule()) {
     return false;
   }
-  
+
   // Try to use the native function
   if (isLiquidGlassAvailableNative) {
     try {
@@ -131,7 +131,7 @@ export function isLiquidGlassAvailable(): boolean {
       return false;
     }
   }
-  
+
   return false;
 }
 
@@ -139,13 +139,13 @@ export function isLiquidGlassAvailable(): boolean {
  * Safe GlassView component
  * Falls back to a regular View on iPad and unsupported platforms
  */
-export function GlassView({ 
-  children, 
+export function GlassView({
+  children,
   style,
   glassEffectStyle,
   tintColor,
   isInteractive,
-  ...props 
+  ...props
 }: ViewProps & {
   glassEffectStyle?: "clear" | "regular";
   tintColor?: string;
@@ -159,7 +159,7 @@ export function GlassView({
       </View>
     );
   }
-  
+
   // Use the native GlassView if available
   if (GlassViewNative) {
     return (
@@ -174,7 +174,7 @@ export function GlassView({
       </GlassViewNative>
     );
   }
-  
+
   // Fallback to View
   return (
     <View style={style} {...props}>

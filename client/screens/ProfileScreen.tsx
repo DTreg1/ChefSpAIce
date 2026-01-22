@@ -29,11 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
-import {
-  Spacing,
-  BorderRadius,
-  AppColors,
-} from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   storage,
   FoodItem,
@@ -49,11 +45,13 @@ import { getApiUrl } from "@/lib/query-client";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark, colorScheme, themePreference, setThemePreference } = useTheme();
+  const { theme, isDark, colorScheme, themePreference, setThemePreference } =
+    useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut, token } = useAuth();
-  const { tier, planType, isActive, isTrialing, trialDaysRemaining } = useSubscription();
+  const { tier, planType, isActive, isTrialing, trialDaysRemaining } =
+    useSubscription();
   const { presentCustomerCenter, isCustomerCenterAvailable } = useStoreKit();
   const { resetOnboarding } = useOnboardingStatus();
 
@@ -146,7 +144,8 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    const message = "Are you sure you want to sign out? Your local data will be preserved.";
+    const message =
+      "Are you sure you want to sign out? Your local data will be preserved.";
 
     if (Platform.OS === "web") {
       if (window.confirm(`Sign Out?\n\n${message}`)) {
@@ -169,7 +168,6 @@ export default function ProfileScreen() {
     await storage.logout();
     resetOnboarding();
   };
-
 
   const handleManageSubscription = async () => {
     if (isCustomerCenterAvailable) {
@@ -215,9 +213,10 @@ export default function ProfileScreen() {
     navigation.navigate("Subscription" as any);
   };
 
-  const accountCreatedDate = isAuthenticated && user?.createdAt
-    ? new Date(user.createdAt)
-    : new Date(userProfile.createdAt);
+  const accountCreatedDate =
+    isAuthenticated && user?.createdAt
+      ? new Date(user.createdAt)
+      : new Date(userProfile.createdAt);
 
   const memberSinceDate = accountCreatedDate.toLocaleDateString("en-US", {
     month: "long",
@@ -243,600 +242,714 @@ export default function ProfileScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-      <View style={styles.avatarSection}>
-        <Pressable onPress={handlePickAvatar}>
-          {Platform.OS === "ios" ? (
-            <BlurView
-              intensity={25}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={[
-                styles.avatarGlassRing,
-                {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-            >
-              {userProfile.avatarUri ? (
-                <Image
-                  source={{ uri: userProfile.avatarUri }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
-              ) : (
-                <View
-                  style={[styles.avatar, { backgroundColor: AppColors.primary }]}
-                >
-                  <Feather name="user" size={40} color="#FFFFFF" />
-                </View>
-              )}
-              <View style={styles.editBadge}>
-                <Feather name="camera" size={12} color="#FFFFFF" />
-              </View>
-            </BlurView>
-          ) : (
-            <View
-              style={[
-                styles.avatarGlassRing,
-                {
-                  backgroundColor: theme.glass.background,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-            >
-              {userProfile.avatarUri ? (
-                <Image
-                  source={{ uri: userProfile.avatarUri }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
-              ) : (
-                <View
-                  style={[styles.avatar, { backgroundColor: AppColors.primary }]}
-                >
-                  <Feather name="user" size={40} color="#FFFFFF" />
-                </View>
-              )}
-              <View style={styles.editBadge}>
-                <Feather name="camera" size={12} color="#FFFFFF" />
-              </View>
-            </View>
-          )}
-        </Pressable>
-
-        {isEditingName ? (
-          <View style={styles.nameEditContainer}>
-            <TextInput
-              value={editedName}
-              onChangeText={setEditedName}
-              style={[
-                styles.nameInput,
-                {
-                  color: theme.text,
-                  borderColor: AppColors.primary,
-                  backgroundColor: theme.backgroundSecondary,
-                },
-              ]}
-              autoFocus
-              selectTextOnFocus
-              onBlur={handleSaveName}
-              onSubmitEditing={handleSaveName}
-            />
-            <Pressable onPress={handleSaveName} style={styles.saveButton}>
-              <Feather name="check" size={20} color={AppColors.primary} />
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setIsEditingName(true)}
-            style={styles.nameContainer}
-          >
-            <ThemedText type="h3">{userProfile.displayName}</ThemedText>
-            <Feather name="edit-2" size={16} color={theme.textSecondary} />
-          </Pressable>
-        )}
-        <ThemedText type="caption">
-          Member since {memberSinceDate}
-        </ThemedText>
-      </View>
-
-      <GlassCard style={styles.preferencesCard}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          App Preferences
-        </ThemedText>
-
-        <View style={styles.preferenceRow}>
-          <View style={styles.preferenceInfo}>
-            <View
-              style={[
-                styles.preferenceIcon,
-                { backgroundColor: `${AppColors.accent}15` },
-              ]}
-            >
-              <Feather name={isDark ? "moon" : "sun"} size={20} color={AppColors.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <ThemedText type="body">Theme</ThemedText>
-              <ThemedText type="caption">
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.themeToggleGroup}>
-            {(["light", "system", "dark"] as ThemePreference[]).map((option) => {
-              const isSelected = themePreference === option;
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => setThemePreference(option)}
-                  style={[
-                    styles.themeToggleButton,
-                    {
-                      backgroundColor: isSelected
-                        ? AppColors.primary
-                        : theme.glass.background,
-                      borderWidth: 1,
-                      borderColor: isSelected
-                        ? AppColors.primary
-                        : theme.glass.border,
-                    },
-                  ]}
-                  data-testid={`button-theme-${option}`}
-                >
-                  <Feather
-                    name={option === "light" ? "sun" : option === "dark" ? "moon" : "monitor"}
-                    size={16}
-                    color={isSelected ? "#FFFFFF" : theme.textSecondary}
+        <View style={styles.avatarSection}>
+          <Pressable onPress={handlePickAvatar}>
+            {Platform.OS === "ios" ? (
+              <BlurView
+                intensity={25}
+                tint={colorScheme === "dark" ? "dark" : "light"}
+                style={[
+                  styles.avatarGlassRing,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+              >
+                {userProfile.avatarUri ? (
+                  <Image
+                    source={{ uri: userProfile.avatarUri }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
                   />
-                </Pressable>
-              );
-            })}
-          </View>
+                ) : (
+                  <View
+                    style={[
+                      styles.avatar,
+                      { backgroundColor: AppColors.primary },
+                    ]}
+                  >
+                    <Feather name="user" size={40} color="#FFFFFF" />
+                  </View>
+                )}
+                <View style={styles.editBadge}>
+                  <Feather name="camera" size={12} color="#FFFFFF" />
+                </View>
+              </BlurView>
+            ) : (
+              <View
+                style={[
+                  styles.avatarGlassRing,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+              >
+                {userProfile.avatarUri ? (
+                  <Image
+                    source={{ uri: userProfile.avatarUri }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.avatar,
+                      { backgroundColor: AppColors.primary },
+                    ]}
+                  >
+                    <Feather name="user" size={40} color="#FFFFFF" />
+                  </View>
+                )}
+                <View style={styles.editBadge}>
+                  <Feather name="camera" size={12} color="#FFFFFF" />
+                </View>
+              </View>
+            )}
+          </Pressable>
+
+          {isEditingName ? (
+            <View style={styles.nameEditContainer}>
+              <TextInput
+                value={editedName}
+                onChangeText={setEditedName}
+                style={[
+                  styles.nameInput,
+                  {
+                    color: theme.text,
+                    borderColor: AppColors.primary,
+                    backgroundColor: theme.backgroundSecondary,
+                  },
+                ]}
+                autoFocus
+                selectTextOnFocus
+                onBlur={handleSaveName}
+                onSubmitEditing={handleSaveName}
+              />
+              <Pressable onPress={handleSaveName} style={styles.saveButton}>
+                <Feather name="check" size={20} color={AppColors.primary} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setIsEditingName(true)}
+              style={styles.nameContainer}
+            >
+              <ThemedText type="h3">{userProfile.displayName}</ThemedText>
+              <Feather name="edit-2" size={16} color={theme.textSecondary} />
+            </Pressable>
+          )}
+          <ThemedText type="caption">Member since {memberSinceDate}</ThemedText>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+        <GlassCard style={styles.preferencesCard}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            App Preferences
+          </ThemedText>
 
-        <View style={styles.preferenceRow}>
-          <View style={styles.preferenceInfo}>
+          <View style={styles.preferenceRow}>
+            <View style={styles.preferenceInfo}>
+              <View
+                style={[
+                  styles.preferenceIcon,
+                  { backgroundColor: `${AppColors.accent}15` },
+                ]}
+              >
+                <Feather
+                  name={isDark ? "moon" : "sun"}
+                  size={20}
+                  color={AppColors.accent}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="body">Theme</ThemedText>
+                <ThemedText type="caption"></ThemedText>
+              </View>
+            </View>
+            <View style={styles.themeToggleGroup}>
+              {(["light", "system", "dark"] as ThemePreference[]).map(
+                (option) => {
+                  const isSelected = themePreference === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => setThemePreference(option)}
+                      style={[
+                        styles.themeToggleButton,
+                        {
+                          backgroundColor: isSelected
+                            ? AppColors.primary
+                            : theme.glass.background,
+                          borderWidth: 1,
+                          borderColor: isSelected
+                            ? AppColors.primary
+                            : theme.glass.border,
+                        },
+                      ]}
+                      data-testid={`button-theme-${option}`}
+                    >
+                      <Feather
+                        name={
+                          option === "light"
+                            ? "sun"
+                            : option === "dark"
+                              ? "moon"
+                              : "monitor"
+                        }
+                        size={16}
+                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                      />
+                    </Pressable>
+                  );
+                },
+              )}
+            </View>
+          </View>
+
+          <View
+            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+          />
+
+          <View style={styles.preferenceRow}>
+            <View style={styles.preferenceInfo}>
+              <View
+                style={[
+                  styles.preferenceIcon,
+                  { backgroundColor: `${AppColors.primary}15` },
+                ]}
+              >
+                <Feather name="bell" size={20} color={AppColors.primary} />
+              </View>
+              <View>
+                <ThemedText type="body">Notifications</ThemedText>
+                <ThemedText type="caption">
+                  Expiration alerts and reminders
+                </ThemedText>
+              </View>
+            </View>
+            <Switch
+              value={preferences.notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{
+                false: theme.backgroundSecondary,
+                true: AppColors.primary,
+              }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.statsCard}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Inventory Overview
+          </ThemedText>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={{ color: AppColors.primary }}>
+                {inventory.length}
+              </ThemedText>
+              <ThemedText type="caption">Total Items</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={{ color: AppColors.success }}>
+                {freshCount}
+              </ThemedText>
+              <ThemedText type="caption">Fresh</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={{ color: AppColors.warning }}>
+                {expiringCount}
+              </ThemedText>
+              <ThemedText type="caption">Expiring</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={{ color: AppColors.error }}>
+                {expiredCount}
+              </ThemedText>
+              <ThemedText type="caption">Expired</ThemedText>
+            </View>
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.statsCard}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Storage Distribution
+          </ThemedText>
+          <View style={styles.storageList}>
+            {Object.entries(storageBreakdown).map(([location, count]) => (
+              <View key={location} style={styles.storageRow}>
+                <View style={styles.storageLabel}>
+                  <Feather
+                    name={
+                      location === "fridge"
+                        ? "thermometer"
+                        : location === "freezer"
+                          ? "wind"
+                          : location === "pantry"
+                            ? "archive"
+                            : "coffee"
+                    }
+                    size={18}
+                    color={theme.textSecondary}
+                  />
+                  <ThemedText type="body" style={styles.storageName}>
+                    {location.charAt(0).toUpperCase() + location.slice(1)}
+                  </ThemedText>
+                </View>
+                <View
+                  style={[
+                    styles.storageBar,
+                    { backgroundColor: theme.glass.background },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.storageProgress,
+                      {
+                        width: `${inventory.length > 0 ? (count / inventory.length) * 100 : 0}%`,
+                        backgroundColor: AppColors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+                <ThemedText type="body" style={styles.storageCount}>
+                  {count}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.statsCard}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Recipe Stats
+          </ThemedText>
+          <View style={styles.recipeStats}>
+            <View style={styles.recipeStat}>
+              <Feather name="book-open" size={24} color={AppColors.primary} />
+              <ThemedText type="h3">{recipes.length}</ThemedText>
+              <ThemedText type="caption">Total Recipes</ThemedText>
+            </View>
+            <View style={styles.recipeStat}>
+              <Feather name="heart" size={24} color={AppColors.error} />
+              <ThemedText type="h3">
+                {recipes.filter((r) => r.isFavorite).length}
+              </ThemedText>
+              <ThemedText type="caption">Favorites</ThemedText>
+            </View>
+            <View style={styles.recipeStat}>
+              <Feather name="zap" size={24} color={AppColors.secondary} />
+              <ThemedText type="h3">
+                {recipes.filter((r) => r.isAIGenerated).length}
+              </ThemedText>
+              <ThemedText type="caption">AI Generated</ThemedText>
+            </View>
+          </View>
+        </GlassCard>
+
+        <WasteReductionStats compact />
+
+        {expiringCount > 0 ? (
+          <GlassCard
+            style={{ backgroundColor: `${AppColors.warning}15` }}
+            contentStyle={styles.alertCard}
+            onPress={() => navigation.navigate("Analytics")}
+          >
+            <Feather
+              name="alert-triangle"
+              size={24}
+              color={AppColors.warning}
+            />
+            <View style={styles.alertContent}>
+              <ThemedText type="body" style={{ fontWeight: "600" }}>
+                {expiringCount} items expiring soon
+              </ThemedText>
+              <ThemedText type="caption">
+                Check your inventory to use them before they expire
+              </ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </GlassCard>
+        ) : null}
+
+        {onboardingStatus?.cookwareSetupSkipped &&
+        !onboardingStatus?.cookwareSetupCompleted ? (
+          <GlassCard
+            style={{ backgroundColor: `${AppColors.primary}15` }}
+            contentStyle={styles.alertCard}
+            onPress={() => navigation.navigate("Cookware")}
+          >
+            <Feather name="tool" size={24} color={AppColors.primary} />
+            <View style={styles.alertContent}>
+              <ThemedText type="body" style={{ fontWeight: "600" }}>
+                Set up your kitchen cookware
+              </ThemedText>
+              <ThemedText type="caption">
+                Get better recipe suggestions based on what you have
+              </ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </GlassCard>
+        ) : null}
+
+        <GlassCard style={styles.menuCard}>
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("Subscription")}
+            data-testid="link-subscription"
+          >
             <View
               style={[
-                styles.preferenceIcon,
+                styles.menuIcon,
+                { backgroundColor: `${AppColors.warning}15` },
+              ]}
+            >
+              <Feather name="star" size={20} color={AppColors.warning} />
+            </View>
+            <ThemedText type="body" style={styles.menuLabel}>
+              Subscription
+            </ThemedText>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+          <View
+            style={[
+              styles.menuDivider,
+              { backgroundColor: theme.glass.border },
+            ]}
+          />
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("Analytics")}
+          >
+            <View
+              style={[
+                styles.menuIcon,
                 { backgroundColor: `${AppColors.primary}15` },
               ]}
             >
-              <Feather name="bell" size={20} color={AppColors.primary} />
+              <Feather name="bar-chart-2" size={20} color={AppColors.primary} />
             </View>
-            <View>
-              <ThemedText type="body">Notifications</ThemedText>
-              <ThemedText type="caption">
-                Expiration alerts and reminders
-              </ThemedText>
-            </View>
-          </View>
-          <Switch
-            value={preferences.notificationsEnabled}
-            onValueChange={handleToggleNotifications}
-            trackColor={{
-              false: theme.backgroundSecondary,
-              true: AppColors.primary,
-            }}
-            thumbColor="#FFFFFF"
+            <ThemedText type="body" style={styles.menuLabel}>
+              Food Waste Analytics
+            </ThemedText>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+          <View
+            style={[
+              styles.menuDivider,
+              { backgroundColor: theme.glass.border },
+            ]}
           />
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.statsCard}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Inventory Overview
-        </ThemedText>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={{ color: AppColors.primary }}>
-              {inventory.length}
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("StorageLocations")}
+          >
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: `${AppColors.accent}15` },
+              ]}
+            >
+              <Feather name="package" size={20} color={AppColors.accent} />
+            </View>
+            <ThemedText type="body" style={styles.menuLabel}>
+              Storage Locations
             </ThemedText>
-            <ThemedText type="caption">Total Items</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={{ color: AppColors.success }}>
-              {freshCount}
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+          <View
+            style={[
+              styles.menuDivider,
+              { backgroundColor: theme.glass.border },
+            ]}
+          />
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("CookingTerms")}
+          >
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: `${AppColors.secondary}15` },
+              ]}
+            >
+              <Feather name="book" size={20} color={AppColors.secondary} />
+            </View>
+            <ThemedText type="body" style={styles.menuLabel}>
+              Cooking Terms Glossary
             </ThemedText>
-            <ThemedText type="caption">Fresh</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={{ color: AppColors.warning }}>
-              {expiringCount}
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+          <View
+            style={[
+              styles.menuDivider,
+              { backgroundColor: theme.glass.border },
+            ]}
+          />
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("Cookware")}
+          >
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: `${AppColors.accent}15` },
+              ]}
+            >
+              <Feather name="tool" size={20} color={AppColors.accent} />
+            </View>
+            <ThemedText type="body" style={styles.menuLabel}>
+              Kitchen Cookware
             </ThemedText>
-            <ThemedText type="caption">Expiring</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={{ color: AppColors.error }}>
-              {expiredCount}
-            </ThemedText>
-            <ThemedText type="caption">Expired</ThemedText>
-          </View>
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.statsCard}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Storage Distribution
-        </ThemedText>
-        <View style={styles.storageList}>
-          {Object.entries(storageBreakdown).map(([location, count]) => (
-            <View key={location} style={styles.storageRow}>
-              <View style={styles.storageLabel}>
-                <Feather
-                  name={
-                    location === "fridge"
-                      ? "thermometer"
-                      : location === "freezer"
-                        ? "wind"
-                        : location === "pantry"
-                          ? "archive"
-                          : "coffee"
-                  }
-                  size={18}
-                  color={theme.textSecondary}
-                />
-                <ThemedText type="body" style={styles.storageName}>
-                  {location.charAt(0).toUpperCase() + location.slice(1)}
-                </ThemedText>
-              </View>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+          {__DEV__ ? (
+            <>
               <View
                 style={[
-                  styles.storageBar,
-                  { backgroundColor: theme.glass.background },
+                  styles.menuDivider,
+                  { backgroundColor: theme.glass.border },
                 ]}
+              />
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => navigation.navigate("DevComponents")}
               >
                 <View
                   style={[
-                    styles.storageProgress,
-                    {
-                      width: `${inventory.length > 0 ? (count / inventory.length) * 100 : 0}%`,
-                      backgroundColor: AppColors.primary,
-                    },
+                    styles.menuIcon,
+                    { backgroundColor: `${AppColors.warning}15` },
                   ]}
+                >
+                  <Feather name="code" size={20} color={AppColors.warning} />
+                </View>
+                <ThemedText type="body" style={styles.menuLabel}>
+                  Component Library
+                </ThemedText>
+                <Feather
+                  name="chevron-right"
+                  size={20}
+                  color={theme.textSecondary}
                 />
-              </View>
-              <ThemedText type="body" style={styles.storageCount}>
-                {count}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.statsCard}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Recipe Stats
-        </ThemedText>
-        <View style={styles.recipeStats}>
-          <View style={styles.recipeStat}>
-            <Feather name="book-open" size={24} color={AppColors.primary} />
-            <ThemedText type="h3">{recipes.length}</ThemedText>
-            <ThemedText type="caption">Total Recipes</ThemedText>
-          </View>
-          <View style={styles.recipeStat}>
-            <Feather name="heart" size={24} color={AppColors.error} />
-            <ThemedText type="h3">
-              {recipes.filter((r) => r.isFavorite).length}
-            </ThemedText>
-            <ThemedText type="caption">Favorites</ThemedText>
-          </View>
-          <View style={styles.recipeStat}>
-            <Feather name="zap" size={24} color={AppColors.secondary} />
-            <ThemedText type="h3">
-              {recipes.filter((r) => r.isAIGenerated).length}
-            </ThemedText>
-            <ThemedText type="caption">AI Generated</ThemedText>
-          </View>
-        </View>
-      </GlassCard>
-
-      <WasteReductionStats compact />
-
-      {expiringCount > 0 ? (
-        <GlassCard
-          style={{ backgroundColor: `${AppColors.warning}15` }}
-          contentStyle={styles.alertCard}
-          onPress={() => navigation.navigate("Analytics")}
-        >
-          <Feather name="alert-triangle" size={24} color={AppColors.warning} />
-          <View style={styles.alertContent}>
-            <ThemedText type="body" style={{ fontWeight: "600" }}>
-              {expiringCount} items expiring soon
-            </ThemedText>
-            <ThemedText type="caption">
-              Check your inventory to use them before they expire
-            </ThemedText>
-          </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </GlassCard>
-      ) : null}
-
-      {onboardingStatus?.cookwareSetupSkipped &&
-      !onboardingStatus?.cookwareSetupCompleted ? (
-        <GlassCard
-          style={{ backgroundColor: `${AppColors.primary}15` }}
-          contentStyle={styles.alertCard}
-          onPress={() => navigation.navigate("Cookware")}
-        >
-          <Feather name="tool" size={24} color={AppColors.primary} />
-          <View style={styles.alertContent}>
-            <ThemedText type="body" style={{ fontWeight: "600" }}>
-              Set up your kitchen cookware
-            </ThemedText>
-            <ThemedText type="caption">
-              Get better recipe suggestions based on what you have
-            </ThemedText>
-          </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </GlassCard>
-      ) : null}
-
-      <GlassCard style={styles.menuCard}>
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Subscription")}
-          data-testid="link-subscription"
-        >
+              </Pressable>
+            </>
+          ) : null}
           <View
             style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.warning}15` },
+              styles.menuDivider,
+              { backgroundColor: theme.glass.border },
             ]}
+          />
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("BarcodeTest")}
           >
-            <Feather name="star" size={20} color={AppColors.warning} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Subscription
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Analytics")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.primary}15` },
-            ]}
-          >
-            <Feather name="bar-chart-2" size={20} color={AppColors.primary} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Food Waste Analytics
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("StorageLocations")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.accent}15` },
-            ]}
-          >
-            <Feather name="package" size={20} color={AppColors.accent} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Storage Locations
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("CookingTerms")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.secondary}15` },
-            ]}
-          >
-            <Feather name="book" size={20} color={AppColors.secondary} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Cooking Terms Glossary
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Cookware")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.accent}15` },
-            ]}
-          >
-            <Feather name="tool" size={20} color={AppColors.accent} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Kitchen Cookware
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-        {__DEV__ ? (
-          <>
             <View
               style={[
-                styles.menuDivider,
-                { backgroundColor: theme.glass.border },
+                styles.menuIcon,
+                { backgroundColor: `${AppColors.primary}15` },
               ]}
+            >
+              <Feather name="maximize" size={20} color={AppColors.primary} />
+            </View>
+            <ThemedText type="body" style={styles.menuLabel}>
+              Barcode Test Scanner
+            </ThemedText>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
             />
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => navigation.navigate("DevComponents")}
-            >
-              <View
-                style={[
-                  styles.menuIcon,
-                  { backgroundColor: `${AppColors.warning}15` },
-                ]}
-              >
-                <Feather name="code" size={20} color={AppColors.warning} />
-              </View>
-              <ThemedText type="body" style={styles.menuLabel}>
-                Component Library
-              </ThemedText>
-              <Feather
-                name="chevron-right"
-                size={20}
-                color={theme.textSecondary}
-              />
-            </Pressable>
-          </>
-        ) : null}
-        <View
-          style={[styles.menuDivider, { backgroundColor: theme.glass.border }]}
-        />
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("BarcodeTest")}
-        >
-          <View
-            style={[
-              styles.menuIcon,
-              { backgroundColor: `${AppColors.primary}15` },
-            ]}
-          >
-            <Feather name="maximize" size={20} color={AppColors.primary} />
-          </View>
-          <ThemedText type="body" style={styles.menuLabel}>
-            Barcode Test Scanner
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
-      </GlassCard>
-
-      {isAuthenticated ? (
-        <>
-          <GlassCard style={styles.accountCard}>
-            <View style={styles.accountHeader}>
-              <View style={[styles.accountIcon, { backgroundColor: `${AppColors.primary}15` }]}>
-                <Feather name="cloud" size={24} color={AppColors.primary} />
-              </View>
-              <View style={styles.accountInfo}>
-                <ThemedText type="body" style={{ fontWeight: "600" }}>
-                  Cloud Sync Active
-                </ThemedText>
-                <ThemedText type="caption">
-                  Signed in as {user?.email}
-                </ThemedText>
-              </View>
-              <View style={[styles.syncBadge, { backgroundColor: `${AppColors.success}15` }]}>
-                <Feather name="check" size={14} color={AppColors.success} />
-              </View>
-            </View>
-          </GlassCard>
-
-          <GlassCard style={styles.subscriptionCard}>
-            <View style={styles.subscriptionHeader}>
-              <View style={[styles.subscriptionIcon, { backgroundColor: `${AppColors.accent}15` }]}>
-                <Feather name="credit-card" size={24} color={AppColors.accent} />
-              </View>
-              <View style={styles.subscriptionInfo}>
-                <ThemedText type="body" style={{ fontWeight: "600" }}>
-                  {isActive
-                    ? isTrialing
-                      ? `Pro Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
-                      : tier === "PRO" ? "Pro Subscription" : "Basic Plan"
-                    : "Basic Plan"}
-                </ThemedText>
-                <ThemedText type="caption">
-                  {isActive
-                    ? isTrialing
-                      ? "Full Pro access during trial"
-                      : tier === "PRO" 
-                        ? `Pro Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : ""}`
-                        : "25 items, 5 AI recipes, 5 cookware"
-                    : "25 items, 5 AI recipes, 5 cookware"}
-                </ThemedText>
-              </View>
-            </View>
-            {(isActive && tier === "PRO" && !isTrialing) ? (
-              <Pressable
-                style={styles.manageSubscriptionButton}
-                onPress={handleManageSubscription}
-                data-testid="button-manage-subscription"
-              >
-                <ThemedText type="body" style={{ color: AppColors.accent }}>
-                  Manage Subscription
-                </ThemedText>
-                <Feather name="external-link" size={16} color={AppColors.accent} />
-              </Pressable>
-            ) : (
-              <Pressable
-                style={styles.manageSubscriptionButton}
-                onPress={handleUpgradeSubscription}
-                data-testid="button-upgrade-subscription"
-              >
-                <ThemedText type="body" style={{ color: AppColors.primary }}>
-                  Choose Plan
-                </ThemedText>
-                <Feather name="arrow-right" size={16} color={AppColors.primary} />
-              </Pressable>
-            )}
-          </GlassCard>
-
-          <GlassCard style={styles.logoutCard}>
-            <Pressable 
-              style={styles.logoutButton} 
-              onPress={handleLogout}
-              testID="button-sign-out"
-              accessibilityLabel="Sign Out"
-            >
-              <View
-                style={[
-                  styles.menuIcon,
-                  { backgroundColor: `${AppColors.error}15` },
-                ]}
-              >
-                <Feather name="log-out" size={20} color={AppColors.error} />
-              </View>
-              <ThemedText type="body" style={[styles.menuLabel, { color: AppColors.error }]}>
-                Sign Out
-              </ThemedText>
-            </Pressable>
-          </GlassCard>
-        </>
-      ) : (
-        <GlassCard
-          contentStyle={styles.signInCard}
-          onPress={() => navigation.getParent()?.getParent()?.reset({ index: 0, routes: [{ name: "Onboarding" }] })}
-        >
-          <View style={styles.signInContent}>
-            <View style={[styles.signInIcon, { backgroundColor: `${AppColors.primary}15` }]}>
-              <Feather name="cloud" size={28} color={AppColors.primary} />
-            </View>
-            <View style={styles.signInText}>
-              <ThemedText type="body" style={{ fontWeight: "600" }}>
-                Sign in to enable cloud sync
-              </ThemedText>
-              <ThemedText type="caption">
-                Back up your data and access it from any device
-              </ThemedText>
-            </View>
-          </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </Pressable>
         </GlassCard>
-      )}
+
+        {isAuthenticated ? (
+          <>
+            <GlassCard style={styles.accountCard}>
+              <View style={styles.accountHeader}>
+                <View
+                  style={[
+                    styles.accountIcon,
+                    { backgroundColor: `${AppColors.primary}15` },
+                  ]}
+                >
+                  <Feather name="cloud" size={24} color={AppColors.primary} />
+                </View>
+                <View style={styles.accountInfo}>
+                  <ThemedText type="body" style={{ fontWeight: "600" }}>
+                    Cloud Sync Active
+                  </ThemedText>
+                  <ThemedText type="caption">
+                    Signed in as {user?.email}
+                  </ThemedText>
+                </View>
+                <View
+                  style={[
+                    styles.syncBadge,
+                    { backgroundColor: `${AppColors.success}15` },
+                  ]}
+                >
+                  <Feather name="check" size={14} color={AppColors.success} />
+                </View>
+              </View>
+            </GlassCard>
+
+            <GlassCard style={styles.subscriptionCard}>
+              <View style={styles.subscriptionHeader}>
+                <View
+                  style={[
+                    styles.subscriptionIcon,
+                    { backgroundColor: `${AppColors.accent}15` },
+                  ]}
+                >
+                  <Feather
+                    name="credit-card"
+                    size={24}
+                    color={AppColors.accent}
+                  />
+                </View>
+                <View style={styles.subscriptionInfo}>
+                  <ThemedText type="body" style={{ fontWeight: "600" }}>
+                    {isActive
+                      ? isTrialing
+                        ? `Pro Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
+                        : tier === "PRO"
+                          ? "Pro Subscription"
+                          : "Basic Plan"
+                      : "Basic Plan"}
+                  </ThemedText>
+                  <ThemedText type="caption">
+                    {isActive
+                      ? isTrialing
+                        ? "Full Pro access during trial"
+                        : tier === "PRO"
+                          ? `Pro Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : ""}`
+                          : "25 items, 5 AI recipes, 5 cookware"
+                      : "25 items, 5 AI recipes, 5 cookware"}
+                  </ThemedText>
+                </View>
+              </View>
+              {isActive && tier === "PRO" && !isTrialing ? (
+                <Pressable
+                  style={styles.manageSubscriptionButton}
+                  onPress={handleManageSubscription}
+                  data-testid="button-manage-subscription"
+                >
+                  <ThemedText type="body" style={{ color: AppColors.accent }}>
+                    Manage Subscription
+                  </ThemedText>
+                  <Feather
+                    name="external-link"
+                    size={16}
+                    color={AppColors.accent}
+                  />
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={styles.manageSubscriptionButton}
+                  onPress={handleUpgradeSubscription}
+                  data-testid="button-upgrade-subscription"
+                >
+                  <ThemedText type="body" style={{ color: AppColors.primary }}>
+                    Choose Plan
+                  </ThemedText>
+                  <Feather
+                    name="arrow-right"
+                    size={16}
+                    color={AppColors.primary}
+                  />
+                </Pressable>
+              )}
+            </GlassCard>
+
+            <GlassCard style={styles.logoutCard}>
+              <Pressable
+                style={styles.logoutButton}
+                onPress={handleLogout}
+                testID="button-sign-out"
+                accessibilityLabel="Sign Out"
+              >
+                <View
+                  style={[
+                    styles.menuIcon,
+                    { backgroundColor: `${AppColors.error}15` },
+                  ]}
+                >
+                  <Feather name="log-out" size={20} color={AppColors.error} />
+                </View>
+                <ThemedText
+                  type="body"
+                  style={[styles.menuLabel, { color: AppColors.error }]}
+                >
+                  Sign Out
+                </ThemedText>
+              </Pressable>
+            </GlassCard>
+          </>
+        ) : (
+          <GlassCard
+            contentStyle={styles.signInCard}
+            onPress={() =>
+              navigation
+                .getParent()
+                ?.getParent()
+                ?.reset({ index: 0, routes: [{ name: "Onboarding" }] })
+            }
+          >
+            <View style={styles.signInContent}>
+              <View
+                style={[
+                  styles.signInIcon,
+                  { backgroundColor: `${AppColors.primary}15` },
+                ]}
+              >
+                <Feather name="cloud" size={28} color={AppColors.primary} />
+              </View>
+              <View style={styles.signInText}>
+                <ThemedText type="body" style={{ fontWeight: "600" }}>
+                  Sign in to enable cloud sync
+                </ThemedText>
+                <ThemedText type="caption">
+                  Back up your data and access it from any device
+                </ThemedText>
+              </View>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={theme.textSecondary}
+            />
+          </GlassCard>
+        )}
       </ScrollView>
     </View>
   );

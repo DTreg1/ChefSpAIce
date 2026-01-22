@@ -3,7 +3,10 @@ import { StyleSheet, Pressable, Platform, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 
 import { useNavigation } from "@react-navigation/native";
@@ -37,11 +40,12 @@ export function FloatingChatButton() {
   const { isDark } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
   const { checkFeature } = useSubscription();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scale = useSharedValue(1);
 
-  const canUseAiAssistant = checkFeature('canUseAiKitchenAssistant');
+  const canUseAiAssistant = checkFeature("canUseAiKitchenAssistant");
 
   const handlePressIn = () => {
     scale.value = withSpring(0.9, { damping: 15, stiffness: 400 });
@@ -80,7 +84,11 @@ export function FloatingChatButton() {
   const iconContent = isChatOpen ? (
     <Feather name="x" size={28} color="#FFFFFF" />
   ) : (
-    <Image source={chefHatLight} style={{ width: 28, height: 28 }} resizeMode="contain" />
+    <Image
+      source={chefHatLight}
+      style={{ width: 28, height: 28 }}
+      resizeMode="contain"
+    />
   );
 
   const renderInnerContent = () => {
@@ -119,7 +127,10 @@ export function FloatingChatButton() {
       <Animated.View
         entering={FadeIn.duration(300)}
         exiting={FadeOut.duration(200)}
-        style={[styles.container, { bottom: bottomPosition, right: Spacing.lg }]}
+        style={[
+          styles.container,
+          { bottom: bottomPosition, right: Spacing.lg },
+        ]}
       >
         <AnimatedPressable
           onPress={handlePress}
@@ -144,12 +155,12 @@ export function FloatingChatButton() {
           onUpgrade={() => {
             setShowUpgradePrompt(false);
             // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
-            navigation.navigate("Main" as any, { 
-              screen: 'Tabs', 
-              params: { 
-                screen: 'ProfileTab', 
-                params: { screen: 'Subscription' } 
-              } 
+            navigation.navigate("Main" as any, {
+              screen: "Tabs",
+              params: {
+                screen: "ProfileTab",
+                params: { screen: "Subscription" },
+              },
             });
           }}
           onDismiss={() => setShowUpgradePrompt(false)}

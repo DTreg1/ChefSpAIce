@@ -24,7 +24,13 @@
  * 9. FloatingChatProvider - AI assistant chat modal
  */
 
-import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { StyleSheet, View, Platform } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -121,9 +127,15 @@ function getActiveRouteName(
 function MobileAppContent() {
   const colorScheme = useTheme();
   const isDark = colorScheme.isDark;
-  const { isAuthenticated, isLoading: isAuthLoading, user, setSignOutCallback } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    user,
+    setSignOutCallback,
+  } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
-  const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } = useSubscription();
+  const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } =
+    useSubscription();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
@@ -169,7 +181,7 @@ function MobileAppContent() {
    * 4. User has an active subscription
    * 5. Onboarding is complete
    * 6. Not on excluded screens (like AddItem where chat would interfere)
-   * 
+   *
    * IMPORTANT: We require currentRoute to be defined to prevent the chat button
    * from flashing during initial navigation setup, before we know which screen
    * the user is on. This ensures the button never appears on auth/onboarding screens.
@@ -266,7 +278,7 @@ function RootWrapper() {
  * - ErrorBoundary for graceful error handling
  * - QueryClientProvider for React Query data fetching
  * - SafeAreaProvider for handling device notches and safe areas
- * 
+ *
  * Also handles font loading to ensure icons render properly on Android.
  */
 export default function App() {

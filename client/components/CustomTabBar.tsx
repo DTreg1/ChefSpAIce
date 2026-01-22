@@ -8,7 +8,10 @@ import {
   LayoutChangeEvent,
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
@@ -71,7 +74,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const useLiquidGlass = isLiquidGlassAvailable();
 
   // Calculate remaining AI recipes for Basic users
-  const maxAiRecipes = typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5;
+  const maxAiRecipes =
+    typeof entitlements.maxAiRecipes === "number"
+      ? entitlements.maxAiRecipes
+      : 5;
   const remainingAiRecipes = maxAiRecipes - usage.aiRecipesUsedThisMonth;
   const showRecipeBadge = !isProUser && remainingAiRecipes >= 0;
 
@@ -81,7 +87,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     "SettingsTab",
     "NotificationsTab",
   ];
-  
+
   const leftTabs = state.routes.filter((_, i) => i < 2);
   const rightTabs = state.routes.filter(
     (route, i) => i > 2 && !hiddenRoutes.includes(route.name),
@@ -239,7 +245,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           {isKitchenTab || isCookwareTab || isRecipesTab ? (
             <MaterialIcons
               name={
-                isKitchenTab ? "kitchen" : isRecipesTab ? "art-track" : "blender"
+                isKitchenTab
+                  ? "kitchen"
+                  : isRecipesTab
+                    ? "art-track"
+                    : "blender"
               }
               size={ICON_SIZE}
               color={isFocused ? colors.selected : colors.unselected}
@@ -254,7 +264,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             />
           )}
           {isRecipesTab && showRecipeBadge && (
-            <View style={[styles.recipeBadge, { backgroundColor: getBadgeColor() }]}>
+            <View
+              style={[styles.recipeBadge, { backgroundColor: getBadgeColor() }]}
+            >
               <Text style={styles.recipeBadgeText}>{remainingAiRecipes}</Text>
             </View>
           )}
@@ -299,7 +311,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           StyleSheet.absoluteFill,
           styles.pillBlur,
           {
-            backgroundColor: isDark ? "rgba(28, 28, 30, 0.85)" : "rgba(255, 255, 255, 0.85)",
+            backgroundColor: isDark
+              ? "rgba(28, 28, 30, 0.85)"
+              : "rgba(255, 255, 255, 0.85)",
           },
         ]}
       />

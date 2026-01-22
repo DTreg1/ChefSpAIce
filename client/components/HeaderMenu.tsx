@@ -25,7 +25,10 @@ interface HeaderMenuProps {
   testID?: string;
 }
 
-export function HeaderMenu({ items, testID = "button-header-menu" }: HeaderMenuProps) {
+export function HeaderMenu({
+  items,
+  testID = "button-header-menu",
+}: HeaderMenuProps) {
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -87,7 +90,13 @@ export function HeaderMenu({ items, testID = "button-header-menu" }: HeaderMenuP
                       <Feather
                         name={item.icon}
                         size={18}
-                        color={item.active ? AppColors.primary : (item.disabled ? theme.textSecondary : theme.text)}
+                        color={
+                          item.active
+                            ? AppColors.primary
+                            : item.disabled
+                              ? theme.textSecondary
+                              : theme.text
+                        }
                       />
                       <ThemedText
                         style={[

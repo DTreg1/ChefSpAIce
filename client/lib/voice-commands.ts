@@ -227,4 +227,3 @@ export function parseVoiceCommand(
     rawText: text,
   };
 }
-

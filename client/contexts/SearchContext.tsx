@@ -19,39 +19,51 @@ interface SearchContextType {
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [searchStates, setSearchStates] = useState<Record<string, ScreenSearchState>>({});
+  const [searchStates, setSearchStates] = useState<
+    Record<string, ScreenSearchState>
+  >({});
 
-  const getSearchQuery = useCallback((screenKey: string) => {
-    return searchStates[screenKey]?.query || "";
-  }, [searchStates]);
+  const getSearchQuery = useCallback(
+    (screenKey: string) => {
+      return searchStates[screenKey]?.query || "";
+    },
+    [searchStates],
+  );
 
   const setSearchQuery = useCallback((screenKey: string, query: string) => {
-    setSearchStates(prev => ({
+    setSearchStates((prev) => ({
       ...prev,
-      [screenKey]: { ...prev[screenKey], query, isOpen: prev[screenKey]?.isOpen ?? false },
+      [screenKey]: {
+        ...prev[screenKey],
+        query,
+        isOpen: prev[screenKey]?.isOpen ?? false,
+      },
     }));
   }, []);
 
-  const isSearchOpen = useCallback((screenKey: string) => {
-    return searchStates[screenKey]?.isOpen || false;
-  }, [searchStates]);
+  const isSearchOpen = useCallback(
+    (screenKey: string) => {
+      return searchStates[screenKey]?.isOpen || false;
+    },
+    [searchStates],
+  );
 
   const openSearch = useCallback((screenKey: string) => {
-    setSearchStates(prev => ({
+    setSearchStates((prev) => ({
       ...prev,
       [screenKey]: { query: prev[screenKey]?.query || "", isOpen: true },
     }));
   }, []);
 
   const closeSearch = useCallback((screenKey: string) => {
-    setSearchStates(prev => ({
+    setSearchStates((prev) => ({
       ...prev,
       [screenKey]: { query: "", isOpen: false },
     }));
   }, []);
 
   const collapseSearch = useCallback((screenKey: string) => {
-    setSearchStates(prev => {
+    setSearchStates((prev) => {
       const current = prev[screenKey];
       if (!current) {
         return prev;
@@ -64,9 +76,13 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearSearch = useCallback((screenKey: string) => {
-    setSearchStates(prev => ({
+    setSearchStates((prev) => ({
       ...prev,
-      [screenKey]: { ...prev[screenKey], query: "", isOpen: prev[screenKey]?.isOpen ?? false },
+      [screenKey]: {
+        ...prev[screenKey],
+        query: "",
+        isOpen: prev[screenKey]?.isOpen ?? false,
+      },
     }));
   }, []);
 

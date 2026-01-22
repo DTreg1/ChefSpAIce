@@ -99,10 +99,11 @@ export function UpgradePrompt({
   const { theme, isDark } = useTheme();
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
-  const benefitKey = type === "limit" 
-    ? (limitName?.replace(/\s+/g, "") || "default").toLowerCase()
-    : (featureName?.replace(/\s+/g, "") || "default").toLowerCase();
-  
+  const benefitKey =
+    type === "limit"
+      ? (limitName?.replace(/\s+/g, "") || "default").toLowerCase()
+      : (featureName?.replace(/\s+/g, "") || "default").toLowerCase();
+
   const benefits = PRO_BENEFITS[benefitKey] || PRO_BENEFITS.default;
 
   const getMessage = () => {
@@ -139,7 +140,12 @@ export function UpgradePrompt({
   const renderContent = () => (
     <View style={styles.content}>
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: `${AppColors.secondary}30` }]}>
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: `${AppColors.secondary}30` },
+          ]}
+        >
           <Ionicons name={getIcon()} size={28} color={AppColors.secondary} />
         </View>
         <Pressable
@@ -152,16 +158,27 @@ export function UpgradePrompt({
         </Pressable>
       </View>
 
-      <ThemedText type="h3" style={[styles.title, { color: theme.textOnGlass }]} data-testid="text-upgrade-title">
+      <ThemedText
+        type="h3"
+        style={[styles.title, { color: theme.textOnGlass }]}
+        data-testid="text-upgrade-title"
+      >
         {getTitle()}
       </ThemedText>
 
-      <ThemedText type="body" style={[styles.message, { color: theme.textSecondaryOnGlass }]} data-testid="text-upgrade-message">
+      <ThemedText
+        type="body"
+        style={[styles.message, { color: theme.textSecondaryOnGlass }]}
+        data-testid="text-upgrade-message"
+      >
         {getMessage()}
       </ThemedText>
 
       <View style={styles.benefitsContainer}>
-        <ThemedText type="caption" style={[styles.benefitsLabel, { color: theme.textSecondaryOnGlass }]}>
+        <ThemedText
+          type="caption"
+          style={[styles.benefitsLabel, { color: theme.textSecondaryOnGlass }]}
+        >
           Pro includes:
         </ThemedText>
         {benefits.map((benefit, index) => (
@@ -171,7 +188,10 @@ export function UpgradePrompt({
               size={20}
               color={AppColors.primary}
             />
-            <ThemedText type="body" style={[styles.benefitText, { color: theme.textOnGlass }]}>
+            <ThemedText
+              type="body"
+              style={[styles.benefitText, { color: theme.textOnGlass }]}
+            >
               {benefit.text}
             </ThemedText>
           </View>
@@ -293,7 +313,10 @@ export function UsageBadge({ current, max, onPress }: UsageBadgeProps) {
       {max === "unlimited" ? (
         <MaterialCommunityIcons name="infinity" size={14} color={getColor()} />
       ) : null}
-      <ThemedText type="small" style={[styles.usageBadgeText, { color: getColor() }]}>
+      <ThemedText
+        type="small"
+        style={[styles.usageBadgeText, { color: getColor() }]}
+      >
         {getText()}
       </ThemedText>
       {isExhausted || isLow ? (
@@ -310,7 +333,10 @@ export function UsageBadge({ current, max, onPress }: UsageBadgeProps) {
         onPressOut={handlePressOut}
         style={[
           styles.usageBadge,
-          { backgroundColor: `${getColor()}15`, borderColor: `${getColor()}40` },
+          {
+            backgroundColor: `${getColor()}15`,
+            borderColor: `${getColor()}40`,
+          },
           animatedStyle,
         ]}
         data-testid="badge-usage"

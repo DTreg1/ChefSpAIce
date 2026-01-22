@@ -23,7 +23,7 @@ interface InventoryItemWithExpiry extends FoodItem {
 }
 
 function calculateDaysUntilExpiry(
-  expiryDate: string | null | undefined
+  expiryDate: string | null | undefined,
 ): number | null {
   if (!expiryDate) return null;
   const expiry = new Date(expiryDate);
@@ -99,7 +99,7 @@ export function useQuickRecipeGeneration() {
         Alert.alert(
           "No Ingredients",
           "Add some ingredients to your pantry first, then we can create a recipe for you!",
-          [{ text: "OK" }]
+          [{ text: "OK" }],
         );
         return;
       }
@@ -109,7 +109,11 @@ export function useQuickRecipeGeneration() {
         daysUntilExpiry: calculateDaysUntilExpiry(item.expirationDate),
       }));
 
-      let cookware: Array<{ id: number; name: string; alternatives?: string[] }> = [];
+      let cookware: Array<{
+        id: number;
+        name: string;
+        alternatives?: string[];
+      }> = [];
       if (cookwareIds.length > 0) {
         try {
           const baseUrl = getApiUrl();
@@ -156,7 +160,7 @@ export function useQuickRecipeGeneration() {
       const expiringItems = inventory.filter(
         (item) =>
           item.daysUntilExpiry !== null &&
-          item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS
+          item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS,
       );
 
       const response = await apiRequest("POST", "/api/recipes/generate", {
@@ -227,7 +231,7 @@ export function useQuickRecipeGeneration() {
             title: recipeTitle,
             description: recipeDescription,
             cuisine: cuisinePreference,
-          }
+          },
         );
 
         if (imageResponse.ok) {
@@ -237,12 +241,12 @@ export function useQuickRecipeGeneration() {
             if (imageData.imageBase64) {
               imageUri = await saveRecipeImage(
                 newRecipe.id,
-                imageData.imageBase64
+                imageData.imageBase64,
               );
             } else if (imageData.imageUrl) {
               imageUri = await saveRecipeImageFromUrl(
                 newRecipe.id,
-                imageData.imageUrl
+                imageData.imageUrl,
               );
             }
             if (imageUri) {
@@ -270,7 +274,7 @@ export function useQuickRecipeGeneration() {
               params: { recipeId: newRecipe.id, initialRecipe: newRecipe },
             },
           ],
-        })
+        }),
       );
     } catch (error) {
       console.error("Error generating quick recipe:", error);
@@ -330,7 +334,7 @@ export function useQuickRecipeGeneration() {
                 },
               },
             ],
-          })
+          }),
         );
       } catch (fallbackError) {
         console.error("Error creating fallback recipe:", fallbackError);
@@ -339,7 +343,7 @@ export function useQuickRecipeGeneration() {
         Alert.alert(
           "Recipe Generation Failed",
           "We couldn't generate a recipe right now. Please try again.",
-          [{ text: "OK" }]
+          [{ text: "OK" }],
         );
       }
     }

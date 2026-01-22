@@ -2,10 +2,10 @@
  * =============================================================================
  * RECIPES SCREEN
  * =============================================================================
- * 
+ *
  * The recipe browsing and management screen for ChefSpAIce.
  * Users can view their saved recipes, search, filter, and navigate to details.
- * 
+ *
  * KEY FEATURES:
  * - View saved recipes in a 2-column grid layout
  * - Search recipes by title or description
@@ -14,7 +14,7 @@
  * - Quick access to AI chef chat for recipe suggestions
  * - Export recipes to CSV or PDF format
  * - Generate new recipes via AI
- * 
+ *
  * UI COMPONENTS:
  * - Blurred search header with filter chips
  * - Grid of recipe cards with images
@@ -22,12 +22,12 @@
  * - Cookware compatibility indicators
  * - Favorite heart icons
  * - Empty state with generate button
- * 
+ *
  * DATA FLOW:
  * - Loads recipes and inventory from local storage
  * - Calculates ingredient match on the fly
  * - Checks cookware compatibility from user settings
- * 
+ *
  * @module screens/RecipesScreen
  */
 
@@ -85,7 +85,7 @@ export default function RecipesScreen() {
   const searchQuery = getSearchQuery("recipes");
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
+    const unsubscribe = navigation.addListener("blur", () => {
       collapseSearch("recipes");
     });
     return unsubscribe;
@@ -110,53 +110,63 @@ export default function RecipesScreen() {
     checkLimit,
   } = useQuickRecipeGeneration();
 
-  const menuItems: MenuItemConfig[] = useMemo(() => [
-    {
-      label: showFavoritesOnly ? "Show All" : "Favorites Only",
-      icon: "heart",
-      onPress: () => setShowFavoritesOnly(prev => !prev),
-      active: showFavoritesOnly,
-    },
-    {
-      label: "Custom Recipe",
-      icon: "sliders",
-      onPress: () => setShowSettingsModal(true),
-    },
-    {
-      label: isGenerating ? "Generating..." : "Quick Recipe",
-      icon: "zap",
-      onPress: generateQuickRecipe,
-      disabled: isGenerating,
-    },
-    {
-      label: exporting ? "Exporting..." : "Export to CSV",
-      icon: "file-text",
-      onPress: async () => {
-        if (recipes.length === 0 || loading) return;
-        setExporting(true);
-        try {
-          await exportRecipesToCSV(recipes);
-        } finally {
-          setExporting(false);
-        }
+  const menuItems: MenuItemConfig[] = useMemo(
+    () => [
+      {
+        label: showFavoritesOnly ? "Show All" : "Favorites Only",
+        icon: "heart",
+        onPress: () => setShowFavoritesOnly((prev) => !prev),
+        active: showFavoritesOnly,
       },
-      disabled: loading || recipes.length === 0 || exporting,
-    },
-    {
-      label: exporting ? "Exporting..." : "Export to PDF",
-      icon: "file",
-      onPress: async () => {
-        if (recipes.length === 0 || loading) return;
-        setExporting(true);
-        try {
-          await exportRecipesToPDF(recipes);
-        } finally {
-          setExporting(false);
-        }
+      {
+        label: "Custom Recipe",
+        icon: "sliders",
+        onPress: () => setShowSettingsModal(true),
       },
-      disabled: loading || recipes.length === 0 || exporting,
-    },
-  ], [showFavoritesOnly, loading, recipes, exporting, isGenerating, generateQuickRecipe]);
+      {
+        label: isGenerating ? "Generating..." : "Quick Recipe",
+        icon: "zap",
+        onPress: generateQuickRecipe,
+        disabled: isGenerating,
+      },
+      {
+        label: exporting ? "Exporting..." : "Export to CSV",
+        icon: "file-text",
+        onPress: async () => {
+          if (recipes.length === 0 || loading) return;
+          setExporting(true);
+          try {
+            await exportRecipesToCSV(recipes);
+          } finally {
+            setExporting(false);
+          }
+        },
+        disabled: loading || recipes.length === 0 || exporting,
+      },
+      {
+        label: exporting ? "Exporting..." : "Export to PDF",
+        icon: "file",
+        onPress: async () => {
+          if (recipes.length === 0 || loading) return;
+          setExporting(true);
+          try {
+            await exportRecipesToPDF(recipes);
+          } finally {
+            setExporting(false);
+          }
+        },
+        disabled: loading || recipes.length === 0 || exporting,
+      },
+    ],
+    [
+      showFavoritesOnly,
+      loading,
+      recipes,
+      exporting,
+      isGenerating,
+      generateQuickRecipe,
+    ],
+  );
 
   const loadData = useCallback(async (showSkeleton = false) => {
     if (showSkeleton) setLoading(true);
@@ -265,7 +275,10 @@ export default function RecipesScreen() {
           }
         >
           {recipe.imageUri ? (
-            <View style={styles.recipeImageContainer} data-testid={`container-recipe-image-${recipe.id}`}>
+            <View
+              style={styles.recipeImageContainer}
+              data-testid={`container-recipe-image-${recipe.id}`}
+            >
               <Image
                 source={{ uri: recipe.imageUri }}
                 style={styles.recipeImage}
@@ -366,7 +379,7 @@ export default function RecipesScreen() {
     if (loading) {
       return <RecipeGridSkeleton count={4} />;
     }
-    
+
     return (
       <View style={styles.emptyState}>
         <View
@@ -439,27 +452,32 @@ export default function RecipesScreen() {
       <RecipeSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onGenerate={(settings) => navigation.navigate("GenerateRecipe", {
-          customSettings: settings,
-        })}
+        onGenerate={(settings) =>
+          navigation.navigate("GenerateRecipe", {
+            customSettings: settings,
+          })
+        }
       />
 
-      <Modal
-        visible={isGenerating}
-        transparent
-        animationType="fade"
-      >
+      <Modal visible={isGenerating} transparent animationType="fade">
         <View style={styles.progressModalOverlay}>
-          <View style={[styles.progressModalContent, { backgroundColor: theme.glass.background }]}>
+          <View
+            style={[
+              styles.progressModalContent,
+              { backgroundColor: theme.glass.background },
+            ]}
+          >
             <CookPotLoader
               size="lg"
-              text={progressStage === "loading"
-                ? "Loading your kitchen..."
-                : progressStage === "recipe"
-                  ? "Creating your recipe..."
-                  : progressStage === "image"
-                    ? "Generating image..."
-                    : "Almost done..."}
+              text={
+                progressStage === "loading"
+                  ? "Loading your kitchen..."
+                  : progressStage === "recipe"
+                    ? "Creating your recipe..."
+                    : progressStage === "image"
+                      ? "Generating image..."
+                      : "Almost done..."
+              }
             />
           </View>
         </View>
@@ -475,8 +493,15 @@ export default function RecipesScreen() {
           <UpgradePrompt
             type="limit"
             limitName="AI recipes"
-            remaining={(() => { const r = checkLimit("aiRecipes").remaining; return typeof r === 'number' ? r : undefined; })()}
-            max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 3}
+            remaining={(() => {
+              const r = checkLimit("aiRecipes").remaining;
+              return typeof r === "number" ? r : undefined;
+            })()}
+            max={
+              typeof entitlements.maxAiRecipes === "number"
+                ? entitlements.maxAiRecipes
+                : 3
+            }
             onUpgrade={() => {
               dismissUpgradePrompt();
               navigation.navigate("Pricing" as any);

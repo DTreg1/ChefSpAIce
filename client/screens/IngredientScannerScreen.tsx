@@ -12,7 +12,12 @@ import {
 } from "react-native";
 import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+  RouteProp,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Feather } from "@expo/vector-icons";
@@ -87,7 +92,7 @@ export default function IngredientScannerScreen() {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   // Handle AppState changes - suspend camera when app goes to background
@@ -95,8 +100,11 @@ export default function IngredientScannerScreen() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
-    
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [isScreenFocused]);
 
@@ -368,7 +376,10 @@ export default function IngredientScannerScreen() {
           We need access to your camera to scan ingredient labels from food
           packaging.
         </ThemedText>
-        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
           Enable Camera
         </GlassButton>
         <GlassButton
@@ -516,7 +527,9 @@ export default function IngredientScannerScreen() {
               disabled={!scanResult.nutrition}
               style={styles.addButton}
             >
-              {scanResult.nutrition ? "Use This Nutrition Data" : "No Nutrition Found"}
+              {scanResult.nutrition
+                ? "Use This Nutrition Data"
+                : "No Nutrition Found"}
             </GlassButton>
           ) : (
             <GlassButton

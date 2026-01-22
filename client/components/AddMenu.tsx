@@ -1,6 +1,23 @@
-import React, { useEffect, useState, useRef, memo, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, Text, Platform, Modal } from "react-native";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  memo,
+  useCallback,
+  useMemo,
+} from "react";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Text,
+  Platform,
+  Modal,
+} from "react-native";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
@@ -185,7 +202,7 @@ export const AddMenu = memo(function AddMenu({
   const [shouldRender, setShouldRender] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
-  
+
   const { checkLimit, entitlements } = useSubscription();
   const { generateQuickRecipe } = useQuickRecipeGeneration();
 
@@ -201,8 +218,14 @@ export const AddMenu = memo(function AddMenu({
     scale: [s0, s1, s2],
   });
 
-  const glassColors = useMemo(() => isDark ? GlassColors.dark : GlassColors.light, [isDark]);
-  const textColor = useMemo(() => isDark ? Colors.dark.text : Colors.light.text, [isDark]);
+  const glassColors = useMemo(
+    () => (isDark ? GlassColors.dark : GlassColors.light),
+    [isDark],
+  );
+  const textColor = useMemo(
+    () => (isDark ? Colors.dark.text : Colors.light.text),
+    [isDark],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -239,31 +262,34 @@ export const AddMenu = memo(function AddMenu({
     opacity: overlayOpacity.value,
   }));
 
-  const handleItemPress = useCallback(async (itemId: string) => {
-    if (itemId === "add-item") {
-      const limitCheck = checkLimit("pantryItems");
-      if (!limitCheck.allowed) {
-        setShowUpgradePrompt(true);
-        return;
+  const handleItemPress = useCallback(
+    async (itemId: string) => {
+      if (itemId === "add-item") {
+        const limitCheck = checkLimit("pantryItems");
+        if (!limitCheck.allowed) {
+          setShowUpgradePrompt(true);
+          return;
+        }
       }
-    }
 
-    onClose();
+      onClose();
 
-    setTimeout(async () => {
-      switch (itemId) {
-        case "add-item":
-          onNavigate("AddItem");
-          break;
-        case "scan":
-          onNavigate("ScanHub");
-          break;
-        case "quick-recipe":
-          generateQuickRecipe();
-          break;
-      }
-    }, 250);
-  }, [checkLimit, onClose, onNavigate, generateQuickRecipe]);
+      setTimeout(async () => {
+        switch (itemId) {
+          case "add-item":
+            onNavigate("AddItem");
+            break;
+          case "scan":
+            onNavigate("ScanHub");
+            break;
+          case "quick-recipe":
+            generateQuickRecipe();
+            break;
+        }
+      }, 250);
+    },
+    [checkLimit, onClose, onNavigate, generateQuickRecipe],
+  );
 
   const handleUpgrade = useCallback(() => {
     setShowUpgradePrompt(false);
@@ -277,10 +303,14 @@ export const AddMenu = memo(function AddMenu({
     setShowUpgradePrompt(false);
   }, []);
 
-  const menuItems = useMemo(() => MENU_ITEMS.map((item) => ({
-    ...item,
-    onPress: () => handleItemPress(item.id),
-  })), [handleItemPress]);
+  const menuItems = useMemo(
+    () =>
+      MENU_ITEMS.map((item) => ({
+        ...item,
+        onPress: () => handleItemPress(item.id),
+      })),
+    [handleItemPress],
+  );
 
   if (!shouldRender) {
     return null;
@@ -300,7 +330,10 @@ export const AddMenu = memo(function AddMenu({
               },
             ]}
           />
-          <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
+          <GlassView
+            glassEffectStyle="regular"
+            style={StyleSheet.absoluteFill}
+          />
         </>
       );
     }
@@ -330,8 +363,12 @@ export const AddMenu = memo(function AddMenu({
   };
 
   const pantryLimit = checkLimit("pantryItems");
-  const remaining = typeof pantryLimit.remaining === 'number' ? pantryLimit.remaining : 25;
-  const max = typeof entitlements.maxPantryItems === 'number' ? entitlements.maxPantryItems : 25;
+  const remaining =
+    typeof pantryLimit.remaining === "number" ? pantryLimit.remaining : 25;
+  const max =
+    typeof entitlements.maxPantryItems === "number"
+      ? entitlements.maxPantryItems
+      : 25;
 
   return (
     <>

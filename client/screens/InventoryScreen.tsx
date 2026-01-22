@@ -2,10 +2,10 @@
  * =============================================================================
  * INVENTORY SCREEN
  * =============================================================================
- * 
+ *
  * The main inventory management screen for ChefSpAIce.
  * Users can view, filter, and manage their food inventory here.
- * 
+ *
  * KEY FEATURES:
  * - View all food items grouped by storage location (fridge, freezer, pantry)
  * - Search and filter items by name, category, or food group
@@ -13,18 +13,18 @@
  * - View nutrition information for each item
  * - Swipe left/right to mark items as consumed or wasted
  * - Pull to refresh inventory data
- * 
+ *
  * UI COMPONENTS:
  * - Search bar with food group filter chips
  * - Nutrition summary showing total macros
  * - Collapsible sections by storage location
  * - Swipeable cards with gesture animations
- * 
+ *
  * DATA FLOW:
  * - Loads inventory from local storage (offline-first)
  * - Syncs with server when online
  * - Updates React Query cache on changes
- * 
+ *
  * @module screens/InventoryScreen
  */
 
@@ -89,12 +89,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
 import { logger } from "@/lib/logger";
 
-type FoodGroup =
-  | "grains"
-  | "vegetables"
-  | "fruits"
-  | "protein"
-  | "dairy";
+type FoodGroup = "grains" | "vegetables" | "fruits" | "protein" | "dairy";
 interface StorageLocationOption {
   key: string;
   label: string;
@@ -228,9 +223,15 @@ export default function InventoryScreen() {
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
-  const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([
+  const [storageLocations, setStorageLocations] = useState<
+    StorageLocationOption[]
+  >([
     { key: "all", label: "All", icon: "grid" },
-    ...DEFAULT_STORAGE_LOCATIONS.map(loc => ({ key: loc.key, label: loc.label, icon: loc.icon })),
+    ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({
+      key: loc.key,
+      label: loc.label,
+      icon: loc.icon,
+    })),
   ]);
   const [funFact, setFunFact] = useState<string | null>(null);
   const [funFactLoading, setFunFactLoading] = useState(false);
@@ -295,14 +296,14 @@ export default function InventoryScreen() {
 
   // Use navigation.addListener for more reliable focus events on web
   useEffect(() => {
-    const unsubscribeFocus = navigation.addListener('focus', () => {
+    const unsubscribeFocus = navigation.addListener("focus", () => {
       // Only silently refresh if we've already loaded once (no loading state flash)
       if (hasLoadedRef.current) {
         loadItems(false);
         loadStorageLocations();
       }
     });
-    const unsubscribeBlur = navigation.addListener('blur', () => {
+    const unsubscribeBlur = navigation.addListener("blur", () => {
       collapseSearch("inventory");
     });
     return () => {
@@ -326,23 +327,28 @@ export default function InventoryScreen() {
       filtered = filtered.filter((item) => {
         const matchesName = item.name.toLowerCase().includes(query);
         const matchesCategory = item.category.toLowerCase().includes(query);
-        const matchesLocation = (item.storageLocation || "").toLowerCase().includes(query);
+        const matchesLocation = (item.storageLocation || "")
+          .toLowerCase()
+          .includes(query);
         return matchesName || matchesCategory || matchesLocation;
       });
     }
 
     // Food group filter (multi-select: show items matching ANY selected group)
     if (selectedFoodGroups.length > 0) {
-      logger.log('[Filter] Filtering by food groups:', selectedFoodGroups);
+      logger.log("[Filter] Filtering by food groups:", selectedFoodGroups);
       filtered = filtered.filter((item) => {
         const itemFoodGroup = getItemFoodGroup(item);
-        const passes = itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
+        const passes =
+          itemFoodGroup !== null && selectedFoodGroups.includes(itemFoodGroup);
         if (!passes) {
-          logger.log(`[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`);
+          logger.log(
+            `[Filter] Excluding "${item.name}" (category: ${item.category}, foodGroup: ${itemFoodGroup})`,
+          );
         }
         return passes;
       });
-      logger.log('[Filter] After filtering:', filtered.length, 'items');
+      logger.log("[Filter] After filtering:", filtered.length, "items");
     }
 
     // Apply sorting (alphabetically by name)
@@ -387,7 +393,9 @@ export default function InventoryScreen() {
     setFunFactLoading(true);
     try {
       const token = await storage.getAuthToken();
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -414,7 +422,10 @@ export default function InventoryScreen() {
         setFunFact(data.fact);
         setFunFactTimestamp(timestamp);
         // Save to local storage
-        await AsyncStorage.setItem("funFact", JSON.stringify({ fact: data.fact, timestamp }));
+        await AsyncStorage.setItem(
+          "funFact",
+          JSON.stringify({ fact: data.fact, timestamp }),
+        );
       }
     } catch (error) {
       console.error("Error fetching fun fact:", error);
@@ -499,7 +510,7 @@ export default function InventoryScreen() {
     if (items.length === 0) return null;
     const showFunFact = funFact || funFactLoading;
     if (!showFunFact) return null;
-    
+
     return (
       <View style={styles.listHeader}>
         <GlassCard style={styles.funFactCard}>
@@ -518,10 +529,12 @@ export default function InventoryScreen() {
                   style={styles.funFactRefreshButton}
                   testID="button-refresh-fun-fact"
                 >
-                  <Feather 
-                    name="refresh-cw" 
-                    size={14} 
-                    color={funFactLoading ? theme.textSecondary : AppColors.primary} 
+                  <Feather
+                    name="refresh-cw"
+                    size={14}
+                    color={
+                      funFactLoading ? theme.textSecondary : AppColors.primary
+                    }
                   />
                 </Pressable>
               </View>
@@ -545,18 +558,21 @@ export default function InventoryScreen() {
   const renderListFooter = () => {
     if (items.length === 0) return null;
     if (nutritionTotals.itemsWithNutrition === 0) return null;
-    
+
     return (
       <View style={styles.listFooter}>
         <GlassCard style={styles.nutritionSummary}>
           <View style={styles.nutritionSummaryContent}>
             <Feather name="zap" size={16} color={AppColors.primary} />
             <ThemedText style={styles.nutritionSummaryText}>
-              {nutritionTotals.calories.toLocaleString()} cal | {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g carbs | {nutritionTotals.fat}g fat
+              {nutritionTotals.calories.toLocaleString()} cal |{" "}
+              {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g
+              carbs | {nutritionTotals.fat}g fat
             </ThemedText>
           </View>
           <ThemedText type="caption" style={styles.nutritionSummaryMeta}>
-            Based on {nutritionTotals.itemsWithNutrition} items with nutrition data
+            Based on {nutritionTotals.itemsWithNutrition} items with nutrition
+            data
           </ThemedText>
         </GlassCard>
       </View>
@@ -637,9 +653,9 @@ export default function InventoryScreen() {
       const mutedColors = {
         success: "#6B8E6B", // Muted sage green
         warning: "#C4956A", // Muted warm amber
-        error: "#B57D7D",   // Muted dusty rose
+        error: "#B57D7D", // Muted dusty rose
       };
-      
+
       switch (status) {
         case "expired":
           return mutedColors.error;
@@ -738,7 +754,11 @@ export default function InventoryScreen() {
         exiting={FadeOut}
         style={styles.swipeContainer}
       >
-        <Pressable style={styles.consumedAction} onPress={handleConsumed} testID={`button-consumed-${item.id}`}>
+        <Pressable
+          style={styles.consumedAction}
+          onPress={handleConsumed}
+          testID={`button-consumed-${item.id}`}
+        >
           <LinearGradient
             colors={["rgba(46, 204, 113, 0.25)", "transparent"]}
             start={{ x: 0, y: 0.5 }}
@@ -756,14 +776,20 @@ export default function InventoryScreen() {
           </LinearGradient>
         </Pressable>
 
-        <Pressable style={styles.wastedAction} onPress={handleWasted} testID={`button-wasted-${item.id}`}>
+        <Pressable
+          style={styles.wastedAction}
+          onPress={handleWasted}
+          testID={`button-wasted-${item.id}`}
+        >
           <LinearGradient
             colors={["transparent", "rgba(231, 76, 60, 0.25)"]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.actionGradient}
           >
-            <Animated.View style={[styles.actionButtonInner, wastedActionStyle]}>
+            <Animated.View
+              style={[styles.actionButtonInner, wastedActionStyle]}
+            >
               <Feather name="trash-2" size={22} color="#FFFFFF" />
               <ThemedText type="caption" style={styles.actionText}>
                 Wasted
@@ -926,7 +952,7 @@ export default function InventoryScreen() {
     if (loading) {
       return <InventoryListSkeleton sectionCount={3} />;
     }
-    
+
     return (
       <View style={styles.emptyState} testID="container-empty-inventory">
         <View
@@ -940,10 +966,18 @@ export default function InventoryScreen() {
         >
           <Feather name="inbox" size={48} color={theme.textSecondary} />
         </View>
-        <ThemedText type="h3" style={styles.emptyTitle} testID="text-empty-title">
+        <ThemedText
+          type="h3"
+          style={styles.emptyTitle}
+          testID="text-empty-title"
+        >
           Your pantry is empty
         </ThemedText>
-        <ThemedText type="body" style={styles.emptySubtitle} testID="text-empty-subtitle">
+        <ThemedText
+          type="body"
+          style={styles.emptySubtitle}
+          testID="text-empty-subtitle"
+        >
           Tap the + button to add your first item
         </ThemedText>
       </View>
@@ -951,7 +985,10 @@ export default function InventoryScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-inventory">
+    <View
+      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+      testID="screen-inventory"
+    >
       <ExpoGlassHeader
         title="Kitchen"
         materialIcon="stove"
@@ -959,57 +996,53 @@ export default function InventoryScreen() {
         searchPlaceholder="Search items..."
         menuItems={menuItems}
       />
-      <View 
+      <View
         style={[styles.searchContainer, { top: 56 + insets.top }]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
         {/* Food Group Row */}
-        <View 
-          style={[styles.filterRow, styles.searchBlur]}
-        >
-        {FOOD_GROUPS.map((group, index) => {
-          const isSelected = selectedFoodGroups.includes(group.key);
-          return (
-            <Pressable
-              key={group.key}
-              testID={`filter-foodgroup-${group.key}`}
-              style={[
-                styles.foodGroupChip,
-                {
-                  backgroundColor: isSelected
-                    ? AppColors.primary
-                    : theme.glass.background,
-                  borderColor: isSelected
-                    ? AppColors.primary
-                    : theme.glass.border,
-                },
-              ]}
-              onPress={() => {
-                setSelectedFoodGroups((prev) => {
-                  const newSelection = isSelected
-                    ? prev.filter((g) => g !== group.key)
-                    : [...prev, group.key];
-                  logger.log('[Filter] Selected food groups:', newSelection);
-                  return newSelection;
-                });
-              }}
-            >
-              <ThemedText
-                type="caption"
-                numberOfLines={1}
-                style={{
-                  color: isSelected
-                    ? "#FFFFFF"
-                    : theme.textSecondary,
-                  fontWeight: isSelected ? "600" : "400",
-                  textAlign: "center",
+        <View style={[styles.filterRow, styles.searchBlur]}>
+          {FOOD_GROUPS.map((group, index) => {
+            const isSelected = selectedFoodGroups.includes(group.key);
+            return (
+              <Pressable
+                key={group.key}
+                testID={`filter-foodgroup-${group.key}`}
+                style={[
+                  styles.foodGroupChip,
+                  {
+                    backgroundColor: isSelected
+                      ? AppColors.primary
+                      : theme.glass.background,
+                    borderColor: isSelected
+                      ? AppColors.primary
+                      : theme.glass.border,
+                  },
+                ]}
+                onPress={() => {
+                  setSelectedFoodGroups((prev) => {
+                    const newSelection = isSelected
+                      ? prev.filter((g) => g !== group.key)
+                      : [...prev, group.key];
+                    logger.log("[Filter] Selected food groups:", newSelection);
+                    return newSelection;
+                  });
                 }}
               >
-                {group.label}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
+                <ThemedText
+                  type="caption"
+                  numberOfLines={1}
+                  style={{
+                    color: isSelected ? "#FFFFFF" : theme.textSecondary,
+                    fontWeight: isSelected ? "600" : "400",
+                    textAlign: "center",
+                  }}
+                >
+                  {group.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 

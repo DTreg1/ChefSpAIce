@@ -350,25 +350,27 @@ export function useShelfLifeSuggestion({
   const shouldFetchAI =
     localResult.needsAI && !!debouncedFoodName && !!debouncedLocation;
 
-  const {
-    data: aiData,
-    isLoading: isAILoading,
-  } = useQuery<AIShelfLifeResponse>({
-    queryKey: [
-      "/api/suggestions/shelf-life",
-      debouncedFoodName,
-      debouncedCategory,
-      debouncedLocation,
-    ],
-    queryFn: () =>
-      fetchAIShelfLife(debouncedFoodName, debouncedCategory, debouncedLocation),
-    enabled: shouldFetchAI,
-    staleTime: 24 * 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
-    retry: 1,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+  const { data: aiData, isLoading: isAILoading } =
+    useQuery<AIShelfLifeResponse>({
+      queryKey: [
+        "/api/suggestions/shelf-life",
+        debouncedFoodName,
+        debouncedCategory,
+        debouncedLocation,
+      ],
+      queryFn: () =>
+        fetchAIShelfLife(
+          debouncedFoodName,
+          debouncedCategory,
+          debouncedLocation,
+        ),
+      enabled: shouldFetchAI,
+      staleTime: 24 * 60 * 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    });
 
   const result = useMemo((): UseShelfLifeSuggestionResult => {
     if (!localResult.needsAI) {

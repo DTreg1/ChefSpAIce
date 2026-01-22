@@ -84,7 +84,7 @@ export default function ItemDetailScreen() {
     // Use window.confirm on web, Alert.alert on native
     if (Platform.OS === "web") {
       const confirmed = window.confirm(
-        `Are you sure you want to remove "${item.name}" from your inventory? This cannot be undone.`
+        `Are you sure you want to remove "${item.name}" from your inventory? This cannot be undone.`,
       );
       if (confirmed) {
         await storage.deleteInventoryItem(item.id);
@@ -162,7 +162,14 @@ export default function ItemDetailScreen() {
           showBackButton={true}
           menuItems={[]}
         />
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingTop: headerPadding }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingTop: headerPadding,
+          }}
+        >
           <ThemedText>Loading...</ThemedText>
         </View>
       </View>
@@ -189,31 +196,241 @@ export default function ItemDetailScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-      <GlassCard style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type="h4">Basic Info</ThemedText>
-          <Pressable style={styles.removeButton} onPress={handleDelete} testID="button-remove-item">
-            <Feather name="trash-2" size={14} color={AppColors.warning} />
-            <ThemedText
-              style={{
-                color: AppColors.warning,
-                fontSize: 12,
-                fontWeight: "500",
-              }}
+        <GlassCard style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="h4">Basic Info</ThemedText>
+            <Pressable
+              style={styles.removeButton}
+              onPress={handleDelete}
+              testID="button-remove-item"
             >
-              Remove Inventory
-            </ThemedText>
-          </Pressable>
-        </View>
+              <Feather name="trash-2" size={14} color={AppColors.warning} />
+              <ThemedText
+                style={{
+                  color: AppColors.warning,
+                  fontSize: 12,
+                  fontWeight: "500",
+                }}
+              >
+                Remove Inventory
+              </ThemedText>
+            </Pressable>
+          </View>
 
-        <View style={styles.inputGroup}>
-          <ThemedText type="small" style={styles.label}>
-            Name
+          <View style={styles.inputGroup}>
+            <ThemedText type="small" style={styles.label}>
+              Name
+            </ThemedText>
+            <TextInput
+              testID="input-item-name"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  borderColor: theme.glass.border,
+                  borderWidth: 1,
+                  color: theme.text,
+                },
+              ]}
+              value={item.name}
+              onChangeText={(text) => setItem({ ...item, name: text })}
+              placeholder="Item name"
+              placeholderTextColor={theme.textSecondary}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Quantity
+              </ThemedText>
+              <TextInput
+                testID="input-item-quantity"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                    borderWidth: 1,
+                    color: theme.text,
+                  },
+                ]}
+                value={item.quantity.toString()}
+                onChangeText={(text) =>
+                  setItem({ ...item, quantity: parseInt(text) || 0 })
+                }
+                keyboardType="numeric"
+                placeholder="1"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Unit
+              </ThemedText>
+              <TextInput
+                testID="input-item-unit"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                    borderWidth: 1,
+                    color: theme.text,
+                  },
+                ]}
+                value={item.unit}
+                onChangeText={(text) => setItem({ ...item, unit: text })}
+                placeholder="pcs"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+            <View style={[styles.inputGroup, { flex: 1.5 }]}>
+              <ThemedText type="small" style={styles.label}>
+                Category
+              </ThemedText>
+              <View
+                style={[
+                  styles.readOnlyField,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <ThemedText
+                  type="body"
+                  style={{ color: theme.text }}
+                  numberOfLines={1}
+                >
+                  {item.usdaCategory || item.category || "Not specified"}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
+        <NutritionSection
+          foodId={item.id}
+          foodName={item.name}
+          defaultQuantity={item.quantity}
+          nutrition={item.nutrition}
+        />
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Where to Store
+          </ThemedText>
+          <View style={styles.locationGrid}>
+            {STORAGE_OPTIONS.map((loc) => (
+              <Pressable
+                key={loc.key}
+                testID={`button-storage-${loc.key}`}
+                style={[
+                  styles.locationCard,
+                  {
+                    backgroundColor:
+                      item.storageLocation === loc.key
+                        ? AppColors.primary
+                        : theme.backgroundSecondary,
+                  },
+                ]}
+                onPress={() => setItem({ ...item, storageLocation: loc.key })}
+              >
+                <Feather
+                  name={loc.icon as any}
+                  size={24}
+                  color={
+                    item.storageLocation === loc.key ? "#FFFFFF" : theme.text
+                  }
+                />
+                <ThemedText
+                  type="small"
+                  style={{
+                    color:
+                      item.storageLocation === loc.key ? "#FFFFFF" : theme.text,
+                    marginTop: Spacing.xs,
+                  }}
+                >
+                  {loc.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Dates
+          </ThemedText>
+
+          <View style={styles.row}>
+            <Pressable
+              testID="button-purchase-date"
+              style={[
+                styles.dateButtonCompact,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  borderColor: theme.glass.border,
+                  flex: 1,
+                },
+              ]}
+              onPress={() => openDatePicker("purchase")}
+            >
+              <ThemedText type="small" style={styles.label}>
+                Purchase
+              </ThemedText>
+              <View style={styles.dateValueRow}>
+                <ThemedText type="body" numberOfLines={1}>
+                  {formatDate(item.purchaseDate)}
+                </ThemedText>
+                <Feather
+                  name="calendar"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable
+              testID="button-expiration-date"
+              style={[
+                styles.dateButtonCompact,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  borderColor: theme.glass.border,
+                  flex: 1,
+                },
+              ]}
+              onPress={() => openDatePicker("expiration")}
+            >
+              <ThemedText type="small" style={styles.label}>
+                Expiration
+              </ThemedText>
+              <View style={styles.dateValueRow}>
+                <ThemedText type="body" numberOfLines={1}>
+                  {formatDate(item.expirationDate)}
+                </ThemedText>
+                <Feather
+                  name="calendar"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </View>
+            </Pressable>
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Notes
           </ThemedText>
           <TextInput
-            testID="input-item-name"
+            testID="input-item-notes"
             style={[
               styles.input,
+              styles.textArea,
               {
                 backgroundColor: theme.glass.backgroundSubtle,
                 borderColor: theme.glass.border,
@@ -221,275 +438,80 @@ export default function ItemDetailScreen() {
                 color: theme.text,
               },
             ]}
-            value={item.name}
-            onChangeText={(text) => setItem({ ...item, name: text })}
-            placeholder="Item name"
+            value={item.notes || ""}
+            onChangeText={(text) => setItem({ ...item, notes: text })}
+            placeholder="Add notes..."
             placeholderTextColor={theme.textSecondary}
+            multiline
+            numberOfLines={4}
           />
-        </View>
+        </GlassCard>
 
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Quantity
-            </ThemedText>
-            <TextInput
-              testID="input-item-quantity"
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
-                  borderWidth: 1,
-                  color: theme.text,
-                },
-              ]}
-              value={item.quantity.toString()}
-              onChangeText={(text) =>
-                setItem({ ...item, quantity: parseInt(text) || 0 })
-              }
-              keyboardType="numeric"
-              placeholder="1"
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Unit
-            </ThemedText>
-            <TextInput
-              testID="input-item-unit"
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
-                  borderWidth: 1,
-                  color: theme.text,
-                },
-              ]}
-              value={item.unit}
-              onChangeText={(text) => setItem({ ...item, unit: text })}
-              placeholder="pcs"
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
-          <View style={[styles.inputGroup, { flex: 1.5 }]}>
-            <ThemedText type="small" style={styles.label}>
-              Category
-            </ThemedText>
-            <View
-              style={[
-                styles.readOnlyField,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  borderColor: theme.glass.border,
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              <ThemedText
-                type="body"
-                style={{ color: theme.text }}
-                numberOfLines={1}
-              >
-                {item.usdaCategory || item.category || "Not specified"}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-      </GlassCard>
-
-      <NutritionSection
-        foodId={item.id}
-        foodName={item.name}
-        defaultQuantity={item.quantity}
-        nutrition={item.nutrition}
-      />
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Where to Store
-        </ThemedText>
-        <View style={styles.locationGrid}>
-          {STORAGE_OPTIONS.map((loc) => (
-            <Pressable
-              key={loc.key}
-              testID={`button-storage-${loc.key}`}
-              style={[
-                styles.locationCard,
-                {
-                  backgroundColor:
-                    item.storageLocation === loc.key
-                      ? AppColors.primary
-                      : theme.backgroundSecondary,
-                },
-              ]}
-              onPress={() => setItem({ ...item, storageLocation: loc.key })}
-            >
-              <Feather
-                name={loc.icon as any}
-                size={24}
-                color={
-                  item.storageLocation === loc.key ? "#FFFFFF" : theme.text
-                }
-              />
-              <ThemedText
-                type="small"
-                style={{
-                  color:
-                    item.storageLocation === loc.key ? "#FFFFFF" : theme.text,
-                  marginTop: Spacing.xs,
-                }}
-              >
-                {loc.label}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Dates
-        </ThemedText>
-
-        <View style={styles.row}>
-          <Pressable
-            testID="button-purchase-date"
-            style={[
-              styles.dateButtonCompact,
-              {
-                backgroundColor: theme.glass.backgroundSubtle,
-                borderColor: theme.glass.border,
-                flex: 1,
-              },
-            ]}
-            onPress={() => openDatePicker("purchase")}
-          >
-            <ThemedText type="small" style={styles.label}>
-              Purchase
-            </ThemedText>
-            <View style={styles.dateValueRow}>
-              <ThemedText type="body" numberOfLines={1}>
-                {formatDate(item.purchaseDate)}
-              </ThemedText>
-              <Feather name="calendar" size={16} color={theme.textSecondary} />
-            </View>
-          </Pressable>
-
-          <Pressable
-            testID="button-expiration-date"
-            style={[
-              styles.dateButtonCompact,
-              {
-                backgroundColor: theme.glass.backgroundSubtle,
-                borderColor: theme.glass.border,
-                flex: 1,
-              },
-            ]}
-            onPress={() => openDatePicker("expiration")}
-          >
-            <ThemedText type="small" style={styles.label}>
-              Expiration
-            </ThemedText>
-            <View style={styles.dateValueRow}>
-              <ThemedText type="body" numberOfLines={1}>
-                {formatDate(item.expirationDate)}
-              </ThemedText>
-              <Feather name="calendar" size={16} color={theme.textSecondary} />
-            </View>
-          </Pressable>
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Notes
-        </ThemedText>
-        <TextInput
-          testID="input-item-notes"
-          style={[
-            styles.input,
-            styles.textArea,
-            {
-              backgroundColor: theme.glass.backgroundSubtle,
-              borderColor: theme.glass.border,
-              borderWidth: 1,
-              color: theme.text,
-            },
-          ]}
-          value={item.notes || ""}
-          onChangeText={(text) => setItem({ ...item, notes: text })}
-          placeholder="Add notes..."
-          placeholderTextColor={theme.textSecondary}
-          multiline
-          numberOfLines={4}
-        />
-      </GlassCard>
-
-      {Platform.OS === "ios" ? (
-        <Modal
-          visible={showDatePicker}
-          transparent
-          animationType="slide"
-          onRequestClose={handleDatePickerDone}
-        >
-          <Pressable
-            style={styles.datePickerOverlay}
-            onPress={handleDatePickerDone}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={handleDatePickerDone}
           >
             <Pressable
-              style={[
-                styles.datePickerContainer,
-                { backgroundColor: theme.backgroundDefault },
-              ]}
-              onPress={(e) => e.stopPropagation()}
+              style={styles.datePickerOverlay}
+              onPress={handleDatePickerDone}
             >
-              <View style={styles.datePickerHeader}>
-                <ThemedText type="h4">
-                  {datePickerField === "expiration"
-                    ? "Expiration Date"
-                    : "Purchase Date"}
-                </ThemedText>
-                <Pressable onPress={handleDatePickerDone} testID="button-date-picker-done">
-                  <ThemedText
-                    style={{ color: AppColors.primary, fontWeight: "600" }}
-                  >
-                    Done
+              <Pressable
+                style={[
+                  styles.datePickerContainer,
+                  { backgroundColor: theme.backgroundDefault },
+                ]}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <View style={styles.datePickerHeader}>
+                  <ThemedText type="h4">
+                    {datePickerField === "expiration"
+                      ? "Expiration Date"
+                      : "Purchase Date"}
                   </ThemedText>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={
-                  new Date(
-                    datePickerField === "expiration"
-                      ? item.expirationDate
-                      : item.purchaseDate,
-                  )
-                }
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                style={styles.datePicker}
-              />
+                  <Pressable
+                    onPress={handleDatePickerDone}
+                    testID="button-date-picker-done"
+                  >
+                    <ThemedText
+                      style={{ color: AppColors.primary, fontWeight: "600" }}
+                    >
+                      Done
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                <DateTimePicker
+                  value={
+                    new Date(
+                      datePickerField === "expiration"
+                        ? item.expirationDate
+                        : item.purchaseDate,
+                    )
+                  }
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  style={styles.datePicker}
+                />
+              </Pressable>
             </Pressable>
-          </Pressable>
-        </Modal>
-      ) : showDatePicker ? (
-        <DateTimePicker
-          value={
-            new Date(
-              datePickerField === "expiration"
-                ? item.expirationDate
-                : item.purchaseDate,
-            )
-          }
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      ) : null}
+          </Modal>
+        ) : showDatePicker ? (
+          <DateTimePicker
+            value={
+              new Date(
+                datePickerField === "expiration"
+                  ? item.expirationDate
+                  : item.purchaseDate,
+              )
+            }
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        ) : null}
       </KeyboardAwareScrollViewCompat>
     </View>
   );

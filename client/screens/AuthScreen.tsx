@@ -10,9 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import Animated, {
-  FadeIn,
-} from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -35,7 +33,7 @@ export default function AuthScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { recheckOnboarding, markOnboardingComplete } = useOnboardingStatus();
-  
+
   const {
     signIn,
     signUp,
@@ -57,8 +55,8 @@ export default function AuthScreen() {
   const confirmPasswordRef = useRef<TextInput>(null);
 
   const prices = {
-    basic: { monthly: 4.99, annual: 49.90 },
-    pro: { monthly: 9.99, annual: 99.90 },
+    basic: { monthly: 4.99, annual: 49.9 },
+    pro: { monthly: 9.99, annual: 99.9 },
   };
 
   const handleAuth = async () => {
@@ -97,7 +95,7 @@ export default function AuthScreen() {
       // Check onboarding and subscription status to determine navigation
       await recheckOnboarding();
       const needsOnboarding = await storage.needsOnboarding();
-      
+
       if (needsOnboarding) {
         navigation.dispatch(
           CommonActions.reset({
@@ -110,12 +108,17 @@ export default function AuthScreen() {
 
       // Onboarding complete - check subscription status via API
       const baseUrl = getApiUrl();
-      const subscriptionResponse = await fetch(`${baseUrl}/api/subscriptions/me`, {
-        credentials: "include",
-      });
+      const subscriptionResponse = await fetch(
+        `${baseUrl}/api/subscriptions/me`,
+        {
+          credentials: "include",
+        },
+      );
       const subscriptionData = await subscriptionResponse.json();
-      const isSubscriptionActive = subscriptionData?.status === 'active' || subscriptionData?.status === 'trialing';
-      
+      const isSubscriptionActive =
+        subscriptionData?.status === "active" ||
+        subscriptionData?.status === "trialing";
+
       if (isSubscriptionActive) {
         markOnboardingComplete();
         navigation.dispatch(
@@ -129,7 +132,7 @@ export default function AuthScreen() {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: "Subscription", params: { reason: 'expired' } }],
+            routes: [{ name: "Subscription", params: { reason: "expired" } }],
           }),
         );
       }
@@ -169,7 +172,7 @@ export default function AuthScreen() {
       // Check onboarding and subscription status to determine navigation
       await recheckOnboarding();
       const needsOnboarding = await storage.needsOnboarding();
-      
+
       if (needsOnboarding) {
         navigation.dispatch(
           CommonActions.reset({
@@ -182,12 +185,17 @@ export default function AuthScreen() {
 
       // Onboarding complete - check subscription status via API
       const baseUrl = getApiUrl();
-      const subscriptionResponse = await fetch(`${baseUrl}/api/subscriptions/me`, {
-        credentials: "include",
-      });
+      const subscriptionResponse = await fetch(
+        `${baseUrl}/api/subscriptions/me`,
+        {
+          credentials: "include",
+        },
+      );
       const subscriptionData = await subscriptionResponse.json();
-      const isSubscriptionActive = subscriptionData?.status === 'active' || subscriptionData?.status === 'trialing';
-      
+      const isSubscriptionActive =
+        subscriptionData?.status === "active" ||
+        subscriptionData?.status === "trialing";
+
       if (isSubscriptionActive) {
         markOnboardingComplete();
         navigation.dispatch(
@@ -201,7 +209,7 @@ export default function AuthScreen() {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: "Subscription", params: { reason: 'expired' } }],
+            routes: [{ name: "Subscription", params: { reason: "expired" } }],
           }),
         );
       }
@@ -224,18 +232,14 @@ export default function AuthScreen() {
         },
       ]}
     >
-      <View style={styles.header}>
-      </View>
+      <View style={styles.header}></View>
 
       <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcomeHeader}>
-        </View>
-
-        
+        <View style={styles.welcomeHeader}></View>
 
         <Animated.View
           entering={FadeIn.delay(700).duration(400)}
@@ -244,13 +248,30 @@ export default function AuthScreen() {
           {isSignUp && (
             <View style={styles.planSelectionContainer}>
               {/* Free Trial Banner */}
-              <View style={[styles.trialBanner, { backgroundColor: `${AppColors.primary}15` }]}>
-                <View style={[styles.trialIconContainer, { backgroundColor: AppColors.primary }]}>
+              <View
+                style={[
+                  styles.trialBanner,
+                  { backgroundColor: `${AppColors.primary}15` },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.trialIconContainer,
+                    { backgroundColor: AppColors.primary },
+                  ]}
+                >
                   <Feather name="gift" size={20} color="#FFFFFF" />
                 </View>
                 <View style={styles.trialTextContainer}>
-                  <ThemedText style={styles.trialTitle}>7-Day Free Trial</ThemedText>
-                  <ThemedText style={[styles.trialSubtitle, { color: theme.textSecondary }]}>
+                  <ThemedText style={styles.trialTitle}>
+                    7-Day Free Trial
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.trialSubtitle,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
                     Full access to all features. No payment required.
                   </ThemedText>
                 </View>
@@ -258,7 +279,9 @@ export default function AuthScreen() {
 
               {/* Features List */}
               <View style={styles.featuresListContainer}>
-                <ThemedText style={styles.featuresListTitle}>What you'll get:</ThemedText>
+                <ThemedText style={styles.featuresListTitle}>
+                  What you'll get:
+                </ThemedText>
                 <View style={styles.featuresGrid}>
                   {[
                     "Unlimited inventory",
@@ -271,29 +294,65 @@ export default function AuthScreen() {
                     "Waste reduction",
                   ].map((feature, index) => (
                     <View key={index} style={styles.featureGridItem}>
-                      <Feather name="check-circle" size={12} color={AppColors.primary} />
-                      <ThemedText style={styles.featureGridItemText}>{feature}</ThemedText>
+                      <Feather
+                        name="check-circle"
+                        size={12}
+                        color={AppColors.primary}
+                      />
+                      <ThemedText style={styles.featureGridItemText}>
+                        {feature}
+                      </ThemedText>
                     </View>
                   ))}
                 </View>
               </View>
 
               {/* Subscription Options Preview */}
-              <View style={[styles.subscriptionPreview, { backgroundColor: theme.glass.background, borderColor: theme.glass.border }]}>
-                <ThemedText style={[styles.subscriptionPreviewTitle, { color: theme.textSecondary }]}>
+              <View
+                style={[
+                  styles.subscriptionPreview,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.subscriptionPreviewTitle,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   After your trial, choose a plan:
                 </ThemedText>
                 <View style={styles.planPreviewRow}>
                   <View style={styles.planPreviewItem}>
-                    <ThemedText style={styles.planPreviewName}>Basic</ThemedText>
-                    <ThemedText style={[styles.planPreviewPrice, { color: AppColors.primary }]}>
+                    <ThemedText style={styles.planPreviewName}>
+                      Basic
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.planPreviewPrice,
+                        { color: AppColors.primary },
+                      ]}
+                    >
                       ${prices.basic.monthly.toFixed(2)}/mo
                     </ThemedText>
                   </View>
-                  <View style={[styles.planPreviewDivider, { backgroundColor: theme.glass.border }]} />
+                  <View
+                    style={[
+                      styles.planPreviewDivider,
+                      { backgroundColor: theme.glass.border },
+                    ]}
+                  />
                   <View style={styles.planPreviewItem}>
                     <ThemedText style={styles.planPreviewName}>Pro</ThemedText>
-                    <ThemedText style={[styles.planPreviewPrice, { color: AppColors.primary }]}>
+                    <ThemedText
+                      style={[
+                        styles.planPreviewPrice,
+                        { color: AppColors.primary },
+                      ]}
+                    >
                       ${prices.pro.monthly.toFixed(2)}/mo
                     </ThemedText>
                   </View>
@@ -307,9 +366,16 @@ export default function AuthScreen() {
           </ThemedText>
 
           {authError && (
-            <View style={[styles.authErrorContainer, { backgroundColor: `${AppColors.error}15` }]}>
+            <View
+              style={[
+                styles.authErrorContainer,
+                { backgroundColor: `${AppColors.error}15` },
+              ]}
+            >
               <Feather name="alert-circle" size={16} color={AppColors.error} />
-              <ThemedText style={[styles.authErrorText, { color: AppColors.error }]}>
+              <ThemedText
+                style={[styles.authErrorText, { color: AppColors.error }]}
+              >
                 {authError}
               </ThemedText>
             </View>
@@ -319,10 +385,18 @@ export default function AuthScreen() {
             <View
               style={[
                 styles.authInputWrapper,
-                { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                {
+                  backgroundColor: theme.glass.background,
+                  borderColor: theme.glass.border,
+                },
               ]}
             >
-              <Feather name="mail" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+              <Feather
+                name="mail"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.authInputIcon}
+              />
               <TextInput
                 style={[styles.authInput, { color: theme.text }]}
                 placeholder="Email"
@@ -342,10 +416,18 @@ export default function AuthScreen() {
             <View
               style={[
                 styles.authInputWrapper,
-                { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                {
+                  backgroundColor: theme.glass.background,
+                  borderColor: theme.glass.border,
+                },
               ]}
             >
-              <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+              <Feather
+                name="lock"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.authInputIcon}
+              />
               <TextInput
                 ref={passwordRef}
                 style={[styles.authInput, { color: theme.text }]}
@@ -365,8 +447,15 @@ export default function AuthScreen() {
                 }}
                 data-testid="input-password"
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.authEyeButton}>
-                <Feather name={showPassword ? "eye-off" : "eye"} size={20} color={theme.textSecondary} />
+              <Pressable
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.authEyeButton}
+              >
+                <Feather
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color={theme.textSecondary}
+                />
               </Pressable>
             </View>
 
@@ -374,10 +463,18 @@ export default function AuthScreen() {
               <View
                 style={[
                   styles.authInputWrapper,
-                  { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor: theme.glass.border,
+                  },
                 ]}
               >
-                <Feather name="lock" size={20} color={theme.textSecondary} style={styles.authInputIcon} />
+                <Feather
+                  name="lock"
+                  size={20}
+                  color={theme.textSecondary}
+                  style={styles.authInputIcon}
+                />
                 <TextInput
                   ref={confirmPasswordRef}
                   style={[styles.authInput, { color: theme.text }]}
@@ -422,9 +519,15 @@ export default function AuthScreen() {
             style={styles.authSwitchButton}
             data-testid="button-switch-auth-mode"
           >
-            <ThemedText style={[styles.authSwitchText, { color: theme.textSecondary }]}>
-              {isSignUp ? "Already have an account? " : "Don't have an account? "}
-              <ThemedText style={{ color: AppColors.primary, fontWeight: "600" }}>
+            <ThemedText
+              style={[styles.authSwitchText, { color: theme.textSecondary }]}
+            >
+              {isSignUp
+                ? "Already have an account? "
+                : "Don't have an account? "}
+              <ThemedText
+                style={{ color: AppColors.primary, fontWeight: "600" }}
+              >
                 {isSignUp ? "Sign In" : "Sign Up"}
               </ThemedText>
             </ThemedText>
@@ -433,11 +536,26 @@ export default function AuthScreen() {
           {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
             <>
               <View style={styles.authDividerContainer}>
-                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
-                <ThemedText style={[styles.authDividerText, { color: theme.textSecondary }]}>
+                <View
+                  style={[
+                    styles.authDivider,
+                    { backgroundColor: theme.glass.border },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.authDividerText,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   or continue with
                 </ThemedText>
-                <View style={[styles.authDivider, { backgroundColor: theme.glass.border }]} />
+                <View
+                  style={[
+                    styles.authDivider,
+                    { backgroundColor: theme.glass.border },
+                  ]}
+                />
               </View>
 
               <View style={styles.authSocialButtons}>
@@ -445,14 +563,19 @@ export default function AuthScreen() {
                   <Pressable
                     style={[
                       styles.authSocialButton,
-                      { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                      {
+                        backgroundColor: theme.glass.background,
+                        borderColor: theme.glass.border,
+                      },
                     ]}
                     onPress={() => handleSocialAuth("apple")}
                     disabled={authLoading}
                     data-testid="button-signin-apple"
                   >
                     <Ionicons name="logo-apple" size={24} color={theme.text} />
-                    <ThemedText style={styles.authSocialButtonText}>Apple</ThemedText>
+                    <ThemedText style={styles.authSocialButtonText}>
+                      Apple
+                    </ThemedText>
                   </Pressable>
                 )}
 
@@ -460,7 +583,10 @@ export default function AuthScreen() {
                   <Pressable
                     style={[
                       styles.authSocialButton,
-                      { backgroundColor: theme.glass.background, borderColor: theme.glass.border },
+                      {
+                        backgroundColor: theme.glass.background,
+                        borderColor: theme.glass.border,
+                      },
                     ]}
                     onPress={() => handleSocialAuth("google")}
                     disabled={authLoading}
@@ -470,7 +596,9 @@ export default function AuthScreen() {
                       source={{ uri: "https://www.google.com/favicon.ico" }}
                       style={styles.authGoogleIcon}
                     />
-                    <ThemedText style={styles.authSocialButtonText}>Google</ThemedText>
+                    <ThemedText style={styles.authSocialButtonText}>
+                      Google
+                    </ThemedText>
                   </Pressable>
                 )}
               </View>

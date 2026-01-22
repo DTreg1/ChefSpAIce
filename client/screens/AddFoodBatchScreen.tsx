@@ -27,7 +27,12 @@ import { GlassButton } from "@/components/GlassButton";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { storage, FoodItem, generateId, DEFAULT_STORAGE_LOCATIONS } from "@/lib/storage";
+import {
+  storage,
+  FoodItem,
+  generateId,
+  DEFAULT_STORAGE_LOCATIONS,
+} from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
 
@@ -533,7 +538,9 @@ function EditModal({
   const [category, setCategory] = useState(item.category);
   const [storageLocation, setStorageLocation] = useState(item.storageLocation);
   const [quantityUnit, setQuantityUnit] = useState(item.quantityUnit);
-  const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([...DEFAULT_STORAGE_LOCATIONS]);
+  const [storageLocations, setStorageLocations] = useState<
+    StorageLocationOption[]
+  >([...DEFAULT_STORAGE_LOCATIONS]);
 
   React.useEffect(() => {
     const loadStorageLocations = async () => {
@@ -757,7 +764,8 @@ function EditModal({
                   style={[
                     styles.chip,
                     { backgroundColor: theme.backgroundSecondary },
-                    (storageLocation === loc.key || storageLocation === loc.label.toLowerCase()) && {
+                    (storageLocation === loc.key ||
+                      storageLocation === loc.label.toLowerCase()) && {
                       backgroundColor: AppColors.primary,
                     },
                   ]}
@@ -766,7 +774,10 @@ function EditModal({
                   <ThemedText
                     type="caption"
                     style={
-                      (storageLocation === loc.key || storageLocation === loc.label.toLowerCase()) ? { color: "#FFFFFF" } : undefined
+                      storageLocation === loc.key ||
+                      storageLocation === loc.label.toLowerCase()
+                        ? { color: "#FFFFFF" }
+                        : undefined
                     }
                   >
                     {loc.label}

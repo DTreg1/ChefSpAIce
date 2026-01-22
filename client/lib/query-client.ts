@@ -2,29 +2,29 @@
  * =============================================================================
  * REACT QUERY CLIENT CONFIGURATION
  * =============================================================================
- * 
+ *
  * Sets up TanStack React Query for data fetching throughout ChefSpAIce.
  * Provides the API request utilities and default query configuration.
- * 
+ *
  * KEY EXPORTS:
  * - queryClient: Pre-configured QueryClient instance
  * - getApiUrl(): Returns the Express API base URL
  * - apiRequest(): Makes authenticated API calls with error handling
  * - getQueryFn(): Factory for creating query functions
- * 
+ *
  * ERROR HANDLING:
  * - 401 errors trigger auth error callback (auto-logout)
  * - Non-OK responses throw errors with status and message
- * 
+ *
  * QUERY DEFAULTS:
  * - No automatic refetching (staleTime: Infinity)
  * - No retry on failure
  * - Credentials included for auth cookies
- * 
+ *
  * USAGE:
  * - Queries: useQuery({ queryKey: ['/api/recipes'] })
  * - Mutations: useMutation + apiRequest()
- * 
+ *
  * @module lib/query-client
  */
 
@@ -57,7 +57,7 @@ export function getApiUrl(): string {
   let url = new URL(`https://${host}`);
 
   // Remove trailing slash to prevent double-slashes when concatenating paths
-  return url.href.replace(/\/$/, '');
+  return url.href.replace(/\/$/, "");
 }
 
 // Auth error callback - set by AuthContext to handle 401 errors
@@ -95,11 +95,11 @@ export async function apiRequest(
 
   const token = await getStoredAuthToken();
   const headers: Record<string, string> = {};
-  
+
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -131,7 +131,7 @@ const getQueryFn: <T>(options: {
 
     const token = await getStoredAuthToken();
     const headers: Record<string, string> = {};
-    
+
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -144,7 +144,7 @@ const getQueryFn: <T>(options: {
     if (res.status === 401) {
       // Always trigger auth error callback on 401
       handleAuthError();
-      
+
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }

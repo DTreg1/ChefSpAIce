@@ -99,15 +99,17 @@ export function AnimatedBackground({
         <div
           key={config.id}
           className="bubble"
-          style={{
-            width: config.size,
-            height: config.size,
-            left: config.startX,
-            "--duration": `${config.duration}ms`,
-            "--delay": `${config.delay}ms`,
-            "--bubble-opacity": config.opacity,
-            "--wobble-amount": `${config.wobbleAmount}px`,
-          } as React.CSSProperties}
+          style={
+            {
+              width: config.size,
+              height: config.size,
+              left: config.startX,
+              "--duration": `${config.duration}ms`,
+              "--delay": `${config.delay}ms`,
+              "--bubble-opacity": config.opacity,
+              "--wobble-amount": `${config.wobbleAmount}px`,
+            } as React.CSSProperties
+          }
         />
       ))}
     </View>

@@ -45,8 +45,8 @@ function WaterDroplet({ cx, cy, size, delay }: WaterDropletProps) {
       withRepeat(
         withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
   }, [delay, shimmer]);
 
@@ -101,18 +101,21 @@ function Bubble({ cx, cy, r, delay }: BubbleProps) {
     float.value = withDelay(
       delay,
       withRepeat(
-        withTiming(1, { duration: 4000 + Math.random() * 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, {
+          duration: 4000 + Math.random() * 2000,
+          easing: Easing.inOut(Easing.ease),
+        }),
         -1,
-        true
-      )
+        true,
+      ),
     );
     pulse.value = withDelay(
       delay + 500,
       withRepeat(
         withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
   }, [delay, float, pulse]);
 
@@ -163,8 +166,8 @@ function Sparkle({ cx, cy, size, delay }: SparkleProps) {
       withRepeat(
         withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
   }, [delay, twinkle]);
 
@@ -200,14 +203,17 @@ interface GlassLeafProps {
   height?: number;
 }
 
-export function GlassLeaf({ width = SCREEN_WIDTH, height = SCREEN_HEIGHT }: GlassLeafProps) {
+export function GlassLeaf({
+  width = SCREEN_WIDTH,
+  height = SCREEN_HEIGHT,
+}: GlassLeafProps) {
   const glowPulse = useSharedValue(0);
 
   useEffect(() => {
     glowPulse.value = withRepeat(
       withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      true,
     );
   }, [glowPulse]);
 
@@ -218,34 +224,43 @@ export function GlassLeaf({ width = SCREEN_WIDTH, height = SCREEN_HEIGHT }: Glas
     };
   });
 
-  const droplets = useMemo(() => [
-    { cx: 180, cy: 280, size: 6, delay: 0 },
-    { cx: 220, cy: 350, size: 4, delay: 300 },
-    { cx: 160, cy: 400, size: 5, delay: 600 },
-    { cx: 200, cy: 450, size: 3.5, delay: 900 },
-    { cx: 175, cy: 320, size: 4.5, delay: 1200 },
-    { cx: 210, cy: 380, size: 3, delay: 1500 },
-  ], []);
+  const droplets = useMemo(
+    () => [
+      { cx: 180, cy: 280, size: 6, delay: 0 },
+      { cx: 220, cy: 350, size: 4, delay: 300 },
+      { cx: 160, cy: 400, size: 5, delay: 600 },
+      { cx: 200, cy: 450, size: 3.5, delay: 900 },
+      { cx: 175, cy: 320, size: 4.5, delay: 1200 },
+      { cx: 210, cy: 380, size: 3, delay: 1500 },
+    ],
+    [],
+  );
 
-  const bubbles = useMemo(() => [
-    { cx: 120, cy: 250, r: 8, delay: 0 },
-    { cx: 280, cy: 320, r: 6, delay: 500 },
-    { cx: 100, cy: 400, r: 10, delay: 1000 },
-    { cx: 290, cy: 450, r: 7, delay: 1500 },
-    { cx: 85, cy: 300, r: 5, delay: 2000 },
-    { cx: 310, cy: 380, r: 9, delay: 2500 },
-    { cx: 70, cy: 480, r: 6, delay: 3000 },
-    { cx: 320, cy: 280, r: 4, delay: 3500 },
-  ], []);
+  const bubbles = useMemo(
+    () => [
+      { cx: 120, cy: 250, r: 8, delay: 0 },
+      { cx: 280, cy: 320, r: 6, delay: 500 },
+      { cx: 100, cy: 400, r: 10, delay: 1000 },
+      { cx: 290, cy: 450, r: 7, delay: 1500 },
+      { cx: 85, cy: 300, r: 5, delay: 2000 },
+      { cx: 310, cy: 380, r: 9, delay: 2500 },
+      { cx: 70, cy: 480, r: 6, delay: 3000 },
+      { cx: 320, cy: 280, r: 4, delay: 3500 },
+    ],
+    [],
+  );
 
-  const sparkles = useMemo(() => [
-    { cx: 195, cy: 270, size: 2.5, delay: 0 },
-    { cx: 170, cy: 340, size: 2, delay: 400 },
-    { cx: 220, cy: 400, size: 3, delay: 800 },
-    { cx: 185, cy: 470, size: 2, delay: 1200 },
-    { cx: 205, cy: 310, size: 2.5, delay: 1600 },
-    { cx: 150, cy: 430, size: 1.8, delay: 2000 },
-  ], []);
+  const sparkles = useMemo(
+    () => [
+      { cx: 195, cy: 270, size: 2.5, delay: 0 },
+      { cx: 170, cy: 340, size: 2, delay: 400 },
+      { cx: 220, cy: 400, size: 3, delay: 800 },
+      { cx: 185, cy: 470, size: 2, delay: 1200 },
+      { cx: 205, cy: 310, size: 2.5, delay: 1600 },
+      { cx: 150, cy: 430, size: 1.8, delay: 2000 },
+    ],
+    [],
+  );
 
   const leafPath = `
     M 195 180
@@ -288,7 +303,12 @@ export function GlassLeaf({ width = SCREEN_WIDTH, height = SCREEN_HEIGHT }: Glas
         <View style={styles.glow} />
       </AnimatedView>
 
-      <Svg width={width} height={height} viewBox="0 0 390 700" style={styles.svg}>
+      <Svg
+        width={width}
+        height={height}
+        viewBox="0 0 390 700"
+        style={styles.svg}
+      >
         <Defs>
           <LinearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <Stop offset="0%" stopColor="rgba(255, 255, 255, 0.35)" />
@@ -336,10 +356,7 @@ export function GlassLeaf({ width = SCREEN_WIDTH, height = SCREEN_HEIGHT }: Glas
             strokeWidth={1.5}
           />
 
-          <Path
-            d={leafPath}
-            fill="url(#innerGlow)"
-          />
+          <Path d={leafPath} fill="url(#innerGlow)" />
 
           <Path
             d={`
@@ -411,12 +428,7 @@ export function GlassLeaf({ width = SCREEN_WIDTH, height = SCREEN_HEIGHT }: Glas
           fill="rgba(255, 255, 255, 0.15)"
           opacity={0.5}
         />
-        <Circle
-          cx={155}
-          cy={255}
-          r={5}
-          fill="rgba(255, 255, 255, 0.4)"
-        />
+        <Circle cx={155} cy={255} r={5} fill="rgba(255, 255, 255, 0.4)" />
       </Svg>
     </View>
   );

@@ -25,15 +25,24 @@ async function compressImage(base64Data: string): Promise<string> {
   try {
     const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/i, "");
     const dataUri = `data:image/png;base64,${cleanBase64}`;
-    
+
     const result = await ImageManipulator.manipulateAsync(
       dataUri,
       [{ resize: { width: MAX_IMAGE_SIZE, height: MAX_IMAGE_SIZE } }],
-      { compress: JPEG_QUALITY, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      {
+        compress: JPEG_QUALITY,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      },
     );
-    
+
     if (result.base64) {
-      logger.log("[compressImage] Compressed from", cleanBase64.length, "to", result.base64.length);
+      logger.log(
+        "[compressImage] Compressed from",
+        cleanBase64.length,
+        "to",
+        result.base64.length,
+      );
       return result.base64;
     }
     return cleanBase64;
@@ -49,13 +58,19 @@ export async function saveRecipeImage(
 ): Promise<string> {
   logger.log("[saveRecipeImage] Starting save for recipe:", recipeId);
   logger.log("[saveRecipeImage] Base64 data length:", base64Data?.length || 0);
-  
+
   const compressedBase64 = await compressImage(base64Data);
-  logger.log("[saveRecipeImage] Compressed base64 length:", compressedBase64?.length || 0);
+  logger.log(
+    "[saveRecipeImage] Compressed base64 length:",
+    compressedBase64?.length || 0,
+  );
 
   if (Platform.OS === "web" || !RECIPE_IMAGES_DIR) {
     const dataUri = `data:image/jpeg;base64,${compressedBase64}`;
-    logger.log("[saveRecipeImage] Web platform - returning data URI, length:", dataUri.length);
+    logger.log(
+      "[saveRecipeImage] Web platform - returning data URI, length:",
+      dataUri.length,
+    );
     return dataUri;
   }
 
@@ -106,4 +121,3 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
     await FileSystem.deleteAsync(fileUri);
   }
 }
-

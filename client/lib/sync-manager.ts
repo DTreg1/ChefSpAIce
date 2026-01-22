@@ -44,7 +44,9 @@ class SyncManager {
   private consecutiveFailures = 0;
   private lastSuccessfulRequest = Date.now();
   private appState: AppStateStatus = "active";
-  private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+  private appStateSubscription: ReturnType<
+    typeof AppState.addEventListener
+  > | null = null;
   private isPaused = false;
   private preferencesSyncTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingPreferences: unknown = null;
@@ -58,46 +60,50 @@ class SyncManager {
 
   private initAppStateListener() {
     this.appState = AppState.currentState;
-    this.appStateSubscription = AppState.addEventListener("change", (nextAppState) => {
-      const wasBackground = this.appState === "background" || this.appState === "inactive";
-      const isNowActive = nextAppState === "active";
-      
-      this.appState = nextAppState;
-      
-      if (nextAppState === "background" || nextAppState === "inactive") {
-        // App going to background - pause sync operations to save battery
-        this.pauseSync();
-      } else if (isNowActive && wasBackground) {
-        // App coming back to foreground - resume sync
-        this.resumeSync();
-      }
-    });
+    this.appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextAppState) => {
+        const wasBackground =
+          this.appState === "background" || this.appState === "inactive";
+        const isNowActive = nextAppState === "active";
+
+        this.appState = nextAppState;
+
+        if (nextAppState === "background" || nextAppState === "inactive") {
+          // App going to background - pause sync operations to save battery
+          this.pauseSync();
+        } else if (isNowActive && wasBackground) {
+          // App coming back to foreground - resume sync
+          this.resumeSync();
+        }
+      },
+    );
   }
 
   private pauseSync() {
     if (this.isPaused) return;
-    
+
     this.isPaused = true;
     logger.log("[Sync] Pausing sync (app in background)");
-    
+
     // Clear any pending sync timers
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
       this.syncTimer = null;
     }
-    
+
     // Clear preferences sync timer
     if (this.preferencesSyncTimer) {
       clearTimeout(this.preferencesSyncTimer);
       this.preferencesSyncTimer = null;
     }
-    
+
     // Clear userProfile sync timer
     if (this.userProfileSyncTimer) {
       clearTimeout(this.userProfileSyncTimer);
       this.userProfileSyncTimer = null;
     }
-    
+
     // Pause network check interval
     if (this.networkCheckInterval) {
       clearInterval(this.networkCheckInterval);
@@ -107,34 +113,34 @@ class SyncManager {
 
   private resumeSync() {
     if (!this.isPaused) return;
-    
+
     this.isPaused = false;
     logger.log("[Sync] Resuming sync (app in foreground)");
-    
+
     // Clear any existing interval to avoid duplicates
     if (this.networkCheckInterval) {
       clearInterval(this.networkCheckInterval);
       this.networkCheckInterval = null;
     }
-    
+
     // Always reinstate network check interval on resume
     this.networkCheckInterval = setInterval(() => {
       if (!this.isPaused) {
         this.checkNetworkStatus();
       }
     }, 60000); // 60 seconds
-    
+
     // Immediately check network status on resume
     this.checkNetworkStatus();
-    
+
     // Process any pending sync items
     this.processSyncQueue();
-    
+
     // Flush any pending preferences sync
     if (this.pendingPreferences) {
       this.flushPreferencesSync();
     }
-    
+
     // Flush any pending userProfile sync
     if (this.pendingUserProfile) {
       this.flushUserProfileSync();
@@ -144,7 +150,7 @@ class SyncManager {
   private async initNetworkListener() {
     // Assume online by default - expo-network is unreliable in Expo Go
     this.isOnline = true;
-    
+
     // Check periodically but with a longer interval since we track API success/failure
     this.networkCheckInterval = setInterval(() => {
       if (!this.isPaused) {
@@ -158,7 +164,7 @@ class SyncManager {
     // If we've had 3+ consecutive failures, we're offline
     const timeSinceLastSuccess = Date.now() - this.lastSuccessfulRequest;
     const wasOffline = !this.isOnline;
-    
+
     if (this.consecutiveFailures >= 3) {
       this.isOnline = false;
     } else if (timeSinceLastSuccess < 60000) {
@@ -166,14 +172,14 @@ class SyncManager {
       this.isOnline = true;
     }
     // Otherwise keep current state
-    
+
     if (wasOffline && this.isOnline) {
       logger.log("[Sync] Network restored, processing sync queue");
       this.processSyncQueue();
     } else if (!wasOffline && !this.isOnline) {
       logger.log("[Sync] Network appears offline after multiple failures");
     }
-    
+
     this.notifyListeners();
   }
 
@@ -213,10 +219,10 @@ class SyncManager {
   async getState(): Promise<SyncState> {
     const queue = await this.getQueue();
     const lastSync = await AsyncStorage.getItem(SYNC_KEYS.LAST_SYNC);
-    
+
     const fatalItems = queue.filter((item) => item.isFatal);
     const pendingItems = queue.filter((item) => !item.isFatal);
-    
+
     let status: SyncStatus = "idle";
     if (!this.isOnline) {
       status = "offline";
@@ -254,15 +260,15 @@ class SyncManager {
   async queueChange(
     dataType: SyncDataType,
     operation: SyncOperation,
-    data: unknown
+    data: unknown,
   ): Promise<void> {
     const queue = await this.getQueue();
-    
+
     const existingIndex = queue.findIndex(
       (item) =>
         item.dataType === dataType &&
         (data as { id?: string })?.id &&
-        (item.data as { id?: string })?.id === (data as { id?: string })?.id
+        (item.data as { id?: string })?.id === (data as { id?: string })?.id,
     );
 
     const newItem: SyncQueueItem = {
@@ -277,7 +283,10 @@ class SyncManager {
     if (existingIndex !== -1) {
       if (operation === "delete") {
         queue[existingIndex] = newItem;
-      } else if (queue[existingIndex].operation === "create" && operation === "update") {
+      } else if (
+        queue[existingIndex].operation === "create" &&
+        operation === "update"
+      ) {
         queue[existingIndex] = { ...newItem, operation: "create" };
       } else {
         queue[existingIndex] = newItem;
@@ -295,11 +304,11 @@ class SyncManager {
     if (this.isPaused) {
       return;
     }
-    
+
     if (this.syncTimer) {
       clearTimeout(this.syncTimer);
     }
-    
+
     this.syncTimer = setTimeout(() => {
       this.processSyncQueue();
     }, 2000); // Increased debounce to 2 seconds for battery
@@ -334,36 +343,47 @@ class SyncManager {
         failedItems.push(item);
         continue;
       }
-      
+
       try {
         await this.syncItem(item, token);
         processedIds.add(item.id);
       } catch (error) {
-        const syncError = error as { statusCode?: number; message?: string; isConflict?: boolean };
+        const syncError = error as {
+          statusCode?: number;
+          message?: string;
+          isConflict?: boolean;
+        };
         const statusCode = syncError.statusCode || 0;
         const is4xxError = statusCode >= 400 && statusCode < 500;
         const isConflict = syncError.isConflict === true;
         const errorMessage = syncError.message || "Unknown sync error";
-        
+
         console.error(`Sync failed for ${item.dataType}:`, error);
-        
+
         if (isConflict) {
-          console.warn(`[SyncManager] Conflict detected - server has newer version:`, 
-            item.dataType, (item.data as { id?: string })?.id);
-          failedItems.push({ 
-            ...item, 
-            isFatal: true, 
-            errorMessage: "Your changes were overwritten by a newer version from another device",
-            retryCount: item.retryCount + 1 
+          console.warn(
+            `[SyncManager] Conflict detected - server has newer version:`,
+            item.dataType,
+            (item.data as { id?: string })?.id,
+          );
+          failedItems.push({
+            ...item,
+            isFatal: true,
+            errorMessage:
+              "Your changes were overwritten by a newer version from another device",
+            retryCount: item.retryCount + 1,
           });
         } else if (is4xxError || item.retryCount >= maxRetries) {
-          console.warn(`[SyncManager] Marking item as fatal after ${item.retryCount} retries (status: ${statusCode}):`, 
-            item.dataType, (item.data as { id?: string })?.id);
-          failedItems.push({ 
-            ...item, 
-            isFatal: true, 
+          console.warn(
+            `[SyncManager] Marking item as fatal after ${item.retryCount} retries (status: ${statusCode}):`,
+            item.dataType,
+            (item.data as { id?: string })?.id,
+          );
+          failedItems.push({
+            ...item,
+            isFatal: true,
             errorMessage: `Failed to sync: ${errorMessage}`,
-            retryCount: item.retryCount + 1 
+            retryCount: item.retryCount + 1,
           });
         } else {
           failedItems.push({ ...item, retryCount: item.retryCount + 1 });
@@ -374,9 +394,9 @@ class SyncManager {
 
     const currentQueue = await this.getQueue();
     const newlyAddedItems = currentQueue.filter(
-      (item) => !queue.some((oldItem) => oldItem.id === item.id)
+      (item) => !queue.some((oldItem) => oldItem.id === item.id),
     );
-    
+
     const newQueue = [...failedItems, ...newlyAddedItems];
     await this.setQueue(newQueue);
 
@@ -402,8 +422,12 @@ class SyncManager {
     const endpoint = `/api/sync/${item.dataType}`;
     const url = new URL(endpoint, baseUrl);
 
-    const method = item.operation === "delete" ? "DELETE" : 
-                   item.operation === "create" ? "POST" : "PUT";
+    const method =
+      item.operation === "delete"
+        ? "DELETE"
+        : item.operation === "create"
+          ? "POST"
+          : "PUT";
 
     let response: Response;
     try {
@@ -429,25 +453,29 @@ class SyncManager {
     this.markRequestSuccess();
 
     if (!response.ok) {
-      const error = new Error(`Sync failed: ${response.status}`) as Error & { statusCode: number };
+      const error = new Error(`Sync failed: ${response.status}`) as Error & {
+        statusCode: number;
+      };
       error.statusCode = response.status;
       throw error;
     }
-    
+
     if (response.status === 204) {
       return;
     }
-    
+
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       return;
     }
-    
+
     const result = await response.json();
-    
+
     if (result.operation === "skipped" && result.reason === "stale_update") {
-      const error = new Error("Update was stale - server has newer version") as Error & { 
-        statusCode: number; 
+      const error = new Error(
+        "Update was stale - server has newer version",
+      ) as Error & {
+        statusCode: number;
         isConflict: boolean;
       };
       error.statusCode = 409;
@@ -480,7 +508,7 @@ class SyncManager {
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
-      
+
       let response: Response;
       try {
         response = await fetch(url.toString(), {
@@ -502,27 +530,39 @@ class SyncManager {
       }
 
       const { data } = await response.json();
-      
+
       if (data) {
         if (data.inventory) {
-          await AsyncStorage.setItem("@chefspaice/inventory", JSON.stringify(data.inventory));
+          await AsyncStorage.setItem(
+            "@chefspaice/inventory",
+            JSON.stringify(data.inventory),
+          );
         }
         if (data.recipes) {
-          await AsyncStorage.setItem("@chefspaice/recipes", JSON.stringify(data.recipes));
+          await AsyncStorage.setItem(
+            "@chefspaice/recipes",
+            JSON.stringify(data.recipes),
+          );
         }
         if (data.mealPlans) {
-          await AsyncStorage.setItem("@chefspaice/meal_plans", JSON.stringify(data.mealPlans));
+          await AsyncStorage.setItem(
+            "@chefspaice/meal_plans",
+            JSON.stringify(data.mealPlans),
+          );
         }
         if (data.shoppingList) {
-          await AsyncStorage.setItem("@chefspaice/shopping_list", JSON.stringify(data.shoppingList));
+          await AsyncStorage.setItem(
+            "@chefspaice/shopping_list",
+            JSON.stringify(data.shoppingList),
+          );
         }
       }
 
       await AsyncStorage.setItem(SYNC_KEYS.LAST_SYNC, new Date().toISOString());
-      
+
       this.isSyncing = false;
       this.notifyListeners();
-      
+
       return { success: true };
     } catch (error) {
       this.isSyncing = false;
@@ -538,15 +578,15 @@ class SyncManager {
 
   async syncPreferences(preferences: unknown): Promise<void> {
     this.pendingPreferences = preferences;
-    
+
     if (this.isPaused) {
       return;
     }
-    
+
     if (this.preferencesSyncTimer) {
       clearTimeout(this.preferencesSyncTimer);
     }
-    
+
     this.preferencesSyncTimer = setTimeout(() => {
       this.flushPreferencesSync();
     }, 2000);
@@ -569,7 +609,7 @@ class SyncManager {
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
-      
+
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: {
@@ -604,15 +644,15 @@ class SyncManager {
 
   async syncUserProfile(userProfile: unknown): Promise<void> {
     this.pendingUserProfile = userProfile;
-    
+
     if (this.isPaused) {
       return;
     }
-    
+
     if (this.userProfileSyncTimer) {
       clearTimeout(this.userProfileSyncTimer);
     }
-    
+
     this.userProfileSyncTimer = setTimeout(() => {
       this.flushUserProfileSync();
     }, 2000);
@@ -635,7 +675,7 @@ class SyncManager {
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
-      
+
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: {
@@ -701,8 +741,10 @@ class SyncManager {
 
   async retryFailedItems(): Promise<void> {
     const queue = await this.getQueue();
-    const hasConflicts = queue.some((item) => item.isFatal && item.errorMessage?.includes("overwritten"));
-    
+    const hasConflicts = queue.some(
+      (item) => item.isFatal && item.errorMessage?.includes("overwritten"),
+    );
+
     if (hasConflicts) {
       await this.fullSync();
       const updatedQueue = await this.getQueue();
@@ -711,10 +753,15 @@ class SyncManager {
       this.notifyListeners();
       return;
     }
-    
+
     const newQueue = queue.map((item) => {
       if (item.isFatal) {
-        return { ...item, isFatal: false, retryCount: 0, errorMessage: undefined };
+        return {
+          ...item,
+          isFatal: false,
+          retryCount: 0,
+          errorMessage: undefined,
+        };
       }
       return item;
     });
@@ -722,8 +769,10 @@ class SyncManager {
     this.notifyListeners();
     this.processSyncQueue();
   }
-  
-  async getFailedItemDetails(): Promise<Array<{ dataType: string; itemName: string; errorMessage: string }>> {
+
+  async getFailedItemDetails(): Promise<
+    Array<{ dataType: string; itemName: string; errorMessage: string }>
+  > {
     const failedItems = await this.getFailedItems();
     return failedItems.map((item) => {
       const data = item.data as { name?: string; title?: string; id?: string };

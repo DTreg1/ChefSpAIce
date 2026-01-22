@@ -13,7 +13,10 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -60,7 +63,7 @@ export default function MealPlanScreen() {
   }>({ visible: false, recipe: null, slotId: "", date: new Date() });
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
-  const canUseWeeklyPrepping = checkFeature('canUseWeeklyMealPrepping');
+  const canUseWeeklyPrepping = checkFeature("canUseWeeklyMealPrepping");
 
   const currentPreset = getPresetById(
     preferences?.mealPlanPresetId || DEFAULT_PRESET_ID,
@@ -181,16 +184,23 @@ export default function MealPlanScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
         <View style={styles.weekNavigation}>
-          <Pressable 
-            onPress={navigatePrevWeek} 
-            style={[styles.navButton, !canUseWeeklyPrepping && styles.navButtonLocked]}
+          <Pressable
+            onPress={navigatePrevWeek}
+            style={[
+              styles.navButton,
+              !canUseWeeklyPrepping && styles.navButtonLocked,
+            ]}
           >
             {!canUseWeeklyPrepping && (
               <View style={styles.navLockBadge}>
                 <Feather name="lock" size={8} color="#FFFFFF" />
               </View>
             )}
-            <Feather name="chevron-left" size={24} color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text} />
+            <Feather
+              name="chevron-left"
+              size={24}
+              color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text}
+            />
           </Pressable>
           <View style={styles.weekTitleContainer}>
             <ThemedText type="h4">
@@ -199,20 +209,29 @@ export default function MealPlanScreen() {
             </ThemedText>
             {!canUseWeeklyPrepping && (
               <View style={styles.weekProBadge}>
-                <ThemedText type="small" style={styles.weekProBadgeText}>PRO</ThemedText>
+                <ThemedText type="small" style={styles.weekProBadgeText}>
+                  PRO
+                </ThemedText>
               </View>
             )}
           </View>
-          <Pressable 
-            onPress={navigateNextWeek} 
-            style={[styles.navButton, !canUseWeeklyPrepping && styles.navButtonLocked]}
+          <Pressable
+            onPress={navigateNextWeek}
+            style={[
+              styles.navButton,
+              !canUseWeeklyPrepping && styles.navButtonLocked,
+            ]}
           >
             {!canUseWeeklyPrepping && (
               <View style={styles.navLockBadge}>
                 <Feather name="lock" size={8} color="#FFFFFF" />
               </View>
             )}
-            <Feather name="chevron-right" size={24} color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text} />
+            <Feather
+              name="chevron-right"
+              size={24}
+              color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text}
+            />
           </Pressable>
         </View>
 
@@ -540,12 +559,12 @@ export default function MealPlanScreen() {
             // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
             const rootNav = navigation.getParent()?.getParent()?.getParent();
             if (rootNav) {
-              rootNav.navigate("Main" as any, { 
-                screen: 'Tabs', 
-                params: { 
-                  screen: 'ProfileTab', 
-                  params: { screen: 'Subscription' } 
-                } 
+              rootNav.navigate("Main" as any, {
+                screen: "Tabs",
+                params: {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
+                },
               });
             }
           }}

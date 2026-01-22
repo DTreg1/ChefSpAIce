@@ -1,11 +1,21 @@
 import React from "react";
-import { View, StyleSheet, Platform, Image, Pressable, Linking } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Platform,
+  Image,
+  Pressable,
+  Linking,
+} from "react-native";
 import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
 } from "@react-navigation/drawer";
 import { DrawerActions } from "@react-navigation/native";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,11 +26,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { getApiUrl } from "@/lib/query-client";
-import {
-  AppColors,
-  Spacing,
-  BorderRadius,
-} from "@/constants/theme";
+import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 function TrialBadge() {
   const { isAuthenticated, token } = useAuth();
@@ -279,84 +285,84 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <TrialBadge />
           </View>
 
-        <View
-          style={[styles.divider, { backgroundColor: theme.glass.border }]}
-        />
+          <View
+            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+          />
 
-        <View style={styles.menuSection}>
-          {menuItems.map((item) => (
+          <View style={styles.menuSection}>
+            {menuItems.map((item) => (
+              <DrawerItem
+                key={item.route}
+                label={item.label}
+                icon={item.icon}
+                isActive={isItemActive(item)}
+                onPress={() => {
+                  closeDrawer();
+                  if (item.route === "ShoppingList") {
+                    navigation.navigate("Tabs", {
+                      screen: "MealPlanTab",
+                      params: { screen: "ShoppingList" },
+                    });
+                  } else {
+                    navigation.navigate("Tabs", { screen: item.route });
+                  }
+                }}
+              />
+            ))}
+          </View>
+
+          <View
+            style={[styles.divider, { backgroundColor: theme.glass.border }]}
+          />
+
+          <View style={styles.menuSection}>
             <DrawerItem
-              key={item.route}
-              label={item.label}
-              icon={item.icon}
-              isActive={isItemActive(item)}
+              label="Profile"
+              icon="user"
               onPress={() => {
                 closeDrawer();
-                if (item.route === "ShoppingList") {
-                  navigation.navigate("Tabs", {
-                    screen: "MealPlanTab",
-                    params: { screen: "ShoppingList" },
-                  });
-                } else {
-                  navigation.navigate("Tabs", { screen: item.route });
-                }
+                navigation.navigate("Tabs", {
+                  screen: "ProfileTab",
+                });
               }}
             />
-          ))}
-        </View>
-
-        <View
-          style={[styles.divider, { backgroundColor: theme.glass.border }]}
-        />
-
-        <View style={styles.menuSection}>
-          <DrawerItem
-            label="Profile"
-            icon="user"
-            onPress={() => {
-              closeDrawer();
-              navigation.navigate("Tabs", {
-                screen: "ProfileTab",
-              });
-            }}
-          />
-          <DrawerItem
-            label="Analytics"
-            icon="bar-chart-2"
-            isActive={activeScreen === "Analytics"}
-            onPress={() => {
-              closeDrawer();
-              navigation.navigate("Tabs", {
-                screen: "ProfileTab",
-                params: { screen: "Analytics" },
-              });
-            }}
-          />
-          <DrawerItem
-            label="Cooking Terms"
-            icon="book"
-            isActive={activeScreen === "CookingTerms"}
-            onPress={() => {
-              closeDrawer();
-              navigation.navigate("Tabs", {
-                screen: "ProfileTab",
-                params: { screen: "CookingTerms" },
-              });
-            }}
-          />
-          <DrawerItem
-            label="Cookware"
-            icon="tool"
-            isActive={activeScreen === "Cookware"}
-            onPress={() => {
-              closeDrawer();
-              navigation.navigate("Tabs", {
-                screen: "ProfileTab",
-                params: { screen: "Cookware" },
-              });
-            }}
-          />
-        </View>
+            <DrawerItem
+              label="Analytics"
+              icon="bar-chart-2"
+              isActive={activeScreen === "Analytics"}
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Tabs", {
+                  screen: "ProfileTab",
+                  params: { screen: "Analytics" },
+                });
+              }}
+            />
+            <DrawerItem
+              label="Cooking Terms"
+              icon="book"
+              isActive={activeScreen === "CookingTerms"}
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Tabs", {
+                  screen: "ProfileTab",
+                  params: { screen: "CookingTerms" },
+                });
+              }}
+            />
+            <DrawerItem
+              label="Cookware"
+              icon="tool"
+              isActive={activeScreen === "Cookware"}
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Tabs", {
+                  screen: "ProfileTab",
+                  params: { screen: "Cookware" },
+                });
+              }}
+            />
+          </View>
         </DrawerContentScrollView>
 
         <View

@@ -22,15 +22,8 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import {
-  Spacing,
-  BorderRadius,
-  AppColors,
-} from "@/constants/theme";
-import {
-  storage,
-  DEFAULT_STORAGE_LOCATIONS,
-} from "@/lib/storage";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { storage, DEFAULT_STORAGE_LOCATIONS } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface StorageLocationOption {
@@ -58,15 +51,18 @@ export default function StorageLocationsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { checkFeature } = useSubscription();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [customLocations, setCustomLocations] = useState<StorageLocationOption[]>([]);
+  const [customLocations, setCustomLocations] = useState<
+    StorageLocationOption[]
+  >([]);
   const [newLocationName, setNewLocationName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("box");
   const [isAdding, setIsAdding] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
-  const canCustomize = checkFeature('canCustomizeStorageAreas');
+  const canCustomize = checkFeature("canCustomizeStorageAreas");
 
   const loadCustomLocations = useCallback(async () => {
     try {
@@ -92,12 +88,14 @@ export default function StorageLocationsScreen() {
 
     const key = trimmedName.toLowerCase().replace(/\s+/g, "_");
     const allLocations = [...DEFAULT_STORAGE_LOCATIONS, ...customLocations];
-    
+
     const isDuplicateKey = allLocations.some((loc) => loc.key === key);
     const isDuplicateName = allLocations.some(
-      (loc) => loc.label.toLowerCase().replace(/\s+/g, "") === trimmedName.toLowerCase().replace(/\s+/g, "")
+      (loc) =>
+        loc.label.toLowerCase().replace(/\s+/g, "") ===
+        trimmedName.toLowerCase().replace(/\s+/g, ""),
     );
-    
+
     if (isDuplicateKey || isDuplicateName) {
       Alert.alert("Error", "A location with this name already exists.");
       return;
@@ -133,15 +131,20 @@ export default function StorageLocationsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const result = await storage.removeCustomStorageLocation(key, "pantry");
+              const result = await storage.removeCustomStorageLocation(
+                key,
+                "pantry",
+              );
               if (Platform.OS !== "web") {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Warning,
+                );
               }
               loadCustomLocations();
               if (result.migratedCount > 0) {
                 Alert.alert(
                   "Items Moved",
-                  `${result.migratedCount} item${result.migratedCount !== 1 ? "s" : ""} moved to Pantry.`
+                  `${result.migratedCount} item${result.migratedCount !== 1 ? "s" : ""} moved to Pantry.`,
                 );
               }
             } catch (e) {
@@ -172,207 +175,267 @@ export default function StorageLocationsScreen() {
           },
         ]}
       >
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Default Locations
-      </ThemedText>
-      <ThemedText type="caption" style={styles.description}>
-        These are the built-in storage locations that cannot be removed.
-      </ThemedText>
+        <ThemedText type="h4" style={styles.sectionTitle}>
+          Default Locations
+        </ThemedText>
+        <ThemedText type="caption" style={styles.description}>
+          These are the built-in storage locations that cannot be removed.
+        </ThemedText>
 
-      <GlassCard style={styles.locationsCard}>
-        {DEFAULT_STORAGE_LOCATIONS.map((location, index) => (
-          <View key={location.key}>
-            <View style={styles.locationRow}>
-              <View style={[styles.iconContainer, { backgroundColor: `${AppColors.primary}15` }]}>
-                <Feather name={location.icon as any} size={20} color={AppColors.primary} />
-              </View>
-              <ThemedText type="body" style={styles.locationLabel}>
-                {location.label}
-              </ThemedText>
-              <View style={styles.defaultBadge}>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  Default
-                </ThemedText>
-              </View>
-            </View>
-            {index < DEFAULT_STORAGE_LOCATIONS.length - 1 ? (
-              <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
-            ) : null}
-          </View>
-        ))}
-      </GlassCard>
-
-      <ThemedText type="h4" style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>
-        Custom Locations
-      </ThemedText>
-      <ThemedText type="caption" style={styles.description}>
-        Add your own storage locations like "Garage Fridge", "Wine Cellar", etc.
-      </ThemedText>
-
-      {customLocations.length > 0 ? (
         <GlassCard style={styles.locationsCard}>
-          {customLocations.map((location, index) => (
+          {DEFAULT_STORAGE_LOCATIONS.map((location, index) => (
             <View key={location.key}>
               <View style={styles.locationRow}>
-                <View style={[styles.iconContainer, { backgroundColor: `${AppColors.accent}15` }]}>
-                  <Feather name={location.icon as any} size={20} color={AppColors.accent} />
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: `${AppColors.primary}15` },
+                  ]}
+                >
+                  <Feather
+                    name={location.icon as any}
+                    size={20}
+                    color={AppColors.primary}
+                  />
                 </View>
                 <ThemedText type="body" style={styles.locationLabel}>
                   {location.label}
                 </ThemedText>
-                <Pressable
-                  style={styles.removeButton}
-                  onPress={() => handleRemoveLocation(location.key, location.label)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Feather name="trash-2" size={18} color={AppColors.error} />
-                </Pressable>
+                <View style={styles.defaultBadge}>
+                  <ThemedText
+                    type="caption"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    Default
+                  </ThemedText>
+                </View>
               </View>
-              {index < customLocations.length - 1 ? (
-                <View style={[styles.divider, { backgroundColor: theme.glass.border }]} />
+              {index < DEFAULT_STORAGE_LOCATIONS.length - 1 ? (
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: theme.glass.border },
+                  ]}
+                />
               ) : null}
             </View>
           ))}
         </GlassCard>
-      ) : (
-        <GlassCard style={styles.emptyCard}>
-          <Feather name="inbox" size={40} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
-            No custom locations yet
-          </ThemedText>
-        </GlassCard>
-      )}
 
-      {canCustomize ? (
-        isAdding ? (
-          <GlassCard style={styles.addCard}>
-            <ThemedText type="h4" style={styles.addTitle}>
-              New Storage Location
-            </ThemedText>
-            
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.glass.backgroundSubtle,
-                  color: theme.text,
-                  borderColor: theme.glass.border,
-                },
-              ]}
-              value={newLocationName}
-              onChangeText={setNewLocationName}
-              placeholder="Enter location name..."
-              placeholderTextColor={theme.textSecondary}
-              autoFocus
-            />
+        <ThemedText
+          type="h4"
+          style={[styles.sectionTitle, { marginTop: Spacing.xl }]}
+        >
+          Custom Locations
+        </ThemedText>
+        <ThemedText type="caption" style={styles.description}>
+          Add your own storage locations like "Garage Fridge", "Wine Cellar",
+          etc.
+        </ThemedText>
 
-            <ThemedText type="caption" style={styles.iconLabel}>
-              Choose an icon
-            </ThemedText>
-            <View style={styles.iconGrid}>
-              {AVAILABLE_ICONS.map((icon) => (
-                <Pressable
-                  key={icon}
-                  style={[
-                    styles.iconOption,
-                    { backgroundColor: theme.glass.backgroundSubtle },
-                    selectedIcon === icon && {
-                      backgroundColor: AppColors.primary,
-                      borderColor: AppColors.primary,
-                    },
-                  ]}
-                  onPress={() => setSelectedIcon(icon)}
-                >
-                  <Feather
-                    name={icon as any}
-                    size={20}
-                    color={selectedIcon === icon ? "#FFFFFF" : theme.text}
+        {customLocations.length > 0 ? (
+          <GlassCard style={styles.locationsCard}>
+            {customLocations.map((location, index) => (
+              <View key={location.key}>
+                <View style={styles.locationRow}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      { backgroundColor: `${AppColors.accent}15` },
+                    ]}
+                  >
+                    <Feather
+                      name={location.icon as any}
+                      size={20}
+                      color={AppColors.accent}
+                    />
+                  </View>
+                  <ThemedText type="body" style={styles.locationLabel}>
+                    {location.label}
+                  </ThemedText>
+                  <Pressable
+                    style={styles.removeButton}
+                    onPress={() =>
+                      handleRemoveLocation(location.key, location.label)
+                    }
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Feather name="trash-2" size={18} color={AppColors.error} />
+                  </Pressable>
+                </View>
+                {index < customLocations.length - 1 ? (
+                  <View
+                    style={[
+                      styles.divider,
+                      { backgroundColor: theme.glass.border },
+                    ]}
                   />
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.addActions}>
-              <GlassButton
-                variant="ghost"
-                onPress={() => {
-                  setIsAdding(false);
-                  setNewLocationName("");
-                  setSelectedIcon("box");
-                }}
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </GlassButton>
-              <GlassButton
-                variant="primary"
-                onPress={handleAddLocation}
-                style={{ flex: 1, marginLeft: Spacing.md }}
-              >
-                Add Location
-              </GlassButton>
-            </View>
+                ) : null}
+              </View>
+            ))}
           </GlassCard>
         ) : (
-          <GlassButton
-            variant="primary"
-            onPress={() => setIsAdding(true)}
-            style={styles.addButton}
-          >
-            <Feather name="plus" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
-            Add Custom Location
-          </GlassButton>
-        )
-      ) : (
-        <Pressable
-          style={styles.proUpgradeCard}
-          onPress={() => setShowUpgradePrompt(true)}
-        >
-          <GlassCard style={styles.proUpgradeCardInner}>
-            <View style={styles.proUpgradeContent}>
-              <View style={[styles.lockIconContainer, { backgroundColor: `${AppColors.warning}20` }]}>
-                <Feather name="lock" size={24} color={AppColors.warning} />
-              </View>
-              <View style={styles.proUpgradeText}>
-                <View style={styles.proTitleRow}>
-                  <ThemedText type="body" style={styles.proUpgradeTitle}>
-                    Add Custom Locations
-                  </ThemedText>
-                  <View style={styles.proBadge}>
-                    <ThemedText type="small" style={styles.proBadgeText}>PRO</ThemedText>
-                  </View>
-                </View>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  Upgrade to create custom storage areas like "Garage Fridge" or "Wine Cellar"
-                </ThemedText>
-              </View>
-              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-            </View>
+          <GlassCard style={styles.emptyCard}>
+            <Feather name="inbox" size={40} color={theme.textSecondary} />
+            <ThemedText
+              type="body"
+              style={{ color: theme.textSecondary, marginTop: Spacing.md }}
+            >
+              No custom locations yet
+            </ThemedText>
           </GlassCard>
-        </Pressable>
-      )}
+        )}
 
-      {showUpgradePrompt && (
-        <UpgradePrompt
-          type="feature"
-          featureName="Custom Storage Areas"
-          onUpgrade={() => {
-            setShowUpgradePrompt(false);
-            // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
-            const rootNav = navigation.getParent()?.getParent()?.getParent();
-            if (rootNav) {
-              rootNav.navigate("Main" as any, { 
-                screen: 'Tabs', 
-                params: { 
-                  screen: 'ProfileTab', 
-                  params: { screen: 'Subscription' } 
-                } 
-              });
-            }
-          }}
-          onDismiss={() => setShowUpgradePrompt(false)}
-        />
-      )}
+        {canCustomize ? (
+          isAdding ? (
+            <GlassCard style={styles.addCard}>
+              <ThemedText type="h4" style={styles.addTitle}>
+                New Storage Location
+              </ThemedText>
+
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    color: theme.text,
+                    borderColor: theme.glass.border,
+                  },
+                ]}
+                value={newLocationName}
+                onChangeText={setNewLocationName}
+                placeholder="Enter location name..."
+                placeholderTextColor={theme.textSecondary}
+                autoFocus
+              />
+
+              <ThemedText type="caption" style={styles.iconLabel}>
+                Choose an icon
+              </ThemedText>
+              <View style={styles.iconGrid}>
+                {AVAILABLE_ICONS.map((icon) => (
+                  <Pressable
+                    key={icon}
+                    style={[
+                      styles.iconOption,
+                      { backgroundColor: theme.glass.backgroundSubtle },
+                      selectedIcon === icon && {
+                        backgroundColor: AppColors.primary,
+                        borderColor: AppColors.primary,
+                      },
+                    ]}
+                    onPress={() => setSelectedIcon(icon)}
+                  >
+                    <Feather
+                      name={icon as any}
+                      size={20}
+                      color={selectedIcon === icon ? "#FFFFFF" : theme.text}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.addActions}>
+                <GlassButton
+                  variant="ghost"
+                  onPress={() => {
+                    setIsAdding(false);
+                    setNewLocationName("");
+                    setSelectedIcon("box");
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </GlassButton>
+                <GlassButton
+                  variant="primary"
+                  onPress={handleAddLocation}
+                  style={{ flex: 1, marginLeft: Spacing.md }}
+                >
+                  Add Location
+                </GlassButton>
+              </View>
+            </GlassCard>
+          ) : (
+            <GlassButton
+              variant="primary"
+              onPress={() => setIsAdding(true)}
+              style={styles.addButton}
+            >
+              <Feather
+                name="plus"
+                size={20}
+                color="#FFFFFF"
+                style={{ marginRight: Spacing.sm }}
+              />
+              Add Custom Location
+            </GlassButton>
+          )
+        ) : (
+          <Pressable
+            style={styles.proUpgradeCard}
+            onPress={() => setShowUpgradePrompt(true)}
+          >
+            <GlassCard style={styles.proUpgradeCardInner}>
+              <View style={styles.proUpgradeContent}>
+                <View
+                  style={[
+                    styles.lockIconContainer,
+                    { backgroundColor: `${AppColors.warning}20` },
+                  ]}
+                >
+                  <Feather name="lock" size={24} color={AppColors.warning} />
+                </View>
+                <View style={styles.proUpgradeText}>
+                  <View style={styles.proTitleRow}>
+                    <ThemedText type="body" style={styles.proUpgradeTitle}>
+                      Add Custom Locations
+                    </ThemedText>
+                    <View style={styles.proBadge}>
+                      <ThemedText type="small" style={styles.proBadgeText}>
+                        PRO
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText
+                    type="caption"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    Upgrade to create custom storage areas like "Garage Fridge"
+                    or "Wine Cellar"
+                  </ThemedText>
+                </View>
+                <Feather
+                  name="chevron-right"
+                  size={20}
+                  color={theme.textSecondary}
+                />
+              </View>
+            </GlassCard>
+          </Pressable>
+        )}
+
+        {showUpgradePrompt && (
+          <UpgradePrompt
+            type="feature"
+            featureName="Custom Storage Areas"
+            onUpgrade={() => {
+              setShowUpgradePrompt(false);
+              // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
+              const rootNav = navigation.getParent()?.getParent()?.getParent();
+              if (rootNav) {
+                rootNav.navigate("Main" as any, {
+                  screen: "Tabs",
+                  params: {
+                    screen: "ProfileTab",
+                    params: { screen: "Subscription" },
+                  },
+                });
+              }
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        )}
       </KeyboardAwareScrollViewCompat>
     </View>
   );

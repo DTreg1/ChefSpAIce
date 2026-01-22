@@ -577,10 +577,30 @@ const DIETARY_PREFERENCE_OPTIONS = [
 ];
 
 const DEFAULT_STORAGE_AREAS = [
-  { id: "fridge", label: "Refrigerator", icon: "thermometer" as const, description: "For perishable items" },
-  { id: "freezer", label: "Freezer", icon: "cloud-snow" as const, description: "For frozen goods" },
-  { id: "pantry", label: "Pantry", icon: "box" as const, description: "For dry goods & canned items" },
-  { id: "counter", label: "Counter", icon: "home" as const, description: "For fruits & daily items" },
+  {
+    id: "fridge",
+    label: "Refrigerator",
+    icon: "thermometer" as const,
+    description: "For perishable items",
+  },
+  {
+    id: "freezer",
+    label: "Freezer",
+    icon: "cloud-snow" as const,
+    description: "For frozen goods",
+  },
+  {
+    id: "pantry",
+    label: "Pantry",
+    icon: "box" as const,
+    description: "For dry goods & canned items",
+  },
+  {
+    id: "counter",
+    label: "Counter",
+    icon: "home" as const,
+    description: "For fruits & daily items",
+  },
 ];
 
 function FoodItemRow({
@@ -711,8 +731,8 @@ export default function OnboardingScreen() {
   const navigation = useNavigation();
   const { markOnboardingComplete } = useOnboardingStatus();
   const { entitlements } = useSubscription();
-  
-  const isPro = entitlements.maxCookware === 'unlimited';
+
+  const isPro = entitlements.maxCookware === "unlimited";
 
   const [step, setStep] = useState<OnboardingStep>("preferences");
   const [stepLoaded, setStepLoaded] = useState(false);
@@ -731,7 +751,12 @@ export default function OnboardingScreen() {
     const loadSavedStep = async () => {
       try {
         const savedStep = await storage.getOnboardingStep();
-        if (savedStep && ["preferences", "storage", "foods", "cookware", "complete"].includes(savedStep)) {
+        if (
+          savedStep &&
+          ["preferences", "storage", "foods", "cookware", "complete"].includes(
+            savedStep,
+          )
+        ) {
           setStep(savedStep as OnboardingStep);
         }
       } catch (err) {
@@ -756,13 +781,13 @@ export default function OnboardingScreen() {
   const [servingSize, setServingSize] = useState(2);
   const [dailyMeals, setDailyMeals] = useState(3);
   const [selectedCuisines, setSelectedCuisines] = useState<Set<string>>(
-    new Set(["american", "italian", "mexican"])
+    new Set(["american", "italian", "mexican"]),
   );
   const [dietaryPreferences, setDietaryPreferences] = useState<Set<string>>(
-    new Set(["none"])
+    new Set(["none"]),
   );
   const [selectedStorageAreas, setSelectedStorageAreas] = useState<Set<string>>(
-    new Set(["fridge", "freezer", "pantry", "counter"])
+    new Set(["fridge", "freezer", "pantry", "counter"]),
   );
   const [appliancesLoaded, setAppliancesLoaded] = useState(false);
 
@@ -774,8 +799,8 @@ export default function OnboardingScreen() {
   // Also watch entitlements.maxCookware directly for more reliable enforcement
   useEffect(() => {
     const maxCookware = entitlements.maxCookware;
-    const limit = maxCookware === 'unlimited' ? Infinity : maxCookware;
-    
+    const limit = maxCookware === "unlimited" ? Infinity : maxCookware;
+
     if (appliancesLoaded && selectedEquipmentIds.size > limit) {
       // Trim excess items to enforce limit
       const trimmedIds = Array.from(selectedEquipmentIds).slice(0, limit);
@@ -811,28 +836,31 @@ export default function OnboardingScreen() {
     }
   };
 
-
   const equipmentSelectedCount = selectedEquipmentIds.size;
   const foodSelectedCount = selectedFoodIds.size;
-  const isAtEquipmentLimit = !isPro && equipmentSelectedCount >= BASIC_COOKWARE_LIMIT;
+  const isAtEquipmentLimit =
+    !isPro && equipmentSelectedCount >= BASIC_COOKWARE_LIMIT;
 
-  const toggleAppliance = useCallback((id: number) => {
-    setSelectedEquipmentIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        // Always allow deselecting
-        newSet.delete(id);
-      } else {
-        // Check limit before adding
-        if (!isPro && newSet.size >= BASIC_COOKWARE_LIMIT) {
-          // At limit, don't add more
-          return prev;
+  const toggleAppliance = useCallback(
+    (id: number) => {
+      setSelectedEquipmentIds((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+          // Always allow deselecting
+          newSet.delete(id);
+        } else {
+          // Check limit before adding
+          if (!isPro && newSet.size >= BASIC_COOKWARE_LIMIT) {
+            // At limit, don't add more
+            return prev;
+          }
+          newSet.add(id);
         }
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  }, [isPro]);
+        return newSet;
+      });
+    },
+    [isPro],
+  );
 
   const toggleCuisine = useCallback((id: string) => {
     setSelectedCuisines((prev) => {
@@ -964,7 +992,9 @@ export default function OnboardingScreen() {
         servingSize,
         dailyMeals,
         cuisinePreferences: Array.from(selectedCuisines),
-        dietaryRestrictions: Array.from(dietaryPreferences).filter(d => d !== "none"),
+        dietaryRestrictions: Array.from(dietaryPreferences).filter(
+          (d) => d !== "none",
+        ),
         storageAreas: Array.from(selectedStorageAreas),
       });
 
@@ -978,10 +1008,12 @@ export default function OnboardingScreen() {
       // Get existing inventory to merge with (avoid duplicates)
       const existingInventory = await storage.getInventory();
       const existingByFdcId = new Map(
-        existingInventory.filter(item => item.fdcId).map(item => [item.fdcId, item])
+        existingInventory
+          .filter((item) => item.fdcId)
+          .map((item) => [item.fdcId, item]),
       );
       const existingByName = new Map(
-        existingInventory.map(item => [item.name.toLowerCase(), item])
+        existingInventory.map((item) => [item.name.toLowerCase(), item]),
       );
 
       const newItems: FoodItem[] = [];
@@ -1101,7 +1133,12 @@ export default function OnboardingScreen() {
           <ThemedText style={styles.preferenceSectionTitle}>
             Household Size
           </ThemedText>
-          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.preferenceSectionDesc,
+              { color: theme.textSecondary },
+            ]}
+          >
             How many people are you cooking for?
           </ThemedText>
           <View style={styles.preferenceOptionsGrid}>
@@ -1117,19 +1154,28 @@ export default function OnboardingScreen() {
                 style={[
                   styles.preferenceOption,
                   {
-                    backgroundColor: servingSize === option.value
-                      ? `${AppColors.primary}20`
-                      : theme.backgroundSecondary,
-                    borderColor: servingSize === option.value
-                      ? AppColors.primary
-                      : theme.border,
+                    backgroundColor:
+                      servingSize === option.value
+                        ? `${AppColors.primary}20`
+                        : theme.backgroundSecondary,
+                    borderColor:
+                      servingSize === option.value
+                        ? AppColors.primary
+                        : theme.border,
                   },
                 ]}
               >
-                <ThemedText style={[
-                  styles.preferenceOptionText,
-                  { color: servingSize === option.value ? AppColors.primary : theme.text }
-                ]}>
+                <ThemedText
+                  style={[
+                    styles.preferenceOptionText,
+                    {
+                      color:
+                        servingSize === option.value
+                          ? AppColors.primary
+                          : theme.text,
+                    },
+                  ]}
+                >
                   {option.label}
                 </ThemedText>
               </Pressable>
@@ -1141,7 +1187,12 @@ export default function OnboardingScreen() {
           <ThemedText style={styles.preferenceSectionTitle}>
             Daily Meals
           </ThemedText>
-          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.preferenceSectionDesc,
+              { color: theme.textSecondary },
+            ]}
+          >
             How many meals do you typically have per day?
           </ThemedText>
           <View style={styles.preferenceOptionsGrid}>
@@ -1157,19 +1208,28 @@ export default function OnboardingScreen() {
                 style={[
                   styles.preferenceOption,
                   {
-                    backgroundColor: dailyMeals === option.value
-                      ? `${AppColors.primary}20`
-                      : theme.backgroundSecondary,
-                    borderColor: dailyMeals === option.value
-                      ? AppColors.primary
-                      : theme.border,
+                    backgroundColor:
+                      dailyMeals === option.value
+                        ? `${AppColors.primary}20`
+                        : theme.backgroundSecondary,
+                    borderColor:
+                      dailyMeals === option.value
+                        ? AppColors.primary
+                        : theme.border,
                   },
                 ]}
               >
-                <ThemedText style={[
-                  styles.preferenceOptionText,
-                  { color: dailyMeals === option.value ? AppColors.primary : theme.text }
-                ]}>
+                <ThemedText
+                  style={[
+                    styles.preferenceOptionText,
+                    {
+                      color:
+                        dailyMeals === option.value
+                          ? AppColors.primary
+                          : theme.text,
+                    },
+                  ]}
+                >
                   {option.label}
                 </ThemedText>
               </Pressable>
@@ -1181,7 +1241,12 @@ export default function OnboardingScreen() {
           <ThemedText style={styles.preferenceSectionTitle}>
             Favorite Cuisines
           </ThemedText>
-          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.preferenceSectionDesc,
+              { color: theme.textSecondary },
+            ]}
+          >
             Select cuisines you enjoy cooking (select multiple)
           </ThemedText>
           <View style={styles.preferenceOptionsGrid}>
@@ -1209,10 +1274,12 @@ export default function OnboardingScreen() {
                     color={isSelected ? AppColors.primary : theme.textSecondary}
                     style={{ marginRight: 6 }}
                   />
-                  <ThemedText style={[
-                    styles.preferenceOptionText,
-                    { color: isSelected ? AppColors.primary : theme.text }
-                  ]}>
+                  <ThemedText
+                    style={[
+                      styles.preferenceOptionText,
+                      { color: isSelected ? AppColors.primary : theme.text },
+                    ]}
+                  >
                     {cuisine.label}
                   </ThemedText>
                 </Pressable>
@@ -1225,7 +1292,12 @@ export default function OnboardingScreen() {
           <ThemedText style={styles.preferenceSectionTitle}>
             Dietary Preferences
           </ThemedText>
-          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.preferenceSectionDesc,
+              { color: theme.textSecondary },
+            ]}
+          >
             Any dietary restrictions or preferences?
           </ThemedText>
           <View style={styles.preferenceOptionsGrid}>
@@ -1253,10 +1325,12 @@ export default function OnboardingScreen() {
                     color={isSelected ? AppColors.primary : theme.textSecondary}
                     style={{ marginRight: 6 }}
                   />
-                  <ThemedText style={[
-                    styles.preferenceOptionText,
-                    { color: isSelected ? AppColors.primary : theme.text }
-                  ]}>
+                  <ThemedText
+                    style={[
+                      styles.preferenceOptionText,
+                      { color: isSelected ? AppColors.primary : theme.text },
+                    ]}
+                  >
                     {pref.label}
                   </ThemedText>
                 </Pressable>
@@ -1321,7 +1395,12 @@ export default function OnboardingScreen() {
           <ThemedText style={styles.preferenceSectionTitle}>
             Select Your Storage Areas
           </ThemedText>
-          <ThemedText style={[styles.preferenceSectionDesc, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.preferenceSectionDesc,
+              { color: theme.textSecondary },
+            ]}
+          >
             Choose which storage areas you have in your kitchen
           </ThemedText>
           <View style={styles.storageAreasGrid}>
@@ -1363,12 +1442,20 @@ export default function OnboardingScreen() {
                     {area.label}
                   </ThemedText>
                   <ThemedText
-                    style={[styles.storageAreaDesc, { color: theme.textSecondary }]}
+                    style={[
+                      styles.storageAreaDesc,
+                      { color: theme.textSecondary },
+                    ]}
                   >
                     {area.description}
                   </ThemedText>
                   {isSelected && (
-                    <View style={[styles.storageCheckmark, { backgroundColor: AppColors.primary }]}>
+                    <View
+                      style={[
+                        styles.storageCheckmark,
+                        { backgroundColor: AppColors.primary },
+                      ]}
+                    >
                       <Feather name="check" size={12} color="#FFFFFF" />
                     </View>
                   )}
@@ -1380,7 +1467,9 @@ export default function OnboardingScreen() {
 
         <View style={styles.storageNote}>
           <Feather name="info" size={16} color={theme.textSecondary} />
-          <ThemedText style={[styles.storageNoteText, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[styles.storageNoteText, { color: theme.textSecondary }]}
+          >
             You can add custom storage areas later in Settings
           </ThemedText>
         </View>
@@ -1473,18 +1562,37 @@ export default function OnboardingScreen() {
           <View
             style={[
               styles.statBadge,
-              { backgroundColor: isAtEquipmentLimit ? `${AppColors.warning}15` : `${AppColors.primary}15` },
+              {
+                backgroundColor: isAtEquipmentLimit
+                  ? `${AppColors.warning}15`
+                  : `${AppColors.primary}15`,
+              },
             ]}
           >
-            <Feather name="tool" size={14} color={isAtEquipmentLimit ? AppColors.warning : AppColors.primary} />
+            <Feather
+              name="tool"
+              size={14}
+              color={isAtEquipmentLimit ? AppColors.warning : AppColors.primary}
+            />
             <ThemedText
-              style={[styles.statBadgeText, { color: isAtEquipmentLimit ? AppColors.warning : AppColors.primary }]}
+              style={[
+                styles.statBadgeText,
+                {
+                  color: isAtEquipmentLimit
+                    ? AppColors.warning
+                    : AppColors.primary,
+                },
+              ]}
             >
-              {isPro ? `${equipmentSelectedCount} Cookware` : `${equipmentSelectedCount}/${BASIC_COOKWARE_LIMIT} Cookware`}
+              {isPro
+                ? `${equipmentSelectedCount} Cookware`
+                : `${equipmentSelectedCount}/${BASIC_COOKWARE_LIMIT} Cookware`}
             </ThemedText>
           </View>
           {isAtEquipmentLimit && (
-            <ThemedText style={[styles.limitWarning, { color: AppColors.warning }]}>
+            <ThemedText
+              style={[styles.limitWarning, { color: AppColors.warning }]}
+            >
               Basic plan limit reached. Upgrade for unlimited cookware.
             </ThemedText>
           )}

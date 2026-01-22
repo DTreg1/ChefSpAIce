@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, Pressable, Platform, AppState, AppStateStatus } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Platform,
+  AppState,
+  AppStateStatus,
+} from "react-native";
 import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -34,7 +41,7 @@ export default function BarcodeScannerScreen() {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   // Handle AppState changes - suspend camera when app goes to background
@@ -42,8 +49,11 @@ export default function BarcodeScannerScreen() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
-    
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [isScreenFocused]);
 
@@ -140,7 +150,10 @@ export default function BarcodeScannerScreen() {
           We need access to your camera to scan barcodes and quickly add items
           to your inventory.
         </ThemedText>
-        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
           Enable Camera
         </GlassButton>
         <GlassButton

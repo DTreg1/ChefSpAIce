@@ -10,17 +10,24 @@ export interface NutritionScoreResult {
   completenessLevel: "full" | "partial" | "minimal";
 }
 
-export function calculateNutritionScore(nutrition: NutritionInfo): NutritionScoreResult {
+export function calculateNutritionScore(
+  nutrition: NutritionInfo,
+): NutritionScoreResult {
   const { calories, protein, carbs, fat, fiber, sugar, sodium } = nutrition;
 
   const hasFiber = fiber !== undefined && fiber !== null;
   const hasSugar = sugar !== undefined && sugar !== null;
   const hasSodium = sodium !== undefined && sodium !== null;
 
-  const optionalFieldCount = [hasFiber, hasSugar, hasSodium].filter(Boolean).length;
+  const optionalFieldCount = [hasFiber, hasSugar, hasSodium].filter(
+    Boolean,
+  ).length;
   const completenessLevel: "full" | "partial" | "minimal" =
-    optionalFieldCount === 3 ? "full" :
-    optionalFieldCount >= 1 ? "partial" : "minimal";
+    optionalFieldCount === 3
+      ? "full"
+      : optionalFieldCount >= 1
+        ? "partial"
+        : "minimal";
 
   if (completenessLevel === "minimal") {
     return {
@@ -36,10 +43,10 @@ export function calculateNutritionScore(nutrition: NutritionInfo): NutritionScor
   let score = 50;
 
   const calorieRatio = calories > 0 ? 100 / calories : 1;
-  const proteinPer100Cal = (protein * calorieRatio);
-  const fiberPer100Cal = hasFiber ? ((fiber || 0) * calorieRatio) : 0;
-  const sugarPer100Cal = hasSugar ? ((sugar || 0) * calorieRatio) : 0;
-  const sodiumPer100Cal = hasSodium ? ((sodium || 0) * calorieRatio) : 0;
+  const proteinPer100Cal = protein * calorieRatio;
+  const fiberPer100Cal = hasFiber ? (fiber || 0) * calorieRatio : 0;
+  const sugarPer100Cal = hasSugar ? (sugar || 0) * calorieRatio : 0;
+  const sodiumPer100Cal = hasSodium ? (sodium || 0) * calorieRatio : 0;
 
   if (proteinPer100Cal >= 8) {
     score += 12;
@@ -90,7 +97,7 @@ export function calculateNutritionScore(nutrition: NutritionInfo): NutritionScor
     const proteinRatio = protein / totalMacros;
     const fatRatio = fat / totalMacros;
 
-    if (proteinRatio >= 0.30 && proteinRatio <= 0.40) {
+    if (proteinRatio >= 0.3 && proteinRatio <= 0.4) {
       score += 4;
     }
     if (fatRatio > 0.55) {

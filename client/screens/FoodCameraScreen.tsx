@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Platform,
+  Alert,
+  AppState,
+  AppStateStatus,
+} from "react-native";
 import { logger } from "@/lib/logger";
 import Animated, {
   useSharedValue,
@@ -37,7 +45,6 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { storage, FoodItem, generateId } from "@/lib/storage";
 
 type StorageLocationValue = "fridge" | "freezer" | "pantry" | "counter";
-
 
 type ScreenState = "idle" | "preview" | "analyzing" | "results";
 
@@ -157,7 +164,7 @@ export default function FoodCameraScreen() {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   // Handle AppState changes - suspend camera when app goes to background
@@ -165,8 +172,11 @@ export default function FoodCameraScreen() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
-    
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [isScreenFocused]);
 
@@ -181,7 +191,7 @@ export default function FoodCameraScreen() {
       const url = new URL("/api/ai/analyze-food", baseUrl);
 
       const formData = new FormData();
-      
+
       if (Platform.OS === "web") {
         const response = await fetch(imageUri);
         const blob = await response.blob();
@@ -191,7 +201,7 @@ export default function FoodCameraScreen() {
         if (!fileInfo.exists) {
           throw new Error("Image file not found");
         }
-        
+
         formData.append("image", {
           uri: imageUri,
           type: "image/jpeg",
@@ -221,30 +231,31 @@ export default function FoodCameraScreen() {
     onError: (error: Error) => {
       console.error("Food analysis error:", error);
       setScreenState("preview");
-      
+
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
-      
+
       Alert.alert(
         "Analysis Failed",
-        error.message || "Unable to analyze the image. Please try again or use manual entry.",
+        error.message ||
+          "Unable to analyze the image. Please try again or use manual entry.",
         [
-          { 
-            text: "Try Again", 
+          {
+            text: "Try Again",
             onPress: () => {
               if (capturedImage) {
                 setScreenState("analyzing");
                 analyzeImageMutation.mutate(capturedImage);
               }
-            }
+            },
           },
-          { 
-            text: "Manual Entry", 
-            onPress: () => navigation.navigate("AddItem", {})
+          {
+            text: "Manual Entry",
+            onPress: () => navigation.navigate("AddItem", {}),
           },
           { text: "OK", style: "cancel" },
-        ]
+        ],
       );
     },
   });
@@ -436,7 +447,10 @@ export default function FoodCameraScreen() {
           We need access to your camera to identify food items and add them to
           your inventory.
         </ThemedText>
-        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
           Enable Camera
         </GlassButton>
         <GlassButton
@@ -564,7 +578,11 @@ export default function FoodCameraScreen() {
   return (
     <View style={styles.container}>
       {isCameraActive && (
-        <CameraView ref={cameraRef} style={[StyleSheet.absoluteFill, styles.cameraView]} facing="back">
+        <CameraView
+          ref={cameraRef}
+          style={[StyleSheet.absoluteFill, styles.cameraView]}
+          facing="back"
+        >
           <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
             <View style={styles.cameraHeader}>
               <View style={styles.headerPlaceholder} />

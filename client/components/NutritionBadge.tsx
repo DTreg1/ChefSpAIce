@@ -28,15 +28,21 @@ export function NutritionBadge({
   const fat = Math.round(nutrition.fat * quantity);
 
   const totalMacroGrams = protein + carbs + fat;
-  const proteinPercent = totalMacroGrams > 0 ? Math.round((protein / totalMacroGrams) * 100) : 0;
-  const carbsPercent = totalMacroGrams > 0 ? Math.round((carbs / totalMacroGrams) * 100) : 0;
-  const fatPercent = totalMacroGrams > 0 ? Math.round((fat / totalMacroGrams) * 100) : 0;
+  const proteinPercent =
+    totalMacroGrams > 0 ? Math.round((protein / totalMacroGrams) * 100) : 0;
+  const carbsPercent =
+    totalMacroGrams > 0 ? Math.round((carbs / totalMacroGrams) * 100) : 0;
+  const fatPercent =
+    totalMacroGrams > 0 ? Math.round((fat / totalMacroGrams) * 100) : 0;
 
   return (
     <View style={styles.wrapper}>
       {showCalories ? (
         <View
-          style={[styles.calorieRow, { backgroundColor: theme.backgroundSecondary }]}
+          style={[
+            styles.calorieRow,
+            { backgroundColor: theme.backgroundSecondary },
+          ]}
         >
           <Feather name="zap" size={12} color={theme.textSecondary} />
           <ThemedText
@@ -49,27 +55,60 @@ export function NutritionBadge({
       ) : null}
       {showMacros ? (
         <View style={styles.macroRow}>
-          <View style={[styles.macroBadge, { backgroundColor: "rgba(46, 204, 113, 0.15)" }]}>
-            <ThemedText type="caption" style={[styles.macroText, { color: AppColors.success }]}>
+          <View
+            style={[
+              styles.macroBadge,
+              { backgroundColor: "rgba(46, 204, 113, 0.15)" },
+            ]}
+          >
+            <ThemedText
+              type="caption"
+              style={[styles.macroText, { color: AppColors.success }]}
+            >
               P {protein}g
             </ThemedText>
-            <ThemedText type="caption" style={[styles.percentText, { color: AppColors.success }]}>
+            <ThemedText
+              type="caption"
+              style={[styles.percentText, { color: AppColors.success }]}
+            >
               {proteinPercent}%
             </ThemedText>
           </View>
-          <View style={[styles.macroBadge, { backgroundColor: "rgba(52, 152, 219, 0.15)" }]}>
-            <ThemedText type="caption" style={[styles.macroText, { color: AppColors.accent }]}>
+          <View
+            style={[
+              styles.macroBadge,
+              { backgroundColor: "rgba(52, 152, 219, 0.15)" },
+            ]}
+          >
+            <ThemedText
+              type="caption"
+              style={[styles.macroText, { color: AppColors.accent }]}
+            >
               C {carbs}g
             </ThemedText>
-            <ThemedText type="caption" style={[styles.percentText, { color: AppColors.accent }]}>
+            <ThemedText
+              type="caption"
+              style={[styles.percentText, { color: AppColors.accent }]}
+            >
               {carbsPercent}%
             </ThemedText>
           </View>
-          <View style={[styles.macroBadge, { backgroundColor: "rgba(230, 126, 34, 0.15)" }]}>
-            <ThemedText type="caption" style={[styles.macroText, { color: AppColors.secondary }]}>
+          <View
+            style={[
+              styles.macroBadge,
+              { backgroundColor: "rgba(230, 126, 34, 0.15)" },
+            ]}
+          >
+            <ThemedText
+              type="caption"
+              style={[styles.macroText, { color: AppColors.secondary }]}
+            >
               F {fat}g
             </ThemedText>
-            <ThemedText type="caption" style={[styles.percentText, { color: AppColors.secondary }]}>
+            <ThemedText
+              type="caption"
+              style={[styles.percentText, { color: AppColors.secondary }]}
+            >
               {fatPercent}%
             </ThemedText>
           </View>

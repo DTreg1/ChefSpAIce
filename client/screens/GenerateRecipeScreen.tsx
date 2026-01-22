@@ -82,7 +82,13 @@ export default function GenerateRecipeScreen() {
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
   const route = useRoute<RouteProp<RecipesStackParamList, "GenerateRecipe">>();
   const customSettings = route.params?.customSettings;
-  const { checkLimit, usage, entitlements, isProUser, refetch: refetchSubscription } = useSubscription();
+  const {
+    checkLimit,
+    usage,
+    entitlements,
+    isProUser,
+    refetch: refetchSubscription,
+  } = useSubscription();
 
   const [inventory, setInventory] = useState<InventoryItemWithExpiry[]>([]);
   const [cookware, setCookware] = useState<
@@ -194,7 +200,7 @@ export default function GenerateRecipeScreen() {
     }
 
     // Check AI recipe limit before generating
-    const aiRecipeLimit = checkLimit('aiRecipes');
+    const aiRecipeLimit = checkLimit("aiRecipes");
     if (!aiRecipeLimit.allowed) {
       setShowUpgradePrompt(true);
       return;
@@ -221,7 +227,7 @@ export default function GenerateRecipeScreen() {
       const dietaryRestrictions = userPreferences?.dietaryRestrictions?.length
         ? userPreferences.dietaryRestrictions.join(", ")
         : undefined;
-      
+
       // Use custom cuisine if specified, otherwise random from preferences
       const cuisinePreference = customSettings?.cuisine
         ? customSettings.cuisine
@@ -232,13 +238,14 @@ export default function GenerateRecipeScreen() {
               )
             ]
           : undefined;
-      
+
       const macroTargets =
         userPreferences?.macroTargets || DEFAULT_MACRO_TARGETS;
 
       // Use custom settings if provided, otherwise use defaults
       const effectiveServings = customSettings?.servings ?? 1;
-      const effectiveMaxTime = customSettings?.maxTime ?? (isQuickRecipe ? 20 : 60);
+      const effectiveMaxTime =
+        customSettings?.maxTime ?? (isQuickRecipe ? 20 : 60);
       const effectiveMealType = customSettings?.mealType ?? mealType;
       const effectiveIngredientCount = customSettings?.ingredientCount;
 
@@ -332,7 +339,10 @@ export default function GenerateRecipeScreen() {
                 newRecipe.id,
                 imageData.imageBase64,
               );
-              logger.log("[GenerateRecipe] Saved base64 image, URI:", imageUri?.substring(0, 50));
+              logger.log(
+                "[GenerateRecipe] Saved base64 image, URI:",
+                imageUri?.substring(0, 50),
+              );
             } else if (imageData.imageUrl) {
               imageUri = await saveRecipeImageFromUrl(
                 newRecipe.id,
@@ -342,7 +352,10 @@ export default function GenerateRecipeScreen() {
             }
             if (imageUri) {
               newRecipe.imageUri = imageUri;
-              logger.log("[GenerateRecipe] Recipe imageUri set:", !!newRecipe.imageUri);
+              logger.log(
+                "[GenerateRecipe] Recipe imageUri set:",
+                !!newRecipe.imageUri,
+              );
             }
           }
         }
@@ -437,10 +450,7 @@ export default function GenerateRecipeScreen() {
         showBackButton={true}
       />
       <View
-        style={[
-          styles.content,
-          { paddingTop: 56 + insets.top + Spacing.lg },
-        ]}
+        style={[styles.content, { paddingTop: 56 + insets.top + Spacing.lg }]}
       >
         <View style={styles.heroSection}>
           <View
@@ -465,15 +475,26 @@ export default function GenerateRecipeScreen() {
             <ThemedText type="caption">AI Recipes</ThemedText>
             {isProUser ? (
               <View style={styles.unlimitedBadge}>
-                <MaterialCommunityIcons name="infinity" size={12} color={AppColors.secondary} />
-                <ThemedText type="caption" style={{ color: AppColors.secondary, marginLeft: 4 }}>
+                <MaterialCommunityIcons
+                  name="infinity"
+                  size={12}
+                  color={AppColors.secondary}
+                />
+                <ThemedText
+                  type="caption"
+                  style={{ color: AppColors.secondary, marginLeft: 4 }}
+                >
                   Unlimited
                 </ThemedText>
               </View>
             ) : (
               <UsageBadge
                 current={usage.aiRecipesUsedThisMonth}
-                max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+                max={
+                  typeof entitlements.maxAiRecipes === "number"
+                    ? entitlements.maxAiRecipes
+                    : 5
+                }
               />
             )}
           </View>
@@ -634,24 +655,33 @@ export default function GenerateRecipeScreen() {
         </View>
       </Modal>
 
-      {showUpgradePrompt && Platform.OS === 'web' && (
+      {showUpgradePrompt && Platform.OS === "web" && (
         <View style={styles.webUpgradeOverlay}>
           <UpgradePrompt
             type="limit"
             limitName="AI Recipes"
-            remaining={Math.max(0, (typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5) - usage.aiRecipesUsedThisMonth)}
-            max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+            remaining={Math.max(
+              0,
+              (typeof entitlements.maxAiRecipes === "number"
+                ? entitlements.maxAiRecipes
+                : 5) - usage.aiRecipesUsedThisMonth,
+            )}
+            max={
+              typeof entitlements.maxAiRecipes === "number"
+                ? entitlements.maxAiRecipes
+                : 5
+            }
             onUpgrade={() => {
               setShowUpgradePrompt(false);
               // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
               const rootNav = navigation.getParent()?.getParent()?.getParent();
               if (rootNav) {
-                rootNav.navigate("Main" as any, { 
-                  screen: 'Tabs', 
-                  params: { 
-                    screen: 'ProfileTab', 
-                    params: { screen: 'Subscription' } 
-                  } 
+                rootNav.navigate("Main" as any, {
+                  screen: "Tabs",
+                  params: {
+                    screen: "ProfileTab",
+                    params: { screen: "Subscription" },
+                  },
                 });
               }
             }}
@@ -659,7 +689,7 @@ export default function GenerateRecipeScreen() {
           />
         </View>
       )}
-      {showUpgradePrompt && Platform.OS !== 'web' && (
+      {showUpgradePrompt && Platform.OS !== "web" && (
         <Modal
           visible={showUpgradePrompt}
           transparent
@@ -670,13 +700,22 @@ export default function GenerateRecipeScreen() {
             <UpgradePrompt
               type="limit"
               limitName="AI Recipes"
-              remaining={Math.max(0, (typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5) - usage.aiRecipesUsedThisMonth)}
-              max={typeof entitlements.maxAiRecipes === 'number' ? entitlements.maxAiRecipes : 5}
+              remaining={Math.max(
+                0,
+                (typeof entitlements.maxAiRecipes === "number"
+                  ? entitlements.maxAiRecipes
+                  : 5) - usage.aiRecipesUsedThisMonth,
+              )}
+              max={
+                typeof entitlements.maxAiRecipes === "number"
+                  ? entitlements.maxAiRecipes
+                  : 5
+              }
               onUpgrade={() => {
                 setShowUpgradePrompt(false);
-                navigation.navigate("Main" as any, { 
-                  screen: 'ProfileTab', 
-                  params: { screen: 'Subscription' } 
+                navigation.navigate("Main" as any, {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
                 });
               }}
               onDismiss={() => setShowUpgradePrompt(false)}

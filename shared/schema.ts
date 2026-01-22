@@ -2,15 +2,15 @@
  * =============================================================================
  * CHEFSP-AICE DATABASE SCHEMA
  * =============================================================================
- * 
+ *
  * This file defines all database tables and types for the ChefSpAIce application.
  * It uses Drizzle ORM with PostgreSQL and Zod for validation.
- * 
+ *
  * Key concepts:
  * - Tables are defined using pgTable() from drizzle-orm
  * - Insert schemas are created with createInsertSchema() from drizzle-zod
  * - Types are inferred for both insert operations and select queries
- * 
+ *
  * The schema covers:
  * - User management and authentication
  * - User preferences and settings
@@ -43,17 +43,17 @@ import { z } from "zod";
 
 /**
  * USERS TABLE
- * 
+ *
  * Stores core user account information and preferences.
  * This is the central table that other tables reference via userId.
- * 
+ *
  * Fields:
  * - id: UUID primary key, auto-generated
  * - password: Hashed password for email/password authentication
  * - displayName: User's chosen display name
  * - email: Required unique email address
  * - profileImageUrl: URL to user's profile picture
- * 
+ *
  * Preference fields:
  * - dietaryRestrictions: Array of dietary needs (e.g., "vegetarian", "gluten-free")
  * - allergens: Array of food allergies (e.g., "peanuts", "shellfish")
@@ -64,7 +64,7 @@ import { z } from "zod";
  * - cookingSkillLevel: "beginner", "intermediate", or "advanced"
  * - preferredUnits: "imperial" or "metric"
  * - foodsToAvoid: Foods user wants to avoid (separate from allergens)
- * 
+ *
  * App state:
  * - hasCompletedOnboarding: Whether user finished initial setup
  * - notificationsEnabled: Master notification toggle
@@ -73,11 +73,11 @@ import { z } from "zod";
  * - notifyMealReminders: Remind about planned meals
  * - notificationTime: Preferred time for notifications (24h format)
  * - isAdmin: Whether user has admin access
- * 
+ *
  * Auth provider fields:
  * - primaryProvider: Main auth method ("email", "google", "apple")
  * - primaryProviderId: Provider's unique ID for this user
- * 
+ *
  * Subscription fields:
  * - subscriptionTier: "BASIC" or "PRO" (default: BASIC)
  * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
@@ -86,7 +86,7 @@ import { z } from "zod";
  * - aiRecipesGeneratedThisMonth: Counter for AI recipe generation limit (resets monthly)
  * - aiRecipesResetDate: When the monthly AI recipe counter resets
  * - trialEndsAt: When the 7-day trial expires
- * 
+ *
  * Pre-registration fields (for landing page signups):
  * - preRegistrationSource: Where the user signed up from ("landing", "app", etc.)
  * - preRegisteredAt: When the user pre-registered (before full activation)
@@ -131,7 +131,9 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").notNull().default("trialing"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month").notNull().default(0),
+  aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month")
+    .notNull()
+    .default(0),
   aiRecipesResetDate: timestamp("ai_recipes_reset_date"),
   trialEndsAt: timestamp("trial_ends_at"),
   preRegistrationSource: varchar("pre_registration_source"),
@@ -141,10 +143,10 @@ export const users = pgTable("users", {
 
 /**
  * AUTH PROVIDERS TABLE
- * 
+ *
  * Supports multiple authentication methods per user (email, Google, Apple).
  * Users can link multiple providers to the same account.
- * 
+ *
  * Fields:
  * - provider: Auth provider name ("email", "google", "apple")
  * - providerId: Unique ID from the provider (e.g., Google user ID)
@@ -153,7 +155,7 @@ export const users = pgTable("users", {
  * - tokenExpiry: When the access token expires
  * - isPrimary: Whether this is the user's primary login method
  * - metadata: Additional provider-specific data (JSONB)
- * 
+ *
  * Indexes ensure:
  * - Each provider+providerId combination is unique
  * - Fast lookup by userId
@@ -189,14 +191,14 @@ export const authProviders = pgTable(
 
 /**
  * USER SESSIONS TABLE
- * 
+ *
  * Manages active login sessions for authenticated users.
  * Each session has a unique token that the client sends with API requests.
- * 
+ *
  * Fields:
  * - token: Unique session token (sent in Authorization header)
  * - expiresAt: When the session becomes invalid
- * 
+ *
  * Sessions are validated on each protected API request.
  * Expired sessions are periodically cleaned up.
  */
@@ -221,10 +223,10 @@ export const userSessions = pgTable(
 
 /**
  * USER SYNC DATA TABLE
- * 
+ *
  * Stores user data for cloud synchronization between devices.
  * This enables the "local-first with cloud sync" architecture.
- * 
+ *
  * All data is stored as JSON strings for flexibility:
  * - inventory: Food items in the user's pantry/fridge
  * - recipes: Saved and generated recipes
@@ -238,7 +240,7 @@ export const userSessions = pgTable(
  * - onboarding: Onboarding flow progress
  * - customLocations: User-defined storage locations
  * - userProfile: Additional profile data
- * 
+ *
  * Sync metadata:
  * - lastSyncedAt: When data was last synced
  * - updatedAt: When any field was last modified
@@ -271,10 +273,10 @@ export const userSyncData = pgTable("user_sync_data", {
 
 /**
  * COOKING TERMS TABLE
- * 
+ *
  * Educational reference for cooking terminology.
  * Helps users learn cooking techniques and vocabulary.
- * 
+ *
  * Fields:
  * - term: The cooking term (e.g., "sauté", "julienne")
  * - category: Type of term ("technique", "equipment", "ingredient", etc.)
@@ -327,17 +329,16 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-
 // =============================================================================
 // APPLIANCES TABLES
 // =============================================================================
 
 /**
  * APPLIANCES TABLE
- * 
+ *
  * Master list of kitchen appliances available in the app.
  * Used for recipe filtering and equipment suggestions.
- * 
+ *
  * Fields:
  * - name: Appliance name (e.g., "Air Fryer", "Stand Mixer")
  * - category: Type of appliance ("cooking", "prep", "storage", etc.)
@@ -369,10 +370,10 @@ export const appliances = pgTable(
 
 /**
  * USER APPLIANCES TABLE
- * 
+ *
  * Junction table linking users to the appliances they own.
  * Enables personalized recipe suggestions based on available equipment.
- * 
+ *
  * Fields:
  * - userId: Reference to the user
  * - applianceId: Reference to the appliance
@@ -402,7 +403,6 @@ export const userAppliances = pgTable(
   ],
 );
 
-
 // =============================================================================
 // TYPE EXPORTS
 // These TypeScript types are used throughout the app for type safety
@@ -429,10 +429,10 @@ export type UserAppliance = typeof userAppliances.$inferSelect;
 
 /**
  * NUTRITION FACTS INTERFACE
- * 
+ *
  * Represents nutrition information for a food item or recipe.
  * Based on FDA nutrition label format.
- * 
+ *
  * Required fields: servingSize, calories, totalFat, sodium, totalCarbohydrates, protein
  * Optional fields: All others (may not be available for all foods)
  */
@@ -458,37 +458,37 @@ export interface NutritionFacts {
 
 /**
  * FDA DAILY VALUES
- * 
+ *
  * Reference values for calculating % Daily Value on nutrition labels.
  * Based on a 2,000 calorie diet.
  * Values are in the same units as NutritionFacts (g, mg, mcg).
  */
 export const DAILY_VALUES = {
-  totalFat: 78,           // grams
-  saturatedFat: 20,       // grams
-  transFat: 0,            // grams (no recommended limit, 0 means can't calculate %)
-  cholesterol: 300,       // mg
-  sodium: 2300,           // mg
-  totalCarbohydrates: 275,// grams
-  dietaryFiber: 28,       // grams
-  totalSugars: 0,         // grams (no daily value)
-  addedSugars: 50,        // grams
-  protein: 50,            // grams
-  vitaminD: 20,           // mcg
-  calcium: 1300,          // mg
-  iron: 18,               // mg
-  potassium: 4700,        // mg
+  totalFat: 78, // grams
+  saturatedFat: 20, // grams
+  transFat: 0, // grams (no recommended limit, 0 means can't calculate %)
+  cholesterol: 300, // mg
+  sodium: 2300, // mg
+  totalCarbohydrates: 275, // grams
+  dietaryFiber: 28, // grams
+  totalSugars: 0, // grams (no daily value)
+  addedSugars: 50, // grams
+  protein: 50, // grams
+  vitaminD: 20, // mcg
+  calcium: 1300, // mg
+  iron: 18, // mg
+  potassium: 4700, // mg
 } as const;
 
 export type DailyValueNutrient = keyof typeof DAILY_VALUES;
 
 /**
  * Calculates the percentage of daily value for a nutrient.
- * 
+ *
  * @param value - The amount of the nutrient
  * @param nutrient - Which nutrient to calculate for
  * @returns Percentage of daily value (0-100+), rounded to nearest integer
- * 
+ *
  * @example
  * calculateDailyValuePercent(15, "totalFat") // Returns 19 (15g is 19% of 78g daily value)
  */
@@ -505,11 +505,11 @@ export function calculateDailyValuePercent(
 /**
  * Scales nutrition values by a multiplier.
  * Used when adjusting serving sizes or calculating totals for multiple servings.
- * 
+ *
  * @param nutrition - Original nutrition facts
  * @param multiplier - Scale factor (e.g., 2 for double, 0.5 for half)
  * @returns New nutrition facts with scaled values
- * 
+ *
  * @example
  * const doubled = scaleNutrition(originalNutrition, 2);
  */
@@ -575,10 +575,10 @@ export function scaleNutrition(
 
 /**
  * NUTRITION CORRECTIONS TABLE
- * 
+ *
  * Allows users to submit corrections for inaccurate nutrition data.
  * Corrections are reviewed by admins before being applied.
- * 
+ *
  * Fields:
  * - productName: Name of the product being corrected
  * - barcode: Product barcode if available
@@ -596,7 +596,9 @@ export const nutritionCorrections = pgTable(
   "nutrition_corrections",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+    userId: varchar("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
     productName: text("product_name").notNull(),
     barcode: varchar("barcode", { length: 50 }),
     brand: varchar("brand", { length: 200 }),
@@ -638,10 +640,10 @@ export type NutritionCorrection = typeof nutritionCorrections.$inferSelect;
 
 /**
  * FEEDBACK BUCKETS TABLE
- * 
+ *
  * Groups similar feedback items together for easier management.
  * Multiple related issues/suggestions can be linked to one bucket.
- * 
+ *
  * Fields:
  * - title: Brief title for the bucket
  * - description: Detailed description of the issue/feature
@@ -670,7 +672,9 @@ export const feedbackBuckets = pgTable(
   ],
 );
 
-export const insertFeedbackBucketSchema = createInsertSchema(feedbackBuckets).omit({
+export const insertFeedbackBucketSchema = createInsertSchema(
+  feedbackBuckets,
+).omit({
   createdAt: true,
   updatedAt: true,
 });
@@ -680,9 +684,9 @@ export type FeedbackBucket = typeof feedbackBuckets.$inferSelect;
 
 /**
  * FEEDBACK TABLE
- * 
+ *
  * Stores individual user feedback submissions and bug reports.
- * 
+ *
  * Fields:
  * - type: "feedback" or "bug"
  * - category: For feedback: "suggestion", "general", "compliment", "question"
@@ -703,8 +707,12 @@ export const feedback = pgTable(
   "feedback",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-    bucketId: integer("bucket_id").references(() => feedbackBuckets.id, { onDelete: "set null" }),
+    userId: varchar("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    bucketId: integer("bucket_id").references(() => feedbackBuckets.id, {
+      onDelete: "set null",
+    }),
     type: varchar("type", { length: 20 }).notNull(),
     category: varchar("category", { length: 50 }),
     message: text("message").notNull(),
@@ -745,10 +753,10 @@ export type Feedback = typeof feedback.$inferSelect;
 
 /**
  * SUBSCRIPTIONS TABLE
- * 
+ *
  * Tracks user subscription status with Stripe integration.
  * Controls access to premium features.
- * 
+ *
  * Fields:
  * - stripeCustomerId: Stripe's customer ID
  * - stripeSubscriptionId: Stripe's subscription ID
@@ -792,7 +800,9 @@ export const subscriptions = pgTable(
   },
   (table) => [
     index("idx_subscriptions_stripe_customer").on(table.stripeCustomerId),
-    index("idx_subscriptions_stripe_subscription").on(table.stripeSubscriptionId),
+    index("idx_subscriptions_stripe_subscription").on(
+      table.stripeSubscriptionId,
+    ),
     index("idx_subscriptions_status").on(table.status),
   ],
 );
@@ -813,10 +823,10 @@ export type Subscription = typeof subscriptions.$inferSelect;
 /**
  * Merges nutrition facts from multiple food items.
  * Used for calculating total nutrition for recipes or meals.
- * 
+ *
  * @param items - Array of NutritionFacts to combine
  * @returns Combined nutrition facts with totals
- * 
+ *
  * @example
  * const mealTotal = mergeNutrition([ingredient1, ingredient2, ingredient3]);
  */

@@ -76,10 +76,11 @@ export function NutritionCorrectionModal({
   const handleTakePhoto = async () => {
     setErrorMessage(null);
     setCameraPermissionDenied(false);
-    
+
     try {
-      const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
-      
+      const { status, canAskAgain } =
+        await ImagePicker.requestCameraPermissionsAsync();
+
       if (status !== "granted") {
         if (!canAskAgain && Platform.OS !== "web") {
           setCameraPermissionDenied(true);
@@ -120,7 +121,7 @@ export function NutritionCorrectionModal({
       const url = new URL("/api/nutrition/corrections", baseUrl);
 
       let imageUrlToStore: string | undefined;
-      
+
       if (imageUri && Platform.OS !== "web") {
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
           encoding: "base64",

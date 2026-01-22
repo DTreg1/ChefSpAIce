@@ -19,11 +19,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
-import {
-  Spacing,
-  BorderRadius,
-  AppColors,
-} from "@/constants/theme";
+import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, Recipe, MealPlan } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";

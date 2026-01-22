@@ -222,4 +222,3 @@ export async function getLearnedPreferencesCount(): Promise<number> {
 
   return count;
 }
-

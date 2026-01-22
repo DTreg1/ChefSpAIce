@@ -50,7 +50,6 @@ export interface FoodSearchResult {
   dataCompleteness: number;
 }
 
-
 interface FoodSearchAutocompleteProps {
   onSelect: (item: FoodSearchResult) => void;
   placeholder?: string;
@@ -198,7 +197,8 @@ function ResultItem({
 }) {
   const { theme } = useTheme();
   const searchParts = query.split(":");
-  const productQuery = searchParts.length > 1 ? searchParts[searchParts.length - 1] : query;
+  const productQuery =
+    searchParts.length > 1 ? searchParts[searchParts.length - 1] : query;
 
   return (
     <Pressable
@@ -225,7 +225,12 @@ function ResultItem({
         </View>
         {item.brand ? (
           <View style={styles.brandRow}>
-            <Feather name="tag" size={12} color={theme.textSecondary} style={{ opacity: 0.7 }} />
+            <Feather
+              name="tag"
+              size={12}
+              color={theme.textSecondary}
+              style={{ opacity: 0.7 }}
+            />
             <ThemedText type="caption" style={styles.resultBrandName}>
               {item.brand}
             </ThemedText>

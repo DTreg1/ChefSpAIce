@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Modal,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View, Modal, Pressable, StyleSheet, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 
@@ -73,15 +67,23 @@ const DIETARY_OPTIONS = [
   { id: "kosher", label: "Kosher" },
 ];
 
-export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSettingsModalProps) {
+export function RecipeSettingsModal({
+  visible,
+  onClose,
+  onGenerate,
+}: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
   const [saving, setSaving] = useState(false);
 
   const [servings, setServings] = useState(4);
   const [maxTime, setMaxTime] = useState(60);
-  const [dietaryRestrictions, setDietaryRestrictions] = useState<Set<string>>(new Set());
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<Set<string>>(
+    new Set(),
+  );
   const [cuisines, setCuisines] = useState<Set<string>>(new Set());
-  const [selectedCuisineForRecipe, setSelectedCuisineForRecipe] = useState<string | undefined>(undefined);
+  const [selectedCuisineForRecipe, setSelectedCuisineForRecipe] = useState<
+    string | undefined
+  >(undefined);
   const [mealType, setMealType] = useState<string | undefined>(undefined);
   const [prioritizeExpiring, setPrioritizeExpiring] = useState(false);
   const [cookingLevel, setCookingLevel] = useState<string>("intermediate");
@@ -135,10 +137,10 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
         expirationAlertDays: currentPrefs?.expirationAlertDays ?? 3,
         servingSize: servings,
         maxCookingTime: maxTime,
-        mealType: mealType as UserPreferences['mealType'],
+        mealType: mealType as UserPreferences["mealType"],
         prioritizeExpiring,
-        cookingLevel: cookingLevel as UserPreferences['cookingLevel'],
-        llmCreativity: creativity as UserPreferences['llmCreativity'],
+        cookingLevel: cookingLevel as UserPreferences["cookingLevel"],
+        llmCreativity: creativity as UserPreferences["llmCreativity"],
         macroTargets: currentPrefs?.macroTargets ?? DEFAULT_MACRO_TARGETS,
         ingredientCountMin,
         ingredientCountMax,
@@ -149,7 +151,7 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
         const settings: RecipeSettings = {
           servings,
           maxTime,
-          mealType: mealType as RecipeSettings['mealType'],
+          mealType: mealType as RecipeSettings["mealType"],
           ingredientCount: { min: ingredientCountMin, max: ingredientCountMax },
           cuisine: selectedCuisineForRecipe,
         };
@@ -162,20 +164,22 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
     }
   };
 
-  const OptionChip = ({ 
-    selected, 
-    onPress, 
-    label 
-  }: { 
-    selected: boolean; 
-    onPress: () => void; 
+  const OptionChip = ({
+    selected,
+    onPress,
+    label,
+  }: {
+    selected: boolean;
+    onPress: () => void;
     label: string;
   }) => (
     <Pressable
       style={[
         styles.optionChip,
         {
-          backgroundColor: selected ? AppColors.primary : theme.glass.background,
+          backgroundColor: selected
+            ? AppColors.primary
+            : theme.glass.background,
           borderColor: selected ? AppColors.primary : theme.glass.border,
         },
       ]}
@@ -202,7 +206,12 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
         tint={isDark ? "dark" : "light"}
         style={styles.overlay}
       >
-        <View style={[styles.modalContainer, { backgroundColor: theme.backgroundRoot }]}>
+        <View
+          style={[
+            styles.modalContainer,
+            { backgroundColor: theme.backgroundRoot },
+          ]}
+        >
           <View style={styles.header}>
             <ThemedText type="h3">Recipe Settings</ThemedText>
             <Pressable onPress={onClose} style={styles.closeButton}>
@@ -210,13 +219,15 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </Pressable>
           </View>
 
-          <ScrollView 
+          <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Servings</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Servings
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {SERVING_OPTIONS.map((num) => (
                   <OptionChip
@@ -230,7 +241,9 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Max Cooking Time (minutes)</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Max Cooking Time (minutes)
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {TIME_OPTIONS.map((mins) => (
                   <OptionChip
@@ -244,12 +257,24 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Number of Ingredients</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Number of Ingredients
+              </ThemedText>
               <View style={styles.ingredientCountRow}>
                 <View style={styles.ingredientCountSection}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>Min</ThemedText>
+                  <ThemedText
+                    type="small"
+                    style={{
+                      color: theme.textSecondary,
+                      marginBottom: Spacing.xs,
+                    }}
+                  >
+                    Min
+                  </ThemedText>
                   <View style={styles.optionsRow}>
-                    {INGREDIENT_COUNT_OPTIONS.filter(n => n <= ingredientCountMax).map((num) => (
+                    {INGREDIENT_COUNT_OPTIONS.filter(
+                      (n) => n <= ingredientCountMax,
+                    ).map((num) => (
                       <OptionChip
                         key={`min-${num}`}
                         selected={ingredientCountMin === num}
@@ -260,9 +285,19 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
                   </View>
                 </View>
                 <View style={styles.ingredientCountSection}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>Max</ThemedText>
+                  <ThemedText
+                    type="small"
+                    style={{
+                      color: theme.textSecondary,
+                      marginBottom: Spacing.xs,
+                    }}
+                  >
+                    Max
+                  </ThemedText>
                   <View style={styles.optionsRow}>
-                    {INGREDIENT_COUNT_OPTIONS.filter(n => n >= ingredientCountMin).map((num) => (
+                    {INGREDIENT_COUNT_OPTIONS.filter(
+                      (n) => n >= ingredientCountMin,
+                    ).map((num) => (
                       <OptionChip
                         key={`max-${num}`}
                         selected={ingredientCountMax === num}
@@ -273,19 +308,27 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
                   </View>
                 </View>
               </View>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-                Recipe will use {ingredientCountMin}-{ingredientCountMax} ingredients
+              <ThemedText
+                type="caption"
+                style={{ color: theme.textSecondary, marginTop: Spacing.sm }}
+              >
+                Recipe will use {ingredientCountMin}-{ingredientCountMax}{" "}
+                ingredients
               </ThemedText>
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Meal Type</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Meal Type
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {MEAL_TYPES.map((type) => (
                   <OptionChip
                     key={type.key}
                     selected={mealType === type.key}
-                    onPress={() => setMealType(mealType === type.key ? undefined : type.key)}
+                    onPress={() =>
+                      setMealType(mealType === type.key ? undefined : type.key)
+                    }
                     label={type.label}
                   />
                 ))}
@@ -293,7 +336,9 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Cooking Level</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Cooking Level
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {COOKING_LEVELS.map((level) => (
                   <OptionChip
@@ -307,7 +352,9 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>AI Creativity</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                AI Creativity
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {CREATIVITY_LEVELS.map((level) => (
                   <OptionChip
@@ -321,7 +368,9 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
             </GlassCard>
 
             <GlassCard style={styles.section}>
-              <ThemedText type="caption" style={styles.sectionTitle}>Dietary Restrictions</ThemedText>
+              <ThemedText type="caption" style={styles.sectionTitle}>
+                Dietary Restrictions
+              </ThemedText>
               <View style={styles.optionsRow}>
                 {DIETARY_OPTIONS.map((option) => (
                   <OptionChip
@@ -336,15 +385,23 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
 
             {cuisines.size > 0 && (
               <GlassCard style={styles.section}>
-                <ThemedText type="caption" style={styles.sectionTitle}>Cuisine</ThemedText>
+                <ThemedText type="caption" style={styles.sectionTitle}>
+                  Cuisine
+                </ThemedText>
                 <View style={styles.optionsRow}>
-                  {CUISINE_OPTIONS.filter((option) => cuisines.has(option.id)).map((option) => (
+                  {CUISINE_OPTIONS.filter((option) =>
+                    cuisines.has(option.id),
+                  ).map((option) => (
                     <OptionChip
                       key={option.id}
                       selected={selectedCuisineForRecipe === option.id}
-                      onPress={() => setSelectedCuisineForRecipe(
-                        selectedCuisineForRecipe === option.id ? undefined : option.id
-                      )}
+                      onPress={() =>
+                        setSelectedCuisineForRecipe(
+                          selectedCuisineForRecipe === option.id
+                            ? undefined
+                            : option.id,
+                        )
+                      }
                       label={option.label}
                     />
                   ))}
@@ -358,8 +415,13 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
                 onPress={() => setPrioritizeExpiring(!prioritizeExpiring)}
               >
                 <View style={styles.toggleInfo}>
-                  <ThemedText type="small">Prioritize Expiring Items</ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  <ThemedText type="small">
+                    Prioritize Expiring Items
+                  </ThemedText>
+                  <ThemedText
+                    type="caption"
+                    style={{ color: theme.textSecondary }}
+                  >
                     Use ingredients that expire soon first
                   </ThemedText>
                 </View>
@@ -380,8 +442,12 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
                     style={[
                       styles.toggleKnob,
                       {
-                        backgroundColor: prioritizeExpiring ? "#FFFFFF" : theme.textSecondary,
-                        transform: [{ translateX: prioritizeExpiring ? 16 : 0 }],
+                        backgroundColor: prioritizeExpiring
+                          ? "#FFFFFF"
+                          : theme.textSecondary,
+                        transform: [
+                          { translateX: prioritizeExpiring ? 16 : 0 },
+                        ],
                       },
                     ]}
                   />
@@ -392,10 +458,7 @@ export function RecipeSettingsModal({ visible, onClose, onGenerate }: RecipeSett
 
           <View style={styles.footer}>
             <Pressable
-              style={[
-                styles.generateButton,
-                { opacity: saving ? 0.7 : 1 },
-              ]}
+              style={[styles.generateButton, { opacity: saving ? 0.7 : 1 }]}
               onPress={handleGenerate}
               disabled={saving}
               testID="button-generate-recipe"

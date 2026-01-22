@@ -1,4 +1,12 @@
-import { StyleSheet, View, Text, ScrollView, Pressable, Platform, Image } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Platform,
+  Image,
+} from "react-native";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 
@@ -19,20 +27,32 @@ export default function TermsScreen() {
 
   const navigateTo = (path: string) => {
     if (isWeb && typeof window !== "undefined") {
-      window.history.pushState({}, '', path);
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      window.history.pushState({}, "", path);
+      window.dispatchEvent(new PopStateEvent("popstate"));
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <AnimatedBackground />
-      
+
       {isWeb && (
         <View style={styles.header}>
-          <Pressable style={styles.logoContainer} onPress={() => navigateTo("/")}>
-            <Image source={chefHatLight} style={{ width: 32, height: 32 }} resizeMode="contain" />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
+          <Pressable
+            style={styles.logoContainer}
+            onPress={() => navigateTo("/")}
+          >
+            <Image
+              source={chefHatLight}
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
+            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+              ChefSpAIce
+            </Text>
           </Pressable>
           <View style={styles.navLinks}>
             {NAV_LINKS.map((link) => (
@@ -42,10 +62,17 @@ export default function TermsScreen() {
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
               >
-                <Text style={[
-                  styles.navLinkText,
-                  { color: currentPath === link.path ? colors.brandGreen : colors.textSecondary }
-                ]}>
+                <Text
+                  style={[
+                    styles.navLinkText,
+                    {
+                      color:
+                        currentPath === link.path
+                          ? colors.brandGreen
+                          : colors.textSecondary,
+                    },
+                  ]}
+                >
                   {link.label}
                 </Text>
               </Pressable>
@@ -55,39 +82,76 @@ export default function TermsScreen() {
       )}
 
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Terms of Service</Text>
-        <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>Last updated: December 2024</Text>
-        
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Acceptance of Terms</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
+          Terms of Service
+        </Text>
+        <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>
+          Last updated: December 2024
+        </Text>
+
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Acceptance of Terms
+          </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            By accessing or using ChefSpAIce, you agree to be bound by these Terms of Service. If you do not agree 
-            to these terms, please do not use our application.
+            By accessing or using ChefSpAIce, you agree to be bound by these
+            Terms of Service. If you do not agree to these terms, please do not
+            use our application.
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Use of Service</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Use of Service
+          </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            ChefSpAIce is provided for personal, non-commercial use. You agree to use the service responsibly and 
-            not to misuse or attempt to exploit any features of the application.
+            ChefSpAIce is provided for personal, non-commercial use. You agree
+            to use the service responsibly and not to misuse or attempt to
+            exploit any features of the application.
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>AI-Generated Content</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            AI-Generated Content
+          </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            Recipes generated by our AI are provided for informational purposes only. While we strive for accuracy, 
-            we cannot guarantee that all recipes are safe for individuals with specific allergies or dietary restrictions. 
-            Always verify ingredients before cooking.
+            Recipes generated by our AI are provided for informational purposes
+            only. While we strive for accuracy, we cannot guarantee that all
+            recipes are safe for individuals with specific allergies or dietary
+            restrictions. Always verify ingredients before cooking.
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Limitation of Liability</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Limitation of Liability
+          </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            ChefSpAIce is provided "as is" without warranties of any kind. We are not liable for any damages arising 
-            from your use of the application, including but not limited to food safety issues or inaccurate expiration tracking.
+            ChefSpAIce is provided "as is" without warranties of any kind. We
+            are not liable for any damages arising from your use of the
+            application, including but not limited to food safety issues or
+            inaccurate expiration tracking.
           </Text>
         </View>
       </View>
@@ -112,13 +176,37 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     alignItems: "center",
   },
-  logoContainer: { flexDirection: "row", alignItems: "center", gap: 10, cursor: "pointer" as any, marginBottom: 16 },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    cursor: "pointer" as any,
+    marginBottom: 16,
+  },
   logoText: { fontSize: 24, fontWeight: "700" },
-  navLinks: { flexDirection: "row", alignItems: "center", gap: 24, flexWrap: "wrap", justifyContent: "center" },
+  navLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 24,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
   navLink: { cursor: "pointer" as any },
   navLinkText: { fontSize: 14, fontWeight: "500" },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
-  title: { fontSize: 42, fontWeight: "700", textAlign: "center", marginBottom: 8 },
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 60,
+    maxWidth: 800,
+    alignSelf: "center",
+    width: "100%",
+  },
+  title: {
+    fontSize: 42,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
   lastUpdated: { fontSize: 14, textAlign: "center", marginBottom: 40 },
   card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 24 },
   sectionTitle: { fontSize: 22, fontWeight: "600", marginBottom: 12 },

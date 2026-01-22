@@ -26,7 +26,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
-import { MONTHLY_PRICES, ANNUAL_PRICES, SubscriptionTier } from "../../shared/subscription";
+import {
+  MONTHLY_PRICES,
+  ANNUAL_PRICES,
+  SubscriptionTier,
+} from "../../shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -36,13 +40,28 @@ const PRO_FEATURES = [
   { key: "cookware", name: "Cookware Items", basic: "5", pro: "Unlimited" },
   { key: "recipeScanning", name: "Recipe Scanning", basic: false, pro: true },
   { key: "bulkScanning", name: "Bulk Scanning", basic: false, pro: true },
-  { key: "aiAssistant", name: "Live AI Kitchen Assistant", basic: false, pro: true },
-  { key: "customStorage", name: "Custom Storage Areas", basic: false, pro: true },
-  { key: "weeklyMealPrep", name: "Weekly Meal Prepping", basic: false, pro: true },
+  {
+    key: "aiAssistant",
+    name: "Live AI Kitchen Assistant",
+    basic: false,
+    pro: true,
+  },
+  {
+    key: "customStorage",
+    name: "Custom Storage Areas",
+    basic: false,
+    pro: true,
+  },
+  {
+    key: "weeklyMealPrep",
+    name: "Weekly Meal Prepping",
+    basic: false,
+    pro: true,
+  },
 ];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type SubscriptionRouteProp = RouteProp<RootStackParamList, 'Subscription'>;
+type SubscriptionRouteProp = RouteProp<RootStackParamList, "Subscription">;
 
 export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
@@ -64,22 +83,26 @@ export default function SubscriptionScreen() {
     usage,
     refetch,
   } = useSubscription();
-  
+
   // Check if this is a blocking subscription gate (trial/subscription expired)
   // Block when: routed with expired reason, trial is expired, or subscription is inactive (but user is authenticated)
   const reason = route.params?.reason;
   const subscriptionInactive = !isActive && !isLoading && isAuthenticated;
-  const isBlocking = reason === 'expired' || isTrialExpired || subscriptionInactive;
-  
+  const isBlocking =
+    reason === "expired" || isTrialExpired || subscriptionInactive;
+
   // Block hardware back button when subscription is required
   useEffect(() => {
     if (!isBlocking) return;
-    
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      // Prevent going back when subscription is required
-      return true;
-    });
-    
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Prevent going back when subscription is required
+        return true;
+      },
+    );
+
     return () => backHandler.remove();
   }, [isBlocking]);
 
@@ -92,13 +115,16 @@ export default function SubscriptionScreen() {
     isCustomerCenterAvailable,
   } = useStoreKit();
 
-  const shouldUseStoreKit = (Platform.OS === 'ios' || Platform.OS === 'android') && isStoreKitAvailable;
+  const shouldUseStoreKit =
+    (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
 
   const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
-  const [selectedTier, setSelectedTier] = useState<'basic' | 'pro'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
+    "annual",
+  );
+  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -112,7 +138,10 @@ export default function SubscriptionScreen() {
       case "active":
         return { label: "Active", color: AppColors.success };
       case "trialing":
-        return { label: `Trial (${trialDaysRemaining} days left)`, color: AppColors.warning };
+        return {
+          label: `Trial (${trialDaysRemaining} days left)`,
+          color: AppColors.warning,
+        };
       case "past_due":
         return { label: "Past Due", color: AppColors.error };
       case "canceled":
@@ -173,36 +202,39 @@ export default function SubscriptionScreen() {
   };
 
   const handleNavigateToAuth = () => {
-    navigation.navigate('Auth');
+    navigation.navigate("Auth");
   };
 
   const handleOpenPrivacyPolicy = () => {
-    if (Platform.OS === 'web') {
-      window.open('/privacy', '_blank');
+    if (Platform.OS === "web") {
+      window.open("/privacy", "_blank");
     } else {
-      navigation.navigate('Privacy' as any);
+      navigation.navigate("Privacy" as any);
     }
   };
 
   const handleOpenTermsOfUse = () => {
-    if (Platform.OS === 'web') {
-      window.open('/terms', '_blank');
+    if (Platform.OS === "web") {
+      window.open("/terms", "_blank");
     } else {
-      navigation.navigate('Terms' as any);
+      navigation.navigate("Terms" as any);
     }
   };
 
-  const handleUpgrade = async (tier: 'basic' | 'pro' = 'pro', plan: 'monthly' | 'annual' = 'annual') => {
+  const handleUpgrade = async (
+    tier: "basic" | "pro" = "pro",
+    plan: "monthly" | "annual" = "annual",
+  ) => {
     setIsCheckingOut(true);
-    const tierName = tier === 'pro' ? 'Pro' : 'Basic';
-    
+    const tierName = tier === "pro" ? "Pro" : "Basic";
+
     try {
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      if (Platform.OS === "ios" || Platform.OS === "android") {
         if (!shouldUseStoreKit || !offerings) {
           Alert.alert(
-            'Not Available',
-            'In-app purchases are not available. Please try again later or contact support.',
-            [{ text: 'OK' }]
+            "Not Available",
+            "In-app purchases are not available. Please try again later or contact support.",
+            [{ text: "OK" }],
           );
           return;
         }
@@ -210,23 +242,24 @@ export default function SubscriptionScreen() {
         // Build tier-specific package identifier
         // RevenueCat packages should be named: basic_monthly, basic_annual, pro_monthly, pro_annual
         const expectedPackageId = `${tier}_${plan}`;
-        
+
         // Find package that matches the specific tier and plan - NO FALLBACK to prevent wrong tier purchase
-        const pkg = offerings.availablePackages.find(
-          (p) => {
-            const id = p.identifier.toLowerCase();
-            // Match tier-specific identifiers only
-            return id === expectedPackageId || 
-                   (id.includes(tier) && id.includes(plan)) ||
-                   (id.includes(tier) && p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL'));
-          }
-        );
+        const pkg = offerings.availablePackages.find((p) => {
+          const id = p.identifier.toLowerCase();
+          // Match tier-specific identifiers only
+          return (
+            id === expectedPackageId ||
+            (id.includes(tier) && id.includes(plan)) ||
+            (id.includes(tier) &&
+              p.packageType === (plan === "monthly" ? "MONTHLY" : "ANNUAL"))
+          );
+        });
 
         if (!pkg) {
           Alert.alert(
-            'Package Not Available',
+            "Package Not Available",
             `The ${tierName} ${plan} subscription is not yet configured. Please contact support or try a different option.`,
-            [{ text: 'OK' }]
+            [{ text: "OK" }],
           );
           return;
         }
@@ -237,55 +270,71 @@ export default function SubscriptionScreen() {
           // Show different message for unauthenticated users (Apple 5.1.1 compliance)
           if (!isAuthenticated) {
             Alert.alert(
-              'Subscription Active!',
+              "Subscription Active!",
               `Thank you for subscribing to ${tierName}! You can now use ChefSpAIce. Creating an account is optional but lets you sync across devices.`,
               [
-                { text: 'Continue to App', onPress: () => navigation.navigate('Onboarding') },
-                { text: 'Create Account', onPress: () => navigation.navigate('Auth') },
-              ]
+                {
+                  text: "Continue to App",
+                  onPress: () => navigation.navigate("Onboarding"),
+                },
+                {
+                  text: "Create Account",
+                  onPress: () => navigation.navigate("Auth"),
+                },
+              ],
             );
           } else {
-            Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
+            Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
           }
         }
         return;
       }
 
-      if (Platform.OS === 'web') {
+      if (Platform.OS === "web") {
         const baseUrl = getApiUrl();
-        
-        const pricesResponse = await fetch(`${baseUrl}/api/subscriptions/prices`);
+
+        const pricesResponse = await fetch(
+          `${baseUrl}/api/subscriptions/prices`,
+        );
         const prices = await pricesResponse.json();
-        
+
         // Get price ID based on tier and plan - require exact match, no fallback
-        const priceKey = tier === 'pro' 
-          ? (plan === 'monthly' ? 'proMonthly' : 'proAnnual')
-          : (plan === 'monthly' ? 'basicMonthly' : 'basicAnnual');
+        const priceKey =
+          tier === "pro"
+            ? plan === "monthly"
+              ? "proMonthly"
+              : "proAnnual"
+            : plan === "monthly"
+              ? "basicMonthly"
+              : "basicAnnual";
         const priceId = prices[priceKey]?.id;
-        
+
         if (!priceId) {
           Alert.alert(
-            'Price Not Available',
+            "Price Not Available",
             `The ${tierName} ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
-            [{ text: 'OK' }]
+            [{ text: "OK" }],
           );
           return;
         }
 
-        const response = await fetch(`${baseUrl}/api/subscriptions/create-checkout-session`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        const response = await fetch(
+          `${baseUrl}/api/subscriptions/create-checkout-session`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              priceId,
+              tier,
+              successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+              cancelUrl: `${window.location.origin}/subscription-canceled`,
+            }),
           },
-          credentials: "include",
-          body: JSON.stringify({
-            priceId,
-            tier,
-            successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/subscription-canceled`,
-          }),
-        });
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -294,12 +343,15 @@ export default function SubscriptionScreen() {
           }
         } else {
           const errorData = await response.json();
-          Alert.alert('Error', errorData.error || 'Failed to start checkout. Please try again.');
+          Alert.alert(
+            "Error",
+            errorData.error || "Failed to start checkout. Please try again.",
+          );
         }
       }
     } catch (error) {
       console.error("Error starting checkout:", error);
-      Alert.alert('Error', 'Something went wrong. Please try again later.');
+      Alert.alert("Error", "Something went wrong. Please try again later.");
     } finally {
       setIsCheckingOut(false);
     }
@@ -307,18 +359,21 @@ export default function SubscriptionScreen() {
 
   const handleRestorePurchases = async () => {
     if (!shouldUseStoreKit) return;
-    
+
     setIsRestoring(true);
     try {
       const success = await restorePurchases();
       if (success) {
-        Alert.alert('Success', 'Purchases restored successfully!');
+        Alert.alert("Success", "Purchases restored successfully!");
         refetch();
       } else {
-        Alert.alert('No Purchases Found', 'No previous purchases were found to restore.');
+        Alert.alert(
+          "No Purchases Found",
+          "No previous purchases were found to restore.",
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
+      Alert.alert("Error", "Failed to restore purchases. Please try again.");
     } finally {
       setIsRestoring(false);
     }
@@ -329,12 +384,12 @@ export default function SubscriptionScreen() {
       handleManageSubscription();
       return;
     }
-    
+
     try {
       await presentCustomerCenter();
       refetch();
     } catch (error) {
-      console.error('Error opening customer center:', error);
+      console.error("Error opening customer center:", error);
       handleManageSubscription();
     }
   };
@@ -343,7 +398,12 @@ export default function SubscriptionScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <CookPotLoader size="lg" text="Loading subscription..." />
       </View>
     );
@@ -362,556 +422,971 @@ export default function SubscriptionScreen() {
         style={[styles.container, { backgroundColor: "transparent" }]}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: 56 + insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+          {
+            paddingTop: 56 + insets.top + Spacing.lg,
+            paddingBottom: insets.bottom + Spacing.xl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-      {isBlocking && (
-        <GlassCard style={[styles.blockingBanner, { backgroundColor: `${AppColors.warning}15` }]}>
-          <Feather name="alert-circle" size={24} color={AppColors.warning} />
-          <View style={styles.blockingTextContainer}>
-            <ThemedText type="h4" style={{ color: AppColors.warning }}>
-              Subscription Required
-            </ThemedText>
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              Your trial has ended. Choose a plan below to continue using ChefSpAIce.
-            </ThemedText>
-          </View>
-        </GlassCard>
-      )}
-
-      <GlassCard style={styles.planCard}>
-        <View style={styles.sectionHeader}>
-          <Feather name="credit-card" size={20} color={theme.textSecondaryOnGlass} />
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Current Plan</ThemedText>
-        </View>
-        <View style={styles.planHeader}>
-          <View style={styles.planInfo}>
-            <View style={styles.planBadge}>
-              <Feather
-                name={isProUser ? "star" : "user"}
-                size={20}
-                color={isProUser ? AppColors.warning : AppColors.primary}
-              />
-            </View>
-            <View>
-              <ThemedText style={styles.planName}>{getPlanName()}</ThemedText>
-              <ThemedText style={[styles.planPrice, { color: theme.textSecondary }]}>
-                {getMonthlyPrice()}
+        {isBlocking && (
+          <GlassCard
+            style={[
+              styles.blockingBanner,
+              { backgroundColor: `${AppColors.warning}15` },
+            ]}
+          >
+            <Feather name="alert-circle" size={24} color={AppColors.warning} />
+            <View style={styles.blockingTextContainer}>
+              <ThemedText type="h4" style={{ color: AppColors.warning }}>
+                Subscription Required
+              </ThemedText>
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Your trial has ended. Choose a plan below to continue using
+                ChefSpAIce.
               </ThemedText>
             </View>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}20` }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
-            <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </ThemedText>
-          </View>
-        </View>
-
-        {isTrialing && trialDaysRemaining !== null && (
-          <View style={[styles.trialBanner, { backgroundColor: `${AppColors.warning}15` }]}>
-            <Feather name="clock" size={16} color={AppColors.warning} />
-            <View style={styles.trialTextContainer}>
-              <ThemedText style={[styles.trialTitle, { color: AppColors.warning }]}>
-                Trial expires in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""}
-              </ThemedText>
-              <ThemedText style={[styles.trialSubtitle, { color: theme.textSecondary }]}>
-                Choose a plan below to continue using ChefSpAIce after your trial.
-              </ThemedText>
-            </View>
-          </View>
+          </GlassCard>
         )}
-      </GlassCard>
 
-      <GlassCard style={styles.usageCard}>
-        <View style={styles.sectionHeader}>
-          <Feather name="bar-chart-2" size={20} color={theme.textSecondaryOnGlass} />
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Usage Summary</ThemedText>
-        </View>
-        <View style={styles.usageGrid}>
-          <View style={styles.usageItem}>
-            <View style={[styles.usageIconContainer, { backgroundColor: `${AppColors.primary}15` }]}>
-              <Feather name="package" size={18} color={AppColors.primary} />
-            </View>
-            <View style={styles.usageTextContainer}>
-              <ThemedText style={[styles.usageLabel, { color: theme.textSecondary }]}>
-                Pantry Items
-              </ThemedText>
-              <ThemedText style={styles.usageValue}>
-                {formatLimit(entitlements.maxPantryItems, usage.pantryItemCount)}
-              </ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.usageItem}>
-            <View style={[styles.usageIconContainer, { backgroundColor: `${AppColors.secondary}15` }]}>
-              <Feather name="zap" size={18} color={AppColors.secondary} />
-            </View>
-            <View style={styles.usageTextContainer}>
-              <ThemedText style={[styles.usageLabel, { color: theme.textSecondary }]}>
-                AI Recipes This Month
-              </ThemedText>
-              <ThemedText style={styles.usageValue}>
-                {formatLimit(entitlements.maxAiRecipes, usage.aiRecipesUsedThisMonth)}
-              </ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.usageItem}>
-            <View style={[styles.usageIconContainer, { backgroundColor: `${AppColors.accent}15` }]}>
-              <Feather name="tool" size={18} color={AppColors.accent} />
-            </View>
-            <View style={styles.usageTextContainer}>
-              <ThemedText style={[styles.usageLabel, { color: theme.textSecondary }]}>
-                Cookware
-              </ThemedText>
-              <ThemedText style={styles.usageValue}>
-                {formatLimit(entitlements.maxCookware, usage.cookwareCount)}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.featuresCard}>
-        <View style={styles.sectionHeader}>
-          <Feather name="layers" size={20} color={theme.textSecondaryOnGlass} />
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Feature Comparison</ThemedText>
-        </View>
-        <View style={styles.comparisonHeader}>
-          <ThemedText style={[styles.featureLabel, { flex: 1 }]}>Feature</ThemedText>
-          <ThemedText style={[styles.tierLabel, { color: theme.textSecondary }]}>Basic</ThemedText>
-          <ThemedText style={[styles.tierLabel, { color: AppColors.warning }]}>Pro</ThemedText>
-        </View>
-
-        {PRO_FEATURES.map((feature, index) => {
-          const isUpgradeHighlight = !isProUser && feature.pro === true;
-          return (
-            <View
-              key={feature.key}
-              style={[
-                styles.featureRow,
-                index === PRO_FEATURES.length - 1 && styles.featureRowLast,
-                isUpgradeHighlight && { backgroundColor: `${AppColors.primary}08` },
-              ]}
-            >
-              <ThemedText
-                style={[styles.featureName, { color: theme.textSecondaryOnGlass }]}
-                numberOfLines={2}
-              >
-                {feature.name}
-              </ThemedText>
-              <View style={styles.tierValue}>
-                {typeof feature.basic === "boolean" ? (
-                  <Feather
-                    name={feature.basic ? "check" : "x"}
-                    size={16}
-                    color={feature.basic ? AppColors.success : theme.textSecondary}
-                  />
-                ) : (
-                  <ThemedText style={[styles.tierValueText, { color: theme.textSecondary }]} numberOfLines={1}>
-                    {feature.basic}
-                  </ThemedText>
-                )}
-              </View>
-              <View style={styles.tierValue}>
-                {typeof feature.pro === "boolean" ? (
-                  <Feather
-                    name={feature.pro ? "check" : "x"}
-                    size={16}
-                    color={feature.pro ? AppColors.success : theme.textSecondary}
-                  />
-                ) : (
-                  <ThemedText style={[styles.tierValueText, { color: AppColors.success }]} numberOfLines={1}>
-                    {feature.pro}
-                  </ThemedText>
-                )}
-              </View>
-            </View>
-          );
-        })}
-      </GlassCard>
-
-      {/* Show purchase options for: unauthenticated users OR authenticated users without subscription */}
-      {(!isAuthenticated || (!isProUser && !isTrialing)) && (
-        <GlassCard style={styles.upgradeCard}>
-          <View style={styles.upgradeHeader}>
-            <Feather name="shopping-bag" size={20} color={theme.textSecondaryOnGlass} />
-            <ThemedText style={[styles.upgradeTitle, { color: theme.textSecondaryOnGlass }]}>Choose Your Plan</ThemedText>
-          </View>
-          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondaryOnGlass }]}>
-            Select the plan that works best for you.
-          </ThemedText>
-
-          {/* Billing Period Toggle */}
-          <View style={styles.billingToggleContainer}>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('monthly')}
-              data-testid="button-billing-monthly"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'monthly' && styles.billingToggleTextActive,
-              ]}>Monthly</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'annual' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('annual')}
-              data-testid="button-billing-annual"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'annual' && styles.billingToggleTextActive,
-              ]}>Annual</ThemedText>
-              <View style={styles.saveBadge}>
-                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Tier Selection */}
-          <View style={styles.tierSelectionContainer}>
-            <Pressable
-              style={[
-                styles.tierCard,
-                { 
-                  backgroundColor: theme.glass.background,
-                  borderColor: selectedTier === 'basic' ? AppColors.primary : theme.glass.border,
-                },
-              ]}
-              onPress={() => setSelectedTier('basic')}
-              data-testid="button-select-basic"
-            >
-              <View style={styles.tierCardHeader}>
-                <ThemedText style={styles.tierCardName}>Basic</ThemedText>
-                {selectedTier === 'basic' && (
-                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.primary }]}>
-                    <Feather name="check" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <ThemedText style={[styles.tierCardPrice, { color: AppColors.primary }]}>
-                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.BASIC.toFixed(2) : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
-                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-              </ThemedText>
-              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
-                25 pantry items, 5 AI recipes/mo
-              </ThemedText>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.tierCard,
-                { 
-                  backgroundColor: theme.glass.background,
-                  borderColor: selectedTier === 'pro' ? AppColors.warning : theme.glass.border,
-                },
-              ]}
-              onPress={() => setSelectedTier('pro')}
-              data-testid="button-select-pro"
-            >
-              <View style={[styles.popularBadge, { backgroundColor: AppColors.warning }]}>
-                <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
-              </View>
-              <View style={styles.tierCardHeader}>
-                <ThemedText style={styles.tierCardName}>Pro</ThemedText>
-                {selectedTier === 'pro' && (
-                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.warning }]}>
-                    <Feather name="check" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <ThemedText style={[styles.tierCardPrice, { color: AppColors.warning }]}>
-                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.PRO.toFixed(2) : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
-                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-              </ThemedText>
-              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
-                Unlimited everything
-              </ThemedText>
-            </Pressable>
-          </View>
-
-          <GlassButton
-            onPress={() => handleUpgrade(selectedTier, selectedPlan)}
-            disabled={isCheckingOut}
-            style={styles.upgradeButton}
-            icon={
-              isCheckingOut ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Feather name={selectedTier === 'pro' ? 'star' : 'check-circle'} size={18} color="#FFFFFF" />
-              )
-            }
-            testID="button-subscribe"
-          >
-            {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
-          </GlassButton>
-
-          <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
-            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
-          </ThemedText>
-          <View style={styles.legalLinksContainer}>
-            <Pressable onPress={handleOpenPrivacyPolicy} data-testid="link-privacy-policy">
-              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Privacy Policy</ThemedText>
-            </Pressable>
-            <ThemedText style={[styles.legalSeparator, { color: theme.textSecondary }]}>|</ThemedText>
-            <Pressable onPress={handleOpenTermsOfUse} data-testid="link-terms-of-use">
-              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Terms of Use</ThemedText>
-            </Pressable>
-          </View>
-        </GlassCard>
-      )}
-
-      {isProUser && isActive && !isTrialing && (
-        <GlassCard style={styles.manageCard}>
+        <GlassCard style={styles.planCard}>
           <View style={styles.sectionHeader}>
-            <Feather name="settings" size={20} color={theme.textSecondaryOnGlass} />
-            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Manage Subscription</ThemedText>
-          </View>
-          <ThemedText style={[styles.manageDescription, { color: theme.textSecondary }]}>
-            Update your payment method, change your billing cycle, or cancel your subscription.
-          </ThemedText>
-
-          <GlassButton
-            onPress={shouldUseStoreKit ? handleOpenCustomerCenter : handleManageSubscription}
-            disabled={isManaging}
-            style={styles.manageButton}
-            icon={
-              isManaging ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Feather name={shouldUseStoreKit ? "settings" : "external-link"} size={18} color="#FFFFFF" />
-              )
-            }
-            testID="button-manage-subscription"
-          >
-            {isManaging ? "Opening..." : "Manage Subscription"}
-          </GlassButton>
-        </GlassCard>
-      )}
-
-      {isTrialing && (
-        <GlassCard style={styles.upgradeCard}>
-          <View style={styles.upgradeHeader}>
-            <Feather name="shopping-bag" size={20} color={theme.textSecondaryOnGlass} />
-            <ThemedText style={[styles.upgradeTitle, { color: theme.textSecondaryOnGlass }]}>Choose Your Plan</ThemedText>
-          </View>
-          <ThemedText style={[styles.upgradeDescription, { color: theme.textSecondaryOnGlass }]}>
-            Your trial ends soon. Choose a plan to continue using ChefSpAIce.
-          </ThemedText>
-
-          {/* Billing Period Toggle */}
-          <View style={styles.billingToggleContainer}>
-            <Pressable
+            <Feather
+              name="credit-card"
+              size={20}
+              color={theme.textSecondaryOnGlass}
+            />
+            <ThemedText
               style={[
-                styles.billingToggleButton,
-                selectedPlan === 'monthly' && styles.billingToggleButtonActive,
+                styles.sectionTitle,
+                { color: theme.textSecondaryOnGlass },
               ]}
-              onPress={() => setSelectedPlan('monthly')}
-              data-testid="button-trial-billing-monthly"
             >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'monthly' && styles.billingToggleTextActive,
-              ]}>Monthly</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.billingToggleButton,
-                selectedPlan === 'annual' && styles.billingToggleButtonActive,
-              ]}
-              onPress={() => setSelectedPlan('annual')}
-              data-testid="button-trial-billing-annual"
-            >
-              <ThemedText style={[
-                styles.billingToggleText,
-                selectedPlan === 'annual' && styles.billingToggleTextActive,
-              ]}>Annual</ThemedText>
-              <View style={styles.saveBadge}>
-                <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Tier Selection */}
-          <View style={styles.tierSelectionContainer}>
-            <Pressable
-              style={[
-                styles.tierCard,
-                { 
-                  backgroundColor: theme.glass.background,
-                  borderColor: selectedTier === 'basic' ? AppColors.primary : theme.glass.border,
-                },
-              ]}
-              onPress={() => setSelectedTier('basic')}
-              data-testid="button-trial-select-basic"
-            >
-              <View style={styles.tierCardHeader}>
-                <ThemedText style={styles.tierCardName}>Basic</ThemedText>
-                {selectedTier === 'basic' && (
-                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.primary }]}>
-                    <Feather name="check" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <ThemedText style={[styles.tierCardPrice, { color: AppColors.primary }]}>
-                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.BASIC.toFixed(2) : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
-                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-              </ThemedText>
-              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
-                25 pantry items, 5 AI recipes/mo
-              </ThemedText>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.tierCard,
-                { 
-                  backgroundColor: theme.glass.background,
-                  borderColor: selectedTier === 'pro' ? AppColors.warning : theme.glass.border,
-                },
-              ]}
-              onPress={() => setSelectedTier('pro')}
-              data-testid="button-trial-select-pro"
-            >
-              <View style={[styles.popularBadge, { backgroundColor: AppColors.warning }]}>
-                <ThemedText style={styles.popularBadgeText}>Popular</ThemedText>
-              </View>
-              <View style={styles.tierCardHeader}>
-                <ThemedText style={styles.tierCardName}>Pro</ThemedText>
-                {selectedTier === 'pro' && (
-                  <View style={[styles.tierSelectedBadge, { backgroundColor: AppColors.warning }]}>
-                    <Feather name="check" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <ThemedText style={[styles.tierCardPrice, { color: AppColors.warning }]}>
-                ${selectedPlan === 'monthly' ? MONTHLY_PRICES.PRO.toFixed(2) : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
-                <ThemedText style={[styles.tierCardInterval, { color: theme.textSecondary }]}>/mo</ThemedText>
-              </ThemedText>
-              <ThemedText style={[styles.tierCardFeature, { color: theme.textSecondary }]}>
-                Unlimited everything
-              </ThemedText>
-            </Pressable>
-          </View>
-
-          <GlassButton
-            onPress={() => handleUpgrade(selectedTier, selectedPlan)}
-            disabled={isCheckingOut}
-            style={styles.upgradeButton}
-            icon={
-              isCheckingOut ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Feather name={selectedTier === 'pro' ? 'star' : 'check-circle'} size={18} color="#FFFFFF" />
-              )
-            }
-            testID="button-trial-subscribe"
-          >
-            {isCheckingOut ? "Loading..." : `Subscribe to ${selectedTier === 'pro' ? 'Pro' : 'Basic'}`}
-          </GlassButton>
-
-          <ThemedText style={[styles.subscriptionTerms, { color: theme.textSecondary }]}>
-            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase. Manage subscriptions in Account Settings after purchase.
-          </ThemedText>
-          <View style={styles.legalLinksContainer}>
-            <Pressable onPress={handleOpenPrivacyPolicy} data-testid="link-trial-privacy-policy">
-              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Privacy Policy</ThemedText>
-            </Pressable>
-            <ThemedText style={[styles.legalSeparator, { color: theme.textSecondary }]}>|</ThemedText>
-            <Pressable onPress={handleOpenTermsOfUse} data-testid="link-trial-terms-of-use">
-              <ThemedText style={[styles.legalLink, { color: AppColors.primary }]}>Terms of Use</ThemedText>
-            </Pressable>
-          </View>
-        </GlassCard>
-      )}
-
-      {shouldUseStoreKit && (
-        <Pressable
-          onPress={handleRestorePurchases}
-          disabled={isRestoring}
-          style={[styles.refreshButton, { borderColor: theme.border }]}
-          data-testid="button-restore-purchases"
-        >
-          {isRestoring ? (
-            <ActivityIndicator size="small" color={theme.textSecondaryOnGlass} />
-          ) : (
-            <Feather name="rotate-ccw" size={16} color={theme.textSecondaryOnGlass} />
-          )}
-          <ThemedText style={[styles.refreshText, { color: theme.textSecondaryOnGlass }]}>
-            {isRestoring ? "Restoring..." : "Restore Purchases"}
-          </ThemedText>
-        </Pressable>
-      )}
-
-      {isAuthenticated && (
-        <Pressable
-          onPress={refetch}
-          style={[styles.refreshButton, { borderColor: theme.border }]}
-          data-testid="button-refresh-subscription"
-        >
-          <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
-          <ThemedText style={[styles.refreshText, { color: theme.textSecondary }]}>
-            Refresh subscription status
-          </ThemedText>
-        </Pressable>
-      )}
-
-      {/* Continue to App option for unauthenticated users with active subscription (Apple 5.1.1 compliance) */}
-      {!isAuthenticated && isActive && (
-        <GlassCard style={styles.successCard}>
-          <View style={styles.sectionHeader}>
-            <Feather name="check-circle" size={20} color={AppColors.success} />
-            <ThemedText style={[styles.sectionTitle, { color: AppColors.success }]}>Subscription Active!</ThemedText>
-          </View>
-          <ThemedText style={[styles.successDescription, { color: theme.textSecondaryOnGlass }]}>
-            You're all set! You can start using ChefSpAIce right away.
-          </ThemedText>
-          <GlassButton
-            onPress={() => navigation.navigate('Onboarding')}
-            style={styles.continueButton}
-            icon={<Feather name="arrow-right" size={18} color="#FFFFFF" />}
-            testID="button-continue-to-app"
-          >
-            Continue to App
-          </GlassButton>
-        </GlassCard>
-      )}
-
-      {/* Optional account creation for unauthenticated users (Apple 5.1.1 compliance) */}
-      {!isAuthenticated && (
-        <GlassCard style={styles.signInCard}>
-          <View style={styles.sectionHeader}>
-            <Feather name="user" size={20} color={theme.textSecondaryOnGlass} />
-            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>
-              {isActive ? "Optional: Create an Account" : "Already have an account?"}
+              Current Plan
             </ThemedText>
           </View>
-          <ThemedText style={[styles.signInDescription, { color: theme.textSecondaryOnGlass }]}>
-            {isActive 
-              ? "Creating an account lets you sync your subscription and data across all your devices. This is optional."
-              : "Sign in to sync your subscription across all your devices."
-            }
-          </ThemedText>
-          <GlassButton
-            onPress={handleNavigateToAuth}
-            variant="secondary"
-            style={styles.signInButton}
-            icon={<Feather name="log-in" size={18} color={AppColors.primary} />}
-            testID="button-sign-in"
-          >
-            {isActive ? "Create Account" : "Sign In"}
-          </GlassButton>
+          <View style={styles.planHeader}>
+            <View style={styles.planInfo}>
+              <View style={styles.planBadge}>
+                <Feather
+                  name={isProUser ? "star" : "user"}
+                  size={20}
+                  color={isProUser ? AppColors.warning : AppColors.primary}
+                />
+              </View>
+              <View>
+                <ThemedText style={styles.planName}>{getPlanName()}</ThemedText>
+                <ThemedText
+                  style={[styles.planPrice, { color: theme.textSecondary }]}
+                >
+                  {getMonthlyPrice()}
+                </ThemedText>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: `${statusInfo.color}20` },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: statusInfo.color },
+                ]}
+              />
+              <ThemedText
+                style={[styles.statusText, { color: statusInfo.color }]}
+              >
+                {statusInfo.label}
+              </ThemedText>
+            </View>
+          </View>
+
+          {isTrialing && trialDaysRemaining !== null && (
+            <View
+              style={[
+                styles.trialBanner,
+                { backgroundColor: `${AppColors.warning}15` },
+              ]}
+            >
+              <Feather name="clock" size={16} color={AppColors.warning} />
+              <View style={styles.trialTextContainer}>
+                <ThemedText
+                  style={[styles.trialTitle, { color: AppColors.warning }]}
+                >
+                  Trial expires in {trialDaysRemaining} day
+                  {trialDaysRemaining !== 1 ? "s" : ""}
+                </ThemedText>
+                <ThemedText
+                  style={[styles.trialSubtitle, { color: theme.textSecondary }]}
+                >
+                  Choose a plan below to continue using ChefSpAIce after your
+                  trial.
+                </ThemedText>
+              </View>
+            </View>
+          )}
         </GlassCard>
-      )}
+
+        <GlassCard style={styles.usageCard}>
+          <View style={styles.sectionHeader}>
+            <Feather
+              name="bar-chart-2"
+              size={20}
+              color={theme.textSecondaryOnGlass}
+            />
+            <ThemedText
+              style={[
+                styles.sectionTitle,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              Usage Summary
+            </ThemedText>
+          </View>
+          <View style={styles.usageGrid}>
+            <View style={styles.usageItem}>
+              <View
+                style={[
+                  styles.usageIconContainer,
+                  { backgroundColor: `${AppColors.primary}15` },
+                ]}
+              >
+                <Feather name="package" size={18} color={AppColors.primary} />
+              </View>
+              <View style={styles.usageTextContainer}>
+                <ThemedText
+                  style={[styles.usageLabel, { color: theme.textSecondary }]}
+                >
+                  Pantry Items
+                </ThemedText>
+                <ThemedText style={styles.usageValue}>
+                  {formatLimit(
+                    entitlements.maxPantryItems,
+                    usage.pantryItemCount,
+                  )}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.usageItem}>
+              <View
+                style={[
+                  styles.usageIconContainer,
+                  { backgroundColor: `${AppColors.secondary}15` },
+                ]}
+              >
+                <Feather name="zap" size={18} color={AppColors.secondary} />
+              </View>
+              <View style={styles.usageTextContainer}>
+                <ThemedText
+                  style={[styles.usageLabel, { color: theme.textSecondary }]}
+                >
+                  AI Recipes This Month
+                </ThemedText>
+                <ThemedText style={styles.usageValue}>
+                  {formatLimit(
+                    entitlements.maxAiRecipes,
+                    usage.aiRecipesUsedThisMonth,
+                  )}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.usageItem}>
+              <View
+                style={[
+                  styles.usageIconContainer,
+                  { backgroundColor: `${AppColors.accent}15` },
+                ]}
+              >
+                <Feather name="tool" size={18} color={AppColors.accent} />
+              </View>
+              <View style={styles.usageTextContainer}>
+                <ThemedText
+                  style={[styles.usageLabel, { color: theme.textSecondary }]}
+                >
+                  Cookware
+                </ThemedText>
+                <ThemedText style={styles.usageValue}>
+                  {formatLimit(entitlements.maxCookware, usage.cookwareCount)}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.featuresCard}>
+          <View style={styles.sectionHeader}>
+            <Feather
+              name="layers"
+              size={20}
+              color={theme.textSecondaryOnGlass}
+            />
+            <ThemedText
+              style={[
+                styles.sectionTitle,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              Feature Comparison
+            </ThemedText>
+          </View>
+          <View style={styles.comparisonHeader}>
+            <ThemedText style={[styles.featureLabel, { flex: 1 }]}>
+              Feature
+            </ThemedText>
+            <ThemedText
+              style={[styles.tierLabel, { color: theme.textSecondary }]}
+            >
+              Basic
+            </ThemedText>
+            <ThemedText
+              style={[styles.tierLabel, { color: AppColors.warning }]}
+            >
+              Pro
+            </ThemedText>
+          </View>
+
+          {PRO_FEATURES.map((feature, index) => {
+            const isUpgradeHighlight = !isProUser && feature.pro === true;
+            return (
+              <View
+                key={feature.key}
+                style={[
+                  styles.featureRow,
+                  index === PRO_FEATURES.length - 1 && styles.featureRowLast,
+                  isUpgradeHighlight && {
+                    backgroundColor: `${AppColors.primary}08`,
+                  },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.featureName,
+                    { color: theme.textSecondaryOnGlass },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {feature.name}
+                </ThemedText>
+                <View style={styles.tierValue}>
+                  {typeof feature.basic === "boolean" ? (
+                    <Feather
+                      name={feature.basic ? "check" : "x"}
+                      size={16}
+                      color={
+                        feature.basic ? AppColors.success : theme.textSecondary
+                      }
+                    />
+                  ) : (
+                    <ThemedText
+                      style={[
+                        styles.tierValueText,
+                        { color: theme.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {feature.basic}
+                    </ThemedText>
+                  )}
+                </View>
+                <View style={styles.tierValue}>
+                  {typeof feature.pro === "boolean" ? (
+                    <Feather
+                      name={feature.pro ? "check" : "x"}
+                      size={16}
+                      color={
+                        feature.pro ? AppColors.success : theme.textSecondary
+                      }
+                    />
+                  ) : (
+                    <ThemedText
+                      style={[
+                        styles.tierValueText,
+                        { color: AppColors.success },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {feature.pro}
+                    </ThemedText>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </GlassCard>
+
+        {/* Show purchase options for: unauthenticated users OR authenticated users without subscription */}
+        {(!isAuthenticated || (!isProUser && !isTrialing)) && (
+          <GlassCard style={styles.upgradeCard}>
+            <View style={styles.upgradeHeader}>
+              <Feather
+                name="shopping-bag"
+                size={20}
+                color={theme.textSecondaryOnGlass}
+              />
+              <ThemedText
+                style={[
+                  styles.upgradeTitle,
+                  { color: theme.textSecondaryOnGlass },
+                ]}
+              >
+                Choose Your Plan
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[
+                styles.upgradeDescription,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              Select the plan that works best for you.
+            </ThemedText>
+
+            {/* Billing Period Toggle */}
+            <View style={styles.billingToggleContainer}>
+              <Pressable
+                style={[
+                  styles.billingToggleButton,
+                  selectedPlan === "monthly" &&
+                    styles.billingToggleButtonActive,
+                ]}
+                onPress={() => setSelectedPlan("monthly")}
+                data-testid="button-billing-monthly"
+              >
+                <ThemedText
+                  style={[
+                    styles.billingToggleText,
+                    selectedPlan === "monthly" &&
+                      styles.billingToggleTextActive,
+                  ]}
+                >
+                  Monthly
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.billingToggleButton,
+                  selectedPlan === "annual" && styles.billingToggleButtonActive,
+                ]}
+                onPress={() => setSelectedPlan("annual")}
+                data-testid="button-billing-annual"
+              >
+                <ThemedText
+                  style={[
+                    styles.billingToggleText,
+                    selectedPlan === "annual" && styles.billingToggleTextActive,
+                  ]}
+                >
+                  Annual
+                </ThemedText>
+                <View style={styles.saveBadge}>
+                  <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+                </View>
+              </Pressable>
+            </View>
+
+            {/* Tier Selection */}
+            <View style={styles.tierSelectionContainer}>
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
+                      selectedTier === "basic"
+                        ? AppColors.primary
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("basic")}
+                data-testid="button-select-basic"
+              >
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Basic</ThemedText>
+                  {selectedTier === "basic" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.primary },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.primary }]}
+                >
+                  $
+                  {selectedPlan === "monthly"
+                    ? MONTHLY_PRICES.BASIC.toFixed(2)
+                    : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    /mo
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  25 pantry items, 5 AI recipes/mo
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
+                      selectedTier === "pro"
+                        ? AppColors.warning
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("pro")}
+                data-testid="button-select-pro"
+              >
+                <View
+                  style={[
+                    styles.popularBadge,
+                    { backgroundColor: AppColors.warning },
+                  ]}
+                >
+                  <ThemedText style={styles.popularBadgeText}>
+                    Popular
+                  </ThemedText>
+                </View>
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Pro</ThemedText>
+                  {selectedTier === "pro" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.warning },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.warning }]}
+                >
+                  $
+                  {selectedPlan === "monthly"
+                    ? MONTHLY_PRICES.PRO.toFixed(2)
+                    : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    /mo
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Unlimited everything
+                </ThemedText>
+              </Pressable>
+            </View>
+
+            <GlassButton
+              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              disabled={isCheckingOut}
+              style={styles.upgradeButton}
+              icon={
+                isCheckingOut ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Feather
+                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                )
+              }
+              testID="button-subscribe"
+            >
+              {isCheckingOut
+                ? "Loading..."
+                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+            </GlassButton>
+
+            <ThemedText
+              style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
+            >
+              Subscription automatically renews unless auto-renew is turned off
+              at least 24 hours before the end of the current period. Payment
+              will be charged to your Apple ID account at confirmation of
+              purchase. Manage subscriptions in Account Settings after purchase.
+            </ThemedText>
+            <View style={styles.legalLinksContainer}>
+              <Pressable
+                onPress={handleOpenPrivacyPolicy}
+                data-testid="link-privacy-policy"
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Privacy Policy
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-terms-of-use"
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Terms of Use
+                </ThemedText>
+              </Pressable>
+            </View>
+          </GlassCard>
+        )}
+
+        {isProUser && isActive && !isTrialing && (
+          <GlassCard style={styles.manageCard}>
+            <View style={styles.sectionHeader}>
+              <Feather
+                name="settings"
+                size={20}
+                color={theme.textSecondaryOnGlass}
+              />
+              <ThemedText
+                style={[
+                  styles.sectionTitle,
+                  { color: theme.textSecondaryOnGlass },
+                ]}
+              >
+                Manage Subscription
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[styles.manageDescription, { color: theme.textSecondary }]}
+            >
+              Update your payment method, change your billing cycle, or cancel
+              your subscription.
+            </ThemedText>
+
+            <GlassButton
+              onPress={
+                shouldUseStoreKit
+                  ? handleOpenCustomerCenter
+                  : handleManageSubscription
+              }
+              disabled={isManaging}
+              style={styles.manageButton}
+              icon={
+                isManaging ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Feather
+                    name={shouldUseStoreKit ? "settings" : "external-link"}
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                )
+              }
+              testID="button-manage-subscription"
+            >
+              {isManaging ? "Opening..." : "Manage Subscription"}
+            </GlassButton>
+          </GlassCard>
+        )}
+
+        {isTrialing && (
+          <GlassCard style={styles.upgradeCard}>
+            <View style={styles.upgradeHeader}>
+              <Feather
+                name="shopping-bag"
+                size={20}
+                color={theme.textSecondaryOnGlass}
+              />
+              <ThemedText
+                style={[
+                  styles.upgradeTitle,
+                  { color: theme.textSecondaryOnGlass },
+                ]}
+              >
+                Choose Your Plan
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[
+                styles.upgradeDescription,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              Your trial ends soon. Choose a plan to continue using ChefSpAIce.
+            </ThemedText>
+
+            {/* Billing Period Toggle */}
+            <View style={styles.billingToggleContainer}>
+              <Pressable
+                style={[
+                  styles.billingToggleButton,
+                  selectedPlan === "monthly" &&
+                    styles.billingToggleButtonActive,
+                ]}
+                onPress={() => setSelectedPlan("monthly")}
+                data-testid="button-trial-billing-monthly"
+              >
+                <ThemedText
+                  style={[
+                    styles.billingToggleText,
+                    selectedPlan === "monthly" &&
+                      styles.billingToggleTextActive,
+                  ]}
+                >
+                  Monthly
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.billingToggleButton,
+                  selectedPlan === "annual" && styles.billingToggleButtonActive,
+                ]}
+                onPress={() => setSelectedPlan("annual")}
+                data-testid="button-trial-billing-annual"
+              >
+                <ThemedText
+                  style={[
+                    styles.billingToggleText,
+                    selectedPlan === "annual" && styles.billingToggleTextActive,
+                  ]}
+                >
+                  Annual
+                </ThemedText>
+                <View style={styles.saveBadge}>
+                  <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+                </View>
+              </Pressable>
+            </View>
+
+            {/* Tier Selection */}
+            <View style={styles.tierSelectionContainer}>
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
+                      selectedTier === "basic"
+                        ? AppColors.primary
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("basic")}
+                data-testid="button-trial-select-basic"
+              >
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Basic</ThemedText>
+                  {selectedTier === "basic" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.primary },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.primary }]}
+                >
+                  $
+                  {selectedPlan === "monthly"
+                    ? MONTHLY_PRICES.BASIC.toFixed(2)
+                    : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    /mo
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  25 pantry items, 5 AI recipes/mo
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
+                      selectedTier === "pro"
+                        ? AppColors.warning
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("pro")}
+                data-testid="button-trial-select-pro"
+              >
+                <View
+                  style={[
+                    styles.popularBadge,
+                    { backgroundColor: AppColors.warning },
+                  ]}
+                >
+                  <ThemedText style={styles.popularBadgeText}>
+                    Popular
+                  </ThemedText>
+                </View>
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Pro</ThemedText>
+                  {selectedTier === "pro" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.warning },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.warning }]}
+                >
+                  $
+                  {selectedPlan === "monthly"
+                    ? MONTHLY_PRICES.PRO.toFixed(2)
+                    : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    /mo
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Unlimited everything
+                </ThemedText>
+              </Pressable>
+            </View>
+
+            <GlassButton
+              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              disabled={isCheckingOut}
+              style={styles.upgradeButton}
+              icon={
+                isCheckingOut ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Feather
+                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                )
+              }
+              testID="button-trial-subscribe"
+            >
+              {isCheckingOut
+                ? "Loading..."
+                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+            </GlassButton>
+
+            <ThemedText
+              style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
+            >
+              Subscription automatically renews unless auto-renew is turned off
+              at least 24 hours before the end of the current period. Payment
+              will be charged to your Apple ID account at confirmation of
+              purchase. Manage subscriptions in Account Settings after purchase.
+            </ThemedText>
+            <View style={styles.legalLinksContainer}>
+              <Pressable
+                onPress={handleOpenPrivacyPolicy}
+                data-testid="link-trial-privacy-policy"
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Privacy Policy
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-trial-terms-of-use"
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Terms of Use
+                </ThemedText>
+              </Pressable>
+            </View>
+          </GlassCard>
+        )}
+
+        {shouldUseStoreKit && (
+          <Pressable
+            onPress={handleRestorePurchases}
+            disabled={isRestoring}
+            style={[styles.refreshButton, { borderColor: theme.border }]}
+            data-testid="button-restore-purchases"
+          >
+            {isRestoring ? (
+              <ActivityIndicator
+                size="small"
+                color={theme.textSecondaryOnGlass}
+              />
+            ) : (
+              <Feather
+                name="rotate-ccw"
+                size={16}
+                color={theme.textSecondaryOnGlass}
+              />
+            )}
+            <ThemedText
+              style={[
+                styles.refreshText,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              {isRestoring ? "Restoring..." : "Restore Purchases"}
+            </ThemedText>
+          </Pressable>
+        )}
+
+        {isAuthenticated && (
+          <Pressable
+            onPress={refetch}
+            style={[styles.refreshButton, { borderColor: theme.border }]}
+            data-testid="button-refresh-subscription"
+          >
+            <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
+            <ThemedText
+              style={[styles.refreshText, { color: theme.textSecondary }]}
+            >
+              Refresh subscription status
+            </ThemedText>
+          </Pressable>
+        )}
+
+        {/* Continue to App option for unauthenticated users with active subscription (Apple 5.1.1 compliance) */}
+        {!isAuthenticated && isActive && (
+          <GlassCard style={styles.successCard}>
+            <View style={styles.sectionHeader}>
+              <Feather
+                name="check-circle"
+                size={20}
+                color={AppColors.success}
+              />
+              <ThemedText
+                style={[styles.sectionTitle, { color: AppColors.success }]}
+              >
+                Subscription Active!
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[
+                styles.successDescription,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              You're all set! You can start using ChefSpAIce right away.
+            </ThemedText>
+            <GlassButton
+              onPress={() => navigation.navigate("Onboarding")}
+              style={styles.continueButton}
+              icon={<Feather name="arrow-right" size={18} color="#FFFFFF" />}
+              testID="button-continue-to-app"
+            >
+              Continue to App
+            </GlassButton>
+          </GlassCard>
+        )}
+
+        {/* Optional account creation for unauthenticated users (Apple 5.1.1 compliance) */}
+        {!isAuthenticated && (
+          <GlassCard style={styles.signInCard}>
+            <View style={styles.sectionHeader}>
+              <Feather
+                name="user"
+                size={20}
+                color={theme.textSecondaryOnGlass}
+              />
+              <ThemedText
+                style={[
+                  styles.sectionTitle,
+                  { color: theme.textSecondaryOnGlass },
+                ]}
+              >
+                {isActive
+                  ? "Optional: Create an Account"
+                  : "Already have an account?"}
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[
+                styles.signInDescription,
+                { color: theme.textSecondaryOnGlass },
+              ]}
+            >
+              {isActive
+                ? "Creating an account lets you sync your subscription and data across all your devices. This is optional."
+                : "Sign in to sync your subscription across all your devices."}
+            </ThemedText>
+            <GlassButton
+              onPress={handleNavigateToAuth}
+              variant="secondary"
+              style={styles.signInButton}
+              icon={
+                <Feather name="log-in" size={18} color={AppColors.primary} />
+              }
+              testID="button-sign-in"
+            >
+              {isActive ? "Create Account" : "Sign In"}
+            </GlassButton>
+          </GlassCard>
+        )}
       </ScrollView>
     </View>
   );

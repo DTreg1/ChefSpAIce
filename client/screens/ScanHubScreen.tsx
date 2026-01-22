@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, ScrollView, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Platform,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -33,7 +39,8 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: "maximize",
     title: "Product Barcode",
     subtitle: "Scan the barcode on packaging",
-    description: "Point at the barcode on any packaged food item to quickly look up product details and nutrition info.",
+    description:
+      "Point at the barcode on any packaged food item to quickly look up product details and nutrition info.",
     color: AppColors.accent,
     screen: "BarcodeScanner",
   },
@@ -42,7 +49,8 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: "file-text",
     title: "Nutrition Label",
     subtitle: "Scan ingredients & nutrition facts",
-    description: "Take a photo of the nutrition label or ingredients list on food packaging to extract detailed information.",
+    description:
+      "Take a photo of the nutrition label or ingredients list on food packaging to extract detailed information.",
     color: "#9B59B6",
     screen: "IngredientScanner",
   },
@@ -51,7 +59,8 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: "book-open",
     title: "Recipe from Paper",
     subtitle: "Scan a cookbook or printed recipe",
-    description: "Photograph a recipe from a cookbook, magazine, or printed page to digitize and save it.",
+    description:
+      "Photograph a recipe from a cookbook, magazine, or printed page to digitize and save it.",
     color: AppColors.warning,
     screen: "RecipeScanner",
   },
@@ -60,7 +69,8 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: "camera",
     title: "Food & Leftovers",
     subtitle: "Identify food with AI",
-    description: "Take a photo of groceries, produce, or leftovers to automatically identify and add multiple items at once.",
+    description:
+      "Take a photo of groceries, produce, or leftovers to automatically identify and add multiple items at once.",
     color: AppColors.primary,
     screen: "FoodCamera",
   },
@@ -69,7 +79,8 @@ const SCAN_OPTIONS: ScanOption[] = [
     icon: "shopping-bag",
     title: "Grocery Receipt",
     subtitle: "Import purchases to inventory",
-    description: "Scan any grocery store receipt to automatically extract items and add them to your inventory. Works with any store.",
+    description:
+      "Scan any grocery store receipt to automatically extract items and add them to your inventory. Works with any store.",
     color: AppColors.success,
     screen: "ReceiptScan",
   },
@@ -89,7 +100,7 @@ function ScanOptionCard({
   return (
     <Pressable
       testID={`scan-option-${option.id}`}
-      accessibilityLabel={`${option.title}: ${option.subtitle}${isLocked ? ' (Pro feature)' : ''}`}
+      accessibilityLabel={`${option.title}: ${option.subtitle}${isLocked ? " (Pro feature)" : ""}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
@@ -97,15 +108,24 @@ function ScanOptionCard({
         pressed && styles.optionPressed,
       ]}
     >
-      <GlassCard style={[styles.optionCard, isLocked && styles.optionCardLocked]}>
+      <GlassCard
+        style={[styles.optionCard, isLocked && styles.optionCardLocked]}
+      >
         <View style={styles.optionContent}>
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: `${option.color}20`, borderColor: option.color },
+              {
+                backgroundColor: `${option.color}20`,
+                borderColor: option.color,
+              },
             ]}
           >
-            <Feather name={isLocked ? "lock" : option.icon} size={28} color={option.color} />
+            <Feather
+              name={isLocked ? "lock" : option.icon}
+              size={28}
+              color={option.color}
+            />
           </View>
           <View style={styles.textContainer}>
             <View style={styles.titleRow}>
@@ -114,7 +134,9 @@ function ScanOptionCard({
               </ThemedText>
               {isLocked && (
                 <View style={styles.proBadge}>
-                  <ThemedText type="small" style={styles.proBadgeText}>PRO</ThemedText>
+                  <ThemedText type="small" style={styles.proBadgeText}>
+                    PRO
+                  </ThemedText>
                 </View>
               )}
             </View>
@@ -147,15 +169,15 @@ export default function ScanHubScreen() {
   const { checkFeature } = useSubscription();
   const [upgradePrompt, setUpgradePrompt] = useState<{
     visible: boolean;
-    feature: 'recipeScanning' | 'bulkScanning';
-  }>({ visible: false, feature: 'recipeScanning' });
+    feature: "recipeScanning" | "bulkScanning";
+  }>({ visible: false, feature: "recipeScanning" });
 
   const isOptionLocked = (optionId: string): boolean => {
-    if (optionId === 'recipe') {
-      return !checkFeature('canUseRecipeScanning');
+    if (optionId === "recipe") {
+      return !checkFeature("canUseRecipeScanning");
     }
-    if (optionId === 'food' || optionId === 'receipt') {
-      return !checkFeature('canUseBulkScanning');
+    if (optionId === "food" || optionId === "receipt") {
+      return !checkFeature("canUseBulkScanning");
     }
     return false;
   };
@@ -164,17 +186,20 @@ export default function ScanHubScreen() {
     if (Platform.OS !== "web") {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
+
     // Check if this is a Pro-only feature
-    if (option.id === 'recipe' && !checkFeature('canUseRecipeScanning')) {
-      setUpgradePrompt({ visible: true, feature: 'recipeScanning' });
+    if (option.id === "recipe" && !checkFeature("canUseRecipeScanning")) {
+      setUpgradePrompt({ visible: true, feature: "recipeScanning" });
       return;
     }
-    if ((option.id === 'food' || option.id === 'receipt') && !checkFeature('canUseBulkScanning')) {
-      setUpgradePrompt({ visible: true, feature: 'bulkScanning' });
+    if (
+      (option.id === "food" || option.id === "receipt") &&
+      !checkFeature("canUseBulkScanning")
+    ) {
+      setUpgradePrompt({ visible: true, feature: "bulkScanning" });
       return;
     }
-    
+
     navigation.replace(option.screen as any, option.params);
   };
 
@@ -191,37 +216,46 @@ export default function ScanHubScreen() {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: 56 + insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+            {
+              paddingTop: 56 + insets.top + Spacing.lg,
+              paddingBottom: insets.bottom + Spacing.xl,
+            },
           ]}
           showsVerticalScrollIndicator={false}
         >
-        {SCAN_OPTIONS.map((option) => (
-          <ScanOptionCard
-            key={option.id}
-            option={option}
-            onPress={() => handleOptionPress(option)}
-            isDark={isDark}
-            isLocked={isOptionLocked(option.id)}
-          />
-        ))}
-      </ScrollView>
+          {SCAN_OPTIONS.map((option) => (
+            <ScanOptionCard
+              key={option.id}
+              option={option}
+              onPress={() => handleOptionPress(option)}
+              isDark={isDark}
+              isLocked={isOptionLocked(option.id)}
+            />
+          ))}
+        </ScrollView>
 
         {upgradePrompt.visible && (
           <UpgradePrompt
             type="feature"
-            featureName={upgradePrompt.feature === 'recipeScanning' ? 'Recipe Scanning' : 'Bulk Scanning'}
+            featureName={
+              upgradePrompt.feature === "recipeScanning"
+                ? "Recipe Scanning"
+                : "Bulk Scanning"
+            }
             onUpgrade={() => {
               setUpgradePrompt({ ...upgradePrompt, visible: false });
               // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
-              navigation.navigate("Main" as any, { 
-                screen: 'Tabs', 
-                params: { 
-                  screen: 'ProfileTab', 
-                  params: { screen: 'Subscription' } 
-                } 
+              navigation.navigate("Main" as any, {
+                screen: "Tabs",
+                params: {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
+                },
               });
             }}
-            onDismiss={() => setUpgradePrompt({ ...upgradePrompt, visible: false })}
+            onDismiss={() =>
+              setUpgradePrompt({ ...upgradePrompt, visible: false })
+            }
           />
         )}
       </ThemedView>

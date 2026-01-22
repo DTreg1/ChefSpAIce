@@ -26,7 +26,15 @@ export function SyncStatusIndicator({
   onPress,
 }: SyncStatusIndicatorProps) {
   const { theme } = useTheme();
-  const { status, isOnline, pendingChanges, failedItems, lastSyncAt, fullSync, retryFailedItems } = useSyncStatus();
+  const {
+    status,
+    isOnline,
+    pendingChanges,
+    failedItems,
+    lastSyncAt,
+    fullSync,
+    retryFailedItems,
+  } = useSyncStatus();
 
   const pulse = useSharedValue(1);
 
@@ -35,10 +43,10 @@ export function SyncStatusIndicator({
       pulse.value = withRepeat(
         withSequence(
           withTiming(1.2, { duration: 500 }),
-          withTiming(1, { duration: 500 })
+          withTiming(1, { duration: 500 }),
         ),
         -1,
-        true
+        true,
       );
     } else {
       pulse.value = withTiming(1, { duration: 200 });
@@ -135,7 +143,11 @@ export function SyncStatusIndicator({
         {status === "syncing" ? (
           <ActivityIndicator size="small" color={statusInfo.color} />
         ) : (
-          <Feather name={statusInfo.icon} size={iconSize} color={statusInfo.color} />
+          <Feather
+            name={statusInfo.icon}
+            size={iconSize}
+            color={statusInfo.color}
+          />
         )}
       </Animated.View>
 
@@ -145,7 +157,9 @@ export function SyncStatusIndicator({
             {statusInfo.label}
           </ThemedText>
           {lastSyncAt && status !== "syncing" ? (
-            <ThemedText style={[styles.lastSyncLabel, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[styles.lastSyncLabel, { color: theme.textSecondary }]}
+            >
               {formatLastSync()}
             </ThemedText>
           ) : null}

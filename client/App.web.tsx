@@ -39,83 +39,109 @@ function getExpoDeepLink(): string {
 // Navigation handlers reserved for future mobile web support
 void getExpoDeepLink; // suppress unused warning
 
-
-
 /**
  * Web Landing Content
- * 
+ *
  * Renders pages based on URL path with caching.
  * Once a page is visited, it stays in memory so returning to it is instant.
  */
 function WebLandingContent() {
-  const [currentPath, setCurrentPath] = useState('/');
-  const [visitedPages, setVisitedPages] = useState<Set<string>>(new Set(['/']));
+  const [currentPath, setCurrentPath] = useState("/");
+  const [visitedPages, setVisitedPages] = useState<Set<string>>(new Set(["/"]));
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      const initialPath = window.location.pathname === '' ? '/' : window.location.pathname;
+    if (Platform.OS === "web") {
+      const initialPath =
+        window.location.pathname === "" ? "/" : window.location.pathname;
       setCurrentPath(initialPath);
-      setVisitedPages(prev => new Set([...prev, initialPath]));
-      
+      setVisitedPages((prev) => new Set([...prev, initialPath]));
+
       const handlePopState = () => {
-        const newPath = window.location.pathname === '' ? '/' : window.location.pathname;
+        const newPath =
+          window.location.pathname === "" ? "/" : window.location.pathname;
         setCurrentPath(newPath);
-        setVisitedPages(prev => new Set([...prev, newPath]));
+        setVisitedPages((prev) => new Set([...prev, newPath]));
       };
-      
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
+
+      window.addEventListener("popstate", handlePopState);
+      return () => window.removeEventListener("popstate", handlePopState);
     }
   }, []);
 
   const navigateTo = (path: string) => {
-    if (Platform.OS === 'web') {
-      window.history.pushState({}, '', path);
+    if (Platform.OS === "web") {
+      window.history.pushState({}, "", path);
       setCurrentPath(path);
-      setVisitedPages(prev => new Set([...prev, path]));
+      setVisitedPages((prev) => new Set([...prev, path]));
     }
   };
 
-  const isVisible = (path: string) => currentPath === path || (path === '/' && currentPath === '');
+  const isVisible = (path: string) =>
+    currentPath === path || (path === "/" && currentPath === "");
 
   return (
     <View style={styles.container}>
       <AnimatedBackground bubbleCount={20} />
       <View style={styles.content}>
         {/* Landing page - always loaded */}
-        <View style={[styles.pageContainer, { display: isVisible('/') ? 'flex' : 'none' }]}>
+        <View
+          style={[
+            styles.pageContainer,
+            { display: isVisible("/") ? "flex" : "none" },
+          ]}
+        >
           <LandingScreen
-            onAbout={() => navigateTo('/about')}
-            onPrivacy={() => navigateTo('/privacy')}
-            onTerms={() => navigateTo('/terms')}
-            onSupport={() => navigateTo('/support')}
+            onAbout={() => navigateTo("/about")}
+            onPrivacy={() => navigateTo("/privacy")}
+            onTerms={() => navigateTo("/terms")}
+            onSupport={() => navigateTo("/support")}
           />
         </View>
-        
+
         {/* About - loaded when first visited, then cached */}
-        {visitedPages.has('/about') && (
-          <View style={[styles.pageContainer, { display: isVisible('/about') ? 'flex' : 'none' }]}>
+        {visitedPages.has("/about") && (
+          <View
+            style={[
+              styles.pageContainer,
+              { display: isVisible("/about") ? "flex" : "none" },
+            ]}
+          >
             <AboutScreen />
           </View>
         )}
-        
+
         {/* Privacy - loaded when first visited, then cached */}
-        {visitedPages.has('/privacy') && (
-          <View style={[styles.pageContainer, { display: isVisible('/privacy') ? 'flex' : 'none' }]}>
+        {visitedPages.has("/privacy") && (
+          <View
+            style={[
+              styles.pageContainer,
+              { display: isVisible("/privacy") ? "flex" : "none" },
+            ]}
+          >
             <PrivacyScreen />
           </View>
         )}
-        
+
         {/* Terms - loaded when first visited, then cached */}
-        {visitedPages.has('/terms') && (
-          <View style={[styles.pageContainer, { display: isVisible('/terms') ? 'flex' : 'none' }]}>
+        {visitedPages.has("/terms") && (
+          <View
+            style={[
+              styles.pageContainer,
+              { display: isVisible("/terms") ? "flex" : "none" },
+            ]}
+          >
             <TermsScreen />
           </View>
         )}
-        
+
         {/* Support - loaded when first visited, then cached */}
-        {visitedPages.has('/support') && (
-          <View style={[styles.pageContainer, { display: isVisible('/support') ? 'flex' : 'none' }]}>
+        {visitedPages.has("/support") && (
+          <View
+            style={[
+              styles.pageContainer,
+              { display: isVisible("/support") ? "flex" : "none" },
+            ]}
+          >
             <SupportScreen />
           </View>
         )}
@@ -149,13 +175,13 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a2e05',
+    backgroundColor: "#1a2e05",
   },
   content: {
     flex: 1,
   },
   pageContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,

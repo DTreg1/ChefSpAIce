@@ -2,16 +2,16 @@
  * =============================================================================
  * LOCAL STORAGE MODULE
  * =============================================================================
- * 
+ *
  * The core data persistence layer for ChefSpAIce.
  * Implements a local-first architecture with cloud sync capabilities.
- * 
+ *
  * ARCHITECTURE:
  * - Uses AsyncStorage for persistent local storage on device
  * - All data operations happen locally first (instant UI updates)
  * - Syncs with server when online via sync-manager
  * - Works offline - data is never lost
- * 
+ *
  * DATA ENTITIES:
  * - FoodItem: Inventory items with expiration dates and nutrition
  * - Recipe: Saved recipes (AI-generated or user-created)
@@ -21,17 +21,17 @@
  * - UserPreferences: User settings and preferences
  * - WasteLogEntry: Tracking of wasted food for analytics
  * - ConsumedLogEntry: Tracking of consumed food for analytics
- * 
+ *
  * KEY FEATURES:
  * - Type-safe interfaces for all data models
  * - Utility functions for expiration status
  * - Cloud sync integration for authenticated users
  * - Notification scheduling for expiring items
  * - ID generation utilities
- * 
+ *
  * STORAGE KEYS:
  * All keys are namespaced with @chefspaice/ prefix to avoid conflicts
- * 
+ *
  * @module lib/storage
  */
 
@@ -51,12 +51,14 @@ function triggerNotificationReschedule() {
   if (notificationDebounceTimer) {
     clearTimeout(notificationDebounceTimer);
   }
-  
+
   notificationDebounceTimer = setTimeout(async () => {
     notificationDebounceTimer = null;
-    
+
     if (!scheduleNotifications) {
-      const { scheduleExpirationNotifications } = await import("@/lib/notifications");
+      const { scheduleExpirationNotifications } = await import(
+        "@/lib/notifications"
+      );
       scheduleNotifications = scheduleExpirationNotifications;
     }
     try {
@@ -218,10 +220,10 @@ export interface UserPreferences {
   dailyMeals?: number;
   storageAreas?: string[];
   maxCookingTime?: number;
-  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType?: "breakfast" | "lunch" | "dinner" | "snack";
   prioritizeExpiring?: boolean;
-  cookingLevel?: 'basic' | 'intermediate' | 'professional';
-  llmCreativity?: 'basic' | 'special' | 'spicy' | 'wild';
+  cookingLevel?: "basic" | "intermediate" | "professional";
+  llmCreativity?: "basic" | "special" | "spicy" | "wild";
   ingredientCountMin?: number;
   ingredientCountMax?: number;
 }
@@ -331,12 +333,12 @@ export const storage = {
     const itemWithTimestamp = { ...item, updatedAt: new Date().toISOString() };
     items.push(itemWithTimestamp);
     await this.setInventory(items);
-    
+
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("inventory", "create", itemWithTimestamp);
     }
-    
+
     if (item.expirationDate) {
       triggerNotificationReschedule();
     }
@@ -344,7 +346,7 @@ export const storage = {
 
   async addInventoryItems(
     newItems: FoodItem[],
-    options?: { skipSync?: boolean }
+    options?: { skipSync?: boolean },
   ): Promise<{ added: number; failed: number }> {
     const items = await this.getInventory();
     let added = 0;
@@ -364,7 +366,7 @@ export const storage = {
     }
 
     await this.setInventory(items);
-    
+
     // Skip sync if requested (e.g., during onboarding before subscription)
     if (!options?.skipSync) {
       const token = await this.getAuthToken();
@@ -374,23 +376,29 @@ export const storage = {
         }
       }
     }
-    
-    if (newItems.some(item => item.expirationDate)) {
+
+    if (newItems.some((item) => item.expirationDate)) {
       triggerNotificationReschedule();
     }
-    
+
     return { added, failed };
   },
 
-  async updateInventoryItem(item: FoodItem, options?: { skipSync?: boolean }): Promise<void> {
+  async updateInventoryItem(
+    item: FoodItem,
+    options?: { skipSync?: boolean },
+  ): Promise<void> {
     const items = await this.getInventory();
     const index = items.findIndex((i) => i.id === item.id);
     if (index !== -1) {
       const oldItem = items[index];
-      const itemWithTimestamp = { ...item, updatedAt: new Date().toISOString() };
+      const itemWithTimestamp = {
+        ...item,
+        updatedAt: new Date().toISOString(),
+      };
       items[index] = itemWithTimestamp;
       await this.setInventory(items);
-      
+
       // Skip sync if requested (e.g., during onboarding before subscription)
       if (!options?.skipSync) {
         const token = await this.getAuthToken();
@@ -398,8 +406,11 @@ export const storage = {
           syncManager.queueChange("inventory", "update", itemWithTimestamp);
         }
       }
-      
-      if (oldItem.expirationDate !== item.expirationDate || item.expirationDate) {
+
+      if (
+        oldItem.expirationDate !== item.expirationDate ||
+        item.expirationDate
+      ) {
         triggerNotificationReschedule();
       }
     }
@@ -409,12 +420,12 @@ export const storage = {
     const items = await this.getInventory();
     const deletedItem = items.find((i) => i.id === id);
     await this.setInventory(items.filter((i) => i.id !== id));
-    
+
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("inventory", "delete", { id });
     }
-    
+
     if (deletedItem?.expirationDate) {
       triggerNotificationReschedule();
     }
@@ -432,7 +443,7 @@ export const storage = {
       recipes.map(async (recipe) => {
         let resolvedImageUri: string | undefined = recipe.imageUri;
         let useCloudFallback = false;
-        
+
         if (recipe.imageUri?.startsWith("stored:")) {
           const recipeId = recipe.imageUri.replace("stored:", "");
           const imageUri = await this.getRecipeImage(recipeId);
@@ -441,7 +452,12 @@ export const storage = {
             resolvedImageUri = imageUri;
           } else {
             // Local storage doesn't have it or data is corrupted
-            logger.log("[getRecipes] Local image missing for recipe:", recipe.id, "cloudImageUri available:", !!recipe.cloudImageUri);
+            logger.log(
+              "[getRecipes] Local image missing for recipe:",
+              recipe.id,
+              "cloudImageUri available:",
+              !!recipe.cloudImageUri,
+            );
             if (recipe.cloudImageUri) {
               useCloudFallback = true;
             } else {
@@ -456,7 +472,10 @@ export const storage = {
               const FileSystem = await import("expo-file-system/legacy");
               const fileInfo = await FileSystem.getInfoAsync(recipe.imageUri);
               if (!fileInfo.exists) {
-                logger.log("[getRecipes] Local file missing for recipe:", recipe.id);
+                logger.log(
+                  "[getRecipes] Local file missing for recipe:",
+                  recipe.id,
+                );
                 if (recipe.cloudImageUri) {
                   useCloudFallback = true;
                 } else {
@@ -471,13 +490,16 @@ export const storage = {
           // No local image but cloud image exists - use it directly
           useCloudFallback = true;
         }
-        
+
         // Use cloud fallback if local is confirmed missing and cloud is available
         if (useCloudFallback && recipe.cloudImageUri) {
-          logger.log("[getRecipes] Using cloud fallback for recipe:", recipe.id);
+          logger.log(
+            "[getRecipes] Using cloud fallback for recipe:",
+            recipe.id,
+          );
           resolvedImageUri = recipe.cloudImageUri;
         }
-        
+
         return { ...recipe, imageUri: resolvedImageUri };
       }),
     );
@@ -498,13 +520,13 @@ export const storage = {
 
     // Store images separately to avoid AsyncStorage size limits
     let recipeToStore = recipe;
-    
+
     if (recipe.imageUri?.startsWith("data:image")) {
       logger.log("[storage.addRecipe] Image is data URI, storing separately");
       // Store image separately (works on both web and native)
       const success = await this.setRecipeImage(recipe.id, recipe.imageUri);
       logger.log("[storage.addRecipe] Image storage success:", success);
-      
+
       if (success) {
         recipeToStore = { ...recipe, imageUri: `stored:${recipe.id}` };
       } else {
@@ -514,31 +536,40 @@ export const storage = {
     }
     // file:// URIs are kept as-is for native
 
-    const recipeWithTimestamp = { ...recipeToStore, updatedAt: new Date().toISOString() };
+    const recipeWithTimestamp = {
+      ...recipeToStore,
+      updatedAt: new Date().toISOString(),
+    };
     recipes.push(recipeWithTimestamp);
     await this.setRecipes(recipes);
-    logger.log("[storage.addRecipe] Recipe saved with imageUri:", recipeWithTimestamp.imageUri);
-    
+    logger.log(
+      "[storage.addRecipe] Recipe saved with imageUri:",
+      recipeWithTimestamp.imageUri,
+    );
+
     const token = await this.getAuthToken();
     if (token) {
       // Queue cloud upload in background (non-blocking)
       this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(() => {});
-      
+
       // Queue sync change - cloudImageUri will be added after upload completes
       const recipeForSync = { ...recipeWithTimestamp, imageUri: undefined };
       syncManager.queueChange("recipes", "create", recipeForSync);
     }
   },
-  
-  async uploadRecipeImageToCloud(recipeId: string, imageUri?: string): Promise<void> {
+
+  async uploadRecipeImageToCloud(
+    recipeId: string,
+    imageUri?: string,
+  ): Promise<void> {
     if (!imageUri) return;
-    
+
     try {
       const token = await this.getAuthToken();
       if (!token) return;
-      
+
       let base64Data: string;
-      
+
       if (imageUri.startsWith("data:image")) {
         base64Data = imageUri;
       } else if (imageUri.startsWith("file://") && Platform.OS !== "web") {
@@ -551,32 +582,38 @@ export const storage = {
       } else {
         return;
       }
-      
+
       const { getApiUrl } = await import("@/lib/query-client");
       const baseUrl = getApiUrl();
-      const response = await fetch(new URL("/api/recipe-images/upload", baseUrl).toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+      const response = await fetch(
+        new URL("/api/recipe-images/upload", baseUrl).toString(),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            recipeId,
+            base64Data,
+          }),
         },
-        body: JSON.stringify({
-          recipeId,
-          base64Data,
-        }),
-      });
-      
+      );
+
       if (response.ok) {
         const result = await response.json();
-        logger.log("[storage.uploadRecipeImageToCloud] Success:", result.cloudImageUri);
-        
+        logger.log(
+          "[storage.uploadRecipeImageToCloud] Success:",
+          result.cloudImageUri,
+        );
+
         // Update the recipe with cloudImageUri
         const recipes = await this.getRawRecipes();
         const index = recipes.findIndex((r) => r.id === recipeId);
         if (index !== -1) {
           recipes[index].cloudImageUri = result.cloudImageUri;
           await this.setRecipes(recipes);
-          
+
           // Queue sync update with cloudImageUri
           const recipeForSync = { ...recipes[index], imageUri: undefined };
           syncManager.queueChange("recipes", "update", recipeForSync);
@@ -603,16 +640,20 @@ export const storage = {
         recipes[index] = updatedRecipe;
       }
       await this.setRecipes(recipes);
-      
+
       const token = await this.getAuthToken();
       if (token) {
         // Upload to cloud if image changed
-        const imageChanged = recipe.imageUri !== oldRecipe.imageUri && 
-          (recipe.imageUri?.startsWith("data:image") || recipe.imageUri?.startsWith("file://"));
+        const imageChanged =
+          recipe.imageUri !== oldRecipe.imageUri &&
+          (recipe.imageUri?.startsWith("data:image") ||
+            recipe.imageUri?.startsWith("file://"));
         if (imageChanged) {
-          this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(() => {});
+          this.uploadRecipeImageToCloud(recipe.id, recipe.imageUri).catch(
+            () => {},
+          );
         }
-        
+
         const recipeForSync = { ...recipes[index], imageUri: undefined };
         syncManager.queueChange("recipes", "update", recipeForSync);
       }
@@ -624,7 +665,12 @@ export const storage = {
       // Store each image in its own key to avoid size limits
       const key = `${STORAGE_KEYS.RECIPE_IMAGES}:${recipeId}`;
       const image = await getItem<string>(key);
-      logger.log("[storage.getRecipeImage] Retrieved for:", recipeId, "found:", !!image);
+      logger.log(
+        "[storage.getRecipeImage] Retrieved for:",
+        recipeId,
+        "found:",
+        !!image,
+      );
       return image;
     } catch (error) {
       logger.log("[storage.getRecipeImage] Failed:", error);
@@ -670,7 +716,7 @@ export const storage = {
     // Also delete from separate image storage
     await this.deleteRecipeImage(id);
     await this.setRecipes(recipes.filter((r) => r.id !== id));
-    
+
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("recipes", "delete", { id });
@@ -684,7 +730,7 @@ export const storage = {
       recipes[index].isFavorite = !recipes[index].isFavorite;
       recipes[index].updatedAt = new Date().toISOString();
       await this.setRecipes(recipes);
-      
+
       const token = await this.getAuthToken();
       if (token) {
         const recipeForSync = { ...recipes[index], imageUri: undefined };
@@ -706,7 +752,7 @@ export const storage = {
     const planWithTimestamp = { ...plan, updatedAt: new Date().toISOString() };
     plans.push(planWithTimestamp);
     await this.setMealPlans(plans);
-    
+
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("mealPlans", "create", planWithTimestamp);
@@ -716,14 +762,17 @@ export const storage = {
   async updateMealPlan(updatedPlan: MealPlan): Promise<void> {
     const plans = await this.getMealPlans();
     const index = plans.findIndex((p) => p.id === updatedPlan.id);
-    const planWithTimestamp = { ...updatedPlan, updatedAt: new Date().toISOString() };
+    const planWithTimestamp = {
+      ...updatedPlan,
+      updatedAt: new Date().toISOString(),
+    };
     if (index !== -1) {
       plans[index] = planWithTimestamp;
     } else {
       plans.push(planWithTimestamp);
     }
     await this.setMealPlans(plans);
-    
+
     const token = await this.getAuthToken();
     if (token) {
       syncManager.queueChange("mealPlans", "update", planWithTimestamp);
@@ -803,11 +852,14 @@ export const storage = {
     return (await getItem<number[]>(STORAGE_KEYS.COOKWARE)) || [];
   },
 
-  async setCookware(applianceIds: number[], options?: { skipSync?: boolean }): Promise<void> {
+  async setCookware(
+    applianceIds: number[],
+    options?: { skipSync?: boolean },
+  ): Promise<void> {
     await setItem(STORAGE_KEYS.COOKWARE, applianceIds);
-    
+
     if (options?.skipSync) return;
-    
+
     const token = await this.getAuthToken();
     if (token) {
       try {
@@ -816,7 +868,7 @@ export const storage = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ applianceIds }),
         });
@@ -831,7 +883,7 @@ export const storage = {
     if (!cookware.includes(applianceId)) {
       cookware.push(applianceId);
       await setItem(STORAGE_KEYS.COOKWARE, cookware);
-      
+
       const token = await this.getAuthToken();
       if (token) {
         try {
@@ -840,12 +892,15 @@ export const storage = {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ applianceId }),
           });
         } catch (error) {
-          console.error("[storage.addCookware] Failed to sync to server:", error);
+          console.error(
+            "[storage.addCookware] Failed to sync to server:",
+            error,
+          );
         }
       }
     }
@@ -855,19 +910,25 @@ export const storage = {
     const cookware = await this.getCookware();
     const updated = cookware.filter((id) => id !== applianceId);
     await setItem(STORAGE_KEYS.COOKWARE, updated);
-    
+
     const token = await this.getAuthToken();
     if (token) {
       try {
         const baseUrl = getApiUrl();
-        await fetch(new URL(`/api/user/appliances/${applianceId}`, baseUrl).toString(), {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`,
+        await fetch(
+          new URL(`/api/user/appliances/${applianceId}`, baseUrl).toString(),
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
       } catch (error) {
-        console.error("[storage.removeCookware] Failed to sync to server:", error);
+        console.error(
+          "[storage.removeCookware] Failed to sync to server:",
+          error,
+        );
       }
     }
   },
@@ -915,13 +976,15 @@ export const storage = {
   async needsOnboarding(): Promise<boolean> {
     try {
       const status = await this.getOnboardingStatus();
-      
+
       // If onboarding was explicitly completed or skipped, respect that
       if (status.cookwareSetupCompleted || status.cookwareSetupSkipped) {
-        logger.log(`[Storage] needsOnboarding: false (explicitly ${status.cookwareSetupCompleted ? 'completed' : 'skipped'})`);
+        logger.log(
+          `[Storage] needsOnboarding: false (explicitly ${status.cookwareSetupCompleted ? "completed" : "skipped"})`,
+        );
         return false;
       }
-      
+
       // Fallback: If user has existing data, assume onboarding was completed
       // This prevents false redirects due to storage read failures or cleared cache
       const [recipes, inventory, preferences] = await Promise.all([
@@ -929,20 +992,28 @@ export const storage = {
         this.getInventory().catch(() => []),
         this.getPreferences().catch(() => null),
       ]);
-      
-      const hasExistingData = recipes.length > 0 || inventory.length > 0 || preferences !== null;
+
+      const hasExistingData =
+        recipes.length > 0 || inventory.length > 0 || preferences !== null;
       if (hasExistingData) {
-        logger.log(`[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`);
+        logger.log(
+          `[Storage] needsOnboarding: false (has existing data: recipes=${recipes.length}, inventory=${inventory.length}, prefs=${!!preferences})`,
+        );
         // Auto-fix: Mark onboarding as completed since user has data
         await this.setOnboardingCompleted().catch(() => {});
         return false;
       }
-      
-      logger.log(`[Storage] needsOnboarding: true (no completion flag, no existing data)`);
+
+      logger.log(
+        `[Storage] needsOnboarding: true (no completion flag, no existing data)`,
+      );
       return true;
     } catch (error) {
       // On any error, default to NOT needing onboarding to prevent redirect loops
-      console.error(`[Storage] needsOnboarding error, defaulting to false:`, error);
+      console.error(
+        `[Storage] needsOnboarding error, defaulting to false:`,
+        error,
+      );
       return false;
     }
   },
@@ -974,10 +1045,11 @@ export const storage = {
 
   async resetAllStorage(): Promise<void> {
     const allKeys = await AsyncStorage.getAllKeys();
-    const appKeys = allKeys.filter((key) => 
-      key.startsWith("@chefspaice/") || 
-      key.startsWith("@freshpantry/") ||
-      key === "auth_state"
+    const appKeys = allKeys.filter(
+      (key) =>
+        key.startsWith("@chefspaice/") ||
+        key.startsWith("@freshpantry/") ||
+        key === "auth_state",
     );
     if (appKeys.length > 0) {
       await AsyncStorage.multiRemove(appKeys);
@@ -986,51 +1058,67 @@ export const storage = {
   },
 
   async getCustomStorageLocations(): Promise<CustomStorageLocation[]> {
-    return (await getItem<CustomStorageLocation[]>(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS)) || [];
+    return (
+      (await getItem<CustomStorageLocation[]>(
+        STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS,
+      )) || []
+    );
   },
 
-  async addCustomStorageLocation(location: CustomStorageLocation): Promise<void> {
+  async addCustomStorageLocation(
+    location: CustomStorageLocation,
+  ): Promise<void> {
     const locations = await this.getCustomStorageLocations();
-    const exists = locations.some(l => l.key === location.key);
+    const exists = locations.some((l) => l.key === location.key);
     if (!exists) {
       locations.push(location);
       await setItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS, locations);
     }
   },
 
-  async removeCustomStorageLocation(key: string, migrateToLocation: string = "pantry"): Promise<{ migratedCount: number }> {
+  async removeCustomStorageLocation(
+    key: string,
+    migrateToLocation: string = "pantry",
+  ): Promise<{ migratedCount: number }> {
     const locations = await this.getCustomStorageLocations();
-    await setItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS, locations.filter(l => l.key !== key));
-    
+    await setItem(
+      STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS,
+      locations.filter((l) => l.key !== key),
+    );
+
     const inventory = await this.getInventory();
     let migratedCount = 0;
-    const updatedInventory = inventory.map(item => {
+    const updatedInventory = inventory.map((item) => {
       if (item.storageLocation === key) {
         migratedCount++;
         return { ...item, storageLocation: migrateToLocation };
       }
       return item;
     });
-    
+
     if (migratedCount > 0) {
       await setItem(STORAGE_KEYS.INVENTORY, updatedInventory);
     }
-    
+
     return { migratedCount };
   },
 
-  async getAllStorageLocations(): Promise<Array<{ key: string; label: string; icon: string }>> {
+  async getAllStorageLocations(): Promise<
+    Array<{ key: string; label: string; icon: string }>
+  > {
     const custom = await this.getCustomStorageLocations();
     return [...DEFAULT_STORAGE_LOCATIONS, ...custom];
   },
 
   async getUserProfile(): Promise<UserProfile> {
     const profile = await getItem<UserProfile>(STORAGE_KEYS.USER_PROFILE);
-    return profile || {
-      displayName: "Food Manager",
-      createdAt: new Date().toISOString(),
-      isLoggedIn: true,
-    };
+    return (
+      profile || {
+        displayName: "Food Manager",
+        createdAt: new Date().toISOString(),
+        isLoggedIn: true,
+      }
+    );
   },
 
   async setUserProfile(profile: UserProfile): Promise<void> {
@@ -1085,7 +1173,10 @@ export const storage = {
     });
   },
 
-  async getPendingPurchase(): Promise<{ customerInfo: unknown; timestamp: number } | null> {
+  async getPendingPurchase(): Promise<{
+    customerInfo: unknown;
+    timestamp: number;
+  } | null> {
     return await getItem(STORAGE_KEYS.PENDING_PURCHASE);
   },
 
@@ -1144,7 +1235,7 @@ export const storage = {
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
-      
+
       const response = await fetch(url.toString(), {
         method: "POST",
         headers: {
@@ -1177,7 +1268,7 @@ export const storage = {
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
-      
+
       const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
@@ -1191,23 +1282,27 @@ export const storage = {
       }
 
       const data = await response.json();
-      
+
       if (!data.data) {
         return { success: true };
       }
 
       const syncData = data.data;
 
-      await Promise.all([
-        syncData.inventory && this.setInventory(syncData.inventory),
-        syncData.recipes && this.setRecipes(syncData.recipes),
-        syncData.mealPlans && this.setMealPlans(syncData.mealPlans),
-        syncData.shoppingList && this.setShoppingList(syncData.shoppingList),
-        syncData.preferences && this.setPreferences(syncData.preferences),
-        syncData.cookware && this.setCookware(syncData.cookware, { skipSync: true }),
-        syncData.userProfile && this.setUserProfile(syncData.userProfile),
-        syncData.onboarding && setItem(STORAGE_KEYS.ONBOARDING, syncData.onboarding),
-      ].filter(Boolean));
+      await Promise.all(
+        [
+          syncData.inventory && this.setInventory(syncData.inventory),
+          syncData.recipes && this.setRecipes(syncData.recipes),
+          syncData.mealPlans && this.setMealPlans(syncData.mealPlans),
+          syncData.shoppingList && this.setShoppingList(syncData.shoppingList),
+          syncData.preferences && this.setPreferences(syncData.preferences),
+          syncData.cookware &&
+            this.setCookware(syncData.cookware, { skipSync: true }),
+          syncData.userProfile && this.setUserProfile(syncData.userProfile),
+          syncData.onboarding &&
+            setItem(STORAGE_KEYS.ONBOARDING, syncData.onboarding),
+        ].filter(Boolean),
+      );
 
       return { success: true };
     } catch (error) {
@@ -1224,11 +1319,11 @@ export function generateId(): string {
 export function getDaysUntilExpiration(expirationDate: string): number {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  
+
   // Parse the expiration date and normalize to local midnight
   const expDate = new Date(expirationDate);
   expDate.setHours(0, 0, 0, 0);
-  
+
   const diffTime = expDate.getTime() - now.getTime();
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -1250,5 +1345,3 @@ export function formatDate(dateString: string): string {
     year: "numeric",
   });
 }
-
-

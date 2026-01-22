@@ -200,10 +200,12 @@ export function ChatModal() {
           : "No ingredients in inventory";
 
       const baseUrl = getApiUrl();
-      
+
       // Get auth token if user is logged in
       const authToken = await storage.getAuthToken();
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
@@ -215,7 +217,7 @@ export function ChatModal() {
         body: JSON.stringify({
           message: userMessage.content,
           context: inventoryContext,
-          inventory: inventory.map(i => ({
+          inventory: inventory.map((i) => ({
             id: i.id,
             name: i.name,
             quantity: i.quantity,
@@ -224,11 +226,13 @@ export function ChatModal() {
             storageLocation: i.storageLocation,
             category: i.category,
           })),
-          preferences: preferences ? {
-            dietaryRestrictions: preferences.dietaryRestrictions,
-            cuisinePreferences: preferences.cuisinePreferences,
-            macroTargets: preferences.macroTargets,
-          } : null,
+          preferences: preferences
+            ? {
+                dietaryRestrictions: preferences.dietaryRestrictions,
+                cuisinePreferences: preferences.cuisinePreferences,
+                macroTargets: preferences.macroTargets,
+              }
+            : null,
           equipment: equipment,
           history: updatedMessages.slice(-10).map((m) => ({
             role: m.role,
@@ -425,37 +429,64 @@ export function ChatModal() {
               styles.feedbackChip,
               {
                 borderWidth: 1,
-                borderColor: suggestion === "Report Bug" 
-                  ? (isDark ? "rgba(255,100,100,0.4)" : "rgba(200,50,50,0.3)")
-                  : (isDark ? "rgba(100,200,255,0.4)" : "rgba(50,150,200,0.3)"),
-                backgroundColor: suggestion === "Report Bug"
-                  ? (isDark ? "rgba(255,100,100,0.1)" : "rgba(200,50,50,0.08)")
-                  : (isDark ? "rgba(100,200,255,0.1)" : "rgba(50,150,200,0.08)"),
+                borderColor:
+                  suggestion === "Report Bug"
+                    ? isDark
+                      ? "rgba(255,100,100,0.4)"
+                      : "rgba(200,50,50,0.3)"
+                    : isDark
+                      ? "rgba(100,200,255,0.4)"
+                      : "rgba(50,150,200,0.3)",
+                backgroundColor:
+                  suggestion === "Report Bug"
+                    ? isDark
+                      ? "rgba(255,100,100,0.1)"
+                      : "rgba(200,50,50,0.08)"
+                    : isDark
+                      ? "rgba(100,200,255,0.1)"
+                      : "rgba(50,150,200,0.08)",
               },
             ]}
-            onPress={() => setInputText(suggestion === "Send Feedback" 
-              ? "I'd like to send some feedback" 
-              : "I want to report a bug")}
+            onPress={() =>
+              setInputText(
+                suggestion === "Send Feedback"
+                  ? "I'd like to send some feedback"
+                  : "I want to report a bug",
+              )
+            }
             testID={`feedback-chip-${suggestion.toLowerCase().replace(" ", "-")}`}
             accessibilityRole="button"
             accessibilityLabel={suggestion}
             accessibilityHint={`Tap to ${suggestion.toLowerCase()}`}
           >
-            <Feather 
-              name={suggestion === "Report Bug" ? "alert-circle" : "message-square"} 
-              size={10} 
-              color={suggestion === "Report Bug" 
-                ? (isDark ? "#ff8888" : "#cc4444") 
-                : (isDark ? "#88ccff" : "#4488cc")} 
+            <Feather
+              name={
+                suggestion === "Report Bug" ? "alert-circle" : "message-square"
+              }
+              size={10}
+              color={
+                suggestion === "Report Bug"
+                  ? isDark
+                    ? "#ff8888"
+                    : "#cc4444"
+                  : isDark
+                    ? "#88ccff"
+                    : "#4488cc"
+              }
               style={{ marginRight: 4 }}
             />
-            <ThemedText 
-              type="caption" 
-              style={{ 
+            <ThemedText
+              type="caption"
+              style={{
                 fontSize: 10,
-                color: suggestion === "Report Bug" 
-                  ? (isDark ? "#ff8888" : "#cc4444") 
-                  : (isDark ? "#88ccff" : "#4488cc"),
+                color:
+                  suggestion === "Report Bug"
+                    ? isDark
+                      ? "#ff8888"
+                      : "#cc4444"
+                    : isDark
+                      ? "#88ccff"
+                      : "#4488cc",
               }}
             >
               {suggestion}

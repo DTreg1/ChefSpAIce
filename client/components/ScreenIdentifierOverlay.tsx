@@ -26,7 +26,7 @@ export function ScreenIdentifierOverlay({
 
   // Check environment variable to hide overlay (default: show in dev)
   const showOverlay = process.env.EXPO_PUBLIC_SHOW_DEV_OVERLAY !== "false";
-  
+
   if (!screenName || !showOverlay) return null;
 
   const handleCopy = async () => {
@@ -48,25 +48,32 @@ export function ScreenIdentifierOverlay({
       setResetting(true);
       try {
         const baseUrl = getApiUrl();
-        
+
         // 1. Delete account from server (removes all user data)
         const authToken = await storage.getAuthToken();
         if (authToken) {
           try {
-            const deleteResponse = await fetch(`${baseUrl}/api/auth/delete-account`, {
-              method: "DELETE",
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
+            const deleteResponse = await fetch(
+              `${baseUrl}/api/auth/delete-account`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${authToken}`,
+                  "Content-Type": "application/json",
+                },
               },
-            });
+            );
             if (deleteResponse.ok) {
               logger.log("[Reset] Account deleted from server");
             } else {
-              logger.log("[Reset] Could not delete from server, continuing with local reset");
+              logger.log(
+                "[Reset] Could not delete from server, continuing with local reset",
+              );
             }
           } catch (err) {
-            logger.log("[Reset] Server delete failed, continuing with local reset");
+            logger.log(
+              "[Reset] Server delete failed, continuing with local reset",
+            );
           }
         }
 
@@ -85,12 +92,15 @@ export function ScreenIdentifierOverlay({
         queryClient.clear();
 
         logger.log("[Reset] Signed out and cleared all local data");
-        
+
         // 4. Reload the page to show landing/auth screen
         if (Platform.OS === "web") {
           window.location.reload();
         } else {
-          Alert.alert("App Reset", "The app has been reset. Please restart to see the landing screen.");
+          Alert.alert(
+            "App Reset",
+            "The app has been reset. Please restart to see the landing screen.",
+          );
         }
       } catch (err) {
         console.error("Failed to reset:", err);
@@ -105,7 +115,11 @@ export function ScreenIdentifierOverlay({
     };
 
     if (Platform.OS === "web") {
-      if (confirm("Reset app for testing? This will DELETE your account and show the landing page.")) {
+      if (
+        confirm(
+          "Reset app for testing? This will DELETE your account and show the landing page.",
+        )
+      ) {
         confirmReset();
       }
     } else {
@@ -114,8 +128,12 @@ export function ScreenIdentifierOverlay({
         "This will DELETE your account from the server and reset the app. Continue?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Delete & Reset", style: "destructive", onPress: confirmReset },
-        ]
+          {
+            text: "Delete & Reset",
+            style: "destructive",
+            onPress: confirmReset,
+          },
+        ],
       );
     }
   };

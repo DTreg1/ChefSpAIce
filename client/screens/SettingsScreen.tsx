@@ -2,10 +2,10 @@
  * =============================================================================
  * SETTINGS SCREEN
  * =============================================================================
- * 
+ *
  * The user preferences and settings screen for ChefSpAIce.
  * Allows users to customize their app experience and manage their account.
- * 
+ *
  * KEY FEATURES:
  * - Cloud sync status indicator (for authenticated users)
  * - Notification preferences (expiration alerts, timing)
@@ -16,19 +16,19 @@
  * - Macro nutrient target adjustment
  * - Data management (clear data, reset preferences)
  * - Account deletion with confirmation flow
- * 
+ *
  * UI COMPONENTS:
  * - GlassCard sections for each settings group
  * - Toggles for boolean settings
  * - Chip selectors for multi-select options
  * - Stepper controls for numeric values (macro targets)
  * - Destructive action buttons with confirmation dialogs
- * 
+ *
  * DATA PERSISTENCE:
  * - Settings saved to local storage
  * - Synced with server for authenticated users
  * - Macros auto-balance to always equal 100%
- * 
+ *
  * @module screens/SettingsScreen
  */
 
@@ -132,7 +132,8 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     dietaryRestrictions: [],
@@ -241,7 +242,12 @@ export default function SettingsScreen() {
   };
 
   const handleToggleStorageArea = async (areaId: string) => {
-    const current = preferences.storageAreas || ["fridge", "freezer", "pantry", "counter"];
+    const current = preferences.storageAreas || [
+      "fridge",
+      "freezer",
+      "pantry",
+      "counter",
+    ];
     const updated = current.includes(areaId)
       ? current.filter((a) => a !== areaId)
       : [...current, areaId];
@@ -368,7 +374,9 @@ export default function SettingsScreen() {
         await storage.clearAllData();
         await clearPreferences();
         setLearnedPrefsCount(0);
-        window.alert("All your data has been deleted. The app will now reload.");
+        window.alert(
+          "All your data has been deleted. The app will now reload.",
+        );
         window.location.reload();
       }
     } else {
@@ -381,12 +389,16 @@ export default function SettingsScreen() {
             await storage.clearAllData();
             await clearPreferences();
             setLearnedPrefsCount(0);
-            Alert.alert("Data Cleared", "All your data has been deleted. The app will now reload.", [
-              {
-                text: "OK",
-                onPress: () => reloadAppAsync(),
-              },
-            ]);
+            Alert.alert(
+              "Data Cleared",
+              "All your data has been deleted. The app will now reload.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => reloadAppAsync(),
+                },
+              ],
+            );
           },
         },
       ]);
@@ -425,7 +437,8 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccountStep1 = () => {
-    const message = "Are you sure you want to delete your account? This action is irreversible and will permanently remove all your data.";
+    const message =
+      "Are you sure you want to delete your account? This action is irreversible and will permanently remove all your data.";
 
     if (Platform.OS === "web") {
       if (window.confirm(`Delete Account?\n\n${message}`)) {
@@ -444,7 +457,8 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccountStep2 = async () => {
-    const message = "This is your final warning. Deleting your account will permanently remove:\n\n- All inventory items\n- All saved recipes\n- Meal plans\n- Chat history\n- All preferences\n\nThis cannot be undone.";
+    const message =
+      "This is your final warning. Deleting your account will permanently remove:\n\n- All inventory items\n- All saved recipes\n- Meal plans\n- Chat history\n- All preferences\n\nThis cannot be undone.";
 
     const performDelete = async () => {
       try {
@@ -453,25 +467,30 @@ export default function SettingsScreen() {
         if (authToken) {
           const baseUrl = getApiUrl();
           const response = await fetch(`${baseUrl}/api/auth/delete-account`, {
-            method: 'DELETE',
+            method: "DELETE",
             headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
             },
           });
-          
+
           if (!response.ok) {
             const data = await response.json();
-            throw new Error(data.error || 'Failed to delete account from server');
+            throw new Error(
+              data.error || "Failed to delete account from server",
+            );
           }
         }
-        
+
         // Clear local storage
         await storage.deleteAccount();
         return { success: true };
       } catch (error) {
-        console.error('Delete account error:', error);
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        console.error("Delete account error:", error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
       }
     };
 
@@ -479,7 +498,9 @@ export default function SettingsScreen() {
       if (window.confirm(`Final Confirmation\n\n${message}`)) {
         const result = await performDelete();
         if (result.success) {
-          window.alert("Your account has been deleted. The app will now restart.");
+          window.alert(
+            "Your account has been deleted. The app will now restart.",
+          );
           window.location.reload();
         } else {
           window.alert(`Failed to delete account: ${result.error}`);
@@ -490,8 +511,8 @@ export default function SettingsScreen() {
       }
     } else {
       Alert.alert("Final Confirmation", message, [
-        { 
-          text: "Cancel", 
+        {
+          text: "Cancel",
           style: "cancel",
           onPress: () => setDeleteStep("none"),
         },
@@ -501,9 +522,11 @@ export default function SettingsScreen() {
           onPress: async () => {
             const result = await performDelete();
             if (result.success) {
-              Alert.alert("Account Deleted", "Your account has been deleted. The app will now restart.", [
-                { text: "OK", onPress: () => reloadAppAsync() },
-              ]);
+              Alert.alert(
+                "Account Deleted",
+                "Your account has been deleted. The app will now restart.",
+                [{ text: "OK", onPress: () => reloadAppAsync() }],
+              );
             } else {
               Alert.alert("Error", `Failed to delete account: ${result.error}`);
               setDeleteStep("none");
@@ -538,9 +561,11 @@ export default function SettingsScreen() {
           onPress: async () => {
             await signOut();
             await storage.resetAllStorage();
-            Alert.alert("App Reset", "The app has been reset to its initial state.", [
-              { text: "OK", onPress: () => reloadAppAsync() },
-            ]);
+            Alert.alert(
+              "App Reset",
+              "The app has been reset to its initial state.",
+              [{ text: "OK", onPress: () => reloadAppAsync() }],
+            );
           },
         },
       ]);
@@ -567,410 +592,66 @@ export default function SettingsScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-      {isAuthenticated ? (
+        {isAuthenticated ? (
+          <GlassCard style={styles.section}>
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Cloud Sync
+            </ThemedText>
+            <View style={styles.syncRow}>
+              <SyncStatusIndicator showLabel size="medium" />
+            </View>
+            <ThemedText type="caption" style={styles.dataInfo}>
+              Signed in as {user?.email}. Your data is synced across devices.
+            </ThemedText>
+          </GlassCard>
+        ) : null}
+
         <GlassCard style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            Cloud Sync
+            Notifications
           </ThemedText>
-          <View style={styles.syncRow}>
-            <SyncStatusIndicator showLabel size="medium" />
-          </View>
-          <ThemedText type="caption" style={styles.dataInfo}>
-            Signed in as {user?.email}. Your data is synced across devices.
-          </ThemedText>
-        </GlassCard>
-      ) : null}
 
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Notifications
-        </ThemedText>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Feather name="bell" size={20} color={theme.text} />
-            <View style={styles.settingText}>
-              <ThemedText type="body">Expiration Alerts</ThemedText>
-              <ThemedText type="caption">
-                Get notified when items are about to expire
-              </ThemedText>
-            </View>
-          </View>
-          <Switch
-            value={preferences.notificationsEnabled}
-            onValueChange={handleToggleNotifications}
-            trackColor={{
-              false: theme.backgroundSecondary,
-              true: AppColors.primary,
-            }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        {preferences.notificationsEnabled ? (
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Feather name="clock" size={20} color={theme.text} />
+              <Feather name="bell" size={20} color={theme.text} />
               <View style={styles.settingText}>
-                <ThemedText type="body">Alert Before Expiration</ThemedText>
+                <ThemedText type="body">Expiration Alerts</ThemedText>
                 <ThemedText type="caption">
-                  Days before expiration to send alert
+                  Get notified when items are about to expire
                 </ThemedText>
               </View>
             </View>
-            <View style={styles.daysSelector}>
-              <Pressable
-                onPress={() =>
-                  handleExpirationDaysChange(
-                    (preferences.expirationAlertDays || 3) - 1,
-                  )
-                }
-                style={[
-                  styles.dayButton,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-              >
-                <Feather name="minus" size={16} color={theme.text} />
-              </Pressable>
-              <View
-                style={[
-                  styles.daysValue,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-              >
-                <ThemedText type="body" style={styles.daysText}>
-                  {preferences.expirationAlertDays || 3}
-                </ThemedText>
-              </View>
-              <Pressable
-                onPress={() =>
-                  handleExpirationDaysChange(
-                    (preferences.expirationAlertDays || 3) + 1,
-                  )
-                }
-                style={[
-                  styles.dayButton,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-              >
-                <Feather name="plus" size={16} color={theme.text} />
-              </Pressable>
-            </View>
+            <Switch
+              value={preferences.notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{
+                false: theme.backgroundSecondary,
+                true: AppColors.primary,
+              }}
+              thumbColor="#FFFFFF"
+            />
           </View>
-        ) : null}
-      </GlassCard>
 
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Recipe Display
-        </ThemedText>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Feather name="book" size={20} color={theme.text} />
-            <View style={styles.settingText}>
-              <ThemedText type="body">Cooking Term Highlights</ThemedText>
-              <ThemedText type="caption">
-                Highlight cooking terms in recipes for quick definitions
-              </ThemedText>
-            </View>
-          </View>
-          <Switch
-            value={preferences.termHighlightingEnabled ?? true}
-            onValueChange={handleToggleTermHighlighting}
-            trackColor={{
-              false: theme.backgroundSecondary,
-              true: AppColors.primary,
-            }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Meal Planning
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Choose how many meals you want to plan each day
-        </ThemedText>
-        <View style={styles.presetContainer}>
-          {MEAL_PLAN_PRESETS.map((preset) => {
-            const isSelected =
-              (preferences.mealPlanPresetId || DEFAULT_PRESET_ID) === preset.id;
-            return (
-              <Pressable
-                key={preset.id}
-                onPress={() => handleSelectMealPlanPreset(preset.id)}
-                style={[
-                  styles.presetOption,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.primary : theme.border,
-                  },
-                ]}
-              >
-                <View style={styles.presetHeader}>
-                  <Feather
-                    name={isSelected ? "check-circle" : "circle"}
-                    size={20}
-                    color={isSelected ? "#FFFFFF" : theme.textSecondary}
-                  />
-                  <ThemedText
-                    type="body"
-                    style={{
-                      color: isSelected ? "#FFFFFF" : theme.text,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {preset.name}
+          {preferences.notificationsEnabled ? (
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Feather name="clock" size={20} color={theme.text} />
+                <View style={styles.settingText}>
+                  <ThemedText type="body">Alert Before Expiration</ThemedText>
+                  <ThemedText type="caption">
+                    Days before expiration to send alert
                   </ThemedText>
                 </View>
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: isSelected
-                      ? "rgba(255,255,255,0.8)"
-                      : theme.textSecondary,
-                  }}
-                >
-                  {preset.description}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Household Size
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Set your household size for personalized portion suggestions
-        </ThemedText>
-        <View style={styles.chipContainer}>
-          {HOUSEHOLD_SIZE_OPTIONS.map((option) => {
-            const isSelected = (preferences.servingSize || 2) === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => handleServingSizeChange(option.value)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.primary : theme.border,
-                  },
-                ]}
-                data-testid={`button-household-size-${option.value}`}
-              >
-                <ThemedText
-                  type="small"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {option.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Daily Meals
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          How many meals do you typically eat per day?
-        </ThemedText>
-        <View style={styles.chipContainer}>
-          {DAILY_MEALS_OPTIONS.map((option) => {
-            const isSelected = (preferences.dailyMeals || 3) === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => handleDailyMealsChange(option.value)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.primary : theme.border,
-                  },
-                ]}
-                data-testid={`button-daily-meals-${option.value}`}
-              >
-                <ThemedText
-                  type="small"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {option.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Kitchen Storage Areas
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Select which storage areas you have in your kitchen
-        </ThemedText>
-        <View style={styles.chipContainer}>
-          {STORAGE_AREA_OPTIONS.map((area) => {
-            const currentAreas = preferences.storageAreas || ["fridge", "freezer", "pantry", "counter"];
-            const isSelected = currentAreas.includes(area.id);
-            return (
-              <Pressable
-                key={area.id}
-                onPress={() => handleToggleStorageArea(area.id)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.accent
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.accent : theme.border,
-                  },
-                ]}
-                data-testid={`button-storage-area-${area.id}`}
-              >
-                <Feather
-                  name={area.icon}
-                  size={14}
-                  color={isSelected ? "#FFFFFF" : theme.text}
-                  style={{ marginRight: 4 }}
-                />
-                <ThemedText
-                  type="small"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {area.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Cuisine Preferences
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Select your favorite cuisines to personalize recipe suggestions
-        </ThemedText>
-        <View style={styles.chipContainer}>
-          {CUISINE_OPTIONS.map((cuisine) => {
-            const isSelected = (preferences.cuisinePreferences || []).includes(
-              cuisine,
-            );
-            return (
-              <Pressable
-                key={cuisine}
-                onPress={() => handleToggleCuisine(cuisine)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.primary
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.primary : theme.border,
-                  },
-                ]}
-              >
-                <ThemedText
-                  type="small"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {cuisine}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Allergies & Dietary Restrictions
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Select any allergies or dietary restrictions to avoid in recipes
-        </ThemedText>
-        <View style={styles.chipContainer}>
-          {COMMON_ALLERGIES.map((allergy) => {
-            const isSelected = (preferences.dietaryRestrictions || []).includes(
-              allergy,
-            );
-            return (
-              <Pressable
-                key={allergy}
-                onPress={() => handleToggleAllergy(allergy)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? AppColors.error
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? AppColors.error : theme.border,
-                  },
-                ]}
-              >
-                <ThemedText
-                  type="small"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {allergy}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Nutrition Targets
-        </ThemedText>
-        <ThemedText type="caption" style={styles.dataInfo}>
-          Set your preferred macro ratios for recipe generation. Values must
-          total 100%.
-        </ThemedText>
-
-        {(["protein", "carbs", "fat"] as const).map((macro) => {
-          const macros = preferences.macroTargets || DEFAULT_MACRO_TARGETS;
-          const labels = { protein: "Protein", carbs: "Carbs", fat: "Fat" };
-          const colors = {
-            protein: AppColors.primary,
-            carbs: AppColors.warning,
-            fat: AppColors.accent,
-          };
-          return (
-            <View key={macro} style={styles.macroRow}>
-              <View style={styles.macroLabel}>
-                <View
-                  style={[
-                    styles.macroIndicator,
-                    { backgroundColor: colors[macro] },
-                  ]}
-                />
-                <ThemedText type="body">{labels[macro]}</ThemedText>
               </View>
-              <View style={styles.macroControls}>
+              <View style={styles.daysSelector}>
                 <Pressable
-                  onPress={() => handleMacroChange(macro, -5)}
+                  onPress={() =>
+                    handleExpirationDaysChange(
+                      (preferences.expirationAlertDays || 3) - 1,
+                    )
+                  }
                   style={[
-                    styles.macroButton,
+                    styles.dayButton,
                     { backgroundColor: theme.backgroundSecondary },
                   ]}
                 >
@@ -978,21 +659,22 @@ export default function SettingsScreen() {
                 </Pressable>
                 <View
                   style={[
-                    styles.macroValue,
-                    { backgroundColor: colors[macro] },
+                    styles.daysValue,
+                    { backgroundColor: theme.backgroundSecondary },
                   ]}
                 >
-                  <ThemedText
-                    type="body"
-                    style={{ color: "#FFFFFF", fontWeight: "600" }}
-                  >
-                    {macros[macro]}%
+                  <ThemedText type="body" style={styles.daysText}>
+                    {preferences.expirationAlertDays || 3}
                   </ThemedText>
                 </View>
                 <Pressable
-                  onPress={() => handleMacroChange(macro, 5)}
+                  onPress={() =>
+                    handleExpirationDaysChange(
+                      (preferences.expirationAlertDays || 3) + 1,
+                    )
+                  }
                   style={[
-                    styles.macroButton,
+                    styles.dayButton,
                     { backgroundColor: theme.backgroundSecondary },
                   ]}
                 >
@@ -1000,249 +682,665 @@ export default function SettingsScreen() {
                 </Pressable>
               </View>
             </View>
-          );
-        })}
+          ) : null}
+        </GlassCard>
 
-        <GlassButton
-          variant="outline"
-          onPress={handleResetMacros}
-          style={styles.resetMacroButton}
-          icon={
-            <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
-          }
-        >
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            Reset to Default (50/35/15)
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Recipe Display
           </ThemedText>
-        </GlassButton>
-      </GlassCard>
 
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          About
-        </ThemedText>
-
-        <View style={styles.aboutItem}>
-          <ThemedText type="body">Version</ThemedText>
-          <ThemedText type="caption">1.0.0</ThemedText>
-        </View>
-
-        <View style={styles.aboutItem}>
-          <ThemedText type="body">ChefSpAIce</ThemedText>
-          <ThemedText type="caption">Your smart kitchen companion</ThemedText>
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Legal & Support
-        </ThemedText>
-
-        <Pressable
-          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
-          onPress={() => navigation.navigate("PrivacyPolicy")}
-          data-testid="button-privacy-policy"
-        >
-          <View style={styles.legalMenuIcon}>
-            <Feather name="shield" size={18} color={theme.text} />
-          </View>
-          <View style={styles.legalMenuText}>
-            <ThemedText type="body">Privacy Policy</ThemedText>
-            <ThemedText type="caption">How we handle your data</ThemedText>
-          </View>
-          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
-        </Pressable>
-
-        <Pressable
-          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
-          onPress={() => navigation.navigate("TermsOfService")}
-          data-testid="button-terms-of-service"
-        >
-          <View style={styles.legalMenuIcon}>
-            <Feather name="file-text" size={18} color={theme.text} />
-          </View>
-          <View style={styles.legalMenuText}>
-            <ThemedText type="body">Terms of Service</ThemedText>
-            <ThemedText type="caption">Usage terms and conditions</ThemedText>
-          </View>
-          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
-        </Pressable>
-
-        <Pressable
-          style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
-          onPress={() => Linking.openURL("https://chefspaice.com/support")}
-          data-testid="button-support"
-        >
-          <View style={styles.legalMenuIcon}>
-            <Feather name="help-circle" size={18} color={theme.text} />
-          </View>
-          <View style={styles.legalMenuText}>
-            <ThemedText type="body">Help & Support</ThemedText>
-            <ThemedText type="caption">Get help or contact us</ThemedText>
-          </View>
-          <Feather name="external-link" size={16} color={theme.textSecondary} />
-        </Pressable>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Storage Preferences
-        </ThemedText>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Feather name="database" size={20} color={theme.text} />
-            <View style={styles.settingText}>
-              <ThemedText type="body">Learned Preferences</ThemedText>
-              <ThemedText type="caption">
-                {learnedPrefsCount > 0
-                  ? `${learnedPrefsCount} categories with custom storage locations`
-                  : "No custom preferences yet"}
-              </ThemedText>
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Feather name="book" size={20} color={theme.text} />
+              <View style={styles.settingText}>
+                <ThemedText type="body">Cooking Term Highlights</ThemedText>
+                <ThemedText type="caption">
+                  Highlight cooking terms in recipes for quick definitions
+                </ThemedText>
+              </View>
             </View>
+            <Switch
+              value={preferences.termHighlightingEnabled ?? true}
+              onValueChange={handleToggleTermHighlighting}
+              trackColor={{
+                false: theme.backgroundSecondary,
+                true: AppColors.primary,
+              }}
+              thumbColor="#FFFFFF"
+            />
           </View>
-        </View>
+        </GlassCard>
 
-        <ThemedText type="caption" style={styles.dataInfo}>
-          The app learns your preferred storage locations based on your choices.
-          After selecting a different location 3 or more times for a category,
-          it becomes your new default.
-        </ThemedText>
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Meal Planning
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Choose how many meals you want to plan each day
+          </ThemedText>
+          <View style={styles.presetContainer}>
+            {MEAL_PLAN_PRESETS.map((preset) => {
+              const isSelected =
+                (preferences.mealPlanPresetId || DEFAULT_PRESET_ID) ===
+                preset.id;
+              return (
+                <Pressable
+                  key={preset.id}
+                  onPress={() => handleSelectMealPlanPreset(preset.id)}
+                  style={[
+                    styles.presetOption,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.primary
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.presetHeader}>
+                    <Feather
+                      name={isSelected ? "check-circle" : "circle"}
+                      size={20}
+                      color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                    />
+                    <ThemedText
+                      type="body"
+                      style={{
+                        color: isSelected ? "#FFFFFF" : theme.text,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {preset.name}
+                    </ThemedText>
+                  </View>
+                  <ThemedText
+                    type="caption"
+                    style={{
+                      color: isSelected
+                        ? "rgba(255,255,255,0.8)"
+                        : theme.textSecondary,
+                    }}
+                  >
+                    {preset.description}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
 
-        {learnedPrefsCount > 0 ? (
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Household Size
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Set your household size for personalized portion suggestions
+          </ThemedText>
+          <View style={styles.chipContainer}>
+            {HOUSEHOLD_SIZE_OPTIONS.map((option) => {
+              const isSelected =
+                (preferences.servingSize || 2) === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleServingSizeChange(option.value)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.primary
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                  data-testid={`button-household-size-${option.value}`}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                  >
+                    {option.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Daily Meals
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            How many meals do you typically eat per day?
+          </ThemedText>
+          <View style={styles.chipContainer}>
+            {DAILY_MEALS_OPTIONS.map((option) => {
+              const isSelected = (preferences.dailyMeals || 3) === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleDailyMealsChange(option.value)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.primary
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                  data-testid={`button-daily-meals-${option.value}`}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                  >
+                    {option.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Kitchen Storage Areas
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Select which storage areas you have in your kitchen
+          </ThemedText>
+          <View style={styles.chipContainer}>
+            {STORAGE_AREA_OPTIONS.map((area) => {
+              const currentAreas = preferences.storageAreas || [
+                "fridge",
+                "freezer",
+                "pantry",
+                "counter",
+              ];
+              const isSelected = currentAreas.includes(area.id);
+              return (
+                <Pressable
+                  key={area.id}
+                  onPress={() => handleToggleStorageArea(area.id)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.accent
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected ? AppColors.accent : theme.border,
+                    },
+                  ]}
+                  data-testid={`button-storage-area-${area.id}`}
+                >
+                  <Feather
+                    name={area.icon}
+                    size={14}
+                    color={isSelected ? "#FFFFFF" : theme.text}
+                    style={{ marginRight: 4 }}
+                  />
+                  <ThemedText
+                    type="small"
+                    style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                  >
+                    {area.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Cuisine Preferences
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Select your favorite cuisines to personalize recipe suggestions
+          </ThemedText>
+          <View style={styles.chipContainer}>
+            {CUISINE_OPTIONS.map((cuisine) => {
+              const isSelected = (
+                preferences.cuisinePreferences || []
+              ).includes(cuisine);
+              return (
+                <Pressable
+                  key={cuisine}
+                  onPress={() => handleToggleCuisine(cuisine)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.primary
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected
+                        ? AppColors.primary
+                        : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                  >
+                    {cuisine}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Allergies & Dietary Restrictions
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Select any allergies or dietary restrictions to avoid in recipes
+          </ThemedText>
+          <View style={styles.chipContainer}>
+            {COMMON_ALLERGIES.map((allergy) => {
+              const isSelected = (
+                preferences.dietaryRestrictions || []
+              ).includes(allergy);
+              return (
+                <Pressable
+                  key={allergy}
+                  onPress={() => handleToggleAllergy(allergy)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isSelected
+                        ? AppColors.error
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected ? AppColors.error : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{ color: isSelected ? "#FFFFFF" : theme.text }}
+                  >
+                    {allergy}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Nutrition Targets
+          </ThemedText>
+          <ThemedText type="caption" style={styles.dataInfo}>
+            Set your preferred macro ratios for recipe generation. Values must
+            total 100%.
+          </ThemedText>
+
+          {(["protein", "carbs", "fat"] as const).map((macro) => {
+            const macros = preferences.macroTargets || DEFAULT_MACRO_TARGETS;
+            const labels = { protein: "Protein", carbs: "Carbs", fat: "Fat" };
+            const colors = {
+              protein: AppColors.primary,
+              carbs: AppColors.warning,
+              fat: AppColors.accent,
+            };
+            return (
+              <View key={macro} style={styles.macroRow}>
+                <View style={styles.macroLabel}>
+                  <View
+                    style={[
+                      styles.macroIndicator,
+                      { backgroundColor: colors[macro] },
+                    ]}
+                  />
+                  <ThemedText type="body">{labels[macro]}</ThemedText>
+                </View>
+                <View style={styles.macroControls}>
+                  <Pressable
+                    onPress={() => handleMacroChange(macro, -5)}
+                    style={[
+                      styles.macroButton,
+                      { backgroundColor: theme.backgroundSecondary },
+                    ]}
+                  >
+                    <Feather name="minus" size={16} color={theme.text} />
+                  </Pressable>
+                  <View
+                    style={[
+                      styles.macroValue,
+                      { backgroundColor: colors[macro] },
+                    ]}
+                  >
+                    <ThemedText
+                      type="body"
+                      style={{ color: "#FFFFFF", fontWeight: "600" }}
+                    >
+                      {macros[macro]}%
+                    </ThemedText>
+                  </View>
+                  <Pressable
+                    onPress={() => handleMacroChange(macro, 5)}
+                    style={[
+                      styles.macroButton,
+                      { backgroundColor: theme.backgroundSecondary },
+                    ]}
+                  >
+                    <Feather name="plus" size={16} color={theme.text} />
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+
           <GlassButton
             variant="outline"
-            onPress={handleResetStoragePreferences}
-            style={styles.resetButton}
+            onPress={handleResetMacros}
+            style={styles.resetMacroButton}
             icon={
-              <Feather name="refresh-cw" size={18} color={AppColors.warning} />
+              <Feather
+                name="refresh-cw"
+                size={16}
+                color={theme.textSecondary}
+              />
             }
           >
-            <ThemedText style={{ color: AppColors.warning }}>
-              Reset Storage Preferences
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              Reset to Default (50/35/15)
             </ThemedText>
           </GlassButton>
-        ) : null}
-      </GlassCard>
+        </GlassCard>
 
-      <GlassCard style={styles.section}>
-        <ThemedText type="h4" style={styles.sectionTitle}>
-          Account & Data
-        </ThemedText>
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            About
+          </ThemedText>
 
-        {deleteStep === "none" ? (
-          <>
-            <Pressable
-              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
-              onPress={handleClearData}
-            >
-              <View style={styles.dangerMenuIcon}>
-                <Feather name="trash-2" size={18} color={AppColors.warning} />
-              </View>
-              <View style={styles.dangerMenuText}>
-                <ThemedText type="body">Clear All Data</ThemedText>
+          <View style={styles.aboutItem}>
+            <ThemedText type="body">Version</ThemedText>
+            <ThemedText type="caption">1.0.0</ThemedText>
+          </View>
+
+          <View style={styles.aboutItem}>
+            <ThemedText type="body">ChefSpAIce</ThemedText>
+            <ThemedText type="caption">Your smart kitchen companion</ThemedText>
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Legal & Support
+          </ThemedText>
+
+          <Pressable
+            style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+            data-testid="button-privacy-policy"
+          >
+            <View style={styles.legalMenuIcon}>
+              <Feather name="shield" size={18} color={theme.text} />
+            </View>
+            <View style={styles.legalMenuText}>
+              <ThemedText type="body">Privacy Policy</ThemedText>
+              <ThemedText type="caption">How we handle your data</ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+
+          <Pressable
+            style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+            onPress={() => navigation.navigate("TermsOfService")}
+            data-testid="button-terms-of-service"
+          >
+            <View style={styles.legalMenuIcon}>
+              <Feather name="file-text" size={18} color={theme.text} />
+            </View>
+            <View style={styles.legalMenuText}>
+              <ThemedText type="body">Terms of Service</ThemedText>
+              <ThemedText type="caption">Usage terms and conditions</ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+
+          <Pressable
+            style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+            onPress={() => Linking.openURL("https://chefspaice.com/support")}
+            data-testid="button-support"
+          >
+            <View style={styles.legalMenuIcon}>
+              <Feather name="help-circle" size={18} color={theme.text} />
+            </View>
+            <View style={styles.legalMenuText}>
+              <ThemedText type="body">Help & Support</ThemedText>
+              <ThemedText type="caption">Get help or contact us</ThemedText>
+            </View>
+            <Feather
+              name="external-link"
+              size={16}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Storage Preferences
+          </ThemedText>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Feather name="database" size={20} color={theme.text} />
+              <View style={styles.settingText}>
+                <ThemedText type="body">Learned Preferences</ThemedText>
                 <ThemedText type="caption">
-                  Remove inventory, recipes, meal plans, and chat history
+                  {learnedPrefsCount > 0
+                    ? `${learnedPrefsCount} categories with custom storage locations`
+                    : "No custom preferences yet"}
                 </ThemedText>
               </View>
-            </Pressable>
+            </View>
+          </View>
 
-            <Pressable
-              style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
-              onPress={handleDeleteAccountStep1}
+          <ThemedText type="caption" style={styles.dataInfo}>
+            The app learns your preferred storage locations based on your
+            choices. After selecting a different location 3 or more times for a
+            category, it becomes your new default.
+          </ThemedText>
+
+          {learnedPrefsCount > 0 ? (
+            <GlassButton
+              variant="outline"
+              onPress={handleResetStoragePreferences}
+              style={styles.resetButton}
+              icon={
+                <Feather
+                  name="refresh-cw"
+                  size={18}
+                  color={AppColors.warning}
+                />
+              }
             >
-              <View style={styles.dangerMenuIcon}>
-                <Feather name="user-x" size={18} color={AppColors.error} />
-              </View>
-              <View style={styles.dangerMenuText}>
-                <ThemedText type="body" style={{ color: AppColors.error }}>
-                  Delete Account
-                </ThemedText>
-                <ThemedText type="caption">
-                  Permanently remove your account and all data
-                </ThemedText>
-              </View>
-            </Pressable>
+              <ThemedText style={{ color: AppColors.warning }}>
+                Reset Storage Preferences
+              </ThemedText>
+            </GlassButton>
+          ) : null}
+        </GlassCard>
 
-            {__DEV__ ? (
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Account & Data
+          </ThemedText>
+
+          {deleteStep === "none" ? (
+            <>
               <Pressable
-                style={[styles.dangerMenuItem, { borderColor: theme.glass.border }]}
-                onPress={handleResetForTesting}
-                testID="button-reset-for-testing"
-                accessibilityRole="button"
-                accessibilityLabel="Reset app for testing"
-                accessibilityHint="Signs out and resets the app to experience it as a new user"
+                style={[
+                  styles.dangerMenuItem,
+                  { borderColor: theme.glass.border },
+                ]}
+                onPress={handleClearData}
               >
                 <View style={styles.dangerMenuIcon}>
-                  <Feather name="refresh-cw" size={18} color={theme.textSecondary} />
+                  <Feather name="trash-2" size={18} color={AppColors.warning} />
                 </View>
                 <View style={styles.dangerMenuText}>
-                  <ThemedText type="body">Reset App (For Testing)</ThemedText>
+                  <ThemedText type="body">Clear All Data</ThemedText>
                   <ThemedText type="caption">
-                    Sign out and reset to test as a new user
+                    Remove inventory, recipes, meal plans, and chat history
                   </ThemedText>
                 </View>
               </Pressable>
-            ) : null}
-          </>
-        ) : (
-          <View style={styles.deleteConfirmContainer}>
-            <View style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
-              <Feather name="alert-triangle" size={24} color={AppColors.error} />
-              <ThemedText type="body" style={{ color: AppColors.error, fontWeight: "600" }}>
-                Delete Account Confirmation
-              </ThemedText>
-            </View>
 
-            <ThemedText type="body" style={styles.deleteWarningText}>
-              This will permanently delete your account and all data including inventory, recipes, meal plans, and preferences.
-            </ThemedText>
+              <Pressable
+                style={[
+                  styles.dangerMenuItem,
+                  { borderColor: theme.glass.border },
+                ]}
+                onPress={handleDeleteAccountStep1}
+              >
+                <View style={styles.dangerMenuIcon}>
+                  <Feather name="user-x" size={18} color={AppColors.error} />
+                </View>
+                <View style={styles.dangerMenuText}>
+                  <ThemedText type="body" style={{ color: AppColors.error }}>
+                    Delete Account
+                  </ThemedText>
+                  <ThemedText type="caption">
+                    Permanently remove your account and all data
+                  </ThemedText>
+                </View>
+              </Pressable>
 
-            <View style={styles.deleteButtonRow}>
-              <GlassButton
-                variant="outline"
-                onPress={handleCancelDelete}
-                style={styles.cancelDeleteButton}
+              {__DEV__ ? (
+                <Pressable
+                  style={[
+                    styles.dangerMenuItem,
+                    { borderColor: theme.glass.border },
+                  ]}
+                  onPress={handleResetForTesting}
+                  testID="button-reset-for-testing"
+                  accessibilityRole="button"
+                  accessibilityLabel="Reset app for testing"
+                  accessibilityHint="Signs out and resets the app to experience it as a new user"
+                >
+                  <View style={styles.dangerMenuIcon}>
+                    <Feather
+                      name="refresh-cw"
+                      size={18}
+                      color={theme.textSecondary}
+                    />
+                  </View>
+                  <View style={styles.dangerMenuText}>
+                    <ThemedText type="body">Reset App (For Testing)</ThemedText>
+                    <ThemedText type="caption">
+                      Sign out and reset to test as a new user
+                    </ThemedText>
+                  </View>
+                </Pressable>
+              ) : null}
+            </>
+          ) : (
+            <View style={styles.deleteConfirmContainer}>
+              <View
+                style={[
+                  styles.warningBanner,
+                  { backgroundColor: `${AppColors.error}15` },
+                ]}
               >
-                <ThemedText>Cancel</ThemedText>
-              </GlassButton>
-              <GlassButton
-                variant="primary"
-                onPress={handleDeleteAccountStep2}
-                style={styles.confirmDeleteButton}
-                icon={<Feather name="trash-2" size={16} color="#FFFFFF" />}
-              >
-                <ThemedText style={{ color: "#FFFFFF" }}>
-                  Confirm Delete
+                <Feather
+                  name="alert-triangle"
+                  size={24}
+                  color={AppColors.error}
+                />
+                <ThemedText
+                  type="body"
+                  style={{ color: AppColors.error, fontWeight: "600" }}
+                >
+                  Delete Account Confirmation
                 </ThemedText>
-              </GlassButton>
-            </View>
-          </View>
-        )}
-      </GlassCard>
+              </View>
 
-      <View style={styles.footer}>
-        <ThemedText type="caption" style={styles.footerText}>
-          Made with care for food lovers everywhere
-        </ThemedText>
-        <View style={styles.featureList}>
-          <View style={styles.featureItem}>
-            <Feather name="check-circle" size={14} color={AppColors.success} />
-            <ThemedText type="caption">USDA Nutrition Data</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <Feather name="check-circle" size={14} color={AppColors.success} />
-            <ThemedText type="caption">AI Recipe Generation</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <Feather name="check-circle" size={14} color={AppColors.success} />
-            <ThemedText type="caption">Barcode Scanning</ThemedText>
+              <ThemedText type="body" style={styles.deleteWarningText}>
+                This will permanently delete your account and all data including
+                inventory, recipes, meal plans, and preferences.
+              </ThemedText>
+
+              <View style={styles.deleteButtonRow}>
+                <GlassButton
+                  variant="outline"
+                  onPress={handleCancelDelete}
+                  style={styles.cancelDeleteButton}
+                >
+                  <ThemedText>Cancel</ThemedText>
+                </GlassButton>
+                <GlassButton
+                  variant="primary"
+                  onPress={handleDeleteAccountStep2}
+                  style={styles.confirmDeleteButton}
+                  icon={<Feather name="trash-2" size={16} color="#FFFFFF" />}
+                >
+                  <ThemedText style={{ color: "#FFFFFF" }}>
+                    Confirm Delete
+                  </ThemedText>
+                </GlassButton>
+              </View>
+            </View>
+          )}
+        </GlassCard>
+
+        <View style={styles.footer}>
+          <ThemedText type="caption" style={styles.footerText}>
+            Made with care for food lovers everywhere
+          </ThemedText>
+          <View style={styles.featureList}>
+            <View style={styles.featureItem}>
+              <Feather
+                name="check-circle"
+                size={14}
+                color={AppColors.success}
+              />
+              <ThemedText type="caption">USDA Nutrition Data</ThemedText>
+            </View>
+            <View style={styles.featureItem}>
+              <Feather
+                name="check-circle"
+                size={14}
+                color={AppColors.success}
+              />
+              <ThemedText type="caption">AI Recipe Generation</ThemedText>
+            </View>
+            <View style={styles.featureItem}>
+              <Feather
+                name="check-circle"
+                size={14}
+                color={AppColors.success}
+              />
+              <ThemedText type="caption">Barcode Scanning</ThemedText>
+            </View>
           </View>
         </View>
-      </View>
-    </KeyboardAwareScrollViewCompat>
-  </View>
-);
+      </KeyboardAwareScrollViewCompat>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

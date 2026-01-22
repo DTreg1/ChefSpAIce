@@ -2,12 +2,12 @@
  * =============================================================================
  * ROOT STACK NAVIGATOR
  * =============================================================================
- * 
+ *
  * The top-level navigation structure for ChefSpAIce.
  * Controls the main navigation flow based on auth and onboarding state.
- * 
+ *
  * NAVIGATION STRUCTURE:
- * 
+ *
  * RootStack (this file)
  * ├── Onboarding - First-time user setup and sign-in
  * ├── Main (DrawerNavigator)
@@ -26,17 +26,17 @@
  * ├── RecipeScanner - Scan recipe cards
  * ├── FoodCamera - AI food recognition
  * └── FoodSearch - USDA food database search
- * 
+ *
  * AUTH FLOW:
  * - Shows Onboarding for new/logged-out users
  * - Redirects to Main after successful auth
  * - Auto-logs out on 401 errors
- * 
+ *
  * SUBSCRIPTION HANDLING:
  * - Checks subscription status after auth
  * - Redirects to pricing if no active subscription
  * - Supports 7-day free trial
- * 
+ *
  * @module navigation/RootStackNavigator
  */
 
@@ -75,12 +75,14 @@ const isWeb = Platform.OS === "web";
 
 export type RootStackParamList = {
   SignIn: undefined;
-  Auth: { selectedTier?: 'basic' | 'pro'; billingPeriod?: 'monthly' | 'annual' } | undefined;
+  Auth:
+    | { selectedTier?: "basic" | "pro"; billingPeriod?: "monthly" | "annual" }
+    | undefined;
   Main: undefined;
   Onboarding: undefined;
   Landing: undefined;
   LogoPreview: undefined;
-  Subscription: { reason?: 'expired' | 'resubscribe' } | undefined;
+  Subscription: { reason?: "expired" | "resubscribe" } | undefined;
   About: undefined;
   Privacy: undefined;
   Terms: undefined;
@@ -107,12 +109,14 @@ export type RootStackParamList = {
   AddFoodBatch: { items: IdentifiedFood[] };
   ScanHub: undefined;
   BarcodeScanner: undefined;
-  IngredientScanner: { 
-    mode?: "nutrition" | "recipe"; 
-    returnTo?: "AddItem";
-    existingBarcode?: string;
-    existingProductName?: string;
-  } | undefined;
+  IngredientScanner:
+    | {
+        mode?: "nutrition" | "recipe";
+        returnTo?: "AddItem";
+        existingBarcode?: string;
+        existingProductName?: string;
+      }
+    | undefined;
   RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
   FoodSearch: undefined;
@@ -137,10 +141,7 @@ function AuthGuardedNavigator() {
     isLoading: authLoading,
     setSignOutCallback,
   } = useAuth();
-  const {
-    isActive,
-    isLoading: subscriptionLoading,
-  } = useSubscription();
+  const { isActive, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const hasInitialized = useRef(false);
@@ -209,11 +210,13 @@ function AuthGuardedNavigator() {
     // This allows users to resubscribe instead of being stuck in an auth loop
     if (isAuthenticated && wasActive && !isActive) {
       const target = needsOnboarding ? "Onboarding" : "Subscription";
-      logger.log(`[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`);
+      logger.log(
+        `[Nav] Subscription lost, redirecting to ${target} (needsOnboarding: ${needsOnboarding})`,
+      );
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: target, params: { reason: 'expired' } }],
+          routes: [{ name: target, params: { reason: "expired" } }],
         }),
       );
     }
@@ -231,7 +234,9 @@ function AuthGuardedNavigator() {
           }),
         );
       } else {
-        logger.log("[Nav] Subscription gained but needs onboarding, staying in current flow");
+        logger.log(
+          "[Nav] Subscription gained but needs onboarding, staying in current flow",
+        );
       }
     }
 
@@ -279,7 +284,9 @@ function AuthGuardedNavigator() {
     // Show subscription screen first - they can purchase via StoreKit without an account
     // Account creation is optional and enables cross-device sync
     if (!isAuthenticated) {
-      logger.log("[Nav] Initial route: Subscription (mobile, unauthenticated - can purchase without account per Apple 5.1.1)");
+      logger.log(
+        "[Nav] Initial route: Subscription (mobile, unauthenticated - can purchase without account per Apple 5.1.1)",
+      );
       return "Subscription";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
@@ -293,7 +300,9 @@ function AuthGuardedNavigator() {
       logger.log("[Nav] Initial route: Subscription (inactive subscription)");
       return "Subscription";
     }
-    logger.log("[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)");
+    logger.log(
+      "[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)",
+    );
     return "Main";
   };
 
@@ -302,10 +311,7 @@ function AuthGuardedNavigator() {
       screenOptions={screenOptions}
       initialRouteName={getInitialRoute()}
     >
-      <Stack.Screen
-        name="Landing"
-        options={{ headerShown: false }}
-      >
+      <Stack.Screen name="Landing" options={{ headerShown: false }}>
         {(props) => (
           <LandingScreen
             onAbout={() => props.navigation.navigate("About")}

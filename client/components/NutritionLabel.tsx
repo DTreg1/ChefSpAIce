@@ -119,7 +119,7 @@ export const NutritionLabel = memo(function NutritionLabel({
 
   const scaled = useMemo(
     () => (quantity !== 1 ? scaleNutrition(nutrition, quantity) : nutrition),
-    [nutrition, quantity]
+    [nutrition, quantity],
   );
 
   if (compact) {

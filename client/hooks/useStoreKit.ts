@@ -1,8 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Platform } from 'react-native';
-import type { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
-import { storeKitService, ENTITLEMENTS, PaywallResult } from '@/lib/storekit-service';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback } from "react";
+import { Platform } from "react-native";
+import type {
+  PurchasesOffering,
+  PurchasesPackage,
+  CustomerInfo,
+} from "react-native-purchases";
+import {
+  storeKitService,
+  ENTITLEMENTS,
+  PaywallResult,
+} from "@/lib/storekit-service";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UseStoreKitReturn {
   isLoading: boolean;
@@ -10,12 +18,16 @@ interface UseStoreKitReturn {
   offerings: PurchasesOffering | null;
   customerInfo: CustomerInfo | null;
   isSubscribed: boolean;
-  currentTier: 'basic' | 'pro' | null;
+  currentTier: "basic" | "pro" | null;
   purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
   refreshCustomerInfo: () => Promise<void>;
-  presentPaywall: (options?: { offering?: PurchasesOffering }) => Promise<PaywallResult>;
-  presentPaywallIfNeeded: (requiredEntitlementId?: string) => Promise<PaywallResult>;
+  presentPaywall: (options?: {
+    offering?: PurchasesOffering;
+  }) => Promise<PaywallResult>;
+  presentPaywallIfNeeded: (
+    requiredEntitlementId?: string,
+  ) => Promise<PaywallResult>;
   presentCustomerCenter: () => Promise<void>;
   isPaywallAvailable: boolean;
   isCustomerCenterAvailable: boolean;
@@ -28,14 +40,15 @@ export function useStoreKit(): UseStoreKitReturn {
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isPaywallAvailable, setIsPaywallAvailable] = useState(false);
-  const [isCustomerCenterAvailable, setIsCustomerCenterAvailable] = useState(false);
+  const [isCustomerCenterAvailable, setIsCustomerCenterAvailable] =
+    useState(false);
 
   useEffect(() => {
     storeKitService.setAuthToken(token);
   }, [token]);
 
   useEffect(() => {
-    if (user?.id && Platform.OS !== 'web') {
+    if (user?.id && Platform.OS !== "web") {
       storeKitService.setUserId(user.id);
     }
   }, [user?.id]);
@@ -44,16 +57,16 @@ export function useStoreKit(): UseStoreKitReturn {
     ? Object.keys(customerInfo.entitlements.active).length > 0
     : false;
 
-  const currentTier: 'basic' | 'pro' | null = customerInfo?.entitlements?.active
+  const currentTier: "basic" | "pro" | null = customerInfo?.entitlements?.active
     ? customerInfo.entitlements.active[ENTITLEMENTS.PRO]
-      ? 'pro'
+      ? "pro"
       : customerInfo.entitlements.active[ENTITLEMENTS.BASIC]
-        ? 'basic'
+        ? "basic"
         : null
     : null;
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       setIsLoading(false);
       setIsAvailable(false);
       setIsPaywallAvailable(false);
@@ -65,13 +78,15 @@ export function useStoreKit(): UseStoreKitReturn {
       setIsLoading(true);
       try {
         await storeKitService.initialize();
-        
+
         const initialized = storeKitService.isInitialized();
         setIsAvailable(initialized);
-        
+
         setIsPaywallAvailable(storeKitService.isPaywallAvailable());
-        setIsCustomerCenterAvailable(storeKitService.isCustomerCenterAvailable());
-        
+        setIsCustomerCenterAvailable(
+          storeKitService.isCustomerCenterAvailable(),
+        );
+
         if (initialized) {
           const [fetchedOfferings, fetchedCustomerInfo] = await Promise.all([
             storeKitService.getOfferings(),
@@ -81,7 +96,7 @@ export function useStoreKit(): UseStoreKitReturn {
           setCustomerInfo(fetchedCustomerInfo);
         }
       } catch (error) {
-        console.error('useStoreKit: Failed to load data', error);
+        console.error("useStoreKit: Failed to load data", error);
         setIsAvailable(false);
         setIsPaywallAvailable(false);
         setIsCustomerCenterAvailable(false);
@@ -93,18 +108,21 @@ export function useStoreKit(): UseStoreKitReturn {
     initAndLoad();
   }, []);
 
-  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await storeKitService.purchasePackage(pkg);
-      if (result.success && result.customerInfo) {
-        setCustomerInfo(result.customerInfo);
+  const purchasePackage = useCallback(
+    async (pkg: PurchasesPackage): Promise<boolean> => {
+      setIsLoading(true);
+      try {
+        const result = await storeKitService.purchasePackage(pkg);
+        if (result.success && result.customerInfo) {
+          setCustomerInfo(result.customerInfo);
+        }
+        return result.success;
+      } finally {
+        setIsLoading(false);
       }
-      return result.success;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
@@ -126,31 +144,41 @@ export function useStoreKit(): UseStoreKitReturn {
     }
   }, []);
 
-  const presentPaywall = useCallback(async (options?: { offering?: PurchasesOffering }): Promise<PaywallResult> => {
-    setIsLoading(true);
-    try {
-      const result = await storeKitService.presentPaywall(options);
-      if (result === 'purchased' || result === 'restored') {
-        await refreshCustomerInfo();
+  const presentPaywall = useCallback(
+    async (options?: {
+      offering?: PurchasesOffering;
+    }): Promise<PaywallResult> => {
+      setIsLoading(true);
+      try {
+        const result = await storeKitService.presentPaywall(options);
+        if (result === "purchased" || result === "restored") {
+          await refreshCustomerInfo();
+        }
+        return result;
+      } finally {
+        setIsLoading(false);
       }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshCustomerInfo]);
+    },
+    [refreshCustomerInfo],
+  );
 
-  const presentPaywallIfNeeded = useCallback(async (requiredEntitlementId?: string): Promise<PaywallResult> => {
-    setIsLoading(true);
-    try {
-      const result = await storeKitService.presentPaywallIfNeeded(requiredEntitlementId);
-      if (result === 'purchased' || result === 'restored') {
-        await refreshCustomerInfo();
+  const presentPaywallIfNeeded = useCallback(
+    async (requiredEntitlementId?: string): Promise<PaywallResult> => {
+      setIsLoading(true);
+      try {
+        const result = await storeKitService.presentPaywallIfNeeded(
+          requiredEntitlementId,
+        );
+        if (result === "purchased" || result === "restored") {
+          await refreshCustomerInfo();
+        }
+        return result;
+      } finally {
+        setIsLoading(false);
       }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshCustomerInfo]);
+    },
+    [refreshCustomerInfo],
+  );
 
   const presentCustomerCenter = useCallback(async (): Promise<void> => {
     await storeKitService.presentCustomerCenter();

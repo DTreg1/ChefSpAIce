@@ -11,7 +11,10 @@ import Animated, {
 import { ThemedText } from "./ThemedText";
 import { GlassCard } from "./GlassCard";
 import { NutritionLabel } from "./NutritionLabel";
-import { NutritionScoreBadge, NutritionScoreDetail } from "./NutritionScoreBadge";
+import {
+  NutritionScoreBadge,
+  NutritionScoreDetail,
+} from "./NutritionScoreBadge";
 import { NutritionCorrectionModal } from "./NutritionCorrectionModal";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -110,7 +113,9 @@ export function NutritionSection({
 
     return (
       <View style={styles.nutritionContent}>
-        {existingNutrition && <NutritionScoreDetail nutrition={existingNutrition} />}
+        {existingNutrition && (
+          <NutritionScoreDetail nutrition={existingNutrition} />
+        )}
 
         <View style={styles.servingAdjuster}>
           <ThemedText type="small" style={styles.servingLabel}>

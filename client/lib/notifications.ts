@@ -77,7 +77,8 @@ export async function cancelAllExpirationNotifications(): Promise<void> {
   const notif = await getNotificationsModule();
   if (!notif) return;
 
-  const scheduledNotifications = await notif.getAllScheduledNotificationsAsync();
+  const scheduledNotifications =
+    await notif.getAllScheduledNotificationsAsync();
 
   for (const notification of scheduledNotifications) {
     const data = notification.content.data as { type?: string } | undefined;
@@ -169,7 +170,10 @@ export async function scheduleExpirationNotifications(): Promise<number> {
       }
     }
 
-    const daysAtNotification = differenceInDays(expirationDate, startOfDay(triggerDate));
+    const daysAtNotification = differenceInDays(
+      expirationDate,
+      startOfDay(triggerDate),
+    );
     const { title, body } = getExpirationMessage(item.name, daysAtNotification);
 
     await notif.scheduleNotificationAsync({
@@ -222,15 +226,15 @@ export function addNotificationResponseListener(
   if (shouldSkipNotificationsImport()) {
     return { remove: () => {} };
   }
-  
+
   let subscription: { remove: () => void } | null = null;
-  
+
   getNotificationsModule().then((notif) => {
     if (notif) {
       subscription = notif.addNotificationResponseReceivedListener(callback);
     }
   });
-  
+
   return {
     remove: () => {
       if (subscription) {

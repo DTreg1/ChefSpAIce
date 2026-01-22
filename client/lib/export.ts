@@ -7,11 +7,9 @@ import type { FoodItem, Recipe } from "@/lib/storage";
 
 const showFileSavedAlert = (filePath: string) => {
   if (Platform.OS !== "web") {
-    Alert.alert(
-      "File Saved",
-      `Your file has been saved to:\n${filePath}`,
-      [{ text: "OK" }]
-    );
+    Alert.alert("File Saved", `Your file has been saved to:\n${filePath}`, [
+      { text: "OK" },
+    ]);
   }
 };
 
@@ -33,7 +31,9 @@ const escapeCSV = (value: string | number | undefined | null): string => {
   return str;
 };
 
-export async function exportInventoryToCSV(inventory: FoodItem[]): Promise<void> {
+export async function exportInventoryToCSV(
+  inventory: FoodItem[],
+): Promise<void> {
   const headers = [
     "Name",
     "Category",
@@ -64,7 +64,10 @@ export async function exportInventoryToCSV(inventory: FoodItem[]): Promise<void>
     escapeCSV(item.nutrition?.fat),
   ]);
 
-  const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) => row.join(",")),
+  ].join("\n");
 
   const fileName = `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.csv`;
   const result = await shareFile(csvContent, fileName, "text/csv");
@@ -101,7 +104,11 @@ export async function exportRecipesToCSV(recipes: Recipe[]): Promise<void> {
     escapeCSV(recipe.cookTime),
     escapeCSV(recipe.prepTime + recipe.cookTime),
     escapeCSV(recipe.servings),
-    escapeCSV(recipe.ingredients.map((i) => `${i.quantity} ${i.unit} ${i.name}`).join("; ")),
+    escapeCSV(
+      recipe.ingredients
+        .map((i) => `${i.quantity} ${i.unit} ${i.name}`)
+        .join("; "),
+    ),
     escapeCSV(recipe.instructions.join("; ")),
     escapeCSV(recipe.dietaryTags?.join(", ")),
     escapeCSV(recipe.isFavorite ? "Yes" : "No"),
@@ -112,7 +119,10 @@ export async function exportRecipesToCSV(recipes: Recipe[]): Promise<void> {
     escapeCSV(recipe.nutrition?.fat),
   ]);
 
-  const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) => row.join(",")),
+  ].join("\n");
 
   const fileName = `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.csv`;
   const result = await shareFile(csvContent, fileName, "text/csv");
@@ -121,7 +131,9 @@ export async function exportRecipesToCSV(recipes: Recipe[]): Promise<void> {
   }
 }
 
-export async function exportInventoryToPDF(inventory: FoodItem[]): Promise<void> {
+export async function exportInventoryToPDF(
+  inventory: FoodItem[],
+): Promise<void> {
   const groupedByLocation: Record<string, FoodItem[]> = {};
   inventory.forEach((item) => {
     const loc = item.storageLocation || "Other";
@@ -235,7 +247,10 @@ export async function exportInventoryToPDF(inventory: FoodItem[]): Promise<void>
     </html>
   `;
 
-  const result = await generateAndSharePDF(html, `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  const result = await generateAndSharePDF(
+    html,
+    `ChefSpAIce_Inventory_${format(new Date(), "yyyy-MM-dd")}.pdf`,
+  );
   if (!result.success && result.filePath) {
     showFileSavedAlert(result.filePath);
   }
@@ -393,7 +408,10 @@ export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
     </html>
   `;
 
-  const result = await generateAndSharePDF(html, `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  const result = await generateAndSharePDF(
+    html,
+    `ChefSpAIce_Recipes_${format(new Date(), "yyyy-MM-dd")}.pdf`,
+  );
   if (!result.success && result.filePath) {
     showFileSavedAlert(result.filePath);
   }
@@ -661,13 +679,19 @@ function getExpiryClass(expirationDate: string | undefined): string {
   today.setHours(0, 0, 0, 0);
   const expiry = new Date(expirationDate);
   expiry.setHours(0, 0, 0, 0);
-  const daysUntil = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const daysUntil = Math.ceil(
+    (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
   if (daysUntil < 0) return "expired";
   if (daysUntil <= 3) return "expiring-soon";
   return "";
 }
 
-async function shareFile(content: string, fileName: string, mimeType: string): Promise<{ success: boolean; filePath?: string }> {
+async function shareFile(
+  content: string,
+  fileName: string,
+  mimeType: string,
+): Promise<{ success: boolean; filePath?: string }> {
   if (Platform.OS === "web") {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -693,11 +717,14 @@ async function shareFile(content: string, fileName: string, mimeType: string): P
     });
     return { success: true };
   }
-  
+
   return { success: false, filePath: fileUri };
 }
 
-async function generateAndSharePDF(html: string, fileName: string): Promise<{ success: boolean; filePath?: string }> {
+async function generateAndSharePDF(
+  html: string,
+  fileName: string,
+): Promise<{ success: boolean; filePath?: string }> {
   if (Platform.OS === "web") {
     return new Promise((resolve) => {
       const printWindow = window.open("", "_blank");
@@ -735,7 +762,6 @@ async function generateAndSharePDF(html: string, fileName: string): Promise<{ su
     });
     return { success: true };
   }
-  
+
   return { success: false, filePath: newUri };
 }
-

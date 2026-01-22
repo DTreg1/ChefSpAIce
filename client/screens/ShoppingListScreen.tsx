@@ -1,5 +1,12 @@
 import React, { useState, useCallback } from "react";
-import { View, FlatList, StyleSheet, Pressable, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
@@ -16,12 +23,15 @@ import { useInstacart } from "@/hooks/useInstacart";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem } from "@/lib/storage";
 
-
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
-  const { isConfigured: instacartConfigured, isLoading: instacartLoading, openShoppingLink } = useInstacart();
+  const {
+    isConfigured: instacartConfigured,
+    isLoading: instacartLoading,
+    openShoppingLink,
+  } = useInstacart();
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -79,7 +89,10 @@ export default function ShoppingListScreen() {
   const handleOrderOnInstacart = async () => {
     const itemsToOrder = items.filter((i) => !i.isChecked);
     if (itemsToOrder.length === 0) {
-      Alert.alert("No Items", "Add items to your shopping list to order on Instacart.");
+      Alert.alert(
+        "No Items",
+        "Add items to your shopping list to order on Instacart.",
+      );
       return;
     }
 
@@ -152,17 +165,28 @@ export default function ShoppingListScreen() {
   const renderEmptyState = () => (
     <View style={styles.emptyState} testID="container-empty-shopping">
       <Feather name="shopping-cart" size={64} color={theme.textSecondary} />
-      <ThemedText type="h3" style={styles.emptyTitle} testID="text-empty-shopping-title">
+      <ThemedText
+        type="h3"
+        style={styles.emptyTitle}
+        testID="text-empty-shopping-title"
+      >
         Your list is empty
       </ThemedText>
-      <ThemedText type="body" style={styles.emptySubtitle} testID="text-empty-shopping-subtitle">
+      <ThemedText
+        type="body"
+        style={styles.emptySubtitle}
+        testID="text-empty-shopping-subtitle"
+      >
         Add missing ingredients from recipes to build your shopping list
       </ThemedText>
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]} testID="screen-shopping-list">
+    <View
+      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+      testID="screen-shopping-list"
+    >
       <ExpoGlassHeader
         title="Shopping"
         screenKey="shopping"
@@ -190,7 +214,10 @@ export default function ShoppingListScreen() {
                 {uncheckedItems.length} items remaining
               </ThemedText>
               {checkedItems.length > 0 ? (
-                <Pressable onPress={handleClearChecked} testID="button-clear-checked">
+                <Pressable
+                  onPress={handleClearChecked}
+                  testID="button-clear-checked"
+                >
                   <ThemedText type="small" style={{ color: AppColors.error }}>
                     Clear checked
                   </ThemedText>
@@ -211,14 +238,23 @@ export default function ShoppingListScreen() {
           testID="container-completed-banner"
         >
           <Feather name="check-circle" size={24} color="#FFFFFF" />
-          <ThemedText type="body" style={styles.completedText} testID="text-shopping-complete">
+          <ThemedText
+            type="body"
+            style={styles.completedText}
+            testID="text-shopping-complete"
+          >
             Shopping complete! All items checked off.
           </ThemedText>
         </View>
       ) : null}
 
       {uncheckedItems.length > 0 && instacartConfigured ? (
-        <View style={[styles.instacartContainer, { paddingBottom: insets.bottom + Spacing.md }]}>
+        <View
+          style={[
+            styles.instacartContainer,
+            { paddingBottom: insets.bottom + Spacing.md },
+          ]}
+        >
           <GlassButton
             onPress={handleOrderOnInstacart}
             disabled={instacartLoading}
@@ -238,7 +274,6 @@ export default function ShoppingListScreen() {
           </GlassButton>
         </View>
       ) : null}
-
     </View>
   );
 }

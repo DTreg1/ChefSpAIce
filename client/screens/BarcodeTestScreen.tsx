@@ -301,7 +301,10 @@ export default function BarcodeTestScreen() {
         <ThemedText type="body" style={styles.permissionText}>
           We need access to your camera to scan barcodes for testing.
         </ThemedText>
-        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
           Enable Camera
         </GlassButton>
         <GlassButton

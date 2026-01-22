@@ -1,4 +1,11 @@
-import { StyleSheet, View, Text, ScrollView, Pressable, Platform } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Platform,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -43,59 +50,137 @@ export default function AttributionsScreen() {
   };
 
   const attributions = [
-    { name: "Expo", description: "React Native development platform", url: "https://expo.dev" },
-    { name: "OpenAI", description: "AI-powered recipe generation", url: "https://openai.com" },
-    { name: "Stripe", description: "Secure payment processing", url: "https://stripe.com" },
-    { name: "Instacart", description: "Grocery ordering and delivery", url: "https://instacart.com" },
-    { name: "React Navigation", description: "Navigation framework", url: "https://reactnavigation.org" },
-    { name: "Lucide Icons", description: "Beautiful open-source icons", url: "https://lucide.dev" },
-    { name: "Open Food Facts", description: "Food product database", url: "https://openfoodfacts.org" },
+    {
+      name: "Expo",
+      description: "React Native development platform",
+      url: "https://expo.dev",
+    },
+    {
+      name: "OpenAI",
+      description: "AI-powered recipe generation",
+      url: "https://openai.com",
+    },
+    {
+      name: "Stripe",
+      description: "Secure payment processing",
+      url: "https://stripe.com",
+    },
+    {
+      name: "Instacart",
+      description: "Grocery ordering and delivery",
+      url: "https://instacart.com",
+    },
+    {
+      name: "React Navigation",
+      description: "Navigation framework",
+      url: "https://reactnavigation.org",
+    },
+    {
+      name: "Lucide Icons",
+      description: "Beautiful open-source icons",
+      url: "https://lucide.dev",
+    },
+    {
+      name: "Open Food Facts",
+      description: "Food product database",
+      url: "https://openfoodfacts.org",
+    },
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
-      <LinearGradient colors={[colors.background, colors.backgroundGradient]} style={StyleSheet.absoluteFillObject} />
-      
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <LinearGradient
+        colors={[colors.background, colors.backgroundGradient]}
+        style={StyleSheet.absoluteFillObject}
+      />
+
       {isWeb && (
         <View style={styles.header}>
           <Pressable style={styles.logoContainer} onPress={handleGoHome}>
-            <MaterialCommunityIcons name="chef-hat" size={32} color={BRAND_GREEN} />
-            <Text style={[styles.logoText, { color: colors.textPrimary }]}>ChefSpAIce</Text>
+            <MaterialCommunityIcons
+              name="chef-hat"
+              size={32}
+              color={BRAND_GREEN}
+            />
+            <Text style={[styles.logoText, { color: colors.textPrimary }]}>
+              ChefSpAIce
+            </Text>
           </Pressable>
           <Pressable
             onPress={toggleTheme}
-            style={[styles.themeToggle, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+            style={[
+              styles.themeToggle,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
           >
-            {isDark ? <Feather name="sun" size={20} color={colors.textPrimary} /> : <Feather name="moon" size={20} color={colors.textPrimary} />}
+            {isDark ? (
+              <Feather name="sun" size={20} color={colors.textPrimary} />
+            ) : (
+              <Feather name="moon" size={20} color={colors.textPrimary} />
+            )}
           </Pressable>
         </View>
       )}
 
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Attributions</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          ChefSpAIce is built with the help of these amazing open-source projects and services.
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
+          Attributions
         </Text>
-        
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          ChefSpAIce is built with the help of these amazing open-source
+          projects and services.
+        </Text>
+
         {attributions.map((item, index) => (
-          <View key={index} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <Text style={[styles.itemName, { color: colors.textPrimary }]}>{item.name}</Text>
-            <Text style={[styles.itemDescription, { color: colors.textSecondary }]}>{item.description}</Text>
-            <Text style={[styles.itemUrl, { color: BRAND_GREEN }]}>{item.url}</Text>
+          <View
+            key={index}
+            style={[
+              styles.card,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            ]}
+          >
+            <Text style={[styles.itemName, { color: colors.textPrimary }]}>
+              {item.name}
+            </Text>
+            <Text
+              style={[styles.itemDescription, { color: colors.textSecondary }]}
+            >
+              {item.description}
+            </Text>
+            <Text style={[styles.itemUrl, { color: BRAND_GREEN }]}>
+              {item.url}
+            </Text>
           </View>
         ))}
 
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Special Thanks</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Special Thanks
+          </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            Thank you to the open-source community for making projects like ChefSpAIce possible. 
-            Your contributions to libraries, frameworks, and tools help developers build better software every day.
+            Thank you to the open-source community for making projects like
+            ChefSpAIce possible. Your contributions to libraries, frameworks,
+            and tools help developers build better software every day.
           </Text>
         </View>
 
         <Pressable style={styles.backButton} onPress={handleGoHome}>
           <Feather name="arrow-left" size={20} color="#FFFFFF" />
-          <Text style={styles.backButtonText}>{isWeb ? "Back to Home" : "Go Back"}</Text>
+          <Text style={styles.backButtonText}>
+            {isWeb ? "Back to Home" : "Go Back"}
+          </Text>
         </Pressable>
       </View>
 
@@ -120,11 +205,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  logoContainer: { flexDirection: "row", alignItems: "center", gap: 10, cursor: "pointer" as any },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    cursor: "pointer" as any,
+  },
   logoText: { fontSize: 24, fontWeight: "700" },
   themeToggle: { padding: 10, borderRadius: 10 },
-  content: { paddingHorizontal: 24, paddingVertical: 60, maxWidth: 800, alignSelf: "center", width: "100%" },
-  title: { fontSize: 42, fontWeight: "700", textAlign: "center", marginBottom: 16 },
+  content: {
+    paddingHorizontal: 24,
+    paddingVertical: 60,
+    maxWidth: 800,
+    alignSelf: "center",
+    width: "100%",
+  },
+  title: {
+    fontSize: 42,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 16,
+  },
   subtitle: { fontSize: 18, textAlign: "center", marginBottom: 40 },
   card: { borderRadius: 16, padding: 24, borderWidth: 1, marginBottom: 16 },
   itemName: { fontSize: 20, fontWeight: "600", marginBottom: 4 },

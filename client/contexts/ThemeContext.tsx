@@ -1,5 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, StyleSheet, Appearance, Platform } from "react-native";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import {
+  View,
+  ActivityIndicator,
+  StyleSheet,
+  Appearance,
+  Platform,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/theme";
 
@@ -21,15 +34,19 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getSystemScheme(): ColorScheme {
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
   const scheme = Appearance.getColorScheme();
   return scheme === "light" || scheme === "dark" ? scheme : "dark";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>("system");
-  const [systemScheme, setSystemScheme] = useState<ColorScheme>(getSystemScheme);
+  const [themePreference, setThemePreferenceState] =
+    useState<ThemePreference>("system");
+  const [systemScheme, setSystemScheme] =
+    useState<ColorScheme>(getSystemScheme);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -62,23 +79,31 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setThemePreference = useCallback((preference: ThemePreference) => {
     setThemePreferenceState(preference);
     AsyncStorage.setItem(THEME_STORAGE_KEY, preference);
-    
-    if (Platform.OS === "web" && typeof window !== "undefined" && typeof localStorage !== "undefined") {
+
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      typeof localStorage !== "undefined"
+    ) {
       localStorage.setItem("chefspaice-theme", preference);
       const resolved = preference === "system" ? getSystemScheme() : preference;
       document.documentElement?.classList?.toggle("dark", resolved === "dark");
     }
   }, []);
 
-  const colorScheme: ColorScheme = 
+  const colorScheme: ColorScheme =
     themePreference === "system" ? systemScheme : themePreference;
 
   const theme = useMemo(() => Colors[colorScheme], [colorScheme]);
-  
+
   const isDark = colorScheme === "dark";
 
   useEffect(() => {
-    if (Platform.OS === "web" && typeof window !== "undefined" && typeof document !== "undefined") {
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      typeof document !== "undefined"
+    ) {
       document.documentElement?.classList?.toggle("dark", isDark);
     }
   }, [isDark]);

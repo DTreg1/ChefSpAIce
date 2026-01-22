@@ -74,7 +74,13 @@ export function OnboardingProvider({
       resetOnboarding,
       recheckOnboarding,
     }),
-    [isOnboardingComplete, isCheckingOnboarding, markOnboardingComplete, resetOnboarding, recheckOnboarding],
+    [
+      isOnboardingComplete,
+      isCheckingOnboarding,
+      markOnboardingComplete,
+      resetOnboarding,
+      recheckOnboarding,
+    ],
   );
 
   return (

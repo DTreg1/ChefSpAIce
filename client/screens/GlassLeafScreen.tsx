@@ -13,7 +13,7 @@ export default function GlassLeafScreen() {
   return (
     <View style={styles.container}>
       <GlassLeaf />
-      
+
       <Pressable
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}

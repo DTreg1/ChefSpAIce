@@ -69,10 +69,7 @@ export function OfflineIndicator() {
   const content = (
     <View style={styles.content}>
       <Feather name={getIcon()} size={14} color={getColor()} />
-      <ThemedText
-        type="caption"
-        style={[styles.text, { color: getColor() }]}
-      >
+      <ThemedText type="caption" style={[styles.text, { color: getColor() }]}>
         {getMessage()}
       </ThemedText>
     </View>
@@ -91,7 +88,12 @@ export function OfflineIndicator() {
           {content}
         </BlurView>
       ) : (
-        <View style={[styles.androidBackground, { backgroundColor: theme.backgroundSecondary }]}>
+        <View
+          style={[
+            styles.androidBackground,
+            { backgroundColor: theme.backgroundSecondary },
+          ]}
+        >
           {content}
         </View>
       )}

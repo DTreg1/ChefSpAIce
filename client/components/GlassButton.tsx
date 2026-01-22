@@ -133,7 +133,10 @@ export const GlassButton = memo(function GlassButton({
       <AnimatedPressable
         testID={testID}
         accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel || (typeof children === "string" ? children : undefined)}
+        accessibilityLabel={
+          accessibilityLabel ||
+          (typeof children === "string" ? children : undefined)
+        }
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: disabled || loading }}
         onPress={disabled || loading ? undefined : onPress}
@@ -150,11 +153,7 @@ export const GlassButton = memo(function GlassButton({
         <BlurView
           intensity={40}
           tint={blurTint}
-          style={[
-            styles.glassButton,
-            { backgroundColor },
-            borderStyle,
-          ]}
+          style={[styles.glassButton, { backgroundColor }, borderStyle]}
         >
           {loading ? (
             <ActivityIndicator color={textColor} size="small" />
@@ -181,7 +180,10 @@ export const GlassButton = memo(function GlassButton({
     <AnimatedPressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || (typeof children === "string" ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel ||
+        (typeof children === "string" ? children : undefined)
+      }
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: disabled || loading }}
       onPress={disabled || loading ? undefined : onPress}

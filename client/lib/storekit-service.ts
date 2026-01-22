@@ -1,21 +1,31 @@
-import { Platform } from 'react-native';
-import { getApiUrl } from '@/lib/query-client';
-import Purchases, { LOG_LEVEL, PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import { storage } from '@/lib/storage';
-import { logger } from '@/lib/logger';
+import { Platform } from "react-native";
+import { getApiUrl } from "@/lib/query-client";
+import Purchases, {
+  LOG_LEVEL,
+  PurchasesOffering,
+  PurchasesPackage,
+  CustomerInfo,
+} from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
+import { storage } from "@/lib/storage";
+import { logger } from "@/lib/logger";
 
-
-const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
-const REVENUECAT_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
-const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || '';
+const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || "";
+const REVENUECAT_ANDROID_KEY =
+  process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || "";
+const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || "";
 
 export const ENTITLEMENTS = {
-  BASIC: 'basic',
-  PRO: 'pro',
+  BASIC: "basic",
+  PRO: "pro",
 } as const;
 
-export type PaywallResult = 'purchased' | 'restored' | 'cancelled' | 'error' | 'not_presented';
+export type PaywallResult =
+  | "purchased"
+  | "restored"
+  | "cancelled"
+  | "error"
+  | "not_presented";
 
 class StoreKitService {
   private initialized = false;
@@ -29,67 +39,75 @@ class StoreKitService {
   async syncPurchaseWithServer(customerInfo: CustomerInfo): Promise<boolean> {
     // If not authenticated, save purchase for later sync
     if (!this.authToken) {
-      logger.log('StoreKit: No auth token, saving purchase for later sync');
+      logger.log("StoreKit: No auth token, saving purchase for later sync");
       try {
         await storage.savePendingPurchase(customerInfo);
-        logger.log('StoreKit: Pending purchase saved successfully');
+        logger.log("StoreKit: Pending purchase saved successfully");
         return true; // Return true because purchase is valid, just pending server sync
       } catch (error) {
-        console.error('StoreKit: Failed to save pending purchase', error);
+        console.error("StoreKit: Failed to save pending purchase", error);
         return false;
       }
     }
 
     try {
-      let tier: 'BASIC' | 'PRO' = 'BASIC';
-      let status: string = 'active';
+      let tier: "BASIC" | "PRO" = "BASIC";
+      let status: string = "active";
 
       if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
-        tier = 'PRO';
+        tier = "PRO";
         const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO];
-        if (entitlement.periodType === 'TRIAL') {
-          status = 'trialing';
+        if (entitlement.periodType === "TRIAL") {
+          status = "trialing";
         }
       } else if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
-        tier = 'BASIC';
-        const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
-        if (entitlement.periodType === 'TRIAL') {
-          status = 'trialing';
+        tier = "BASIC";
+        const entitlement =
+          customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
+        if (entitlement.periodType === "TRIAL") {
+          status = "trialing";
         }
       } else {
-        status = 'expired';
+        status = "expired";
       }
 
-      const activeEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO] || 
-                                 customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
+      const activeEntitlement =
+        customerInfo.entitlements.active[ENTITLEMENTS.PRO] ||
+        customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
       const expirationDate = activeEntitlement?.expirationDate || null;
 
       const baseUrl = getApiUrl();
-      const response = await fetch(`${baseUrl}/api/subscriptions/sync-revenuecat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.authToken}`,
+      const response = await fetch(
+        `${baseUrl}/api/subscriptions/sync-revenuecat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.authToken}`,
+          },
+          body: JSON.stringify({
+            tier,
+            status,
+            productId: activeEntitlement?.productIdentifier || null,
+            expirationDate,
+          }),
         },
-        body: JSON.stringify({
-          tier,
-          status,
-          productId: activeEntitlement?.productIdentifier || null,
-          expirationDate,
-        }),
-      });
+      );
 
       if (response.ok) {
-        logger.log('StoreKit: Purchase synced with server successfully');
+        logger.log("StoreKit: Purchase synced with server successfully");
         // Clear any pending purchase since we've synced
         await storage.clearPendingPurchase();
         return true;
       } else {
-        console.error('StoreKit: Failed to sync purchase with server', await response.text());
+        console.error(
+          "StoreKit: Failed to sync purchase with server",
+          await response.text(),
+        );
         return false;
       }
     } catch (error) {
-      console.error('StoreKit: Error syncing purchase with server', error);
+      console.error("StoreKit: Error syncing purchase with server", error);
       return false;
     }
   }
@@ -100,25 +118,27 @@ class StoreKitService {
    */
   async syncPendingPurchases(): Promise<boolean> {
     if (!this.authToken) {
-      console.warn('StoreKit: Cannot sync pending purchases without auth token');
+      console.warn(
+        "StoreKit: Cannot sync pending purchases without auth token",
+      );
       return false;
     }
 
     try {
       const pending = await storage.getPendingPurchase();
       if (!pending) {
-        logger.log('StoreKit: No pending purchases to sync');
+        logger.log("StoreKit: No pending purchases to sync");
         return true;
       }
 
-      logger.log('StoreKit: Found pending purchase, syncing...');
-      
+      logger.log("StoreKit: Found pending purchase, syncing...");
+
       // Get fresh customer info from RevenueCat (more reliable than stored data)
       const customerInfo = await this.getCustomerInfo();
       if (customerInfo) {
         const success = await this.syncPurchaseWithServer(customerInfo);
         if (success) {
-          logger.log('StoreKit: Pending purchase synced successfully');
+          logger.log("StoreKit: Pending purchase synced successfully");
           return true;
         }
       }
@@ -129,15 +149,15 @@ class StoreKitService {
         // Temporarily allow sync even with stored data
         const success = await this.syncPurchaseWithServer(storedCustomerInfo);
         if (success) {
-          logger.log('StoreKit: Pending purchase synced from stored data');
+          logger.log("StoreKit: Pending purchase synced from stored data");
           return true;
         }
       }
 
-      console.warn('StoreKit: Failed to sync pending purchase');
+      console.warn("StoreKit: Failed to sync pending purchase");
       return false;
     } catch (error) {
-      console.error('StoreKit: Error syncing pending purchases', error);
+      console.error("StoreKit: Error syncing pending purchases", error);
       return false;
     }
   }
@@ -153,7 +173,7 @@ class StoreKitService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
     if (this.initPromise) return this.initPromise;
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === "web") return;
 
     this.initPromise = (async () => {
       try {
@@ -166,22 +186,30 @@ class StoreKitService {
         let apiKey = Platform.select({
           ios: REVENUECAT_IOS_KEY,
           android: REVENUECAT_ANDROID_KEY,
-          default: '',
+          default: "",
         });
 
         // Try to configure with the production key first
         if (apiKey) {
           try {
-            logger.log('StoreKit: Configuring with production API key for', Platform.OS);
+            logger.log(
+              "StoreKit: Configuring with production API key for",
+              Platform.OS,
+            );
             await Purchases.configure({ apiKey });
             this.initialized = true;
-            logger.log('StoreKit: Initialized successfully with production key');
+            logger.log(
+              "StoreKit: Initialized successfully with production key",
+            );
             return;
           } catch (error: unknown) {
-            const errorMessage = (error as Error)?.message || '';
+            const errorMessage = (error as Error)?.message || "";
             // If it fails due to Expo Go, try the test key
-            if (errorMessage.includes('Expo Go') || errorMessage.includes('Test Store')) {
-              logger.log('StoreKit: Production key failed, trying test key...');
+            if (
+              errorMessage.includes("Expo Go") ||
+              errorMessage.includes("Test Store")
+            ) {
+              logger.log("StoreKit: Production key failed, trying test key...");
             } else {
               throw error;
             }
@@ -190,16 +218,18 @@ class StoreKitService {
 
         // Fall back to test key (for Expo Go)
         if (REVENUECAT_TEST_KEY) {
-          logger.log('StoreKit: Configuring with Test Store API key');
+          logger.log("StoreKit: Configuring with Test Store API key");
           await Purchases.configure({ apiKey: REVENUECAT_TEST_KEY });
           this.initialized = true;
-          logger.log('StoreKit: Initialized successfully with test key (Expo Go mode)');
+          logger.log(
+            "StoreKit: Initialized successfully with test key (Expo Go mode)",
+          );
           return;
         }
 
-        console.warn('StoreKit: No valid API key available');
+        console.warn("StoreKit: No valid API key available");
       } catch (error) {
-        console.error('StoreKit: Failed to initialize', error);
+        console.error("StoreKit: Failed to initialize", error);
       }
     })();
 
@@ -207,91 +237,94 @@ class StoreKitService {
   }
 
   async setUserId(userId: string): Promise<void> {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === "web") return;
 
     if (!this.initialized && this.initPromise) {
       await this.initPromise;
     }
-    
+
     if (!this.initialized) {
       await this.initialize();
     }
-    
+
     if (!this.initialized) return;
 
     try {
       await Purchases.logIn(userId);
-      logger.log('StoreKit: User ID set', userId);
+      logger.log("StoreKit: User ID set", userId);
     } catch (error) {
-      console.error('StoreKit: Failed to set user ID', error);
+      console.error("StoreKit: Failed to set user ID", error);
     }
   }
 
   async logout(): Promise<void> {
-    if (!this.initialized || Platform.OS === 'web') return;
+    if (!this.initialized || Platform.OS === "web") return;
 
     try {
       await Purchases.logOut();
-      logger.log('StoreKit: User logged out');
+      logger.log("StoreKit: User logged out");
     } catch (error) {
-      console.error('StoreKit: Failed to logout', error);
+      console.error("StoreKit: Failed to logout", error);
     }
   }
 
   async getOfferings(): Promise<PurchasesOffering | null> {
-    if (!this.initialized || Platform.OS === 'web') return null;
+    if (!this.initialized || Platform.OS === "web") return null;
 
     try {
       const offerings = await Purchases.getOfferings();
       return offerings.current;
     } catch (error) {
-      console.error('StoreKit: Failed to get offerings', error);
+      console.error("StoreKit: Failed to get offerings", error);
       return null;
     }
   }
 
   async getAllOfferings(): Promise<Record<string, PurchasesOffering> | null> {
-    if (!this.initialized || Platform.OS === 'web') return null;
+    if (!this.initialized || Platform.OS === "web") return null;
 
     try {
       const offerings = await Purchases.getOfferings();
       return offerings.all;
     } catch (error) {
-      console.error('StoreKit: Failed to get all offerings', error);
+      console.error("StoreKit: Failed to get all offerings", error);
       return null;
     }
   }
 
   async getCustomerInfo(): Promise<CustomerInfo | null> {
-    if (!this.initialized || Platform.OS === 'web') return null;
+    if (!this.initialized || Platform.OS === "web") return null;
 
     try {
       return await Purchases.getCustomerInfo();
     } catch (error) {
-      console.error('StoreKit: Failed to get customer info', error);
+      console.error("StoreKit: Failed to get customer info", error);
       return null;
     }
   }
 
-  async hasActiveSubscription(): Promise<{ isActive: boolean; tier: 'basic' | 'pro' | null }> {
-    if (!this.initialized || Platform.OS === 'web') {
+  async hasActiveSubscription(): Promise<{
+    isActive: boolean;
+    tier: "basic" | "pro" | null;
+  }> {
+    if (!this.initialized || Platform.OS === "web") {
       return { isActive: false, tier: null };
     }
 
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      
+
       if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
-        return { isActive: true, tier: 'pro' };
+        return { isActive: true, tier: "pro" };
       }
-      
+
       if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
-        return { isActive: true, tier: 'basic' };
+        return { isActive: true, tier: "basic" };
       }
 
       return { isActive: false, tier: null };
     } catch (error) {
-      console.error('StoreKit: Failed to check subscription', error);
+      console.error("StoreKit: Failed to check subscription", error);
       return { isActive: false, tier: null };
     }
   }
@@ -301,23 +334,29 @@ class StoreKitService {
     customerInfo?: CustomerInfo;
     error?: string;
   }> {
-    if (!this.initialized || Platform.OS === 'web') {
-      return { success: false, error: 'StoreKit not available' };
+    if (!this.initialized || Platform.OS === "web") {
+      return { success: false, error: "StoreKit not available" };
     }
 
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      
+
       await this.syncPurchaseWithServer(customerInfo);
-      
+
       return { success: true, customerInfo };
     } catch (error: unknown) {
-      const purchaseError = error as { userCancelled?: boolean; message?: string };
+      const purchaseError = error as {
+        userCancelled?: boolean;
+        message?: string;
+      };
       if (purchaseError.userCancelled) {
-        return { success: false, error: 'User cancelled' };
+        return { success: false, error: "User cancelled" };
       }
-      console.error('StoreKit: Purchase failed', error);
-      return { success: false, error: purchaseError.message || 'Purchase failed' };
+      console.error("StoreKit: Purchase failed", error);
+      return {
+        success: false,
+        error: purchaseError.message || "Purchase failed",
+      };
     }
   }
 
@@ -326,62 +365,70 @@ class StoreKitService {
     customerInfo?: CustomerInfo;
     error?: string;
   }> {
-    if (!this.initialized || Platform.OS === 'web') {
-      return { success: false, error: 'StoreKit not available' };
+    if (!this.initialized || Platform.OS === "web") {
+      return { success: false, error: "StoreKit not available" };
     }
 
     try {
       const customerInfo = await Purchases.restorePurchases();
-      
+
       await this.syncPurchaseWithServer(customerInfo);
-      
+
       return { success: true, customerInfo };
     } catch (error: unknown) {
       const restoreError = error as { message?: string };
-      console.error('StoreKit: Restore failed', error);
-      return { success: false, error: restoreError.message || 'Restore failed' };
+      console.error("StoreKit: Restore failed", error);
+      return {
+        success: false,
+        error: restoreError.message || "Restore failed",
+      };
     }
   }
 
   async presentPaywall(options?: {
     offering?: PurchasesOffering;
   }): Promise<PaywallResult> {
-    if (!this.initialized || Platform.OS === 'web') {
-      logger.log('StoreKit: Paywall not available');
-      return 'not_presented';
+    if (!this.initialized || Platform.OS === "web") {
+      logger.log("StoreKit: Paywall not available");
+      return "not_presented";
     }
 
     try {
       const result = await RevenueCatUI.presentPaywall(options);
-      
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+
+      if (
+        result === PAYWALL_RESULT.PURCHASED ||
+        result === PAYWALL_RESULT.RESTORED
+      ) {
         const customerInfo = await Purchases.getCustomerInfo();
         await this.syncPurchaseWithServer(customerInfo);
       }
-      
+
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
-          return 'purchased';
+          return "purchased";
         case PAYWALL_RESULT.RESTORED:
-          return 'restored';
+          return "restored";
         case PAYWALL_RESULT.CANCELLED:
-          return 'cancelled';
+          return "cancelled";
         case PAYWALL_RESULT.ERROR:
-          return 'error';
+          return "error";
         case PAYWALL_RESULT.NOT_PRESENTED:
         default:
-          return 'not_presented';
+          return "not_presented";
       }
     } catch (error) {
-      console.error('StoreKit: Failed to present paywall', error);
-      return 'error';
+      console.error("StoreKit: Failed to present paywall", error);
+      return "error";
     }
   }
 
-  async presentPaywallIfNeeded(requiredEntitlementId?: string): Promise<PaywallResult> {
-    if (!this.initialized || Platform.OS === 'web') {
-      logger.log('StoreKit: Paywall not available');
-      return 'not_presented';
+  async presentPaywallIfNeeded(
+    requiredEntitlementId?: string,
+  ): Promise<PaywallResult> {
+    if (!this.initialized || Platform.OS === "web") {
+      logger.log("StoreKit: Paywall not available");
+      return "not_presented";
     }
 
     try {
@@ -389,34 +436,37 @@ class StoreKitService {
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: entitlementId,
       });
-      
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+
+      if (
+        result === PAYWALL_RESULT.PURCHASED ||
+        result === PAYWALL_RESULT.RESTORED
+      ) {
         const customerInfo = await Purchases.getCustomerInfo();
         await this.syncPurchaseWithServer(customerInfo);
       }
-      
+
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
-          return 'purchased';
+          return "purchased";
         case PAYWALL_RESULT.RESTORED:
-          return 'restored';
+          return "restored";
         case PAYWALL_RESULT.CANCELLED:
-          return 'cancelled';
+          return "cancelled";
         case PAYWALL_RESULT.ERROR:
-          return 'error';
+          return "error";
         case PAYWALL_RESULT.NOT_PRESENTED:
         default:
-          return 'not_presented';
+          return "not_presented";
       }
     } catch (error) {
-      console.error('StoreKit: Failed to present paywall if needed', error);
-      return 'error';
+      console.error("StoreKit: Failed to present paywall if needed", error);
+      return "error";
     }
   }
 
   async presentCustomerCenter(): Promise<void> {
-    if (!this.initialized || Platform.OS === 'web') {
-      logger.log('StoreKit: Customer Center not available');
+    if (!this.initialized || Platform.OS === "web") {
+      logger.log("StoreKit: Customer Center not available");
       return;
     }
 
@@ -424,38 +474,56 @@ class StoreKitService {
       await RevenueCatUI.presentCustomerCenter({
         callbacks: {
           onFeedbackSurveyCompleted: ({ feedbackSurveyOptionId }) => {
-            logger.log('StoreKit: Feedback survey completed', feedbackSurveyOptionId);
+            logger.log(
+              "StoreKit: Feedback survey completed",
+              feedbackSurveyOptionId,
+            );
           },
           onShowingManageSubscriptions: () => {
-            logger.log('StoreKit: Showing manage subscriptions');
+            logger.log("StoreKit: Showing manage subscriptions");
           },
           onRestoreStarted: () => {
-            logger.log('StoreKit: Restore started from Customer Center');
+            logger.log("StoreKit: Restore started from Customer Center");
           },
           onRestoreCompleted: ({ customerInfo }) => {
-            logger.log('StoreKit: Restore completed from Customer Center', customerInfo);
+            logger.log(
+              "StoreKit: Restore completed from Customer Center",
+              customerInfo,
+            );
           },
           onRestoreFailed: ({ error }) => {
-            console.error('StoreKit: Restore failed from Customer Center', error);
+            console.error(
+              "StoreKit: Restore failed from Customer Center",
+              error,
+            );
           },
           onRefundRequestStarted: ({ productIdentifier }) => {
-            logger.log('StoreKit: Refund request started', productIdentifier);
+            logger.log("StoreKit: Refund request started", productIdentifier);
           },
-          onRefundRequestCompleted: ({ productIdentifier, refundRequestStatus }) => {
-            logger.log('StoreKit: Refund request completed', productIdentifier, refundRequestStatus);
+          onRefundRequestCompleted: ({
+            productIdentifier,
+            refundRequestStatus,
+          }) => {
+            logger.log(
+              "StoreKit: Refund request completed",
+              productIdentifier,
+              refundRequestStatus,
+            );
           },
           onManagementOptionSelected: ({ option, url }) => {
-            logger.log('StoreKit: Management option selected', option, url);
+            logger.log("StoreKit: Management option selected", option, url);
           },
         },
       });
     } catch (error) {
-      console.error('StoreKit: Failed to present Customer Center', error);
+      console.error("StoreKit: Failed to present Customer Center", error);
     }
   }
 
   shouldUseStoreKit(): boolean {
-    return (Platform.OS === 'ios' || Platform.OS === 'android') && this.initialized;
+    return (
+      (Platform.OS === "ios" || Platform.OS === "android") && this.initialized
+    );
   }
 
   isInitialized(): boolean {
@@ -463,11 +531,11 @@ class StoreKitService {
   }
 
   isPaywallAvailable(): boolean {
-    return this.initialized && Platform.OS !== 'web';
+    return this.initialized && Platform.OS !== "web";
   }
 
   isCustomerCenterAvailable(): boolean {
-    return this.initialized && Platform.OS !== 'web';
+    return this.initialized && Platform.OS !== "web";
   }
 }
 

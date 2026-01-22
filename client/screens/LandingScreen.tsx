@@ -11,10 +11,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import {
-  Feather,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
@@ -26,8 +23,8 @@ const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
 
 // App store URLs - update these when app is published
 const APP_STORE_URL = "https://apps.apple.com/app/chefspaice/id000000000"; // Replace with actual App Store URL
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.chefspaice.app"; // Replace with actual Play Store URL
-
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.chefspaice.app"; // Replace with actual Play Store URL
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -295,7 +292,11 @@ function PricingCard({
               onPress={onDownloadAndroid}
               data-testid={`button-download-android-${testId}`}
             >
-              <MaterialCommunityIcons name="google-play" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons
+                name="google-play"
+                size={20}
+                color="#FFFFFF"
+              />
               <Text style={styles.downloadButtonText}>Google Play</Text>
             </Pressable>
           </View>
@@ -329,10 +330,9 @@ function PricingCard({
   );
 }
 
-
 // Helper function to get showcase image URLs
 function getShowcaseImageUrl(category: string, filename: string): string {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const { protocol, hostname } = window.location;
     // Use EXPO_PUBLIC_DOMAIN env var for the correct server domain:port
     // In development, this points to port 5000 where Express serves images
@@ -345,40 +345,40 @@ function getShowcaseImageUrl(category: string, filename: string): string {
     // Production fallback: same host, no port needed
     return `${protocol}//${hostname}/public/showcase/${category}/${filename}`;
   }
-  return '';
+  return "";
 }
 
 // Showcase screenshots data
 const showcaseScreenshots = [
   {
-    category: 'inventory',
-    filename: '338A0B62-F334-41D1-8AE9-F27252F582DC_1_105_c.jpeg',
-    label: 'Inventory',
-    description: 'Track your pantry',
+    category: "inventory",
+    filename: "338A0B62-F334-41D1-8AE9-F27252F582DC_1_105_c.jpeg",
+    label: "Inventory",
+    description: "Track your pantry",
   },
   {
-    category: 'recipes',
-    filename: '85633BFE-AEE0-4C16-85F3-EB3E54BDCF22_1_105_c.jpeg',
-    label: 'Recipes',
-    description: 'AI-generated recipes',
+    category: "recipes",
+    filename: "85633BFE-AEE0-4C16-85F3-EB3E54BDCF22_1_105_c.jpeg",
+    label: "Recipes",
+    description: "AI-generated recipes",
   },
   {
-    category: 'mealplan',
-    filename: '9923E5F7-BDF1-4437-8DE5-2265D313F287_1_105_c.jpeg',
-    label: 'Meal Plan',
-    description: 'Plan your week',
+    category: "mealplan",
+    filename: "9923E5F7-BDF1-4437-8DE5-2265D313F287_1_105_c.jpeg",
+    label: "Meal Plan",
+    description: "Plan your week",
   },
   {
-    category: 'scanning',
-    filename: 'B1DD5F3A-BCFE-4861-9097-6313C695FE20_1_105_c.jpeg',
-    label: 'Scanning',
-    description: 'Add items instantly',
+    category: "scanning",
+    filename: "B1DD5F3A-BCFE-4861-9097-6313C695FE20_1_105_c.jpeg",
+    label: "Scanning",
+    description: "Add items instantly",
   },
 ];
 
 const heroScreenshot = {
-  category: 'hero',
-  filename: 'EB0F64E2-5BB7-4CB9-9C62-3AABEAF61B38_1_105_c.jpeg',
+  category: "hero",
+  filename: "EB0F64E2-5BB7-4CB9-9C62-3AABEAF61B38_1_105_c.jpeg",
 };
 
 // Floating device mockup for hero section
@@ -387,14 +387,19 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
   const frameHeight = frameWidth * 2.16;
   const screenWidth = frameWidth - 14;
   const screenHeight = frameHeight - 28;
-  const imageUrl = getShowcaseImageUrl(heroScreenshot.category, heroScreenshot.filename);
+  const imageUrl = getShowcaseImageUrl(
+    heroScreenshot.category,
+    heroScreenshot.filename,
+  );
 
   // Floating animation styles for web
-  const floatingStyle: React.CSSProperties = isWeb ? {
-    animation: 'heroFloat 6s ease-in-out infinite',
-    transformStyle: 'preserve-3d',
-    transform: 'rotateY(-8deg) rotateX(2deg)',
-  } : {};
+  const floatingStyle: React.CSSProperties = isWeb
+    ? {
+        animation: "heroFloat 6s ease-in-out infinite",
+        transformStyle: "preserve-3d",
+        transform: "rotateY(-8deg) rotateX(2deg)",
+      }
+    : {};
 
   return (
     <View style={heroDeviceStyles.container} data-testid="hero-device-mockup">
@@ -434,7 +439,7 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
               {
                 width: screenWidth,
                 height: screenHeight,
-                borderRadius: (frameWidth * 0.15) - 4,
+                borderRadius: frameWidth * 0.15 - 4,
               },
             ]}
           >
@@ -445,12 +450,18 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
                 style={{
                   width: screenWidth,
                   height: screenHeight,
-                  objectFit: 'cover',
-                  borderRadius: (frameWidth * 0.15) - 4,
+                  objectFit: "cover",
+                  borderRadius: frameWidth * 0.15 - 4,
                 }}
               />
             ) : (
-              <View style={{ width: screenWidth, height: screenHeight, backgroundColor: '#1a1a1a' }} />
+              <View
+                style={{
+                  width: screenWidth,
+                  height: screenHeight,
+                  backgroundColor: "#1a1a1a",
+                }}
+              />
             )}
           </View>
           <View style={heroDeviceStyles.homeIndicator} />
@@ -464,23 +475,24 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
 
 const heroDeviceStyles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   phoneFrame: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderWidth: 3,
-    borderColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    ...(Platform.OS === 'web'
+    borderColor: "#2a2a2a",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    ...(Platform.OS === "web"
       ? {
-          boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 80px rgba(39, 174, 96, 0.15)',
+          boxShadow:
+            "0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 80px rgba(39, 174, 96, 0.15)",
         }
       : {
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 15 },
           shadowOpacity: 0.6,
           shadowRadius: 30,
@@ -488,32 +500,30 @@ const heroDeviceStyles = StyleSheet.create({
         }),
   },
   notch: {
-    backgroundColor: '#1a1a1a',
-    position: 'absolute',
+    backgroundColor: "#1a1a1a",
+    position: "absolute",
     top: 0,
     zIndex: 10,
   },
   screen: {
-    overflow: 'hidden',
-    backgroundColor: '#0a0a0a',
+    overflow: "hidden",
+    backgroundColor: "#0a0a0a",
   },
   homeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 10,
     width: 120,
     height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 3,
   },
   glowEffect: {
-    position: 'absolute',
+    position: "absolute",
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(39, 174, 96, 0.15)',
-    ...(Platform.OS === 'web'
-      ? { filter: 'blur(60px)' }
-      : {}),
+    backgroundColor: "rgba(39, 174, 96, 0.15)",
+    ...(Platform.OS === "web" ? { filter: "blur(60px)" } : {}),
     zIndex: -1,
   },
 });
@@ -531,11 +541,11 @@ interface DeviceMockupProps {
   totalCount?: number;
 }
 
-function DeviceMockup({ 
-  imageUrl, 
-  label, 
-  description, 
-  testId, 
+function DeviceMockup({
+  imageUrl,
+  label,
+  description,
+  testId,
   isWide,
   index = 0,
   isHovered = false,
@@ -584,18 +594,23 @@ function DeviceMockup({
   }
 
   // Web-specific wrapper with 3D transforms
-  const webWrapperStyle: React.CSSProperties = isWeb ? {
-    perspective: '1000px',
-    transformStyle: 'preserve-3d',
-    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-    transform: `rotateY(${rotateY}deg) translateX(${transformX}px) translateZ(${translateZ}px) scale(${scale})`,
-    zIndex: isHovered ? 100 : 10 - Math.abs(offset),
-    cursor: 'pointer',
-    marginLeft: index === 0 ? 0 : -40, // Overlap devices
-  } : {};
+  const webWrapperStyle: React.CSSProperties = isWeb
+    ? {
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
+        transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transform: `rotateY(${rotateY}deg) translateX(${transformX}px) translateZ(${translateZ}px) scale(${scale})`,
+        zIndex: isHovered ? 100 : 10 - Math.abs(offset),
+        cursor: "pointer",
+        marginLeft: index === 0 ? 0 : -40, // Overlap devices
+      }
+    : {};
 
   const mockupContent = (
-    <View style={deviceStyles.mockupContainer} data-testid={`device-mockup-${testId}`}>
+    <View
+      style={deviceStyles.mockupContainer}
+      data-testid={`device-mockup-${testId}`}
+    >
       <View
         style={[
           deviceStyles.phoneFrame,
@@ -623,7 +638,7 @@ function DeviceMockup({
             {
               width: screenWidth,
               height: screenHeight,
-              borderRadius: (frameWidth * 0.15) - 4,
+              borderRadius: frameWidth * 0.15 - 4,
             },
           ]}
         >
@@ -634,20 +649,38 @@ function DeviceMockup({
               style={{
                 width: screenWidth,
                 height: screenHeight,
-                objectFit: 'cover',
-                borderRadius: (frameWidth * 0.15) - 4,
+                objectFit: "cover",
+                borderRadius: frameWidth * 0.15 - 4,
               }}
             />
           ) : (
-            <View style={{ width: screenWidth, height: screenHeight, backgroundColor: '#1a1a1a' }} />
+            <View
+              style={{
+                width: screenWidth,
+                height: screenHeight,
+                backgroundColor: "#1a1a1a",
+              }}
+            />
           )}
         </View>
         <View style={deviceStyles.homeIndicator} />
       </View>
-      <Text style={[deviceStyles.mockupLabel, { opacity: isHovered || !isWeb ? 1 : 0.7 }]} data-testid={`text-mockup-label-${testId}`}>
+      <Text
+        style={[
+          deviceStyles.mockupLabel,
+          { opacity: isHovered || !isWeb ? 1 : 0.7 },
+        ]}
+        data-testid={`text-mockup-label-${testId}`}
+      >
         {label}
       </Text>
-      <Text style={[deviceStyles.mockupDescription, { opacity: isHovered || !isWeb ? 1 : 0.5 }]} data-testid={`text-mockup-desc-${testId}`}>
+      <Text
+        style={[
+          deviceStyles.mockupDescription,
+          { opacity: isHovered || !isWeb ? 1 : 0.5 },
+        ]}
+        data-testid={`text-mockup-desc-${testId}`}
+      >
         {description}
       </Text>
     </View>
@@ -678,27 +711,39 @@ function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
   // For web with isometric effect, use a centered div instead of ScrollView
   if (isWeb) {
     return (
-      <View style={deviceStyles.showcaseSection} data-testid="section-screenshot-showcase">
-        <Text style={deviceStyles.showcaseTitle} data-testid="text-showcase-title">
+      <View
+        style={deviceStyles.showcaseSection}
+        data-testid="section-screenshot-showcase"
+      >
+        <Text
+          style={deviceStyles.showcaseTitle}
+          data-testid="text-showcase-title"
+        >
           See ChefSpAIce in Action
         </Text>
-        <Text style={deviceStyles.showcaseSubtitle} data-testid="text-showcase-subtitle">
+        <Text
+          style={deviceStyles.showcaseSubtitle}
+          data-testid="text-showcase-subtitle"
+        >
           Experience the app that transforms your kitchen
         </Text>
-        <div 
+        <div
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            padding: '20px 60px',
-            perspective: '1200px',
-            width: '100%',
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            padding: "20px 60px",
+            perspective: "1200px",
+            width: "100%",
           }}
         >
           {showcaseScreenshots.map((screenshot, index) => (
             <DeviceMockup
               key={index}
-              imageUrl={getShowcaseImageUrl(screenshot.category, screenshot.filename)}
+              imageUrl={getShowcaseImageUrl(
+                screenshot.category,
+                screenshot.filename,
+              )}
               label={screenshot.label}
               description={screenshot.description}
               testId={screenshot.category}
@@ -720,11 +765,20 @@ function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
 
   // For native, use horizontal ScrollView
   return (
-    <View style={deviceStyles.showcaseSection} data-testid="section-screenshot-showcase">
-      <Text style={deviceStyles.showcaseTitle} data-testid="text-showcase-title">
+    <View
+      style={deviceStyles.showcaseSection}
+      data-testid="section-screenshot-showcase"
+    >
+      <Text
+        style={deviceStyles.showcaseTitle}
+        data-testid="text-showcase-title"
+      >
         See ChefSpAIce in Action
       </Text>
-      <Text style={deviceStyles.showcaseSubtitle} data-testid="text-showcase-subtitle">
+      <Text
+        style={deviceStyles.showcaseSubtitle}
+        data-testid="text-showcase-subtitle"
+      >
         Experience the app that transforms your kitchen
       </Text>
       <ScrollView
@@ -739,7 +793,10 @@ function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
         {showcaseScreenshots.map((screenshot, index) => (
           <DeviceMockup
             key={index}
-            imageUrl={getShowcaseImageUrl(screenshot.category, screenshot.filename)}
+            imageUrl={getShowcaseImageUrl(
+              screenshot.category,
+              screenshot.filename,
+            )}
             label={screenshot.label}
             description={screenshot.description}
             testId={screenshot.category}
@@ -806,14 +863,13 @@ export default function LandingScreen({
   const { isDark } = useTheme();
   const isWide = width > 768;
 
-
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleDownloadApp = (store: 'ios' | 'android') => {
-    const url = store === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+  const handleDownloadApp = (store: "ios" | "android") => {
+    const url = store === "ios" ? APP_STORE_URL : PLAY_STORE_URL;
     Linking.openURL(url).catch((err) => {
-      console.error('Failed to open app store:', err);
+      console.error("Failed to open app store:", err);
     });
   };
 
@@ -846,34 +902,45 @@ export default function LandingScreen({
   const handleDonate = async (amount: number) => {
     if (isDonating) return;
     setIsDonating(true);
-    
+
     try {
       // Get API URL from environment (correctly handles dev vs production)
       const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
-      const apiBaseUrl = expoDomain 
-        ? `https://${expoDomain}` 
-        : (isWeb ? window.location.origin : 'https://chefspaice.com');
-      
+      const apiBaseUrl = expoDomain
+        ? `https://${expoDomain}`
+        : isWeb
+          ? window.location.origin
+          : "https://chefspaice.com";
+
       // For redirect URLs, use the current window location on web
-      const redirectBaseUrl = isWeb ? window.location.origin : 'https://chefspaice.com';
-      
-      const response = await fetch(`${apiBaseUrl}/api/donations/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount,
-          successUrl: `${redirectBaseUrl}/?donation=success`,
-          cancelUrl: `${redirectBaseUrl}/?donation=cancelled`,
-        }),
-      });
+      const redirectBaseUrl = isWeb
+        ? window.location.origin
+        : "https://chefspaice.com";
+
+      const response = await fetch(
+        `${apiBaseUrl}/api/donations/create-checkout-session`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            successUrl: `${redirectBaseUrl}/?donation=success`,
+            cancelUrl: `${redirectBaseUrl}/?donation=cancelled`,
+          }),
+        },
+      );
 
       if (!response.ok) {
-        console.error('Donation API error:', response.status, response.statusText);
+        console.error(
+          "Donation API error:",
+          response.status,
+          response.statusText,
+        );
         return;
       }
 
       const data = await response.json();
-      
+
       if (data.url) {
         if (isWeb) {
           window.location.href = data.url;
@@ -881,20 +948,20 @@ export default function LandingScreen({
           Linking.openURL(data.url);
         }
       } else if (data.error) {
-        console.error('Donation error:', data.error);
+        console.error("Donation error:", data.error);
       }
     } catch (error) {
-      console.error('Donation error:', error);
+      console.error("Donation error:", error);
     } finally {
       setIsDonating(false);
     }
   };
 
   const donationAmounts = [
-    { amount: 500, label: '$5' },
-    { amount: 1000, label: '$10' },
-    { amount: 2500, label: '$25' },
-    { amount: 5000, label: '$50' },
+    { amount: 500, label: "$5" },
+    { amount: 1000, label: "$10" },
+    { amount: 2500, label: "$25" },
+    { amount: 5000, label: "$50" },
   ];
 
   const faqs = [
@@ -990,7 +1057,9 @@ export default function LandingScreen({
           data-testid="section-hero"
         >
           <View style={[styles.heroInner, isWide && styles.heroInnerWide]}>
-            <View style={[styles.heroContent, isWide && styles.heroContentWide]}>
+            <View
+              style={[styles.heroContent, isWide && styles.heroContentWide]}
+            >
               <View style={styles.tagline}>
                 <MaterialCommunityIcons name="leaf" size={14} color="#FFFFFF" />
                 <Text style={styles.taglineText} data-testid="text-tagline">
@@ -1002,7 +1071,10 @@ export default function LandingScreen({
                 Your AI-Powered{"\n"}Kitchen Assistant
               </Text>
 
-              <Text style={styles.heroSubtitle} data-testid="text-hero-subtitle">
+              <Text
+                style={styles.heroSubtitle}
+                data-testid="text-hero-subtitle"
+              >
                 Manage your pantry, generate recipes from what you have, plan
                 meals, and never let food go to waste again.
               </Text>
@@ -1035,7 +1107,12 @@ export default function LandingScreen({
               */}
             </View>
 
-            <View style={[styles.heroDeviceContainer, isWide && styles.heroDeviceContainerWide]}>
+            <View
+              style={[
+                styles.heroDeviceContainer,
+                isWide && styles.heroDeviceContainerWide,
+              ]}
+            >
               <HeroDeviceMockup isWide={isWide} />
             </View>
           </View>
@@ -1331,8 +1408,8 @@ export default function LandingScreen({
               testId="basic"
               isWide={isWide}
               showDownloadButtons={true}
-              onDownloadiOS={() => handleDownloadApp('ios')}
-              onDownloadAndroid={() => handleDownloadApp('android')}
+              onDownloadiOS={() => handleDownloadApp("ios")}
+              onDownloadAndroid={() => handleDownloadApp("android")}
             />
             <PricingCard
               tier="Pro"
@@ -1353,8 +1430,8 @@ export default function LandingScreen({
               testId="pro"
               isWide={isWide}
               showDownloadButtons={true}
-              onDownloadiOS={() => handleDownloadApp('ios')}
-              onDownloadAndroid={() => handleDownloadApp('android')}
+              onDownloadiOS={() => handleDownloadApp("ios")}
+              onDownloadAndroid={() => handleDownloadApp("android")}
             />
           </View>
         </View>
@@ -1425,7 +1502,10 @@ export default function LandingScreen({
           <Text style={styles.sectionTitle} data-testid="text-donate-title">
             Support ChefSpAIce
           </Text>
-          <Text style={styles.sectionSubtitle} data-testid="text-donate-subtitle">
+          <Text
+            style={styles.sectionSubtitle}
+            data-testid="text-donate-subtitle"
+          >
             Help us fight food waste and keep the app free for everyone
           </Text>
 
@@ -1437,9 +1517,16 @@ export default function LandingScreen({
                 color={AppColors.primary}
               />
               <Text style={styles.donationText}>
-                Your donation helps us maintain and improve ChefSpAIce, keeping it accessible to everyone while we work to reduce global food waste.
+                Your donation helps us maintain and improve ChefSpAIce, keeping
+                it accessible to everyone while we work to reduce global food
+                waste.
               </Text>
-              <View style={[styles.donationAmounts, isWide && styles.donationAmountsWide]}>
+              <View
+                style={[
+                  styles.donationAmounts,
+                  isWide && styles.donationAmountsWide,
+                ]}
+              >
                 {donationAmounts.map((item) => (
                   <Pressable
                     key={item.amount}
@@ -1465,7 +1552,8 @@ export default function LandingScreen({
 
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
-            <View style={styles.footerLogo}>logoImage
+            <View style={styles.footerLogo}>
+              logoImage
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
             <Text style={styles.footerText}>
@@ -2333,7 +2421,8 @@ const deviceStyles = StyleSheet.create({
     position: "relative",
     ...(Platform.OS === "web"
       ? {
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+          boxShadow:
+            "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)",
         }
       : {
           shadowColor: "#000",

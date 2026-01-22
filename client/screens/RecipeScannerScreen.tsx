@@ -61,7 +61,7 @@ export default function RecipeScannerScreen() {
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   // Handle AppState changes - suspend camera when app goes to background
@@ -69,8 +69,11 @@ export default function RecipeScannerScreen() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
-    
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [isScreenFocused]);
 
@@ -157,10 +160,7 @@ export default function RecipeScannerScreen() {
       }
     } catch (error) {
       console.error("Recipe scan error:", error);
-      Alert.alert(
-        "Error",
-        "Failed to scan recipe. Please try again.",
-      );
+      Alert.alert("Error", "Failed to scan recipe. Please try again.");
     } finally {
       setIsCapturing(false);
       setIsProcessing(false);
@@ -188,7 +188,9 @@ export default function RecipeScannerScreen() {
       await storage.addRecipe(newRecipe as any);
 
       if (Platform.OS !== "web") {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
       }
 
       Alert.alert(
@@ -246,8 +248,7 @@ export default function RecipeScannerScreen() {
             Camera Access Required
           </ThemedText>
           <ThemedText type="body" style={styles.permissionText}>
-            Please enable camera access in your device settings to scan
-            recipes.
+            Please enable camera access in your device settings to scan recipes.
           </ThemedText>
           {Platform.OS !== "web" ? (
             <GlassButton
@@ -290,7 +291,10 @@ export default function RecipeScannerScreen() {
           We need access to your camera to scan recipes from cookbooks and
           printed pages.
         </ThemedText>
-        <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+        <GlassButton
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
           Enable Camera
         </GlassButton>
         <GlassButton
@@ -332,18 +336,24 @@ export default function RecipeScannerScreen() {
             <ThemedText type="h3" style={styles.recipeTitle}>
               {scanResult.title}
             </ThemedText>
-            
+
             {scanResult.description ? (
               <ThemedText type="body" style={styles.recipeDescription}>
                 {scanResult.description}
               </ThemedText>
             ) : null}
 
-            {(scanResult.prepTime || scanResult.cookTime || scanResult.servings) ? (
+            {scanResult.prepTime ||
+            scanResult.cookTime ||
+            scanResult.servings ? (
               <View style={styles.metaRow}>
                 {scanResult.prepTime ? (
                   <View style={styles.metaItem}>
-                    <Feather name="clock" size={14} color={theme.textSecondary} />
+                    <Feather
+                      name="clock"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
                     <ThemedText type="caption" style={styles.metaText}>
                       Prep: {scanResult.prepTime}
                     </ThemedText>
@@ -351,7 +361,11 @@ export default function RecipeScannerScreen() {
                 ) : null}
                 {scanResult.cookTime ? (
                   <View style={styles.metaItem}>
-                    <Feather name="thermometer" size={14} color={theme.textSecondary} />
+                    <Feather
+                      name="thermometer"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
                     <ThemedText type="caption" style={styles.metaText}>
                       Cook: {scanResult.cookTime}
                     </ThemedText>
@@ -359,7 +373,11 @@ export default function RecipeScannerScreen() {
                 ) : null}
                 {scanResult.servings ? (
                   <View style={styles.metaItem}>
-                    <Feather name="users" size={14} color={theme.textSecondary} />
+                    <Feather
+                      name="users"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
                     <ThemedText type="caption" style={styles.metaText}>
                       Serves: {scanResult.servings}
                     </ThemedText>
@@ -469,7 +487,10 @@ export default function RecipeScannerScreen() {
             </View>
 
             <View
-              style={[styles.cameraFooter, { paddingBottom: insets.bottom + 20 }]}
+              style={[
+                styles.cameraFooter,
+                { paddingBottom: insets.bottom + 20 },
+              ]}
             >
               {isProcessing ? (
                 <View style={styles.processingContainer}>

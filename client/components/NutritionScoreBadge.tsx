@@ -6,7 +6,10 @@ import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, AppColors } from "@/constants/theme";
 import type { NutritionInfo } from "@/lib/storage";
-import { calculateNutritionScore, getScoreDescription } from "@/lib/nutrition-score";
+import {
+  calculateNutritionScore,
+  getScoreDescription,
+} from "@/lib/nutrition-score";
 
 interface NutritionScoreBadgeProps {
   nutrition: NutritionInfo;
@@ -95,14 +98,25 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
 
   if (scoreResult.grade === "?") {
     return (
-      <View style={[styles.incompleteContainer, { backgroundColor: theme.glass.background, borderColor: theme.glass.border }]}>
+      <View
+        style={[
+          styles.incompleteContainer,
+          {
+            backgroundColor: theme.glass.background,
+            borderColor: theme.glass.border,
+          },
+        ]}
+      >
         <View style={styles.incompleteHeader}>
           <Feather name="help-circle" size={24} color={theme.textSecondary} />
           <View style={styles.incompleteInfo}>
             <ThemedText type="body" style={{ color: theme.textSecondary }}>
               Nutrition Score Unavailable
             </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary, opacity: 0.7 }}>
+            <ThemedText
+              type="caption"
+              style={{ color: theme.textSecondary, opacity: 0.7 }}
+            >
               {description}
             </ThemedText>
           </View>
@@ -112,13 +126,18 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
   }
 
   return (
-    <View style={[styles.detailContainer, { backgroundColor: theme.glass.background, borderColor: theme.glass.border }]}>
+    <View
+      style={[
+        styles.detailContainer,
+        {
+          backgroundColor: theme.glass.background,
+          borderColor: theme.glass.border,
+        },
+      ]}
+    >
       <View style={styles.detailHeader}>
         <View
-          style={[
-            styles.largeBadge,
-            { backgroundColor: scoreResult.color },
-          ]}
+          style={[styles.largeBadge, { backgroundColor: scoreResult.color }]}
         >
           <ThemedText style={styles.largeGradeText}>
             {scoreResult.grade}
@@ -146,7 +165,10 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         />
       </View>
 
-      <ThemedText type="small" style={[styles.description, { color: theme.textSecondary }]}>
+      <ThemedText
+        type="small"
+        style={[styles.description, { color: theme.textSecondary }]}
+      >
         {description}
       </ThemedText>
 

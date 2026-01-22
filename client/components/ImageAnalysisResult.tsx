@@ -603,13 +603,15 @@ export function ImageAnalysisResult({
         })}
 
         <Pressable
-          style={[
-            styles.addMissingButton,
-            { borderColor: theme.border },
-          ]}
+          style={[styles.addMissingButton, { borderColor: theme.border }]}
           onPress={addMissingItem}
         >
-          <View style={[styles.addMissingIcon, { backgroundColor: AppColors.primary + "15" }]}>
+          <View
+            style={[
+              styles.addMissingIcon,
+              { backgroundColor: AppColors.primary + "15" },
+            ]}
+          >
             <Feather name="plus" size={20} color={AppColors.primary} />
           </View>
           <View style={styles.addMissingText}>
@@ -641,7 +643,10 @@ export function ImageAnalysisResult({
             >
               Edit Details
             </GlassButton>
-            <GlassButton onPress={handleQuickAdd} style={styles.singleItemButton}>
+            <GlassButton
+              onPress={handleQuickAdd}
+              style={styles.singleItemButton}
+            >
               Quick Add
             </GlassButton>
           </View>

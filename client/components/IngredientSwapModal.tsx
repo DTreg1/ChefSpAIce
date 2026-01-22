@@ -8,7 +8,10 @@ import {
   Platform,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { GlassView, isLiquidGlassAvailable } from "@/components/GlassViewWithContext";
+import {
+  GlassView,
+  isLiquidGlassAvailable,
+} from "@/components/GlassViewWithContext";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 

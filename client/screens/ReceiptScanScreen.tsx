@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, StyleSheet, Pressable, Platform, Alert, AppState, AppStateStatus, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Platform,
+  Alert,
+  AppState,
+  AppStateStatus,
+  ScrollView,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -170,30 +179,44 @@ function ReceiptResultsView({
 
   return (
     <ThemedView style={styles.resultsContainer}>
-      <View style={[styles.resultsHeader, { paddingTop: insets.top + Spacing.md }]}>
-        <Pressable onPress={onRetake} style={styles.retakeButton} data-testid="button-retake">
+      <View
+        style={[styles.resultsHeader, { paddingTop: insets.top + Spacing.md }]}
+      >
+        <Pressable
+          onPress={onRetake}
+          style={styles.retakeButton}
+          data-testid="button-retake"
+        >
           <Feather name="arrow-left" size={24} color={theme.text} />
         </Pressable>
         <View style={styles.headerCenter}>
           <ThemedText type="h3">Receipt Items</ThemedText>
           {result.storeName && (
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {result.storeName} {result.purchaseDate ? `• ${result.purchaseDate}` : ""}
+              {result.storeName}{" "}
+              {result.purchaseDate ? `• ${result.purchaseDate}` : ""}
             </ThemedText>
           )}
         </View>
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.resultsScroll}
         contentContainerStyle={styles.resultsContent}
         showsVerticalScrollIndicator={false}
       >
         {result.error ? (
           <View style={styles.errorContainer}>
-            <Feather name="alert-circle" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={[styles.errorText, { color: theme.textSecondary }]}>
+            <Feather
+              name="alert-circle"
+              size={48}
+              color={theme.textSecondary}
+            />
+            <ThemedText
+              type="body"
+              style={[styles.errorText, { color: theme.textSecondary }]}
+            >
               {result.error}
             </ThemedText>
             <GlassButton onPress={onRetake} style={styles.retryButton}>
@@ -202,8 +225,15 @@ function ReceiptResultsView({
           </View>
         ) : result.items.length === 0 ? (
           <View style={styles.errorContainer}>
-            <Feather name="shopping-bag" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={[styles.errorText, { color: theme.textSecondary }]}>
+            <Feather
+              name="shopping-bag"
+              size={48}
+              color={theme.textSecondary}
+            />
+            <ThemedText
+              type="body"
+              style={[styles.errorText, { color: theme.textSecondary }]}
+            >
               No food items found on this receipt
             </ThemedText>
             <GlassButton onPress={onRetake} style={styles.retryButton}>
@@ -216,27 +246,52 @@ function ReceiptResultsView({
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Feather name="package" size={20} color={AppColors.primary} />
-                  <ThemedText type="h4" style={styles.summaryValue}>{result.items.length}</ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>Items</ThemedText>
+                  <ThemedText type="h4" style={styles.summaryValue}>
+                    {result.items.length}
+                  </ThemedText>
+                  <ThemedText
+                    type="caption"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    Items
+                  </ThemedText>
                 </View>
                 {result.totalAmount && (
                   <View style={styles.summaryItem}>
-                    <Feather name="dollar-sign" size={20} color={AppColors.success} />
-                    <ThemedText type="h4" style={styles.summaryValue}>${result.totalAmount.toFixed(2)}</ThemedText>
-                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>Total</ThemedText>
+                    <Feather
+                      name="dollar-sign"
+                      size={20}
+                      color={AppColors.success}
+                    />
+                    <ThemedText type="h4" style={styles.summaryValue}>
+                      ${result.totalAmount.toFixed(2)}
+                    </ThemedText>
+                    <ThemedText
+                      type="caption"
+                      style={{ color: theme.textSecondary }}
+                    >
+                      Total
+                    </ThemedText>
                   </View>
                 )}
               </View>
             </View>
 
             {result.items.map((item, index) => (
-              <View 
-                key={index} 
-                style={[styles.itemCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              <View
+                key={index}
+                style={[
+                  styles.itemCard,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}
                 data-testid={`receipt-item-${index}`}
               >
                 <View style={styles.itemHeader}>
-                  <ThemedText type="body" style={styles.itemName} numberOfLines={2}>
+                  <ThemedText
+                    type="body"
+                    style={styles.itemName}
+                    numberOfLines={2}
+                  >
                     {item.name}
                   </ThemedText>
                   {item.price && (
@@ -246,20 +301,51 @@ function ReceiptResultsView({
                   )}
                 </View>
                 <View style={styles.itemMeta}>
-                  <View style={[styles.badge, { backgroundColor: theme.backgroundSecondary }]}>
-                    <ThemedText type="caption">{item.quantity} {item.quantityUnit}</ThemedText>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: theme.backgroundSecondary },
+                    ]}
+                  >
+                    <ThemedText type="caption">
+                      {item.quantity} {item.quantityUnit}
+                    </ThemedText>
                   </View>
-                  <View style={[styles.badge, { backgroundColor: theme.backgroundSecondary }]}>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: theme.backgroundSecondary },
+                    ]}
+                  >
                     <Feather name="box" size={12} color={theme.textSecondary} />
-                    <ThemedText type="caption" style={{ marginLeft: 4 }}>{item.storageLocation}</ThemedText>
+                    <ThemedText type="caption" style={{ marginLeft: 4 }}>
+                      {item.storageLocation}
+                    </ThemedText>
                   </View>
-                  <View style={[styles.badge, { backgroundColor: theme.backgroundSecondary }]}>
-                    <Feather name="clock" size={12} color={theme.textSecondary} />
-                    <ThemedText type="caption" style={{ marginLeft: 4 }}>{item.shelfLifeDays}d</ThemedText>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: theme.backgroundSecondary },
+                    ]}
+                  >
+                    <Feather
+                      name="clock"
+                      size={12}
+                      color={theme.textSecondary}
+                    />
+                    <ThemedText type="caption" style={{ marginLeft: 4 }}>
+                      {item.shelfLifeDays}d
+                    </ThemedText>
                   </View>
                 </View>
                 {item.originalText && (
-                  <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+                  <ThemedText
+                    type="small"
+                    style={{
+                      color: theme.textSecondary,
+                      marginTop: Spacing.xs,
+                    }}
+                  >
                     Receipt: {item.originalText}
                   </ThemedText>
                 )}
@@ -267,9 +353,21 @@ function ReceiptResultsView({
             ))}
 
             {result.notes && (
-              <View style={[styles.notesCard, { backgroundColor: theme.backgroundSecondary }]}>
+              <View
+                style={[
+                  styles.notesCard,
+                  { backgroundColor: theme.backgroundSecondary },
+                ]}
+              >
                 <Feather name="info" size={16} color={theme.textSecondary} />
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.sm, flex: 1 }}>
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: theme.textSecondary,
+                    marginLeft: Spacing.sm,
+                    flex: 1,
+                  }}
+                >
                   {result.notes}
                 </ThemedText>
               </View>
@@ -279,7 +377,12 @@ function ReceiptResultsView({
       </ScrollView>
 
       {result.items.length > 0 && (
-        <View style={[styles.resultsFooter, { paddingBottom: insets.bottom + Spacing.md }]}>
+        <View
+          style={[
+            styles.resultsFooter,
+            { paddingBottom: insets.bottom + Spacing.md },
+          ]}
+        >
           <GlassButton
             onPress={onAddToInventory}
             loading={isLoading}
@@ -297,28 +400,33 @@ function ReceiptResultsView({
 export default function ReceiptScanScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [screenState, setScreenState] = useState<ScreenState>("idle");
   const [isCameraActive, setIsCameraActive] = useState(true);
   const [isScreenFocused, setIsScreenFocused] = useState(true);
-  const [analysisResult, setAnalysisResult] = useState<ReceiptAnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] =
+    useState<ReceiptAnalysisResult | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       setIsScreenFocused(true);
       return () => setIsScreenFocused(false);
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setIsCameraActive(nextAppState === "active" && isScreenFocused);
     };
-    
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [isScreenFocused]);
 
@@ -330,7 +438,7 @@ export default function ReceiptScanScreen() {
     mutationFn: async (imageUri: string) => {
       const baseUrl = getApiUrl();
       const formData = new FormData();
-      
+
       if (Platform.OS === "web") {
         const response = await fetch(imageUri);
         const blob = await response.blob();
@@ -339,7 +447,7 @@ export default function ReceiptScanScreen() {
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        
+
         const byteString = atob(base64);
         const arrayBuffer = new ArrayBuffer(byteString.length);
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -374,8 +482,10 @@ export default function ReceiptScanScreen() {
       console.error("[ReceiptScan] Analysis error:", error);
       Alert.alert(
         "Analysis Failed",
-        error instanceof Error ? error.message : "Could not analyze the receipt. Please try again.",
-        [{ text: "OK", onPress: () => setScreenState("preview") }]
+        error instanceof Error
+          ? error.message
+          : "Could not analyze the receipt. Please try again.",
+        [{ text: "OK", onPress: () => setScreenState("preview") }],
       );
     },
   });
@@ -440,15 +550,17 @@ export default function ReceiptScanScreen() {
   const handleAddToInventory = () => {
     if (!analysisResult || analysisResult.items.length === 0) return;
 
-    const identifiedFoods: IdentifiedFood[] = analysisResult.items.map((item) => ({
-      name: item.name,
-      category: item.category,
-      quantity: item.quantity,
-      quantityUnit: item.quantityUnit,
-      storageLocation: item.storageLocation,
-      shelfLifeDays: item.shelfLifeDays,
-      confidence: item.confidence,
-    }));
+    const identifiedFoods: IdentifiedFood[] = analysisResult.items.map(
+      (item) => ({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        quantityUnit: item.quantityUnit,
+        storageLocation: item.storageLocation,
+        shelfLifeDays: item.shelfLifeDays,
+        confidence: item.confidence,
+      }),
+    );
 
     navigation.replace("AddFoodBatch", { items: identifiedFoods });
   };
@@ -461,9 +573,14 @@ export default function ReceiptScanScreen() {
           Use Expo Go
         </ThemedText>
         <ThemedText type="body" style={styles.permissionText}>
-          Receipt scanning works best on your mobile device. Scan the QR code to open in Expo Go.
+          Receipt scanning works best on your mobile device. Scan the QR code to
+          open in Expo Go.
         </ThemedText>
-        <GlassButton variant="ghost" onPress={handleClose} style={styles.cancelButton}>
+        <GlassButton
+          variant="ghost"
+          onPress={handleClose}
+          style={styles.cancelButton}
+        >
           Go Back
         </GlassButton>
       </ThemedView>
@@ -504,7 +621,10 @@ export default function ReceiptScanScreen() {
           To scan receipts, we need access to your camera.
         </ThemedText>
         {permission.canAskAgain ? (
-          <GlassButton onPress={requestPermission} style={styles.permissionButton}>
+          <GlassButton
+            onPress={requestPermission}
+            style={styles.permissionButton}
+          >
             Grant Camera Access
           </GlassButton>
         ) : (
@@ -515,7 +635,11 @@ export default function ReceiptScanScreen() {
             Open Settings
           </GlassButton>
         )}
-        <GlassButton variant="ghost" onPress={handleClose} style={styles.cancelButton}>
+        <GlassButton
+          variant="ghost"
+          onPress={handleClose}
+          style={styles.cancelButton}
+        >
           Cancel
         </GlassButton>
       </ThemedView>
@@ -534,8 +658,14 @@ export default function ReceiptScanScreen() {
           />
 
           <View style={styles.overlay}>
-            <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-              <Pressable onPress={handleClose} style={styles.closeButton} data-testid="button-close">
+            <View
+              style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}
+            >
+              <Pressable
+                onPress={handleClose}
+                style={styles.closeButton}
+                data-testid="button-close"
+              >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
               <ThemedText type="h3" style={styles.headerTitle}>
@@ -560,15 +690,30 @@ export default function ReceiptScanScreen() {
               </ThemedText>
             </View>
 
-            <View style={[styles.controls, { paddingBottom: insets.bottom + Spacing.lg }]}>
-              <Pressable onPress={handlePickImage} style={styles.controlButton} data-testid="button-gallery">
+            <View
+              style={[
+                styles.controls,
+                { paddingBottom: insets.bottom + Spacing.lg },
+              ]}
+            >
+              <Pressable
+                onPress={handlePickImage}
+                style={styles.controlButton}
+                data-testid="button-gallery"
+              >
                 <View style={styles.controlButtonInner}>
                   <Feather name="image" size={24} color="#FFFFFF" />
                 </View>
-                <ThemedText type="caption" style={styles.controlLabel}>Gallery</ThemedText>
+                <ThemedText type="caption" style={styles.controlLabel}>
+                  Gallery
+                </ThemedText>
               </Pressable>
 
-              <Pressable onPress={handleCapture} style={styles.captureButton} data-testid="button-capture">
+              <Pressable
+                onPress={handleCapture}
+                style={styles.captureButton}
+                data-testid="button-capture"
+              >
                 <View style={styles.captureButtonOuter}>
                   <View style={styles.captureButtonInner} />
                 </View>
@@ -590,8 +735,14 @@ export default function ReceiptScanScreen() {
             contentFit="cover"
           />
           <View style={styles.previewOverlay}>
-            <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-              <Pressable onPress={handleRetake} style={styles.closeButton} data-testid="button-retake-preview">
+            <View
+              style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}
+            >
+              <Pressable
+                onPress={handleRetake}
+                style={styles.closeButton}
+                data-testid="button-retake-preview"
+              >
                 <Feather name="arrow-left" size={28} color="#FFFFFF" />
               </Pressable>
               <ThemedText type="h3" style={styles.headerTitle}>
@@ -600,11 +751,24 @@ export default function ReceiptScanScreen() {
               <View style={styles.headerRight} />
             </View>
 
-            <View style={[styles.previewControls, { paddingBottom: insets.bottom + Spacing.lg }]}>
-              <GlassButton variant="ghost" onPress={handleRetake} style={styles.previewButton}>
+            <View
+              style={[
+                styles.previewControls,
+                { paddingBottom: insets.bottom + Spacing.lg },
+              ]}
+            >
+              <GlassButton
+                variant="ghost"
+                onPress={handleRetake}
+                style={styles.previewButton}
+              >
                 Retake
               </GlassButton>
-              <GlassButton onPress={handleAnalyze} style={styles.previewButton} data-testid="button-analyze">
+              <GlassButton
+                onPress={handleAnalyze}
+                style={styles.previewButton}
+                data-testid="button-analyze"
+              >
                 Analyze Receipt
               </GlassButton>
             </View>

@@ -53,7 +53,6 @@ interface Appliance {
   alternatives: string[];
 }
 
-
 const CATEGORIES = [
   { id: "all", label: "All", icon: "grid" },
   { id: "essential", label: "Essential", icon: "home" },
@@ -124,7 +123,7 @@ const GroupedSection = React.memo(function GroupedSection({
   isAtLimit: boolean;
 }) {
   const { theme } = useTheme();
-  
+
   return (
     <GlassCard style={styles.groupCard} contentStyle={styles.groupCardContent}>
       <Pressable
@@ -305,10 +304,12 @@ export default function CookwareScreen() {
   const [loadingLocal, setLoadingLocal] = useState(true);
   const [savingCommon, setSavingCommon] = useState(false);
   const [filterHeaderHeight, setFilterHeaderHeight] = useState(0);
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<
+    Record<string, boolean>
+  >({});
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
-  const isPro = entitlements.maxCookware === 'unlimited';
+  const isPro = entitlements.maxCookware === "unlimited";
   const isAtLimit = !isPro && ownedCookwareIds.length >= BASIC_COOKWARE_LIMIT;
 
   const toggleSection = useCallback((key: string) => {
@@ -354,7 +355,7 @@ export default function CookwareScreen() {
     useCallback(() => {
       // Reload cookware every time screen comes into focus
       loadCookware();
-    }, [loadCookware])
+    }, [loadCookware]),
   );
 
   const ownedApplianceIds = useMemo(
@@ -459,15 +460,12 @@ export default function CookwareScreen() {
     }
 
     return result;
-  }, [
-    allAppliances,
-    searchQuery,
-    showOwnedOnly,
-    ownedApplianceIds,
-  ]);
+  }, [allAppliances, searchQuery, showOwnedOnly, ownedApplianceIds]);
 
   const groupedAppliances = useMemo(() => {
-    const categoryOrder = CATEGORIES.filter((c) => c.id !== "all").map((c) => c.id);
+    const categoryOrder = CATEGORIES.filter((c) => c.id !== "all").map(
+      (c) => c.id,
+    );
     const groups: {
       key: string;
       title: string;
@@ -482,11 +480,13 @@ export default function CookwareScreen() {
       if (!category) return;
 
       const items = filteredAppliances.filter(
-        (a) => a.category.toLowerCase() === categoryId.toLowerCase()
+        (a) => a.category.toLowerCase() === categoryId.toLowerCase(),
       );
 
       if (items.length > 0) {
-        const ownedCount = items.filter((a) => ownedApplianceIds.has(a.id)).length;
+        const ownedCount = items.filter((a) =>
+          ownedApplianceIds.has(a.id),
+        ).length;
         groups.push({
           key: categoryId,
           title: category.label,
@@ -501,23 +501,29 @@ export default function CookwareScreen() {
     return groups;
   }, [filteredAppliances, ownedApplianceIds]);
 
-  const renderGroupedSection = useCallback(({
-    item,
-  }: {
-    item: GroupedSectionData;
-  }) => {
-    return (
-      <GroupedSection
-        section={item}
-        isCollapsed={collapsedSections[item.key] ?? false}
-        onToggleSection={toggleSection}
-        ownedApplianceIds={ownedApplianceIds}
-        togglingIds={togglingIds}
-        onToggleAppliance={toggleAppliance}
-        isAtLimit={isAtLimit}
-      />
-    );
-  }, [collapsedSections, toggleSection, ownedApplianceIds, togglingIds, toggleAppliance, isAtLimit]);
+  const renderGroupedSection = useCallback(
+    ({ item }: { item: GroupedSectionData }) => {
+      return (
+        <GroupedSection
+          section={item}
+          isCollapsed={collapsedSections[item.key] ?? false}
+          onToggleSection={toggleSection}
+          ownedApplianceIds={ownedApplianceIds}
+          togglingIds={togglingIds}
+          onToggleAppliance={toggleAppliance}
+          isAtLimit={isAtLimit}
+        />
+      );
+    },
+    [
+      collapsedSections,
+      toggleSection,
+      ownedApplianceIds,
+      togglingIds,
+      toggleAppliance,
+      isAtLimit,
+    ],
+  );
 
   const renderFirstTimeSetup = () => (
     <GlassCard style={styles.setupCard}>
@@ -574,7 +580,7 @@ export default function CookwareScreen() {
 
   const renderHeader = () => {
     if (!isAtLimit) return null;
-    
+
     return (
       <BlurView
         intensity={15}
@@ -582,16 +588,25 @@ export default function CookwareScreen() {
         style={[styles.headerSection, styles.fixedHeader]}
         onLayout={(e) => setFilterHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <Pressable 
-          style={[styles.limitWarning, { backgroundColor: `${AppColors.warning}15` }]}
+        <Pressable
+          style={[
+            styles.limitWarning,
+            { backgroundColor: `${AppColors.warning}15` },
+          ]}
           onPress={() => setShowUpgradePrompt(true)}
         >
           <Feather name="alert-circle" size={16} color={AppColors.warning} />
-          <ThemedText type="small" style={{ color: AppColors.warning, flex: 1 }}>
-            Limit reached ({ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}). Remove an item to select a different one.
+          <ThemedText
+            type="small"
+            style={{ color: AppColors.warning, flex: 1 }}
+          >
+            Limit reached ({ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}).
+            Remove an item to select a different one.
           </ThemedText>
           <View style={styles.upgradeChip}>
-            <ThemedText type="small" style={styles.upgradeChipText}>Upgrade</ThemedText>
+            <ThemedText type="small" style={styles.upgradeChipText}>
+              Upgrade
+            </ThemedText>
           </View>
         </Pressable>
       </BlurView>
@@ -680,12 +695,12 @@ export default function CookwareScreen() {
             // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
             const rootNav = navigation.getParent()?.getParent()?.getParent();
             if (rootNav) {
-              rootNav.navigate("Main" as any, { 
-                screen: 'Tabs', 
-                params: { 
-                  screen: 'ProfileTab', 
-                  params: { screen: 'Subscription' } 
-                } 
+              rootNav.navigate("Main" as any, {
+                screen: "Tabs",
+                params: {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
+                },
               });
             }
           }}

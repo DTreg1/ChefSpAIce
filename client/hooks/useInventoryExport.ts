@@ -24,39 +24,41 @@ export function useInventoryExport() {
       Alert.alert("No Data", "There are no inventory items to export.");
       return;
     }
-    Alert.alert(
-      "Export Inventory",
-      "Choose export format:",
-      [
-        {
-          text: "CSV (Spreadsheet)",
-          onPress: async () => {
-            setExporting(true);
-            try {
-              await exportInventoryToCSV(items);
-            } catch (error) {
-              Alert.alert("Export Failed", "Unable to export inventory. Please try again.");
-            } finally {
-              setExporting(false);
-            }
-          },
+    Alert.alert("Export Inventory", "Choose export format:", [
+      {
+        text: "CSV (Spreadsheet)",
+        onPress: async () => {
+          setExporting(true);
+          try {
+            await exportInventoryToCSV(items);
+          } catch (error) {
+            Alert.alert(
+              "Export Failed",
+              "Unable to export inventory. Please try again.",
+            );
+          } finally {
+            setExporting(false);
+          }
         },
-        {
-          text: "PDF (Document)",
-          onPress: async () => {
-            setExporting(true);
-            try {
-              await exportInventoryToPDF(items);
-            } catch (error) {
-              Alert.alert("Export Failed", "Unable to export inventory. Please try again.");
-            } finally {
-              setExporting(false);
-            }
-          },
+      },
+      {
+        text: "PDF (Document)",
+        onPress: async () => {
+          setExporting(true);
+          try {
+            await exportInventoryToPDF(items);
+          } catch (error) {
+            Alert.alert(
+              "Export Failed",
+              "Unable to export inventory. Please try again.",
+            );
+          } finally {
+            setExporting(false);
+          }
         },
-        { text: "Cancel", style: "cancel" },
-      ],
-    );
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   }, [items]);
 
   return { handleExport, exporting, items };

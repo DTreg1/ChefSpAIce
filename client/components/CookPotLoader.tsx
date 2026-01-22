@@ -50,46 +50,46 @@ export function CookPotLoader({
     bubble1.value = withRepeat(
       withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      true,
     );
     bubble2.value = withDelay(
       200,
       withRepeat(
         withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
     bubble3.value = withDelay(
       400,
       withRepeat(
         withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
 
     // Steam animations
     steam1.value = withRepeat(
       withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      true,
     );
     steam2.value = withDelay(
       300,
       withRepeat(
         withTiming(1, { duration: 2700, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
     steam3.value = withDelay(
       600,
       withRepeat(
         withTiming(1, { duration: 3300, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      )
+        true,
+      ),
     );
   }, [bubble1, bubble2, bubble3, steam1, steam2, steam3]);
 
@@ -123,16 +123,24 @@ export function CookPotLoader({
   }));
 
   // Colors based on theme
-  const potFill = isDark ? "rgba(101, 163, 13, 0.2)" : "rgba(101, 163, 13, 0.15)";
+  const potFill = isDark
+    ? "rgba(101, 163, 13, 0.2)"
+    : "rgba(101, 163, 13, 0.15)";
   const potStroke = isDark ? "#84cc16" : "#65a30d";
   const lidFill = isDark ? "#a3e635" : "#84cc16";
-  const steamFill = isDark ? "rgba(101, 163, 13, 0.4)" : "rgba(101, 163, 13, 0.3)";
-  const bubbleFill = isDark ? "rgba(163, 230, 53, 0.7)" : "rgba(132, 204, 22, 0.7)";
+  const steamFill = isDark
+    ? "rgba(101, 163, 13, 0.4)"
+    : "rgba(101, 163, 13, 0.3)";
+  const bubbleFill = isDark
+    ? "rgba(163, 230, 53, 0.7)"
+    : "rgba(132, 204, 22, 0.7)";
   const textColor = theme.text;
 
   return (
     <View style={styles.container}>
-      <View style={{ width: dimensions.container, height: dimensions.container }}>
+      <View
+        style={{ width: dimensions.container, height: dimensions.container }}
+      >
         <Svg
           viewBox="0 0 100 100"
           width={dimensions.svg}
@@ -186,14 +194,7 @@ export function CookPotLoader({
           />
 
           {/* Pot Lid */}
-          <Rect
-            x="20"
-            y="40"
-            width="60"
-            height="10"
-            rx="5"
-            fill={lidFill}
-          />
+          <Rect x="20" y="40" width="60" height="10" rx="5" fill={lidFill} />
           <Circle cx="50" cy="40" r="7" fill={lidFill} />
 
           {/* Steam Clouds - Animated */}
@@ -239,7 +240,12 @@ export function CookPotLoader({
         </Svg>
       </View>
 
-      <Text style={[styles.text, { color: textColor, fontSize: dimensions.fontSize }]}>
+      <Text
+        style={[
+          styles.text,
+          { color: textColor, fontSize: dimensions.fontSize },
+        ]}
+      >
         {text}
       </Text>
     </View>

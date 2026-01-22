@@ -42,7 +42,10 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="CookingTerms" component={CookingTermsScreen} />
       <Stack.Screen name="Cookware" component={CookwareScreen} />
       <Stack.Screen name="BarcodeTest" component={BarcodeTestScreen} />
-      <Stack.Screen name="StorageLocations" component={StorageLocationsScreen} />
+      <Stack.Screen
+        name="StorageLocations"
+        component={StorageLocationsScreen}
+      />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       <Stack.Screen name="GlassLeaf" component={GlassLeafScreen} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />

@@ -55,7 +55,13 @@ export function ExpoGlassHeader({
   const navigation = useNavigation();
   const inputRef = useRef<TextInput>(null);
 
-  const { getSearchQuery, setSearchQuery, isSearchOpen, openSearch, closeSearch } = useSearch();
+  const {
+    getSearchQuery,
+    setSearchQuery,
+    isSearchOpen,
+    openSearch,
+    closeSearch,
+  } = useSearch();
 
   const handleGoBack = () => {
     if (navigation.canGoBack()) {
@@ -103,13 +109,14 @@ export function ExpoGlassHeader({
     setSearchQuery(screenKey, text);
   };
 
-  const expandedWidth = SCREEN_WIDTH - BUTTON_SIZE - Spacing.md * 2 - (showMenu ? BUTTON_SIZE : 0);
+  const expandedWidth =
+    SCREEN_WIDTH - BUTTON_SIZE - Spacing.md * 2 - (showMenu ? BUTTON_SIZE : 0);
 
   const searchContainerStyle = useAnimatedStyle(() => {
     const width = interpolate(
       searchExpansion.value,
       [0, 1],
-      [BUTTON_SIZE, expandedWidth]
+      [BUTTON_SIZE, expandedWidth],
     );
 
     return {
@@ -135,9 +142,16 @@ export function ExpoGlassHeader({
   });
 
   const textColor = typeof theme.text === "string" ? theme.text : "#000";
-  const secondaryColor = typeof theme.textSecondary === "string" ? theme.textSecondary : "#888";
-  const glassBg = typeof theme.glass?.background === "string" ? theme.glass.background : "rgba(255,255,255,0.1)";
-  const glassBorder = typeof theme.glass?.border === "string" ? theme.glass.border : "rgba(255,255,255,0.2)";
+  const secondaryColor =
+    typeof theme.textSecondary === "string" ? theme.textSecondary : "#888";
+  const glassBg =
+    typeof theme.glass?.background === "string"
+      ? theme.glass.background
+      : "rgba(255,255,255,0.1)";
+  const glassBorder =
+    typeof theme.glass?.border === "string"
+      ? theme.glass.border
+      : "rgba(255,255,255,0.2)";
 
   return (
     <View
@@ -209,10 +223,19 @@ export function ExpoGlassHeader({
                 </Pressable>
               ) : (
                 <>
-                  <Pressable style={styles.searchCloseButton} onPress={handleCloseSearch}>
-                    <Feather name="arrow-left" size={20} color={secondaryColor} />
+                  <Pressable
+                    style={styles.searchCloseButton}
+                    onPress={handleCloseSearch}
+                  >
+                    <Feather
+                      name="arrow-left"
+                      size={20}
+                      color={secondaryColor}
+                    />
                   </Pressable>
-                  <Animated.View style={[styles.searchInputWrapper, searchInputStyle]}>
+                  <Animated.View
+                    style={[styles.searchInputWrapper, searchInputStyle]}
+                  >
                     <TextInput
                       ref={inputRef}
                       style={[styles.searchInput, { color: textColor }]}
@@ -226,7 +249,10 @@ export function ExpoGlassHeader({
                     />
                   </Animated.View>
                   {searchQuery.length > 0 && (
-                    <Pressable style={styles.searchClearButton} onPress={handleClearSearch}>
+                    <Pressable
+                      style={styles.searchClearButton}
+                      onPress={handleClearSearch}
+                    >
                       <Feather name="x" size={18} color={secondaryColor} />
                     </Pressable>
                   )}

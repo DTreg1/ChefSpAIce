@@ -1,6 +1,6 @@
 export enum SubscriptionTier {
-  BASIC = 'BASIC',
-  PRO = 'PRO',
+  BASIC = "BASIC",
+  PRO = "PRO",
 }
 
 export interface TierLimits {
@@ -43,8 +43,8 @@ export const MONTHLY_PRICES = {
 } as const;
 
 export const ANNUAL_PRICES = {
-  BASIC: 49.90,
-  PRO: 99.90,
+  BASIC: 49.9,
+  PRO: 99.9,
 } as const;
 
 export const TRIAL_CONFIG = {
@@ -58,8 +58,8 @@ export function getTierLimits(tier: SubscriptionTier): TierLimits {
 
 export function isWithinLimit(
   tier: SubscriptionTier,
-  limitKey: 'maxPantryItems' | 'maxAiRecipesPerMonth' | 'maxCookwareItems',
-  currentCount: number
+  limitKey: "maxPantryItems" | "maxAiRecipesPerMonth" | "maxCookwareItems",
+  currentCount: number,
 ): boolean {
   const limits = getTierLimits(tier);
   const limit = limits[limitKey];
@@ -71,27 +71,31 @@ export function isWithinLimit(
 
 export function getRemainingQuota(
   tier: SubscriptionTier,
-  limitKey: 'maxPantryItems' | 'maxAiRecipesPerMonth' | 'maxCookwareItems',
-  currentCount: number
-): number | 'unlimited' {
+  limitKey: "maxPantryItems" | "maxAiRecipesPerMonth" | "maxCookwareItems",
+  currentCount: number,
+): number | "unlimited" {
   const limits = getTierLimits(tier);
   const limit = limits[limitKey];
   if (limit === -1) {
-    return 'unlimited';
+    return "unlimited";
   }
   return Math.max(0, limit - currentCount);
 }
 
 export const ERROR_CODES = {
-  PANTRY_LIMIT_REACHED: 'PANTRY_LIMIT_REACHED',
-  COOKWARE_LIMIT_REACHED: 'COOKWARE_LIMIT_REACHED',
-  AI_RECIPE_LIMIT_REACHED: 'AI_RECIPE_LIMIT_REACHED',
-  FEATURE_NOT_AVAILABLE: 'FEATURE_NOT_AVAILABLE',
+  PANTRY_LIMIT_REACHED: "PANTRY_LIMIT_REACHED",
+  COOKWARE_LIMIT_REACHED: "COOKWARE_LIMIT_REACHED",
+  AI_RECIPE_LIMIT_REACHED: "AI_RECIPE_LIMIT_REACHED",
+  FEATURE_NOT_AVAILABLE: "FEATURE_NOT_AVAILABLE",
 } as const;
 
 export const ERROR_MESSAGES: Record<string, string> = {
-  [ERROR_CODES.PANTRY_LIMIT_REACHED]: 'You have reached your pantry item limit. Upgrade to Pro for unlimited items.',
-  [ERROR_CODES.COOKWARE_LIMIT_REACHED]: 'You have reached your cookware limit. Upgrade to Pro for unlimited cookware.',
-  [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]: 'You have reached your monthly AI recipe generation limit. Upgrade to Pro for unlimited recipes.',
-  [ERROR_CODES.FEATURE_NOT_AVAILABLE]: 'This feature is not available on your current plan. Upgrade to Pro to unlock it.',
+  [ERROR_CODES.PANTRY_LIMIT_REACHED]:
+    "You have reached your pantry item limit. Upgrade to Pro for unlimited items.",
+  [ERROR_CODES.COOKWARE_LIMIT_REACHED]:
+    "You have reached your cookware limit. Upgrade to Pro for unlimited cookware.",
+  [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]:
+    "You have reached your monthly AI recipe generation limit. Upgrade to Pro for unlimited recipes.",
+  [ERROR_CODES.FEATURE_NOT_AVAILABLE]:
+    "This feature is not available on your current plan. Upgrade to Pro to unlock it.",
 };

@@ -20,331 +20,337 @@ export interface ItemStorageRecommendation {
   notes: string;
 }
 
-const ITEM_STORAGE_RECOMMENDATIONS: Record<
-  string,
-  ItemStorageRecommendation
-> = {
-  milk: {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
-  },
-  "whole milk": {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
-  },
-  "2% milk": {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
-  },
-  "skim milk": {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
-  },
-  "almond milk": {
-    locations: ["refrigerator"],
-    notes: "Refrigerate after opening. Shelf-stable before opening.",
-  },
-  "oat milk": {
-    locations: ["refrigerator"],
-    notes: "Refrigerate after opening. Shelf-stable before opening.",
-  },
-  bread: {
-    locations: ["pantry", "freezer"],
-    notes:
-      "Room temperature keeps best texture. Freeze for long-term storage. Avoid refrigerator.",
-  },
-  "white bread": {
-    locations: ["pantry", "freezer"],
-    notes: "Room temperature keeps best texture. Freeze for long-term storage.",
-  },
-  "whole wheat bread": {
-    locations: ["pantry", "freezer"],
-    notes: "Room temperature keeps best texture. Freeze for long-term storage.",
-  },
-  apples: {
-    locations: ["counter", "refrigerator"],
-    notes:
-      "Ripen on counter, then refrigerate to extend freshness up to 4-6 weeks.",
-  },
-  apple: {
-    locations: ["counter", "refrigerator"],
-    notes:
-      "Ripen on counter, then refrigerate to extend freshness up to 4-6 weeks.",
-  },
-  bananas: {
-    locations: ["counter"],
-    notes:
-      "Keep on counter to ripen. Refrigeration darkens skin but extends life.",
-  },
-  banana: {
-    locations: ["counter"],
-    notes:
-      "Keep on counter to ripen. Refrigeration darkens skin but extends life.",
-  },
-  oranges: {
-    locations: ["counter", "refrigerator"],
-    notes: "Counter for short-term, refrigerator extends life to 2-3 weeks.",
-  },
-  orange: {
-    locations: ["counter", "refrigerator"],
-    notes: "Counter for short-term, refrigerator extends life to 2-3 weeks.",
-  },
-  "ice cream": {
-    locations: ["freezer"],
-    notes:
-      "Keep at 0°F or below. Store in back of freezer for consistent temperature.",
-  },
-  "frozen pizza": {
-    locations: ["freezer"],
-    notes: "Keep frozen until ready to cook. Do not refreeze after thawing.",
-  },
-  "frozen vegetables": {
-    locations: ["freezer"],
-    notes: "Keep at 0°F or below. Can be cooked directly from frozen.",
-  },
-  "frozen fruit": {
-    locations: ["freezer"],
-    notes: "Keep frozen. Great for smoothies and baking.",
-  },
-  "frozen dinner": {
-    locations: ["freezer"],
-    notes: "Keep frozen until ready to heat. Check packaging for instructions.",
-  },
-  "canned beans": {
-    locations: ["pantry"],
-    notes:
-      "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
-  },
-  "canned soup": {
-    locations: ["pantry"],
-    notes:
-      "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
-  },
-  "canned tomatoes": {
-    locations: ["pantry"],
-    notes:
-      "Cool, dry place. Transfer to container and refrigerate after opening.",
-  },
-  "canned tuna": {
-    locations: ["pantry"],
-    notes: "Cool, dry place. Refrigerate after opening and use within 2 days.",
-  },
-  "canned vegetables": {
-    locations: ["pantry"],
-    notes:
-      "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
-  },
-  cheese: {
-    locations: ["refrigerator", "freezer"],
-    notes:
-      "Wrap tightly. Hard cheeses last longer. Freeze for extended storage.",
-  },
-  eggs: {
-    locations: ["refrigerator"],
-    notes:
-      "Keep in original carton on shelf, not in door. Do not freeze in shell.",
-  },
-  butter: {
-    locations: ["refrigerator", "counter"],
-    notes:
-      "Refrigerate for long-term. Small amount on counter for easy spreading.",
-  },
-  yogurt: {
-    locations: ["refrigerator"],
-    notes:
-      "Keep refrigerated. Check expiration date. Freezing changes texture.",
-  },
-  chicken: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Use within 1-2 days refrigerated or freeze immediately.",
-  },
-  beef: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Ground beef 1-2 days, steaks 3-5 days. Freeze for longer storage.",
-  },
-  pork: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Use within 3-5 days refrigerated. Freeze for extended storage.",
-  },
-  fish: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Highly perishable. Use within 1-2 days or freeze immediately.",
-  },
-  salmon: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Use within 1-2 days refrigerated. Freeze for up to 3 months.",
-  },
-  shrimp: {
-    locations: ["refrigerator", "freezer"],
-    notes: "Use within 1-2 days refrigerated. Keep frozen until ready to use.",
-  },
-  rice: {
-    locations: ["pantry"],
-    notes: "Store in airtight container in cool, dry place. Lasts 1-2 years.",
-  },
-  pasta: {
-    locations: ["pantry"],
-    notes: "Dry pasta lasts 1-2 years in pantry. Cooked pasta refrigerate.",
-  },
-  cereal: {
-    locations: ["pantry"],
-    notes: "Keep in airtight container in cool, dry place.",
-  },
-  chips: {
-    locations: ["pantry"],
-    notes: "Store in cool, dry place. Seal bag tightly after opening.",
-  },
-  crackers: {
-    locations: ["pantry"],
-    notes: "Keep in airtight container in cool, dry place.",
-  },
-  cookies: {
-    locations: ["pantry", "freezer"],
-    notes: "Room temperature in airtight container. Freeze for long-term.",
-  },
-  ketchup: {
-    locations: ["pantry", "refrigerator"],
-    notes: "Pantry before opening. Refrigerate after opening for best quality.",
-  },
-  mustard: {
-    locations: ["refrigerator"],
-    notes: "Refrigerate after opening to maintain flavor and quality.",
-  },
-  mayonnaise: {
-    locations: ["refrigerator"],
-    notes: "Always refrigerate after opening. Use within 2 months.",
-  },
-  tomatoes: {
-    locations: ["counter"],
-    notes:
-      "Store at room temperature for best flavor. Refrigerate only when ripe.",
-  },
-  tomato: {
-    locations: ["counter"],
-    notes:
-      "Store at room temperature for best flavor. Refrigerate only when ripe.",
-  },
-  potatoes: {
-    locations: ["pantry"],
-    notes: "Store in cool, dark, dry place. Not in refrigerator.",
-  },
-  potato: {
-    locations: ["pantry"],
-    notes: "Store in cool, dark, dry place. Not in refrigerator.",
-  },
-  onions: {
-    locations: ["pantry"],
-    notes: "Store in cool, dark, dry place. Keep away from potatoes.",
-  },
-  onion: {
-    locations: ["pantry"],
-    notes: "Store in cool, dark, dry place. Keep away from potatoes.",
-  },
-  garlic: {
-    locations: ["pantry"],
-    notes: "Store in cool, dry place with good air circulation.",
-  },
-  lettuce: {
-    locations: ["refrigerator"],
-    notes: "Keep in crisper drawer. Wrap in paper towel to absorb moisture.",
-  },
-  spinach: {
-    locations: ["refrigerator"],
-    notes: "Keep in crisper drawer. Use within 5-7 days.",
-  },
-  carrots: {
-    locations: ["refrigerator"],
-    notes: "Remove greens. Store in plastic bag in crisper drawer.",
-  },
-  avocados: {
-    locations: ["counter", "refrigerator"],
-    notes: "Ripen on counter, then refrigerate to extend freshness.",
-  },
-  avocado: {
-    locations: ["counter", "refrigerator"],
-    notes: "Ripen on counter, then refrigerate to extend freshness.",
-  },
-  lemons: {
-    locations: ["counter", "refrigerator"],
-    notes: "Counter for short-term. Refrigerate for up to 4 weeks.",
-  },
-  lemon: {
-    locations: ["counter", "refrigerator"],
-    notes: "Counter for short-term. Refrigerate for up to 4 weeks.",
-  },
-  berries: {
-    locations: ["refrigerator"],
-    notes: "Don't wash until ready to use. Store in single layer if possible.",
-  },
-  strawberries: {
-    locations: ["refrigerator"],
-    notes: "Don't wash until ready to eat. Use within 3-5 days.",
-  },
-  blueberries: {
-    locations: ["refrigerator"],
-    notes: "Don't wash until ready to eat. Use within 1-2 weeks.",
-  },
-  grapes: {
-    locations: ["refrigerator"],
-    notes: "Don't wash until ready to eat. Store in perforated bag.",
-  },
-  coffee: {
-    locations: ["pantry"],
-    notes:
-      "Store in airtight container in cool, dark place. Don't refrigerate.",
-  },
-  tea: {
-    locations: ["pantry"],
-    notes: "Store in airtight container away from light and moisture.",
-  },
-  honey: {
-    locations: ["pantry"],
-    notes:
-      "Room temperature in pantry. Never refrigerate - causes crystallization.",
-  },
-  peanut_butter: {
-    locations: ["pantry"],
-    notes:
-      "Pantry storage is fine. Refrigerate natural peanut butter after opening.",
-  },
-  jam: {
-    locations: ["pantry", "refrigerator"],
-    notes: "Pantry before opening. Refrigerate after opening.",
-  },
-  jelly: {
-    locations: ["pantry", "refrigerator"],
-    notes: "Pantry before opening. Refrigerate after opening.",
-  },
-  olive_oil: {
-    locations: ["pantry"],
-    notes: "Store in cool, dark place. Not in refrigerator.",
-  },
-  "olive oil": {
-    locations: ["pantry"],
-    notes: "Store in cool, dark place. Not in refrigerator.",
-  },
-  nuts: {
-    locations: ["pantry", "refrigerator", "freezer"],
-    notes: "Pantry short-term. Refrigerate or freeze to prevent rancidity.",
-  },
-  chocolate: {
-    locations: ["pantry"],
-    notes: "Cool, dry place around 65-70°F. Avoid refrigerator.",
-  },
-  "orange juice": {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at all times. Use within 7-10 days of opening.",
-  },
-  oj: {
-    locations: ["refrigerator"],
-    notes: "Keep refrigerated at all times. Use within 7-10 days of opening.",
-  },
-  juice: {
-    locations: ["refrigerator"],
-    notes:
-      "Most juices should be refrigerated after opening. Check label for shelf-stable varieties.",
-  },
-};
+const ITEM_STORAGE_RECOMMENDATIONS: Record<string, ItemStorageRecommendation> =
+  {
+    milk: {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
+    },
+    "whole milk": {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
+    },
+    "2% milk": {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
+    },
+    "skim milk": {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at 35-40°F. Use within 7 days of opening.",
+    },
+    "almond milk": {
+      locations: ["refrigerator"],
+      notes: "Refrigerate after opening. Shelf-stable before opening.",
+    },
+    "oat milk": {
+      locations: ["refrigerator"],
+      notes: "Refrigerate after opening. Shelf-stable before opening.",
+    },
+    bread: {
+      locations: ["pantry", "freezer"],
+      notes:
+        "Room temperature keeps best texture. Freeze for long-term storage. Avoid refrigerator.",
+    },
+    "white bread": {
+      locations: ["pantry", "freezer"],
+      notes:
+        "Room temperature keeps best texture. Freeze for long-term storage.",
+    },
+    "whole wheat bread": {
+      locations: ["pantry", "freezer"],
+      notes:
+        "Room temperature keeps best texture. Freeze for long-term storage.",
+    },
+    apples: {
+      locations: ["counter", "refrigerator"],
+      notes:
+        "Ripen on counter, then refrigerate to extend freshness up to 4-6 weeks.",
+    },
+    apple: {
+      locations: ["counter", "refrigerator"],
+      notes:
+        "Ripen on counter, then refrigerate to extend freshness up to 4-6 weeks.",
+    },
+    bananas: {
+      locations: ["counter"],
+      notes:
+        "Keep on counter to ripen. Refrigeration darkens skin but extends life.",
+    },
+    banana: {
+      locations: ["counter"],
+      notes:
+        "Keep on counter to ripen. Refrigeration darkens skin but extends life.",
+    },
+    oranges: {
+      locations: ["counter", "refrigerator"],
+      notes: "Counter for short-term, refrigerator extends life to 2-3 weeks.",
+    },
+    orange: {
+      locations: ["counter", "refrigerator"],
+      notes: "Counter for short-term, refrigerator extends life to 2-3 weeks.",
+    },
+    "ice cream": {
+      locations: ["freezer"],
+      notes:
+        "Keep at 0°F or below. Store in back of freezer for consistent temperature.",
+    },
+    "frozen pizza": {
+      locations: ["freezer"],
+      notes: "Keep frozen until ready to cook. Do not refreeze after thawing.",
+    },
+    "frozen vegetables": {
+      locations: ["freezer"],
+      notes: "Keep at 0°F or below. Can be cooked directly from frozen.",
+    },
+    "frozen fruit": {
+      locations: ["freezer"],
+      notes: "Keep frozen. Great for smoothies and baking.",
+    },
+    "frozen dinner": {
+      locations: ["freezer"],
+      notes:
+        "Keep frozen until ready to heat. Check packaging for instructions.",
+    },
+    "canned beans": {
+      locations: ["pantry"],
+      notes:
+        "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
+    },
+    "canned soup": {
+      locations: ["pantry"],
+      notes:
+        "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
+    },
+    "canned tomatoes": {
+      locations: ["pantry"],
+      notes:
+        "Cool, dry place. Transfer to container and refrigerate after opening.",
+    },
+    "canned tuna": {
+      locations: ["pantry"],
+      notes:
+        "Cool, dry place. Refrigerate after opening and use within 2 days.",
+    },
+    "canned vegetables": {
+      locations: ["pantry"],
+      notes:
+        "Cool, dry place. Refrigerate after opening and use within 3-4 days.",
+    },
+    cheese: {
+      locations: ["refrigerator", "freezer"],
+      notes:
+        "Wrap tightly. Hard cheeses last longer. Freeze for extended storage.",
+    },
+    eggs: {
+      locations: ["refrigerator"],
+      notes:
+        "Keep in original carton on shelf, not in door. Do not freeze in shell.",
+    },
+    butter: {
+      locations: ["refrigerator", "counter"],
+      notes:
+        "Refrigerate for long-term. Small amount on counter for easy spreading.",
+    },
+    yogurt: {
+      locations: ["refrigerator"],
+      notes:
+        "Keep refrigerated. Check expiration date. Freezing changes texture.",
+    },
+    chicken: {
+      locations: ["refrigerator", "freezer"],
+      notes: "Use within 1-2 days refrigerated or freeze immediately.",
+    },
+    beef: {
+      locations: ["refrigerator", "freezer"],
+      notes:
+        "Ground beef 1-2 days, steaks 3-5 days. Freeze for longer storage.",
+    },
+    pork: {
+      locations: ["refrigerator", "freezer"],
+      notes: "Use within 3-5 days refrigerated. Freeze for extended storage.",
+    },
+    fish: {
+      locations: ["refrigerator", "freezer"],
+      notes: "Highly perishable. Use within 1-2 days or freeze immediately.",
+    },
+    salmon: {
+      locations: ["refrigerator", "freezer"],
+      notes: "Use within 1-2 days refrigerated. Freeze for up to 3 months.",
+    },
+    shrimp: {
+      locations: ["refrigerator", "freezer"],
+      notes:
+        "Use within 1-2 days refrigerated. Keep frozen until ready to use.",
+    },
+    rice: {
+      locations: ["pantry"],
+      notes: "Store in airtight container in cool, dry place. Lasts 1-2 years.",
+    },
+    pasta: {
+      locations: ["pantry"],
+      notes: "Dry pasta lasts 1-2 years in pantry. Cooked pasta refrigerate.",
+    },
+    cereal: {
+      locations: ["pantry"],
+      notes: "Keep in airtight container in cool, dry place.",
+    },
+    chips: {
+      locations: ["pantry"],
+      notes: "Store in cool, dry place. Seal bag tightly after opening.",
+    },
+    crackers: {
+      locations: ["pantry"],
+      notes: "Keep in airtight container in cool, dry place.",
+    },
+    cookies: {
+      locations: ["pantry", "freezer"],
+      notes: "Room temperature in airtight container. Freeze for long-term.",
+    },
+    ketchup: {
+      locations: ["pantry", "refrigerator"],
+      notes:
+        "Pantry before opening. Refrigerate after opening for best quality.",
+    },
+    mustard: {
+      locations: ["refrigerator"],
+      notes: "Refrigerate after opening to maintain flavor and quality.",
+    },
+    mayonnaise: {
+      locations: ["refrigerator"],
+      notes: "Always refrigerate after opening. Use within 2 months.",
+    },
+    tomatoes: {
+      locations: ["counter"],
+      notes:
+        "Store at room temperature for best flavor. Refrigerate only when ripe.",
+    },
+    tomato: {
+      locations: ["counter"],
+      notes:
+        "Store at room temperature for best flavor. Refrigerate only when ripe.",
+    },
+    potatoes: {
+      locations: ["pantry"],
+      notes: "Store in cool, dark, dry place. Not in refrigerator.",
+    },
+    potato: {
+      locations: ["pantry"],
+      notes: "Store in cool, dark, dry place. Not in refrigerator.",
+    },
+    onions: {
+      locations: ["pantry"],
+      notes: "Store in cool, dark, dry place. Keep away from potatoes.",
+    },
+    onion: {
+      locations: ["pantry"],
+      notes: "Store in cool, dark, dry place. Keep away from potatoes.",
+    },
+    garlic: {
+      locations: ["pantry"],
+      notes: "Store in cool, dry place with good air circulation.",
+    },
+    lettuce: {
+      locations: ["refrigerator"],
+      notes: "Keep in crisper drawer. Wrap in paper towel to absorb moisture.",
+    },
+    spinach: {
+      locations: ["refrigerator"],
+      notes: "Keep in crisper drawer. Use within 5-7 days.",
+    },
+    carrots: {
+      locations: ["refrigerator"],
+      notes: "Remove greens. Store in plastic bag in crisper drawer.",
+    },
+    avocados: {
+      locations: ["counter", "refrigerator"],
+      notes: "Ripen on counter, then refrigerate to extend freshness.",
+    },
+    avocado: {
+      locations: ["counter", "refrigerator"],
+      notes: "Ripen on counter, then refrigerate to extend freshness.",
+    },
+    lemons: {
+      locations: ["counter", "refrigerator"],
+      notes: "Counter for short-term. Refrigerate for up to 4 weeks.",
+    },
+    lemon: {
+      locations: ["counter", "refrigerator"],
+      notes: "Counter for short-term. Refrigerate for up to 4 weeks.",
+    },
+    berries: {
+      locations: ["refrigerator"],
+      notes:
+        "Don't wash until ready to use. Store in single layer if possible.",
+    },
+    strawberries: {
+      locations: ["refrigerator"],
+      notes: "Don't wash until ready to eat. Use within 3-5 days.",
+    },
+    blueberries: {
+      locations: ["refrigerator"],
+      notes: "Don't wash until ready to eat. Use within 1-2 weeks.",
+    },
+    grapes: {
+      locations: ["refrigerator"],
+      notes: "Don't wash until ready to eat. Store in perforated bag.",
+    },
+    coffee: {
+      locations: ["pantry"],
+      notes:
+        "Store in airtight container in cool, dark place. Don't refrigerate.",
+    },
+    tea: {
+      locations: ["pantry"],
+      notes: "Store in airtight container away from light and moisture.",
+    },
+    honey: {
+      locations: ["pantry"],
+      notes:
+        "Room temperature in pantry. Never refrigerate - causes crystallization.",
+    },
+    peanut_butter: {
+      locations: ["pantry"],
+      notes:
+        "Pantry storage is fine. Refrigerate natural peanut butter after opening.",
+    },
+    jam: {
+      locations: ["pantry", "refrigerator"],
+      notes: "Pantry before opening. Refrigerate after opening.",
+    },
+    jelly: {
+      locations: ["pantry", "refrigerator"],
+      notes: "Pantry before opening. Refrigerate after opening.",
+    },
+    olive_oil: {
+      locations: ["pantry"],
+      notes: "Store in cool, dark place. Not in refrigerator.",
+    },
+    "olive oil": {
+      locations: ["pantry"],
+      notes: "Store in cool, dark place. Not in refrigerator.",
+    },
+    nuts: {
+      locations: ["pantry", "refrigerator", "freezer"],
+      notes: "Pantry short-term. Refrigerate or freeze to prevent rancidity.",
+    },
+    chocolate: {
+      locations: ["pantry"],
+      notes: "Cool, dry place around 65-70°F. Avoid refrigerator.",
+    },
+    "orange juice": {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at all times. Use within 7-10 days of opening.",
+    },
+    oj: {
+      locations: ["refrigerator"],
+      notes: "Keep refrigerated at all times. Use within 7-10 days of opening.",
+    },
+    juice: {
+      locations: ["refrigerator"],
+      notes:
+        "Most juices should be refrigerated after opening. Check label for shelf-stable varieties.",
+    },
+  };
 
 export function getItemStorageRecommendation(
   itemName: string,
