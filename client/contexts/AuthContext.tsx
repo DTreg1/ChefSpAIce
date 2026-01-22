@@ -302,6 +302,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "Sign in failed" };
       }
 
+      // Validate required fields from server response
+      if (!data.user || !data.user.id || !data.token) {
+        console.error("Login: Invalid server response - missing user or token");
+        return { success: false, error: "Invalid server response. Please try again." };
+      }
+
       const authData: StoredAuthData = {
         user: data.user,
         token: data.token,
@@ -312,11 +318,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Set StoreKit auth token, user ID, and sync any pending purchases
       storeKitService.setAuthToken(data.token);
-      if (data.user?.id) {
-        storeKitService.setUserId(String(data.user.id)).catch(err =>
-          console.warn('Failed to set StoreKit user ID:', err)
-        );
-      }
+      storeKitService.setUserId(String(data.user.id)).catch(err =>
+        console.warn('Failed to set StoreKit user ID:', err)
+      );
       storeKitService.syncPendingPurchases().catch(err => 
         console.warn('Failed to sync pending purchases:', err)
       );
@@ -360,6 +364,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { success: false, error: data.error || "Registration failed" };
         }
 
+        // Validate required fields from server response
+        if (!data.user || !data.user.id || !data.token) {
+          console.error("SignUp: Invalid server response - missing user or token");
+          return { success: false, error: "Invalid server response. Please try again." };
+        }
+
         const authData: StoredAuthData = {
           user: data.user,
           token: data.token,
@@ -370,11 +380,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Set StoreKit auth token, user ID, and sync any pending purchases
         storeKitService.setAuthToken(data.token);
-        if (data.user?.id) {
-          storeKitService.setUserId(String(data.user.id)).catch(err =>
-            console.warn('Failed to set StoreKit user ID:', err)
-          );
-        }
+        storeKitService.setUserId(String(data.user.id)).catch(err =>
+          console.warn('Failed to set StoreKit user ID:', err)
+        );
         storeKitService.syncPendingPurchases().catch(err => 
           console.warn('Failed to sync pending purchases:', err)
         );
@@ -491,7 +499,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
       let response: Response;
-      let data: { error?: string; user?: { id: string }; token?: string; isNewUser?: boolean };
+      let data: { 
+        error?: string; 
+        user?: { 
+          id: string; 
+          email: string; 
+          displayName?: string; 
+          avatarUrl?: string;
+          provider?: string;
+          isNewUser?: boolean;
+          createdAt: string;
+        }; 
+        token?: string; 
+      };
       
       try {
         response = await fetch(url.toString(), {
@@ -520,21 +540,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "Apple sign in failed. Please try again." };
       }
 
+      // Validate required fields from server response
+      if (!data.user || !data.user.id || !data.token) {
+        console.error("Apple auth: Invalid server response - missing user or token");
+        return { success: false, error: "Invalid server response. Please try again." };
+      }
+
+      const userData = data.user;
+      const authToken = data.token;
+
       const authData: StoredAuthData = {
-        user: { ...data.user, provider: "apple" },
-        token: data.token,
+        user: {
+          id: userData.id,
+          email: userData.email,
+          displayName: userData.displayName,
+          avatarUrl: userData.avatarUrl,
+          provider: "apple",
+          createdAt: userData.createdAt,
+        },
+        token: authToken,
       };
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
-      await storage.setAuthToken(data.token);
+      await storage.setAuthToken(authToken);
 
       // Set StoreKit auth token, user ID, and sync any pending purchases
-      storeKitService.setAuthToken(data.token);
-      if (data.user?.id) {
-        storeKitService.setUserId(String(data.user.id)).catch(err =>
-          console.warn('Failed to set StoreKit user ID:', err)
-        );
-      }
+      storeKitService.setAuthToken(authToken);
+      storeKitService.setUserId(String(userData.id)).catch(err =>
+        console.warn('Failed to set StoreKit user ID:', err)
+      );
       storeKitService.syncPendingPurchases().catch(err => 
         console.warn('Failed to sync pending purchases:', err)
       );
@@ -542,7 +576,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Reset all local data for new users to ensure they see onboarding
       // This clears any leftover data from previous accounts
       // Note: isNewUser is returned inside data.user from the server
-      const isNewUser = data.user?.isNewUser === true;
+      const isNewUser = userData.isNewUser === true;
       logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
       
       if (isNewUser) {
@@ -551,7 +585,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setState({
         user: authData.user,
-        token: data.token,
+        token: authToken,
         isLoading: false,
       });
 
@@ -634,21 +668,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "Google sign in failed" };
       }
 
+      // Validate required fields from server response
+      if (!data.user || !data.user.id || !data.token) {
+        console.error("Google auth: Invalid server response - missing user or token");
+        return { success: false, error: "Invalid server response. Please try again." };
+      }
+
+      const userData = data.user;
+      const authToken = data.token;
+
       const authData: StoredAuthData = {
-        user: { ...data.user, provider: "google" },
-        token: data.token,
+        user: {
+          id: userData.id,
+          email: userData.email,
+          displayName: userData.displayName,
+          avatarUrl: userData.avatarUrl,
+          provider: "google",
+          createdAt: userData.createdAt,
+        },
+        token: authToken,
       };
 
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
-      await storage.setAuthToken(data.token);
+      await storage.setAuthToken(authToken);
 
       // Set StoreKit auth token, user ID, and sync any pending purchases
-      storeKitService.setAuthToken(data.token);
-      if (data.user?.id) {
-        storeKitService.setUserId(String(data.user.id)).catch(err =>
-          console.warn('Failed to set StoreKit user ID:', err)
-        );
-      }
+      storeKitService.setAuthToken(authToken);
+      storeKitService.setUserId(String(userData.id)).catch(err =>
+        console.warn('Failed to set StoreKit user ID:', err)
+      );
       storeKitService.syncPendingPurchases().catch(err => 
         console.warn('Failed to sync pending purchases:', err)
       );
@@ -656,7 +704,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Reset all local data for new users to ensure they see onboarding
       // This clears any leftover data from previous accounts
       // Note: isNewUser is returned inside data.user from the server
-      const isNewUser = data.user?.isNewUser === true;
+      const isNewUser = userData.isNewUser === true;
       logger.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
       
       if (isNewUser) {
@@ -665,7 +713,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setState({
         user: authData.user,
-        token: data.token,
+        token: authToken,
         isLoading: false,
       });
 

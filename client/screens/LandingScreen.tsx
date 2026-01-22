@@ -13,15 +13,12 @@ import { BlurView } from "expo-blur";
 import {
   Feather,
   MaterialCommunityIcons,
-  FontAwesome,
 } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
-import { NavigationContext } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
 const isWeb = Platform.OS === "web";
 
@@ -29,12 +26,6 @@ const isWeb = Platform.OS === "web";
 const APP_STORE_URL = "https://apps.apple.com/app/chefspaice/id000000000"; // Replace with actual App Store URL
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.chefspaice.app"; // Replace with actual Play Store URL
 
-// Safe navigation hook that returns null when not inside NavigationContainer
-function useSafeNavigation(): NativeStackNavigationProp<any> | null {
-  const navigationContext = useContext(NavigationContext);
-  // Return the navigation object from context or null if not available
-  return navigationContext as NativeStackNavigationProp<any> | null;
-}
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -336,61 +327,6 @@ function PricingCard({
   );
 }
 
-interface TestimonialCardProps {
-  name: string;
-  role: string;
-  quote: string;
-  rating: number;
-  testId: string;
-  isWide?: boolean;
-}
-
-function TestimonialCard({
-  name,
-  role,
-  quote,
-  rating,
-  testId,
-  isWide,
-}: TestimonialCardProps) {
-  return (
-    <GlassCard
-      style={[styles.testimonialCard, isWide && styles.testimonialCardWide]}
-      testId={`card-testimonial-${testId}`}
-    >
-      <View style={styles.testimonialStars}>
-        {[...Array(5)].map((_, i) => (
-          <FontAwesome
-            key={i}
-            name={i < rating ? "star" : "star-o"}
-            size={16}
-            color={i < rating ? "#FFD700" : "rgba(255,255,255,0.3)"}
-          />
-        ))}
-      </View>
-      <Text
-        style={styles.testimonialQuote}
-        data-testid={`text-testimonial-quote-${testId}`}
-      >
-        "{quote}"
-      </Text>
-      <View style={styles.testimonialAuthor}>
-        <View style={styles.testimonialAvatar}>
-          <Text style={styles.testimonialAvatarText}>{name.charAt(0)}</Text>
-        </View>
-        <View>
-          <Text
-            style={styles.testimonialName}
-            data-testid={`text-testimonial-name-${testId}`}
-          >
-            {name}
-          </Text>
-          <Text style={styles.testimonialRole}>{role}</Text>
-        </View>
-      </View>
-    </GlassCard>
-  );
-}
 
 // Helper function to get showcase image URLs
 function getShowcaseImageUrl(category: string, filename: string): string {
@@ -630,8 +566,6 @@ function DeviceMockup({
     translateZ = 80;
     scale = 1.08;
   } else if (anyHovered && hoveredIndex !== null) {
-    // Non-hovered devices spread apart when something is hovered
-    const hoveredOffset = hoveredIndex - centerIndex;
     const distanceFromHovered = index - hoveredIndex;
     // Push devices away from the hovered one
     const spreadAmount = distanceFromHovered * 60;
@@ -870,8 +804,6 @@ export default function LandingScreen({
   const { isDark } = useTheme();
   const isWide = width > 768;
 
-  // Use safe navigation that doesn't crash when outside NavigationContainer (web)
-  const navigation = useSafeNavigation();
 
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
@@ -961,30 +893,6 @@ export default function LandingScreen({
     { amount: 1000, label: '$10' },
     { amount: 2500, label: '$25' },
     { amount: 5000, label: '$50' },
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah M.",
-      role: "Busy Mom of 3",
-      quote:
-        "This app has completely transformed how I manage my kitchen. No more wasted groceries!",
-      rating: 5,
-    },
-    {
-      name: "James K.",
-      role: "Home Chef",
-      quote:
-        "The AI recipe suggestions are incredible. It's like having a personal chef in my pocket.",
-      rating: 5,
-    },
-    {
-      name: "Emily R.",
-      role: "Sustainability Advocate",
-      quote:
-        "I've reduced my food waste by 70% since using ChefSpAIce. Highly recommend!",
-      rating: 5,
-    },
   ];
 
   const faqs = [
