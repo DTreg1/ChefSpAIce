@@ -264,8 +264,9 @@ function AuthGuardedNavigator() {
   }
 
   // Determine initial route:
+  // Apple Guideline 5.1.1: Users must be able to purchase subscriptions WITHOUT registering first
   // 1. Web + not authenticated → Landing (marketing page)
-  // 2. Mobile + not authenticated → Auth (sign in/sign up required)
+  // 2. Mobile + not authenticated + no subscription → Subscription (can purchase without account)
   // 3. Authenticated + needs onboarding → Onboarding
   // 4. Authenticated + subscription inactive → Subscription (to show pricing/resubscribe)
   // 5. Otherwise → Main
@@ -275,11 +276,12 @@ function AuthGuardedNavigator() {
       logger.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
-    // Require authentication for mobile users before accessing the app
-    // ChefSpAIce stores personal data (inventory, recipes, meal plans) which justifies requiring an account
+    // Apple 5.1.1 compliance: Allow mobile users to purchase subscriptions without registering
+    // Show subscription screen first - they can purchase via StoreKit without an account
+    // Account creation is optional and enables cross-device sync
     if (!isAuthenticated) {
-      logger.log("[Nav] Initial route: Auth (mobile, unauthenticated - account required for personal data)");
-      return "Auth";
+      logger.log("[Nav] Initial route: Subscription (mobile, unauthenticated - can purchase without account per Apple 5.1.1)");
+      return "Subscription";
     }
     // User needs onboarding - send to Onboarding (includes pricing)
     if (needsOnboarding) {

@@ -233,8 +233,20 @@ export default function SubscriptionScreen() {
 
         const success = await purchasePackage(pkg);
         if (success) {
-          Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
           refetch();
+          // Show different message for unauthenticated users (Apple 5.1.1 compliance)
+          if (!isAuthenticated) {
+            Alert.alert(
+              'Subscription Active!',
+              `Thank you for subscribing to ${tierName}! You can now use ChefSpAIce. Creating an account is optional but lets you sync across devices.`,
+              [
+                { text: 'Continue to App', onPress: () => navigation.navigate('Onboarding') },
+                { text: 'Create Account', onPress: () => navigation.navigate('Auth') },
+              ]
+            );
+          } else {
+            Alert.alert('Success', `Thank you for subscribing to ${tierName}!`);
+          }
         }
         return;
       }
@@ -853,15 +865,41 @@ export default function SubscriptionScreen() {
         </Pressable>
       )}
 
-      {/* Sign In option for unauthenticated users */}
+      {/* Continue to App option for unauthenticated users with active subscription (Apple 5.1.1 compliance) */}
+      {!isAuthenticated && isActive && (
+        <GlassCard style={styles.successCard}>
+          <View style={styles.sectionHeader}>
+            <Feather name="check-circle" size={20} color={AppColors.success} />
+            <ThemedText style={[styles.sectionTitle, { color: AppColors.success }]}>Subscription Active!</ThemedText>
+          </View>
+          <ThemedText style={[styles.successDescription, { color: theme.textSecondaryOnGlass }]}>
+            You're all set! You can start using ChefSpAIce right away.
+          </ThemedText>
+          <GlassButton
+            onPress={() => navigation.navigate('Onboarding')}
+            style={styles.continueButton}
+            icon={<Feather name="arrow-right" size={18} color="#FFFFFF" />}
+            testID="button-continue-to-app"
+          >
+            Continue to App
+          </GlassButton>
+        </GlassCard>
+      )}
+
+      {/* Optional account creation for unauthenticated users (Apple 5.1.1 compliance) */}
       {!isAuthenticated && (
         <GlassCard style={styles.signInCard}>
           <View style={styles.sectionHeader}>
             <Feather name="user" size={20} color={theme.textSecondaryOnGlass} />
-            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>Already have an account?</ThemedText>
+            <ThemedText style={[styles.sectionTitle, { color: theme.textSecondaryOnGlass }]}>
+              {isActive ? "Optional: Create an Account" : "Already have an account?"}
+            </ThemedText>
           </View>
           <ThemedText style={[styles.signInDescription, { color: theme.textSecondaryOnGlass }]}>
-            Sign in to sync your subscription across all your devices.
+            {isActive 
+              ? "Creating an account lets you sync your subscription and data across all your devices. This is optional."
+              : "Sign in to sync your subscription across all your devices."
+            }
           </ThemedText>
           <GlassButton
             onPress={handleNavigateToAuth}
@@ -870,7 +908,7 @@ export default function SubscriptionScreen() {
             icon={<Feather name="log-in" size={18} color={AppColors.primary} />}
             testID="button-sign-in"
           >
-            Sign In
+            {isActive ? "Create Account" : "Sign In"}
           </GlassButton>
         </GlassCard>
       )}
@@ -1249,6 +1287,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  successCard: {
+    padding: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  successDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  continueButton: {
+    marginTop: Spacing.sm,
   },
   signInCard: {
     padding: Spacing.lg,
