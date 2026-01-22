@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   Platform,
   Linking,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -21,6 +22,7 @@ import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
 import { useState } from "react";
 
 const isWeb = Platform.OS === "web";
+const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
 
 // App store URLs - update these when app is published
 const APP_STORE_URL = "https://apps.apple.com/app/chefspaice/id000000000"; // Replace with actual App Store URL
@@ -964,6 +966,7 @@ export default function LandingScreen({
       >
         <View style={styles.header} data-testid="header">
           <View style={styles.logoContainer}>
+            <Image source={logoImage} style={{ width: 32, height: 32 }} />
             <MaterialCommunityIcons
               name="chef-hat"
               size={32}
