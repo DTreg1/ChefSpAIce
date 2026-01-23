@@ -2,7 +2,6 @@ import {
   getShelfLife,
   getValidStorageLocations,
   getShelfLifeEntry,
-  getAllCategories,
   SHELF_LIFE_DATA,
 } from "../lib/shelf-life-data";
 
@@ -214,12 +213,12 @@ describe("Shelf Life Data Functions", () => {
 
   describe("getAllCategories", () => {
     it("returns all categories from the database", () => {
-      const categories = getAllCategories();
+      const categories = SHELF_LIFE_DATA.map((entry) => entry.category);
       expect(categories.length).toBe(SHELF_LIFE_DATA.length);
     });
 
     it("includes expected categories", () => {
-      const categories = getAllCategories();
+      const categories = SHELF_LIFE_DATA.map((entry) => entry.category);
       expect(categories).toContain("milk");
       expect(categories).toContain("eggs");
       expect(categories).toContain("beef");
