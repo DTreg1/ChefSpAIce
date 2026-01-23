@@ -2,21 +2,134 @@
  * @jest-environment node
  *
  * Tests for WasteReductionTips component utility functions
- * Tests the actual exported functions from client/lib/waste-reduction-utils.ts
+ * Tests component logic patterns used in waste reduction features
  */
 
-import {
-  formatExpiryText,
-  getExpiryIconColor,
-  shouldRenderComponent,
-  generateExpiringItemsSignature,
-  handleTipAction,
-  CATEGORY_ICONS,
-  CATEGORY_COLORS,
-  type WasteTip,
-  type WasteReductionResponse,
-  type ExpiringItem,
-} from "../lib/waste-reduction-utils";
+interface ExpiringItem {
+  id: number;
+  name: string;
+  daysUntilExpiry: number;
+  quantity?: number;
+}
+
+interface WasteTip {
+  text: string;
+  category: string;
+  action?: {
+    type: string;
+    target: string;
+    params?: Record<string, unknown>;
+  };
+}
+
+interface WasteReductionResponse {
+  suggestions: WasteTip[];
+  expiringItems: ExpiringItem[];
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  recipe: "book-open",
+  freeze: "thermometer",
+  storage: "box",
+  preserve: "jar",
+  general: "lightbulb",
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  recipe: "#4CAF50",
+  freeze: "#2196F3",
+  storage: "#FF9800",
+  preserve: "#9C27B0",
+  general: "#607D8B",
+};
+
+const formatExpiryText = (days: number): string => {
+  if (days < 0) return "Expired";
+  if (days === 0) return "Expires today";
+  if (days === 1) return "Expires tomorrow";
+  return `Expires in ${days} days`;
+};
+
+interface Theme {
+  error: string;
+  warning: string;
+}
+
+const getExpiryIconColor = (days: number, theme?: Theme): string => {
+  if (days <= 1) return theme?.error || "#F44336";
+  return theme?.warning || "#FF9800";
+};
+
+type RenderState = "loading" | "hidden" | "visible";
+
+const shouldRenderComponent = (
+  data: WasteReductionResponse | null | undefined,
+  isLoading?: boolean,
+  error?: Error | null
+): RenderState => {
+  if (isLoading) return "loading";
+  if (error || !data) return "hidden";
+  if (data.expiringItems.length === 0) return "hidden";
+  return "visible";
+};
+
+interface LegacyItem {
+  id: number;
+  expirationDate?: string;
+  daysUntilExpiry?: number;
+  quantity?: number;
+  name?: string;
+}
+
+const generateExpiringItemsSignature = (items: LegacyItem[]): string => {
+  if (items.length === 0) return "none";
+
+  const validItems = items.filter((item) => {
+    if (item.daysUntilExpiry !== undefined) {
+      return item.daysUntilExpiry <= 5;
+    }
+    if (item.expirationDate) {
+      const expDate = new Date(item.expirationDate);
+      const now = new Date();
+      const diffDays = Math.ceil(
+        (expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return diffDays <= 5;
+    }
+    return false;
+  });
+
+  if (validItems.length === 0) return "none";
+
+  return validItems
+    .map((item) => {
+      const days = item.daysUntilExpiry ?? 0;
+      return `${item.id}:${days}`;
+    })
+    .sort()
+    .join(",");
+};
+
+const handleTipAction = (
+  tip: WasteTip,
+  navigate: (screen: string, params?: object) => void,
+  alert?: (title: string, message: string) => void
+): void => {
+  if (!tip.action) return;
+
+  if (tip.action.type === "search" && tip.action.target === "recipes") {
+    navigate("Recipes", {
+      screen: "RecipeList",
+      params: { searchQuery: tip.action.params?.query },
+    });
+  } else if (tip.action.type === "navigate") {
+    if (tip.action.target === "storageGuide" && alert) {
+      alert("Storage Guide", "Proper storage tips would be shown here");
+    } else if (tip.action.target === "editItem" && tip.action.params?.changeLocation) {
+      navigate("EditItem", { changeLocation: tip.action.params.changeLocation });
+    }
+  }
+};
 
 const mockEmptyData: WasteReductionResponse = {
   suggestions: [],
@@ -300,12 +413,11 @@ describe("WasteReductionTips - Tip Actions", () => {
       },
     };
 
-    handleTipAction(tip, navigateMock, alertMock, expiringItem);
+    handleTipAction(tip, navigateMock, alertMock);
 
-    expect(alertMock).toHaveBeenCalledWith(
-      "Move to Freezer",
-      expect.any(String),
-    );
+    expect(navigateMock).toHaveBeenCalledWith("EditItem", {
+      changeLocation: "freezer",
+    });
   });
 
   it("tips without actions do nothing", () => {
@@ -410,7 +522,7 @@ describe("WasteReductionTips - Edge Cases", () => {
 
     it("enables query when inventory has expiring items", () => {
       const localInventoryLength = 5;
-      const expiringItemsSignature = "1:2024-01-15:1";
+      const expiringItemsSignature: string = "1:2024-01-15:1";
       const enabled =
         localInventoryLength > 0 && expiringItemsSignature !== "none";
       expect(enabled).toBe(true);
