@@ -64,7 +64,7 @@ describe("Smart Recipe Generation", () => {
         const items: InventoryItem[] = [
           { id: 1, name: "Milk", expiryDate: getDateString(3) },
           { id: 2, name: "Yogurt", expiryDate: getDateString(1) },
-          { id: 3, name: "Cheese", expiryDate: getDateString(5) },
+          { id: 3, name: "Cheese", expiryDate: getDateString(2) },
         ];
 
         const { expiringItems } = organizeInventory(items);
@@ -72,10 +72,10 @@ describe("Smart Recipe Generation", () => {
         expect(expiringItems).toHaveLength(3);
         expect(expiringItems[0].name).toBe("Yogurt");
         expect(expiringItems[0].daysUntilExpiry).toBe(1);
-        expect(expiringItems[1].name).toBe("Milk");
-        expect(expiringItems[1].daysUntilExpiry).toBe(3);
-        expect(expiringItems[2].name).toBe("Cheese");
-        expect(expiringItems[2].daysUntilExpiry).toBe(5);
+        expect(expiringItems[1].name).toBe("Cheese");
+        expect(expiringItems[1].daysUntilExpiry).toBe(2);
+        expect(expiringItems[2].name).toBe("Milk");
+        expect(expiringItems[2].daysUntilExpiry).toBe(3);
       });
 
       it("puts today-expiring items first", () => {
@@ -105,20 +105,20 @@ describe("Smart Recipe Generation", () => {
     });
 
     describe("organizeInventory - Classification by threshold", () => {
-      it("classifies items expiring within 5 days as expiring", () => {
+      it("classifies items expiring within 3 days as expiring", () => {
         const items: InventoryItem[] = [
-          { id: 1, name: "Expires in 4", expiryDate: getDateString(4) },
-          { id: 2, name: "Expires in 5", expiryDate: getDateString(5) },
-          { id: 3, name: "Expires in 6", expiryDate: getDateString(6) },
+          { id: 1, name: "Expires in 2", expiryDate: getDateString(2) },
+          { id: 2, name: "Expires in 3", expiryDate: getDateString(3) },
+          { id: 3, name: "Expires in 4", expiryDate: getDateString(4) },
         ];
 
         const { expiringItems, otherItems } = organizeInventory(items);
 
         expect(expiringItems).toHaveLength(2);
-        expect(expiringItems.map((i) => i.name)).toContain("Expires in 4");
-        expect(expiringItems.map((i) => i.name)).toContain("Expires in 5");
+        expect(expiringItems.map((i) => i.name)).toContain("Expires in 2");
+        expect(expiringItems.map((i) => i.name)).toContain("Expires in 3");
         expect(otherItems).toHaveLength(1);
-        expect(otherItems[0].name).toBe("Expires in 6");
+        expect(otherItems[0].name).toBe("Expires in 4");
       });
 
       it("puts items without expiry date in other items", () => {
@@ -623,13 +623,11 @@ describe("Smart Recipe Generation", () => {
           { id: 1, name: "Milk", expiryDate: getDateString(1) },
           { id: 2, name: "Yogurt", expiryDate: getDateString(2) },
           { id: 3, name: "Cheese", expiryDate: getDateString(3) },
-          { id: 4, name: "Bread", expiryDate: getDateString(4) },
-          { id: 5, name: "Eggs", expiryDate: getDateString(5) },
         ];
 
         const { expiringItems, otherItems } = organizeInventory(items);
 
-        expect(expiringItems).toHaveLength(5);
+        expect(expiringItems).toHaveLength(3);
         expect(otherItems).toHaveLength(0);
       });
 
@@ -714,7 +712,7 @@ describe("Smart Recipe Generation", () => {
           { id: 2, name: "Rice", expiryDate: getDateString(30) },
           { id: 3, name: "Yogurt", expiryDate: getDateString(1) },
           { id: 4, name: "Pasta", expiryDate: null },
-          { id: 5, name: "Cheese", expiryDate: getDateString(5) },
+          { id: 5, name: "Cheese", expiryDate: getDateString(3) },
         ];
 
         const { expiringItems, otherItems } = organizeInventory(items);
@@ -813,18 +811,18 @@ describe("Smart Recipe Generation", () => {
         expect(otherItems).toHaveLength(0);
       });
 
-      it("handles items on threshold boundary (5 days)", () => {
+      it("handles items on threshold boundary (3 days)", () => {
         const items: InventoryItem[] = [
-          { id: 1, name: "Day 5", expiryDate: getDateString(5) },
-          { id: 2, name: "Day 6", expiryDate: getDateString(6) },
+          { id: 1, name: "Day 3", expiryDate: getDateString(3) },
+          { id: 2, name: "Day 4", expiryDate: getDateString(4) },
         ];
 
         const { expiringItems, otherItems } = organizeInventory(items);
 
         expect(expiringItems).toHaveLength(1);
-        expect(expiringItems[0].name).toBe("Day 5");
+        expect(expiringItems[0].name).toBe("Day 3");
         expect(otherItems).toHaveLength(1);
-        expect(otherItems[0].name).toBe("Day 6");
+        expect(otherItems[0].name).toBe("Day 4");
       });
 
       it("handles very long expiry dates", () => {
