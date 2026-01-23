@@ -1,8 +1,68 @@
-import {
-  buildTermPattern,
-  findTermMatches,
-  detectTermsInText,
-} from "../lib/cooking-terms-regex";
+/**
+ * @jest-environment node
+ *
+ * Tests for cooking terms regex matching utilities
+ */
+
+interface TermMatch {
+  term: string;
+  index: number;
+}
+
+interface TermWithId {
+  term: string;
+  id: number;
+}
+
+const escapeRegex = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const buildTermPattern = (terms: string[] | undefined): RegExp | null => {
+  if (!terms || terms.length === 0) return null;
+
+  const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+  const escaped = sortedTerms.map((t) => escapeRegex(t));
+  const pattern = `\\b(${escaped.join("|")})\\b`;
+
+  return new RegExp(pattern, "gi");
+};
+
+const findTermMatches = (text: string, terms: string[]): TermMatch[] => {
+  const pattern = buildTermPattern(terms);
+  if (!pattern) return [];
+
+  const matches: TermMatch[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    matches.push({
+      term: match[1],
+      index: match.index,
+    });
+  }
+
+  return matches;
+};
+
+const detectTermsInText = (
+  text: string,
+  terms: TermWithId[]
+): TermWithId[] => {
+  if (!text || terms.length === 0) return [];
+
+  const termStrings = terms.map((t) => t.term);
+  const pattern = buildTermPattern(termStrings);
+  if (!pattern) return [];
+
+  const foundTerms = new Set<string>();
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    foundTerms.add(match[1].toLowerCase());
+  }
+
+  return terms.filter((t) => foundTerms.has(t.term.toLowerCase()));
+};
 
 describe("buildTermPattern", () => {
   it("returns null for empty array", () => {

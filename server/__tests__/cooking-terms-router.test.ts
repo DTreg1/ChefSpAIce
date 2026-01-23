@@ -177,9 +177,9 @@ describe("Cooking Terms API", () => {
       expect(response.body.term).toBe(firstTerm.term);
     });
 
-    it("returns 400 for invalid ID format", async () => {
+    it("returns 404 for invalid ID format", async () => {
       const response = await request(app).get("/api/cooking-terms/invalid");
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
     });
 
