@@ -295,30 +295,30 @@ describe("WasteReductionTips - Category Icons", () => {
     expect(CATEGORY_ICONS.freeze).toBe("thermometer");
   });
 
-  it("maps preserve to archive icon", () => {
-    expect(CATEGORY_ICONS.preserve).toBe("archive");
+  it("maps preserve to jar icon", () => {
+    expect(CATEGORY_ICONS.preserve).toBe("jar");
   });
 
-  it("maps general to zap icon", () => {
-    expect(CATEGORY_ICONS.general).toBe("zap");
+  it("maps general to lightbulb icon", () => {
+    expect(CATEGORY_ICONS.general).toBe("lightbulb");
   });
 });
 
 describe("WasteReductionTips - Expiry Formatting", () => {
-  it("formats 0 days as Today", () => {
-    expect(formatExpiryText(0)).toBe("Today");
+  it("formats 0 days as Expires today", () => {
+    expect(formatExpiryText(0)).toBe("Expires today");
   });
 
-  it("formats 1 day as Tomorrow", () => {
-    expect(formatExpiryText(1)).toBe("Tomorrow");
+  it("formats 1 day as Expires tomorrow", () => {
+    expect(formatExpiryText(1)).toBe("Expires tomorrow");
   });
 
-  it("formats 2 days as 2 days", () => {
-    expect(formatExpiryText(2)).toBe("2 days");
+  it("formats 2 days as Expires in 2 days", () => {
+    expect(formatExpiryText(2)).toBe("Expires in 2 days");
   });
 
-  it("formats 5 days as 5 days", () => {
-    expect(formatExpiryText(5)).toBe("5 days");
+  it("formats 5 days as Expires in 5 days", () => {
+    expect(formatExpiryText(5)).toBe("Expires in 5 days");
   });
 });
 
@@ -391,7 +391,7 @@ describe("WasteReductionTips - Tip Actions", () => {
 
     handleTipAction(tip, navigateMock, alertMock);
 
-    expect(alertMock).toHaveBeenCalledWith("Storage Tips", expect.any(String));
+    expect(alertMock).toHaveBeenCalledWith("Storage Guide", expect.any(String));
   });
 
   it("freeze tip shows freezer move alert", () => {
