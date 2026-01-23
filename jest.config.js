@@ -20,7 +20,7 @@ module.exports = {
   watchPathIgnorePatterns: [
     '<rootDir>/.cache/',
   ],
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/client/jest.setup.js'],
   collectCoverageFrom: [
     'client/**/*.{ts,tsx}',
     '!client/**/*.d.ts',
