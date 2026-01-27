@@ -823,16 +823,26 @@ export default function SubscriptionScreen() {
                   $
                   {selectedPlan === "monthly"
                     ? MONTHLY_PRICES.BASIC.toFixed(2)
-                    : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                    : ANNUAL_PRICES.BASIC.toFixed(2)}
                   <ThemedText
                     style={[
                       styles.tierCardInterval,
                       { color: theme.textSecondary },
                     ]}
                   >
-                    /mo
+                    {selectedPlan === "monthly" ? "/month" : "/year"}
                   </ThemedText>
                 </ThemedText>
+                {selectedPlan === "annual" && (
+                  <ThemedText
+                    style={[
+                      styles.tierCardMonthlyCalc,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Just ${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo
+                  </ThemedText>
+                )}
                 <ThemedText
                   style={[
                     styles.tierCardFeature,
@@ -886,16 +896,26 @@ export default function SubscriptionScreen() {
                   $
                   {selectedPlan === "monthly"
                     ? MONTHLY_PRICES.PRO.toFixed(2)
-                    : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                    : ANNUAL_PRICES.PRO.toFixed(2)}
                   <ThemedText
                     style={[
                       styles.tierCardInterval,
                       { color: theme.textSecondary },
                     ]}
                   >
-                    /mo
+                    {selectedPlan === "monthly" ? "/month" : "/year"}
                   </ThemedText>
                 </ThemedText>
+                {selectedPlan === "annual" && (
+                  <ThemedText
+                    style={[
+                      styles.tierCardMonthlyCalc,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Just ${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo
+                  </ThemedText>
+                )}
                 <ThemedText
                   style={[
                     styles.tierCardFeature,
@@ -1121,16 +1141,26 @@ export default function SubscriptionScreen() {
                   $
                   {selectedPlan === "monthly"
                     ? MONTHLY_PRICES.BASIC.toFixed(2)
-                    : (ANNUAL_PRICES.BASIC / 12).toFixed(2)}
+                    : ANNUAL_PRICES.BASIC.toFixed(2)}
                   <ThemedText
                     style={[
                       styles.tierCardInterval,
                       { color: theme.textSecondary },
                     ]}
                   >
-                    /mo
+                    {selectedPlan === "monthly" ? "/month" : "/year"}
                   </ThemedText>
                 </ThemedText>
+                {selectedPlan === "annual" && (
+                  <ThemedText
+                    style={[
+                      styles.tierCardMonthlyCalc,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Just ${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo
+                  </ThemedText>
+                )}
                 <ThemedText
                   style={[
                     styles.tierCardFeature,
@@ -1184,16 +1214,26 @@ export default function SubscriptionScreen() {
                   $
                   {selectedPlan === "monthly"
                     ? MONTHLY_PRICES.PRO.toFixed(2)
-                    : (ANNUAL_PRICES.PRO / 12).toFixed(2)}
+                    : ANNUAL_PRICES.PRO.toFixed(2)}
                   <ThemedText
                     style={[
                       styles.tierCardInterval,
                       { color: theme.textSecondary },
                     ]}
                   >
-                    /mo
+                    {selectedPlan === "monthly" ? "/month" : "/year"}
                   </ThemedText>
                 </ThemedText>
+                {selectedPlan === "annual" && (
+                  <ThemedText
+                    style={[
+                      styles.tierCardMonthlyCalc,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Just ${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo
+                  </ThemedText>
+                )}
                 <ThemedText
                   style={[
                     styles.tierCardFeature,
@@ -1706,6 +1746,11 @@ const styles = StyleSheet.create({
   tierCardInterval: {
     fontSize: 12,
     fontWeight: "400",
+  },
+  tierCardMonthlyCalc: {
+    fontSize: 12,
+    fontWeight: "400",
+    marginTop: 2,
   },
   tierCardFeature: {
     fontSize: 11,
