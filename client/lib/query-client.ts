@@ -52,14 +52,24 @@ export function getApiUrl(): string {
 
   // Fallback to production domain if env var is not set (for production builds)
   if (!host) {
+    console.warn("[API] EXPO_PUBLIC_DOMAIN not set, using production fallback: chefspaice.com");
     host = "chefspaice.com";
   }
 
-  // Remove port if present in host (e.g., "domain:5000" -> "domain")
-  // Production domains don't need ports; development uses port 5000
-  const hostWithoutPort = host.includes(":") ? host : host;
+  // Determine if this is a development environment (localhost or local IP)
+  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
+  
+  // For production domains, strip the port (API runs on standard HTTPS port 443)
+  // For development, preserve the port for local testing
+  let finalHost = host;
+  if (!isLocalDev && host.includes(":")) {
+    // Strip port from production domains (e.g., "chefspaice.com:5000" -> "chefspaice.com")
+    finalHost = host.split(":")[0];
+  }
 
-  let url = new URL(`https://${hostWithoutPort}`);
+  // Use http for localhost development, https for all other environments
+  const protocol = isLocalDev ? "http" : "https";
+  let url = new URL(`${protocol}://${finalHost}`);
 
   // Remove trailing slash to prevent double-slashes when concatenating paths
   return url.href.replace(/\/$/, "");
