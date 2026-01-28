@@ -50,11 +50,16 @@ async function getStoredAuthToken(): Promise<string | null> {
 export function getApiUrl(): string {
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
+  // Fallback to production domain if env var is not set (for production builds)
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    host = "chefspaice.com";
   }
 
-  let url = new URL(`https://${host}`);
+  // Remove port if present in host (e.g., "domain:5000" -> "domain")
+  // Production domains don't need ports; development uses port 5000
+  const hostWithoutPort = host.includes(":") ? host : host;
+
+  let url = new URL(`https://${hostWithoutPort}`);
 
   // Remove trailing slash to prevent double-slashes when concatenating paths
   return url.href.replace(/\/$/, "");

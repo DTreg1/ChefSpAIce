@@ -43,6 +43,10 @@ function setupCors(app: express.Application) {
 
     const origin = req.header("origin");
 
+    // Add production domain
+    origins.add("https://chefspaice.com");
+    origins.add("https://www.chefspaice.com");
+
     if (origin && origins.has(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header(
