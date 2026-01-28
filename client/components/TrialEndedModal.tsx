@@ -6,6 +6,8 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Platform,
+  Linking,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,12 +81,16 @@ interface TrialEndedModalProps {
   visible: boolean;
   onSelectPlan: (tier: "basic" | "pro", plan: "monthly" | "annual") => void;
   isLoading?: boolean;
+  onOpenPrivacyPolicy?: () => void;
+  onOpenTermsOfUse?: () => void;
 }
 
 export function TrialEndedModal({
   visible,
   onSelectPlan,
   isLoading = false,
+  onOpenPrivacyPolicy,
+  onOpenTermsOfUse,
 }: TrialEndedModalProps) {
   const { theme, isDark } = useTheme();
   const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
@@ -103,6 +109,26 @@ export function TrialEndedModal({
         : ANNUAL_PRICES.BASIC / 12;
     }
     return plan === "monthly" ? MONTHLY_PRICES.PRO : ANNUAL_PRICES.PRO / 12;
+  };
+
+  const handleOpenPrivacyPolicy = () => {
+    if (onOpenPrivacyPolicy) {
+      onOpenPrivacyPolicy();
+    } else if (Platform.OS === "web") {
+      window.open("/privacy", "_blank");
+    } else {
+      Linking.openURL("https://chefspice.app/privacy");
+    }
+  };
+
+  const handleOpenTermsOfUse = () => {
+    if (onOpenTermsOfUse) {
+      onOpenTermsOfUse();
+    } else if (Platform.OS === "web") {
+      window.open("/terms", "_blank");
+    } else {
+      Linking.openURL("https://chefspice.app/terms");
+    }
   };
 
   return (
@@ -374,10 +400,43 @@ export function TrialEndedModal({
             </Pressable>
             <ThemedText
               type="caption"
-              style={[styles.termsText, { color: theme.textSecondary }]}
+              style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              By subscribing, you agree to our Terms of Service
+              Subscription automatically renews unless auto-renew is turned off
+              at least 24 hours before the end of the current period. Payment
+              will be charged to your Apple ID account at confirmation of
+              purchase.
             </ThemedText>
+            <View style={styles.legalLinksContainer}>
+              <Pressable
+                onPress={handleOpenPrivacyPolicy}
+                data-testid="link-modal-privacy-policy"
+              >
+                <ThemedText
+                  type="caption"
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Privacy Policy
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                type="caption"
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-modal-terms-of-use"
+              >
+                <ThemedText
+                  type="caption"
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  Terms of Use (EULA)
+                </ThemedText>
+              </Pressable>
+            </View>
           </View>
         </BlurView>
       </View>
@@ -493,8 +552,24 @@ const styles = StyleSheet.create({
   subscribeButtonText: {
     color: "#fff",
   },
-  termsText: {
+  subscriptionTerms: {
     textAlign: "center",
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  legalLinksContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  legalLink: {
+    fontSize: 11,
+    fontWeight: "500",
+    textDecorationLine: "underline",
+  },
+  legalSeparator: {
     fontSize: 11,
   },
 });
