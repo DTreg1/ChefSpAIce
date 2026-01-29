@@ -391,6 +391,14 @@ export const NutritionLabel = memo(function NutritionLabel({
         food contributes to a daily diet. 2,000 calories a day is used for
         general nutrition advice.
       </ThemedText>
+      <ThemedText
+        style={[styles.disclaimer, { color: textColor }]}
+        accessible={true}
+        accessibilityLabel="Nutrition data is for informational purposes only and should not be considered medical or dietary advice."
+      >
+        Nutrition data is for informational purposes only and should not be
+        considered medical or dietary advice.
+      </ThemedText>
     </View>
   );
 });
@@ -496,6 +504,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     marginTop: Spacing.xs,
+  },
+  disclaimer: {
+    fontSize: 9,
+    lineHeight: 12,
+    marginTop: Spacing.sm,
+    fontStyle: "italic",
+    opacity: 0.7,
   },
   compactContainer: {
     flexDirection: "row",

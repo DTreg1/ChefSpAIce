@@ -60,19 +60,32 @@ Each third-party service has its own privacy policy governing the use of your in
 To exercise these rights, contact us at privacy@chefspaice.com or use the settings within the app.`,
   },
   {
-    title: "6. Children's Privacy",
+    title: "6. Nutrition Information Disclaimer",
+    content: `Nutrition data displayed in ChefSpAIce is sourced from third-party databases (USDA FoodData Central, OpenFoodFacts) and AI-generated estimates.
+
+This information is provided for general informational purposes only and:
+
+• May not be 100% accurate for all products
+• Should not be considered medical or dietary advice
+• Is not intended to diagnose, treat, or prevent any condition
+• Should not replace consultation with a qualified healthcare professional
+
+Always verify nutrition information and consult a healthcare provider for dietary decisions, especially if you have allergies, medical conditions, or specific nutritional requirements.`,
+  },
+  {
+    title: "7. Children's Privacy",
     content: `ChefSpAIce is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
 
 If you believe we have collected information from a child under 13, please contact us immediately so we can delete the information.`,
   },
   {
-    title: "7. Changes to This Policy",
+    title: "8. Changes to This Policy",
     content: `We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last updated" date.
 
 Your continued use of the app after any changes constitutes acceptance of the new policy.`,
   },
   {
-    title: "8. Contact Us",
+    title: "9. Contact Us",
     content: `If you have any questions about this Privacy Policy, please contact us:
 
 Email: privacy@chefspaice.com
