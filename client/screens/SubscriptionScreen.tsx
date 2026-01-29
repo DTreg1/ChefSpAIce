@@ -840,7 +840,7 @@ export default function SubscriptionScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Just ${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo
+                    (${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo equivalent)
                   </ThemedText>
                 )}
                 <ThemedText
@@ -913,7 +913,7 @@ export default function SubscriptionScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Just ${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo
+                    (${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo equivalent)
                   </ThemedText>
                 )}
                 <ThemedText
@@ -1158,7 +1158,7 @@ export default function SubscriptionScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Just ${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo
+                    (${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo equivalent)
                   </ThemedText>
                 )}
                 <ThemedText
@@ -1231,7 +1231,7 @@ export default function SubscriptionScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Just ${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo
+                    (${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo equivalent)
                   </ThemedText>
                 )}
                 <ThemedText
@@ -1740,17 +1740,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tierCardPrice: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   tierCardInterval: {
     fontSize: 12,
     fontWeight: "400",
   },
   tierCardMonthlyCalc: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: "400",
-    marginTop: 2,
+    marginTop: 4,
+    opacity: 0.5,
   },
   tierCardFeature: {
     fontSize: 11,
