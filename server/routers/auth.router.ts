@@ -694,9 +694,10 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       updatedAt: new Date(),
     };
 
-    // Helper to merge arrays or replace
-    const mergeOrReplace = (existing: string | null, incoming: unknown[]): string | null => {
-      if (!incoming || incoming.length === 0) return existing;
+    // Helper to safely merge arrays - validates input is array and merges by ID
+    const mergeOrReplace = (existing: string | null, incoming: unknown): string | null => {
+      // Validate incoming is an array
+      if (!Array.isArray(incoming) || incoming.length === 0) return existing;
       if (!existing) return JSON.stringify(incoming);
       
       try {
@@ -720,7 +721,39 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       }
     };
 
-    // Process each data type
+    // Check cookware limits if guest has cookware
+    if (data.cookware && Array.isArray(data.cookware) && data.cookware.length > 0) {
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+      const incomingCount = data.cookware.length;
+      
+      // Get current cookware count
+      const currentCookware = await db
+        .select({ applianceId: userAppliances.applianceId })
+        .from(userAppliances)
+        .where(eq(userAppliances.userId, session.userId));
+      
+      const totalCount = currentCookware.length + incomingCount;
+      
+      if (totalCount > maxLimit) {
+        // Truncate guest cookware to fit within limit
+        const slotsAvailable = Math.max(0, maxLimit - currentCookware.length);
+        data.cookware = data.cookware.slice(0, slotsAvailable);
+        console.log(`[MigrateGuestData] Truncated cookware to ${slotsAvailable} items due to limit`);
+      }
+    }
+
+    // Check custom locations feature access
+    if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
+      const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
+      if (!hasAccess) {
+        // Skip custom locations migration for non-Pro users
+        console.log(`[MigrateGuestData] Skipping custom locations - user doesn't have Pro access`);
+        delete data.customLocations;
+      }
+    }
+
+    // Process array data types with safe merge
     if (data.inventory !== undefined) {
       syncUpdate.inventory = mergeOrReplace(
         hasExistingData ? existingSyncData?.inventory || null : null,
@@ -764,8 +797,8 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       );
     }
     
-    // For non-array data, use guest data if no existing data
-    if (data.preferences !== undefined) {
+    // For non-array data, only use guest data if no existing data
+    if (data.preferences !== undefined && !existingSyncData?.preferences) {
       const parseResult = syncPreferencesSchema.safeParse(data.preferences);
       if (parseResult.success) {
         syncUpdate.preferences = JSON.stringify(parseResult.data);
@@ -789,10 +822,12 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
         }
       }
     }
-    if (data.onboarding !== undefined) {
+    // Only set onboarding if no existing onboarding data
+    if (data.onboarding !== undefined && !existingSyncData?.onboarding) {
       syncUpdate.onboarding = JSON.stringify(data.onboarding);
     }
-    if (data.userProfile !== undefined) {
+    // Only set userProfile if no existing userProfile data
+    if (data.userProfile !== undefined && !existingSyncData?.userProfile) {
       syncUpdate.userProfile = JSON.stringify(data.userProfile);
     }
 
