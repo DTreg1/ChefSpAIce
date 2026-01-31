@@ -36,9 +36,10 @@
  *
  * NAVIGATION PRIORITY:
  * 1. Web + unauthenticated → Landing
- * 2. Trial expired (guest or registered) → Subscription
- * 3. Needs onboarding → Onboarding
- * 4. Otherwise → Main
+ * 2. Guest trial expired → TrialExpired
+ * 3. Authenticated + subscription inactive → Subscription
+ * 4. Needs onboarding → Onboarding
+ * 5. Otherwise → Main
  *
  * @module navigation/RootStackNavigator
  */
@@ -68,6 +69,7 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import AttributionsScreen from "@/screens/web/AttributionsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import TrialExpiredScreen from "@/screens/TrialExpiredScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -87,6 +89,7 @@ export type RootStackParamList = {
   Landing: undefined;
   LogoPreview: undefined;
   Subscription: { reason?: "expired" | "resubscribe" } | undefined;
+  TrialExpired: undefined;
   About: undefined;
   Privacy: undefined;
   Terms: undefined;
@@ -300,7 +303,7 @@ function AuthGuardedNavigator() {
   // Determine initial route with guest user support:
   // Priority order:
   // 1. Web + unauthenticated → Landing (marketing page)
-  // 2. Trial expired (guest) → Subscription (must subscribe to continue)
+  // 2. Guest trial expired → TrialExpired (must register/subscribe to continue)
   // 3. Authenticated + subscription inactive → Subscription (resubscribe)
   // 4. Needs onboarding → Onboarding (first-time setup)
   // 5. Otherwise → Main (active trial or subscription)
@@ -313,12 +316,12 @@ function AuthGuardedNavigator() {
 
     // For mobile guest users (not authenticated)
     if (!isAuthenticated) {
-      // Check if trial has expired - must subscribe
+      // Check if trial has expired - show trial expired screen for guests
       if (isTrialExpired) {
         logger.log(
-          "[Nav] Initial route: Subscription (guest trial expired)",
+          "[Nav] Initial route: TrialExpired (guest trial expired)",
         );
-        return "Subscription";
+        return "TrialExpired";
       }
 
       // New guest user or returning guest who needs onboarding
@@ -388,6 +391,11 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Subscription"
         component={SubscriptionScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TrialExpired"
+        component={TrialExpiredScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
