@@ -92,6 +92,9 @@ export interface AuthState {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
+  isGuestUser: boolean;
+  guestId: string | null;
+  guestTrialStartDate: Date | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -116,12 +119,25 @@ interface AuthContextType extends AuthState {
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
   isGoogleAuthAvailable: boolean;
+  initializeAsGuest: () => Promise<void>;
+  upgradeGuestToRegistered: (
+    email: string,
+    password: string,
+    displayName?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  linkGuestToExistingAccount: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   isLoading: true,
+  isGuestUser: false,
+  guestId: null,
+  guestTrialStartDate: null,
   isAuthenticated: false,
   isAppleAuthAvailable: false,
   isGoogleAuthAvailable: false,
@@ -131,6 +147,9 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
   setSignOutCallback: () => {},
+  initializeAsGuest: async () => {},
+  upgradeGuestToRegistered: async () => ({ success: false }),
+  linkGuestToExistingAccount: async () => ({ success: false }),
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -160,6 +179,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     token: null,
     isLoading: true,
+    isGuestUser: false,
+    guestId: null,
+    guestTrialStartDate: null,
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const signOutCallbackRef = useRef<(() => void) | null>(null);
@@ -230,6 +252,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user,
             token,
             isLoading: false,
+            isGuestUser: false,
+            guestId: null,
+            guestTrialStartDate: null,
           });
 
           // Automatically sync from cloud when app loads with stored auth
@@ -292,6 +317,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user: data.user,
                 token: data.token,
                 isLoading: false,
+                isGuestUser: false,
+                guestId: null,
+                guestTrialStartDate: null,
               });
 
               logger.log("[Auth] Restored session from cookie");
@@ -316,11 +344,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        setState({
-          user: null,
-          token: null,
-          isLoading: false,
-        });
+        // No registered user found - check for existing guest session or create new one
+        const guestInfo = await storage.getGuestUserInfo();
+
+        if (guestInfo && guestInfo.isGuest) {
+          // Restore existing guest session
+          const trialStartDate = guestInfo.trialStartDate
+            ? new Date(guestInfo.trialStartDate)
+            : null;
+
+          logger.log("[Auth] Restored guest session:", guestInfo.guestId);
+
+          setState({
+            user: null,
+            token: null,
+            isLoading: false,
+            isGuestUser: true,
+            guestId: guestInfo.guestId,
+            guestTrialStartDate: trialStartDate,
+          });
+        } else {
+          // No guest session exists - initialize a new one
+          const newGuestInfo = await storage.initializeGuestUser();
+          const trialStartDate = newGuestInfo.trialStartDate
+            ? new Date(newGuestInfo.trialStartDate)
+            : null;
+
+          logger.log("[Auth] Initialized new guest session:", newGuestInfo.guestId);
+
+          setState({
+            user: null,
+            token: null,
+            isLoading: false,
+            isGuestUser: true,
+            guestId: newGuestInfo.guestId,
+            guestTrialStartDate: trialStartDate,
+          });
+        }
       } catch (error) {
         console.error("Error loading auth state:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -390,10 +450,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Clear guest status since user is now authenticated
+      await storage.clearGuestUser();
+
       setState({
         user: data.user,
         token: data.token,
         isLoading: false,
+        isGuestUser: false,
+        guestId: null,
+        guestTrialStartDate: null,
       });
 
       await storage.syncFromCloud();
@@ -501,10 +567,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await storage.syncToCloud();
         }
 
+        // Clear guest status since user is now authenticated
+        await storage.clearGuestUser();
+
         setState({
           user: data.user,
           token: data.token,
           isLoading: false,
+          isGuestUser: false,
+          guestId: null,
+          guestTrialStartDate: null,
         });
 
         return { success: true };
@@ -542,11 +614,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear all cached query data for security
       queryClient.clear();
 
-      // Reset auth state
+      // Clear any previous guest data (old guest data is gone after sign out)
+      await storage.clearGuestUser();
+
+      // Initialize a new guest session for the signed out user
+      const newGuestInfo = await storage.initializeGuestUser();
+      const trialStartDate = newGuestInfo.trialStartDate
+        ? new Date(newGuestInfo.trialStartDate)
+        : null;
+
+      logger.log("[Auth] Signed out, initialized new guest session:", newGuestInfo.guestId);
+
+      // Reset auth state and set up as new guest
       setState({
         user: null,
         token: null,
         isLoading: false,
+        isGuestUser: true,
+        guestId: newGuestInfo.guestId,
+        guestTrialStartDate: trialStartDate,
       });
 
       // Call navigation callback to redirect to SignIn
@@ -729,10 +815,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await storage.resetForNewUser();
         }
 
+        // Clear guest status since user is now authenticated
+        await storage.clearGuestUser();
+
         setState({
           user: authData.user,
           token: authToken,
           isLoading: false,
+          isGuestUser: false,
+          guestId: null,
+          guestTrialStartDate: null,
         });
 
         if (isNewUser) {
@@ -905,10 +997,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await storage.resetForNewUser();
         }
 
+        // Clear guest status since user is now authenticated
+        await storage.clearGuestUser();
+
         setState({
           user: authData.user,
           token: authToken,
           isLoading: false,
+          isGuestUser: false,
+          guestId: null,
+          guestTrialStartDate: null,
         });
 
         if (isNewUser) {
@@ -930,6 +1028,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Google auth is available on Android and Web when the auth request is ready
   const isGoogleAuthAvailable = isAndroid && !!promptGoogleAsync;
 
+  const initializeAsGuest = useCallback(async () => {
+    try {
+      // Clear any existing auth state first
+      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+      await storage.clearAuthToken();
+      await storage.clearGuestUser();
+
+      // Initialize a new guest session
+      const newGuestInfo = await storage.initializeGuestUser();
+      const trialStartDate = newGuestInfo.trialStartDate
+        ? new Date(newGuestInfo.trialStartDate)
+        : null;
+
+      logger.log("[Auth] Initialized as guest:", newGuestInfo.guestId);
+
+      setState({
+        user: null,
+        token: null,
+        isLoading: false,
+        isGuestUser: true,
+        guestId: newGuestInfo.guestId,
+        guestTrialStartDate: trialStartDate,
+      });
+    } catch (error) {
+      console.error("Error initializing as guest:", error);
+    }
+  }, []);
+
+  const upgradeGuestToRegistered = useCallback(
+    async (email: string, password: string, displayName?: string) => {
+      // This is essentially signUp, but ensures we're coming from a guest state
+      // The signUp function already handles guest data migration
+      if (!state.isGuestUser) {
+        return { success: false, error: "User is not a guest" };
+      }
+      return signUp(email, password, displayName);
+    },
+    [state.isGuestUser, signUp],
+  );
+
+  const linkGuestToExistingAccount = useCallback(
+    async (email: string, password: string) => {
+      // This is essentially signIn, but ensures we're coming from a guest state
+      // The signIn function already handles guest data migration
+      if (!state.isGuestUser) {
+        return { success: false, error: "User is not a guest" };
+      }
+      return signIn(email, password);
+    },
+    [state.isGuestUser, signIn],
+  );
+
   const value = useMemo(
     () => ({
       ...state,
@@ -942,6 +1092,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOut,
       setSignOutCallback,
+      initializeAsGuest,
+      upgradeGuestToRegistered,
+      linkGuestToExistingAccount,
     }),
     [
       state,
@@ -953,6 +1106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOut,
       setSignOutCallback,
+      initializeAsGuest,
+      upgradeGuestToRegistered,
+      linkGuestToExistingAccount,
     ],
   );
 
