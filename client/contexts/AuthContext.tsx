@@ -373,6 +373,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .syncPendingPurchases()
         .catch((err) => console.warn("Failed to sync pending purchases:", err));
 
+      // Check if user was a guest and migrate their data
+      const isGuest = await storage.getIsGuestUser();
+      if (isGuest) {
+        logger.log("[SignIn] Migrating guest data to account...");
+        const migrationResult = await storage.migrateGuestDataToAccount(
+          data.token,
+        );
+        if (migrationResult.success) {
+          logger.log("[SignIn] Guest data migration successful");
+        } else {
+          logger.log(
+            "[SignIn] Guest data migration failed:",
+            migrationResult.error,
+          );
+        }
+      }
+
       setState({
         user: data.user,
         token: data.token,
@@ -460,19 +477,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("Failed to sync pending purchases:", err),
           );
 
-        // Reset onboarding status for new users to ensure they see onboarding
-        // This prevents stale local data from previous sessions from affecting the new user
-        await storage.resetOnboarding();
+        // Check if user was a guest and migrate their data
+        const isGuest = await storage.getIsGuestUser();
+        if (isGuest) {
+          logger.log("[SignUp] Migrating guest data to new account...");
+          const migrationResult = await storage.migrateGuestDataToAccount(
+            data.token,
+          );
+          if (migrationResult.success) {
+            logger.log("[SignUp] Guest data migration successful");
+          } else {
+            logger.log(
+              "[SignUp] Guest data migration failed:",
+              migrationResult.error,
+            );
+            // Continue anyway - user can still use the app, data will be local
+          }
+        } else {
+          // Reset onboarding status for non-guest new users
+          // This prevents stale local data from previous sessions from affecting the new user
+          await storage.resetOnboarding();
+          // Sync fresh state to cloud (with onboarding reset)
+          await storage.syncToCloud();
+        }
 
         setState({
           user: data.user,
           token: data.token,
           isLoading: false,
         });
-
-        // Sync fresh state to cloud (with onboarding reset)
-        // This ensures the clean onboarding status is saved server-side
-        await storage.syncToCloud();
 
         return { success: true };
       } catch (error) {
@@ -668,10 +701,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("Failed to sync pending purchases:", err),
           );
 
+        // Check if user was a guest and migrate their data FIRST
+        const isGuest = await storage.getIsGuestUser();
+        if (isGuest) {
+          logger.log("[AppleAuth] Migrating guest data to account...");
+          const migrationResult = await storage.migrateGuestDataToAccount(
+            authToken,
+          );
+          if (migrationResult.success) {
+            logger.log("[AppleAuth] Guest data migration successful");
+          } else {
+            logger.log(
+              "[AppleAuth] Guest data migration failed:",
+              migrationResult.error,
+            );
+          }
+        }
+
         // Reset all local data for new users to ensure they see onboarding
         // This clears any leftover data from previous accounts
         // Note: isNewUser is returned inside data.user from the server
-        const isNewUser = userData.isNewUser === true;
+        // But if they were a guest, don't reset - use their migrated data
+        const isNewUser = userData.isNewUser === true && !isGuest;
         logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
 
         if (isNewUser) {
@@ -826,10 +877,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("Failed to sync pending purchases:", err),
           );
 
+        // Check if user was a guest and migrate their data FIRST
+        const isGuest = await storage.getIsGuestUser();
+        if (isGuest) {
+          logger.log("[GoogleAuth] Migrating guest data to account...");
+          const migrationResult = await storage.migrateGuestDataToAccount(
+            authToken,
+          );
+          if (migrationResult.success) {
+            logger.log("[GoogleAuth] Guest data migration successful");
+          } else {
+            logger.log(
+              "[GoogleAuth] Guest data migration failed:",
+              migrationResult.error,
+            );
+          }
+        }
+
         // Reset all local data for new users to ensure they see onboarding
         // This clears any leftover data from previous accounts
         // Note: isNewUser is returned inside data.user from the server
-        const isNewUser = userData.isNewUser === true;
+        // But if they were a guest, don't reset - use their migrated data
+        const isNewUser = userData.isNewUser === true && !isGuest;
         logger.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
 
         if (isNewUser) {
