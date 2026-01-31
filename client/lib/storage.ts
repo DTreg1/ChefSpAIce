@@ -1391,6 +1391,118 @@ export const storage = {
     }
   },
 
+  async migrateGuestDataToAccount(
+    token: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const isGuest = await this.getIsGuestUser();
+      if (!isGuest) {
+        logger.log(
+          "[Storage] migrateGuestDataToAccount: Not a guest user, skipping migration",
+        );
+        return { success: true };
+      }
+
+      const guestId = await this.getGuestId();
+      logger.log("[Storage] migrateGuestDataToAccount: Starting migration", {
+        guestId,
+      });
+
+      const [
+        inventory,
+        recipes,
+        mealPlans,
+        shoppingList,
+        preferences,
+        wasteLog,
+        consumedLog,
+        cookware,
+        onboarding,
+        customLocations,
+        userProfile,
+      ] = await Promise.all([
+        this.getInventory(),
+        this.getRawRecipes(),
+        this.getMealPlans(),
+        this.getShoppingList(),
+        this.getPreferences(),
+        this.getWasteLog(),
+        this.getConsumedLog(),
+        this.getCookware(),
+        this.getOnboardingStatus(),
+        this.getCustomStorageLocations(),
+        this.getUserProfile(),
+      ]);
+
+      const hasData =
+        inventory.length > 0 ||
+        recipes.length > 0 ||
+        mealPlans.length > 0 ||
+        shoppingList.length > 0 ||
+        cookware.length > 0 ||
+        customLocations.length > 0 ||
+        onboarding.cookwareSetupCompleted;
+
+      if (!hasData) {
+        logger.log(
+          "[Storage] migrateGuestDataToAccount: No guest data to migrate",
+        );
+        await this.setIsGuestUser(false);
+        return { success: true };
+      }
+
+      const migrationData = {
+        guestId,
+        data: {
+          inventory,
+          recipes,
+          mealPlans,
+          shoppingList,
+          preferences,
+          wasteLog,
+          consumedLog,
+          cookware,
+          onboarding,
+          customLocations,
+          userProfile,
+        },
+      };
+
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/auth/migrate-guest-data", baseUrl);
+
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(migrationData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        logger.log(
+          "[Storage] migrateGuestDataToAccount: Migration failed",
+          errorData,
+        );
+        return {
+          success: false,
+          error: errorData.error || "Failed to migrate guest data",
+        };
+      }
+
+      await this.setIsGuestUser(false);
+      await this.clearRegisterPromptDismissedAt();
+
+      logger.log("[Storage] migrateGuestDataToAccount: Migration successful");
+      return { success: true };
+    } catch (error) {
+      console.error("Guest data migration error:", error);
+      return { success: false, error: "Failed to migrate guest data" };
+    }
+  },
+
   async syncFromCloud(): Promise<{ success: boolean; error?: string }> {
     try {
       const token = await this.getAuthToken();
