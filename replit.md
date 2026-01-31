@@ -18,7 +18,11 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
 - **Design System:** iOS 26 Liquid Glass Design with blur effects, theme support, and reusable components including a unified `ExpoGlassHeader`.
 - **State Management:** AsyncStorage for local data, React Query for server state.
 - **Authentication:** Custom username/password authentication with SHA-256 hashing, social login (Apple, Google), and 30-day session tokens. Uses both bearer tokens for API routes and HTTP-only cookies for web session persistence.
-- **Trial and Subscription System:** New users get a 7-day free trial, with hourly background jobs for trial expiration. Features tiered subscription limits (Basic, Pro) enforced in UI and during onboarding.
+- **Trial and Subscription System:** New users get a 7-day free trial, with hourly background jobs for trial expiration. Features tiered subscription limits (Basic, Pro) enforced in UI and during onboarding. Apple-compliant guest account system allows users to try the app without registration:
+  - `useTrialStatus` hook: Calculates trial days remaining based on first app open (stored in TRIAL_START_DATE)
+  - `TrialStatusBadge`: Color-coded badge showing trial status with days remaining
+  - `RegisterPrompt`: Dismissible banner/card encouraging registration with clear "optional" messaging (24-hour dismissal tracking)
+  - Guest user data persists via AsyncStorage with unique ID generation
 - **Onboarding Flow:** A 6-step sequence for new users to set preferences, define storage areas, and input kitchen equipment.
 - **Cloud Sync:** All authenticated user data syncs to PostgreSQL with retry logic and conflict resolution using a "last write wins" strategy. Includes preference syncing with Zod schema validation and battery optimizations (AppState-aware sync, polling intervals, debounced writes, exponential backoff).
 - **Recipe Image Cloud Sync:** Automatic background upload of recipe images to cloud storage (Replit Object Storage/GCS) with local fallback.

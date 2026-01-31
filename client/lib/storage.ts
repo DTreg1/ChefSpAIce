@@ -90,6 +90,7 @@ const STORAGE_KEYS = {
   GUEST_ID: "@chefspaice/guest_id",
   TRIAL_START_DATE: "@chefspaice/trial_start_date",
   IS_GUEST_USER: "@chefspaice/is_guest_user",
+  REGISTER_PROMPT_DISMISSED_AT: "@chefspaice/register_prompt_dismissed_at",
 } as const;
 
 export const DEFAULT_STORAGE_LOCATIONS = [
@@ -1287,6 +1288,32 @@ export const storage = {
       trialStartDate: trialStartDate || new Date().toISOString(),
       isGuest,
     };
+  },
+
+  async getRegisterPromptDismissedAt(): Promise<string | null> {
+    return await getItem<string>(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT);
+  },
+
+  async setRegisterPromptDismissedAt(date: string): Promise<void> {
+    await setItem(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT, date);
+  },
+
+  async clearRegisterPromptDismissedAt(): Promise<void> {
+    await AsyncStorage.removeItem(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT);
+  },
+
+  async shouldShowRegisterPrompt(hoursToWait: number = 24): Promise<boolean> {
+    const dismissedAt = await this.getRegisterPromptDismissedAt();
+    if (!dismissedAt) {
+      return true;
+    }
+
+    const dismissedDate = new Date(dismissedAt);
+    const now = new Date();
+    const hoursSinceDismissal =
+      (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60);
+
+    return hoursSinceDismissal >= hoursToWait;
   },
 
   async syncToCloud(): Promise<{ success: boolean; error?: string }> {

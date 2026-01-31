@@ -88,6 +88,7 @@ import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
 import { logger } from "@/lib/logger";
+import { RegisterPrompt } from "@/components/RegisterPrompt";
 
 type FoodGroup = "grains" | "vegetables" | "fruits" | "protein" | "dairy";
 interface StorageLocationOption {
@@ -507,50 +508,51 @@ export default function InventoryScreen() {
   };
 
   const renderListHeader = () => {
-    if (items.length === 0) return null;
-    const showFunFact = funFact || funFactLoading;
-    if (!showFunFact) return null;
+    const showFunFact = items.length > 0 && (funFact || funFactLoading);
 
     return (
       <View style={styles.listHeader}>
-        <GlassCard style={styles.funFactCard}>
-          {funFact && (
-            <View style={styles.funFactContainer}>
-              <View style={styles.funFactHeader}>
-                <Feather name="info" size={14} color={AppColors.primary} />
-                {funFactTimeRemaining && (
-                  <ThemedText type="caption" style={styles.funFactTimer}>
-                    Next in {funFactTimeRemaining}
-                  </ThemedText>
-                )}
-                <Pressable
-                  onPress={handleRefreshFunFact}
-                  disabled={funFactLoading}
-                  style={styles.funFactRefreshButton}
-                  testID="button-refresh-fun-fact"
-                >
-                  <Feather
-                    name="refresh-cw"
-                    size={14}
-                    color={
-                      funFactLoading ? theme.textSecondary : AppColors.primary
-                    }
-                  />
-                </Pressable>
+        <RegisterPrompt variant="banner" />
+        {showFunFact && (
+          <GlassCard style={styles.funFactCard}>
+            {funFact && (
+              <View style={styles.funFactContainer}>
+                <View style={styles.funFactHeader}>
+                  <Feather name="info" size={14} color={AppColors.primary} />
+                  {funFactTimeRemaining && (
+                    <ThemedText type="caption" style={styles.funFactTimer}>
+                      Next in {funFactTimeRemaining}
+                    </ThemedText>
+                  )}
+                  <Pressable
+                    onPress={handleRefreshFunFact}
+                    disabled={funFactLoading}
+                    style={styles.funFactRefreshButton}
+                    testID="button-refresh-fun-fact"
+                  >
+                    <Feather
+                      name="refresh-cw"
+                      size={14}
+                      color={
+                        funFactLoading ? theme.textSecondary : AppColors.primary
+                      }
+                    />
+                  </Pressable>
+                </View>
+                <ThemedText type="caption" style={styles.funFactText}>
+                  {funFact}
+                </ThemedText>
               </View>
-              <ThemedText type="caption" style={styles.funFactText}>
-                {funFact}
-              </ThemedText>
-            </View>
-          )}
-          {funFactLoading && !funFact && (
-            <View style={styles.funFactContainer}>
-              <ThemedText type="caption" style={styles.funFactText}>
-                Discovering a fun fact about your kitchen...
-              </ThemedText>
-            </View>
-          )}
-        </GlassCard>
+            )}
+            {funFactLoading && !funFact && (
+              <View style={styles.funFactContainer}>
+                <ThemedText type="caption" style={styles.funFactText}>
+                  Discovering a fun fact about your kitchen...
+                </ThemedText>
+              </View>
+            )}
+          </GlassCard>
+        )}
       </View>
     );
   };
