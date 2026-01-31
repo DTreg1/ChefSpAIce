@@ -4,12 +4,12 @@
  * =============================================================================
  *
  * The top-level navigation structure for ChefSpAIce.
- * Controls the main navigation flow based on auth and onboarding state.
+ * Controls the main navigation flow based on auth, guest, and onboarding state.
  *
  * NAVIGATION STRUCTURE:
  *
  * RootStack (this file)
- * ├── Onboarding - First-time user setup and sign-in
+ * ├── Onboarding - First-time user setup (for new guests)
  * ├── Main (DrawerNavigator)
  * │   ├── TabNavigator
  * │   │   ├── InventoryStack (Inventory, ItemDetail)
@@ -27,15 +27,18 @@
  * ├── FoodCamera - AI food recognition
  * └── FoodSearch - USDA food database search
  *
- * AUTH FLOW:
- * - Shows Onboarding for new/logged-out users
- * - Redirects to Main after successful auth
- * - Auto-logs out on 401 errors
+ * GUEST USER FLOW (Apple-compliant):
+ * - New mobile users start as guests with a trial period
+ * - Guest ID and trial start date are stored locally
+ * - Flow: New user → Onboarding → Main (during trial)
+ * - When trial expires → Subscription screen
+ * - Registration is optional and enables cloud sync
  *
- * SUBSCRIPTION HANDLING:
- * - Checks subscription status after auth
- * - Redirects to pricing if no active subscription
- * - Supports 7-day free trial
+ * NAVIGATION PRIORITY:
+ * 1. Web + unauthenticated → Landing
+ * 2. Trial expired (guest or registered) → Subscription
+ * 3. Needs onboarding → Onboarding
+ * 4. Otherwise → Main
  *
  * @module navigation/RootStackNavigator
  */
@@ -72,6 +75,7 @@ import { storage } from "@/lib/storage";
 import { AppColors } from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
+const TRIAL_DURATION_DAYS = 7;
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -144,12 +148,13 @@ function AuthGuardedNavigator() {
   const { isActive, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
   const hasInitialized = useRef(false);
   const prevAuthState = useRef({ isAuthenticated });
   const prevSubscriptionState = useRef({ isActive, subscriptionLoading });
 
   useEffect(() => {
-    checkOnboardingStatus();
+    checkOnboardingAndGuestStatus();
   }, [isAuthenticated]);
 
   // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
@@ -251,13 +256,38 @@ function AuthGuardedNavigator() {
     needsOnboarding,
   ]);
 
-  const checkOnboardingStatus = async () => {
+  const checkTrialExpired = (trialStartDate: string): boolean => {
+    const startDate = new Date(trialStartDate);
+    const now = new Date();
+    const diffTime = now.getTime() - startDate.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays > TRIAL_DURATION_DAYS;
+  };
+
+  const checkOnboardingAndGuestStatus = async () => {
     try {
+      // Check onboarding status
       const needs = await storage.needsOnboarding();
       logger.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
       setNeedsOnboarding(needs);
+
+      // For mobile users, initialize or retrieve guest user info
+      if (!isWeb && !isAuthenticated) {
+        const guest = await storage.initializeGuestUser();
+
+        // Check if trial has expired
+        const expired = checkTrialExpired(guest.trialStartDate);
+        setIsTrialExpired(expired);
+        logger.log(
+          `[Nav] Guest user: id=${guest.guestId}, trialStart=${guest.trialStartDate}, expired=${expired}`,
+        );
+      } else {
+        // For authenticated users, trial expiration doesn't apply
+        // Subscription status is checked separately
+        setIsTrialExpired(false);
+      }
     } catch (err) {
-      console.error("[Nav] Error checking onboarding status:", err);
+      console.error("[Nav] Error checking onboarding/guest status:", err);
     } finally {
       setIsLoading(false);
     }
@@ -267,39 +297,58 @@ function AuthGuardedNavigator() {
     return <LoadingScreen />;
   }
 
-  // Determine initial route:
-  // Apple Guideline 5.1.1: Users must be able to purchase subscriptions WITHOUT registering first
-  // 1. Web + not authenticated → Landing (marketing page)
-  // 2. Mobile + not authenticated + no subscription → Subscription (can purchase without account)
-  // 3. Authenticated + needs onboarding → Onboarding
-  // 4. Authenticated + subscription inactive → Subscription (to show pricing/resubscribe)
-  // 5. Otherwise → Main
+  // Determine initial route with guest user support:
+  // Priority order:
+  // 1. Web + unauthenticated → Landing (marketing page)
+  // 2. Trial expired (guest) → Subscription (must subscribe to continue)
+  // 3. Authenticated + subscription inactive → Subscription (resubscribe)
+  // 4. Needs onboarding → Onboarding (first-time setup)
+  // 5. Otherwise → Main (active trial or subscription)
   const getInitialRoute = (): keyof RootStackParamList => {
     // Show landing page for web users who aren't authenticated
     if (isWeb && !isAuthenticated) {
       logger.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
-    // Apple 5.1.1 compliance: Allow mobile users to purchase subscriptions without registering
-    // Show subscription screen first - they can purchase via StoreKit without an account
-    // Account creation is optional and enables cross-device sync
+
+    // For mobile guest users (not authenticated)
     if (!isAuthenticated) {
+      // Check if trial has expired - must subscribe
+      if (isTrialExpired) {
+        logger.log(
+          "[Nav] Initial route: Subscription (guest trial expired)",
+        );
+        return "Subscription";
+      }
+
+      // New guest user or returning guest who needs onboarding
+      if (needsOnboarding) {
+        logger.log(
+          "[Nav] Initial route: Onboarding (new guest or needs onboarding)",
+        );
+        return "Onboarding";
+      }
+
+      // Returning guest with active trial - go to main app
       logger.log(
-        "[Nav] Initial route: Subscription (mobile, unauthenticated - can purchase without account per Apple 5.1.1)",
+        "[Nav] Initial route: Main (guest with active trial)",
       );
-      return "Subscription";
+      return "Main";
     }
-    // User needs onboarding - send to Onboarding (includes pricing)
+
+    // For authenticated users
+    // User needs onboarding - send to Onboarding first
     if (needsOnboarding) {
-      logger.log("[Nav] Initial route: Onboarding (needsOnboarding=true)");
+      logger.log("[Nav] Initial route: Onboarding (authenticated, needsOnboarding=true)");
       return "Onboarding";
     }
-    // User has completed onboarding but has no active subscription - send to Subscription
-    // so they can see pricing and resubscribe (instead of going through onboarding again)
+
+    // Authenticated user with no active subscription - send to Subscription to resubscribe
     if (!isActive) {
-      logger.log("[Nav] Initial route: Subscription (inactive subscription)");
+      logger.log("[Nav] Initial route: Subscription (authenticated, inactive subscription)");
       return "Subscription";
     }
+
     logger.log(
       "[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)",
     );
