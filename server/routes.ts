@@ -1263,10 +1263,11 @@ BEHAVIOR GUIDELINES:
       console.log("[TEST] create-test-user endpoint hit");
       try {
         const crypto = await import("crypto");
+        const bcrypt = await import("bcrypt");
         const testId = crypto.randomBytes(4).toString("hex");
         const email = `test_${testId}@test.chefspaice.com`;
         const plainPassword = "TestPassword123!";
-        const passwordHash = crypto.createHash("sha256").update(plainPassword).digest("hex");
+        const passwordHash = await bcrypt.hash(plainPassword, 12);
         
         // Create the test user
         const [newUser] = await db
