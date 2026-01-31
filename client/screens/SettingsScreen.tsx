@@ -57,6 +57,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
+import { TrialStatusBadge } from "@/components/TrialStatusBadge";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -592,6 +593,8 @@ export default function SettingsScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
+        <TrialStatusBadge />
+
         {isAuthenticated ? (
           <GlassCard style={styles.section}>
             <ThemedText type="h4" style={styles.sectionTitle}>
