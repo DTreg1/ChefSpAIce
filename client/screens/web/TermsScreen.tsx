@@ -86,7 +86,7 @@ export default function TermsScreen() {
           Terms of Service
         </Text>
         <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>
-          Last updated: December 2024
+          Last updated: January 2026
         </Text>
 
         <View
@@ -152,6 +152,81 @@ export default function TermsScreen() {
             are not liable for any damages arising from your use of the
             application, including but not limited to food safety issues or
             inaccurate expiration tracking.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Subscriptions and Payments
+          </Text>
+          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+            ChefSpAIce offers auto-renewable subscription options to access
+            premium features. By purchasing a subscription, you agree to the
+            following terms:
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>Payment:</Text> Payment will be
+            charged to your Apple ID account at confirmation of purchase.
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>Renewal:</Text> Subscriptions
+            automatically renew unless auto-renew is turned off at least 24
+            hours before the end of the current subscription period. Your
+            account will be charged for renewal within 24 hours prior to the
+            end of the current period at the same price.
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>Managing Subscriptions:</Text>{" "}
+            You can manage and cancel your subscriptions by going to your
+            Account Settings in the App Store after purchase. Any unused
+            portion of a free trial period will be forfeited when you purchase
+            a subscription.
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>Refunds:</Text> Refunds are
+            handled by Apple in accordance with their refund policies. To
+            request a refund, please visit Apple's Report a Problem page or
+            contact Apple Support directly.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Contact Us
+          </Text>
+          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+            If you have any questions about these Terms of Service, please
+            contact us through our Support page.
           </Text>
         </View>
       </View>
