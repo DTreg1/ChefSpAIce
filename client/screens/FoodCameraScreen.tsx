@@ -426,13 +426,6 @@ export default function FoodCameraScreen() {
               Open Settings
             </GlassButton>
           ) : null}
-          <GlassButton
-            variant="ghost"
-            onPress={handleClose}
-            style={styles.cancelButton}
-          >
-            Cancel
-          </GlassButton>
         </ThemedView>
       );
     }
@@ -451,14 +444,7 @@ export default function FoodCameraScreen() {
           onPress={requestPermission}
           style={styles.permissionButton}
         >
-          Enable Camera
-        </GlassButton>
-        <GlassButton
-          variant="ghost"
-          onPress={handleClose}
-          style={styles.cancelButton}
-        >
-          Cancel
+          Continue
         </GlassButton>
       </ThemedView>
     );

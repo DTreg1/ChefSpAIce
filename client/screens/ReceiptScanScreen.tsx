@@ -625,7 +625,7 @@ export default function ReceiptScanScreen() {
             onPress={requestPermission}
             style={styles.permissionButton}
           >
-            Grant Camera Access
+            Continue
           </GlassButton>
         ) : (
           <GlassButton
@@ -635,13 +635,6 @@ export default function ReceiptScanScreen() {
             Open Settings
           </GlassButton>
         )}
-        <GlassButton
-          variant="ghost"
-          onPress={handleClose}
-          style={styles.cancelButton}
-        >
-          Cancel
-        </GlassButton>
       </ThemedView>
     );
   }

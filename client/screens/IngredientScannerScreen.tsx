@@ -349,13 +349,6 @@ export default function IngredientScannerScreen() {
               Open Settings
             </GlassButton>
           ) : null}
-          <GlassButton
-            variant="ghost"
-            onPress={handleClose}
-            style={styles.cancelButton}
-          >
-            Cancel
-          </GlassButton>
         </View>
       );
     }
@@ -380,14 +373,7 @@ export default function IngredientScannerScreen() {
           onPress={requestPermission}
           style={styles.permissionButton}
         >
-          Enable Camera
-        </GlassButton>
-        <GlassButton
-          variant="ghost"
-          onPress={handleClose}
-          style={styles.cancelButton}
-        >
-          Cancel
+          Continue
         </GlassButton>
       </View>
     );

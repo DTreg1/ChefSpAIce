@@ -264,13 +264,6 @@ export default function RecipeScannerScreen() {
               Open Settings
             </GlassButton>
           ) : null}
-          <GlassButton
-            variant="ghost"
-            onPress={handleClose}
-            style={styles.cancelButton}
-          >
-            Cancel
-          </GlassButton>
         </View>
       );
     }
@@ -295,14 +288,7 @@ export default function RecipeScannerScreen() {
           onPress={requestPermission}
           style={styles.permissionButton}
         >
-          Enable Camera
-        </GlassButton>
-        <GlassButton
-          variant="ghost"
-          onPress={handleClose}
-          style={styles.cancelButton}
-        >
-          Cancel
+          Continue
         </GlassButton>
       </View>
     );
