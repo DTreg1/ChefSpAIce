@@ -23,6 +23,7 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
   - `TrialStatusBadge`: Color-coded badge showing trial status with days remaining
   - `RegisterPrompt`: Dismissible banner/card encouraging registration with clear "optional" messaging (24-hour dismissal tracking)
   - Guest user data persists via AsyncStorage with unique ID generation
+  - **Guest Data Migration:** When a guest user registers or signs in, all local data is automatically migrated to their account via `POST /api/auth/migrate-guest-data`. Arrays (inventory, recipes, etc.) are merged by ID to avoid duplicates. Non-array data (preferences, onboarding) only migrates if the account doesn't have existing data. Respects subscription limits (cookware limits, Pro-only features).
 - **Onboarding Flow:** A 6-step sequence for new users to set preferences, define storage areas, and input kitchen equipment.
 - **Cloud Sync:** All authenticated user data syncs to PostgreSQL with retry logic and conflict resolution using a "last write wins" strategy. Includes preference syncing with Zod schema validation and battery optimizations (AppState-aware sync, polling intervals, debounced writes, exponential backoff).
 - **Recipe Image Cloud Sync:** Automatic background upload of recipe images to cloud storage (Replit Object Storage/GCS) with local fallback.
