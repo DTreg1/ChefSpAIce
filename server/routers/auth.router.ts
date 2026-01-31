@@ -638,6 +638,225 @@ router.post("/sync", async (req: Request, res: Response) => {
 });
 
 // =============================================================================
+// MIGRATE GUEST DATA ENDPOINT
+// Transfers local guest data to new registered account
+// =============================================================================
+
+router.post("/migrate-guest-data", async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const token = authHeader.substring(7);
+
+    const [session] = await db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.token, token))
+      .limit(1);
+
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    const { guestId, data } = req.body;
+
+    if (!data) {
+      return res.status(400).json({ error: "No data provided for migration" });
+    }
+
+    console.log(`[MigrateGuestData] Starting migration for user ${session.userId}, guest ${guestId}`);
+
+    // Check for existing data in user's sync record
+    const [existingSyncData] = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId))
+      .limit(1);
+
+    // Determine merge strategy: if user already has data, we'll merge arrays
+    const hasExistingData = existingSyncData && (
+      existingSyncData.inventory ||
+      existingSyncData.recipes ||
+      existingSyncData.mealPlans ||
+      existingSyncData.shoppingList
+    );
+
+    if (hasExistingData) {
+      console.log(`[MigrateGuestData] User ${session.userId} has existing data, merging...`);
+    }
+
+    // Prepare sync update with guest data
+    const syncUpdate: Record<string, unknown> = {
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Helper to merge arrays or replace
+    const mergeOrReplace = (existing: string | null, incoming: unknown[]): string | null => {
+      if (!incoming || incoming.length === 0) return existing;
+      if (!existing) return JSON.stringify(incoming);
+      
+      try {
+        const existingArr = JSON.parse(existing);
+        if (!Array.isArray(existingArr)) return JSON.stringify(incoming);
+        
+        // Merge: add incoming items that don't exist (by id if available)
+        const merged = [...existingArr];
+        for (const item of incoming) {
+          const itemId = (item as { id?: string })?.id;
+          if (itemId) {
+            const exists = merged.some((e: { id?: string }) => e.id === itemId);
+            if (!exists) merged.push(item);
+          } else {
+            merged.push(item);
+          }
+        }
+        return JSON.stringify(merged);
+      } catch {
+        return JSON.stringify(incoming);
+      }
+    };
+
+    // Process each data type
+    if (data.inventory !== undefined) {
+      syncUpdate.inventory = mergeOrReplace(
+        hasExistingData ? existingSyncData?.inventory || null : null,
+        data.inventory
+      );
+    }
+    if (data.recipes !== undefined) {
+      syncUpdate.recipes = mergeOrReplace(
+        hasExistingData ? existingSyncData?.recipes || null : null,
+        data.recipes
+      );
+    }
+    if (data.mealPlans !== undefined) {
+      syncUpdate.mealPlans = mergeOrReplace(
+        hasExistingData ? existingSyncData?.mealPlans || null : null,
+        data.mealPlans
+      );
+    }
+    if (data.shoppingList !== undefined) {
+      syncUpdate.shoppingList = mergeOrReplace(
+        hasExistingData ? existingSyncData?.shoppingList || null : null,
+        data.shoppingList
+      );
+    }
+    if (data.wasteLog !== undefined) {
+      syncUpdate.wasteLog = mergeOrReplace(
+        hasExistingData ? existingSyncData?.wasteLog || null : null,
+        data.wasteLog
+      );
+    }
+    if (data.consumedLog !== undefined) {
+      syncUpdate.consumedLog = mergeOrReplace(
+        hasExistingData ? existingSyncData?.consumedLog || null : null,
+        data.consumedLog
+      );
+    }
+    if (data.customLocations !== undefined) {
+      syncUpdate.customLocations = mergeOrReplace(
+        hasExistingData ? existingSyncData?.customLocations || null : null,
+        data.customLocations
+      );
+    }
+    
+    // For non-array data, use guest data if no existing data
+    if (data.preferences !== undefined) {
+      const parseResult = syncPreferencesSchema.safeParse(data.preferences);
+      if (parseResult.success) {
+        syncUpdate.preferences = JSON.stringify(parseResult.data);
+        
+        // Also update user profile with preferences
+        const prefs = parseResult.data;
+        const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
+        if (prefs.servingSize !== undefined) userUpdate.householdSize = prefs.servingSize;
+        if (prefs.dailyMeals !== undefined) userUpdate.dailyMeals = prefs.dailyMeals;
+        if (prefs.dietaryRestrictions !== undefined) userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;
+        if (prefs.cuisinePreferences !== undefined) userUpdate.favoriteCategories = prefs.cuisinePreferences;
+        if (prefs.storageAreas !== undefined) userUpdate.storageAreasEnabled = prefs.storageAreas;
+        if (prefs.cookingLevel !== undefined) {
+          const levelMap: Record<string, string> = { basic: "beginner", intermediate: "intermediate", professional: "advanced" };
+          userUpdate.cookingSkillLevel = levelMap[prefs.cookingLevel] || "beginner";
+        }
+        if (prefs.expirationAlertDays !== undefined) userUpdate.expirationAlertDays = prefs.expirationAlertDays;
+        
+        if (Object.keys(userUpdate).length > 1) {
+          await db.update(users).set(userUpdate).where(eq(users.id, session.userId));
+        }
+      }
+    }
+    if (data.onboarding !== undefined) {
+      syncUpdate.onboarding = JSON.stringify(data.onboarding);
+    }
+    if (data.userProfile !== undefined) {
+      syncUpdate.userProfile = JSON.stringify(data.userProfile);
+    }
+
+    // Handle cookware migration
+    if (data.cookware !== undefined && Array.isArray(data.cookware)) {
+      const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
+      
+      if (newCookwareIds.length > 0) {
+        // Get current cookware
+        const currentCookware = await db
+          .select({ applianceId: userAppliances.applianceId })
+          .from(userAppliances)
+          .where(eq(userAppliances.userId, session.userId));
+        
+        const currentIds = new Set(currentCookware.map(c => c.applianceId));
+        const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
+        
+        if (toAdd.length > 0) {
+          await db
+            .insert(userAppliances)
+            .values(toAdd.map(applianceId => ({
+              userId: session.userId,
+              applianceId,
+            })))
+            .onConflictDoNothing();
+        }
+      }
+    }
+
+    // Update or insert sync data
+    if (existingSyncData) {
+      await db
+        .update(userSyncData)
+        .set(syncUpdate)
+        .where(eq(userSyncData.userId, session.userId));
+    } else {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        ...syncUpdate,
+      });
+    }
+
+    // Update onboarding status if completed during guest mode
+    if (data.onboarding?.completedAt) {
+      await db
+        .update(users)
+        .set({ hasCompletedOnboarding: true, updatedAt: new Date() })
+        .where(eq(users.id, session.userId));
+    }
+
+    console.log(`[MigrateGuestData] Successfully migrated data for user ${session.userId}`);
+
+    res.json({ 
+      success: true, 
+      migratedAt: new Date().toISOString(),
+      merged: hasExistingData,
+    });
+  } catch (error) {
+    console.error("Guest data migration error:", error);
+    res.status(500).json({ error: "Failed to migrate guest data" });
+  }
+});
+
+// =============================================================================
 // DELETE ACCOUNT ENDPOINT
 // Apple App Store Guideline 5.1.1(v) and 5.1.1(vi) Compliance
 // =============================================================================
