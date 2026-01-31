@@ -87,6 +87,9 @@ const STORAGE_KEYS = {
   CUSTOM_STORAGE_LOCATIONS: "@chefspaice/custom_storage_locations",
   ONBOARDING_STEP: "@chefspaice/onboarding_step",
   PENDING_PURCHASE: "@chefspaice/pending_purchase",
+  GUEST_ID: "@chefspaice/guest_id",
+  TRIAL_START_DATE: "@chefspaice/trial_start_date",
+  IS_GUEST_USER: "@chefspaice/is_guest_user",
 } as const;
 
 export const DEFAULT_STORAGE_LOCATIONS = [
@@ -114,6 +117,12 @@ export interface UserProfile {
   avatarUri?: string;
   createdAt: string;
   isLoggedIn: boolean;
+}
+
+export interface GuestUserInfo {
+  guestId: string;
+  trialStartDate: string;
+  isGuest: boolean;
 }
 
 export interface FoodItem {
@@ -1039,6 +1048,7 @@ export const storage = {
       AsyncStorage.removeItem(STORAGE_KEYS.SHOPPING_LIST),
       AsyncStorage.removeItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS),
       AsyncStorage.removeItem(STORAGE_KEYS.COOKWARE),
+      AsyncStorage.removeItem(STORAGE_KEYS.IS_GUEST_USER),
     ]);
     logger.log("[Storage] New user reset complete");
   },
@@ -1184,6 +1194,101 @@ export const storage = {
     await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_PURCHASE);
   },
 
+  // ==========================================================================
+  // GUEST USER STORAGE
+  // For users who haven't registered yet - allows trial usage before signup
+  // ==========================================================================
+
+  async getGuestId(): Promise<string | null> {
+    return await getItem<string>(STORAGE_KEYS.GUEST_ID);
+  },
+
+  async setGuestId(guestId: string): Promise<void> {
+    await setItem(STORAGE_KEYS.GUEST_ID, guestId);
+  },
+
+  async getTrialStartDate(): Promise<string | null> {
+    return await getItem<string>(STORAGE_KEYS.TRIAL_START_DATE);
+  },
+
+  async setTrialStartDate(date: string): Promise<void> {
+    await setItem(STORAGE_KEYS.TRIAL_START_DATE, date);
+  },
+
+  async getIsGuestUser(): Promise<boolean> {
+    const isGuest = await getItem<boolean>(STORAGE_KEYS.IS_GUEST_USER);
+    return isGuest ?? false;
+  },
+
+  async setIsGuestUser(isGuest: boolean): Promise<void> {
+    await setItem(STORAGE_KEYS.IS_GUEST_USER, isGuest);
+  },
+
+  async isGuestUser(): Promise<boolean> {
+    const authToken = await this.getAuthToken();
+    if (authToken) {
+      return false;
+    }
+    return await this.getIsGuestUser();
+  },
+
+  async initializeGuestUser(): Promise<GuestUserInfo> {
+    const existingGuestId = await this.getGuestId();
+
+    if (existingGuestId) {
+      const trialStartDate = await this.getTrialStartDate();
+      const isGuest = await this.getIsGuestUser();
+      logger.log("[Storage] Guest user already initialized:", existingGuestId);
+      return {
+        guestId: existingGuestId,
+        trialStartDate: trialStartDate || new Date().toISOString(),
+        isGuest,
+      };
+    }
+
+    const newGuestId = generateGuestId();
+    const trialStartDate = new Date().toISOString();
+
+    await Promise.all([
+      this.setGuestId(newGuestId),
+      this.setTrialStartDate(trialStartDate),
+      this.setIsGuestUser(true),
+    ]);
+
+    logger.log("[Storage] New guest user initialized:", newGuestId);
+
+    return {
+      guestId: newGuestId,
+      trialStartDate,
+      isGuest: true,
+    };
+  },
+
+  async clearGuestUser(): Promise<void> {
+    await Promise.all([
+      AsyncStorage.removeItem(STORAGE_KEYS.GUEST_ID),
+      AsyncStorage.removeItem(STORAGE_KEYS.TRIAL_START_DATE),
+      AsyncStorage.removeItem(STORAGE_KEYS.IS_GUEST_USER),
+    ]);
+    logger.log("[Storage] Guest user data cleared");
+  },
+
+  async getGuestUserInfo(): Promise<GuestUserInfo | null> {
+    const guestId = await this.getGuestId();
+    if (!guestId) {
+      return null;
+    }
+
+    const trialStartDate = await this.getTrialStartDate();
+    const isGuest = await this.getIsGuestUser();
+
+    return {
+      guestId,
+      trialStartDate: trialStartDate || new Date().toISOString(),
+      isGuest,
+    };
+  },
+
   async syncToCloud(): Promise<{ success: boolean; error?: string }> {
     try {
       const token = await this.getAuthToken();
@@ -1314,6 +1419,13 @@ export const storage = {
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+export function generateGuestId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomPart1 = Math.random().toString(36).substring(2, 10);
+  const randomPart2 = Math.random().toString(36).substring(2, 10);
+  return `guest_${timestamp}_${randomPart1}${randomPart2}`;
 }
 
 export function getDaysUntilExpiration(expirationDate: string): number {
