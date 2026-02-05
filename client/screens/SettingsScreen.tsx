@@ -1084,6 +1084,33 @@ export default function SettingsScreen() {
 
         <GlassCard style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
+            Integrations
+          </ThemedText>
+
+          <Pressable
+            style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
+            onPress={() => navigation.navigate("SiriShortcutsGuide")}
+            data-testid="button-siri-shortcuts"
+          >
+            <View style={styles.legalMenuIcon}>
+              <Feather name="mic" size={18} color={theme.text} />
+            </View>
+            <View style={styles.legalMenuText}>
+              <ThemedText type="body">Siri Shortcuts</ThemedText>
+              <ThemedText type="caption">
+                Set up voice commands for your kitchen
+              </ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
             Legal & Support
           </ThemedText>
 

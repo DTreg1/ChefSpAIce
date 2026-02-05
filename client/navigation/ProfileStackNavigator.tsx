@@ -11,6 +11,7 @@ import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import GlassLeafScreen from "@/screens/GlassLeafScreen";
 import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
+import SiriShortcutsGuideScreen from "@/screens/SiriShortcutsGuideScreen";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -25,6 +26,7 @@ export type ProfileStackParamList = {
   GlassLeaf: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  SiriShortcutsGuide: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -50,6 +52,7 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="GlassLeaf" component={GlassLeafScreen} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <Stack.Screen name="SiriShortcutsGuide" component={SiriShortcutsGuideScreen} />
     </Stack.Navigator>
   );
 }
