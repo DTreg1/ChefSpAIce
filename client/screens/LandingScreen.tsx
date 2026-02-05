@@ -338,12 +338,14 @@ function getShowcaseImageUrl(category: string, filename: string): string {
     // In development, this points to port 5000 where Express serves images
     // In production, use the same hostname without port (images served via same server)
     const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+    // Cache bust parameter to force reload updated images
+    const cacheBust = "v=2";
     if (expoDomain) {
       // Development: EXPO_PUBLIC_DOMAIN contains domain:5000
-      return `${protocol}//${expoDomain}/public/showcase/${category}/${filename}`;
+      return `${protocol}//${expoDomain}/public/showcase/${category}/${filename}?${cacheBust}`;
     }
     // Production fallback: same host, no port needed
-    return `${protocol}//${hostname}/public/showcase/${category}/${filename}`;
+    return `${protocol}//${hostname}/public/showcase/${category}/${filename}?${cacheBust}`;
   }
   return "";
 }
