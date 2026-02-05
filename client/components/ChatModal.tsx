@@ -20,6 +20,10 @@ import Animated, {
   useSharedValue,
   interpolate,
   Extrapolation,
+  withRepeat,
+  withTiming,
+  withSequence,
+  cancelAnimation,
 } from "react-native-reanimated";
 
 import { useNavigation } from "@react-navigation/native";
@@ -37,6 +41,8 @@ import {
   UserPreferences,
 } from "@/lib/storage";
 import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { useVoiceChat } from "@/hooks/useVoiceChat";
+import { useAIVoice } from "@/hooks/useAIVoice";
 
 const chefHatDark = require("../../assets/images/transparent/chef-hat-dark-64.png");
 
@@ -83,13 +89,70 @@ export function ChatModal() {
   const [currentTip, setCurrentTip] = useState<WasteTip | null>(null);
   const [expiringCount, setExpiringCount] = useState(0);
   const [tipLoading, setTipLoading] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isReplayLoading, setIsReplayLoading] = useState<string | null>(null);
+  const isPressAndHoldRef = useRef(false);
 
   const animationProgress = useSharedValue(0);
+  const pulseAnimation = useSharedValue(1);
+
+  const voiceChat = useVoiceChat({
+    onUserMessage: (msg) => {
+      const chatMessage: ChatMessage = {
+        id: generateId(),
+        role: "user",
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      };
+      setMessages((prev) => {
+        const updated = [...prev, chatMessage];
+        storage.setChatHistory(updated);
+        return updated;
+      });
+      scrollToBottom();
+    },
+    onAssistantMessage: (msg) => {
+      const chatMessage: ChatMessage = {
+        id: generateId(),
+        role: "assistant",
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      };
+      setMessages((prev) => {
+        const updated = [...prev, chatMessage];
+        storage.setChatHistory(updated);
+        return updated;
+      });
+      scrollToBottom();
+    },
+  });
+
+  const replayVoice = useAIVoice();
 
   const chatWidth = Math.min(CHAT_WIDTH, screenWidth * 0.85);
   const chatHeight = Math.min(screenHeight * CHAT_MAX_HEIGHT_RATIO, 450);
   const bottomPadding = Math.max(insets.bottom, 10);
   const bottomPosition = TAB_BAR_HEIGHT + bottomPadding + FAB_SIZE + Spacing.xl;
+
+  useEffect(() => {
+    if (voiceChat.isListening) {
+      pulseAnimation.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(pulseAnimation);
+      pulseAnimation.value = withTiming(1, { duration: 200 });
+    }
+  }, [voiceChat.isListening]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnimation.value }],
+  }));
 
   const getExpiringItems = useCallback((items: FoodItem[]) => {
     const today = new Date();
@@ -169,6 +232,7 @@ export function ChatModal() {
   const handleClearChat = async () => {
     await storage.clearChatHistory();
     setMessages([]);
+    voiceChat.clearHistory();
   };
 
   const scrollToBottom = () => {
@@ -201,7 +265,6 @@ export function ChatModal() {
 
       const baseUrl = getApiUrl();
 
-      // Get auth token if user is logged in
       const authToken = await storage.getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -256,14 +319,11 @@ export function ChatModal() {
       setMessages(finalMessages);
       await storage.setChatHistory(finalMessages);
 
-      // If actions were performed, refresh local data from server
       if (data.refreshData && authToken) {
         logger.log("[Chat] Actions performed, refreshing local data...");
         try {
-          // Trigger a full sync to get updated data
           const syncResult = await storage.syncFromCloud();
           if (syncResult.success) {
-            // Reload inventory to reflect changes
             const updatedInventory = await storage.getInventory();
             setInventory(updatedInventory);
             loadTip(updatedInventory);
@@ -273,7 +333,6 @@ export function ChatModal() {
         }
       }
 
-      // Handle navigation after action (e.g., navigate to RecipeDetail after generating recipe)
       if (data.navigateTo) {
         logger.log("[Chat] Navigation requested:", data.navigateTo);
         closeChat();
@@ -313,6 +372,66 @@ export function ChatModal() {
     }
   };
 
+  const handleVoiceTap = async () => {
+    if (isPressAndHoldRef.current) {
+      isPressAndHoldRef.current = false;
+      return;
+    }
+    if (voiceChat.isListening) {
+      await voiceChat.endConversation();
+    } else if (!voiceChat.isProcessing && !voiceChat.isSpeaking) {
+      await voiceChat.startConversation();
+    }
+  };
+
+  const handleVoicePressIn = async () => {
+    isPressAndHoldRef.current = true;
+    if (!voiceChat.isProcessing && !voiceChat.isSpeaking && !voiceChat.isListening) {
+      await voiceChat.startConversation();
+    }
+  };
+
+  const handleVoicePressOut = async () => {
+    if (isPressAndHoldRef.current && voiceChat.isListening) {
+      await voiceChat.endConversation();
+    }
+    isPressAndHoldRef.current = false;
+  };
+
+  const handleReplayMessage = async (messageId: string, content: string) => {
+    if (isReplayLoading || replayVoice.isSpeaking) return;
+    
+    setIsReplayLoading(messageId);
+    const baseUrl = getApiUrl();
+    const authToken = await storage.getAuthToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
+    try {
+      const response = await fetch(new URL("/api/voice/speak", baseUrl).href, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ text: content }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.audioUrl) {
+          await replayVoice.play(data.audioUrl);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to replay message:", error);
+    } finally {
+      setIsReplayLoading(null);
+    }
+  };
+
   const containerStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       animationProgress.value,
@@ -339,22 +458,52 @@ export function ChatModal() {
     };
   });
 
-  const renderAssistantBubble = (content: string) => {
+  const renderAssistantBubble = (content: string, messageId: string) => {
+    const isThisMessageLoading = isReplayLoading === messageId;
+    const isPlaying = replayVoice.isSpeaking && isReplayLoading === null;
+    
     return (
-      <GlassView
-        style={[
-          styles.assistantBubble,
-          {
-            backgroundColor: isDark
-              ? "rgba(255,255,255,0.1)"
-              : "rgba(0,0,0,0.05)",
-          },
-        ]}
-      >
-        <ThemedText type="small" style={{ color: theme.text }}>
-          {content}
-        </ThemedText>
-      </GlassView>
+      <View style={styles.assistantBubbleWrapper}>
+        <GlassView
+          style={[
+            styles.assistantBubble,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.05)",
+            },
+          ]}
+        >
+          <ThemedText type="small" style={{ color: theme.text }}>
+            {content}
+          </ThemedText>
+        </GlassView>
+        <Pressable
+          style={[
+            styles.replayButton,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.05)",
+            },
+          ]}
+          onPress={() => handleReplayMessage(messageId, content)}
+          disabled={isReplayLoading !== null || replayVoice.isSpeaking}
+          data-testid={`button-replay-${messageId}`}
+          accessibilityRole="button"
+          accessibilityLabel="Replay message"
+        >
+          {isThisMessageLoading ? (
+            <ActivityIndicator size={12} color={theme.textSecondary} />
+          ) : (
+            <Feather
+              name={isPlaying ? "volume-2" : "volume-2"}
+              size={12}
+              color={theme.textSecondary}
+            />
+          )}
+        </Pressable>
+      </View>
     );
   };
 
@@ -364,7 +513,7 @@ export function ChatModal() {
     if (!isUser) {
       return (
         <GlassView style={styles.assistantBubbleContainer}>
-          {renderAssistantBubble(item.content)}
+          {renderAssistantBubble(item.content, item.id)}
         </GlassView>
       );
     }
@@ -408,7 +557,12 @@ export function ChatModal() {
                     : "rgba(0,0,0,0.12)",
                 },
               ]}
-              onPress={() => setInputText(suggestion)}
+              onPress={() => {
+                if (isVoiceMode) {
+                  setIsVoiceMode(false);
+                }
+                setInputText(suggestion);
+              }}
               testID={`suggestion-chip-${index}`}
               accessibilityRole="button"
               accessibilityLabel={suggestion}
@@ -447,13 +601,16 @@ export function ChatModal() {
                       : "rgba(50,150,200,0.08)",
               },
             ]}
-            onPress={() =>
+            onPress={() => {
+              if (isVoiceMode) {
+                setIsVoiceMode(false);
+              }
               setInputText(
                 suggestion === "Send Feedback"
                   ? "I'd like to send some feedback"
                   : "I want to report a bug",
-              )
-            }
+              );
+            }}
             testID={`feedback-chip-${suggestion.toLowerCase().replace(" ", "-")}`}
             accessibilityRole="button"
             accessibilityLabel={suggestion}
@@ -496,6 +653,180 @@ export function ChatModal() {
       </View>
     </GlassView>
   );
+
+  const renderVoiceInput = () => {
+    const getVoiceState = () => {
+      if (voiceChat.isSpeaking) return "speaking";
+      if (voiceChat.isProcessing) return "processing";
+      if (voiceChat.isListening) return "listening";
+      return "idle";
+    };
+
+    const voiceState = getVoiceState();
+
+    const getStatusText = () => {
+      switch (voiceState) {
+        case "listening":
+          return "Listening... (release to send)";
+        case "processing":
+          return "Thinking...";
+        case "speaking":
+          return "Speaking...";
+        default:
+          return "Tap or hold to speak";
+      }
+    };
+
+    const getIconName = (): keyof typeof Feather.glyphMap => {
+      switch (voiceState) {
+        case "speaking":
+          return "volume-2";
+        default:
+          return "mic";
+      }
+    };
+
+    const getMicButtonColor = () => {
+      switch (voiceState) {
+        case "listening":
+          return AppColors.error;
+        case "processing":
+          return AppColors.warning;
+        case "speaking":
+          return AppColors.primary;
+        default:
+          return theme.textSecondary;
+      }
+    };
+
+    return (
+      <View style={styles.voiceInputContainer}>
+        <View style={styles.voiceMicWrapper}>
+          {voiceState === "listening" && (
+            <Animated.View
+              style={[
+                styles.pulseRing,
+                {
+                  borderColor: AppColors.error,
+                },
+                pulseStyle,
+              ]}
+            />
+          )}
+          <Pressable
+            style={[
+              styles.voiceMicButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+                borderColor:
+                  voiceState === "listening"
+                    ? AppColors.error
+                    : voiceState === "processing"
+                      ? AppColors.warning
+                      : voiceState === "speaking"
+                        ? AppColors.primary
+                        : "transparent",
+                borderWidth: voiceState !== "idle" ? 2 : 0,
+              },
+            ]}
+            onPress={handleVoiceTap}
+            onPressIn={handleVoicePressIn}
+            onPressOut={handleVoicePressOut}
+            disabled={voiceChat.isProcessing || voiceChat.isSpeaking}
+            data-testid="button-voice-mic"
+            accessibilityRole="button"
+            accessibilityLabel={getStatusText()}
+          >
+            {voiceState === "processing" ? (
+              <ActivityIndicator size="large" color={AppColors.warning} />
+            ) : (
+              <Feather
+                name={getIconName()}
+                size={32}
+                color={getMicButtonColor()}
+              />
+            )}
+          </Pressable>
+        </View>
+
+        <ThemedText
+          type="caption"
+          style={[
+            styles.voiceStatusText,
+            {
+              color:
+                voiceState === "listening"
+                  ? AppColors.error
+                  : voiceState === "processing"
+                    ? AppColors.warning
+                    : voiceState === "speaking"
+                      ? AppColors.primary
+                      : theme.textSecondary,
+            },
+          ]}
+        >
+          {getStatusText()}
+        </ThemedText>
+
+        {voiceChat.lastUserTranscript && voiceChat.isProcessing && (
+          <View
+            style={[
+              styles.transcriptPreview,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+          >
+            <ThemedText
+              type="caption"
+              style={{ color: theme.textSecondary }}
+              numberOfLines={2}
+            >
+              "{voiceChat.lastUserTranscript}"
+            </ThemedText>
+          </View>
+        )}
+
+        {voiceChat.error && (
+          <View style={styles.voiceErrorContainer}>
+            <ThemedText
+              type="caption"
+              style={{ color: AppColors.error, textAlign: "center" }}
+            >
+              {voiceChat.error}
+            </ThemedText>
+          </View>
+        )}
+
+        {voiceChat.isActive && (
+          <Pressable
+            style={[
+              styles.cancelVoiceButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,100,100,0.2)"
+                  : "rgba(200,50,50,0.1)",
+              },
+            ]}
+            onPress={() => voiceChat.cancelConversation()}
+            data-testid="button-voice-cancel"
+          >
+            <Feather name="x" size={14} color={AppColors.error} />
+            <ThemedText
+              type="caption"
+              style={{ color: AppColors.error, marginLeft: 4 }}
+            >
+              Cancel
+            </ThemedText>
+          </Pressable>
+        )}
+      </View>
+    );
+  };
 
   if (!isChatOpen) {
     return null;
@@ -601,58 +932,105 @@ export function ChatModal() {
         keyboardShouldPersistTaps="handled"
       />
 
-      <GlassView
-        style={[
-          styles.inputContainer,
-          {
-            borderTopColor: theme.glass.border,
-          },
-        ]}
-      >
-        <TextInput
+      {isVoiceMode ? (
+        <GlassView
           style={[
-            styles.input,
+            styles.inputContainer,
+            styles.voiceInputWrapper,
             {
-              color: theme.text,
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.08)"
-                : "rgba(0,0,0,0.05)",
+              borderTopColor: theme.glass.border,
             },
           ]}
-          placeholder="Type a message..."
-          data-testid="input-chat-message"
-          placeholderTextColor={theme.textSecondary}
-          value={inputText}
-          onChangeText={setInputText}
-          multiline
-          maxLength={500}
-          editable={!sending}
-        />
-        <Pressable
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor:
-                inputText.trim() && !sending
-                  ? AppColors.primary
-                  : theme.backgroundSecondary,
-            },
-          ]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || sending}
-          data-testid="button-chat-send"
         >
-          {sending ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Feather
-              name="send"
-              size={14}
-              color={inputText.trim() ? "#FFFFFF" : theme.textSecondary}
-            />
-          )}
-        </Pressable>
-      </GlassView>
+          {renderVoiceInput()}
+          <Pressable
+            style={[
+              styles.modeToggleButton,
+              styles.modeToggleButtonVoice,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+            onPress={() => setIsVoiceMode(false)}
+            data-testid="button-mode-text"
+            accessibilityRole="button"
+            accessibilityLabel="Switch to text mode"
+          >
+            <Feather name="type" size={16} color={theme.textSecondary} />
+          </Pressable>
+        </GlassView>
+      ) : (
+        <GlassView
+          style={[
+            styles.inputContainer,
+            {
+              borderTopColor: theme.glass.border,
+            },
+          ]}
+        >
+          <TextInput
+            style={[
+              styles.input,
+              {
+                color: theme.text,
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+            placeholder="Type a message..."
+            data-testid="input-chat-message"
+            placeholderTextColor={theme.textSecondary}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={500}
+            editable={!sending}
+          />
+          <Pressable
+            style={[
+              styles.modeToggleButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+            onPress={() => setIsVoiceMode(true)}
+            data-testid="button-mode-voice"
+            accessibilityRole="button"
+            accessibilityLabel="Switch to voice mode"
+          >
+            <Feather name="mic" size={14} color={theme.textSecondary} />
+          </Pressable>
+          <Pressable
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor:
+                  inputText.trim() && !sending
+                    ? AppColors.primary
+                    : theme.backgroundSecondary,
+              },
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || sending}
+            data-testid="button-chat-send"
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Feather
+                name="send"
+                size={14}
+                color={inputText.trim() ? "#FFFFFF" : theme.textSecondary}
+              />
+            )}
+          </Pressable>
+        </GlassView>
+      )}
     </>
   );
 
@@ -792,10 +1170,23 @@ const styles = StyleSheet.create({
     maxWidth: "85%",
     marginBottom: Spacing.xs,
   },
+  assistantBubbleWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: Spacing.xs,
+  },
   assistantBubble: {
+    flex: 1,
     padding: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderBottomLeftRadius: 4,
+  },
+  replayButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputContainer: {
     flexDirection: "row",
@@ -804,6 +1195,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderTopWidth: 1,
     gap: Spacing.xs,
+  },
+  voiceInputWrapper: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    position: "relative",
   },
   input: {
     flex: 1,
@@ -821,6 +1218,69 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+  },
+  modeToggleButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modeToggleButtonVoice: {
+    position: "absolute",
+    right: Spacing.sm,
+    bottom: Spacing.sm,
+  },
+  voiceInputContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+    width: "100%",
+  },
+  voiceMicWrapper: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  pulseRing: {
+    position: "absolute",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+  },
+  voiceMicButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voiceStatusText: {
+    marginTop: Spacing.sm,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  transcriptPreview: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    maxWidth: "90%",
+  },
+  voiceErrorContainer: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  cancelVoiceButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
   },
   emptyState: {
     flex: 1,
