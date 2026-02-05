@@ -76,7 +76,7 @@ export function ChatModal() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
-  const { isChatOpen, closeChat } = useFloatingChat();
+  const { isChatOpen, closeChat, initialMessage, setInitialMessage } = useFloatingChat();
   const navigation = useNavigation<any>();
   const flatListRef = useRef<FlatList>(null);
 
@@ -228,6 +228,23 @@ export function ChatModal() {
       loadData();
     }
   }, [isChatOpen, loadData]);
+
+  const pendingInitialMessageRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (initialMessage) {
+      pendingInitialMessageRef.current = initialMessage;
+      setInitialMessage(null);
+    }
+  }, [initialMessage, setInitialMessage]);
+
+  useEffect(() => {
+    if (isChatOpen && pendingInitialMessageRef.current && !sending) {
+      const messageToSend = pendingInitialMessageRef.current;
+      pendingInitialMessageRef.current = null;
+      setInputText(messageToSend);
+    }
+  }, [isChatOpen, sending]);
 
   const handleClearChat = async () => {
     await storage.clearChatHistory();

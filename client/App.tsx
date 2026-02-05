@@ -76,6 +76,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "./hooks/useSubscription";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
+import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -218,6 +219,7 @@ function MobileAppContent() {
             {/* Floating chat button and modal - only shown after auth + onboarding */}
             {showChat ? (
               <>
+                <VoiceQuickAction />
                 <FloatingChatButton />
                 <ChatModal />
               </>
