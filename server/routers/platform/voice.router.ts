@@ -223,6 +223,103 @@ router.post("/transcribe", async (req: Request, res: Response) => {
   }
 });
 
+const speakSchema = z.object({
+  text: z.string().min(1, "Text is required").max(4096, "Text must be under 4096 characters"),
+  voice: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]).optional().default("alloy"),
+});
+
+router.post("/speak", async (req: Request, res: Response) => {
+  try {
+    const parseResult = speakSchema.safeParse(req.body);
+
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors;
+      const isEmptyText = errors.some(e => e.path.includes("text") && e.code === "too_small");
+      const isTooLong = errors.some(e => e.path.includes("text") && e.code === "too_big");
+
+      if (isEmptyText) {
+        return res.status(400).json({
+          error: "Empty text",
+          details: "Text is required and cannot be empty",
+        });
+      }
+
+      if (isTooLong) {
+        return res.status(400).json({
+          error: "Text too long",
+          details: "Text must be under 4096 characters",
+        });
+      }
+
+      const errorMessages = errors.map((e) => e.message).join(", ");
+      return res.status(400).json({
+        error: "Invalid input",
+        details: errorMessages,
+      });
+    }
+
+    const { text, voice } = parseResult.data;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini-audio-preview",
+      modalities: ["text", "audio"],
+      audio: {
+        voice: voice,
+        format: "mp3",
+      },
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful voice assistant. Speak the provided text naturally and clearly. Do not add any extra commentary, just speak the text as given.",
+        },
+        {
+          role: "user",
+          content: `Please speak the following text naturally: "${text}"`,
+        },
+      ],
+      max_completion_tokens: 4096,
+    });
+
+    const audioData = completion.choices[0]?.message?.audio;
+
+    if (!audioData || !audioData.data) {
+      return res.status(500).json({
+        error: "Speech generation failed",
+        details: "No audio was generated from the AI response",
+      });
+    }
+
+    console.log(`[Voice] Speech generated for text: "${text.substring(0, 50)}..."`);
+
+    return res.json({
+      audio: audioData.data,
+      format: "mp3",
+      duration: audioData.transcript ? undefined : undefined,
+    });
+  } catch (error: any) {
+    console.error("Text-to-speech error:", error);
+
+    if (error.status === 429) {
+      return res.status(429).json({
+        error: "Rate limited",
+        details: "Too many requests. Please try again in a moment.",
+      });
+    }
+
+    if (error.status === 400) {
+      return res.status(400).json({
+        error: "Invalid request",
+        details: error.message || "The request was invalid",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Speech generation failed",
+      details: error.message || "An unexpected error occurred during speech generation",
+    });
+  }
+});
+
 router.post("/parse", async (req: Request, res: Response) => {
   try {
     const parseResult = parseCommandSchema.safeParse(req.body);
