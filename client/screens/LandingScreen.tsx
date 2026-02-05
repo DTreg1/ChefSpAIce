@@ -1553,7 +1553,7 @@ export default function LandingScreen({
         <View style={styles.footer} data-testid="footer">
           <View style={styles.footerContent}>
             <View style={styles.footerLogo}>
-              logoImage
+              <Image source={logoImage} style={{ width: 28, height: 28 }} />
               <Text style={styles.footerLogoText}>ChefSpAIce</Text>
             </View>
             <Text style={styles.footerText}>
