@@ -16,7 +16,7 @@ import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const isWeb = Platform.OS === "web";
 const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
@@ -400,7 +400,25 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
     heroScreenshot.filename,
   );
 
-  // Floating animation styles for web
+  useEffect(() => {
+    if (!isWeb) return;
+    const styleId = "hero-float-keyframes";
+    if (document.getElementById(styleId)) return;
+    const styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    styleEl.textContent = `
+      @keyframes heroFloat {
+        0%, 100% { transform: rotateY(-8deg) rotateX(2deg) translateY(0px); }
+        50% { transform: rotateY(-8deg) rotateX(2deg) translateY(-15px); }
+      }
+    `;
+    document.head.appendChild(styleEl);
+    return () => {
+      const existing = document.getElementById(styleId);
+      if (existing) existing.remove();
+    };
+  }, []);
+
   const floatingStyle: React.CSSProperties = isWeb
     ? {
         animation: "heroFloat 6s ease-in-out infinite",
@@ -411,14 +429,6 @@ function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
 
   return (
     <View style={heroDeviceStyles.container} data-testid="hero-device-mockup">
-      {isWeb && (
-        <style>{`
-          @keyframes heroFloat {
-            0%, 100% { transform: rotateY(-8deg) rotateX(2deg) translateY(0px); }
-            50% { transform: rotateY(-8deg) rotateX(2deg) translateY(-15px); }
-          }
-        `}</style>
-      )}
       <div style={floatingStyle}>
         <View
           style={[
