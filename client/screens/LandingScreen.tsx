@@ -357,6 +357,12 @@ const showcaseScreenshots = [
     description: "Track your pantry",
   },
   {
+    category: "cookware",
+    filename: "cookware-showcase.png",
+    label: "Cookware",
+    description: "Manage your tools",
+  },
+  {
     category: "recipes",
     filename: "85633BFE-AEE0-4C16-85F3-EB3E54BDCF22_1_105_c.jpeg",
     label: "Recipes",
