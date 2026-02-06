@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getPlanTypeFromPriceId, getTierFromPriceId } from "./subscriptionConfig";
 import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
+import { logger } from "../lib/logger";
 
 export class WebhookHandlers {
   static async processWebhook(
@@ -32,7 +33,7 @@ export class WebhookHandlers {
 }
 
 async function processSubscriptionEvent(event: Stripe.Event): Promise<void> {
-  console.log("[Webhook] Processing event:", event.type);
+  logger.info("Processing webhook event", { eventType: event.type });
 
   try {
     switch (event.type) {
@@ -58,7 +59,7 @@ async function processSubscriptionEvent(event: Stripe.Event): Promise<void> {
         break;
     }
   } catch (error) {
-    console.error(`[Webhook] Error processing ${event.type}:`, error);
+    logger.error("Error processing webhook event", { eventType: event.type, error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -79,7 +80,7 @@ async function findUserIdFromCustomerMetadata(stripeCustomerId: string): Promise
     if (customer.deleted) return null;
     return (customer as Stripe.Customer).metadata?.userId || null;
   } catch (error) {
-    console.error("[Webhook] Error fetching customer metadata:", error);
+    logger.error("Error fetching customer metadata", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -113,14 +114,14 @@ async function updateUserSubscriptionTier(
     .set(updateData)
     .where(eq(users.id, userId));
 
-  console.log(`[Webhook] Updated user ${userId} tier to ${tier}, status to ${status}`);
+  logger.info("Updated user subscription tier", { userId, tier, status });
 }
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
-  console.log("[Webhook] checkout.session.completed:", session.id);
+  logger.info("Processing checkout.session.completed", { sessionId: session.id });
 
   if (session.mode !== "subscription") {
-    console.log("[Webhook] Skipping non-subscription checkout session");
+    logger.info("Skipping non-subscription checkout session");
     return;
   }
 
@@ -132,14 +133,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
     : (session.subscription as any)?.id;
 
   if (!stripeCustomerId || !stripeSubscriptionId) {
-    console.error("[Webhook] Missing customer or subscription ID in checkout session");
+    logger.error("Missing customer or subscription ID in checkout session");
     return;
   }
 
   const userId = session.metadata?.userId || await findUserIdFromCustomerMetadata(stripeCustomerId);
 
   if (!userId) {
-    console.error("[Webhook] Could not find userId for checkout session:", session.id);
+    logger.error("Could not find userId for checkout session", { sessionId: session.id });
     return;
   }
 
@@ -200,18 +201,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
 
-  console.log("[Webhook] Subscription record created/updated for user:", userId, "Tier:", tier);
+  logger.info("Subscription record created/updated", { userId, tier });
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
-  console.log("[Webhook] customer.subscription.created:", subscription.id);
+  logger.info("Processing customer.subscription.created", { subscriptionId: subscription.id });
 
   const stripeCustomerId = typeof subscription.customer === "string"
     ? subscription.customer
     : (subscription.customer as any)?.id;
 
   if (!stripeCustomerId) {
-    console.error("[Webhook] Missing customer ID in subscription");
+    logger.error("Missing customer ID in subscription");
     return;
   }
 
@@ -220,7 +221,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
     await findUserIdFromCustomerMetadata(stripeCustomerId);
 
   if (!userId) {
-    console.log("[Webhook] No userId found for subscription, will be linked via checkout.session.completed");
+    logger.info("No userId found for subscription, will be linked via checkout.session.completed");
     return;
   }
 
@@ -280,25 +281,25 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, subscription.id, trialEnd);
 
-  console.log("[Webhook] Subscription created for user:", userId, "Tier:", tier);
+  logger.info("Subscription created", { userId, tier });
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
-  console.log("[Webhook] customer.subscription.updated:", subscription.id);
+  logger.info("Processing customer.subscription.updated", { subscriptionId: subscription.id });
 
   const stripeCustomerId = typeof subscription.customer === "string"
     ? subscription.customer
     : (subscription.customer as any)?.id;
 
   if (!stripeCustomerId) {
-    console.error("[Webhook] Missing customer ID in subscription");
+    logger.error("Missing customer ID in subscription update");
     return;
   }
 
   const userId = await findUserByStripeCustomerId(stripeCustomerId);
 
   if (!userId) {
-    console.log("[Webhook] No user found for subscription update:", subscription.id);
+    logger.info("No user found for subscription update", { subscriptionId: subscription.id });
     return;
   }
 
@@ -343,18 +344,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
                     subscription.status === "active" ? "active" : subscription.status;
   await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, undefined, trialEnd);
 
-  console.log("[Webhook] Subscription updated for user:", userId, "Tier:", tier, "Status:", subscription.status);
+  logger.info("Subscription updated", { userId, tier, status: subscription.status });
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
-  console.log("[Webhook] customer.subscription.deleted:", subscription.id);
+  logger.info("Processing customer.subscription.deleted", { subscriptionId: subscription.id });
 
   const stripeCustomerId = typeof subscription.customer === "string"
     ? subscription.customer
     : (subscription.customer as any)?.id;
 
   if (!stripeCustomerId) {
-    console.error("[Webhook] Missing customer ID in subscription");
+    logger.error("Missing customer ID in subscription deletion");
     return;
   }
 
@@ -379,15 +380,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
     await updateUserSubscriptionTier(userId, SubscriptionTier.BASIC, finalStatus);
   }
 
-  console.log("[Webhook] Subscription marked as", finalStatus, "for customer:", stripeCustomerId);
+  logger.info("Subscription deleted", { status: finalStatus, stripeCustomerId });
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  console.log("[Webhook] invoice.paid:", invoice.id);
+  logger.info("Processing invoice.paid", { invoiceId: invoice.id });
 
   const inv = invoice as any;
   if (!inv.subscription) {
-    console.log("[Webhook] Invoice not related to subscription, skipping");
+    logger.info("Invoice not related to subscription, skipping");
     return;
   }
 
@@ -396,7 +397,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     : (invoice.customer as any)?.id;
 
   if (!stripeCustomerId) {
-    console.error("[Webhook] Missing customer ID in invoice");
+    logger.error("Missing customer ID in invoice");
     return;
   }
 
@@ -422,15 +423,15 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
-  console.log("[Webhook] Subscription confirmed active for customer:", stripeCustomerId);
+  logger.info("Subscription confirmed active", { stripeCustomerId });
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-  console.log("[Webhook] invoice.payment_failed:", invoice.id);
+  logger.info("Processing invoice.payment_failed", { invoiceId: invoice.id });
 
   const inv = invoice as any;
   if (!inv.subscription) {
-    console.log("[Webhook] Invoice not related to subscription, skipping");
+    logger.info("Invoice not related to subscription, skipping");
     return;
   }
 
@@ -439,7 +440,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
     : (invoice.customer as any)?.id;
 
   if (!stripeCustomerId) {
-    console.error("[Webhook] Missing customer ID in invoice");
+    logger.error("Missing customer ID in failed invoice");
     return;
   }
 
@@ -451,5 +452,5 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
-  console.log("[Webhook] Subscription marked as past_due for customer:", stripeCustomerId);
+  logger.info("Subscription marked as past_due", { stripeCustomerId });
 }

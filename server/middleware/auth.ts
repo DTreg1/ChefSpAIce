@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 declare global {
   namespace Express {
@@ -54,7 +55,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     req.userId = session.userId;
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
+    logger.error("Auth middleware error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Authentication failed" });
   }
 }

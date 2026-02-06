@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 const ACTIVE_STATUSES = ["active", "trialing"];
 
@@ -39,7 +40,7 @@ export async function requireSubscription(
 
     next();
   } catch (error) {
-    console.error("Subscription middleware error:", error);
+    logger.error("Subscription middleware error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to verify subscription" });
   }
 }
