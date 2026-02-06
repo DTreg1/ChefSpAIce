@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { db } from "../../db";
 import {
   appliances,
@@ -10,6 +10,7 @@ import {
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../../middleware/auth";
 import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 export const appliancesRouter = Router();
 export const userAppliancesRouter = Router();
@@ -640,7 +641,7 @@ function formatUserApplianceResponse(
   };
 }
 
-appliancesRouter.get("/", async (req: Request, res: Response) => {
+appliancesRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { category } = req.query;
 
@@ -657,12 +658,11 @@ appliancesRouter.get("/", async (req: Request, res: Response) => {
     res.set("Cache-Control", "public, max-age=86400");
     res.json(allAppliances.map(formatApplianceResponse));
   } catch (error) {
-    logger.error("Error fetching appliances", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch appliances" });
+    next(error);
   }
 });
 
-appliancesRouter.get("/common", async (req: Request, res: Response) => {
+appliancesRouter.get("/common", async (req: Request, res: Response, next: NextFunction) => {
   try {
     let allAppliances = await getCachedAppliances();
 
@@ -672,12 +672,11 @@ appliancesRouter.get("/common", async (req: Request, res: Response) => {
     res.set("Cache-Control", "public, max-age=86400");
     res.json(commonAppliances.map(formatApplianceResponse));
   } catch (error) {
-    logger.error("Error fetching common appliances", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch common appliances" });
+    next(error);
   }
 });
 
-userAppliancesRouter.get("/", async (req: Request, res: Response) => {
+userAppliancesRouter.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
 
@@ -703,26 +702,25 @@ userAppliancesRouter.get("/", async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    logger.error("Error fetching user appliances", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch user appliances" });
+    next(error);
   }
 });
 
-userAppliancesRouter.post("/", async (req: Request, res: Response) => {
+userAppliancesRouter.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
 
     const { applianceId, notes, brand } = req.body;
 
     if (!applianceId || typeof applianceId !== "number") {
-      return res.status(400).json({ error: "Appliance ID is required" });
+      throw AppError.badRequest("Appliance ID is required", "MISSING_APPLIANCE_ID");
     }
 
     const allAppliances = await getCachedAppliances();
     const appliance = allAppliances.find((a) => a.id === applianceId);
 
     if (!appliance) {
-      return res.status(404).json({ error: "Appliance not found" });
+      throw AppError.notFound("Appliance not found", "APPLIANCE_NOT_FOUND");
     }
 
     const existing = await db
@@ -736,9 +734,7 @@ userAppliancesRouter.post("/", async (req: Request, res: Response) => {
       );
 
     if (existing.length > 0) {
-      return res
-        .status(409)
-        .json({ error: "Appliance already added to kitchen" });
+      throw AppError.conflict("Appliance already added to kitchen", "APPLIANCE_ALREADY_EXISTS");
     }
 
     const [created] = await db
@@ -757,21 +753,20 @@ userAppliancesRouter.post("/", async (req: Request, res: Response) => {
       .status(201)
       .json(formatUserApplianceResponse({ ...created, appliance }));
   } catch (error) {
-    logger.error("Error adding user appliance", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to add appliance to kitchen" });
+    next(error);
   }
 });
 
 userAppliancesRouter.delete(
   "/:applianceId",
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId!;
 
       const applianceId = parseInt(req.params.applianceId, 10);
 
       if (isNaN(applianceId)) {
-        return res.status(400).json({ error: "Invalid appliance ID" });
+        throw AppError.badRequest("Invalid appliance ID", "INVALID_APPLIANCE_ID");
       }
 
       const result = await db
@@ -785,24 +780,19 @@ userAppliancesRouter.delete(
         .returning();
 
       if (result.length === 0) {
-        return res
-          .status(404)
-          .json({ error: "Appliance not found in user's kitchen" });
+        throw AppError.notFound("Appliance not found in user's kitchen", "APPLIANCE_NOT_FOUND");
       }
 
       await updateCookwareSectionTimestamp(userId);
 
       res.json({ success: true, message: "Appliance removed from kitchen" });
     } catch (error) {
-      logger.error("Error removing user appliance", { error: error instanceof Error ? error.message : String(error) });
-      res
-        .status(500)
-        .json({ error: "Failed to remove appliance from kitchen" });
+      next(error);
     }
   },
 );
 
-userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
+userAppliancesRouter.post("/bulk", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
 
@@ -810,7 +800,7 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
 
     // Allow empty array to clear all cookware
     if (!Array.isArray(applianceIds)) {
-      return res.status(400).json({ error: "Appliance IDs array is required" });
+      throw AppError.badRequest("Appliance IDs array is required", "MISSING_APPLIANCE_IDS");
     }
 
     const validIds = applianceIds.filter(
@@ -871,7 +861,6 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
       message: `Synced ${validIds.length} appliances`,
     });
   } catch (error) {
-    logger.error("Error bulk syncing user appliances", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to bulk sync appliances" });
+    next(error);
   }
 });

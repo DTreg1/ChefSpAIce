@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
 import {
@@ -16,6 +16,7 @@ import {
   checkFeatureAccess,
 } from "../../services/subscriptionService";
 import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -395,21 +396,19 @@ export function buildSmartPrompt(params: {
   return prompt;
 }
 
-router.post("/generate", async (req: Request, res: Response) => {
+router.post("/generate", async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.userId) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required");
     }
 
     const limitCheck = await checkAiRecipeLimit(req.userId);
     const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
     if (remaining < 1) {
-      return res.status(403).json({
-        error: "Monthly AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
-        code: "AI_RECIPE_LIMIT_REACHED",
-        limit: limitCheck.limit,
-        remaining: 0,
-      });
+      throw AppError.forbidden(
+        "Monthly AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
+        "AI_RECIPE_LIMIT_REACHED",
+      ).withDetails({ limit: limitCheck.limit, remaining: 0 });
     }
 
     const parseResult = generateRecipeSchema.safeParse(req.body);
@@ -418,10 +417,7 @@ router.post("/generate", async (req: Request, res: Response) => {
       const errorMessages = parseResult.error.errors
         .map((e) => e.message)
         .join(", ");
-      return res.status(400).json({
-        error: "Invalid input",
-        details: errorMessages,
-      });
+      throw AppError.badRequest("Invalid input", "VALIDATION_ERROR").withDetails({ errors: errorMessages });
     }
 
     const {
@@ -442,10 +438,10 @@ router.post("/generate", async (req: Request, res: Response) => {
 
     if (!inventory || inventory.length === 0) {
       if (selectedIngredientIds && selectedIngredientIds.length === 0) {
-        return res.status(400).json({
-          error: "No ingredients available",
-          details: "Please add items to your inventory or select ingredients",
-        });
+        throw AppError.badRequest(
+          "No ingredients available",
+          "NO_INGREDIENTS",
+        ).withDetails({ details: "Please add items to your inventory or select ingredients" });
       }
     }
 
@@ -455,10 +451,10 @@ router.post("/generate", async (req: Request, res: Response) => {
     );
 
     if (expiringItems.length === 0 && otherItems.length === 0) {
-      return res.status(400).json({
-        error: "No ingredients to use",
-        details: "Please add items to your inventory",
-      });
+      throw AppError.badRequest(
+        "No ingredients to use",
+        "NO_INGREDIENTS",
+      ).withDetails({ details: "Please add items to your inventory" });
     }
 
     const effectiveMaxTime = quickRecipe ? 20 : maxTime;
@@ -758,12 +754,10 @@ KEY PRINCIPLES:
       (ing) => ing.fromInventory === true,
     );
     if (inventoryIngredients.length < 2) {
-      logger.error("Insufficient inventory ingredients after filtering", { validCount: inventoryIngredients.length });
-      return res.status(400).json({
-        error: "Could not generate a valid recipe",
-        details:
-          "Not enough matching ingredients were found. Please try again or add more items to your inventory.",
-      });
+      throw AppError.badRequest(
+        "Could not generate a valid recipe",
+        "INSUFFICIENT_INGREDIENTS",
+      ).withDetails({ details: "Not enough matching ingredients were found. Please try again or add more items to your inventory." });
     }
 
     // Build list of valid ingredient terms for validation
@@ -1023,8 +1017,7 @@ KEY PRINCIPLES:
       },
     });
   } catch (error) {
-    logger.error("Smart recipe generation error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Failed to generate recipe" });
+    next(error);
   }
 });
 
@@ -1063,7 +1056,7 @@ const ALLOWED_CUISINES = [
   "african",
 ];
 
-router.post("/generate-image", async (req: Request, res: Response) => {
+router.post("/generate-image", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = generateImageSchema.parse(req.body);
     const { title, description, cuisine } = body;
@@ -1123,11 +1116,7 @@ router.post("/generate-image", async (req: Request, res: Response) => {
       throw new Error("No image URL or data returned");
     }
   } catch (error) {
-    logger.error("Recipe image generation error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({
-      error: "Failed to generate image",
-      success: false,
-    });
+    next(error);
   }
 });
 
@@ -1181,19 +1170,18 @@ function detectMimeType(base64: string): string {
   return "image/jpeg";
 }
 
-router.post("/scan", async (req: Request, res: Response) => {
+router.post("/scan", async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.userId) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required");
     }
 
     const hasAccess = await checkFeatureAccess(req.userId, "recipeScanning");
     if (!hasAccess) {
-      return res.status(403).json({
-        error: "Recipe scanning is a Pro feature. Upgrade to Pro to scan recipes from images.",
-        code: "FEATURE_NOT_AVAILABLE",
-        feature: "recipeScanning",
-      });
+      throw AppError.forbidden(
+        "Recipe scanning is a Pro feature. Upgrade to Pro to scan recipes from images.",
+        "FEATURE_NOT_AVAILABLE",
+      ).withDetails({ feature: "recipeScanning" });
     }
 
     const contentType = req.headers["content-type"] || "";
@@ -1203,19 +1191,14 @@ router.post("/scan", async (req: Request, res: Response) => {
     if (contentType.includes("application/json")) {
       const parseResult = recipeScanRequestSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: "Invalid request body",
-          details: parseResult.error.errors,
-        });
+        throw AppError.badRequest("Invalid request body", "VALIDATION_ERROR").withDetails({ errors: parseResult.error.errors });
       }
       base64Image = parseResult.data.image.replace(
         /^data:image\/\w+;base64,/,
         "",
       );
     } else {
-      return res.status(400).json({
-        error: "Expected application/json content type",
-      });
+      throw AppError.badRequest("Expected application/json content type", "INVALID_CONTENT_TYPE");
     }
 
     const mimeType = detectMimeType(base64Image);
@@ -1255,19 +1238,14 @@ router.post("/scan", async (req: Request, res: Response) => {
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      return res.status(500).json({
-        error: "No response from AI service",
-      });
+      throw new Error("No response from AI service");
     }
 
     let result: any;
     try {
       result = JSON.parse(content);
     } catch (parseError) {
-      logger.error("Failed to parse AI response");
-      return res.status(500).json({
-        error: "Failed to parse recipe scan results",
-      });
+      throw new Error("Failed to parse recipe scan results");
     }
 
     if (result.error) {
@@ -1290,11 +1268,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       notes: result.notes || "",
     });
   } catch (error) {
-    logger.error("Recipe scan error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({
-      error: "Failed to scan recipe",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
   }
 });
 

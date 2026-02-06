@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 import { db } from "../db";
 import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../lib/logger";
+import { AppError } from "./errorHandler";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -38,7 +38,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const authHeader = req.headers.authorization;
     
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Authentication required" });
+      return next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
     }
 
     const rawToken = authHeader.substring(7);
@@ -51,18 +51,17 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       .limit(1);
 
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      return next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
     }
 
     if (new Date(session.expiresAt) < new Date()) {
       await db.delete(userSessions).where(eq(userSessions.token, hashedToken));
-      return res.status(401).json({ error: "Session expired" });
+      return next(AppError.unauthorized("Session expired", "SESSION_EXPIRED"));
     }
 
     req.userId = session.userId;
     next();
   } catch (error) {
-    logger.error("Auth middleware error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Authentication failed" });
+    next(error);
   }
 }

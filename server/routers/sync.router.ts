@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -6,7 +6,7 @@ import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
-import { logger } from "../lib/logger";
+import { AppError } from "../middleware/errorHandler";
 
 interface SyncFailureRecord {
   dataType: string;
@@ -176,26 +176,23 @@ function getAuthToken(req: Request): string | null {
   return authHeader.slice(7);
 }
 
-router.post("/inventory", async (req: Request, res: Response) => {
+router.post("/inventory", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
     const parseResult = inventorySyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { operation, data } = parseResult.data;
@@ -204,9 +201,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
       const limitCheck = await checkPantryItemLimit(session.userId);
       const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
       if (remaining < 1) {
-        return res.status(403).json({
-          error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
-          code: ERROR_CODES.PANTRY_LIMIT_REACHED,
+        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
           limit: limitCheck.limit,
           remaining: 0,
         });
@@ -237,9 +232,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
         const limitCheck = await checkPantryItemLimit(session.userId);
         const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
         if (remaining < 1) {
-          return res.status(403).json({
-            error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
-            code: ERROR_CODES.PANTRY_LIMIT_REACHED,
+          throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
             limit: limitCheck.limit,
             remaining: 0,
           });
@@ -255,9 +248,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
     const finalLimitCheck = await checkPantryItemLimit(session.userId);
     const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
     if (currentInventory.length > maxLimit) {
-      return res.status(403).json({
-        error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
-        code: ERROR_CODES.PANTRY_LIMIT_REACHED,
+      throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
         limit: finalLimitCheck.limit,
         count: currentInventory.length,
       });
@@ -291,24 +282,21 @@ router.post("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "inventory", operation: "create", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "inventory", "create", errorMessage);
-    res.status(500).json({ error: "Failed to sync inventory" });
+    next(error);
   }
 });
 
-router.put("/inventory", async (req: Request, res: Response) => {
+router.put("/inventory", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -318,10 +306,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
     });
     const parseResult = updateSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data, clientTimestamp } = parseResult.data;
@@ -365,9 +350,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
       const limitCheck = await checkPantryItemLimit(session.userId);
       const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
       if (remaining < 1) {
-        return res.status(403).json({
-          error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
-          code: ERROR_CODES.PANTRY_LIMIT_REACHED,
+        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
           limit: limitCheck.limit,
           remaining: 0,
         });
@@ -379,9 +362,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
     const finalLimitCheck = await checkPantryItemLimit(session.userId);
     const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
     if (currentInventory.length > maxLimit) {
-      return res.status(403).json({
-        error: ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED],
-        code: ERROR_CODES.PANTRY_LIMIT_REACHED,
+      throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
         limit: finalLimitCheck.limit,
         count: currentInventory.length,
       });
@@ -407,24 +388,21 @@ router.put("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "inventory", operation: "update", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "inventory", "update", errorMessage);
-    res.status(500).json({ error: "Failed to sync inventory update" });
+    next(error);
   }
 });
 
-router.delete("/inventory", async (req: Request, res: Response) => {
+router.delete("/inventory", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -433,10 +411,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
     });
     const parseResult = deleteSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data } = parseResult.data;
@@ -476,33 +451,27 @@ router.delete("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "inventory", operation: "delete", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "inventory", "delete", errorMessage);
-    res.status(500).json({ error: "Failed to sync inventory deletion" });
+    next(error);
   }
 });
 
-router.post("/recipes", async (req: Request, res: Response) => {
+router.post("/recipes", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
     const parseResult = recipeSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { operation, data } = parseResult.data;
@@ -563,24 +532,21 @@ router.post("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "recipes", operation: "create", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "recipes", "create", errorMessage);
-    res.status(500).json({ error: "Failed to sync recipes" });
+    next(error);
   }
 });
 
-router.put("/recipes", async (req: Request, res: Response) => {
+router.put("/recipes", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -590,10 +556,7 @@ router.put("/recipes", async (req: Request, res: Response) => {
     });
     const parseResult = updateSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data, clientTimestamp } = parseResult.data;
@@ -657,24 +620,21 @@ router.put("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "recipes", operation: "update", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "recipes", "update", errorMessage);
-    res.status(500).json({ error: "Failed to sync recipe update" });
+    next(error);
   }
 });
 
-router.delete("/recipes", async (req: Request, res: Response) => {
+router.delete("/recipes", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -683,10 +643,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
     });
     const parseResult = deleteSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data } = parseResult.data;
@@ -726,33 +683,27 @@ router.delete("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "recipes", operation: "delete", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "recipes", "delete", errorMessage);
-    res.status(500).json({ error: "Failed to sync recipe deletion" });
+    next(error);
   }
 });
 
-router.post("/mealPlans", async (req: Request, res: Response) => {
+router.post("/mealPlans", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
     const parseResult = mealPlanSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-  });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { operation, data } = parseResult.data;
@@ -813,24 +764,21 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "mealPlans", operation: "create", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "mealPlans", "create", errorMessage);
-    res.status(500).json({ error: "Failed to sync meal plans" });
+    next(error);
   }
 });
 
-router.put("/mealPlans", async (req: Request, res: Response) => {
+router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -840,10 +788,7 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
     });
     const parseResult = updateSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data, clientTimestamp } = parseResult.data;
@@ -907,24 +852,21 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "mealPlans", operation: "update", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "mealPlans", "update", errorMessage);
-    res.status(500).json({ error: "Failed to sync meal plan update" });
+    next(error);
   }
 });
 
-router.delete("/mealPlans", async (req: Request, res: Response) => {
+router.delete("/mealPlans", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -933,10 +875,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
     });
     const parseResult = deleteSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data } = parseResult.data;
@@ -976,10 +915,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "mealPlans", operation: "delete", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "mealPlans", "delete", errorMessage);
-    res.status(500).json({ error: "Failed to sync meal plan deletion" });
+    next(error);
   }
 });
 
@@ -987,26 +923,23 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
 // COOKWARE SYNC ROUTES - with limit enforcement
 // =========================================================================
 
-router.post("/cookware", async (req: Request, res: Response) => {
+router.post("/cookware", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
     const parseResult = cookwareSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { operation, data } = parseResult.data;
@@ -1036,9 +969,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       
       // Check if current count would exceed limit after adding
       if (currentCookware.length >= maxLimit) {
-        return res.status(403).json({
-          error: ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED],
-          code: ERROR_CODES.COOKWARE_LIMIT_REACHED,
+        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
           limit: limitCheck.limit,
           remaining: 0,
           count: currentCookware.length,
@@ -1094,24 +1025,21 @@ router.post("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "cookware", operation: "create", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "cookware", "create", errorMessage);
-    res.status(500).json({ error: "Failed to sync cookware" });
+    next(error);
   }
 });
 
-router.put("/cookware", async (req: Request, res: Response) => {
+router.put("/cookware", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -1121,10 +1049,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
     });
     const parseResult = updateSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data, clientTimestamp } = parseResult.data;
@@ -1151,9 +1076,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
       const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
       
       if (currentCookware.length >= maxLimit) {
-        return res.status(403).json({
-          error: ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED],
-          code: ERROR_CODES.COOKWARE_LIMIT_REACHED,
+        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
           limit: limitCheck.limit,
           remaining: 0,
           count: currentCookware.length,
@@ -1213,24 +1136,21 @@ router.put("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "cookware", operation: "update", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "cookware", "update", errorMessage);
-    res.status(500).json({ error: "Failed to sync cookware update" });
+    next(error);
   }
 });
 
-router.delete("/cookware", async (req: Request, res: Response) => {
+router.delete("/cookware", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -1239,10 +1159,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
     });
     const parseResult = deleteSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data } = parseResult.data;
@@ -1282,10 +1199,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "cookware", operation: "delete", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "cookware", "delete", errorMessage);
-    res.status(500).json({ error: "Failed to sync cookware deletion" });
+    next(error);
   }
 });
 
@@ -1293,26 +1207,23 @@ router.delete("/cookware", async (req: Request, res: Response) => {
 // SHOPPING LIST SYNC ROUTES
 // =========================================================================
 
-router.post("/shoppingList", async (req: Request, res: Response) => {
+router.post("/shoppingList", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
     const parseResult = shoppingListSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { operation, data } = parseResult.data;
@@ -1373,24 +1284,21 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "shoppingList", operation: "create", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "shoppingList", "create", errorMessage);
-    res.status(500).json({ error: "Failed to sync shopping list" });
+    next(error);
   }
 });
 
-router.put("/shoppingList", async (req: Request, res: Response) => {
+router.put("/shoppingList", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -1400,10 +1308,7 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
     });
     const parseResult = updateSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data, clientTimestamp } = parseResult.data;
@@ -1475,24 +1380,21 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "shoppingList", operation: "update", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "shoppingList", "update", errorMessage);
-    res.status(500).json({ error: "Failed to sync shopping list update" });
+    next(error);
   }
 });
 
-router.delete("/shoppingList", async (req: Request, res: Response) => {
+router.delete("/shoppingList", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
     userId = session.userId;
 
@@ -1501,10 +1403,7 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
     });
     const parseResult = deleteSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid request data", 
-        details: parseResult.error.errors.map(e => e.message).join(", ") 
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { data } = parseResult.data;
@@ -1544,23 +1443,20 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Sync failed", { dataType: "shoppingList", operation: "delete", userId, error: errorMessage });
-    recordSyncFailure(userId || "unknown", "shoppingList", "delete", errorMessage);
-    res.status(500).json({ error: "Failed to sync shopping list deletion" });
+    next(error);
   }
 });
 
-router.get("/status", async (req: Request, res: Response) => {
+router.get("/status", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
     const existingSyncData = await db
@@ -1598,21 +1494,20 @@ router.get("/status", async (req: Request, res: Response) => {
       } : null,
     });
   } catch (error) {
-    logger.error("Failed to get sync status", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to get sync status" });
+    next(error);
   }
 });
 
-router.post("/export", async (req: Request, res: Response) => {
+router.post("/export", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
     const existingSyncData = await db
@@ -1646,8 +1541,7 @@ router.post("/export", async (req: Request, res: Response) => {
     res.setHeader("Content-Type", "application/json");
     res.json(backup);
   } catch (error) {
-    logger.error("Export failed", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to export data" });
+    next(error);
   }
 });
 
@@ -1701,24 +1595,21 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
   return result;
 }
 
-router.post("/import", async (req: Request, res: Response) => {
+router.post("/import", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = getAuthToken(req);
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.unauthorized("Unauthorized", "UNAUTHORIZED");
     }
 
     const session = await getSessionFromToken(token);
     if (!session) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
     const parseResult = importRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({
-        error: "Invalid request data",
-        details: parseResult.error.errors.map(e => e.message).join(", "),
-      });
+      throw AppError.badRequest("Invalid request data", "INVALID_REQUEST_DATA").withDetails({ details: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { backup, mode } = parseResult.data;
@@ -1892,8 +1783,7 @@ router.post("/import", async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    logger.error("Import failed", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to import data" });
+    next(error);
   }
 });
 

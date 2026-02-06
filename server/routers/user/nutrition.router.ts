@@ -1,9 +1,10 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { nutritionCorrections } from "@shared/schema";
 import { db } from "../../db";
 import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -19,13 +20,12 @@ const correctionSubmitSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/corrections", async (req: Request, res: Response) => {
+router.post("/corrections", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parseResult = correctionSubmitSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({
-        error: "Invalid submission data",
-        details: parseResult.error.errors.map((e) => e.message).join(", "),
+      throw AppError.badRequest("Invalid submission data", "VALIDATION_ERROR").withDetails({
+        errors: parseResult.error.errors.map((e) => e.message).join(", "),
       });
     }
 
@@ -56,12 +56,11 @@ router.post("/corrections", async (req: Request, res: Response) => {
       id: correction.id,
     });
   } catch (error) {
-    logger.error("Error submitting nutrition correction", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Failed to submit correction" });
+    next(error);
   }
 });
 
-router.get("/corrections", async (req: Request, res: Response) => {
+router.get("/corrections", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = req.query.status as string | undefined;
     const limit = Math.min(parseInt((req.query.limit as string) || "50", 10), 100);
@@ -87,22 +86,21 @@ router.get("/corrections", async (req: Request, res: Response) => {
       offset,
     });
   } catch (error) {
-    logger.error("Error fetching nutrition corrections", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Failed to fetch corrections" });
+    next(error);
   }
 });
 
-router.patch("/corrections/:id", async (req: Request, res: Response) => {
+router.patch("/corrections/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid correction ID" });
+      throw AppError.badRequest("Invalid correction ID", "INVALID_CORRECTION_ID");
     }
 
     const { status, reviewNotes } = req.body;
 
     if (!status || !["pending", "reviewed", "approved", "rejected"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+      throw AppError.badRequest("Invalid status", "INVALID_STATUS");
     }
 
     const [updated] = await db
@@ -117,13 +115,12 @@ router.patch("/corrections/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) {
-      return res.status(404).json({ error: "Correction not found" });
+      throw AppError.notFound("Correction not found", "CORRECTION_NOT_FOUND");
     }
 
     return res.json({ message: "Correction updated", correction: updated });
   } catch (error) {
-    logger.error("Error updating nutrition correction", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Failed to update correction" });
+    next(error);
   }
 });
 

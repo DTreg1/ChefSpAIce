@@ -37,7 +37,7 @@
  * @module server/routes
  */
 
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "node:http";
 import { eq } from "drizzle-orm";
 import suggestionsRouter from "./routers/user/suggestions.router";
@@ -75,7 +75,7 @@ import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
-import { requestIdMiddleware, globalErrorHandler } from "./middleware/errorHandler";
+import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
 import { logger } from "./lib/logger";
 
 
@@ -139,18 +139,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Allows users to sign up from the landing page with just their email.
   // Creates a user account that they can activate later.
   // =========================================================================
-  app.post("/api/pre-register", async (req: Request, res: Response) => {
+  app.post("/api/pre-register", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email } = req.body;
 
       if (!email || typeof email !== "string") {
-        return res.status(400).json({ error: "Email is required" });
+        throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
       }
 
       const normalizedEmail = email.toLowerCase().trim();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(normalizedEmail)) {
-        return res.status(400).json({ error: "Please enter a valid email address" });
+        throw AppError.badRequest("Please enter a valid email address", "INVALID_EMAIL");
       }
 
       // Check if user already exists
@@ -186,8 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
       });
     } catch (error) {
-      logger.error("Pre-registration error", { error: error instanceof Error ? error.message : String(error) });
-      return res.status(500).json({ error: "Something went wrong. Please try again." });
+      next(error);
     }
   });
 
@@ -227,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logger.info("Registering test endpoints for development mode");
     
     // Create a test user and establish session for e2e testing
-    app.post("/api/test/create-test-user", async (req: Request, res: Response) => {
+    app.post("/api/test/create-test-user", async (req: Request, res: Response, next: NextFunction) => {
       logger.info("create-test-user endpoint hit");
       try {
         const crypto = await import("crypto");
@@ -253,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .returning();
         
         if (!newUser) {
-          return res.status(500).json({ error: "Failed to create test user" });
+          throw AppError.internal("Failed to create test user", "TEST_USER_CREATION_FAILED");
         }
         
         // Create a session token
@@ -289,24 +288,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Test user created with PRO trial. Session cookie set.",
         });
       } catch (error) {
-        logger.error("Error creating test user", { error: error instanceof Error ? error.message : String(error) });
-        res.status(500).json({ error: "Failed to create test user" });
+        next(error);
       }
     });
     
     // Version with auth
-    app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response) => {
+    app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
       logger.info("set-subscription-tier endpoint hit");
       try {
         const userId = req.userId;
         if (!userId) {
-          return res.status(401).json({ error: "Not authenticated" });
+          throw AppError.unauthorized("Not authenticated", "NOT_AUTHENTICATED");
         }
 
         const { tier, status } = req.body;
         
         if (!tier || !['BASIC', 'PRO'].includes(tier)) {
-          return res.status(400).json({ error: "Invalid tier. Must be 'BASIC' or 'PRO'" });
+          throw AppError.badRequest("Invalid tier. Must be 'BASIC' or 'PRO'", "INVALID_TIER");
         }
 
         const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
@@ -341,22 +339,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `Subscription updated to ${tier} (${newStatus})`
         });
       } catch (error) {
-        logger.error("Error setting subscription tier", { error: error instanceof Error ? error.message : String(error) });
-        res.status(500).json({ error: "Failed to set subscription tier" });
+        next(error);
       }
     });
 
-    app.post("/api/test/set-tier-by-email", async (req: Request, res: Response) => {
+    app.post("/api/test/set-tier-by-email", async (req: Request, res: Response, next: NextFunction) => {
       logger.info("set-tier-by-email endpoint hit");
       try {
         const { email, tier, status } = req.body;
         
         if (!email) {
-          return res.status(400).json({ error: "Email is required" });
+          throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
         }
         
         if (!tier || !['BASIC', 'PRO'].includes(tier)) {
-          return res.status(400).json({ error: "Invalid tier. Must be 'BASIC' or 'PRO'" });
+          throw AppError.badRequest("Invalid tier. Must be 'BASIC' or 'PRO'", "INVALID_TIER");
         }
 
         // Find user by email
@@ -367,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .limit(1);
 
         if (!user) {
-          return res.status(404).json({ error: "User not found" });
+          throw AppError.notFound("User not found", "USER_NOT_FOUND");
         }
 
         const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
@@ -404,8 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `Subscription updated to ${tier} (${newStatus})`
         });
       } catch (error) {
-        logger.error("Error setting subscription tier", { error: error instanceof Error ? error.message : String(error) });
-        res.status(500).json({ error: "Failed to set subscription tier" });
+        next(error);
       }
     });
   }

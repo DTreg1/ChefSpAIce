@@ -1,7 +1,7 @@
-import express, { Router, Request, Response } from "express";
+import express, { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { uploadRecipeImage, deleteRecipeImage } from "../services/objectStorageService";
-import { logger } from "../lib/logger";
+import { AppError } from "../middleware/errorHandler";
 
 const router = Router();
 
@@ -11,17 +11,14 @@ const uploadSchema = z.object({
   contentType: z.string().optional(),
 });
 
-// 10 MB limit for image uploads — base64-encoded images are ~33% larger than
-// the raw file, so 10 MB JSON allows roughly 7.5 MB of actual image data.
-// This overrides the global 1 MB express.json() limit for this route only.
-router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res: Response) => {
+router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parseResult = uploadSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({
-        error: "Invalid request data",
-        details: parseResult.error.errors.map(e => e.message).join(", "),
-      });
+      throw AppError.badRequest(
+        "Invalid request data",
+        "INVALID_REQUEST_DATA"
+      ).withDetails({ validationErrors: parseResult.error.errors.map(e => e.message).join(", ") });
     }
 
     const { recipeId, base64Data, contentType } = parseResult.data;
@@ -34,12 +31,11 @@ router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res
       recipeId,
     });
   } catch (error) {
-    logger.error("Recipe image upload error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to upload recipe image" });
+    next(error);
   }
 });
 
-router.delete("/:recipeId", async (req: Request, res: Response) => {
+router.delete("/:recipeId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { recipeId } = req.params;
     
@@ -50,8 +46,7 @@ router.delete("/:recipeId", async (req: Request, res: Response) => {
       recipeId,
     });
   } catch (error) {
-    logger.error("Recipe image delete error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to delete recipe image" });
+    next(error);
   }
 });
 

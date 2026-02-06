@@ -1,7 +1,7 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { db } from "../../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
-import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -49,7 +49,7 @@ function formatTermResponse(term: CookingTerm) {
   };
 }
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { category, search } = req.query;
 
@@ -87,17 +87,16 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json(terms.map(formatTermResponse));
   } catch (error) {
-    logger.error("Error fetching cooking terms", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch cooking terms" });
+    next(error);
   }
 });
 
-router.get("/detect", async (req: Request, res: Response) => {
+router.get("/detect", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { text } = req.query;
 
     if (!text || typeof text !== "string") {
-      return res.status(400).json({ error: "Text parameter is required" });
+      throw AppError.badRequest("Text parameter is required", "TEXT_REQUIRED");
     }
 
     const allTerms = await getCachedTerms();
@@ -128,24 +127,23 @@ router.get("/detect", async (req: Request, res: Response) => {
 
     res.json(foundTerms.map(formatTermResponse));
   } catch (error) {
-    logger.error("Error detecting cooking terms", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to detect cooking terms" });
+    next(error);
   }
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
     if (!id || id.trim() === "") {
-      return res.status(400).json({ error: "Invalid term ID" });
+      throw AppError.badRequest("Invalid term ID", "INVALID_TERM_ID");
     }
 
     const allTerms = await getCachedTerms();
     const term = allTerms.find((t) => t.id === id);
 
     if (!term) {
-      return res.status(404).json({ error: "Cooking term not found" });
+      throw AppError.notFound("Cooking term not found", "COOKING_TERM_NOT_FOUND");
     }
 
     const response = formatTermResponse(term);
@@ -163,8 +161,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    logger.error("Error fetching cooking term", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch cooking term" });
+    next(error);
   }
 });
 

@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../lib/logger";
+import { AppError } from "./errorHandler";
 
 const ACTIVE_STATUSES = ["active", "trialing"];
 
@@ -15,7 +15,7 @@ export async function requireSubscription(
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
+      return next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
     }
 
     const [subscription] = await db
@@ -25,22 +25,15 @@ export async function requireSubscription(
       .limit(1);
 
     if (!subscription) {
-      return res.status(403).json({
-        error: "subscription_required",
-        message: "Active subscription required",
-      });
+      return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
     if (!ACTIVE_STATUSES.includes(subscription.status)) {
-      return res.status(403).json({
-        error: "subscription_required",
-        message: "Active subscription required",
-      });
+      return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
     next();
   } catch (error) {
-    logger.error("Subscription middleware error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: "Failed to verify subscription" });
+    next(error);
   }
 }

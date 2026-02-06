@@ -1,6 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import sharp from "sharp";
-import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -69,7 +68,7 @@ function generateIconOnlySVG(size: number = 512): string {
 </svg>`;
 }
 
-router.get("/svg", (req: Request, res: Response) => {
+router.get("/svg", (req: Request, res: Response, _next: NextFunction) => {
   const size = parseInt(req.query.size as string) || 512;
   const withBg = req.query.background !== "false";
   
@@ -80,7 +79,7 @@ router.get("/svg", (req: Request, res: Response) => {
   res.send(svg);
 });
 
-router.get("/icon-svg", (req: Request, res: Response) => {
+router.get("/icon-svg", (req: Request, res: Response, _next: NextFunction) => {
   const size = parseInt(req.query.size as string) || 512;
   
   const svg = generateIconOnlySVG(size);
@@ -90,7 +89,7 @@ router.get("/icon-svg", (req: Request, res: Response) => {
   res.send(svg);
 });
 
-router.get("/png", async (req: Request, res: Response) => {
+router.get("/png", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const size = parseInt(req.query.size as string) || 512;
     const withBg = req.query.background !== "false";
@@ -105,12 +104,11 @@ router.get("/png", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", `attachment; filename="chefspace-logo-${size}.png"`);
     res.send(pngBuffer);
   } catch (error) {
-    logger.error("Error generating PNG", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to generate PNG" });
+    next(error);
   }
 });
 
-router.get("/favicon.ico", async (req: Request, res: Response) => {
+router.get("/favicon.ico", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const svg = generateLogoSVG(32, true);
     
@@ -123,12 +121,11 @@ router.get("/favicon.ico", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "attachment; filename=\"favicon.ico\"");
     res.send(pngBuffer);
   } catch (error) {
-    logger.error("Error generating favicon", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to generate favicon" });
+    next(error);
   }
 });
 
-router.get("/favicon-png", async (req: Request, res: Response) => {
+router.get("/favicon-png", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sizes = [16, 32, 48, 64, 128, 256];
     const requestedSize = parseInt(req.query.size as string);
@@ -145,12 +142,11 @@ router.get("/favicon-png", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", `attachment; filename="favicon-${size}x${size}.png"`);
     res.send(pngBuffer);
   } catch (error) {
-    logger.error("Error generating favicon PNG", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to generate favicon PNG" });
+    next(error);
   }
 });
 
-router.get("/apple-touch-icon", async (req: Request, res: Response) => {
+router.get("/apple-touch-icon", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const size = 180;
     const svg = generateLogoSVG(size, true);
@@ -164,12 +160,11 @@ router.get("/apple-touch-icon", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "attachment; filename=\"apple-touch-icon.png\"");
     res.send(pngBuffer);
   } catch (error) {
-    logger.error("Error generating Apple touch icon", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to generate Apple touch icon" });
+    next(error);
   }
 });
 
-router.get("/", (req: Request, res: Response) => {
+router.get("/", (req: Request, res: Response, _next: NextFunction) => {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
 import { randomBytes, createHash } from "crypto";
@@ -6,6 +6,7 @@ import pg from "pg";
 import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
 import { ensureTrialSubscription } from "../services/subscriptionService";
+import { AppError } from "../middleware/errorHandler";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -93,7 +94,7 @@ interface GoogleTokenPayload {
   selectedPlan?: 'monthly' | 'annual';
 }
 
-router.post("/apple", async (req: Request, res: Response) => {
+router.post("/apple", async (req: Request, res: Response, next: NextFunction) => {
   logger.info("Apple sign-in request received");
   const client = await pool.connect();
   try {
@@ -108,13 +109,12 @@ router.post("/apple", async (req: Request, res: Response) => {
       try {
         const tokenResponse = await exchangeAppleAuthCode(authorizationCode, redirectUri);
         if (!tokenResponse) {
-          logger.error("Apple web auth failed: authorization code exchange returned null");
-          return res.status(401).json({ error: "Failed to exchange Apple authorization code. Please try again." });
+          throw AppError.unauthorized("Failed to exchange Apple authorization code. Please try again.", "APPLE_AUTH_CODE_EXCHANGE_FAILED");
         }
         verifiedToken = tokenResponse;
       } catch (error) {
-        logger.error("Apple web auth code exchange error", { error: error instanceof Error ? error.message : String(error) });
-        return res.status(401).json({ error: "Apple web authentication failed. Please try again." });
+        if (error instanceof AppError) throw error;
+        throw AppError.unauthorized("Apple web authentication failed. Please try again.", "APPLE_WEB_AUTH_FAILED");
       }
     }
     // Handle native iOS flow - verify identity token directly
@@ -123,13 +123,11 @@ router.post("/apple", async (req: Request, res: Response) => {
       verifiedToken = await verifyAppleToken(identityToken);
     }
     else {
-      logger.error("Apple auth failed: missing both identityToken and authorizationCode");
-      return res.status(400).json({ error: "Sign-in incomplete. Please try again." });
+      throw AppError.badRequest("Sign-in incomplete. Please try again.", "APPLE_AUTH_INCOMPLETE");
     }
 
     if (!verifiedToken || !verifiedToken.sub) {
-      logger.error("Apple token verification failed");
-      return res.status(401).json({ error: "Unable to verify Apple credentials. Please try signing in again." });
+      throw AppError.unauthorized("Unable to verify Apple credentials. Please try signing in again.", "APPLE_TOKEN_VERIFICATION_FAILED");
     }
     
     logger.info("Apple token verified successfully", { subPrefix: verifiedToken.sub.substring(0, 8) });
@@ -214,7 +212,7 @@ router.post("/apple", async (req: Request, res: Response) => {
 
     if (userResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(500).json({ error: "Failed to retrieve user data" });
+      throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
     }
 
     const dbUser = userResult.rows[0];
@@ -246,20 +244,19 @@ router.post("/apple", async (req: Request, res: Response) => {
     });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
-    logger.error("Apple auth error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Apple authentication failed" });
+    next(error);
   } finally {
     client.release();
   }
 });
 
-router.post("/google", async (req: Request, res: Response) => {
+router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
   const dbClient = await pool.connect();
   try {
     const { idToken, accessToken, selectedPlan } = req.body as GoogleTokenPayload;
 
     if (!idToken) {
-      return res.status(400).json({ error: "ID token is required" });
+      throw AppError.badRequest("ID token is required", "MISSING_ID_TOKEN");
     }
     
     const validPlans = ['monthly', 'annual'];
@@ -270,8 +267,7 @@ router.post("/google", async (req: Request, res: Response) => {
 
     const clientIds = getGoogleClientIds();
     if (clientIds.length === 0) {
-      logger.error("No Google client IDs configured");
-      return res.status(500).json({ error: "Google authentication not configured" });
+      throw AppError.internal("Google authentication not configured", "GOOGLE_AUTH_NOT_CONFIGURED");
     }
 
     try {
@@ -281,12 +277,11 @@ router.post("/google", async (req: Request, res: Response) => {
       });
       payload = ticket.getPayload();
     } catch (verifyError) {
-      logger.error("Google token verification error", { error: verifyError instanceof Error ? verifyError.message : String(verifyError) });
-      return res.status(401).json({ error: "Invalid Google token" });
+      throw AppError.unauthorized("Invalid Google token", "INVALID_GOOGLE_TOKEN");
     }
 
     if (!payload || !payload.sub) {
-      return res.status(401).json({ error: "Invalid Google token payload" });
+      throw AppError.unauthorized("Invalid Google token payload", "INVALID_GOOGLE_TOKEN_PAYLOAD");
     }
 
     const googleUserId = payload.sub;
@@ -374,7 +369,7 @@ router.post("/google", async (req: Request, res: Response) => {
 
     if (userResult.rows.length === 0) {
       await dbClient.query("ROLLBACK");
-      return res.status(500).json({ error: "Failed to retrieve user data" });
+      throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
     }
 
     const dbUser = userResult.rows[0];
@@ -406,8 +401,7 @@ router.post("/google", async (req: Request, res: Response) => {
     });
   } catch (error) {
     await dbClient.query("ROLLBACK").catch(() => {});
-    logger.error("Google auth error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Google authentication failed" });
+    next(error);
   } finally {
     dbClient.release();
   }

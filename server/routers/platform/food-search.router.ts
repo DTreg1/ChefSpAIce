@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import {
   searchUSDA,
   mapUSDAToFoodItem,
@@ -10,6 +10,7 @@ import {
   mapOFFToFoodItem,
 } from "../../integrations/openFoodFacts";
 import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -197,14 +198,14 @@ function matchesBrandFilter(itemBrand: string | undefined, filterBrand: string |
   return true;
 }
 
-router.get("/search", async (req: Request, res: Response) => {
+router.get("/search", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query = req.query.query as string;
     const sourcesParam = req.query.sources as string | string[] | undefined;
     const limitParam = req.query.limit as string | undefined;
 
     if (!query || query.trim().length === 0) {
-      return res.status(400).json({ error: "Query parameter is required" });
+      throw AppError.badRequest("Query parameter is required", "QUERY_REQUIRED");
     }
 
     const parsedQuery = parseAdvancedQuery(query);
@@ -348,17 +349,16 @@ router.get("/search", async (req: Request, res: Response) => {
     setCachedSearch(cacheKey, response);
     res.json(response);
   } catch (error) {
-    logger.error("Food search error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to search food database" });
+    next(error);
   }
 });
 
-router.get("/barcode/:code", async (req: Request, res: Response) => {
+router.get("/barcode/:code", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
 
     if (!code || code.trim().length === 0) {
-      return res.status(400).json({ error: "Barcode is required" });
+      throw AppError.badRequest("Barcode is required", "BARCODE_REQUIRED");
     }
 
     const cleanCode = code.replace(/\D/g, "");
@@ -423,8 +423,7 @@ router.get("/barcode/:code", async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    logger.error("Barcode lookup error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to lookup barcode" });
+    next(error);
   }
 });
 

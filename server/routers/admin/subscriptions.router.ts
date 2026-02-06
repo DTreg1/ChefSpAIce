@@ -1,9 +1,9 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { subscriptions, users } from "../../../shared/schema";
 import { eq, sql, and, count } from "drizzle-orm";
 import { requireAdmin } from "../../middleware/requireAdmin";
-import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -33,7 +33,7 @@ interface SubscriptionWithUser {
   };
 }
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query;
     
@@ -93,12 +93,11 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json(subscriptionsWithUsers);
   } catch (error) {
-    logger.error("Error fetching admin subscriptions", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscriptions" });
+    next(error);
   }
 });
 
-router.get("/stats", async (_req: Request, res: Response) => {
+router.get("/stats", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const [totalActiveResult] = await db
       .select({ count: count() })
@@ -192,12 +191,11 @@ router.get("/stats", async (_req: Request, res: Response) => {
       trialConversionRate,
     });
   } catch (error) {
-    logger.error("Error fetching subscription stats", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscription stats" });
+    next(error);
   }
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -228,7 +226,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!result) {
-      return res.status(404).json({ error: "Subscription not found" });
+      throw AppError.notFound("Subscription not found", "SUBSCRIPTION_NOT_FOUND");
     }
 
     const subscription: SubscriptionWithUser = {
@@ -257,8 +255,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     res.json(subscription);
   } catch (error) {
-    logger.error("Error fetching subscription details", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscription details" });
+    next(error);
   }
 });
 

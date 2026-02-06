@@ -1,6 +1,7 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
+import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../lib/logger";
 
 const router = Router();
@@ -68,13 +69,10 @@ function isValidAudioFormat(filename: string): boolean {
   return ext ? SUPPORTED_AUDIO_FORMATS.includes(ext) : false;
 }
 
-router.post("/transcribe", async (req: Request, res: Response) => {
+router.post("/transcribe", async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.body || typeof req.body !== "object") {
-      return res.status(400).json({
-        error: "Invalid request",
-        details: "Request body is required",
-      });
+      throw AppError.badRequest("Request body is required", "INVALID_REQUEST");
     }
 
     const contentType = req.headers["content-type"] || "";
@@ -84,34 +82,22 @@ router.post("/transcribe", async (req: Request, res: Response) => {
         const { audioBase64, filename, language = "en" } = req.body;
 
         if (!isValidAudioFormat(filename)) {
-          return res.status(400).json({
-            error: "Invalid audio format",
-            details: `Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`,
-          });
+          throw AppError.badRequest(`Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`, "INVALID_AUDIO_FORMAT");
         }
 
         const mimeType = getAudioMimeType(filename);
         if (!mimeType) {
-          return res.status(400).json({
-            error: "Unknown audio format",
-            details: "Could not determine audio MIME type",
-          });
+          throw AppError.badRequest("Could not determine audio MIME type", "UNKNOWN_AUDIO_FORMAT");
         }
 
         const audioBuffer = Buffer.from(audioBase64, "base64");
 
         if (audioBuffer.length > MAX_FILE_SIZE) {
-          return res.status(400).json({
-            error: "File too large",
-            details: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-          });
+          throw AppError.badRequest(`Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`, "FILE_TOO_LARGE");
         }
 
         if (audioBuffer.length === 0) {
-          return res.status(400).json({
-            error: "Empty audio",
-            details: "The audio file appears to be empty",
-          });
+          throw AppError.badRequest("The audio file appears to be empty", "EMPTY_AUDIO");
         }
 
         const file = new File([audioBuffer], filename, { type: mimeType });
@@ -129,47 +115,30 @@ router.post("/transcribe", async (req: Request, res: Response) => {
         });
       }
 
-      return res.status(400).json({
-        error: "Invalid request format",
-        details:
-          "Expected multipart/form-data with audio file or JSON with audioBase64 and filename",
-      });
+      throw AppError.badRequest("Expected multipart/form-data with audio file or JSON with audioBase64 and filename", "INVALID_REQUEST_FORMAT");
     }
 
     const files = (req as any).files;
     const file = files?.file || files?.audio;
 
     if (!file) {
-      return res.status(400).json({
-        error: "No audio file provided",
-        details:
-          "Please upload an audio file with field name 'file' or 'audio'",
-      });
+      throw AppError.badRequest("Please upload an audio file with field name 'file' or 'audio'", "MISSING_AUDIO_FILE");
     }
 
     const filename = file.name || file.originalname || "audio.m4a";
 
     if (!isValidAudioFormat(filename)) {
-      return res.status(400).json({
-        error: "Invalid audio format",
-        details: `Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`,
-      });
+      throw AppError.badRequest(`Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`, "INVALID_AUDIO_FORMAT");
     }
 
     const fileData = file.data || file.buffer;
 
     if (!fileData || fileData.length === 0) {
-      return res.status(400).json({
-        error: "Empty audio",
-        details: "The audio file appears to be empty",
-      });
+      throw AppError.badRequest("The audio file appears to be empty", "EMPTY_AUDIO");
     }
 
     if (fileData.length > MAX_FILE_SIZE) {
-      return res.status(400).json({
-        error: "File too large",
-        details: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-      });
+      throw AppError.badRequest(`Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`, "FILE_TOO_LARGE");
     }
 
     const mimeType = getAudioMimeType(filename) || "audio/m4a";
@@ -190,37 +159,8 @@ router.post("/transcribe", async (req: Request, res: Response) => {
       transcript: response.text,
       language,
     });
-  } catch (error: any) {
-    logger.error("Transcription error", { error: error instanceof Error ? error.message : String(error) });
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        error: "Rate limited",
-        details: "Too many requests. Please try again in a moment.",
-      });
-    }
-
-    if (error.code === "audio_too_short") {
-      return res.status(400).json({
-        error: "Audio too short",
-        details:
-          "The audio recording is too short to transcribe. Please record a longer message.",
-      });
-    }
-
-    if (error.message?.includes("Invalid file format")) {
-      return res.status(400).json({
-        error: "Invalid audio format",
-        details:
-          "The audio file format is not supported or the file is corrupted.",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Transcription failed",
-      details:
-        error.message || "An unexpected error occurred during transcription",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -229,7 +169,7 @@ const speakSchema = z.object({
   voice: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]).optional().default("alloy"),
 });
 
-router.post("/speak", async (req: Request, res: Response) => {
+router.post("/speak", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parseResult = speakSchema.safeParse(req.body);
 
@@ -239,24 +179,15 @@ router.post("/speak", async (req: Request, res: Response) => {
       const isTooLong = errors.some(e => e.path.includes("text") && e.code === "too_big");
 
       if (isEmptyText) {
-        return res.status(400).json({
-          error: "Empty text",
-          details: "Text is required and cannot be empty",
-        });
+        throw AppError.badRequest("Text is required and cannot be empty", "EMPTY_TEXT");
       }
 
       if (isTooLong) {
-        return res.status(400).json({
-          error: "Text too long",
-          details: "Text must be under 4096 characters",
-        });
+        throw AppError.badRequest("Text must be under 4096 characters", "TEXT_TOO_LONG");
       }
 
       const errorMessages = errors.map((e) => e.message).join(", ");
-      return res.status(400).json({
-        error: "Invalid input",
-        details: errorMessages,
-      });
+      throw AppError.badRequest(errorMessages, "INVALID_INPUT");
     }
 
     const { text, voice } = parseResult.data;
@@ -284,10 +215,7 @@ router.post("/speak", async (req: Request, res: Response) => {
     const audioData = completion.choices[0]?.message?.audio;
 
     if (!audioData || !audioData.data) {
-      return res.status(500).json({
-        error: "Speech generation failed",
-        details: "No audio was generated from the AI response",
-      });
+      throw AppError.internal("No audio was generated from the AI response", "SPEECH_GENERATION_FAILED");
     }
 
     logger.info("Speech generated", { textPreview: text.substring(0, 50) });
@@ -297,31 +225,12 @@ router.post("/speak", async (req: Request, res: Response) => {
       format: "mp3",
       duration: audioData.transcript ? undefined : undefined,
     });
-  } catch (error: any) {
-    logger.error("Text-to-speech error", { error: error instanceof Error ? error.message : String(error) });
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        error: "Rate limited",
-        details: "Too many requests. Please try again in a moment.",
-      });
-    }
-
-    if (error.status === 400) {
-      return res.status(400).json({
-        error: "Invalid request",
-        details: error.message || "The request was invalid",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Speech generation failed",
-      details: error.message || "An unexpected error occurred during speech generation",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 
-router.post("/parse", async (req: Request, res: Response) => {
+router.post("/parse", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parseResult = parseCommandSchema.safeParse(req.body);
 
@@ -329,10 +238,7 @@ router.post("/parse", async (req: Request, res: Response) => {
       const errorMessages = parseResult.error.errors
         .map((e) => e.message)
         .join(", ");
-      return res.status(400).json({
-        error: "Invalid input",
-        details: errorMessages,
-      });
+      throw AppError.badRequest(errorMessages, "INVALID_INPUT");
     }
 
     const { text } = parseResult.data;
@@ -390,10 +296,7 @@ Return ONLY valid JSON in this format:
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      return res.status(500).json({
-        error: "Parse failed",
-        details: "No response from AI parser",
-      });
+      throw AppError.internal("No response from AI parser", "PARSE_FAILED");
     }
 
     const parsed: ParsedCommand = JSON.parse(content);
@@ -424,22 +327,8 @@ Return ONLY valid JSON in this format:
       ...parsed,
       rawText: text,
     });
-  } catch (error: any) {
-    logger.error("Parse error", { error: error instanceof Error ? error.message : String(error) });
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        error: "Rate limited",
-        details: "Too many requests. Please try again in a moment.",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Parse failed",
-      details:
-        error.message ||
-        "An unexpected error occurred while parsing the command",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -452,50 +341,35 @@ const conversationHistorySchema = z.array(
   })
 ).optional();
 
-router.post("/chat", async (req: Request, res: Response) => {
+router.post("/chat", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const contentType = req.headers["content-type"] || "";
 
     if (!contentType.includes("multipart/form-data")) {
-      return res.status(400).json({
-        error: "Invalid request format",
-        details: "Expected multipart/form-data with audio file",
-      });
+      throw AppError.badRequest("Expected multipart/form-data with audio file", "INVALID_REQUEST_FORMAT");
     }
 
     const files = (req as any).files;
     const file = files?.file || files?.audio;
 
     if (!file) {
-      return res.status(400).json({
-        error: "No audio file provided",
-        details: "Please upload an audio file with field name 'file' or 'audio'",
-      });
+      throw AppError.badRequest("Please upload an audio file with field name 'file' or 'audio'", "MISSING_AUDIO_FILE");
     }
 
     const filename = file.name || file.originalname || "audio.m4a";
 
     if (!isValidAudioFormat(filename)) {
-      return res.status(400).json({
-        error: "Invalid audio format",
-        details: `Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`,
-      });
+      throw AppError.badRequest(`Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`, "INVALID_AUDIO_FORMAT");
     }
 
     const fileData = file.data || file.buffer;
 
     if (!fileData || fileData.length === 0) {
-      return res.status(400).json({
-        error: "Empty audio",
-        details: "The audio file appears to be empty",
-      });
+      throw AppError.badRequest("The audio file appears to be empty", "EMPTY_AUDIO");
     }
 
     if (fileData.length > MAX_FILE_SIZE) {
-      return res.status(400).json({
-        error: "File too large",
-        details: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-      });
+      throw AppError.badRequest(`Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`, "FILE_TOO_LARGE");
     }
 
     let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
@@ -549,10 +423,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     const aiResponse = chatCompletion.choices[0]?.message?.content;
 
     if (!aiResponse) {
-      return res.status(500).json({
-        error: "AI response failed",
-        details: "No response generated from the AI chef",
-      });
+      throw AppError.internal("No response generated from the AI chef", "AI_RESPONSE_FAILED");
     }
 
     logger.info("Chef response received", { responsePreview: aiResponse.substring(0, 50) });
@@ -581,10 +452,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     const audioData = ttsCompletion.choices[0]?.message?.audio;
 
     if (!audioData || !audioData.data) {
-      return res.status(500).json({
-        error: "Speech generation failed",
-        details: "No audio was generated for the AI response",
-      });
+      throw AppError.internal("No audio was generated for the AI response", "SPEECH_GENERATION_FAILED");
     }
 
     logger.info("Voice conversation complete");
@@ -595,34 +463,8 @@ router.post("/chat", async (req: Request, res: Response) => {
       audioResponse: audioData.data,
       audioFormat: "mp3",
     });
-  } catch (error: any) {
-    logger.error("Voice chat error", { error: error instanceof Error ? error.message : String(error) });
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        error: "Rate limited",
-        details: "Too many requests. Please try again in a moment.",
-      });
-    }
-
-    if (error.code === "audio_too_short") {
-      return res.status(400).json({
-        error: "Audio too short",
-        details: "The audio recording is too short to transcribe. Please record a longer message.",
-      });
-    }
-
-    if (error.message?.includes("Invalid file format")) {
-      return res.status(400).json({
-        error: "Invalid audio format",
-        details: "The audio file format is not supported or the file is corrupted.",
-      });
-    }
-
-    return res.status(500).json({
-      error: "Voice chat failed",
-      details: error.message || "An unexpected error occurred during the voice conversation",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 

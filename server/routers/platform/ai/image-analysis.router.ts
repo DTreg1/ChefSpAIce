@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import OpenAI from "openai";
 import {
   parseAnalysisResponse,
@@ -8,6 +8,7 @@ import {
   SUPPORTED_IMAGE_FORMATS,
   MAX_FILE_SIZE,
 } from "../../../lib/food-analysis-parser";
+import { AppError } from "../../../middleware/errorHandler";
 import { logger } from "../../../lib/logger";
 
 const router = Router();
@@ -70,43 +71,30 @@ If no food is visible in the image, return:
   "error": "No food items detected in this image"
 }`;
 
-router.post("/analyze-food", async (req: Request, res: Response) => {
+router.post("/analyze-food", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const contentType = req.headers["content-type"] || "";
 
     if (!contentType.includes("multipart/form-data")) {
-      return res.status(400).json({
-        items: [],
-        error: "Expected multipart/form-data with image file",
-      });
+      throw AppError.badRequest("Expected multipart/form-data with image file", "INVALID_CONTENT_TYPE");
     }
 
     const files = (req as any).files;
     const file = files?.image || files?.file;
 
     if (!file) {
-      return res.status(400).json({
-        items: [],
-        error:
-          "No image file provided. Please upload an image with field name 'image' or 'file'",
-      });
+      throw AppError.badRequest("No image file provided. Please upload an image with field name 'image' or 'file'", "MISSING_IMAGE_FILE");
     }
 
     const filename = file.name || file.originalname || "image.jpg";
     const fileData = file.data || file.buffer;
 
     if (!fileData || fileData.length === 0) {
-      return res.status(400).json({
-        items: [],
-        error: "The uploaded image file appears to be empty",
-      });
+      throw AppError.badRequest("The uploaded image file appears to be empty", "EMPTY_IMAGE_FILE");
     }
 
     if (fileData.length > MAX_FILE_SIZE) {
-      return res.status(400).json({
-        items: [],
-        error: `Image file too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-      });
+      throw AppError.badRequest(`Image file too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`, "FILE_TOO_LARGE");
     }
 
     let mimeType = detectMimeTypeFromBuffer(fileData);
@@ -118,10 +106,7 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
     }
 
     if (!mimeType) {
-      return res.status(400).json({
-        items: [],
-        error: `Invalid image format. Supported formats: ${SUPPORTED_IMAGE_FORMATS.join(", ")}`,
-      });
+      throw AppError.badRequest(`Invalid image format. Supported formats: ${SUPPORTED_IMAGE_FORMATS.join(", ")}`, "INVALID_IMAGE_FORMAT");
     }
 
     const base64Image = fileData.toString("base64");
@@ -164,42 +149,13 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
 
     if (!parseResult.success) {
       logger.error("Failed to parse image analysis response", { error: parseResult.error });
-      return res.status(500).json({
-        items: [],
-        error: parseResult.error || "Failed to parse AI response",
-      });
+      throw AppError.internal(parseResult.error || "Failed to parse AI response", "AI_PARSE_ERROR");
     }
 
     logger.info("Image analysis complete", { itemCount: parseResult.data!.items.length });
     return res.json(parseResult.data);
-  } catch (error: any) {
-    logger.error("Image analysis error", { error: error instanceof Error ? error.message : String(error) });
-
-    if (error.status === 429) {
-      return res.status(429).json({
-        items: [],
-        error: "Too many requests. Please try again in a moment.",
-      });
-    }
-
-    if (error.code === "invalid_api_key") {
-      return res.status(500).json({
-        items: [],
-        error: "AI service configuration error",
-      });
-    }
-
-    if (error.message?.includes("Could not process image")) {
-      return res.status(400).json({
-        items: [],
-        error: "Could not process the image. Please try a different image.",
-      });
-    }
-
-    return res.status(500).json({
-      items: [],
-      error: "An unexpected error occurred while analyzing the image",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 

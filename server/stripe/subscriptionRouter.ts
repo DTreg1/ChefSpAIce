@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { db } from "../db";
 import { users, userSessions, subscriptions } from "@shared/schema";
@@ -12,6 +12,7 @@ import {
   checkFeatureAccess,
 } from "../services/subscriptionService";
 import { SubscriptionTier } from "@shared/subscription";
+import { AppError } from "../middleware/errorHandler";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -66,7 +67,7 @@ async function getAuthenticatedUser(req: Request): Promise<{ id: string; email: 
   return user ? { id: user.id, email: user.email } : null;
 }
 
-router.get("/prices", async (_req: Request, res: Response) => {
+router.get("/prices", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     if (pricesCache.data && Date.now() - pricesCache.timestamp < PRICES_CACHE_TTL_MS) {
       return res.json(pricesCache.data);
@@ -115,7 +116,6 @@ router.get("/prices", async (_req: Request, res: Response) => {
 
     const result = { monthly: monthlyPrice, annual: annualPrice };
 
-    // Only cache if we have at least one valid price
     if (monthlyPrice || annualPrice) {
       pricesCache.data = result;
       pricesCache.timestamp = Date.now();
@@ -123,22 +123,21 @@ router.get("/prices", async (_req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    logger.error("Error fetching subscription prices", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscription prices" });
+    next(error);
   }
 });
 
-router.post("/create-checkout-session", async (req: Request, res: Response) => {
+router.post("/create-checkout-session", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const { priceId, successUrl, cancelUrl } = req.body;
 
     if (!priceId) {
-      return res.status(400).json({ error: "priceId is required" });
+      throw AppError.badRequest("priceId is required", "MISSING_PRICE_ID");
     }
 
     const stripe = await getUncachableStripeClient();
@@ -203,16 +202,15 @@ router.post("/create-checkout-session", async (req: Request, res: Response) => {
       url: session.url,
     });
   } catch (error) {
-    logger.error("Error creating checkout session", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to create checkout session" });
+    next(error);
   }
 });
 
-router.post("/create-portal-session", async (req: Request, res: Response) => {
+router.post("/create-portal-session", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const [existingSubscription] = await db
@@ -222,7 +220,7 @@ router.post("/create-portal-session", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!existingSubscription?.stripeCustomerId) {
-      return res.status(400).json({ error: "No subscription found for this user" });
+      throw AppError.badRequest("No subscription found for this user", "NO_SUBSCRIPTION");
     }
 
     const stripe = await getUncachableStripeClient();
@@ -238,16 +236,15 @@ router.post("/create-portal-session", async (req: Request, res: Response) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    logger.error("Error creating portal session", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to create billing portal session" });
+    next(error);
   }
 });
 
-router.get("/status", async (req: Request, res: Response) => {
+router.get("/status", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const [subscription] = await db
@@ -277,27 +274,25 @@ router.get("/status", async (req: Request, res: Response) => {
       canceledAt: subscription.canceledAt?.toISOString() || null,
     });
   } catch (error) {
-    logger.error("Error fetching subscription status", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscription status" });
+    next(error);
   }
 });
 
-router.get("/publishable-key", async (_req: Request, res: Response) => {
+router.get("/publishable-key", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const publishableKey = await getStripePublishableKey();
     res.json({ publishableKey });
   } catch (error) {
-    logger.error("Error fetching publishable key", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to get Stripe publishable key" });
+    next(error);
   }
 });
 
-router.get("/session/:sessionId", async (req: Request, res: Response) => {
+router.get("/session/:sessionId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sessionId } = req.params;
 
     if (!sessionId) {
-      return res.status(400).json({ error: "Session ID is required" });
+      throw AppError.badRequest("Session ID is required", "MISSING_SESSION_ID");
     }
 
     const stripe = await getUncachableStripeClient();
@@ -307,7 +302,7 @@ router.get("/session/:sessionId", async (req: Request, res: Response) => {
     });
 
     if (!session) {
-      return res.status(404).json({ error: "Session not found" });
+      throw AppError.notFound("Session not found", "SESSION_NOT_FOUND");
     }
 
     const subscription = session.subscription as {
@@ -326,33 +321,32 @@ router.get("/session/:sessionId", async (req: Request, res: Response) => {
       currency: session.currency,
     });
   } catch (error) {
-    logger.error("Error fetching session details", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch session details" });
+    next(error);
   }
 });
 
-router.post("/sync-revenuecat", async (req: Request, res: Response) => {
+router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const { tier, status, expirationDate } = req.body;
 
     if (!tier || !status) {
-      return res.status(400).json({ error: "tier and status are required" });
+      throw AppError.badRequest("tier and status are required", "MISSING_REQUIRED_FIELDS");
     }
 
     const validTiers = ['BASIC', 'PRO'];
     const validStatuses = ['active', 'trialing', 'canceled', 'expired', 'past_due'];
 
     if (!validTiers.includes(tier)) {
-      return res.status(400).json({ error: "Invalid tier. Must be BASIC or PRO" });
+      throw AppError.badRequest("Invalid tier. Must be BASIC or PRO", "INVALID_TIER");
     }
 
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+      throw AppError.badRequest("Invalid status", "INVALID_STATUS");
     }
 
     const updateData: Record<string, unknown> = {
@@ -378,21 +372,19 @@ router.post("/sync-revenuecat", async (req: Request, res: Response) => {
       status,
     });
   } catch (error) {
-    logger.error("Error syncing RevenueCat purchase", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to sync purchase" });
+    next(error);
   }
 });
 
-router.get("/me", async (req: Request, res: Response) => {
+router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const entitlements = await getUserEntitlements(user.id);
 
-    // Get subscription for additional fields
     const [subscription] = await db
       .select()
       .from(subscriptions)
@@ -411,16 +403,15 @@ router.get("/me", async (req: Request, res: Response) => {
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
     });
   } catch (error) {
-    logger.error("Error fetching subscription entitlements", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch subscription info" });
+    next(error);
   }
 });
 
-router.get("/check-limit/:limitType", async (req: Request, res: Response) => {
+router.get("/check-limit/:limitType", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const { limitType } = req.params;
@@ -437,21 +428,20 @@ router.get("/check-limit/:limitType", async (req: Request, res: Response) => {
         result = await checkCookwareLimit(user.id);
         break;
       default:
-        return res.status(400).json({ error: "Invalid limit type. Use: pantryItems, aiRecipes, or cookware" });
+        throw AppError.badRequest("Invalid limit type. Use: pantryItems, aiRecipes, or cookware", "INVALID_LIMIT_TYPE");
     }
 
     res.json(result);
   } catch (error) {
-    logger.error("Error checking limit", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to check limit" });
+    next(error);
   }
 });
 
-router.get("/check-feature/:feature", async (req: Request, res: Response) => {
+router.get("/check-feature/:feature", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const { feature } = req.params;
@@ -464,9 +454,10 @@ router.get("/check-feature/:feature", async (req: Request, res: Response) => {
     ];
 
     if (!validFeatures.includes(feature)) {
-      return res.status(400).json({
-        error: `Invalid feature. Use: ${validFeatures.join(", ")}`,
-      });
+      throw AppError.badRequest(
+        `Invalid feature. Use: ${validFeatures.join(", ")}`,
+        "INVALID_FEATURE",
+      );
     }
 
     const allowed = await checkFeatureAccess(
@@ -479,16 +470,15 @@ router.get("/check-feature/:feature", async (req: Request, res: Response) => {
       upgradeRequired: !allowed,
     });
   } catch (error) {
-    logger.error("Error checking feature access", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to check feature access" });
+    next(error);
   }
 });
 
-router.post("/upgrade", async (req: Request, res: Response) => {
+router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
     if (!user) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
     const { billingPeriod = "monthly", successUrl, cancelUrl } = req.body;
@@ -557,7 +547,7 @@ router.post("/upgrade", async (req: Request, res: Response) => {
     }
 
     if (!priceId) {
-      return res.status(400).json({ error: "No suitable price found for Pro upgrade" });
+      throw AppError.badRequest("No suitable price found for Pro upgrade", "NO_PRICE_FOUND");
     }
 
     const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
@@ -594,8 +584,7 @@ router.post("/upgrade", async (req: Request, res: Response) => {
       url: session.url,
     });
   } catch (error) {
-    logger.error("Error creating upgrade checkout session", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to create upgrade session" });
+    next(error);
   }
 });
 

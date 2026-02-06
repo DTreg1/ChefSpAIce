@@ -14,6 +14,7 @@ import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
 import { logger } from "./lib/logger";
+import { AppError, globalErrorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
@@ -301,20 +302,7 @@ function configureStaticFiles(app: express.Application) {
 }
 
 function setupErrorHandler(app: express.Application) {
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    const error = err as {
-      status?: number;
-      statusCode?: number;
-      message?: string;
-    };
-
-    const status = error.status || error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-
-    throw err;
-  });
+  app.use(globalErrorHandler);
 }
 
 async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): Promise<boolean> {
@@ -439,28 +427,26 @@ async function initStripe(retries = 3, delay = 2000) {
   app.post(
     "/api/stripe/webhook/:uuid",
     express.raw({ type: "application/json", limit: "5mb" }),
-    async (req, res) => {
+    async (req: Request, res: Response, next: NextFunction) => {
       const signature = req.headers["stripe-signature"];
 
       if (!signature) {
-        return res.status(400).json({ error: "Missing stripe-signature" });
+        return next(AppError.badRequest("Missing stripe-signature", "MISSING_STRIPE_SIGNATURE"));
       }
 
       try {
         const sig = Array.isArray(signature) ? signature[0] : signature;
 
         if (!Buffer.isBuffer(req.body)) {
-          logger.error("Stripe webhook error: req.body is not a Buffer");
-          return res.status(500).json({ error: "Webhook processing error" });
+          throw AppError.internal("Webhook processing error", "WEBHOOK_BODY_NOT_BUFFER");
         }
 
         const { uuid } = req.params;
         await WebhookHandlers.processWebhook(req.body as Buffer, sig, uuid);
 
         res.status(200).json({ received: true });
-      } catch (error: any) {
-        logger.error("Webhook error", { error: error.message });
-        res.status(400).json({ error: "Webhook processing error" });
+      } catch (error) {
+        next(error);
       }
     },
   );

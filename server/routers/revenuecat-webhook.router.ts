@@ -1,8 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../lib/logger';
+import { AppError } from '../middleware/errorHandler';
 
 const router = express.Router();
 
@@ -109,11 +110,10 @@ async function handleSubscriptionUpdate(
   logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'BASIC', status });
 }
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!verifyWebhookSecret(req)) {
-      logger.warn('RevenueCat invalid webhook secret');
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw AppError.unauthorized('Invalid webhook secret', 'INVALID_WEBHOOK_SECRET');
     }
 
     const webhookData = req.body as RevenueCatWebhookEvent;
@@ -151,8 +151,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    logger.error('RevenueCat webhook error', { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import OpenAI from "openai";
 import {
   generateItemsHash,
@@ -8,6 +8,7 @@ import {
   type WasteReductionCacheEntry,
 } from "../../lib/waste-reduction-utils";
 import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -52,14 +53,12 @@ const shelfLifeCache = new Map<
   }
 >();
 
-router.post("/shelf-life", async (req: Request, res: Response) => {
+router.post("/shelf-life", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { foodName, category, storageLocation } = req.body;
 
     if (!foodName || !storageLocation) {
-      return res.status(400).json({
-        error: "foodName and storageLocation are required",
-      });
+      throw AppError.badRequest("foodName and storageLocation are required", "MISSING_REQUIRED_FIELDS");
     }
 
     const cacheKey = `${foodName.toLowerCase()}:${category?.toLowerCase() || ""}:${storageLocation.toLowerCase()}`;
@@ -128,17 +127,11 @@ Return JSON:
 
     return res.json(result);
   } catch (error) {
-    logger.error("Shelf life suggestion error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({
-      suggestedDays: 7,
-      confidence: "low",
-      source: "default",
-      notes: "Unable to get AI suggestion. Using default 7-day estimate.",
-    });
+    next(error);
   }
 });
 
-router.post("/waste-reduction", async (req: Request, res: Response) => {
+router.post("/waste-reduction", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const forceRefresh = req.query.refresh === "true";
     const clientItems = req.body.expiringItems || [];
@@ -267,12 +260,7 @@ Return JSON:
       });
     }
   } catch (error) {
-    logger.error("Waste reduction endpoint error", { error: error instanceof Error ? error.message : String(error) });
-    return res.status(500).json({
-      error: "Failed to get waste reduction tips",
-      suggestions: [],
-      expiringItems: [],
-    });
+    next(error);
   }
 });
 
@@ -286,7 +274,7 @@ const funFactCache = new Map<
 
 const FUN_FACT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-router.post("/fun-fact", async (req: Request, res: Response) => {
+router.post("/fun-fact", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { items, nutritionTotals } = req.body;
 
@@ -355,10 +343,7 @@ Return JSON: { "fact": "<your fun fact>" }`;
 
     return res.json({ fact });
   } catch (error) {
-    logger.error("Fun fact generation error", { error: error instanceof Error ? error.message : String(error) });
-    return res.json({
-      fact: "Your kitchen is stocked with tasty ingredients!",
-    });
+    next(error);
   }
 });
 
