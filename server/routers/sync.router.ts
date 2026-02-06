@@ -142,6 +142,12 @@ const shoppingListSyncRequestSchema = z.object({
   clientTimestamp: z.string().optional(),
 });
 
+type InventoryItem = z.infer<typeof inventoryItemSchema>;
+type Recipe = z.infer<typeof recipeSchema>;
+type MealPlan = z.infer<typeof mealPlanSchema>;
+type Cookware = z.infer<typeof cookwareSchema>;
+type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
+
 async function getSessionFromToken(token: string) {
   if (!token) return null;
   
@@ -210,9 +216,9 @@ router.post("/inventory", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentInventory: unknown[] = [];
+    let currentInventory: InventoryItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as any[]) || [];
+      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
     }
 
     const dataIdStr = String(data.id);
@@ -319,9 +325,9 @@ router.put("/inventory", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentInventory: unknown[] = [];
+    let currentInventory: InventoryItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as any[]) || [];
+      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
     }
 
     const index = currentInventory.findIndex(
@@ -430,9 +436,9 @@ router.delete("/inventory", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentInventory: unknown[] = [];
+    let currentInventory: InventoryItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as any[]) || [];
+      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
     }
 
     currentInventory = currentInventory.filter(
@@ -492,9 +498,9 @@ router.post("/recipes", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentRecipes: unknown[] = [];
+    let currentRecipes: Recipe[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
+      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
     }
 
     if (operation === "create") {
@@ -578,9 +584,9 @@ router.put("/recipes", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentRecipes: unknown[] = [];
+    let currentRecipes: Recipe[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
+      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
     }
 
     const index = currentRecipes.findIndex(
@@ -667,9 +673,9 @@ router.delete("/recipes", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentRecipes: unknown[] = [];
+    let currentRecipes: Recipe[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
+      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
     }
 
     currentRecipes = currentRecipes.filter(
@@ -729,9 +735,9 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentMealPlans: unknown[] = [];
+    let currentMealPlans: MealPlan[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
+      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
     }
 
     if (operation === "create") {
@@ -815,9 +821,9 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentMealPlans: unknown[] = [];
+    let currentMealPlans: MealPlan[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
+      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
     }
 
     const index = currentMealPlans.findIndex(
@@ -904,9 +910,9 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentMealPlans: unknown[] = [];
+    let currentMealPlans: MealPlan[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
+      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
     }
 
     currentMealPlans = currentMealPlans.filter(
@@ -971,9 +977,9 @@ router.post("/cookware", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentCookware: unknown[] = [];
+    let currentCookware: Cookware[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as any[]) || [];
+      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
     }
 
     // Determine if this operation would add a new item
@@ -1084,9 +1090,9 @@ router.put("/cookware", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentCookware: unknown[] = [];
+    let currentCookware: Cookware[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as any[]) || [];
+      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
     }
 
     const index = currentCookware.findIndex(
@@ -1196,9 +1202,9 @@ router.delete("/cookware", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentCookware: unknown[] = [];
+    let currentCookware: Cookware[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as any[]) || [];
+      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
     }
 
     currentCookware = currentCookware.filter(
@@ -1262,9 +1268,9 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentShoppingList: unknown[] = [];
+    let currentShoppingList: ShoppingListItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
+      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
     }
 
     if (operation === "create") {
@@ -1348,9 +1354,9 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentShoppingList: unknown[] = [];
+    let currentShoppingList: ShoppingListItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
+      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
     }
 
     const index = currentShoppingList.findIndex(
@@ -1444,9 +1450,9 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId));
 
-    let currentShoppingList: unknown[] = [];
+    let currentShoppingList: ShoppingListItem[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
+      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
     }
 
     currentShoppingList = currentShoppingList.filter(
