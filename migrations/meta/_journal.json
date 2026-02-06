@@ -8,6 +8,13 @@
       "when": 1766936336081,
       "tag": "0000_last_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770395800000,
+      "tag": "0001_text_to_jsonb",
+      "breakpoints": true
     }
   ]
 }

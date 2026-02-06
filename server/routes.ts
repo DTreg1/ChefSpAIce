@@ -68,7 +68,7 @@ import chatRouter from "./routers/chat.router";
 import shelfLifeRouter from "./routers/shelf-life.router";
 import foodRouter, { barcodeRawRouter } from "./routers/food.router";
 import { db } from "./db";
-import { users } from "../shared/schema";
+import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";

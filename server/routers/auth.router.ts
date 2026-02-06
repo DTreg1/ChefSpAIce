@@ -417,18 +417,18 @@ router.get("/sync", async (req: Request, res: Response) => {
 
     res.json({
       data: {
-        inventory: syncData.inventory ? JSON.parse(syncData.inventory) : null,
-        recipes: syncData.recipes ? JSON.parse(syncData.recipes) : null,
-        mealPlans: syncData.mealPlans ? JSON.parse(syncData.mealPlans) : null,
-        shoppingList: syncData.shoppingList ? JSON.parse(syncData.shoppingList) : null,
-        preferences: syncData.preferences ? JSON.parse(syncData.preferences) : null,
+        inventory: syncData.inventory ?? null,
+        recipes: syncData.recipes ?? null,
+        mealPlans: syncData.mealPlans ?? null,
+        shoppingList: syncData.shoppingList ?? null,
+        preferences: syncData.preferences ?? null,
         cookware: cookwareIds,
-        wasteLog: syncData.wasteLog ? JSON.parse(syncData.wasteLog) : null,
-        consumedLog: syncData.consumedLog ? JSON.parse(syncData.consumedLog) : null,
-        analytics: syncData.analytics ? JSON.parse(syncData.analytics) : null,
-        onboarding: syncData.onboarding ? JSON.parse(syncData.onboarding) : null,
-        customLocations: syncData.customLocations ? JSON.parse(syncData.customLocations) : null,
-        userProfile: syncData.userProfile ? JSON.parse(syncData.userProfile) : null,
+        wasteLog: syncData.wasteLog ?? null,
+        consumedLog: syncData.consumedLog ?? null,
+        analytics: syncData.analytics ?? null,
+        onboarding: syncData.onboarding ?? null,
+        customLocations: syncData.customLocations ?? null,
+        userProfile: syncData.userProfile ?? null,
       },
       lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
     });
@@ -487,13 +487,13 @@ router.post("/sync", async (req: Request, res: Response) => {
 
     let prefsSynced = true;
     let prefsError: string | null = null;
-    let validatedPreferences: string | undefined = undefined;
+    let validatedPreferences: unknown = undefined;
 
     if (data.preferences) {
       const parseResult = syncPreferencesSchema.safeParse(data.preferences);
       if (parseResult.success) {
         const prefs = parseResult.data;
-        validatedPreferences = JSON.stringify(prefs);
+        validatedPreferences = prefs;
         const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
         
         if (prefs.servingSize !== undefined) {
@@ -542,16 +542,16 @@ router.post("/sync", async (req: Request, res: Response) => {
     };
 
     if (data.inventory !== undefined) {
-      syncUpdate.inventory = data.inventory ? JSON.stringify(data.inventory) : null;
+      syncUpdate.inventory = data.inventory ?? null;
     }
     if (data.recipes !== undefined) {
-      syncUpdate.recipes = data.recipes ? JSON.stringify(data.recipes) : null;
+      syncUpdate.recipes = data.recipes ?? null;
     }
     if (data.mealPlans !== undefined) {
-      syncUpdate.mealPlans = data.mealPlans ? JSON.stringify(data.mealPlans) : null;
+      syncUpdate.mealPlans = data.mealPlans ?? null;
     }
     if (data.shoppingList !== undefined) {
-      syncUpdate.shoppingList = data.shoppingList ? JSON.stringify(data.shoppingList) : null;
+      syncUpdate.shoppingList = data.shoppingList ?? null;
     }
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
       // Sync cookware to userAppliances table (source of truth)
@@ -592,22 +592,22 @@ router.post("/sync", async (req: Request, res: Response) => {
       }
     }
     if (data.wasteLog !== undefined) {
-      syncUpdate.wasteLog = data.wasteLog ? JSON.stringify(data.wasteLog) : null;
+      syncUpdate.wasteLog = data.wasteLog ?? null;
     }
     if (data.consumedLog !== undefined) {
-      syncUpdate.consumedLog = data.consumedLog ? JSON.stringify(data.consumedLog) : null;
+      syncUpdate.consumedLog = data.consumedLog ?? null;
     }
     if (data.analytics !== undefined) {
-      syncUpdate.analytics = data.analytics ? JSON.stringify(data.analytics) : null;
+      syncUpdate.analytics = data.analytics ?? null;
     }
     if (data.onboarding !== undefined) {
-      syncUpdate.onboarding = data.onboarding ? JSON.stringify(data.onboarding) : null;
+      syncUpdate.onboarding = data.onboarding ?? null;
     }
     if (data.customLocations !== undefined) {
-      syncUpdate.customLocations = data.customLocations ? JSON.stringify(data.customLocations) : null;
+      syncUpdate.customLocations = data.customLocations ?? null;
     }
     if (data.userProfile !== undefined) {
-      syncUpdate.userProfile = data.userProfile ? JSON.stringify(data.userProfile) : null;
+      syncUpdate.userProfile = data.userProfile ?? null;
     }
     if (validatedPreferences !== undefined) {
       syncUpdate.preferences = validatedPreferences;
@@ -695,14 +695,14 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
     };
 
     // Helper to safely merge arrays - validates input is array and merges by ID
-    const mergeOrReplace = (existing: string | null, incoming: unknown): string | null => {
+    const mergeOrReplace = (existing: unknown, incoming: unknown): unknown => {
       // Validate incoming is an array
       if (!Array.isArray(incoming) || incoming.length === 0) return existing;
-      if (!existing) return JSON.stringify(incoming);
+      if (!existing) return incoming;
       
       try {
-        const existingArr = JSON.parse(existing);
-        if (!Array.isArray(existingArr)) return JSON.stringify(incoming);
+        const existingArr = Array.isArray(existing) ? existing : null;
+        if (!existingArr) return incoming;
         
         // Merge: add incoming items that don't exist (by id if available)
         const merged = [...existingArr];
@@ -715,9 +715,9 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
             merged.push(item);
           }
         }
-        return JSON.stringify(merged);
+        return merged;
       } catch {
-        return JSON.stringify(incoming);
+        return incoming;
       }
     };
 
@@ -801,7 +801,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
     if (data.preferences !== undefined && !existingSyncData?.preferences) {
       const parseResult = syncPreferencesSchema.safeParse(data.preferences);
       if (parseResult.success) {
-        syncUpdate.preferences = JSON.stringify(parseResult.data);
+        syncUpdate.preferences = parseResult.data;
         
         // Also update user profile with preferences
         const prefs = parseResult.data;
@@ -824,11 +824,11 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
     }
     // Only set onboarding if no existing onboarding data
     if (data.onboarding !== undefined && !existingSyncData?.onboarding) {
-      syncUpdate.onboarding = JSON.stringify(data.onboarding);
+      syncUpdate.onboarding = data.onboarding;
     }
     // Only set userProfile if no existing userProfile data
     if (data.userProfile !== undefined && !existingSyncData?.userProfile) {
-      syncUpdate.userProfile = JSON.stringify(data.userProfile);
+      syncUpdate.userProfile = data.userProfile;
     }
 
     // Handle cookware migration

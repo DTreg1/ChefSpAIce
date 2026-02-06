@@ -113,22 +113,34 @@ interface ParsedCookwareItem {
   [key: string]: unknown;
 }
 
-function parseInventoryArray(jsonString: string | null): ParsedInventoryItem[] {
-  if (!jsonString) return [];
-  try {
-    return JSON.parse(jsonString) as ParsedInventoryItem[];
-  } catch {
-    return [];
+function parseInventoryArray(value: unknown): ParsedInventoryItem[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value as ParsedInventoryItem[];
   }
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as ParsedInventoryItem[];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
-function parseCookwareArray(jsonString: string | null): ParsedCookwareItem[] {
-  if (!jsonString) return [];
-  try {
-    return JSON.parse(jsonString) as ParsedCookwareItem[];
-  } catch {
-    return [];
+function parseCookwareArray(value: unknown): ParsedCookwareItem[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value as ParsedCookwareItem[];
   }
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as ParsedCookwareItem[];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 export async function getUserEntitlements(

@@ -189,7 +189,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
 
     let currentInventory: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = JSON.parse(existingSyncData[0].inventory);
+      currentInventory = (existingSyncData[0].inventory as any[]) || [];
     }
 
     const dataIdStr = String(data.id);
@@ -235,13 +235,13 @@ router.post("/inventory", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        inventory: JSON.stringify(currentInventory),
+        inventory: currentInventory,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          inventory: JSON.stringify(currentInventory),
+          inventory: currentInventory,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -294,7 +294,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
 
     let currentInventory: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = JSON.parse(existingSyncData[0].inventory);
+      currentInventory = (existingSyncData[0].inventory as any[]) || [];
     }
 
     const index = currentInventory.findIndex(
@@ -350,7 +350,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        inventory: JSON.stringify(currentInventory),
+        inventory: currentInventory,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -401,7 +401,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
 
     let currentInventory: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = JSON.parse(existingSyncData[0].inventory);
+      currentInventory = (existingSyncData[0].inventory as any[]) || [];
     }
 
     currentInventory = currentInventory.filter(
@@ -411,7 +411,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        inventory: JSON.stringify(currentInventory),
+        inventory: currentInventory,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -459,7 +459,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
 
     let currentRecipes: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = JSON.parse(existingSyncData[0].recipes);
+      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
     }
 
     if (operation === "create") {
@@ -482,13 +482,13 @@ router.post("/recipes", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        recipes: JSON.stringify(currentRecipes),
+        recipes: currentRecipes,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          recipes: JSON.stringify(currentRecipes),
+          recipes: currentRecipes,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -541,7 +541,7 @@ router.put("/recipes", async (req: Request, res: Response) => {
 
     let currentRecipes: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = JSON.parse(existingSyncData[0].recipes);
+      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
     }
 
     const index = currentRecipes.findIndex(
@@ -575,7 +575,7 @@ router.put("/recipes", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        recipes: JSON.stringify(currentRecipes),
+        recipes: currentRecipes,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -626,7 +626,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
 
     let currentRecipes: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = JSON.parse(existingSyncData[0].recipes);
+      currentRecipes = (existingSyncData[0].recipes as any[]) || [];
     }
 
     currentRecipes = currentRecipes.filter(
@@ -636,7 +636,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        recipes: JSON.stringify(currentRecipes),
+        recipes: currentRecipes,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -684,7 +684,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
 
     let currentMealPlans: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = JSON.parse(existingSyncData[0].mealPlans);
+      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
     }
 
     if (operation === "create") {
@@ -707,13 +707,13 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        mealPlans: JSON.stringify(currentMealPlans),
+        mealPlans: currentMealPlans,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          mealPlans: JSON.stringify(currentMealPlans),
+          mealPlans: currentMealPlans,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -766,7 +766,7 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
 
     let currentMealPlans: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = JSON.parse(existingSyncData[0].mealPlans);
+      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
     }
 
     const index = currentMealPlans.findIndex(
@@ -800,7 +800,7 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        mealPlans: JSON.stringify(currentMealPlans),
+        mealPlans: currentMealPlans,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -851,7 +851,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
 
     let currentMealPlans: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = JSON.parse(existingSyncData[0].mealPlans);
+      currentMealPlans = (existingSyncData[0].mealPlans as any[]) || [];
     }
 
     currentMealPlans = currentMealPlans.filter(
@@ -861,7 +861,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        mealPlans: JSON.stringify(currentMealPlans),
+        mealPlans: currentMealPlans,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -914,7 +914,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
 
     let currentCookware: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = JSON.parse(existingSyncData[0].cookware);
+      currentCookware = (existingSyncData[0].cookware as any[]) || [];
     }
 
     // Determine if this operation would add a new item
@@ -963,13 +963,13 @@ router.post("/cookware", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        cookware: JSON.stringify(currentCookware),
+        cookware: currentCookware,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          cookware: JSON.stringify(currentCookware),
+          cookware: currentCookware,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -1023,7 +1023,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
 
     let currentCookware: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = JSON.parse(existingSyncData[0].cookware);
+      currentCookware = (existingSyncData[0].cookware as any[]) || [];
     }
 
     const index = currentCookware.findIndex(
@@ -1073,13 +1073,13 @@ router.put("/cookware", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        cookware: JSON.stringify(currentCookware),
+        cookware: currentCookware,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          cookware: JSON.stringify(currentCookware),
+          cookware: currentCookware,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -1131,7 +1131,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
 
     let currentCookware: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = JSON.parse(existingSyncData[0].cookware);
+      currentCookware = (existingSyncData[0].cookware as any[]) || [];
     }
 
     currentCookware = currentCookware.filter(
@@ -1141,7 +1141,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        cookware: JSON.stringify(currentCookware),
+        cookware: currentCookware,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -1193,7 +1193,7 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
 
     let currentShoppingList: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
     }
 
     if (operation === "create") {
@@ -1216,13 +1216,13 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        shoppingList: JSON.stringify(currentShoppingList),
+        shoppingList: currentShoppingList,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          shoppingList: JSON.stringify(currentShoppingList),
+          shoppingList: currentShoppingList,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -1275,7 +1275,7 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
 
     let currentShoppingList: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
     }
 
     const index = currentShoppingList.findIndex(
@@ -1309,13 +1309,13 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
     if (existingSyncData.length === 0) {
       await db.insert(userSyncData).values({
         userId: session.userId,
-        shoppingList: JSON.stringify(currentShoppingList),
+        shoppingList: currentShoppingList,
       });
     } else {
       await db
         .update(userSyncData)
         .set({
-          shoppingList: JSON.stringify(currentShoppingList),
+          shoppingList: currentShoppingList,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -1367,7 +1367,7 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
 
     let currentShoppingList: unknown[] = [];
     if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = JSON.parse(existingSyncData[0].shoppingList);
+      currentShoppingList = (existingSyncData[0].shoppingList as any[]) || [];
     }
 
     currentShoppingList = currentShoppingList.filter(
@@ -1377,7 +1377,7 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
     await db
       .update(userSyncData)
       .set({
-        shoppingList: JSON.stringify(currentShoppingList),
+        shoppingList: currentShoppingList,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })

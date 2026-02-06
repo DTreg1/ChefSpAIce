@@ -394,14 +394,14 @@ export async function getUserSyncData(userId: string) {
 
   const data = existingSyncData[0];
   return {
-    inventory: data.inventory ? JSON.parse(data.inventory) : [],
-    recipes: data.recipes ? JSON.parse(data.recipes) : [],
-    mealPlans: data.mealPlans ? JSON.parse(data.mealPlans) : [],
-    shoppingList: data.shoppingList ? JSON.parse(data.shoppingList) : [],
-    wasteLog: data.wasteLog ? JSON.parse(data.wasteLog) : [],
-    consumedLog: data.consumedLog ? JSON.parse(data.consumedLog) : [],
-    preferences: data.preferences ? JSON.parse(data.preferences) : null,
-    cookware: data.cookware ? JSON.parse(data.cookware) : []
+    inventory: (data.inventory as any[]) || [],
+    recipes: (data.recipes as any[]) || [],
+    mealPlans: (data.mealPlans as any[]) || [],
+    shoppingList: (data.shoppingList as any[]) || [],
+    wasteLog: (data.wasteLog as any[]) || [],
+    consumedLog: (data.consumedLog as any[]) || [],
+    preferences: data.preferences || null,
+    cookware: (data.cookware as any[]) || []
   };
 }
 
@@ -417,7 +417,7 @@ async function updateUserSyncData(userId: string, updates: Record<string, unknow
   };
 
   for (const [key, value] of Object.entries(updates)) {
-    updatePayload[key] = JSON.stringify(value);
+    updatePayload[key] = value;
   }
 
   if (existingSyncData.length === 0) {
