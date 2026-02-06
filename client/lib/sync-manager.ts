@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppState, AppStateStatus } from "react-native";
+import { Alert, AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
 
@@ -52,6 +52,7 @@ class SyncManager {
   private pendingPreferences: unknown = null;
   private userProfileSyncTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingUserProfile: unknown = null;
+  private consecutiveItemFailures = new Map<string, number>();
 
   constructor() {
     this.initNetworkListener();
@@ -347,6 +348,8 @@ class SyncManager {
       try {
         await this.syncItem(item, token);
         processedIds.add(item.id);
+        const successKey = `${item.dataType}:${(item.data as { id?: string })?.id || "unknown"}`;
+        this.consecutiveItemFailures.delete(successKey);
       } catch (error) {
         const syncError = error as {
           statusCode?: number;
@@ -358,14 +361,18 @@ class SyncManager {
         const isConflict = syncError.isConflict === true;
         const errorMessage = syncError.message || "Unknown sync error";
 
-        console.error(`Sync failed for ${item.dataType}:`, error);
+        logger.error(`[Sync] Failed for ${item.dataType}`, { error: errorMessage, itemId: (item.data as { id?: string })?.id, statusCode });
+
+        const itemKey = `${item.dataType}:${(item.data as { id?: string })?.id || "unknown"}`;
+        const prevFailures = this.consecutiveItemFailures.get(itemKey) || 0;
+        this.consecutiveItemFailures.set(itemKey, prevFailures + 1);
+
+        if (prevFailures + 1 >= 3 && !item.isFatal) {
+          this.notifySyncFailure(item.dataType, (item.data as { name?: string })?.name || (item.data as { title?: string })?.title || itemKey);
+        }
 
         if (isConflict) {
-          console.warn(
-            `[SyncManager] Conflict detected - server has newer version:`,
-            item.dataType,
-            (item.data as { id?: string })?.id,
-          );
+          logger.warn("[Sync] Conflict detected - server has newer version", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id });
           failedItems.push({
             ...item,
             isFatal: true,
@@ -374,11 +381,7 @@ class SyncManager {
             retryCount: item.retryCount + 1,
           });
         } else if (is4xxError || item.retryCount >= maxRetries) {
-          console.warn(
-            `[SyncManager] Marking item as fatal after ${item.retryCount} retries (status: ${statusCode}):`,
-            item.dataType,
-            (item.data as { id?: string })?.id,
-          );
+          logger.warn("[Sync] Marking item as fatal", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id, retryCount: item.retryCount, statusCode });
           failedItems.push({
             ...item,
             isFatal: true,
@@ -624,7 +627,7 @@ class SyncManager {
         logger.log("[Sync] Preferences synced successfully");
       } else {
         this.markRequestFailure();
-        console.error("[Sync] Failed to sync preferences:", response.status);
+        logger.error("[Sync] Failed to sync preferences", { status: response.status });
         if (response.status >= 500) {
           this.pendingPreferences = preferences;
           this.preferencesSyncTimer = setTimeout(() => {
@@ -634,7 +637,7 @@ class SyncManager {
       }
     } catch (error) {
       this.markRequestFailure();
-      console.error("[Sync] Network error syncing preferences:", error);
+      logger.error("[Sync] Network error syncing preferences", { error: (error as Error).message });
       this.pendingPreferences = preferences;
       this.preferencesSyncTimer = setTimeout(() => {
         this.flushPreferencesSync();
@@ -690,7 +693,7 @@ class SyncManager {
         logger.log("[Sync] UserProfile synced successfully");
       } else {
         this.markRequestFailure();
-        console.error("[Sync] Failed to sync userProfile:", response.status);
+        logger.error("[Sync] Failed to sync userProfile", { status: response.status });
         if (response.status >= 500) {
           this.pendingUserProfile = userProfile;
           this.userProfileSyncTimer = setTimeout(() => {
@@ -700,11 +703,30 @@ class SyncManager {
       }
     } catch (error) {
       this.markRequestFailure();
-      console.error("[Sync] Network error syncing userProfile:", error);
+      logger.error("[Sync] Network error syncing userProfile", { error: (error as Error).message });
       this.pendingUserProfile = userProfile;
       this.userProfileSyncTimer = setTimeout(() => {
         this.flushUserProfileSync();
       }, 5000);
+    }
+  }
+
+  private notifySyncFailure(dataType: string, itemName: string) {
+    const title = "Sync Issue";
+    const message = `We're having trouble syncing your ${dataType} item "${itemName}". Please check your connection and try again.`;
+    try {
+      Alert.alert(title, message, [
+        { text: "Dismiss", style: "cancel" },
+        {
+          text: "Retry Now",
+          onPress: () => {
+            this.consecutiveItemFailures.clear();
+            this.processSyncQueue();
+          },
+        },
+      ]);
+    } catch {
+      logger.warn("[Sync] Could not show sync failure alert", { dataType, itemName });
     }
   }
 

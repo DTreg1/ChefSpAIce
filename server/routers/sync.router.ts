@@ -5,6 +5,27 @@ import { db } from "../db";
 import { userSessions, userSyncData } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
+import { logger } from "../lib/logger";
+
+interface SyncFailureRecord {
+  dataType: string;
+  operation: string;
+  errorMessage: string;
+  timestamp: Date;
+}
+
+const syncFailures = new Map<string, SyncFailureRecord[]>();
+
+function recordSyncFailure(userId: string, dataType: string, operation: string, errorMessage: string) {
+  if (!syncFailures.has(userId)) {
+    syncFailures.set(userId, []);
+  }
+  const records = syncFailures.get(userId)!;
+  records.push({ dataType, operation, errorMessage, timestamp: new Date() });
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const filtered = records.filter(r => r.timestamp > oneDayAgo);
+  syncFailures.set(userId, filtered);
+}
 
 const router = Router();
 
@@ -148,6 +169,7 @@ function getAuthToken(req: Request): string | null {
 }
 
 router.post("/inventory", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -158,6 +180,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const parseResult = inventorySyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -255,12 +278,15 @@ router.post("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Inventory sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "inventory", operation: "create", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "inventory", "create", errorMessage);
     res.status(500).json({ error: "Failed to sync inventory" });
   }
 });
 
 router.put("/inventory", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -271,6 +297,7 @@ router.put("/inventory", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const updateSchema = z.object({
       data: inventoryItemSchema,
@@ -363,12 +390,15 @@ router.put("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Inventory update sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "inventory", operation: "update", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "inventory", "update", errorMessage);
     res.status(500).json({ error: "Failed to sync inventory update" });
   }
 });
 
 router.delete("/inventory", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -379,6 +409,7 @@ router.delete("/inventory", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const deleteSchema = z.object({
       data: z.object({ id: z.union([z.string(), z.number()]) }),
@@ -424,12 +455,15 @@ router.delete("/inventory", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Inventory delete sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "inventory", operation: "delete", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "inventory", "delete", errorMessage);
     res.status(500).json({ error: "Failed to sync inventory deletion" });
   }
 });
 
 router.post("/recipes", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -440,6 +474,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const parseResult = recipeSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -502,12 +537,15 @@ router.post("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Recipes sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "recipes", operation: "create", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "recipes", "create", errorMessage);
     res.status(500).json({ error: "Failed to sync recipes" });
   }
 });
 
 router.put("/recipes", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -518,6 +556,7 @@ router.put("/recipes", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const updateSchema = z.object({
       data: recipeSchema,
@@ -588,12 +627,15 @@ router.put("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Recipes update sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "recipes", operation: "update", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "recipes", "update", errorMessage);
     res.status(500).json({ error: "Failed to sync recipe update" });
   }
 });
 
 router.delete("/recipes", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -604,6 +646,7 @@ router.delete("/recipes", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const deleteSchema = z.object({
       data: z.object({ id: z.union([z.string(), z.number()]) }),
@@ -649,12 +692,15 @@ router.delete("/recipes", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Recipes delete sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "recipes", operation: "delete", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "recipes", "delete", errorMessage);
     res.status(500).json({ error: "Failed to sync recipe deletion" });
   }
 });
 
 router.post("/mealPlans", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -665,6 +711,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const parseResult = mealPlanSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -727,12 +774,15 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Meal plans sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "mealPlans", operation: "create", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "mealPlans", "create", errorMessage);
     res.status(500).json({ error: "Failed to sync meal plans" });
   }
 });
 
 router.put("/mealPlans", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -743,6 +793,7 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const updateSchema = z.object({
       data: mealPlanSchema,
@@ -813,12 +864,15 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Meal plans update sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "mealPlans", operation: "update", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "mealPlans", "update", errorMessage);
     res.status(500).json({ error: "Failed to sync meal plan update" });
   }
 });
 
 router.delete("/mealPlans", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -829,6 +883,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const deleteSchema = z.object({
       data: z.object({ id: z.union([z.string(), z.number()]) }),
@@ -874,7 +929,9 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Meal plans delete sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "mealPlans", operation: "delete", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "mealPlans", "delete", errorMessage);
     res.status(500).json({ error: "Failed to sync meal plan deletion" });
   }
 });
@@ -884,6 +941,7 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
 // =========================================================================
 
 router.post("/cookware", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -894,6 +952,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const parseResult = cookwareSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -983,12 +1042,15 @@ router.post("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Cookware sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "cookware", operation: "create", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "cookware", "create", errorMessage);
     res.status(500).json({ error: "Failed to sync cookware" });
   }
 });
 
 router.put("/cookware", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -999,6 +1061,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const updateSchema = z.object({
       data: cookwareSchema,
@@ -1093,12 +1156,15 @@ router.put("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Cookware update sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "cookware", operation: "update", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "cookware", "update", errorMessage);
     res.status(500).json({ error: "Failed to sync cookware update" });
   }
 });
 
 router.delete("/cookware", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -1109,6 +1175,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const deleteSchema = z.object({
       data: z.object({ id: z.union([z.string(), z.number()]) }),
@@ -1154,7 +1221,9 @@ router.delete("/cookware", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Cookware delete sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "cookware", operation: "delete", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "cookware", "delete", errorMessage);
     res.status(500).json({ error: "Failed to sync cookware deletion" });
   }
 });
@@ -1164,6 +1233,7 @@ router.delete("/cookware", async (req: Request, res: Response) => {
 // =========================================================================
 
 router.post("/shoppingList", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -1174,6 +1244,7 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const parseResult = shoppingListSyncRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -1236,12 +1307,15 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Shopping list sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "shoppingList", operation: "create", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "shoppingList", "create", errorMessage);
     res.status(500).json({ error: "Failed to sync shopping list" });
   }
 });
 
 router.put("/shoppingList", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -1252,6 +1326,7 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const updateSchema = z.object({
       data: shoppingListItemSchema,
@@ -1329,12 +1404,15 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Shopping list update sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "shoppingList", operation: "update", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "shoppingList", "update", errorMessage);
     res.status(500).json({ error: "Failed to sync shopping list update" });
   }
 });
 
 router.delete("/shoppingList", async (req: Request, res: Response) => {
+  let userId: string | undefined;
   try {
     const token = getAuthToken(req);
     if (!token) {
@@ -1345,6 +1423,7 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
     if (!session) {
       return res.status(401).json({ error: "Invalid or expired session" });
     }
+    userId = session.userId;
 
     const deleteSchema = z.object({
       data: z.object({ id: z.union([z.string(), z.number()]) }),
@@ -1390,8 +1469,62 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
       itemId: dataIdStr,
     });
   } catch (error) {
-    console.error("Shopping list delete sync error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Sync failed", { dataType: "shoppingList", operation: "delete", userId, error: errorMessage });
+    recordSyncFailure(userId || "unknown", "shoppingList", "delete", errorMessage);
     res.status(500).json({ error: "Failed to sync shopping list deletion" });
+  }
+});
+
+router.get("/status", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    const lastSyncedAt = existingSyncData.length > 0 && existingSyncData[0].lastSyncedAt
+      ? existingSyncData[0].lastSyncedAt.toISOString()
+      : null;
+
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const userFailures = (syncFailures.get(session.userId) || [])
+      .filter(r => r.timestamp > oneDayAgo);
+    
+    const syncData = existingSyncData.length > 0 ? existingSyncData[0] : null;
+    const isConsistent = syncData !== null && syncData.lastSyncedAt !== null;
+
+    res.json({
+      lastSyncedAt,
+      failedOperations24h: userFailures.length,
+      recentFailures: userFailures.slice(-10).map(f => ({
+        dataType: f.dataType,
+        operation: f.operation,
+        errorMessage: f.errorMessage,
+        timestamp: f.timestamp.toISOString(),
+      })),
+      isConsistent,
+      dataTypes: syncData ? {
+        inventory: Array.isArray(syncData.inventory) ? (syncData.inventory as unknown[]).length : 0,
+        recipes: Array.isArray(syncData.recipes) ? (syncData.recipes as unknown[]).length : 0,
+        mealPlans: Array.isArray(syncData.mealPlans) ? (syncData.mealPlans as unknown[]).length : 0,
+        shoppingList: Array.isArray(syncData.shoppingList) ? (syncData.shoppingList as unknown[]).length : 0,
+        cookware: Array.isArray(syncData.cookware) ? (syncData.cookware as unknown[]).length : 0,
+      } : null,
+    });
+  } catch (error) {
+    logger.error("Failed to get sync status", { error: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ error: "Failed to get sync status" });
   }
 });
 
