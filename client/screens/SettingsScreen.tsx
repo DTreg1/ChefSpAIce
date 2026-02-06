@@ -42,6 +42,8 @@ import {
   Platform,
   Linking,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -129,8 +131,6 @@ import {
   cancelAllExpirationNotifications,
 } from "@/lib/notifications";
 
-type DeleteConfirmationStep = "none" | "first" | "second";
-
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -149,7 +149,9 @@ export default function SettingsScreen() {
     macroTargets: DEFAULT_MACRO_TARGETS,
   });
   const [learnedPrefsCount, setLearnedPrefsCount] = useState(0);
-  const [deleteStep, setDeleteStep] = useState<DeleteConfirmationStep>("none");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -446,109 +448,64 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccountStep1 = () => {
-    const message =
-      "Are you sure you want to delete your account? This action is irreversible and will permanently remove all your data.";
-
-    if (Platform.OS === "web") {
-      if (window.confirm(`Delete Account?\n\n${message}`)) {
-        setDeleteStep("first");
-      }
-    } else {
-      Alert.alert("Delete Account", message, [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Continue",
-          style: "destructive",
-          onPress: () => setDeleteStep("first"),
-        },
-      ]);
-    }
+  const handleDeleteAccountPress = () => {
+    setShowDeleteModal(true);
+    setDeleteConfirmText("");
   };
 
-  const handleDeleteAccountStep2 = async () => {
-    const message =
-      "This is your final warning. Deleting your account will permanently remove:\n\n- All inventory items\n- All saved recipes\n- Meal plans\n- Chat history\n- All preferences\n\nThis cannot be undone.";
+  const handleDeleteAccountConfirm = async () => {
+    if (deleteConfirmText !== "DELETE") return;
 
-    const performDelete = async () => {
-      try {
-        // Delete from server if authenticated
-        const authToken = await storage.getAuthToken();
-        if (authToken) {
-          const baseUrl = getApiUrl();
-          const response = await fetch(`${baseUrl}/api/auth/delete-account`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            const data = await response.json();
-            throw new Error(
-              data.error || "Failed to delete account from server",
-            );
-          }
-        }
-
-        // Clear local storage
-        await storage.deleteAccount();
-        return { success: true };
-      } catch (error) {
-        console.error("Delete account error:", error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
-    };
-
-    if (Platform.OS === "web") {
-      if (window.confirm(`Final Confirmation\n\n${message}`)) {
-        const result = await performDelete();
-        if (result.success) {
-          window.alert(
-            "Your account has been deleted. The app will now restart.",
-          );
-          window.location.reload();
-        } else {
-          window.alert(`Failed to delete account: ${result.error}`);
-          setDeleteStep("none");
-        }
-      } else {
-        setDeleteStep("none");
-      }
-    } else {
-      Alert.alert("Final Confirmation", message, [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => setDeleteStep("none"),
-        },
-        {
-          text: "Delete Permanently",
-          style: "destructive",
-          onPress: async () => {
-            const result = await performDelete();
-            if (result.success) {
-              Alert.alert(
-                "Account Deleted",
-                "Your account has been deleted. The app will now restart.",
-                [{ text: "OK", onPress: () => reloadAppAsync() }],
-              );
-            } else {
-              Alert.alert("Error", `Failed to delete account: ${result.error}`);
-              setDeleteStep("none");
-            }
+    setIsDeleting(true);
+    try {
+      const authToken = await storage.getAuthToken();
+      if (authToken && user?.email) {
+        const baseUrl = getApiUrl();
+        const response = await fetch(`${baseUrl}/api/auth/account`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
           },
-        },
-      ]);
+          body: JSON.stringify({ email: user.email }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to delete account");
+        }
+      }
+
+      await storage.deleteAccount();
+
+      setShowDeleteModal(false);
+      setIsDeleting(false);
+
+      if (Platform.OS === "web") {
+        window.alert("Your account has been permanently deleted. The app will now restart.");
+        window.location.reload();
+      } else {
+        Alert.alert(
+          "Account Deleted",
+          "Your account has been permanently deleted. The app will now restart.",
+          [{ text: "OK", onPress: () => reloadAppAsync() }]
+        );
+      }
+    } catch (error) {
+      setIsDeleting(false);
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      if (Platform.OS === "web") {
+        window.alert(`Failed to delete account: ${msg}`);
+      } else {
+        Alert.alert("Error", `Failed to delete account: ${msg}`);
+      }
     }
   };
 
   const handleCancelDelete = () => {
-    setDeleteStep("none");
+    setShowDeleteModal(false);
+    setDeleteConfirmText("");
+    setIsDeleting(false);
   };
 
   const handleExportData = async () => {
@@ -1472,121 +1429,177 @@ export default function SettingsScreen() {
             </>
           ) : null}
 
-          {deleteStep === "none" ? (
-            <>
-              <Pressable
-                style={[
-                  styles.dangerMenuItem,
-                  { borderColor: theme.glass.border },
-                ]}
-                onPress={handleClearData}
-              >
-                <View style={styles.dangerMenuIcon}>
-                  <Feather name="trash-2" size={18} color={AppColors.warning} />
-                </View>
-                <View style={styles.dangerMenuText}>
-                  <ThemedText type="body">Clear All Data</ThemedText>
-                  <ThemedText type="caption">
-                    Remove inventory, recipes, meal plans, and chat history
-                  </ThemedText>
-                </View>
-              </Pressable>
+          <View style={{ marginTop: 16 }}>
+            <ThemedText type="body" style={{ color: AppColors.error, fontWeight: "600", marginBottom: 8 }}>
+              Danger Zone
+            </ThemedText>
+          </View>
 
-              <Pressable
-                style={[
-                  styles.dangerMenuItem,
-                  { borderColor: theme.glass.border },
-                ]}
-                onPress={handleDeleteAccountStep1}
-              >
-                <View style={styles.dangerMenuIcon}>
-                  <Feather name="user-x" size={18} color={AppColors.error} />
-                </View>
-                <View style={styles.dangerMenuText}>
-                  <ThemedText type="body" style={{ color: AppColors.error }}>
-                    Delete Account
-                  </ThemedText>
-                  <ThemedText type="caption">
-                    Permanently remove your account and all data
-                  </ThemedText>
-                </View>
-              </Pressable>
+          <Pressable
+            style={[
+              styles.dangerMenuItem,
+              { borderColor: theme.glass.border },
+            ]}
+            onPress={handleClearData}
+          >
+            <View style={styles.dangerMenuIcon}>
+              <Feather name="trash-2" size={18} color={AppColors.warning} />
+            </View>
+            <View style={styles.dangerMenuText}>
+              <ThemedText type="body">Clear All Data</ThemedText>
+              <ThemedText type="caption">
+                Remove inventory, recipes, meal plans, and chat history
+              </ThemedText>
+            </View>
+          </Pressable>
 
-              {__DEV__ ? (
-                <Pressable
-                  style={[
-                    styles.dangerMenuItem,
-                    { borderColor: theme.glass.border },
-                  ]}
-                  onPress={handleResetForTesting}
-                  testID="button-reset-for-testing"
-                  accessibilityRole="button"
-                  accessibilityLabel="Reset app for testing"
-                  accessibilityHint="Signs out and resets the app to experience it as a new user"
-                >
-                  <View style={styles.dangerMenuIcon}>
-                    <Feather
-                      name="refresh-cw"
-                      size={18}
-                      color={theme.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.dangerMenuText}>
-                    <ThemedText type="body">Reset App (For Testing)</ThemedText>
-                    <ThemedText type="caption">
-                      Sign out and reset to test as a new user
-                    </ThemedText>
-                  </View>
-                </Pressable>
-              ) : null}
-            </>
-          ) : (
-            <View style={styles.deleteConfirmContainer}>
-              <View
-                style={[
-                  styles.warningBanner,
-                  { backgroundColor: `${AppColors.error}15` },
-                ]}
-              >
+          <Pressable
+            style={[
+              styles.dangerMenuItem,
+              { borderColor: AppColors.error, borderWidth: 1 },
+            ]}
+            onPress={handleDeleteAccountPress}
+            accessibilityRole="button"
+            accessibilityLabel="Delete my account permanently"
+            data-testid="button-delete-account"
+          >
+            <View style={styles.dangerMenuIcon}>
+              <Feather name="user-x" size={18} color={AppColors.error} />
+            </View>
+            <View style={styles.dangerMenuText}>
+              <ThemedText type="body" style={{ color: AppColors.error }}>
+                Delete My Account
+              </ThemedText>
+              <ThemedText type="caption">
+                Permanently remove your account and all data
+              </ThemedText>
+            </View>
+          </Pressable>
+
+          {__DEV__ ? (
+            <Pressable
+              style={[
+                styles.dangerMenuItem,
+                { borderColor: theme.glass.border },
+              ]}
+              onPress={handleResetForTesting}
+              testID="button-reset-for-testing"
+              accessibilityRole="button"
+              accessibilityLabel="Reset app for testing"
+              accessibilityHint="Signs out and resets the app to experience it as a new user"
+            >
+              <View style={styles.dangerMenuIcon}>
                 <Feather
-                  name="alert-triangle"
-                  size={24}
-                  color={AppColors.error}
+                  name="refresh-cw"
+                  size={18}
+                  color={theme.textSecondary}
                 />
-                <ThemedText
-                  type="body"
-                  style={{ color: AppColors.error, fontWeight: "600" }}
-                >
-                  Delete Account Confirmation
+              </View>
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body">Reset App (For Testing)</ThemedText>
+                <ThemedText type="caption">
+                  Sign out and reset to test as a new user
                 </ThemedText>
               </View>
+            </Pressable>
+          ) : null}
 
-              <ThemedText type="body" style={styles.deleteWarningText}>
-                This will permanently delete your account and all data including
-                inventory, recipes, meal plans, and preferences.
-              </ThemedText>
-
-              <View style={styles.deleteButtonRow}>
-                <GlassButton
-                  variant="outline"
-                  onPress={handleCancelDelete}
-                  style={styles.cancelDeleteButton}
-                >
-                  <ThemedText>Cancel</ThemedText>
-                </GlassButton>
-                <GlassButton
-                  variant="primary"
-                  onPress={handleDeleteAccountStep2}
-                  style={styles.confirmDeleteButton}
-                  icon={<Feather name="trash-2" size={16} color="#FFFFFF" />}
-                >
-                  <ThemedText style={{ color: "#FFFFFF" }}>
-                    Confirm Delete
+          <Modal
+            visible={showDeleteModal}
+            transparent
+            animationType="fade"
+            onRequestClose={handleCancelDelete}
+          >
+            <View style={styles.deleteModalOverlay}>
+              <View style={[styles.deleteModalContent, { backgroundColor: theme.glass.background }]}>
+                <View style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
+                  <Feather name="alert-triangle" size={24} color={AppColors.error} />
+                  <ThemedText type="body" style={{ color: AppColors.error, fontWeight: "600" }}>
+                    Delete Account
                   </ThemedText>
-                </GlassButton>
+                </View>
+
+                <ThemedText type="body" style={styles.deleteWarningText}>
+                  This action is permanent and cannot be undone. Deleting your account will remove:
+                </ThemedText>
+
+                <View style={{ paddingHorizontal: 4, marginBottom: 12 }}>
+                  <ThemedText type="caption" style={{ marginBottom: 4 }}>
+                    {"\u2022"} All inventory and pantry items
+                  </ThemedText>
+                  <ThemedText type="caption" style={{ marginBottom: 4 }}>
+                    {"\u2022"} All saved recipes and generated images
+                  </ThemedText>
+                  <ThemedText type="caption" style={{ marginBottom: 4 }}>
+                    {"\u2022"} Meal plans and shopping lists
+                  </ThemedText>
+                  <ThemedText type="caption" style={{ marginBottom: 4 }}>
+                    {"\u2022"} Chat history and preferences
+                  </ThemedText>
+                  <ThemedText type="caption" style={{ marginBottom: 4 }}>
+                    {"\u2022"} Your subscription and payment data
+                  </ThemedText>
+                  <ThemedText type="caption">
+                    {"\u2022"} Cookware and all other account data
+                  </ThemedText>
+                </View>
+
+                <ThemedText type="body" style={{ fontWeight: "600", marginBottom: 8 }}>
+                  Type DELETE to confirm:
+                </ThemedText>
+
+                <TextInput
+                  style={[
+                    styles.deleteConfirmInput,
+                    {
+                      color: theme.text,
+                      borderColor: deleteConfirmText === "DELETE" ? AppColors.error : theme.glass.border,
+                      backgroundColor: theme.glass.background,
+                    },
+                  ]}
+                  value={deleteConfirmText}
+                  onChangeText={setDeleteConfirmText}
+                  placeholder="Type DELETE here"
+                  placeholderTextColor={theme.textSecondary}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!isDeleting}
+                  data-testid="input-delete-confirm"
+                />
+
+                <View style={styles.deleteButtonRow}>
+                  <GlassButton
+                    variant="outline"
+                    onPress={handleCancelDelete}
+                    style={styles.cancelDeleteButton}
+                    disabled={isDeleting}
+                  >
+                    <ThemedText>Cancel</ThemedText>
+                  </GlassButton>
+                  <GlassButton
+                    variant="primary"
+                    onPress={handleDeleteAccountConfirm}
+                    style={[
+                      styles.confirmDeleteButton,
+                      { opacity: deleteConfirmText === "DELETE" && !isDeleting ? 1 : 0.5 },
+                    ]}
+                    disabled={deleteConfirmText !== "DELETE" || isDeleting}
+                    icon={
+                      isDeleting ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Feather name="trash-2" size={16} color="#FFFFFF" />
+                      )
+                    }
+                  >
+                    <ThemedText style={{ color: "#FFFFFF" }}>
+                      {isDeleting ? "Deleting..." : "Delete Permanently"}
+                    </ThemedText>
+                  </GlassButton>
+                </View>
               </View>
             </View>
-          )}
+          </Modal>
         </GlassCard>
 
         <View style={styles.footer}>
@@ -1868,6 +1881,29 @@ const styles = StyleSheet.create({
   legalMenuText: {
     flex: 1,
     gap: 2,
+  },
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  deleteModalContent: {
+    width: "100%" as any,
+    maxWidth: 420,
+    borderRadius: 16,
+    padding: 20,
+  },
+  deleteConfirmInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    letterSpacing: 2,
+    textAlign: "center" as const,
+    marginBottom: 16,
   },
   deleteConfirmContainer: {
     gap: Spacing.md,

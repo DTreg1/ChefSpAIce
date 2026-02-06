@@ -1,12 +1,15 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances } from "@shared/schema";
+import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
 import { csrfProtection, generateCsrfToken } from "../middleware/csrf";
+import { requireAuth } from "../middleware/auth";
+import { getUncachableStripeClient } from "../stripe/stripeClient";
+import { deleteRecipeImage } from "../services/objectStorageService";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -1006,6 +1009,141 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     console.error(`[DeleteAccount] Error:`, error);
     res.status(500).json({ 
       error: "Failed to delete account. Please try again or contact support." 
+    });
+  }
+});
+
+router.delete("/account", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email confirmation is required to delete your account." });
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.email.toLowerCase() !== email.toLowerCase()) {
+      return res.status(400).json({ error: "Email does not match your account email. Please confirm with the correct email address." });
+    }
+
+    if (user.email === DEMO_EMAIL) {
+      return res.status(403).json({
+        error: "Demo account cannot be deleted. This account is used for App Store review purposes."
+      });
+    }
+
+    console.log(`[DeleteAccount] Starting account deletion for user: ${userId} (${user.email})`);
+
+    try {
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
+
+      if (subscription?.stripeSubscriptionId) {
+        const stripe = await getUncachableStripeClient();
+        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+        console.log(`[DeleteAccount] Cancelled Stripe subscription: ${subscription.stripeSubscriptionId}`);
+      }
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error cancelling Stripe subscription:`, e);
+    }
+
+    try {
+      const [syncData] = await db
+        .select()
+        .from(userSyncData)
+        .where(eq(userSyncData.userId, userId))
+        .limit(1);
+
+      if (syncData?.recipes) {
+        const recipes = Array.isArray(syncData.recipes) ? syncData.recipes : JSON.parse(String(syncData.recipes));
+        if (Array.isArray(recipes)) {
+          for (const recipe of recipes) {
+            if (recipe && typeof recipe === "object" && "id" in recipe) {
+              try {
+                await deleteRecipeImage(String(recipe.id));
+              } catch (imgErr) {
+                console.warn(`[DeleteAccount] Error deleting recipe image ${recipe.id}:`, imgErr);
+              }
+            }
+          }
+          console.log(`[DeleteAccount] Processed ${recipes.length} recipe images for deletion`);
+        }
+      }
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting recipe images:`, e);
+    }
+
+    try {
+      await db.delete(feedback).where(eq(feedback.userId, userId));
+      console.log(`[DeleteAccount] Deleted feedback`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting feedback:`, e);
+    }
+
+    try {
+      await db.delete(authProviders).where(eq(authProviders.userId, userId));
+      console.log(`[DeleteAccount] Deleted auth providers`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting auth providers:`, e);
+    }
+
+    try {
+      await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
+      console.log(`[DeleteAccount] Deleted user appliances`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting appliances:`, e);
+    }
+
+    try {
+      await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+      console.log(`[DeleteAccount] Deleted subscriptions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting subscriptions:`, e);
+    }
+
+    try {
+      await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
+      console.log(`[DeleteAccount] Deleted sync data`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sync data:`, e);
+    }
+
+    try {
+      await db.delete(userSessions).where(eq(userSessions.userId, userId));
+      console.log(`[DeleteAccount] Deleted sessions`);
+    } catch (e) {
+      console.warn(`[DeleteAccount] Error deleting sessions:`, e);
+    }
+
+    await db.delete(users).where(eq(users.id, userId));
+    console.log(`[DeleteAccount] Deleted user record`);
+
+    clearAuthCookie(res);
+
+    console.log(`[DeleteAccount] User ${userId} account deleted successfully`);
+
+    res.json({
+      success: true,
+      message: "Your account and all associated data have been permanently deleted."
+    });
+
+  } catch (error) {
+    console.error(`[DeleteAccount] Error:`, error);
+    res.status(500).json({
+      error: "Failed to delete account. Please try again or contact support."
     });
   }
 });
