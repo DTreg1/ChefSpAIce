@@ -3,15 +3,27 @@ import { db } from "../../db";
 import {
   appliances,
   userAppliances,
+  userSyncData,
   type Appliance,
   type UserAppliance,
 } from "@shared/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../../middleware/auth";
 import { logger } from "../../lib/logger";
 
 export const appliancesRouter = Router();
 export const userAppliancesRouter = Router();
+
+async function updateCookwareSectionTimestamp(userId: string) {
+  const now = new Date().toISOString();
+  await db
+    .update(userSyncData)
+    .set({
+      updatedAt: new Date(),
+      sectionUpdatedAt: sql`COALESCE("section_updated_at", '{}'::jsonb) || ${JSON.stringify({ cookware: now })}::jsonb`,
+    })
+    .where(eq(userSyncData.userId, userId));
+}
 
 // Apply auth middleware to all user appliances routes - all users must authenticate
 userAppliancesRouter.use(requireAuth);
@@ -739,6 +751,8 @@ userAppliancesRouter.post("/", async (req: Request, res: Response) => {
       })
       .returning();
 
+    await updateCookwareSectionTimestamp(userId);
+
     res
       .status(201)
       .json(formatUserApplianceResponse({ ...created, appliance }));
@@ -775,6 +789,8 @@ userAppliancesRouter.delete(
           .status(404)
           .json({ error: "Appliance not found in user's kitchen" });
       }
+
+      await updateCookwareSectionTimestamp(userId);
 
       res.json({ success: true, message: "Appliance removed from kitchen" });
     } catch (error) {
@@ -842,6 +858,10 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response) => {
 
         await db.insert(userAppliances).values(valuesToInsert);
       }
+    }
+
+    if (toAdd.length > 0 || toRemove.length > 0) {
+      await updateCookwareSectionTimestamp(userId);
     }
 
     res.json({

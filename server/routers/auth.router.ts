@@ -461,12 +461,59 @@ router.get("/sync", async (req: Request, res: Response) => {
       .where(eq(userAppliances.userId, session.userId));
     
     const cookwareIds = userCookware.map(ua => ua.applianceId);
+    const serverTimestamp = new Date().toISOString();
+    
+    const clientLastSyncedAt = req.query.lastSyncedAt as string | undefined;
 
     if (!syncData) {
       return res.json({ 
         data: { cookware: cookwareIds }, 
-        lastSyncedAt: null 
+        lastSyncedAt: null,
+        serverTimestamp,
       });
+    }
+
+    if (clientLastSyncedAt) {
+      const clientTime = new Date(clientLastSyncedAt);
+      if (isNaN(clientTime.getTime())) {
+        logger.warn("Invalid lastSyncedAt value, falling through to full sync", { lastSyncedAt: clientLastSyncedAt, userId: session.userId });
+      } else {
+      const rowUpdatedAt = syncData.updatedAt ? new Date(syncData.updatedAt) : null;
+      
+      if (rowUpdatedAt && rowUpdatedAt <= clientTime) {
+        return res.json({
+          data: null,
+          unchanged: true,
+          serverTimestamp,
+          lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
+        });
+      }
+      
+      const sectionTimestamps = (syncData.sectionUpdatedAt as Record<string, string>) || {};
+      const deltaData: Record<string, unknown> = {};
+      
+      const sections = [
+        "inventory", "recipes", "mealPlans", "shoppingList", 
+        "preferences", "wasteLog", "consumedLog", "analytics",
+        "onboarding", "customLocations", "userProfile"
+      ] as const;
+      
+      for (const section of sections) {
+        const sectionTime = sectionTimestamps[section];
+        if (sectionTime && new Date(sectionTime) > clientTime) {
+          deltaData[section] = syncData[section] ?? null;
+        }
+      }
+      
+      deltaData.cookware = cookwareIds;
+      
+      return res.json({
+        data: deltaData,
+        delta: true,
+        serverTimestamp,
+        lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
+      });
+      }
     }
 
     res.json({
@@ -485,6 +532,7 @@ router.get("/sync", async (req: Request, res: Response) => {
         userProfile: syncData.userProfile ?? null,
       },
       lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
+      serverTimestamp,
     });
   } catch (error) {
     logger.error("Sync fetch error", { error: error instanceof Error ? error.message : String(error) });
@@ -590,6 +638,16 @@ router.post("/sync", async (req: Request, res: Response) => {
       }
     }
 
+    const [existingSyncForTimestamps] = await db
+      .select({ sectionUpdatedAt: userSyncData.sectionUpdatedAt })
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId))
+      .limit(1);
+    
+    const currentSectionTimestamps = (existingSyncForTimestamps?.sectionUpdatedAt as Record<string, string>) || {};
+    const updatedSectionTimestamps = { ...currentSectionTimestamps };
+    const now = new Date().toISOString();
+
     const syncUpdate: Record<string, unknown> = {
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
@@ -597,15 +655,19 @@ router.post("/sync", async (req: Request, res: Response) => {
 
     if (data.inventory !== undefined) {
       syncUpdate.inventory = data.inventory ?? null;
+      updatedSectionTimestamps.inventory = now;
     }
     if (data.recipes !== undefined) {
       syncUpdate.recipes = data.recipes ?? null;
+      updatedSectionTimestamps.recipes = now;
     }
     if (data.mealPlans !== undefined) {
       syncUpdate.mealPlans = data.mealPlans ?? null;
+      updatedSectionTimestamps.mealPlans = now;
     }
     if (data.shoppingList !== undefined) {
       syncUpdate.shoppingList = data.shoppingList ?? null;
+      updatedSectionTimestamps.shoppingList = now;
     }
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
       // Sync cookware to userAppliances table (source of truth)
@@ -645,27 +707,39 @@ router.post("/sync", async (req: Request, res: Response) => {
           .onConflictDoNothing();
       }
     }
+    if (data.cookware !== undefined) {
+      updatedSectionTimestamps.cookware = now;
+    }
     if (data.wasteLog !== undefined) {
       syncUpdate.wasteLog = data.wasteLog ?? null;
+      updatedSectionTimestamps.wasteLog = now;
     }
     if (data.consumedLog !== undefined) {
       syncUpdate.consumedLog = data.consumedLog ?? null;
+      updatedSectionTimestamps.consumedLog = now;
     }
     if (data.analytics !== undefined) {
       syncUpdate.analytics = data.analytics ?? null;
+      updatedSectionTimestamps.analytics = now;
     }
     if (data.onboarding !== undefined) {
       syncUpdate.onboarding = data.onboarding ?? null;
+      updatedSectionTimestamps.onboarding = now;
     }
     if (data.customLocations !== undefined) {
       syncUpdate.customLocations = data.customLocations ?? null;
+      updatedSectionTimestamps.customLocations = now;
     }
     if (data.userProfile !== undefined) {
       syncUpdate.userProfile = data.userProfile ?? null;
+      updatedSectionTimestamps.userProfile = now;
     }
     if (validatedPreferences !== undefined) {
       syncUpdate.preferences = validatedPreferences;
+      updatedSectionTimestamps.preferences = now;
     }
+
+    syncUpdate.sectionUpdatedAt = updatedSectionTimestamps;
 
     await db
       .update(userSyncData)

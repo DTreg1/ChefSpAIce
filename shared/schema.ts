@@ -267,6 +267,7 @@ export const userSyncData = pgTable("user_sync_data", {
   onboarding: jsonb("onboarding"),
   customLocations: jsonb("custom_locations"),
   userProfile: jsonb("user_profile"),
+  sectionUpdatedAt: jsonb("section_updated_at"),
   lastSyncedAt: timestamp("last_synced_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

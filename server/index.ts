@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import compression from "compression";
 import fileUpload from "express-fileupload";
 import cookieParser from "cookie-parser";
 import { createProxyMiddleware } from "http-proxy-middleware";
@@ -405,6 +406,17 @@ async function initStripe(retries = 3, delay = 2000) {
 
 
   setupCors(app);
+
+  app.use(compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }));
 
   // Register webhook route before body parsing so Stripe receives the raw,
   // unmodified body for signature verification. 5 MB limit accommodates large

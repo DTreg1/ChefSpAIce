@@ -7,6 +7,7 @@ const SYNC_KEYS = {
   SYNC_QUEUE: "@chefspaice/sync_queue",
   LAST_SYNC: "@chefspaice/last_sync",
   SYNC_STATUS: "@chefspaice/sync_status",
+  SERVER_TIMESTAMP: "@chefspaice/server_timestamp",
 } as const;
 
 type SyncOperation = "create" | "update" | "delete";
@@ -497,7 +498,6 @@ class SyncManager {
   }
 
   async fullSync(): Promise<{ success: boolean; error?: string }> {
-    // Don't block on offline status - try anyway and let the request determine connectivity
     const token = await this.getAuthToken();
     if (!token) {
       return { success: false, error: "Not authenticated" };
@@ -511,6 +511,11 @@ class SyncManager {
 
       const baseUrl = getApiUrl();
       const url = new URL("/api/auth/sync", baseUrl);
+
+      const lastServerTimestamp = await AsyncStorage.getItem(SYNC_KEYS.SERVER_TIMESTAMP);
+      if (lastServerTimestamp) {
+        url.searchParams.set("lastSyncedAt", lastServerTimestamp);
+      }
 
       let response: Response;
       try {
@@ -532,7 +537,20 @@ class SyncManager {
         throw new Error("Failed to fetch from server");
       }
 
-      const { data } = await response.json();
+      const result = await response.json();
+
+      if (result.serverTimestamp) {
+        await AsyncStorage.setItem(SYNC_KEYS.SERVER_TIMESTAMP, result.serverTimestamp);
+      }
+
+      if (result.unchanged) {
+        logger.log("[Sync] No changes since last sync");
+        this.isSyncing = false;
+        this.notifyListeners();
+        return { success: true };
+      }
+
+      const { data } = result;
 
       if (data) {
         if (data.inventory) {

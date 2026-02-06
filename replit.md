@@ -43,3 +43,14 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 - AI recipe limit checking in `subscriptionService.ts` accounts for bonus credits
 - "Refer a Friend" section added to SettingsScreen with code display, copy/share buttons, and referral stats
 - Router: `server/routers/referral.router.ts`, registered in `server/routes.ts`
+
+### Performance Optimization (Feb 2026)
+- **Structured Logging**: Migrated 270+ console.log/error/warn calls to structured `logger` (server/lib/logger.ts) across ~40 server files. Uses JSON output in production with context objects.
+- **Response Compression**: Added gzip/brotli compression middleware (compression package) in server/index.ts after CORS. Level 6, 1KB threshold, skippable via `x-no-compression` header.
+- **Database Pool**: Increased PostgreSQL connection pool from 10 to 20 max connections in server/db.ts for better concurrency.
+- **Delta Sync**: Added section-level delta sync to reduce API payload sizes:
+  - Schema: Added `sectionUpdatedAt` jsonb column to `user_sync_data` table tracking per-section timestamps
+  - Migration: `migrations/0002_delta_sync.sql`
+  - Server (GET /api/auth/sync): Accepts optional `?lastSyncedAt=ISO` query param. Returns `unchanged: true` if nothing changed, or only changed sections with `delta: true`. Always includes `serverTimestamp`.
+  - Server (sync write operations): All POST/PUT/DELETE handlers in sync.router.ts and auth.router.ts update `sectionUpdatedAt` for their respective sections.
+  - Client (client/lib/sync-manager.ts): Stores `serverTimestamp` in AsyncStorage, sends it as `lastSyncedAt` on next fullSync(). Handles `unchanged` responses by skipping data writes.

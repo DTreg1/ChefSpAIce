@@ -265,6 +265,7 @@ router.post("/inventory", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         inventory: currentInventory,
+        sectionUpdatedAt: { inventory: new Date().toISOString() },
       });
     } else {
       await db
@@ -273,6 +274,10 @@ router.post("/inventory", async (req: Request, res: Response) => {
           inventory: currentInventory,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            inventory: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -386,6 +391,10 @@ router.put("/inventory", async (req: Request, res: Response) => {
         inventory: currentInventory,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          inventory: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -451,6 +460,10 @@ router.delete("/inventory", async (req: Request, res: Response) => {
         inventory: currentInventory,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          inventory: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -524,6 +537,7 @@ router.post("/recipes", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         recipes: currentRecipes,
+        sectionUpdatedAt: { recipes: new Date().toISOString() },
       });
     } else {
       await db
@@ -532,6 +546,10 @@ router.post("/recipes", async (req: Request, res: Response) => {
           recipes: currentRecipes,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            recipes: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -623,6 +641,10 @@ router.put("/recipes", async (req: Request, res: Response) => {
         recipes: currentRecipes,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          recipes: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -688,6 +710,10 @@ router.delete("/recipes", async (req: Request, res: Response) => {
         recipes: currentRecipes,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          recipes: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -761,6 +787,7 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         mealPlans: currentMealPlans,
+        sectionUpdatedAt: { mealPlans: new Date().toISOString() },
       });
     } else {
       await db
@@ -769,6 +796,10 @@ router.post("/mealPlans", async (req: Request, res: Response) => {
           mealPlans: currentMealPlans,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            mealPlans: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -860,6 +891,10 @@ router.put("/mealPlans", async (req: Request, res: Response) => {
         mealPlans: currentMealPlans,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          mealPlans: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -925,6 +960,10 @@ router.delete("/mealPlans", async (req: Request, res: Response) => {
         mealPlans: currentMealPlans,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          mealPlans: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -1029,6 +1068,7 @@ router.post("/cookware", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         cookware: currentCookware,
+        sectionUpdatedAt: { cookware: new Date().toISOString() },
       });
     } else {
       await db
@@ -1037,6 +1077,10 @@ router.post("/cookware", async (req: Request, res: Response) => {
           cookware: currentCookware,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            cookware: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -1143,6 +1187,7 @@ router.put("/cookware", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         cookware: currentCookware,
+        sectionUpdatedAt: { cookware: new Date().toISOString() },
       });
     } else {
       await db
@@ -1151,6 +1196,10 @@ router.put("/cookware", async (req: Request, res: Response) => {
           cookware: currentCookware,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            cookware: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -1217,6 +1266,10 @@ router.delete("/cookware", async (req: Request, res: Response) => {
         cookware: currentCookware,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          cookware: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -1294,6 +1347,7 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         shoppingList: currentShoppingList,
+        sectionUpdatedAt: { shoppingList: new Date().toISOString() },
       });
     } else {
       await db
@@ -1302,6 +1356,10 @@ router.post("/shoppingList", async (req: Request, res: Response) => {
           shoppingList: currentShoppingList,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            shoppingList: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -1391,6 +1449,7 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
       await db.insert(userSyncData).values({
         userId: session.userId,
         shoppingList: currentShoppingList,
+        sectionUpdatedAt: { shoppingList: new Date().toISOString() },
       });
     } else {
       await db
@@ -1399,6 +1458,10 @@ router.put("/shoppingList", async (req: Request, res: Response) => {
           shoppingList: currentShoppingList,
           lastSyncedAt: new Date(),
           updatedAt: new Date(),
+          sectionUpdatedAt: {
+            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+            shoppingList: new Date().toISOString(),
+          },
         })
         .where(eq(userSyncData.userId, session.userId));
     }
@@ -1465,6 +1528,10 @@ router.delete("/shoppingList", async (req: Request, res: Response) => {
         shoppingList: currentShoppingList,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
+        sectionUpdatedAt: {
+          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
+          shoppingList: new Date().toISOString(),
+        },
       })
       .where(eq(userSyncData.userId, session.userId));
 
@@ -1750,6 +1817,23 @@ router.post("/import", async (req: Request, res: Response) => {
         : existing?.userProfile || null;
     }
 
+    const now = new Date().toISOString();
+    const importSectionTimestamps: Record<string, string> = {
+      ...(existing?.sectionUpdatedAt as Record<string, string> || {}),
+      inventory: now,
+      recipes: now,
+      mealPlans: now,
+      shoppingList: now,
+      cookware: now,
+      preferences: now,
+      wasteLog: now,
+      consumedLog: now,
+      analytics: now,
+      onboarding: now,
+      customLocations: now,
+      userProfile: now,
+    };
+
     const updatePayload = {
       inventory: finalInventory,
       recipes: finalRecipes,
@@ -1763,6 +1847,7 @@ router.post("/import", async (req: Request, res: Response) => {
       onboarding: finalOnboarding,
       customLocations: finalCustomLocations,
       userProfile: finalUserProfile,
+      sectionUpdatedAt: importSectionTimestamps,
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
     };
