@@ -530,6 +530,9 @@ export default function InventoryScreen() {
                     disabled={funFactLoading}
                     style={styles.funFactRefreshButton}
                     testID="button-refresh-fun-fact"
+                    accessibilityRole="button"
+                    accessibilityLabel="Refresh fun fact"
+                    accessibilityHint="Fetches a new fun fact about your kitchen"
                   >
                     <Feather
                       name="refresh-cw"
