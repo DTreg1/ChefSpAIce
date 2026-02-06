@@ -25,6 +25,11 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 
 ## Recent Changes
 
+### Security Hardening (Feb 2026)
+- **HTTP Security Headers**: Added `helmet` middleware in `server/index.ts` with configured Content-Security-Policy (allows Stripe and OpenAI domains), Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, and X-XSS-Protection headers.
+- **Session Token Hashing**: All session tokens are now hashed with SHA-256 (`createHash("sha256")`) before storage in `user_sessions` table. Raw tokens are returned to clients; only hashed values are stored/queried. Updated across 13 files: `auth.router.ts`, `social-auth.router.ts`, `routes.ts`, `auth.ts` middleware, `requireAdmin.ts` middleware, `subscriptionRouter.ts`, `feedback.router.ts`, `sync.router.ts`, `chat.router.ts`.
+- **Note**: Deploying this change invalidates all existing sessions (users must re-login) since previously stored plain tokens won't match hashed lookups.
+
 ### Admin Analytics Dashboard (Feb 2026)
 - Created `GET /api/admin/analytics` endpoint behind `requireAdmin` middleware
   - Returns: userMetrics (total, 7d/30d new, 7d active), subscriptionBreakdown (basic/pro/trialing/active/canceled/expired), revenueMetrics (MRR, ARR, subscriber counts), aiUsage (recipes this month), topFoodItems, userGrowth (12-month history)
