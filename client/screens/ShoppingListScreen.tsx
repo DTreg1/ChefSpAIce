@@ -21,6 +21,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
+import { EmptyState } from "@/components/EmptyState";
 import { useInstacart } from "@/hooks/useInstacart";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem } from "@/lib/storage";
@@ -178,23 +179,11 @@ export default function ShoppingListScreen() {
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState} testID="container-empty-shopping" accessibilityRole="text" accessibilityLabel="Your shopping list is empty. Add missing ingredients from recipes to build your shopping list">
-      <Feather name="shopping-cart" size={64} color={theme.textSecondary} />
-      <ThemedText
-        type="h3"
-        style={styles.emptyTitle}
-        testID="text-empty-shopping-title"
-      >
-        Your list is empty
-      </ThemedText>
-      <ThemedText
-        type="body"
-        style={styles.emptySubtitle}
-        testID="text-empty-shopping-subtitle"
-      >
-        Add missing ingredients from recipes to build your shopping list
-      </ThemedText>
-    </View>
+    <EmptyState
+      icon="shopping-cart"
+      title="Your list is clear"
+      description="Add items or generate a list from a recipe!"
+    />
   );
 
   return (
@@ -356,21 +345,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: Spacing.sm,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing["4xl"],
-    paddingHorizontal: Spacing.xl,
-  },
-  emptyTitle: {
-    marginTop: Spacing.lg,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    marginTop: Spacing.sm,
-    textAlign: "center",
-    opacity: 0.7,
   },
   completedBanner: {
     flexDirection: "row",

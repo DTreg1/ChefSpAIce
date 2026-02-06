@@ -66,6 +66,7 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { NutritionBadge } from "@/components/NutritionBadge";
 import { NutritionScoreBadge } from "@/components/NutritionScoreBadge";
 import { LoadingState } from "@/components/LoadingState";
+import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -966,33 +967,13 @@ export default function InventoryScreen() {
     }
 
     return (
-      <View style={styles.emptyState} testID="container-empty-inventory" accessibilityRole="text" accessibilityLabel="Your pantry is empty. Tap the plus button to add your first item">
-        <View
-          style={[
-            styles.emptyIconContainer,
-            {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
-            },
-          ]}
-        >
-          <Feather name="inbox" size={48} color={theme.textSecondary} />
-        </View>
-        <ThemedText
-          type="h3"
-          style={styles.emptyTitle}
-          testID="text-empty-title"
-        >
-          Your pantry is empty
-        </ThemedText>
-        <ThemedText
-          type="body"
-          style={styles.emptySubtitle}
-          testID="text-empty-subtitle"
-        >
-          Tap the + button to add your first item
-        </ThemedText>
-      </View>
+      <EmptyState
+        icon="package"
+        title="Your pantry is empty"
+        description="Add your first item to start tracking!"
+        actionLabel="Add Item"
+        onAction={() => navigation.navigate("AddItem" as any)}
+      />
     );
   };
 
@@ -1262,27 +1243,6 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     letterSpacing: 0.3,
     fontSize: 12,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing["4xl"],
-  },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  emptyTitle: {
-    marginTop: Spacing.lg,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    marginTop: Spacing.sm,
-    textAlign: "center",
   },
   listHeader: {
     gap: Spacing.md,

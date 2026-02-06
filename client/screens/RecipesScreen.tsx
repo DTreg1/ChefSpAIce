@@ -54,6 +54,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { LoadingState } from "@/components/LoadingState";
+import { EmptyState } from "@/components/EmptyState";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { CookPotLoader } from "@/components/CookPotLoader";
@@ -386,42 +387,14 @@ export default function RecipesScreen() {
     }
 
     return (
-      <View style={styles.emptyState} accessibilityRole="text" accessibilityLabel="No recipes yet. Generate your first recipe based on what's in your kitchen">
-        <View
-          style={[
-            styles.emptyIconContainer,
-            {
-              backgroundColor: theme.glass.background,
-              borderColor: theme.glass.border,
-            },
-          ]}
-        >
-          <Feather name="book-open" size={48} color={theme.textSecondary} />
-        </View>
-        <ThemedText type="h3" style={styles.emptyTitle}>
-          No recipes yet
-        </ThemedText>
-        <ThemedText type="body" style={styles.emptySubtitle}>
-          Generate your first recipe based on what's in your kitchen
-        </ThemedText>
-        <Pressable
-          style={[
-            styles.generateButton,
-            { backgroundColor: AppColors.primary },
-            isGenerating && { opacity: 0.7 },
-          ]}
-          onPress={generateQuickRecipe}
-          disabled={isGenerating}
-          accessibilityRole="button"
-          accessibilityLabel={isGenerating ? "Generating recipe" : "Generate a recipe based on your kitchen inventory"}
-          accessibilityState={{ disabled: isGenerating }}
-        >
-          <Feather name="zap" size={18} color="#FFFFFF" />
-          <ThemedText type="button" style={styles.generateButtonText}>
-            {isGenerating ? "Generating..." : "Generate Recipe"}
-          </ThemedText>
-        </Pressable>
-      </View>
+      <EmptyState
+        icon="book-open"
+        title="No recipes yet"
+        description="Generate your first AI recipe!"
+        actionLabel={isGenerating ? "Generating..." : "Generate Recipe"}
+        onAction={generateQuickRecipe}
+        actionDisabled={isGenerating}
+      />
     );
   };
 
@@ -627,42 +600,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   matchText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing["4xl"],
-    paddingHorizontal: Spacing.xl,
-  },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  emptyTitle: {
-    marginTop: Spacing.lg,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    marginTop: Spacing.sm,
-    textAlign: "center",
-  },
-  generateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginTop: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  generateButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
   },

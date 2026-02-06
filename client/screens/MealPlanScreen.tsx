@@ -26,6 +26,7 @@ import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { LoadingState } from "@/components/LoadingState";
+import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
@@ -409,6 +410,18 @@ export default function MealPlanScreen() {
           </ThemedText>
         </View>
 
+        {mealPlans.length === 0 && recipes.length === 0 ? (
+          <EmptyState
+            icon="calendar"
+            title="No meal plan yet"
+            description="Create your first weekly plan!"
+            actionLabel="Create Plan"
+            onAction={() => navigation.navigate("SelectRecipe" as any, {
+              date: format(selectedDay, "yyyy-MM-dd"),
+              mealType: "dinner" as const,
+            })}
+          />
+        ) : (
         <GlassCard style={styles.selectedDayCard}>
           <ThemedText type="h3" style={styles.selectedDayTitle}>
             {format(selectedDay, "EEEE, MMMM d")}
@@ -498,6 +511,7 @@ export default function MealPlanScreen() {
             );
           })}
         </GlassCard>
+        )}
 
         <GlassCard style={styles.statsCard}>
           <View style={styles.statsHeader}>
