@@ -414,7 +414,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       />
       <View style={[styles.container, { paddingBottom: bottomPadding }]}>
         <View style={styles.innerContainer}>
-          <View style={styles.pillContainer}>
+          <View style={styles.pillContainer} accessibilityRole="tabbar">
             {renderPillBackground()}
 
             <View style={styles.tabsRow}>

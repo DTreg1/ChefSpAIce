@@ -136,6 +136,8 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
         isActive ? { backgroundColor: theme.glass.backgroundStrong } : null,
         pressed ? { opacity: 0.7 } : null,
       ]}
+      accessibilityRole="menuitem"
+      accessibilityLabel={label}
     >
       <Feather
         name={icon}
@@ -260,7 +262,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityRole="menu">
       {renderBackground()}
       <GlassProvider>
         <DrawerContentScrollView

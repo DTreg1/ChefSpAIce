@@ -13,7 +13,8 @@ export function HamburgerButton() {
     <Pressable
       onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       testID="button-open-drawer"
-      accessibilityLabel="Open menu"
+      accessibilityLabel="Open navigation menu"
+      accessibilityRole="button"
       style={styles.button}
     >
       <Feather name="menu" size={24} color={theme.text} />

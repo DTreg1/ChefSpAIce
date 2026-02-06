@@ -180,7 +180,7 @@ export function ExpoGlassHeader({
               style={styles.titleIcon}
             />
           )}
-          <ThemedText style={styles.title} numberOfLines={1}>
+          <ThemedText style={styles.title} numberOfLines={1} accessibilityRole="header">
             {title}
           </ThemedText>
         </Animated.View>
@@ -220,6 +220,8 @@ export function ExpoGlassHeader({
                   style={styles.searchIconButton}
                   onPress={handleSearchPress}
                   testID="button-header-search"
+                  accessibilityLabel={`Search ${title.toLowerCase()}`}
+                  accessibilityRole="button"
                 >
                   <Feather name="search" size={22} color={secondaryColor} />
                 </Pressable>
@@ -248,6 +250,8 @@ export function ExpoGlassHeader({
                       autoCapitalize="none"
                       autoCorrect={false}
                       returnKeyType="search"
+                      accessibilityLabel={searchPlaceholder}
+                      accessibilityHint={`Search within ${title.toLowerCase()}`}
                     />
                   </Animated.View>
                   {searchQuery.length > 0 && (
