@@ -529,7 +529,7 @@ export function ChatModal() {
 
     if (!isUser) {
       return (
-        <GlassView style={styles.assistantBubbleContainer}>
+        <GlassView style={styles.assistantBubbleContainer} accessibilityRole="text">
           {renderAssistantBubble(item.content, item.id)}
         </GlassView>
       );
@@ -542,6 +542,7 @@ export function ChatModal() {
           styles.userBubble,
           { backgroundColor: AppColors.primary },
         ]}
+        accessibilityRole="text"
       >
         <ThemedText type="small" style={{ color: "#FFFFFF" }}>
           {item.content}
@@ -755,6 +756,7 @@ export function ChatModal() {
             data-testid="button-voice-mic"
             accessibilityRole="button"
             accessibilityLabel={getStatusText()}
+            accessibilityHint="Tap to start voice input. Press and hold for push-to-talk"
           >
             {voiceState === "processing" ? (
               <ActivityIndicator size="large" color={AppColors.warning} />
@@ -783,6 +785,7 @@ export function ChatModal() {
                       : theme.textSecondary,
             },
           ]}
+          accessibilityLiveRegion="polite"
         >
           {getStatusText()}
         </ThemedText>
@@ -797,6 +800,8 @@ export function ChatModal() {
                   : "rgba(0,0,0,0.05)",
               },
             ]}
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={`Transcript: ${voiceChat.lastUserTranscript}`}
           >
             <ThemedText
               type="caption"
@@ -809,7 +814,7 @@ export function ChatModal() {
         )}
 
         {voiceChat.error && (
-          <View style={styles.voiceErrorContainer}>
+          <View style={styles.voiceErrorContainer} accessibilityRole="alert">
             <ThemedText
               type="caption"
               style={{ color: AppColors.error, textAlign: "center" }}
@@ -831,6 +836,8 @@ export function ChatModal() {
             ]}
             onPress={() => voiceChat.cancelConversation()}
             data-testid="button-voice-cancel"
+            accessibilityRole="button"
+            accessibilityLabel="Cancel voice conversation"
           >
             <Feather name="x" size={14} color={AppColors.error} />
             <ThemedText
@@ -863,10 +870,10 @@ export function ChatModal() {
           </ThemedText>
         </GlassView>
         <GlassView style={styles.headerRight}>
-          <Pressable onPress={handleClearChat} style={styles.headerButton}>
+          <Pressable onPress={handleClearChat} style={styles.headerButton} accessibilityRole="button" accessibilityLabel="Clear chat history">
             <Feather name="trash-2" size={14} color={theme.textSecondary} />
           </Pressable>
-          <Pressable onPress={closeChat} style={styles.headerButton}>
+          <Pressable onPress={closeChat} style={styles.headerButton} accessibilityRole="button" accessibilityLabel="Close chat">
             <Feather name="x" size={16} color={theme.text} />
           </Pressable>
         </GlassView>
@@ -883,6 +890,8 @@ export function ChatModal() {
             },
           ]}
           onPress={() => loadTip(inventory)}
+          accessibilityRole="button"
+          accessibilityLabel="Kitchen tip. Tap for another tip"
         >
           {tipLoading ? (
             <ActivityIndicator size="small" color={AppColors.primary} />
@@ -947,6 +956,8 @@ export function ChatModal() {
         ListEmptyComponent={renderEmptyState}
         onContentSizeChange={scrollToBottom}
         keyboardShouldPersistTaps="handled"
+        accessibilityRole="list"
+        accessibilityLabel="Chat messages"
       />
 
       {isVoiceMode ? (
@@ -1005,6 +1016,8 @@ export function ChatModal() {
             multiline
             maxLength={500}
             editable={!sending}
+            accessibilityLabel="Type a message"
+            accessibilityHint="Enter your message to the kitchen assistant"
           />
           <Pressable
             style={[
@@ -1035,6 +1048,9 @@ export function ChatModal() {
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
             data-testid="button-chat-send"
+            accessibilityRole="button"
+            accessibilityLabel={sending ? "Sending message" : "Send message"}
+            accessibilityState={{ disabled: !inputText.trim() || sending }}
           >
             {sending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -1063,7 +1079,7 @@ export function ChatModal() {
           { pointerEvents: isChatOpen ? "auto" : "none" },
         ]}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeChat} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeChat} accessibilityLabel="Close chat" accessibilityRole="button" />
       </Animated.View>
 
       <Animated.View
@@ -1078,6 +1094,8 @@ export function ChatModal() {
           },
           containerStyle,
         ]}
+        accessibilityViewIsModal={true}
+        accessibilityRole="none"
       >
         <GlassView
           style={[

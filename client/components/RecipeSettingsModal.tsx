@@ -184,6 +184,9 @@ export function RecipeSettingsModal({
         },
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
     >
       <ThemedText
         type="small"
@@ -200,6 +203,7 @@ export function RecipeSettingsModal({
       animationType="slide"
       transparent
       onRequestClose={onClose}
+      accessibilityViewIsModal={true}
     >
       <BlurView
         intensity={20}
@@ -214,7 +218,7 @@ export function RecipeSettingsModal({
         >
           <View style={styles.header}>
             <ThemedText type="h3">Recipe Settings</ThemedText>
-            <Pressable onPress={onClose} style={styles.closeButton}>
+            <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close recipe settings">
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
           </View>
@@ -223,6 +227,7 @@ export function RecipeSettingsModal({
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            accessibilityLabel="Recipe settings options"
           >
             <GlassCard style={styles.section}>
               <ThemedText type="caption" style={styles.sectionTitle}>
@@ -413,6 +418,9 @@ export function RecipeSettingsModal({
               <Pressable
                 style={styles.toggleRow}
                 onPress={() => setPrioritizeExpiring(!prioritizeExpiring)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: prioritizeExpiring }}
+                accessibilityLabel="Prioritize expiring items"
               >
                 <View style={styles.toggleInfo}>
                   <ThemedText type="small">
@@ -462,6 +470,9 @@ export function RecipeSettingsModal({
               onPress={handleGenerate}
               disabled={saving}
               testID="button-generate-recipe"
+              accessibilityRole="button"
+              accessibilityLabel={saving ? "Saving settings" : "Generate recipe"}
+              accessibilityState={{ disabled: saving }}
             >
               <Feather name="zap" size={20} color="#FFFFFF" />
               <ThemedText type="button" style={styles.generateButtonText}>

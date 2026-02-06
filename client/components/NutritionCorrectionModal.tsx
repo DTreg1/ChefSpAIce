@@ -183,13 +183,14 @@ export function NutritionCorrectionModal({
       transparent
       animationType="fade"
       onRequestClose={handleClose}
+      accessibilityViewIsModal={true}
     >
       <BlurView
         intensity={30}
         tint={isDark ? "dark" : "light"}
         style={styles.backdrop}
       >
-        <Pressable style={styles.backdropPressable} onPress={handleClose} />
+        <Pressable style={styles.backdropPressable} onPress={handleClose} accessibilityLabel="Close nutrition correction" accessibilityRole="button" />
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(150)}
@@ -206,13 +207,13 @@ export function NutritionCorrectionModal({
               <ThemedText type="h3" style={styles.title}>
                 Report Nutrition Issue
               </ThemedText>
-              <Pressable onPress={handleClose} style={styles.closeButton}>
+              <Pressable onPress={handleClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
                 <Feather name="x" size={24} color={theme.text} />
               </Pressable>
             </View>
 
             {submitted ? (
-              <View style={styles.successContainer}>
+              <View style={styles.successContainer} accessibilityRole="alert" accessibilityLabel="Correction submitted successfully">
                 <View
                   style={[
                     styles.successIcon,
@@ -244,7 +245,7 @@ export function NutritionCorrectionModal({
                 ) : null}
 
                 {errorMessage ? (
-                  <View style={styles.errorBanner}>
+                  <View style={styles.errorBanner} accessibilityRole="alert">
                     <Feather
                       name="alert-circle"
                       size={16}
@@ -270,6 +271,8 @@ export function NutritionCorrectionModal({
                     <Pressable
                       style={styles.removeImageButton}
                       onPress={handleRemoveImage}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove uploaded image"
                     >
                       <Feather name="x" size={16} color="#FFFFFF" />
                     </Pressable>
@@ -288,6 +291,7 @@ export function NutritionCorrectionModal({
                       variant="outline"
                       onPress={handleOpenSettings}
                       style={styles.settingsButton}
+                      accessibilityLabel="Open device settings for camera access"
                     >
                       <ThemedText style={{ color: AppColors.primary }}>
                         Open Settings
@@ -368,6 +372,8 @@ export function NutritionCorrectionModal({
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
+                  accessibilityLabel="Additional notes"
+                  accessibilityHint="Describe what's different on your label"
                 />
 
                 <GlassButton

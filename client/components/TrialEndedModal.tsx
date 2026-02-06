@@ -132,7 +132,7 @@ export function TrialEndedModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" accessibilityViewIsModal={true}>
       <View style={styles.overlay}>
         <BlurView
           intensity={80}
@@ -178,6 +178,9 @@ export function TrialEndedModal({
                 ]}
                 onPress={() => setSelectedPlan("monthly")}
                 data-testid="button-monthly-toggle"
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedPlan === "monthly" }}
+                accessibilityLabel="Monthly billing"
               >
                 <ThemedText
                   type="body"
@@ -201,6 +204,9 @@ export function TrialEndedModal({
                 ]}
                 onPress={() => setSelectedPlan("annual")}
                 data-testid="button-annual-toggle"
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedPlan === "annual" }}
+                accessibilityLabel="Annual billing, save 17 percent"
               >
                 <ThemedText
                   type="body"
@@ -242,6 +248,9 @@ export function TrialEndedModal({
               ]}
               onPress={() => setSelectedTier("basic")}
               data-testid="button-select-basic-tier"
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedTier === "basic" }}
+              accessibilityLabel={`Basic plan, $${getPrice("basic", selectedPlan).toFixed(2)} per month`}
             >
               <View style={styles.tierHeader}>
                 <View>
@@ -301,6 +310,9 @@ export function TrialEndedModal({
               ]}
               onPress={() => setSelectedTier("pro")}
               data-testid="button-select-pro-tier"
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedTier === "pro" }}
+              accessibilityLabel={`Pro plan, $${getPrice("pro", selectedPlan).toFixed(2)} per month, most popular`}
             >
               <View
                 style={[
@@ -382,6 +394,9 @@ export function TrialEndedModal({
               onPress={handleSubscribe}
               disabled={isLoading}
               data-testid="button-subscribe-trial-ended"
+              accessibilityRole="button"
+              accessibilityLabel={`Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} plan`}
+              accessibilityState={{ disabled: isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -411,6 +426,8 @@ export function TrialEndedModal({
               <Pressable
                 onPress={handleOpenPrivacyPolicy}
                 data-testid="link-modal-privacy-policy"
+                accessibilityRole="link"
+                accessibilityLabel="Privacy Policy"
               >
                 <ThemedText
                   type="caption"
@@ -428,6 +445,8 @@ export function TrialEndedModal({
               <Pressable
                 onPress={handleOpenTermsOfUse}
                 data-testid="link-modal-terms-of-use"
+                accessibilityRole="link"
+                accessibilityLabel="Terms of Use"
               >
                 <ThemedText
                   type="caption"

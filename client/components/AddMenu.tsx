@@ -164,6 +164,7 @@ const MenuItem = memo(function MenuItem({
       testID={`menu-${item.id}`}
       accessibilityLabel={item.label}
       accessibilityRole="button"
+      accessibilityHint={item.sublabel}
       onPress={onPress}
       style={[styles.menuItem, animatedStyle]}
     >
@@ -381,9 +382,9 @@ export const AddMenu = memo(function AddMenu({
       >
         {renderOverlayBackground()}
 
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" accessibilityRole="button" />
 
-        <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]}>
+        <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]} accessibilityRole="menu">
           <View style={styles.menuRow}>
             {menuItems.map((item, index) => (
               <MenuItem
@@ -406,6 +407,7 @@ export const AddMenu = memo(function AddMenu({
         transparent
         animationType="fade"
         onRequestClose={handleDismissUpgrade}
+        accessibilityViewIsModal={true}
       >
         <View style={styles.upgradeModalOverlay}>
           <UpgradePrompt

@@ -95,7 +95,7 @@ export function IngredientSwapModal({
             Swap Ingredient
           </ThemedText>
         </View>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close ingredient swap">
           <Feather name="x" size={24} color={theme.text} />
         </Pressable>
       </View>
@@ -138,6 +138,9 @@ export function IngredientSwapModal({
                       : theme.glass.border,
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={`${filter.label} dietary filter`}
               >
                 <Feather
                   name={filter.icon as any}
@@ -165,7 +168,7 @@ export function IngredientSwapModal({
         showsVerticalScrollIndicator={false}
       >
         {swaps.length === 0 ? (
-          <View style={styles.emptyState}>
+          <View style={styles.emptyState} accessibilityRole="text">
             <Feather
               name="alert-circle"
               size={32}
@@ -205,6 +208,9 @@ export function IngredientSwapModal({
                         : theme.glass.border,
                     },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${swap.alternative}, ratio ${formatSwapRatio(swap.ratio)}${inStock ? ', in stock' : ''}`}
+                  accessibilityHint="Tap to use this substitute"
                 >
                   <View style={styles.swapHeader}>
                     <View style={styles.swapTitleRow}>
@@ -290,9 +296,10 @@ export function IngredientSwapModal({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      accessibilityViewIsModal={true}
     >
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close swap modal" accessibilityRole="button" />
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(150)}
