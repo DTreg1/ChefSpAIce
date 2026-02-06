@@ -47,39 +47,75 @@
 - Severity: Low
 - Impact: When lists are empty (recipes, inventory), users see plain text instead of helpful visual guidance
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 1.1 — Break up LandingScreen into smaller components
-1. Create `client/components/landing/HeroSection.tsx` — Extract the hero banner (lines ~50-200)
-2. Create `client/components/landing/FeatureGridSection.tsx` — Extract the feature cards grid
-3. Create `client/components/landing/HowItWorksSection.tsx` — Extract step-by-step section
-4. Create `client/components/landing/PricingSection.tsx` — Extract pricing comparison
-5. Create `client/components/landing/FAQSection.tsx` — Extract FAQ accordion
-6. Create `client/components/landing/FooterSection.tsx` — Extract footer
-7. Update `client/screens/LandingScreen.tsx` to import and compose these sections
-8. Each section should accept theme and navigation props, keeping `LandingScreen` under 200 lines
+
+```
+Refactor `client/screens/LandingScreen.tsx` (currently 1,047 lines) by extracting
+each major section into its own component under `client/components/landing/`:
+
+1. Create `HeroSection.tsx` — Extract the hero banner, background image,
+   headline, subheading, and CTA buttons.
+2. Create `FeatureGridSection.tsx` — Extract the feature cards grid.
+3. Create `HowItWorksSection.tsx` — Extract the step-by-step walkthrough section.
+4. Create `PricingSection.tsx` — Extract the pricing comparison cards.
+5. Create `FAQSection.tsx` — Extract the FAQ accordion.
+6. Create `FooterSection.tsx` — Extract the footer with links and copyright.
+
+Each section component should accept `theme` and any necessary callbacks as props.
+The refactored `LandingScreen.tsx` should import and compose these sections,
+staying under 200 lines total. Preserve all existing functionality, animations,
+and styling exactly as they are today.
+```
 
 #### Fix 1.2 — Standardize loading states
-1. Open `client/components/Skeleton.tsx` and verify it handles list, card, and detail layouts
-2. Create a `client/components/LoadingState.tsx` wrapper component:
-   - Accept a `variant` prop: `"list"`, `"detail"`, `"card-grid"`, `"full-page"`
-   - Render the appropriate skeleton pattern for each variant
-3. Audit every screen that uses `useQuery`:
-   - `InventoryScreen.tsx` — Replace any raw `ActivityIndicator` with `<LoadingState variant="list" />`
-   - `RecipesScreen.tsx` — Use `<LoadingState variant="card-grid" />`
-   - `MealPlanScreen.tsx` — Use `<LoadingState variant="detail" />`
-   - `ShoppingListScreen.tsx` — Use `<LoadingState variant="list" />`
-4. Ensure every `isLoading` check in query hooks renders the new `LoadingState` component
+
+```
+Create a reusable `client/components/LoadingState.tsx` component that provides
+consistent skeleton/loading UI across all screens.
+
+Requirements:
+- Accept a `variant` prop with values: "list", "detail", "card-grid", "full-page"
+- Each variant renders an appropriate skeleton pattern (shimmer rectangles)
+- Use the existing theme colors for skeleton backgrounds
+
+Then update every screen that uses `useQuery` to use this component:
+- `InventoryScreen.tsx` — Use `<LoadingState variant="list" />`
+- `RecipesScreen.tsx` — Use `<LoadingState variant="card-grid" />`
+- `MealPlanScreen.tsx` — Use `<LoadingState variant="detail" />`
+- `ShoppingListScreen.tsx` — Use `<LoadingState variant="list" />`
+
+Replace any raw `ActivityIndicator` or empty renders during `isLoading` states
+with the appropriate `<LoadingState>` variant.
+```
 
 #### Fix 1.3 — Add empty state designs
-1. Create `client/components/EmptyState.tsx`:
-   - Props: `icon` (Feather icon name), `title`, `description`, `actionLabel?`, `onAction?`
-   - Render a centered layout with icon, text, and optional action button
-2. Add empty states to:
-   - `InventoryScreen.tsx` — "Your pantry is empty. Add your first item!" with an add button
-   - `RecipesScreen.tsx` — "No recipes yet. Generate your first recipe!" with generate button
-   - `ShoppingListScreen.tsx` — "Your list is clear. Add items or generate from a recipe!"
-   - `MealPlanScreen.tsx` — "No meal plan yet. Create your first weekly plan!"
+
+```
+Create a reusable `client/components/EmptyState.tsx` component for when lists
+have no items.
+
+Props:
+- `icon`: A Feather icon name (string)
+- `title`: Heading text (string)
+- `description`: Subtext explaining what to do (string)
+- `actionLabel?`: Optional button label (string)
+- `onAction?`: Optional button callback (function)
+
+Render: Centered layout with the icon (48px, muted color), title (18px, bold),
+description (14px, secondary text color), and optional themed action button.
+
+Then add empty states to these screens:
+- `InventoryScreen.tsx` — icon="package", title="Your pantry is empty",
+  description="Add your first item to start tracking!", actionLabel="Add Item"
+- `RecipesScreen.tsx` — icon="book-open", title="No recipes yet",
+  description="Generate your first AI recipe!", actionLabel="Generate Recipe"
+- `ShoppingListScreen.tsx` — icon="shopping-cart", title="Your list is clear",
+  description="Add items or generate a list from a recipe!"
+- `MealPlanScreen.tsx` — icon="calendar", title="No meal plan yet",
+  description="Create your first weekly plan!", actionLabel="Create Plan"
+```
 
 ---
 
@@ -109,28 +145,62 @@
 - Severity: Medium
 - Impact: AI shelf-life suggestions endpoint is open, consuming API resources
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 2.1 — Protect the chat endpoint
-1. Open `server/routes.ts`
-2. Find line 219: `app.use("/api/chat", chatRouter);`
-3. Change to: `app.use("/api/chat", requireAuth, requireSubscription, chatRouter);`
-4. Test: Send a request to `/api/chat` without auth headers — should receive 401
-5. Test: Send a request with valid auth — should work normally
+
+```
+In `server/routes.ts`, the chat router is mounted WITHOUT auth middleware.
+
+Find this line (around line 219):
+  app.use("/api/chat", chatRouter);
+
+Change it to:
+  app.use("/api/chat", requireAuth, requireSubscription, chatRouter);
+
+This ensures only authenticated users with active subscriptions can use the
+AI chat feature, preventing unauthorized OpenAI API credit consumption.
+
+Verify: Send a request to POST /api/chat without an Authorization header —
+it should return 401. Send one with a valid Bearer token and active
+subscription — it should work normally.
+```
 
 #### Fix 2.2 — Protect food search endpoint
-1. Open `server/routes.ts`
-2. Find line 220: `app.use("/api/food", foodRouter);`
-3. Change to: `app.use("/api/food", requireAuth, foodRouter);`
-4. Note: This doesn't need `requireSubscription` since basic users should search food too
-5. Test both authenticated and unauthenticated requests
+
+```
+In `server/routes.ts`, the food search router is mounted WITHOUT auth middleware.
+
+Find this line (around line 220):
+  app.use("/api/food", foodRouter);
+
+Change it to:
+  app.use("/api/food", requireAuth, foodRouter);
+
+Note: Only `requireAuth` is needed (not `requireSubscription`) because Basic
+tier users should still be able to search for food items.
+
+Verify: Send a GET request to /api/food/search without auth — should return
+401. With a valid Bearer token — should work normally.
+```
 
 #### Fix 2.3 — Protect shelf-life endpoint
-1. Open `server/routes.ts`
-2. Find line 222: `app.use("/api/suggestions/shelf-life", shelfLifeRouter);`
-3. Change to: `app.use("/api/suggestions/shelf-life", requireAuth, requireSubscription, shelfLifeRouter);`
-4. This uses AI, so it should require an active subscription
-5. Test: Verify unauthenticated requests return 401
+
+```
+In `server/routes.ts`, the shelf-life router is mounted WITHOUT auth middleware.
+
+Find this line (around line 222):
+  app.use("/api/suggestions/shelf-life", shelfLifeRouter);
+
+Change it to:
+  app.use("/api/suggestions/shelf-life", requireAuth, requireSubscription, shelfLifeRouter);
+
+This endpoint uses AI and should require both authentication and an active
+subscription.
+
+Verify: Send a request to /api/suggestions/shelf-life without auth — should
+return 401. With auth but no subscription — should return 403.
+```
 
 ---
 
@@ -165,64 +235,131 @@
 - Severity: Medium
 - Impact: Large payloads on each sync, wasted bandwidth for small changes
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 3.1 — Add missing database indexes
-1. Create a new migration file (use Drizzle's migration tool)
-2. Add indexes for:
-   ```sql
-   CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(token);
-   CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
-   CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
-   CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
-   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-   ```
-3. The `users.email` column already has a unique constraint which creates an index, but verify the others
-4. Run the migration: `npx drizzle-kit push`
-5. Test: Query plans should show index usage for session lookups
+
+```
+Add database indexes to improve query performance on frequently accessed columns.
+
+Create a new Drizzle migration or add indexes to the schema definitions in
+`shared/schema.ts`:
+
+1. `user_sessions.token` — Queried on every authenticated request by
+   `server/middleware/auth.ts`
+2. `user_sessions.user_id` — Used for session cleanup and user lookups
+3. `subscriptions.user_id` — Queried on every protected request by
+   `server/middleware/requireSubscription.ts`
+4. `subscriptions.status` — Filtered by ACTIVE_STATUSES in subscription middleware
+
+In Drizzle, add indexes like this to the table definitions:
+  import { index } from "drizzle-orm/pg-core";
+
+  // Inside the table definition or as separate index declarations:
+  export const userSessionsTokenIdx = index("idx_user_sessions_token")
+    .on(userSessions.token);
+  export const subscriptionsUserIdIdx = index("idx_subscriptions_user_id")
+    .on(subscriptions.userId);
+
+Then run `npx drizzle-kit push` to apply the changes.
+Note: `users.email` likely already has an index from its unique constraint.
+```
 
 #### Fix 3.2 — Replace console.log with structured logger
-1. Open `server/lib/logger.ts` — the structured logger already exists
-2. For each server file that uses `console.log`, `console.error`, or `console.warn`:
-   - Replace `console.log(...)` with `logger.info(...)`
-   - Replace `console.error(...)` with `logger.error(...)`
-   - Replace `console.warn(...)` with `logger.warn(...)`
-3. Priority files to fix (highest console.log counts):
-   - `server/routers/auth.router.ts` (48 instances)
-   - `server/seeds/seed-demo-account.ts` (23 instances)
-   - `server/routers/social-auth.router.ts` (21 instances)
-   - `server/routers/user/recipes.router.ts` (16 instances)
-   - `server/routers/platform/voice.router.ts` (14 instances)
-   - `server/stripe/subscriptionRouter.ts` (14 instances)
-4. Ensure sensitive data (tokens, passwords, emails) is NEVER logged — redact or omit
+
+```
+The project has a structured logger at `server/lib/logger.ts` that supports
+levels (debug, info, warn, error) and outputs structured JSON in production.
+However, 270+ console.log/error/warn calls bypass it.
+
+For every `.ts` file in the `server/` directory:
+1. Add `import { logger } from "../lib/logger";` (adjust relative path as needed)
+2. Replace all `console.log(...)` with `logger.info(...)`
+3. Replace all `console.error(...)` with `logger.error(...)`
+4. Replace all `console.warn(...)` with `logger.warn(...)`
+
+Convert string interpolation to structured context objects:
+  BEFORE: console.log(`User ${userId} logged in from ${ip}`);
+  AFTER:  logger.info("User logged in", { userId, ip });
+
+Priority files (highest console.log counts):
+- server/routers/auth.router.ts (48 instances)
+- server/seeds/seed-demo-account.ts (23 instances)
+- server/routers/social-auth.router.ts (21 instances)
+- server/routers/user/recipes.router.ts (16 instances)
+- server/routers/platform/voice.router.ts (14 instances)
+- server/stripe/subscriptionRouter.ts (14 instances)
+- server/routers/feedback.router.ts (13 instances)
+
+IMPORTANT: Ensure no sensitive data (tokens, passwords, full emails) is passed
+into logger context. Redact or omit sensitive fields.
+```
 
 #### Fix 3.3 — Add response compression
-1. Install `compression` package: Run `npm install compression` and `npm install -D @types/compression`
-2. Open `server/index.ts`
-3. Add `import compression from "compression";` at the top
-4. Add `app.use(compression());` BEFORE body parsing setup, after CORS
-5. This automatically compresses JSON responses with gzip, reducing payload sizes 60-80%
+
+```
+Add gzip/brotli response compression to reduce API response payload sizes.
+
+1. Install the compression package:
+   npm install compression
+   npm install -D @types/compression
+
+2. In `server/index.ts`, add this import at the top:
+   import compression from "compression";
+
+3. Add the middleware BEFORE body parsing and route setup, after CORS:
+   app.use(compression());
+
+This automatically compresses all JSON responses, typically reducing payload
+sizes by 60-80%. It's especially impactful for mobile users on slower networks.
+
+Verify: After adding, check response headers for `Content-Encoding: gzip`
+on API responses.
+```
 
 #### Fix 3.4 — Configure database connection pooling
-1. Open `server/db.ts` (or wherever the database connection is established)
-2. Ensure the PostgreSQL pool is configured with:
-   ```typescript
-   const pool = new Pool({
-     connectionString: process.env.DATABASE_URL,
-     max: 20,          // Maximum connections
-     idleTimeoutMillis: 30000,
-     connectionTimeoutMillis: 5000,
-   });
-   ```
-3. The Replit PostgreSQL integration may already handle this, but verify the configuration
+
+```
+Review and configure the PostgreSQL connection pool in `server/db.ts`.
+
+Check if the pool configuration includes these settings:
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 20,                    // Maximum number of connections
+    idleTimeoutMillis: 30000,   // Close idle connections after 30s
+    connectionTimeoutMillis: 5000, // Fail if can't connect in 5s
+  });
+
+If using Drizzle with `drizzle-orm/neon-http`, the connection pooling is
+handled by Neon's serverless driver. In that case, document this in
+`replit.md` so the team knows pooling is managed externally.
+
+If using `drizzle-orm/node-postgres`, ensure the Pool options above are set.
+```
 
 #### Fix 3.5 — Implement delta sync
-1. Open `server/routers/sync.router.ts`
-2. Add a `lastSyncedAt` parameter to the sync endpoint
-3. On the server, compare the client's `lastSyncedAt` with the server's `updatedAt`
-4. Only return data sections that have changed since `lastSyncedAt`
-5. This reduces typical sync payload from potentially hundreds of KB to just a few KB
-6. Update the client's `client/lib/sync-manager.ts` to send `lastSyncedAt` and handle partial responses
+
+```
+Reduce sync payload sizes by implementing delta sync in the sync endpoint.
+
+In `server/routers/sync.router.ts`:
+1. Accept an optional `lastSyncedAt` timestamp from the client in the request
+   body or query params.
+2. When `lastSyncedAt` is provided, only return data sections whose
+   `updatedAt` timestamp is newer than `lastSyncedAt`.
+3. Return a `serverTimestamp` in the response for the client to use as the
+   next `lastSyncedAt`.
+
+In `client/lib/sync-manager.ts`:
+1. Store the last successful sync timestamp in AsyncStorage.
+2. Include it in sync requests as `lastSyncedAt`.
+3. Handle partial responses — merge returned sections into local state
+   without overwriting sections that weren't included in the response.
+4. On first sync (no stored timestamp), perform a full sync as today.
+
+This reduces typical sync payloads from hundreds of KB to just the changed
+data, which may be only a few KB.
+```
 
 ---
 
@@ -261,14 +398,20 @@
 - Severity: Low
 - Impact: Type safety bypass, potential for bugs
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 4.1 — Add helmet middleware
-1. Install helmet: Run `npm install helmet`
-2. Open `server/index.ts`
-3. Add `import helmet from "helmet";` at the top
-4. Add after CORS setup, before body parsing:
-   ```typescript
+
+```
+Add the `helmet` middleware to set security-related HTTP response headers.
+
+1. Install helmet:
+   npm install helmet
+
+2. In `server/index.ts`, add this import:
+   import helmet from "helmet";
+
+3. Add the middleware AFTER CORS setup but BEFORE body parsing and route setup:
    app.use(helmet({
      contentSecurityPolicy: {
        directives: {
@@ -282,60 +425,117 @@
      },
      crossOriginEmbedderPolicy: false,
    }));
-   ```
-5. Test: Check response headers include X-Frame-Options, X-Content-Type-Options, etc.
 
-#### Fix 4.2 — See Fix 2.1, 2.2, 2.3 above
+This adds X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security,
+X-XSS-Protection, and Content-Security-Policy headers to all responses.
+
+Verify: After adding, inspect response headers on any API response — you
+should see these security headers present.
+```
+
+#### Fix 4.2 — Protect unprotected endpoints
+See Fix 2.1, Fix 2.2, and Fix 2.3 above.
 
 #### Fix 4.3 — Hash session tokens before storage
-1. Open `server/routers/auth.router.ts`
-2. When creating sessions, hash the token before storing:
-   ```typescript
+
+```
+Session tokens are stored as plain text in the `user_sessions` table. If the
+database is ever compromised, attackers could use these tokens directly.
+
+Fix by hashing tokens with SHA-256 before storing:
+
+1. In `server/routers/auth.router.ts`, wherever a session token is created:
    import crypto from "crypto";
+
    const rawToken = crypto.randomBytes(32).toString("hex");
    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-   // Store hashedToken in the database
-   // Return rawToken to the client
-   ```
-3. Open `server/middleware/auth.ts`
-4. When looking up sessions, hash the incoming token first:
-   ```typescript
+
+   // Store `hashedToken` in the database:
+   await db.insert(userSessions).values({
+     userId: user.id,
+     token: hashedToken,  // Store the HASH, not the raw token
+     expiresAt,
+     createdAt: new Date(),
+   });
+
+   // Return `rawToken` to the client (they never see the hash)
+
+2. In `server/middleware/auth.ts`, hash the incoming token before lookup:
+   import crypto from "crypto";
+
    const rawToken = authHeader.substring(7);
    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-   // Look up hashedToken in the database
-   ```
-5. Run a migration to update existing session tokens (or invalidate all sessions, forcing re-login)
+
+   const [session] = await db
+     .select()
+     .from(userSessions)
+     .where(eq(userSessions.token, hashedToken))
+     .limit(1);
+
+3. Apply the same pattern in `server/middleware/requireAdmin.ts` (line 18).
+
+4. After deploying, all existing sessions will be invalidated (users must
+   re-login) because the stored plain tokens won't match the new hashed
+   lookups. This is acceptable for a security improvement.
+```
 
 #### Fix 4.4 — Add password validation
-1. Open `server/routers/auth.router.ts`
-2. Find the registration endpoint
-3. Add a password validation function:
-   ```typescript
-   function validatePassword(password: string): string | null {
-     if (password.length < 8) return "Password must be at least 8 characters";
-     if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
-     if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
-     if (!/[0-9]/.test(password)) return "Password must contain a number";
-     return null;
-   }
-   ```
-4. Call this function before hashing the password
-5. Return 400 with the validation message if it fails
-6. Update the client-side registration form to show these requirements
+
+```
+Add server-side password complexity validation to the registration endpoint
+in `server/routers/auth.router.ts`.
+
+Find the registration handler and add this validation function:
+
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
+  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
+  if (!/[0-9]/.test(password)) return "Password must contain a number";
+  return null;
+}
+
+Call it before hashing:
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return res.status(400).json({ error: passwordError });
+  }
+
+Also update the client-side registration form (`client/screens/AuthScreen.tsx`)
+to show these requirements as helper text below the password field, and
+validate locally before submitting.
+```
 
 #### Fix 4.5 — Fix admin middleware types
-1. Open `server/middleware/requireAdmin.ts`
-2. Replace line 44: `(req as any).userId = user.id;` with `req.userId = user.id;`
-3. Remove line 45: `(req as any).user = user;` — if needed, extend the Express Request type properly:
-   ```typescript
-   declare global {
-     namespace Express {
-       interface Request {
-         user?: typeof users.$inferSelect;
-       }
-     }
-   }
-   ```
+
+```
+In `server/middleware/requireAdmin.ts`, fix the type-unsafe assertions on
+lines 44-45.
+
+Replace:
+  (req as any).userId = user.id;
+  (req as any).user = user;
+
+With:
+  req.userId = user.id;
+
+The `req.userId` property is already declared globally in
+`server/middleware/auth.ts` via the Express namespace extension.
+
+If you also need `req.user`, add it to the global declaration in
+`server/middleware/auth.ts`:
+
+  declare global {
+    namespace Express {
+      interface Request {
+        userId?: string;
+        user?: typeof users.$inferSelect;
+      }
+    }
+  }
+
+Then use `req.user = user;` without the `as any` cast.
+```
 
 ---
 
@@ -369,78 +569,139 @@
 - Severity: Medium
 - Impact: Failed webhook processing isn't communicated back to Stripe for retry
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 5.1 — Standardize error handling with AppError
-1. Open `server/middleware/errorHandler.ts` — the `AppError` class is already well-defined
-2. For each router file, replace ad-hoc error patterns:
 
-   **Before:**
-   ```typescript
+```
+Many route handlers in the `server/routers/` directory use ad-hoc try/catch
+with custom error responses instead of the project's `AppError` class from
+`server/middleware/errorHandler.ts`.
+
+For every router file in `server/routers/`:
+1. Import AppError: `import { AppError } from "../middleware/errorHandler";`
+2. Replace ad-hoc error responses with AppError factory methods:
+
+   BEFORE:
+   if (!user) {
+     return res.status(404).json({ error: "User not found" });
+   }
+   AFTER:
+   if (!user) {
+     throw AppError.notFound("User not found", "USER_NOT_FOUND");
+   }
+
+   BEFORE:
    catch (error) {
      console.error("Something failed:", error);
      return res.status(500).json({ error: "Something went wrong" });
    }
-   ```
-
-   **After:**
-   ```typescript
+   AFTER:
    catch (error) {
-     next(error); // Let the global error handler deal with it
+     next(error);
    }
-   ```
 
-3. For expected errors, throw `AppError` instances:
-   ```typescript
-   if (!user) {
-     throw AppError.notFound("User not found", "USER_NOT_FOUND");
-   }
-   ```
-4. Priority routers to fix:
-   - `server/routers/auth.router.ts`
-   - `server/routers/food.router.ts`
-   - `server/routers/shelf-life.router.ts`
-   - `server/routers/feedback.router.ts`
+3. Ensure every Express route handler has `next` as the third parameter so
+   errors can be forwarded to the global error handler.
+
+Priority files to update:
+- server/routers/auth.router.ts
+- server/routers/food.router.ts
+- server/routers/shelf-life.router.ts
+- server/routers/feedback.router.ts
+- server/routers/chat.router.ts
+```
 
 #### Fix 5.2 — Ensure catch blocks propagate errors
-1. Audit every `catch` block in the server directory
-2. Any `catch` block that only does `console.error(...)` should also call `next(error)` or throw
-3. If the error is expected and recoverable, use `AppError` with appropriate status code
-4. If the error is unexpected, pass it to `next()` for the global handler
+
+```
+Audit every `catch` block in the `server/` directory. Some catch blocks only
+log the error and return a generic 500, swallowing the error details.
+
+For each catch block:
+- If the error is expected/recoverable, throw an `AppError` with the
+  appropriate status code and error code.
+- If the error is unexpected, call `next(error)` to let the global error
+  handler process it (it will log the error, attach the request ID, and
+  return a structured response).
+
+NEVER do this:
+  catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+
+ALWAYS do this:
+  catch (error) {
+    next(error);
+  }
+
+The global error handler in `server/middleware/errorHandler.ts` already
+handles logging, request ID attachment, stack trace suppression in
+production, and structured JSON responses.
+```
 
 #### Fix 5.3 — Add process-level error handlers
-1. Open `server/index.ts`
-2. Add at the bottom of the file (after app setup):
-   ```typescript
-   process.on("unhandledRejection", (reason, promise) => {
-     logger.error("Unhandled Rejection", {
-       reason: reason instanceof Error ? reason.message : String(reason),
-       stack: reason instanceof Error ? reason.stack : undefined,
-     });
-   });
 
-   process.on("uncaughtException", (error) => {
-     logger.error("Uncaught Exception", {
-       error: error.message,
-       stack: error.stack,
-     });
-     process.exit(1);
-   });
-   ```
+```
+Add unhandled rejection and uncaught exception handlers to prevent the
+Node.js process from silently crashing.
+
+In `server/index.ts`, add these handlers at the bottom of the file (after
+all app setup and the server listen call):
+
+import { logger } from "./lib/logger";
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Rejection", {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception", {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
+});
+
+The unhandled rejection handler logs but keeps running (these are usually
+recoverable). The uncaught exception handler logs and exits (these are
+usually not recoverable — the process manager will restart the server).
+```
 
 #### Fix 5.4 — Fix webhook error handling
-1. Open `server/stripe/webhookHandlers.ts`
-2. Find the `processSubscriptionEvent` function (line 35)
-3. In the catch block (line 61-63), rethrow the error so Stripe can retry:
-   ```typescript
-   catch (error) {
-     logger.error("Error processing webhook event", {
-       eventType: event.type,
-       error: error instanceof Error ? error.message : String(error),
-     });
-     throw error; // Rethrow so Stripe retries the webhook
-   }
-   ```
+
+```
+In `server/stripe/webhookHandlers.ts`, the `processSubscriptionEvent`
+function (line 35) catches errors and logs them but does NOT rethrow.
+This means Stripe thinks the webhook succeeded and won't retry.
+
+Find the catch block in `processSubscriptionEvent` (around line 61-63):
+
+  BEFORE:
+  catch (error) {
+    logger.error("Error processing webhook event", {
+      eventType: event.type,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  AFTER:
+  catch (error) {
+    logger.error("Error processing webhook event", {
+      eventType: event.type,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+
+By rethrowing, the error bubbles up to the webhook route handler, which
+returns a 500 to Stripe. Stripe then retries the webhook (up to 3 times
+over 72 hours), giving the system another chance to process the event.
+```
 
 ---
 
@@ -476,68 +737,159 @@
 - Severity: Low
 - Impact: Screen readers can't communicate list structure to users
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 6.1 — Add missing accessibility labels
-1. Audit every `Pressable`, `TouchableOpacity`, and `Button` in the client directory
-2. For each one missing `accessibilityLabel`, add a descriptive label:
-   - Icon-only buttons need labels most urgently (e.g., "Delete item", "Edit recipe", "Close modal")
-3. Priority files:
-   - `client/screens/InventoryScreen.tsx` — item action buttons
-   - `client/screens/RecipeDetailScreen.tsx` — step navigation buttons
-   - `client/components/AddMenu.tsx` — quick action buttons
-   - `client/components/HeaderMenu.tsx` — menu items
+
+```
+Audit every `Pressable`, `TouchableOpacity`, and icon-only `Button` in the
+`client/` directory. Any interactive element without an `accessibilityLabel`
+needs one.
+
+Icon-only buttons are the highest priority since they have no visible text
+for screen readers to read.
+
+For each one, add a descriptive `accessibilityLabel`:
+  <Pressable
+    accessibilityLabel="Delete item"
+    accessibilityRole="button"
+    onPress={handleDelete}
+  >
+    <Feather name="trash-2" size={20} />
+  </Pressable>
+
+Priority files to audit:
+- client/screens/InventoryScreen.tsx — item action buttons (edit, delete, info)
+- client/screens/RecipeDetailScreen.tsx — step navigation, favorite, share
+- client/components/AddMenu.tsx — quick action buttons (scan, manual add, voice)
+- client/components/HeaderMenu.tsx — menu items (settings, profile, notifications)
+- client/components/ChatModal.tsx — send, close, microphone buttons
+- client/components/RecipeVoiceControls.tsx — voice control buttons
+
+Every interactive element should have:
+  accessibilityRole="button" (or appropriate role)
+  accessibilityLabel="descriptive action text"
+  accessibilityHint="what happens when activated" (optional but helpful)
+```
 
 #### Fix 6.2 — Add live regions for dynamic updates
-1. When inventory items are added/removed, wrap the list count with:
-   ```tsx
+
+```
+Add `accessibilityLiveRegion` to elements that display dynamic content so
+screen readers announce changes to users.
+
+1. In inventory/recipe screens, wrap the item count display:
    <View accessibilityLiveRegion="polite">
      <ThemedText>{itemCount} items in pantry</ThemedText>
    </View>
-   ```
-2. When recipe generation completes, announce it:
-   ```tsx
+
+2. When an item is added/removed successfully, wrap the success message:
+   <View accessibilityLiveRegion="polite">
+     <ThemedText>Item added to pantry</ThemedText>
+   </View>
+
+3. When recipe generation completes, announce it:
    <View accessibilityLiveRegion="assertive">
      <ThemedText>Recipe generated successfully</ThemedText>
    </View>
-   ```
-3. When errors appear, wrap error messages with `accessibilityLiveRegion="assertive"`
+
+4. Wrap all error messages with assertive live region:
+   <View accessibilityLiveRegion="assertive">
+     <ThemedText>{errorMessage}</ThemedText>
+   </View>
+
+Use "polite" for non-urgent updates (counts, success messages).
+Use "assertive" for urgent updates (errors, completed generation).
+```
 
 #### Fix 6.3 — Verify color contrast ratios
-1. For glass-effect components that overlay text on translucent backgrounds:
-   - Ensure a minimum contrast ratio of 4.5:1 for body text
-   - Ensure a minimum contrast ratio of 3:1 for large text
-2. In `client/components/GlassButton.tsx` and `client/components/GlassCard.tsx`:
-   - Add a semi-opaque background layer behind text to guarantee contrast
-   - For dark mode: use `rgba(0, 0, 0, 0.6)` minimum behind light text
-   - For light mode: use `rgba(255, 255, 255, 0.7)` minimum behind dark text
-3. Test with a contrast checker tool
+
+```
+The glass-effect components (`GlassButton`, `GlassCard`, `GlassView`) use
+translucent backgrounds which may not provide sufficient contrast with text.
+
+In `client/components/GlassCard.tsx` and `client/components/GlassButton.tsx`:
+
+1. Ensure text has a semi-opaque backing layer that guarantees 4.5:1 contrast
+   ratio for body text and 3:1 for large text (WCAG AA).
+
+2. For dark mode glass components, add a dark overlay behind text:
+   backgroundColor: "rgba(0, 0, 0, 0.6)"
+
+3. For light mode glass components, add a light overlay behind text:
+   backgroundColor: "rgba(255, 255, 255, 0.7)"
+
+4. Review all places where text is rendered over images or gradients and
+   ensure the text remains readable.
+
+Test by taking screenshots and running them through a contrast checker tool
+(e.g., WebAIM Contrast Checker or the Accessibility Inspector in Xcode).
+```
 
 #### Fix 6.4 — Add keyboard navigation for web
-1. Open `client/screens/LandingScreen.tsx`
-2. Ensure all interactive elements have `tabIndex={0}` on web platform
-3. Add `onKeyPress` handlers to critical interactive elements:
-   ```tsx
+
+```
+For the web version of the app, ensure all interactive elements are keyboard
+accessible.
+
+In screens that render on web (especially `LandingScreen.tsx` and any web
+routes):
+
+1. Ensure all interactive elements have `tabIndex={0}` when rendered on web:
+   import { Platform } from "react-native";
+
+   <Pressable
+     {...(Platform.OS === "web" ? { tabIndex: 0 } : {})}
+     accessibilityRole="button"
+     onPress={handlePress}
+   >
+
+2. Add `onKeyPress` handlers for keyboard activation:
    onKeyPress={(e) => {
      if (e.nativeEvent.key === "Enter" || e.nativeEvent.key === " ") {
        handlePress();
      }
    }}
-   ```
-4. Add focus styles visible to keyboard users
+
+3. Add visible focus styles for keyboard users:
+   Use a focus ring style (e.g., outline: "2px solid #4A90D9") that only
+   appears on keyboard focus, not mouse click.
+
+Priority screens: LandingScreen.tsx, AuthScreen.tsx, SubscriptionScreen.tsx
+```
 
 #### Fix 6.5 — Add list roles
-1. In `client/screens/InventoryScreen.tsx`, wrap the FlatList items:
-   ```tsx
+
+```
+Add proper list semantics to FlatList and ScrollView-based lists so screen
+readers can communicate list structure.
+
+In screens that display lists of items:
+
+1. Wrap the FlatList in a View with the list role:
    <View accessibilityRole="list">
-     <FlatList ... renderItem={({ item }) => (
-       <View accessibilityRole="listitem" accessibilityLabel={`${item.name}, expires ${item.expiryDate}`}>
-         ...
-       </View>
-     )} />
+     <FlatList
+       data={items}
+       renderItem={({ item }) => (
+         <View
+           accessibilityRole="listitem"
+           accessibilityLabel={`${item.name}, expires ${item.expiryDate}`}
+         >
+           {/* existing item content */}
+         </View>
+       )}
+     />
    </View>
-   ```
-2. Apply the same pattern to recipe lists, shopping lists, and meal plan items
+
+Apply this pattern to:
+- client/screens/InventoryScreen.tsx — pantry items list
+- client/screens/RecipesScreen.tsx — recipe cards list
+- client/screens/ShoppingListScreen.tsx — shopping items list
+- client/screens/MealPlanScreen.tsx — meal plan entries
+
+This tells screen readers "this is a list with N items" and allows users
+to navigate between items using list navigation shortcuts.
+```
 
 ---
 
@@ -575,47 +927,107 @@
 - Severity: Low
 - Impact: Some endpoints return `{ error: "..." }`, others `{ error: "code", message: "..." }`
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
-#### Fix 7.1 — Migrate all console.log to structured logger (see Fix 3.2)
+#### Fix 7.1 — Migrate all console.log to structured logger
+See Fix 3.2 above.
 
 #### Fix 7.2 — Add client-side tests
-1. Create `client/__tests__/` directory
-2. Start with hook tests (easiest to unit test):
-   - `client/__tests__/useTrialStatus.test.ts` — already exists, ensure it passes
-   - `client/__tests__/useSubscription.test.ts` — already exists, ensure it passes
-3. Add component tests for critical UI:
-   - `client/__tests__/EmptyState.test.tsx`
-   - `client/__tests__/GlassButton.test.tsx`
-   - `client/__tests__/ExpiryBadge.test.tsx`
-4. Use React Native Testing Library (`@testing-library/react-native`)
-5. Configure test runner in `vitest.config.ts` or add a separate Jest config for client
+
+```
+The project has 10 server-side test files but zero client-side tests.
+Add React Native Testing Library tests for critical client components and hooks.
+
+1. Install testing dependencies:
+   npm install -D @testing-library/react-native @testing-library/jest-native
+
+2. Create `client/__tests__/` directory if it doesn't exist.
+
+3. Add tests for key hooks:
+   - `client/__tests__/useTrialStatus.test.ts` — Test trial countdown logic,
+     expired state, active state
+   - `client/__tests__/useSubscription.test.ts` — Test tier detection,
+     feature gating, limit checking
+
+4. Add tests for shared utility components:
+   - `client/__tests__/EmptyState.test.tsx` — Renders icon, title, description,
+     optional action button
+   - `client/__tests__/GlassButton.test.tsx` — Renders label, handles press,
+     respects disabled state
+   - `client/__tests__/ExpiryBadge.test.tsx` — Shows correct color/text for
+     expired, expiring soon, and fresh items
+
+5. Configure the test runner in `vitest.config.ts` or add a separate
+   `jest.config.js` for the client directory with react-native preset.
+
+Start with hooks and utility components — they're easiest to unit test and
+provide the most value for the effort.
+```
 
 #### Fix 7.3 — Break up large screen files
-1. Identify screens over 500 lines:
-   - `client/screens/LandingScreen.tsx` (1,047 lines) — see Fix 1.1
-   - Check: `InventoryScreen.tsx`, `RecipeDetailScreen.tsx`, `SettingsScreen.tsx`, `MealPlanScreen.tsx`
-2. For each large screen, extract:
-   - Section components (e.g., `InventoryHeader`, `InventoryFilters`, `InventoryList`)
-   - Helper functions into utility files
-   - Styles into separate files or shared style modules
-3. Keep each screen file under 400 lines
+See Fix 1.1 above for LandingScreen. Apply the same pattern to other large screens:
 
-#### Fix 7.4 — Fix type assertions (see Fix 4.5)
+```
+Identify all screen files over 500 lines in `client/screens/` and refactor
+each one by extracting sections into smaller components.
+
+For each large screen:
+1. Identify distinct visual sections (header, filters, list, detail panel, etc.)
+2. Extract each section into its own component file under `client/components/`
+3. Pass required data and callbacks as props
+4. Keep the screen file as a thin composition layer, under 400 lines
+
+Common extraction patterns:
+- Header/toolbar sections → `<ScreenNameHeader />`
+- Filter/search bars → `<ScreenNameFilters />`
+- List/grid content → `<ScreenNameList />`
+- Detail/modal panels → `<ScreenNameDetail />`
+- Action bar/bottom sections → `<ScreenNameActions />`
+
+Files to check:
+- client/screens/LandingScreen.tsx (1,047 lines) — see Fix 1.1
+- client/screens/InventoryScreen.tsx
+- client/screens/RecipeDetailScreen.tsx
+- client/screens/SettingsScreen.tsx
+- client/screens/MealPlanScreen.tsx
+```
+
+#### Fix 7.4 — Fix admin middleware types
+See Fix 4.5 above.
 
 #### Fix 7.5 — Standardize API response format
+
+```
+Create a consistent API response helper module and use it across all routes.
+
 1. Create `server/lib/apiResponse.ts`:
-   ```typescript
-   export function success(data: unknown, message?: string) {
-     return { success: true, data, message };
+
+   export function successResponse(data: unknown, message?: string) {
+     return { success: true as const, data, ...(message ? { message } : {}) };
    }
 
-   export function error(message: string, errorCode: string, details?: unknown) {
-     return { success: false, error: message, errorCode, details };
+   export function errorResponse(message: string, errorCode: string, details?: unknown) {
+     return { success: false as const, error: message, errorCode, ...(details ? { details } : {}) };
    }
-   ```
-2. Update route handlers to use these helpers instead of ad-hoc JSON responses
-3. This ensures every response has `success`, `error`/`data`, and `errorCode` fields
+
+2. In route handlers, use these helpers instead of ad-hoc JSON:
+
+   BEFORE:
+   res.json({ items: results });
+   AFTER:
+   res.json(successResponse(results));
+
+   BEFORE:
+   res.status(400).json({ error: "Invalid input" });
+   AFTER:
+   res.status(400).json(errorResponse("Invalid input", "INVALID_INPUT"));
+
+3. Update the client's `apiRequest` function in `client/lib/query-client.ts`
+   to expect this consistent format and handle the `success` boolean.
+
+This ensures every API response has a `success` field, making it trivial for
+the client to check if a request succeeded or failed.
+```
 
 ---
 
@@ -650,31 +1062,94 @@
 - Severity: Low
 - Impact: Poor developer experience when Metro bundler isn't ready
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 8.1 — Improve offline mode indication
-1. Open `client/components/OfflineIndicator.tsx`
-2. Ensure it's rendered at a consistent position (top of screen, below header)
-3. Make it dismissible but re-appearing
-4. Add animations for appearing/disappearing
-5. Ensure it's included in all screen layouts, not just some
+
+```
+Improve the offline mode user experience by ensuring the `OfflineIndicator`
+component is visible and helpful across all screens.
+
+1. Open `client/components/OfflineIndicator.tsx`.
+2. Ensure it renders as a fixed banner at the top of the screen (below the
+   safe area inset), with:
+   - A warning icon and "You're offline" text
+   - A subtle animation for appearing/disappearing (use LayoutAnimation or
+     Animated API)
+   - A "Dismiss" button that hides it temporarily (re-appears if still offline
+     after 60 seconds)
+
+3. Include the OfflineIndicator in the app's root layout so it appears on
+   ALL screens, not just some. Add it to the main layout wrapper in
+   `client/App.tsx` or the navigation container.
+
+4. When offline, disable or visually mute action buttons that require network
+   (e.g., "Generate Recipe", "Sync Now") and show a tooltip: "Available when
+   online".
+```
 
 #### Fix 8.2 — Add offline mutation queue
-1. Open `client/lib/sync-manager.ts`
-2. Add a mutation queue system:
-   - When a mutation fails due to network error, push it to an AsyncStorage queue
-   - When connectivity is restored (detected by the existing `isOnline` check), replay queued mutations
-   - Show a badge/count of pending mutations in the sync indicator
-3. Update `client/lib/query-client.ts` to catch network errors in `apiRequest` and queue them
+
+```
+Implement an offline mutation queue so actions taken while offline are
+automatically retried when connectivity is restored.
+
+1. Create `client/lib/offline-queue.ts`:
+   - Define a MutationQueueItem type: { id, endpoint, method, body, createdAt }
+   - Implement `enqueue(item)` — saves to AsyncStorage under "mutation_queue"
+   - Implement `dequeue()` — removes and returns the oldest item
+   - Implement `getAll()` — returns all queued items
+   - Implement `clear()` — removes all items
+
+2. In `client/lib/query-client.ts`, update `apiRequest`:
+   - When a fetch fails due to network error (TypeError: Network request failed),
+     instead of throwing, call `enqueue()` with the request details
+   - Show a toast: "Saved offline. Will sync when connected."
+
+3. In `client/lib/sync-manager.ts` or a new `client/lib/offline-processor.ts`:
+   - When the app detects connectivity restored (NetInfo event), process
+     the queue by replaying each mutation in order
+   - Remove successfully processed items from the queue
+   - Retry failed items up to 3 times, then notify the user
+
+4. Show a badge in the sync indicator showing the count of pending mutations:
+   "3 changes pending sync"
+```
 
 #### Fix 8.3 — Style Metro error page
-1. Open `server/index.ts`, find line 211-212
-2. Replace the raw HTML with a styled error page:
-   ```html
-   <html><body style="font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f5;">
-   <div style="text-align: center; padding: 40px;"><h1>Starting up...</h1><p>The development server is loading. Please refresh in a moment.</p></div>
-   </body></html>
-   ```
+
+```
+In `server/index.ts`, the Metro proxy error handler (around line 211-212)
+serves raw HTML when Metro bundler isn't available.
+
+Find:
+  res.writeHead(502, { "Content-Type": "text/html" });
+  res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
+
+Replace with a styled page:
+  res.writeHead(502, { "Content-Type": "text/html" });
+  res.end(`
+    <html>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                  display: flex; align-items: center; justify-content: center;
+                  height: 100vh; margin: 0; background: #f8f9fa; color: #333;">
+      <div style="text-align: center; padding: 40px; max-width: 400px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+        <h1 style="font-size: 24px; margin-bottom: 8px;">Starting up...</h1>
+        <p style="font-size: 16px; color: #666; line-height: 1.5;">
+          The development server is loading. Please refresh in a moment.
+        </p>
+        <button onclick="location.reload()"
+                style="margin-top: 20px; padding: 10px 24px; font-size: 14px;
+                       border: 1px solid #ddd; border-radius: 6px; background: white;
+                       cursor: pointer;">
+          Refresh
+        </button>
+      </div>
+    </body>
+    </html>
+  `);
+```
 
 ---
 
@@ -712,62 +1187,173 @@
 - Severity: Low
 - Impact: Edge cases where local and cloud data diverge may cause data loss
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 9.1 — Plan for normalized sync data (Long-term)
-1. This is a significant architectural change — plan carefully
-2. Create normalized tables: `user_inventory_items`, `user_recipes`, `user_meal_plans`
-3. Add proper foreign keys and indexes
-4. Migrate existing JSONB data to normalized tables with a migration script
-5. Update sync endpoints to work with normalized data
-6. This enables server-side querying, analytics, and better data integrity
+
+```
+This is a significant architectural change. The current `user_sync_data` table
+stores inventory, recipes, meal plans, and shopping lists as JSONB blobs.
+This prevents server-side querying and referential integrity.
+
+Plan (implement over 1-2 weeks):
+
+1. Create normalized tables in `shared/schema.ts`:
+   - `user_inventory_items`: id, userId, name, quantity, unit, category,
+     expiryDate, storageArea, addedAt, updatedAt
+   - `user_saved_recipes`: id, userId, title, ingredients (jsonb), steps (jsonb),
+     cuisine, servings, savedAt
+   - `user_meal_plans`: id, userId, weekStartDate, meals (jsonb), createdAt
+   - `user_shopping_items`: id, userId, name, quantity, checked, recipeId?, addedAt
+
+2. Add proper foreign keys: all reference `users.id` with cascade delete.
+
+3. Create a data migration script that reads existing JSONB data from
+   `user_sync_data` and inserts into the normalized tables.
+
+4. Update sync endpoints (`server/routers/sync.router.ts`) to read/write
+   from normalized tables instead of JSONB.
+
+5. Keep the JSONB table temporarily as a backup during migration, then
+   remove it after verifying all data migrated correctly.
+
+6. Update indexes for common query patterns (e.g., items by userId + category).
+```
 
 #### Fix 9.2 — Document backup strategy
-1. Replit's built-in PostgreSQL (Neon) handles automated backups
-2. Document this in `replit.md` under a "Database" section
-3. Add a manual data export endpoint for admin use:
-   - `GET /api/admin/export-data` — returns all user data as JSON
-4. Consider a scheduled job that creates periodic database dumps
+
+```
+Document the database backup strategy and add an admin export endpoint.
+
+1. In `replit.md`, add a "Database & Backups" section:
+   - Note that Replit's built-in PostgreSQL (Neon-backed) handles automated
+     point-in-time recovery
+   - Document the rollback/checkpoint system available in Replit
+   - Note that the database can be rolled back alongside code checkpoints
+
+2. Create `server/routers/admin/data-export.router.ts`:
+   - Add endpoint `GET /api/admin/export-all-data` (protected by requireAdmin)
+   - Export all tables as a JSON object: users (redacted passwords), subscriptions,
+     sync data, feedback, referrals
+   - Stream large datasets to avoid memory issues:
+     res.setHeader("Content-Type", "application/json");
+     res.setHeader("Content-Disposition", "attachment; filename=export.json");
+
+3. Register the router in `server/routes.ts` under admin routes with
+   `requireAdmin` middleware.
+```
 
 #### Fix 9.3 — Add user data export endpoint (GDPR)
-1. Create `server/routers/user/data-export.router.ts`
-2. Add endpoint `GET /api/user/export-data` (requireAuth):
-   ```typescript
+
+```
+Add a GDPR-compliant data export endpoint so users can download all their data.
+
+1. Create `server/routers/user/data-export.router.ts`:
+
+   import { Router } from "express";
+   import { db } from "../../db";
+   import { users, userSyncData, subscriptions } from "@shared/schema";
+   import { eq } from "drizzle-orm";
+
+   const router = Router();
+
    router.get("/", async (req, res) => {
-     const userId = req.userId;
+     const userId = req.userId!;
+
      const [user] = await db.select().from(users).where(eq(users.id, userId));
      const [syncData] = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
      const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
 
-     res.json({
-       profile: { email: user.email, displayName: user.displayName, createdAt: user.createdAt },
-       inventory: syncData?.inventory,
-       recipes: syncData?.recipes,
-       mealPlans: syncData?.mealPlans,
-       shoppingList: syncData?.shoppingList,
-       preferences: syncData?.preferences,
-       subscription: sub ? { planType: sub.planType, status: sub.status } : null,
-     });
+     const exportData = {
+       exportDate: new Date().toISOString(),
+       profile: {
+         email: user.email,
+         displayName: user.displayName,
+         createdAt: user.createdAt,
+       },
+       inventory: syncData?.inventory || [],
+       recipes: syncData?.recipes || [],
+       mealPlans: syncData?.mealPlans || [],
+       shoppingList: syncData?.shoppingList || [],
+       preferences: syncData?.preferences || {},
+       subscription: sub ? { planType: sub.planType, status: sub.status, currentPeriodEnd: sub.currentPeriodEnd } : null,
+     };
+
+     res.setHeader("Content-Disposition", `attachment; filename="chefspaice-data-${userId}.json"`);
+     res.json(exportData);
    });
-   ```
-3. Register in `server/routes.ts` with `requireAuth`
-4. Add a "Download My Data" button in the Settings screen
+
+   export default router;
+
+2. Register in `server/routes.ts`:
+   import dataExportRouter from "./routers/user/data-export.router";
+   app.use("/api/user/export-data", requireAuth, dataExportRouter);
+
+3. Add a "Download My Data" button in `client/screens/SettingsScreen.tsx`
+   or `client/screens/ProfileScreen.tsx` that calls GET /api/user/export-data
+   and saves/shares the resulting JSON file.
+```
 
 #### Fix 9.4 — Add soft delete for inventory items
-1. Since inventory is stored in JSONB sync data, add a `deletedAt` field to items
-2. In the client's local storage layer, mark items as deleted instead of removing them
-3. Filter out deleted items in the UI
-4. The sync manager will propagate the soft delete to the server
-5. Add a "Recently Deleted" section in settings for recovery (30-day window)
+
+```
+Add soft delete support so users can recover accidentally deleted items.
+
+Since inventory is stored in the client's AsyncStorage (local-first), implement
+soft delete at the data model level:
+
+1. In the client's inventory item type, add an optional `deletedAt` field:
+   deletedAt?: string | null;  // ISO timestamp when soft-deleted
+
+2. When deleting an item, set `deletedAt = new Date().toISOString()` instead
+   of removing it from the array.
+
+3. Update all list renders to filter out items with `deletedAt`:
+   const visibleItems = items.filter(item => !item.deletedAt);
+
+4. Add a "Recently Deleted" section in Settings or Profile screen:
+   - Show items deleted in the last 30 days
+   - "Restore" button sets `deletedAt = null`
+   - Items older than 30 days are permanently purged by a cleanup function
+
+5. The sync manager will propagate soft deletes to the server.
+
+6. Add a periodic cleanup in the sync manager or app startup:
+   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+   items = items.filter(item =>
+     !item.deletedAt || new Date(item.deletedAt).getTime() > thirtyDaysAgo
+   );
+```
 
 #### Fix 9.5 — Document conflict resolution
-1. Open `client/lib/sync-manager.ts`
-2. Document the current conflict resolution strategy (last-write-wins, merge, etc.)
-3. Add comments explaining the sync algorithm
-4. Update `replit.md` with a "Data Sync" section describing:
+
+```
+Document the sync conflict resolution strategy so the team understands
+edge cases and can maintain the sync system.
+
+1. Open `client/lib/sync-manager.ts` and add a JSDoc comment at the top
+   explaining:
    - When sync occurs (on app foreground, after mutations, periodic timer)
-   - How conflicts are resolved
+   - The conflict resolution strategy (last-write-wins based on updatedAt,
+     or merge strategy if applicable)
    - What happens when offline changes conflict with server changes
+   - How deletions are handled during sync
+
+2. In `replit.md`, add a "Data Sync Architecture" section:
+
+   ## Data Sync Architecture
+   - **Strategy**: Local-first with cloud backup
+   - **Sync trigger**: On app foreground, after local mutations, every N minutes
+   - **Conflict resolution**: Last-write-wins based on `updatedAt` timestamps
+   - **Offline behavior**: Changes stored locally, synced on reconnect
+   - **Data format**: Per-section JSONB (inventory, recipes, mealPlans,
+     shoppingList, preferences, cookware)
+   - **Known edge case**: If user edits the same item on two devices offline,
+     the device that syncs last wins
+
+3. Add inline comments in the sync router and sync manager explaining
+   the merge/overwrite logic at each decision point.
+```
 
 ---
 
@@ -805,42 +1391,125 @@
 - Severity: Low
 - Impact: Users who can't pay lose all access, reducing potential user base and referral spread
 
-### Step-by-Step Fixes
+### Copyable Fix Prompts
 
 #### Fix 10.1 — Add payment failure grace period
-1. Open `server/stripe/webhookHandlers.ts`
-2. In `handleInvoicePaymentFailed`:
-   - Instead of immediately marking subscription as inactive, set a `paymentFailedAt` field
-   - Allow 7 days grace period before blocking access
-3. Update `server/middleware/requireSubscription.ts`:
-   - Check if subscription is in grace period (status = "past_due" AND within 7 days)
-   - Allow access during grace period
-4. Send a push notification to the user about the failed payment
-5. Add an in-app banner: "Your payment failed. Please update your payment method within X days."
+
+```
+Add a 7-day grace period for failed payments so users don't lose access
+immediately.
+
+1. In `server/stripe/webhookHandlers.ts`, find `handleInvoicePaymentFailed`.
+   Instead of immediately marking the subscription as inactive, set the
+   subscription status to "past_due" (Stripe already sends this status).
+
+2. In `server/middleware/requireSubscription.ts`, update ACTIVE_STATUSES:
+   const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
+
+   Then add a grace period check:
+   if (subscription.status === "past_due") {
+     const paymentFailedAt = subscription.updatedAt || new Date();
+     const gracePeriodEnd = new Date(paymentFailedAt);
+     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
+
+     if (new Date() > gracePeriodEnd) {
+       return res.status(403).json({
+         error: "payment_required",
+         message: "Your payment failed. Please update your payment method.",
+       });
+     }
+   }
+
+3. On the client side, detect "past_due" status and show a banner:
+   "Your payment failed. Please update your payment method within X days
+   to keep your subscription active." with a link to the Stripe customer
+   portal.
+
+4. Send a push notification when payment first fails, and again at 3 days
+   and 1 day before grace period ends.
+```
 
 #### Fix 10.2 — Add contextual upgrade prompts
-1. Open `client/components/UpgradePrompt.tsx` — this component already exists
-2. Ensure it's triggered when:
-   - User tries to add 26th pantry item (Basic limit is 25)
-   - User tries to generate 6th AI recipe in a month
-   - User tries to add 6th cookware item
-   - User tries to access a Pro-only feature
-3. Show: current usage, limit, and a clear CTA button to upgrade
-4. Connect the upgrade button to the Stripe checkout or RevenueCat purchase flow
+
+```
+Show upgrade prompts when Basic tier users hit their limits, using the
+existing `client/components/UpgradePrompt.tsx` component.
+
+1. Open `client/components/UpgradePrompt.tsx` and ensure it accepts these props:
+   - currentUsage: number
+   - limit: number
+   - featureName: string
+   - onUpgrade: () => void
+
+2. In inventory management (client/screens/InventoryScreen.tsx or the
+   add item flow):
+   - Before adding an item, check: if items.length >= 25 (BASIC limit)
+   - Show: "You've reached your 25-item pantry limit. Upgrade to Pro for
+     unlimited items." with an "Upgrade" button.
+
+3. In recipe generation:
+   - Track monthly AI recipe count
+   - Before generating, check: if monthlyCount >= 5 (BASIC limit)
+   - Show: "You've used all 5 AI recipes this month. Upgrade to Pro for
+     unlimited recipes."
+
+4. In cookware management:
+   - Before adding, check: if cookwareCount >= 5 (BASIC limit)
+   - Show: "You've reached your 5-cookware limit. Upgrade to Pro for
+     unlimited cookware."
+
+5. For Pro-only features (recipe scanning, bulk scanning, AI assistant,
+   meal prepping):
+   - When a Basic user taps a Pro feature, show: "This feature is available
+     on Pro. Upgrade to unlock [feature name]."
+
+6. Connect the "Upgrade" button to the subscription screen or Stripe
+   checkout flow.
+```
 
 #### Fix 10.3 — Add trial countdown in the app
-1. Open `client/components/TrialStatusBadge.tsx` — already exists
-2. Ensure it shows: "Trial: X days remaining"
-3. Add prominent notifications at:
-   - 3 days remaining: Banner at top of main screen
-   - 1 day remaining: Modal with "Upgrade now to keep your features"
-   - 0 days: `TrialEndedModal` already exists — ensure it's triggered
-4. Open `client/hooks/useTrialStatus.ts` and verify the countdown logic
+
+```
+Add a visible trial countdown so users know exactly when their trial ends.
+
+1. Open `client/components/TrialStatusBadge.tsx` — verify it shows the
+   remaining days. If not, update it:
+   - Calculate: daysLeft = Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24))
+   - Display: "Trial: {daysLeft} days left"
+   - Color: green (7-4 days), yellow (3-2 days), red (1-0 days)
+
+2. Ensure the badge is visible on the main screen's header or navigation.
+
+3. Add milestone notifications at key points:
+   - At 3 days remaining: Show a non-dismissible banner at the top of the
+     main screen: "Your Pro trial ends in 3 days. Subscribe now to keep
+     your features."
+   - At 1 day remaining: Show a modal (use the existing TrialEndedModal
+     pattern): "Your trial ends tomorrow! Don't lose access to [list Pro
+     features]." with "Subscribe Now" and "Maybe Later" buttons.
+   - At 0 days (expired): The existing TrialEndedModal should trigger —
+     verify it's connected to the trial status hook.
+
+4. In `client/hooks/useTrialStatus.ts`, ensure the countdown recalculates
+   on app foreground (not just on mount) by listening to AppState changes.
+```
 
 #### Fix 10.4 — Consider a limited free tier (Business Decision)
-1. This is a business decision, not a bug — but recommended for growth
-2. If implemented, add to `shared/subscription.ts`:
-   ```typescript
+
+```
+NOTE: This is a business decision, not a bug. Implementing a free tier can
+increase user acquisition and referral spread.
+
+If approved, here's how to implement:
+
+1. In `shared/subscription.ts`, add a FREE tier:
+   export enum SubscriptionTier {
+     FREE = "FREE",
+     BASIC = "BASIC",
+     PRO = "PRO",
+   }
+
+   Add to TIER_CONFIG:
    [SubscriptionTier.FREE]: {
      maxPantryItems: 10,
      maxAiRecipesPerMonth: 2,
@@ -851,9 +1520,19 @@
      canUseAiKitchenAssistant: false,
      canUseWeeklyMealPrepping: false,
    },
-   ```
-3. Update `requireSubscription` to allow free-tier users through
-4. Update all feature-gating checks to account for the new tier
+
+2. In `server/middleware/requireSubscription.ts`, allow FREE tier users
+   through (they don't need a Stripe subscription record):
+   - If no subscription record exists, treat user as FREE tier
+   - Attach the tier to the request so routes can check limits
+
+3. Update `shared/schema.ts` to add "FREE" as a valid subscriptionTier value.
+
+4. Update the pricing page and subscription screen to show 3 tiers:
+   Free ($0), Basic ($4.99/mo), Pro ($9.99/mo).
+
+5. Update all feature-gating checks to account for the new tier's limits.
+```
 
 ---
 
