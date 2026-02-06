@@ -102,6 +102,7 @@
     "express-fileupload": "^1.5.2",
     "express-rate-limit": "^8.2.1",
     "google-auth-library": "^10.5.0",
+    "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.5",
     "moti": "^0.30.0",
     "openai": "^6.10.0",

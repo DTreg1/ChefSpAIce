@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import compression from "compression";
 import fileUpload from "express-fileupload";
 import cookieParser from "cookie-parser";
@@ -406,6 +407,20 @@ async function initStripe(retries = 3, delay = 2000) {
 
 
   setupCors(app);
+
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: ["'self'", "https://api.stripe.com", "https://api.openai.com"],
+        frameSrc: ["'self'", "https://js.stripe.com"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
 
   app.use(compression({
     level: 6,
