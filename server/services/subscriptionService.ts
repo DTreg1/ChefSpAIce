@@ -32,31 +32,27 @@ import {
   isWithinLimit,
   getRemainingQuota,
 } from "@shared/subscription";
+import { CacheService } from "../lib/cache";
 
 const { TRIAL_DAYS } = TRIAL_CONFIG;
 
-// Cache for AI recipe limit checks (avoids redundant DB calls for rapid generations)
-const aiLimitCache = new Map<string, { result: LimitCheckResult; expiresAt: number }>();
 const AI_LIMIT_CACHE_TTL_MS = 30_000; // 30 seconds
 
-function getCachedAiLimit(userId: string): LimitCheckResult | null {
-  const cached = aiLimitCache.get(userId);
-  if (cached && Date.now() < cached.expiresAt) {
-    return cached.result;
-  }
-  aiLimitCache.delete(userId);
-  return null;
+const aiLimitCache = new CacheService<LimitCheckResult>({
+  defaultTtlMs: AI_LIMIT_CACHE_TTL_MS,
+});
+
+async function getCachedAiLimit(userId: string): Promise<LimitCheckResult | null> {
+  const cached = await aiLimitCache.get(userId);
+  return cached ?? null;
 }
 
-function setCachedAiLimit(userId: string, result: LimitCheckResult): void {
-  aiLimitCache.set(userId, {
-    result,
-    expiresAt: Date.now() + AI_LIMIT_CACHE_TTL_MS,
-  });
+async function setCachedAiLimit(userId: string, result: LimitCheckResult): Promise<void> {
+  await aiLimitCache.set(userId, result);
 }
 
-export function invalidateAiLimitCache(userId: string): void {
-  aiLimitCache.delete(userId);
+export async function invalidateAiLimitCache(userId: string): Promise<void> {
+  await aiLimitCache.delete(userId);
 }
 
 export interface UserEntitlements {
@@ -211,7 +207,7 @@ export async function checkAiRecipeLimit(
   userId: string
 ): Promise<LimitCheckResult> {
   // Check cache first to avoid redundant DB calls for rapid generations
-  const cached = getCachedAiLimit(userId);
+  const cached = await getCachedAiLimit(userId);
   if (cached) {
     return cached;
   }
@@ -232,7 +228,7 @@ export async function checkAiRecipeLimit(
   const allowed = isWithinLimit(tier, "maxAiRecipesPerMonth", currentCount);
 
   const result: LimitCheckResult = { allowed, remaining, limit };
-  setCachedAiLimit(userId, result);
+  await setCachedAiLimit(userId, result);
   return result;
 }
 
@@ -310,7 +306,7 @@ export async function incrementAiRecipeCount(userId: string): Promise<void> {
     .where(eq(users.id, userId));
 
   // Invalidate the cache so the next limit check reflects the new count
-  invalidateAiLimitCache(userId);
+  await invalidateAiLimitCache(userId);
 }
 
 export async function resetMonthlyCountsIfNeeded(userId: string): Promise<void> {
