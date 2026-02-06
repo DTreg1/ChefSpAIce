@@ -51,6 +51,14 @@ function getDisplayText(days: number): string {
   return `${days} days`;
 }
 
+function getAccessibilityLabel(days: number): string {
+  if (days < -1) return `Expired ${Math.abs(days)} days ago`;
+  if (days === -1) return "Expired 1 day ago";
+  if (days === 0) return "Expires today";
+  if (days === 1) return "Expires tomorrow";
+  return `Expires in ${days} days`;
+}
+
 function getSizeStyles(size: BadgeSize) {
   switch (size) {
     case "small":
@@ -145,7 +153,8 @@ export function ExpiryBadge({
         },
         animatedStyle,
       ]}
-      accessibilityLabel={`Expires ${displayText.toLowerCase()}`}
+      accessibilityRole="text"
+      accessibilityLabel={getAccessibilityLabel(daysUntilExpiry)}
     >
       {showIcon ? (
         <Feather name={iconName} size={sizeStyles.iconSize} color={textColor} />

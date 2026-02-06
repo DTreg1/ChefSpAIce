@@ -85,6 +85,8 @@ export function TrialStatusBadge({
       <View
         style={[styles.compactContainer, { backgroundColor: statusColor + "20" }]}
         data-testid="badge-trial-status-compact"
+        accessibilityRole="text"
+        accessibilityLabel={`Trial: ${getStatusText()}`}
       >
         <Feather name={getStatusIcon()} size={12} color={statusColor} />
         <ThemedText style={[styles.compactText, { color: statusColor }]}>
@@ -104,6 +106,8 @@ export function TrialStatusBadge({
         },
       ]}
       data-testid="card-trial-status"
+      accessibilityRole="text"
+      accessibilityLabel={`${isGuestTrial ? "Guest Trial" : "Free Trial"}: ${getStatusText()}`}
     >
       <View style={styles.header}>
         <View
@@ -132,6 +136,8 @@ export function TrialStatusBadge({
           style={[styles.upgradeButton, { backgroundColor: AppColors.primary }]}
           onPress={handleUpgrade}
           data-testid="button-upgrade-from-trial"
+          accessibilityRole="button"
+          accessibilityLabel={isExpired ? "Subscribe Now" : "Upgrade"}
         >
           <ThemedText style={styles.upgradeButtonText}>
             {isExpired ? "Subscribe Now" : "Upgrade"}

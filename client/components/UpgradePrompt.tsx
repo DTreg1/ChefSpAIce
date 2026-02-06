@@ -153,6 +153,8 @@ export function UpgradePrompt({
           style={styles.closeButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           data-testid="button-dismiss-upgrade"
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss upgrade prompt"
         >
           <Ionicons name="close" size={24} color={theme.textOnGlass} />
         </Pressable>
@@ -232,6 +234,8 @@ export function UpgradePrompt({
           },
         ]}
         data-testid="upgrade-prompt"
+        accessibilityRole="alert"
+        accessibilityLabel={`${getTitle()}. ${getMessage()}`}
       >
         {renderContent()}
       </View>
@@ -244,6 +248,8 @@ export function UpgradePrompt({
         glassEffectStyle="regular"
         style={styles.card}
         testID="upgrade-prompt"
+        accessibilityRole="alert"
+        accessibilityLabel={`${getTitle()}. ${getMessage()}`}
       >
         {renderContent()}
       </GlassView>
@@ -262,6 +268,8 @@ export function UpgradePrompt({
         },
       ]}
       testID="upgrade-prompt"
+      accessibilityRole="alert"
+      accessibilityLabel={`${getTitle()}. ${getMessage()}`}
     >
       <View style={styles.glassOverlay}>{renderContent()}</View>
     </BlurView>
@@ -340,6 +348,9 @@ export function UsageBadge({ current, max, onPress }: UsageBadgeProps) {
           animatedStyle,
         ]}
         data-testid="badge-usage"
+        accessibilityRole="button"
+        accessibilityLabel={`Usage: ${getText()}${isExhausted ? ", limit reached" : isLow ? ", running low" : ""}`}
+        accessibilityHint="Tap to view upgrade options"
       >
         {BadgeContent}
       </AnimatedPressable>
@@ -353,6 +364,8 @@ export function UsageBadge({ current, max, onPress }: UsageBadgeProps) {
         { backgroundColor: `${getColor()}15`, borderColor: `${getColor()}40` },
       ]}
       data-testid="badge-usage"
+      accessibilityRole="text"
+      accessibilityLabel={`Usage: ${getText()}${isExhausted ? ", limit reached" : isLow ? ", running low" : ""}`}
     >
       {BadgeContent}
     </View>

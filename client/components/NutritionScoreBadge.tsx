@@ -35,7 +35,11 @@ export function NutritionScoreBadge({
   }
 
   const content = (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole="text"
+      accessibilityLabel={`Nutrition score: ${scoreResult.score} out of 100, grade ${scoreResult.grade}, ${scoreResult.label}`}
+    >
       <View
         style={[
           styles.badge,
@@ -78,7 +82,12 @@ export function NutritionScoreBadge({
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} hitSlop={8}>
+      <Pressable
+        onPress={onPress}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityHint="Tap to view nutrition details"
+      >
         {content}
       </Pressable>
     );

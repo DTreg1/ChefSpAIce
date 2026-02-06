@@ -126,8 +126,23 @@ export function SyncStatusIndicator({
     return date.toLocaleDateString();
   };
 
+  const getSyncAccessibilityLabel = () => {
+    if (!isOnline) return "Sync status: Offline";
+    if (status === "syncing") return "Sync status: Syncing in progress";
+    if (status === "error") return `Sync status: ${failedItems > 1 ? `${failedItems} items failed` : "1 item failed"} to sync`;
+    if (pendingChanges > 0) return `Sync status: ${pendingChanges} changes pending`;
+    return "Sync status: All data synced";
+  };
+
   return (
-    <Pressable onPress={handlePress} style={styles.container}>
+    <Pressable
+      onPress={handlePress}
+      style={styles.container}
+      accessibilityRole="button"
+      accessibilityLabel={getSyncAccessibilityLabel()}
+      accessibilityHint={status === "error" ? "Tap to retry failed items" : "Tap to sync now"}
+      accessibilityLiveRegion="polite"
+    >
       <Animated.View
         style={[
           styles.iconContainer,

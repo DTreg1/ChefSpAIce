@@ -82,6 +82,9 @@ export function OfflineIndicator() {
         { paddingTop: insets.top + Spacing.xs, pointerEvents: "none" },
         animatedStyle,
       ]}
+      accessibilityLiveRegion="assertive"
+      accessibilityRole="alert"
+      accessibilityLabel={isOffline ? "You are currently offline. Changes will sync when connection is restored." : undefined}
     >
       {Platform.OS === "ios" ? (
         <BlurView intensity={80} tint="dark" style={styles.blur}>
