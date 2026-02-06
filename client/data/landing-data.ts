@@ -1,7 +1,9 @@
 export const APP_STORE_URL =
-  "https://apps.apple.com/app/chefspaice/id000000000";
+  process.env.EXPO_PUBLIC_APP_STORE_URL ||
+  "https://apps.apple.com/app/chefspaice";
 export const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.chefspaice.app";
+  process.env.EXPO_PUBLIC_PLAY_STORE_URL ||
+  "https://play.google.com/store/apps/details?id=com.chefspaice";
 
 export const showcaseScreenshots = [
   {
