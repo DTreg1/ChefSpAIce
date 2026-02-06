@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
@@ -11,6 +11,7 @@ import { requireAuth } from "../middleware/auth";
 import { getUncachableStripeClient } from "../stripe/stripeClient";
 import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
+import { AppError } from "../middleware/errorHandler";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -37,7 +38,6 @@ interface SubscriptionInfo {
 async function evaluateAndUpdateSubscriptionStatus(subscription: typeof subscriptions.$inferSelect): Promise<SubscriptionStatus> {
   const now = new Date();
   
-  // If trialing and trial has expired, mark as expired
   if (subscription.status === 'trialing' && subscription.trialEnd && new Date(subscription.trialEnd) < now) {
     await db
       .update(subscriptions)
@@ -46,7 +46,6 @@ async function evaluateAndUpdateSubscriptionStatus(subscription: typeof subscrip
     return 'expired';
   }
   
-  // If active but current period has ended, mark as expired (unless it's a Stripe subscription which handles this via webhooks)
   if (subscription.status === 'active' && subscription.currentPeriodEnd && !subscription.stripeSubscriptionId) {
     if (new Date(subscription.currentPeriodEnd) < now) {
       await db
@@ -76,7 +75,6 @@ async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
     };
   }
 
-  // Evaluate and potentially update the subscription status (e.g., expire trials)
   const currentStatus = await evaluateAndUpdateSubscriptionStatus(subscription);
 
   return {
@@ -122,7 +120,6 @@ const AUTH_COOKIE_NAME = "chefspaice_auth";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
 function setAuthCookie(res: Response, token: string, req?: Request): void {
-  // Always use secure cookies when served over HTTPS (Replit always uses HTTPS)
   const isSecure = req ? req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' : true;
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
@@ -137,25 +134,24 @@ function clearAuthCookie(res: Response): void {
   res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
 }
 
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password, displayName, selectedPlan, referralCode } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      throw AppError.badRequest("Email and password are required", "MISSING_CREDENTIALS");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Please enter a valid email address" });
+      throw AppError.badRequest("Please enter a valid email address", "INVALID_EMAIL");
     }
 
     const passwordError = validatePassword(password);
     if (passwordError) {
-      return res.status(400).json({ error: passwordError });
+      throw AppError.badRequest(passwordError, "WEAK_PASSWORD");
     }
 
-    // Validate selectedPlan if provided
     const validPlans = ['monthly', 'annual'];
     const plan = validPlans.includes(selectedPlan) ? selectedPlan : 'monthly';
 
@@ -166,7 +162,7 @@ router.post("/register", async (req: Request, res: Response) => {
       .limit(1);
 
     if (existingUser.length > 0) {
-      return res.status(409).json({ error: "An account with this email already exists" });
+      throw AppError.conflict("An account with this email already exists", "EMAIL_EXISTS");
     }
 
     const hashedPassword = await hashPassword(password);
@@ -194,7 +190,6 @@ router.post("/register", async (req: Request, res: Response) => {
       userId: newUser.id,
     });
 
-    // Handle referral code if provided
     let referralTrialDays: number | undefined;
     if (referralCode && typeof referralCode === 'string') {
       try {
@@ -234,12 +229,10 @@ router.post("/register", async (req: Request, res: Response) => {
       }
     }
 
-    // Create trial subscription for new user (7-day free trial, or 14-day if referred) with selected plan
     await ensureTrialSubscription(newUser.id, plan, referralTrialDays);
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 
-    // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, rawToken, req);
 
     const csrfToken = generateCsrfToken(req, res);
@@ -256,17 +249,16 @@ router.post("/register", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    logger.error("Registration error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Registration failed. Please try again." });
+    next(error);
   }
 });
 
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      throw AppError.badRequest("Email and password are required", "MISSING_CREDENTIALS");
     }
 
     const [user] = await db
@@ -276,12 +268,12 @@ router.post("/login", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user || !user.password) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
     }
 
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
     }
 
     const rawToken = generateToken();
@@ -296,7 +288,6 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
 
-    // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, rawToken, req);
 
     const csrfToken = generateCsrfToken(req, res);
@@ -313,17 +304,15 @@ router.post("/login", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    logger.error("Login error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Login failed. Please try again." });
+    next(error);
   }
 });
 
-router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
+router.post("/logout", csrfProtection, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
     
-    // Get token from either header or cookie
     let token: string | null = null;
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.substring(7);
@@ -336,7 +325,6 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
       await db.delete(userSessions).where(eq(userSessions.token, hashed));
     }
 
-    // Always clear the auth cookie
     clearAuthCookie(res);
 
     res.json({ success: true });
@@ -347,11 +335,11 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/me", async (req: Request, res: Response) => {
+router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Not authenticated" });
+      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
     }
 
     const rawToken = authHeader.substring(7);
@@ -364,7 +352,7 @@ router.get("/me", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ error: "Session expired" });
+      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
     }
 
     const [user] = await db
@@ -374,7 +362,7 @@ router.get("/me", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user) {
-      return res.status(401).json({ error: "User not found" });
+      throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
     }
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
@@ -389,17 +377,16 @@ router.get("/me", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error("Auth check error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to verify authentication" });
+    next(error);
   }
 });
 
-router.get("/restore-session", async (req: Request, res: Response) => {
+router.get("/restore-session", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
     
     if (!cookieToken) {
-      return res.status(401).json({ error: "No session cookie" });
+      throw AppError.unauthorized("No session cookie", "AUTH_REQUIRED");
     }
 
     const hashedCookieToken = hashToken(cookieToken);
@@ -411,8 +398,7 @@ router.get("/restore-session", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      clearAuthCookie(res);
-      return res.status(401).json({ error: "Session expired" });
+      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
     }
 
     const [user] = await db
@@ -422,8 +408,7 @@ router.get("/restore-session", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user) {
-      clearAuthCookie(res);
-      return res.status(401).json({ error: "User not found" });
+      throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
     }
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
@@ -442,17 +427,15 @@ router.get("/restore-session", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    logger.error("Session restore error", { error: error instanceof Error ? error.message : String(error) });
-    clearAuthCookie(res);
-    res.status(500).json({ error: "Failed to restore session" });
+    next(error);
   }
 });
 
-router.get("/sync", async (req: Request, res: Response) => {
+router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Not authenticated" });
+      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
     }
 
     const rawToken = authHeader.substring(7);
@@ -465,7 +448,7 @@ router.get("/sync", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ error: "Session expired" });
+      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
     }
 
     const [syncData] = await db
@@ -474,7 +457,6 @@ router.get("/sync", async (req: Request, res: Response) => {
       .where(eq(userSyncData.userId, session.userId))
       .limit(1);
 
-    // Fetch cookware from userAppliances table (source of truth)
     const userCookware = await db
       .select({ applianceId: userAppliances.applianceId })
       .from(userAppliances)
@@ -555,16 +537,15 @@ router.get("/sync", async (req: Request, res: Response) => {
       serverTimestamp,
     });
   } catch (error) {
-    logger.error("Sync fetch error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch sync data" });
+    next(error);
   }
 });
 
-router.post("/sync", async (req: Request, res: Response) => {
+router.post("/sync", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Not authenticated" });
+      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
     }
 
     const rawToken = authHeader.substring(7);
@@ -577,7 +558,7 @@ router.post("/sync", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ error: "Session expired" });
+      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
     }
 
     const { data } = req.body;
@@ -588,8 +569,7 @@ router.post("/sync", async (req: Request, res: Response) => {
       const incomingCount = data.cookware.length;
       
       if (incomingCount > maxLimit) {
-        return res.status(403).json({
-          error: "Cookware limit reached. Upgrade to Pro for unlimited cookware.",
+        throw AppError.forbidden("Cookware limit reached. Upgrade to Pro for unlimited cookware.", "COOKWARE_LIMIT_REACHED").withDetails({
           code: "COOKWARE_LIMIT_REACHED",
           limit: limitCheck.limit,
           count: incomingCount,
@@ -600,8 +580,7 @@ router.post("/sync", async (req: Request, res: Response) => {
     if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
       const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
       if (!hasAccess) {
-        return res.status(403).json({
-          error: "Custom storage areas are a Pro feature. Upgrade to Pro to create custom storage locations.",
+        throw AppError.forbidden("Custom storage areas are a Pro feature. Upgrade to Pro to create custom storage locations.", "FEATURE_NOT_AVAILABLE").withDetails({
           code: "FEATURE_NOT_AVAILABLE",
           feature: "customStorageAreas",
         });
@@ -691,10 +670,8 @@ router.post("/sync", async (req: Request, res: Response) => {
       updatedSectionTimestamps.shoppingList = now;
     }
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
-      // Sync cookware to userAppliances table (source of truth)
       const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
       
-      // Get current cookware for this user
       const currentCookware = await db
         .select({ applianceId: userAppliances.applianceId })
         .from(userAppliances)
@@ -703,11 +680,9 @@ router.post("/sync", async (req: Request, res: Response) => {
       const currentIds = new Set(currentCookware.map(c => c.applianceId));
       const newIds = new Set(newCookwareIds);
       
-      // Find IDs to add and remove
       const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
       const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
       
-      // Remove old cookware
       if (toRemove.length > 0) {
         await db
           .delete(userAppliances)
@@ -717,7 +692,6 @@ router.post("/sync", async (req: Request, res: Response) => {
           ));
       }
       
-      // Add new cookware
       if (toAdd.length > 0) {
         await db
           .insert(userAppliances)
@@ -781,8 +755,7 @@ router.post("/sync", async (req: Request, res: Response) => {
       ...(prefsError && { prefsError })
     });
   } catch (error) {
-    logger.error("Sync save error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to save sync data" });
+    next(error);
   }
 });
 
@@ -791,11 +764,11 @@ router.post("/sync", async (req: Request, res: Response) => {
 // Transfers local guest data to new registered account
 // =============================================================================
 
-router.post("/migrate-guest-data", async (req: Request, res: Response) => {
+router.post("/migrate-guest-data", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Not authenticated" });
+      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
     }
 
     const rawToken = authHeader.substring(7);
@@ -808,25 +781,23 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ error: "Session expired" });
+      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
     }
 
     const { guestId, data } = req.body;
 
     if (!data) {
-      return res.status(400).json({ error: "No data provided for migration" });
+      throw AppError.badRequest("No data provided for migration", "MISSING_DATA");
     }
 
     logger.info("Starting guest data migration", { userId: session.userId, guestId });
 
-    // Check for existing data in user's sync record
     const [existingSyncData] = await db
       .select()
       .from(userSyncData)
       .where(eq(userSyncData.userId, session.userId))
       .limit(1);
 
-    // Determine merge strategy: if user already has data, we'll merge arrays
     const hasExistingData = existingSyncData && (
       existingSyncData.inventory ||
       existingSyncData.recipes ||
@@ -838,15 +809,12 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       logger.info("User has existing data, merging", { userId: session.userId });
     }
 
-    // Prepare sync update with guest data
     const syncUpdate: Record<string, unknown> = {
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Helper to safely merge arrays - validates input is array and merges by ID
     const mergeOrReplace = (existing: unknown, incoming: unknown): unknown => {
-      // Validate incoming is an array
       if (!Array.isArray(incoming) || incoming.length === 0) return existing;
       if (!existing) return incoming;
       
@@ -854,7 +822,6 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
         const existingArr = Array.isArray(existing) ? existing : null;
         if (!existingArr) return incoming;
         
-        // Merge: add incoming items that don't exist (by id if available)
         const merged = [...existingArr];
         for (const item of incoming) {
           const itemId = (item as { id?: string })?.id;
@@ -871,13 +838,11 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       }
     };
 
-    // Check cookware limits if guest has cookware
     if (data.cookware && Array.isArray(data.cookware) && data.cookware.length > 0) {
       const limitCheck = await checkCookwareLimit(session.userId);
       const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
       const incomingCount = data.cookware.length;
       
-      // Get current cookware count
       const currentCookware = await db
         .select({ applianceId: userAppliances.applianceId })
         .from(userAppliances)
@@ -886,24 +851,20 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       const totalCount = currentCookware.length + incomingCount;
       
       if (totalCount > maxLimit) {
-        // Truncate guest cookware to fit within limit
         const slotsAvailable = Math.max(0, maxLimit - currentCookware.length);
         data.cookware = data.cookware.slice(0, slotsAvailable);
         logger.info("Truncated cookware due to limit", { slotsAvailable });
       }
     }
 
-    // Check custom locations feature access
     if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
       const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
       if (!hasAccess) {
-        // Skip custom locations migration for non-Pro users
         logger.info("Skipping custom locations - user doesn't have Pro access");
         delete data.customLocations;
       }
     }
 
-    // Process array data types with safe merge
     if (data.inventory !== undefined) {
       syncUpdate.inventory = mergeOrReplace(
         hasExistingData ? existingSyncData?.inventory || null : null,
@@ -947,13 +908,11 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       );
     }
     
-    // For non-array data, only use guest data if no existing data
     if (data.preferences !== undefined && !existingSyncData?.preferences) {
       const parseResult = syncPreferencesSchema.safeParse(data.preferences);
       if (parseResult.success) {
         syncUpdate.preferences = parseResult.data;
         
-        // Also update user profile with preferences
         const prefs = parseResult.data;
         const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
         if (prefs.servingSize !== undefined) userUpdate.householdSize = prefs.servingSize;
@@ -972,21 +931,17 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
         }
       }
     }
-    // Only set onboarding if no existing onboarding data
     if (data.onboarding !== undefined && !existingSyncData?.onboarding) {
       syncUpdate.onboarding = data.onboarding;
     }
-    // Only set userProfile if no existing userProfile data
     if (data.userProfile !== undefined && !existingSyncData?.userProfile) {
       syncUpdate.userProfile = data.userProfile;
     }
 
-    // Handle cookware migration
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
       const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
       
       if (newCookwareIds.length > 0) {
-        // Get current cookware
         const currentCookware = await db
           .select({ applianceId: userAppliances.applianceId })
           .from(userAppliances)
@@ -1007,7 +962,6 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       }
     }
 
-    // Update or insert sync data
     if (existingSyncData) {
       await db
         .update(userSyncData)
@@ -1020,7 +974,6 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       });
     }
 
-    // Update onboarding status if completed during guest mode
     if (data.onboarding?.completedAt) {
       await db
         .update(users)
@@ -1036,8 +989,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       merged: hasExistingData,
     });
   } catch (error) {
-    logger.error("Guest data migration error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to migrate guest data" });
+    next(error);
   }
 });
 
@@ -1048,20 +1000,18 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
 
 const DEMO_EMAIL = "demo@chefspaice.com";
 
-router.delete("/delete-account", csrfProtection, async (req: Request, res: Response) => {
+router.delete("/delete-account", csrfProtection, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Get auth token from header or cookie
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
     const rawToken = authHeader?.replace("Bearer ", "") || cookieToken;
 
     if (!rawToken) {
-      return res.status(401).json({ error: "Authentication required" });
+      throw AppError.unauthorized("Authentication required", "AUTH_REQUIRED");
     }
 
     const hashedToken = hashToken(rawToken);
 
-    // Validate session
     const [session] = await db
       .select()
       .from(userSessions)
@@ -1069,12 +1019,11 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
     const userId = session.userId;
 
-    // Get user to check if it's the demo account
     const [user] = await db
       .select()
       .from(users)
@@ -1082,24 +1031,16 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
       .limit(1);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      throw AppError.notFound("User not found", "USER_NOT_FOUND");
     }
 
-    // Protect demo account from deletion
     if (user.email === DEMO_EMAIL) {
-      return res.status(403).json({ 
-        error: "Demo account cannot be deleted. This account is used for App Store review purposes." 
-      });
+      throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
     logger.info("Starting account deletion", { userId });
 
-    // Delete all user data in a transaction
-    // Note: Due to cascade delete on users table, most data will be automatically deleted
-    // But we explicitly delete to ensure everything is removed
-    
     try {
-      // Delete user appliances
       await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
       logger.info("Deleted user appliances", { userId });
     } catch (e) {
@@ -1107,7 +1048,6 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     }
 
     try {
-      // Delete subscriptions
       await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
       logger.info("Deleted subscriptions", { userId });
     } catch (e) {
@@ -1115,7 +1055,6 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     }
 
     try {
-      // Delete sync data
       await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
       logger.info("Deleted sync data", { userId });
     } catch (e) {
@@ -1123,18 +1062,15 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     }
 
     try {
-      // Delete all sessions
       await db.delete(userSessions).where(eq(userSessions.userId, userId));
       logger.info("Deleted sessions", { userId });
     } catch (e) {
       logger.warn("Error deleting sessions", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
-    // Finally, delete the user (this should cascade delete remaining data)
     await db.delete(users).where(eq(users.id, userId));
     logger.info("Deleted user record", { userId });
 
-    // Clear auth cookie
     clearAuthCookie(res);
 
     logger.info("User deleted successfully", { userId });
@@ -1145,20 +1081,17 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     });
 
   } catch (error) {
-    logger.error("Account deletion error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ 
-      error: "Failed to delete account. Please try again or contact support." 
-    });
+    next(error);
   }
 });
 
-router.delete("/account", requireAuth, async (req: Request, res: Response) => {
+router.delete("/account", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email confirmation is required to delete your account." });
+      throw AppError.badRequest("Email confirmation is required to delete your account.", "MISSING_DATA");
     }
 
     const [user] = await db
@@ -1168,17 +1101,15 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      throw AppError.notFound("User not found", "USER_NOT_FOUND");
     }
 
     if (user.email.toLowerCase() !== email.toLowerCase()) {
-      return res.status(400).json({ error: "Email does not match your account email. Please confirm with the correct email address." });
+      throw AppError.badRequest("Email does not match your account email. Please confirm with the correct email address.", "EMAIL_MISMATCH");
     }
 
     if (user.email === DEMO_EMAIL) {
-      return res.status(403).json({
-        error: "Demo account cannot be deleted. This account is used for App Store review purposes."
-      });
+      throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
     logger.info("Starting account deletion", { userId });
@@ -1280,10 +1211,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.error("Account deletion error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({
-      error: "Failed to delete account. Please try again or contact support."
-    });
+    next(error);
   }
 });
 

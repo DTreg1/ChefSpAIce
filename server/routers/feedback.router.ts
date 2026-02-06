@@ -39,13 +39,9 @@ const updateFeedbackSchema = z.object({
   bucketId: z.number().optional().nullable(),
 });
 
-type AuthResult = 
-  | { error: string; status: number }
-  | { user: typeof users.$inferSelect };
-
-async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<AuthResult> {
+async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<typeof users.$inferSelect> {
   if (!authHeader?.startsWith("Bearer ")) {
-    return { error: "Authentication required", status: 401 };
+    throw AppError.unauthorized("Authentication required", "AUTH_REQUIRED");
   }
   
   const rawToken = authHeader.slice(7);
@@ -56,7 +52,7 @@ async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<Au
     .where(eq(userSessions.token, hashedToken));
   
   if (sessions.length === 0 || new Date(sessions[0].expiresAt) <= new Date()) {
-    return { error: "Invalid session", status: 401 };
+    throw AppError.unauthorized("Invalid session", "INVALID_SESSION");
   }
 
   const userResult = await db
@@ -65,14 +61,14 @@ async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<Au
     .where(eq(users.id, sessions[0].userId));
 
   if (userResult.length === 0) {
-    return { error: "User not found", status: 401 };
+    throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
   }
 
   if (!userResult[0].isAdmin) {
-    return { error: "Admin access required", status: 403 };
+    throw AppError.forbidden("Admin access required", "ADMIN_REQUIRED");
   }
 
-  return { user: userResult[0] };
+  return userResult[0];
 }
 
 async function categorizeFeedback(feedbackItem: typeof feedback.$inferSelect): Promise<{ bucketId: number | null; isNewBucket: boolean }> {
@@ -233,12 +229,9 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const { status, type, priority } = req.query;
 
@@ -261,17 +254,13 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json({ feedback: filtered });
   } catch (error) {
-    logger.error("Feedback fetch error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch feedback" });
+    next(error);
   }
 });
 
-router.get("/stats", async (req: Request, res: Response) => {
+router.get("/stats", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const allFeedback = await db.select().from(feedback);
     const allBuckets = await db.select().from(feedbackBuckets);
@@ -300,17 +289,13 @@ router.get("/stats", async (req: Request, res: Response) => {
 
     res.json(stats);
   } catch (error) {
-    logger.error("Feedback stats error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch feedback stats" });
+    next(error);
   }
 });
 
-router.get("/buckets", async (req: Request, res: Response) => {
+router.get("/buckets", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const { status } = req.query;
 
@@ -336,21 +321,17 @@ router.get("/buckets", async (req: Request, res: Response) => {
 
     res.json({ buckets: bucketsWithItems });
   } catch (error) {
-    logger.error("Buckets fetch error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to fetch buckets" });
+    next(error);
   }
 });
 
-router.post("/buckets/:id/generate-prompt", async (req: Request, res: Response) => {
+router.post("/buckets/:id/generate-prompt", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid bucket ID" });
+      throw AppError.badRequest("Invalid bucket ID", "INVALID_BUCKET_ID");
     }
 
     const bucketResult = await db
@@ -359,7 +340,7 @@ router.post("/buckets/:id/generate-prompt", async (req: Request, res: Response) 
       .where(eq(feedbackBuckets.id, id));
 
     if (bucketResult.length === 0) {
-      return res.status(404).json({ error: "Bucket not found" });
+      throw AppError.notFound("Bucket not found", "BUCKET_NOT_FOUND");
     }
 
     const bucket = bucketResult[0];
@@ -369,7 +350,7 @@ router.post("/buckets/:id/generate-prompt", async (req: Request, res: Response) 
       .where(eq(feedback.bucketId, id));
 
     if (items.length === 0) {
-      return res.status(400).json({ error: "Bucket has no feedback items" });
+      throw AppError.badRequest("Bucket has no feedback items", "EMPTY_BUCKET");
     }
 
     const feedbackSummary = items.map((item, idx) => 
@@ -455,21 +436,17 @@ ${items.map((item, idx) => `${idx + 1}. Address: ${item.message.substring(0, 100
       res.json({ prompt: fallbackPrompt, bucketId: id });
     }
   } catch (error) {
-    logger.error("Prompt generation error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to generate prompt" });
+    next(error);
   }
 });
 
-router.post("/buckets/:id/complete", async (req: Request, res: Response) => {
+router.post("/buckets/:id/complete", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid bucket ID" });
+      throw AppError.badRequest("Invalid bucket ID", "INVALID_BUCKET_ID");
     }
 
     const now = new Date();
@@ -496,17 +473,13 @@ router.post("/buckets/:id/complete", async (req: Request, res: Response) => {
 
     res.json({ success: true, message: "Bucket and all feedback items marked as completed" });
   } catch (error) {
-    logger.error("Bucket completion error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to complete bucket" });
+    next(error);
   }
 });
 
-router.post("/categorize-uncategorized", async (req: Request, res: Response) => {
+router.post("/categorize-uncategorized", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const uncategorized = await db
       .select()
@@ -534,17 +507,13 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response) => 
       message: `Categorized ${categorized} of ${uncategorized.length} uncategorized items` 
     });
   } catch (error) {
-    logger.error("Categorization error", { error: error instanceof Error ? error.message : String(error) });
-    res.status(500).json({ error: "Failed to categorize feedback" });
+    next(error);
   }
 });
 
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -568,10 +537,7 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
 
 router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authResult = await getAuthenticatedAdmin(req.headers.authorization);
-    if ("error" in authResult) {
-      return res.status(authResult.status).json({ error: authResult.error });
-    }
+    await getAuthenticatedAdmin(req.headers.authorization);
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
