@@ -10,859 +10,36 @@ import {
   Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import Svg, { Path } from "react-native-svg";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "@/hooks/useTheme";
-import { GlassColors, GlassEffect, AppColors } from "@/constants/theme";
-import { useState, useEffect } from "react";
+import { GlassEffect, AppColors } from "@/constants/theme";
+import { useState } from "react";
+
+import {
+  GlassCard,
+  FeatureCard,
+  StepCard,
+  BenefitCard,
+  PricingCard,
+  HeroDeviceMockup,
+  ScreenshotShowcase,
+  FAQItem,
+  ReplitLogo,
+} from "@/components/landing";
+
+import {
+  faqs,
+  trustLogos,
+  donationAmounts,
+  APP_STORE_URL,
+  PLAY_STORE_URL,
+  BASIC_FEATURES,
+  PRO_FEATURES,
+} from "@/data/landing-data";
 
 const isWeb = Platform.OS === "web";
 const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
-
-// App store URLs - update these when app is published
-const APP_STORE_URL = "https://apps.apple.com/app/chefspaice/id000000000"; // Replace with actual App Store URL
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.chefspaice.app"; // Replace with actual Play Store URL
-
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  testId: string;
-  isDark: boolean;
-  isWide?: boolean;
-}
-
-function GlassCard({
-  children,
-  style,
-  testId,
-}: {
-  children: React.ReactNode;
-  style?: any;
-  testId?: string;
-}) {
-  const { isDark } = useTheme();
-  const glassColors = isDark ? GlassColors.dark : GlassColors.light;
-
-  if (isWeb) {
-    return (
-      <View
-        style={[
-          styles.glassCardWeb,
-          {
-            backgroundColor: glassColors.background,
-            borderColor: glassColors.border,
-          },
-          style,
-        ]}
-        data-testid={testId}
-      >
-        {children}
-      </View>
-    );
-  }
-
-  return (
-    <BlurView
-      intensity={GlassEffect.blur.regular}
-      tint={isDark ? "dark" : "light"}
-      style={[styles.glassCard, style]}
-    >
-      <View
-        style={[
-          styles.glassCardInner,
-          {
-            backgroundColor: glassColors.background,
-            borderColor: glassColors.border,
-          },
-        ]}
-        data-testid={testId}
-      >
-        {children}
-      </View>
-    </BlurView>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-  testId,
-  isDark,
-  isWide,
-}: FeatureCardProps) {
-  return (
-    <GlassCard
-      style={[styles.featureCard, isWide && styles.featureCardWide]}
-      testId={`card-feature-${testId}`}
-    >
-      <View style={styles.featureIconContainer}>{icon}</View>
-      <Text
-        style={[styles.featureTitle, { color: "rgba(255, 255, 255, 0.5)" }]}
-        data-testid={`text-feature-title-${testId}`}
-      >
-        {title}
-      </Text>
-      <Text
-        style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]}
-        data-testid={`text-feature-desc-${testId}`}
-      >
-        {description}
-      </Text>
-    </GlassCard>
-  );
-}
-
-interface StepCardProps {
-  number: string;
-  title: string;
-  description: string;
-  isDark: boolean;
-  isWide?: boolean;
-}
-
-function StepCard({
-  number,
-  title,
-  description,
-  isDark,
-  isWide,
-}: StepCardProps) {
-  return (
-    <GlassCard
-      style={[styles.stepCard, isWide && styles.stepCardWide]}
-      testId={`card-step-${number}`}
-    >
-      <View style={styles.stepNumber}>
-        <Text style={styles.stepNumberText}>{number}</Text>
-      </View>
-      <View style={styles.stepContent}>
-        <Text
-          style={[styles.stepTitle, { color: "rgba(255, 255, 255, 0.5)" }]}
-          data-testid={`text-step-title-${number}`}
-        >
-          {title}
-        </Text>
-        <Text
-          style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]}
-          data-testid={`text-step-desc-${number}`}
-        >
-          {description}
-        </Text>
-      </View>
-    </GlassCard>
-  );
-}
-
-interface BenefitCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  testId: string;
-  isWide?: boolean;
-}
-
-function BenefitCard({
-  icon,
-  title,
-  description,
-  testId,
-  isWide,
-}: BenefitCardProps) {
-  return (
-    <View
-      style={[styles.benefitCard, isWide && styles.benefitCardWide]}
-      data-testid={`card-benefit-${testId}`}
-    >
-      <View style={styles.benefitIconContainer}>{icon}</View>
-      <Text
-        style={styles.benefitTitle}
-        data-testid={`text-benefit-title-${testId}`}
-      >
-        {title}
-      </Text>
-      <Text
-        style={styles.benefitDescription}
-        data-testid={`text-benefit-desc-${testId}`}
-      >
-        {description}
-      </Text>
-    </View>
-  );
-}
-
-interface PricingCardProps {
-  tier: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  isPopular?: boolean;
-  buttonText: string;
-  onPress: () => void;
-  testId: string;
-  isWide?: boolean;
-  showDownloadButtons?: boolean;
-  onDownloadiOS?: () => void;
-  onDownloadAndroid?: () => void;
-}
-
-function PricingCard({
-  tier,
-  price,
-  period,
-  description,
-  features,
-  isPopular,
-  buttonText,
-  onPress,
-  testId,
-  isWide,
-  showDownloadButtons,
-  onDownloadiOS,
-  onDownloadAndroid,
-}: PricingCardProps) {
-  return (
-    <GlassCard
-      style={[
-        styles.pricingCard,
-        isWide && styles.pricingCardWide,
-        isPopular && styles.pricingCardPopular,
-      ]}
-      testId={`card-pricing-${testId}`}
-    >
-      {isPopular && (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularBadgeText}>Most Popular</Text>
-        </View>
-      )}
-      <Text
-        style={styles.pricingTier}
-        data-testid={`text-pricing-tier-${testId}`}
-      >
-        {tier}
-      </Text>
-      <View style={styles.pricingPriceContainer}>
-        <Text
-          style={styles.pricingPrice}
-          data-testid={`text-pricing-price-${testId}`}
-        >
-          {price}
-        </Text>
-        {period && <Text style={styles.pricingPeriod}>/{period}</Text>}
-      </View>
-      <Text
-        style={styles.pricingDescription}
-        data-testid={`text-pricing-desc-${testId}`}
-      >
-        {description}
-      </Text>
-      <View style={styles.pricingFeatures}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.pricingFeatureRow}>
-            <Feather name="check" size={16} color={AppColors.primary} />
-            <Text style={styles.pricingFeatureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
-      {showDownloadButtons ? (
-        <View style={styles.downloadButtonsContainer}>
-          <Text style={styles.downloadLabel}>Download the app:</Text>
-          <View style={styles.downloadButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.downloadButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={onDownloadiOS}
-              data-testid={`button-download-ios-${testId}`}
-            >
-              <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
-              <Text style={styles.downloadButtonText}>App Store</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.downloadButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={onDownloadAndroid}
-              data-testid={`button-download-android-${testId}`}
-            >
-              <MaterialCommunityIcons
-                name="google-play"
-                size={20}
-                color="#FFFFFF"
-              />
-              <Text style={styles.downloadButtonText}>Google Play</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : (
-        <Pressable
-          style={({ pressed }) => [
-            isPopular
-              ? styles.pricingButtonPrimary
-              : styles.pricingButtonSecondary,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={onPress}
-          data-testid={`button-pricing-${testId}`}
-        >
-          {isPopular ? (
-            <LinearGradient
-              colors={[AppColors.primary, "#1E8449"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.pricingButtonGradient}
-            >
-              <Text style={styles.pricingButtonTextPrimary}>{buttonText}</Text>
-            </LinearGradient>
-          ) : (
-            <Text style={styles.pricingButtonTextSecondary}>{buttonText}</Text>
-          )}
-        </Pressable>
-      )}
-    </GlassCard>
-  );
-}
-
-// Helper function to get showcase image URLs
-function getShowcaseImageUrl(category: string, filename: string): string {
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-    // Use EXPO_PUBLIC_DOMAIN env var for the correct server domain:port
-    // In development, this points to port 5000 where Express serves images
-    // In production, use the same hostname without port (images served via same server)
-    const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
-    // Cache bust parameter to force reload updated images
-    const cacheBust = "v=2";
-    if (expoDomain) {
-      // Development: EXPO_PUBLIC_DOMAIN contains domain:5000
-      return `${protocol}//${expoDomain}/public/showcase/${category}/${filename}?${cacheBust}`;
-    }
-    // Production fallback: same host, no port needed
-    return `${protocol}//${hostname}/public/showcase/${category}/${filename}?${cacheBust}`;
-  }
-  return "";
-}
-
-// Showcase screenshots data
-const showcaseScreenshots = [
-  {
-    category: "inventory",
-    filename: "338A0B62-F334-41D1-8AE9-F27252F582DC_1_105_c.jpeg",
-    label: "Inventory",
-    description: "Track your pantry",
-  },
-  {
-    category: "cookware",
-    filename: "cookware-showcase.png",
-    label: "Cookware",
-    description: "Manage your tools",
-  },
-  {
-    category: "recipes",
-    filename: "85633BFE-AEE0-4C16-85F3-EB3E54BDCF22_1_105_c.jpeg",
-    label: "Recipes",
-    description: "AI-generated recipes",
-  },
-  {
-    category: "mealplan",
-    filename: "9923E5F7-BDF1-4437-8DE5-2265D313F287_1_105_c.jpeg",
-    label: "Meal Plan",
-    description: "Plan your week",
-  },
-  {
-    category: "scanning",
-    filename: "B1DD5F3A-BCFE-4861-9097-6313C695FE20_1_105_c.jpeg",
-    label: "Scanning",
-    description: "Add items instantly",
-  },
-];
-
-const heroScreenshot = {
-  category: "hero",
-  filename: "EB0F64E2-5BB7-4CB9-9C62-3AABEAF61B38_1_105_c.jpeg",
-};
-
-// Floating device mockup for hero section
-function HeroDeviceMockup({ isWide }: { isWide: boolean }) {
-  const frameWidth = isWide ? 280 : 200;
-  const frameHeight = frameWidth * 2.16;
-  const screenWidth = frameWidth - 14;
-  const screenHeight = frameHeight - 28;
-  const imageUrl = getShowcaseImageUrl(
-    heroScreenshot.category,
-    heroScreenshot.filename,
-  );
-
-  useEffect(() => {
-    if (!isWeb) return;
-    const styleId = "hero-float-keyframes";
-    if (document.getElementById(styleId)) return;
-    const styleEl = document.createElement("style");
-    styleEl.id = styleId;
-    styleEl.textContent = `
-      @keyframes heroFloat {
-        0%, 100% { transform: rotateY(-8deg) rotateX(2deg) translateY(0px); }
-        50% { transform: rotateY(-8deg) rotateX(2deg) translateY(-15px); }
-      }
-    `;
-    document.head.appendChild(styleEl);
-    return () => {
-      const existing = document.getElementById(styleId);
-      if (existing) existing.remove();
-    };
-  }, []);
-
-  const floatingStyle: React.CSSProperties = isWeb
-    ? {
-        animation: "heroFloat 6s ease-in-out infinite",
-        transformStyle: "preserve-3d",
-        transform: "rotateY(-8deg) rotateX(2deg)",
-      }
-    : {};
-
-  return (
-    <View style={heroDeviceStyles.container} data-testid="hero-device-mockup">
-      <div style={floatingStyle}>
-        <View
-          style={[
-            heroDeviceStyles.phoneFrame,
-            {
-              width: frameWidth,
-              height: frameHeight,
-              borderRadius: frameWidth * 0.15,
-            },
-          ]}
-        >
-          <View
-            style={[
-              heroDeviceStyles.notch,
-              {
-                width: frameWidth * 0.35,
-                height: 24,
-                borderBottomLeftRadius: 12,
-                borderBottomRightRadius: 12,
-              },
-            ]}
-          />
-          <View
-            style={[
-              heroDeviceStyles.screen,
-              {
-                width: screenWidth,
-                height: screenHeight,
-                borderRadius: frameWidth * 0.15 - 4,
-              },
-            ]}
-          >
-            {isWeb ? (
-              <img
-                src={imageUrl}
-                alt="ChefSpAIce app preview"
-                style={{
-                  width: screenWidth,
-                  height: screenHeight,
-                  objectFit: "cover",
-                  borderRadius: frameWidth * 0.15 - 4,
-                }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: screenWidth,
-                  height: screenHeight,
-                  backgroundColor: "#1a1a1a",
-                }}
-              />
-            )}
-          </View>
-          <View style={heroDeviceStyles.homeIndicator} />
-        </View>
-      </div>
-      {/* Glow effect behind device */}
-      <View style={heroDeviceStyles.glowEffect} />
-    </View>
-  );
-}
-
-const heroDeviceStyles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  phoneFrame: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 3,
-    borderColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    ...(Platform.OS === "web"
-      ? {
-          boxShadow:
-            "0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 80px rgba(39, 174, 96, 0.15)",
-        }
-      : {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 15 },
-          shadowOpacity: 0.6,
-          shadowRadius: 30,
-          elevation: 30,
-        }),
-  },
-  notch: {
-    backgroundColor: "#1a1a1a",
-    position: "absolute",
-    top: 0,
-    zIndex: 10,
-  },
-  screen: {
-    overflow: "hidden",
-    backgroundColor: "#0a0a0a",
-  },
-  homeIndicator: {
-    position: "absolute",
-    bottom: 10,
-    width: 120,
-    height: 5,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 3,
-  },
-  glowEffect: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
-    ...(Platform.OS === "web" ? { filter: "blur(60px)" } : {}),
-    zIndex: -1,
-  },
-});
-
-interface DeviceMockupProps {
-  imageUrl: string;
-  label: string;
-  description: string;
-  testId: string;
-  isWide: boolean;
-  index?: number;
-  isHovered?: boolean;
-  hoveredIndex?: number | null;
-  onHover?: (index: number | null) => void;
-  totalCount?: number;
-}
-
-function DeviceMockup({
-  imageUrl,
-  label,
-  description,
-  testId,
-  isWide,
-  index = 0,
-  isHovered = false,
-  hoveredIndex = null,
-  onHover,
-  totalCount = 4,
-}: DeviceMockupProps) {
-  const frameWidth = isWide ? 220 : 160;
-  const frameHeight = frameWidth * 2.16;
-  const screenWidth = frameWidth - 12;
-  const screenHeight = frameHeight - 24;
-  const notchWidth = frameWidth * 0.35;
-  const notchHeight = 22;
-
-  // Isometric effect calculations for web
-  const centerIndex = (totalCount - 1) / 2;
-  const offset = index - centerIndex;
-  const anyHovered = hoveredIndex !== null;
-
-  // Calculate transforms based on hover state
-  let transformX: number;
-  let rotateY: number;
-  let translateZ: number;
-  let scale: number;
-
-  if (isHovered) {
-    // Hovered device: straighten and pop forward
-    transformX = 0;
-    rotateY = 0;
-    translateZ = 80;
-    scale = 1.08;
-  } else if (anyHovered && hoveredIndex !== null) {
-    const distanceFromHovered = index - hoveredIndex;
-    // Push devices away from the hovered one
-    const spreadAmount = distanceFromHovered * 60;
-    transformX = spreadAmount;
-    rotateY = offset * 15; // Slightly more tilt when spread
-    translateZ = -20; // Push back slightly
-    scale = 0.95;
-  } else {
-    // Default isometric fan layout
-    transformX = offset * -30;
-    rotateY = offset * 12;
-    translateZ = 0;
-    scale = 1;
-  }
-
-  // Web-specific wrapper with 3D transforms
-  const webWrapperStyle: React.CSSProperties = isWeb
-    ? {
-        perspective: "1000px",
-        transformStyle: "preserve-3d",
-        transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        transform: `rotateY(${rotateY}deg) translateX(${transformX}px) translateZ(${translateZ}px) scale(${scale})`,
-        zIndex: isHovered ? 100 : 10 - Math.abs(offset),
-        cursor: "pointer",
-        marginLeft: index === 0 ? 0 : -40, // Overlap devices
-      }
-    : {};
-
-  const mockupContent = (
-    <View
-      style={deviceStyles.mockupContainer}
-      data-testid={`device-mockup-${testId}`}
-    >
-      <View
-        style={[
-          deviceStyles.phoneFrame,
-          {
-            width: frameWidth,
-            height: frameHeight,
-            borderRadius: frameWidth * 0.15,
-          },
-        ]}
-      >
-        <View
-          style={[
-            deviceStyles.notch,
-            {
-              width: notchWidth,
-              height: notchHeight,
-              borderBottomLeftRadius: notchHeight / 2,
-              borderBottomRightRadius: notchHeight / 2,
-            },
-          ]}
-        />
-        <View
-          style={[
-            deviceStyles.screen,
-            {
-              width: screenWidth,
-              height: screenHeight,
-              borderRadius: frameWidth * 0.15 - 4,
-            },
-          ]}
-        >
-          {isWeb ? (
-            <img
-              src={imageUrl}
-              alt={`${label} screenshot`}
-              style={{
-                width: screenWidth,
-                height: screenHeight,
-                objectFit: "cover",
-                borderRadius: frameWidth * 0.15 - 4,
-              }}
-            />
-          ) : (
-            <View
-              style={{
-                width: screenWidth,
-                height: screenHeight,
-                backgroundColor: "#1a1a1a",
-              }}
-            />
-          )}
-        </View>
-        <View style={deviceStyles.homeIndicator} />
-      </View>
-      <Text
-        style={[
-          deviceStyles.mockupLabel,
-          { opacity: isHovered || !isWeb ? 1 : 0.7 },
-        ]}
-        data-testid={`text-mockup-label-${testId}`}
-      >
-        {label}
-      </Text>
-      <Text
-        style={[
-          deviceStyles.mockupDescription,
-          { opacity: isHovered || !isWeb ? 1 : 0.5 },
-        ]}
-        data-testid={`text-mockup-desc-${testId}`}
-      >
-        {description}
-      </Text>
-    </View>
-  );
-
-  if (isWeb && onHover) {
-    return (
-      <div
-        style={webWrapperStyle}
-        onMouseEnter={() => onHover(index)}
-        onMouseLeave={() => onHover(null)}
-      >
-        {mockupContent}
-      </div>
-    );
-  }
-
-  return mockupContent;
-}
-
-interface ScreenshotShowcaseProps {
-  isWide: boolean;
-}
-
-function ScreenshotShowcase({ isWide }: ScreenshotShowcaseProps) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-  // For web with isometric effect, use a centered div instead of ScrollView
-  if (isWeb) {
-    return (
-      <View
-        style={deviceStyles.showcaseSection}
-        data-testid="section-screenshot-showcase"
-      >
-        <Text
-          style={deviceStyles.showcaseTitle}
-          data-testid="text-showcase-title"
-        >
-          See ChefSpAIce in Action
-        </Text>
-        <Text
-          style={deviceStyles.showcaseSubtitle}
-          data-testid="text-showcase-subtitle"
-        >
-          Experience the app that transforms your kitchen
-        </Text>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-start",
-            padding: "20px 60px",
-            perspective: "1200px",
-            width: "100%",
-          }}
-        >
-          {showcaseScreenshots.map((screenshot, index) => (
-            <DeviceMockup
-              key={index}
-              imageUrl={getShowcaseImageUrl(
-                screenshot.category,
-                screenshot.filename,
-              )}
-              label={screenshot.label}
-              description={screenshot.description}
-              testId={screenshot.category}
-              isWide={isWide}
-              index={index}
-              isHovered={hoveredIndex === index}
-              hoveredIndex={hoveredIndex}
-              onHover={setHoveredIndex}
-              totalCount={showcaseScreenshots.length}
-            />
-          ))}
-        </div>
-        <Text style={deviceStyles.hoverHint} data-testid="text-hover-hint">
-          Hover over a screen to explore
-        </Text>
-      </View>
-    );
-  }
-
-  // For native, use horizontal ScrollView
-  return (
-    <View
-      style={deviceStyles.showcaseSection}
-      data-testid="section-screenshot-showcase"
-    >
-      <Text
-        style={deviceStyles.showcaseTitle}
-        data-testid="text-showcase-title"
-      >
-        See ChefSpAIce in Action
-      </Text>
-      <Text
-        style={deviceStyles.showcaseSubtitle}
-        data-testid="text-showcase-subtitle"
-      >
-        Experience the app that transforms your kitchen
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          deviceStyles.showcaseScrollContent,
-          isWide && deviceStyles.showcaseScrollContentWide,
-        ]}
-        style={deviceStyles.showcaseScroll}
-      >
-        {showcaseScreenshots.map((screenshot, index) => (
-          <DeviceMockup
-            key={index}
-            imageUrl={getShowcaseImageUrl(
-              screenshot.category,
-              screenshot.filename,
-            )}
-            label={screenshot.label}
-            description={screenshot.description}
-            testId={screenshot.category}
-            isWide={isWide}
-          />
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-interface FAQItemProps {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onToggle: () => void;
-  testId: string;
-}
-
-function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
-  return (
-    <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
-      <GlassCard style={styles.faqCard}>
-        <View style={styles.faqHeader}>
-          <Text
-            style={styles.faqQuestion}
-            data-testid={`text-faq-question-${testId}`}
-          >
-            {question}
-          </Text>
-          <Feather
-            name={isOpen ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="rgba(255,255,255,0.7)"
-          />
-        </View>
-        {isOpen && (
-          <Text
-            style={styles.faqAnswer}
-            data-testid={`text-faq-answer-${testId}`}
-          >
-            {answer}
-          </Text>
-        )}
-      </GlassCard>
-    </Pressable>
-  );
-}
 
 interface LandingScreenProps {
   onAbout?: () => void;
@@ -891,30 +68,6 @@ export default function LandingScreen({
     });
   };
 
-  const handleAbout = () => {
-    if (onAbout) {
-      onAbout();
-    }
-  };
-
-  const handlePrivacy = () => {
-    if (onPrivacy) {
-      onPrivacy();
-    }
-  };
-
-  const handleTerms = () => {
-    if (onTerms) {
-      onTerms();
-    }
-  };
-
-  const handleSupport = () => {
-    if (onSupport) {
-      onSupport();
-    }
-  };
-
   const [isDonating, setIsDonating] = useState(false);
 
   const handleDonate = async (amount: number) => {
@@ -922,7 +75,6 @@ export default function LandingScreen({
     setIsDonating(true);
 
     try {
-      // Get API URL from environment (correctly handles dev vs production)
       const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
       const apiBaseUrl = expoDomain
         ? `https://${expoDomain}`
@@ -930,7 +82,6 @@ export default function LandingScreen({
           ? window.location.origin
           : "https://chefspaice.com";
 
-      // For redirect URLs, use the current window location on web
       const redirectBaseUrl = isWeb
         ? window.location.origin
         : "https://chefspaice.com";
@@ -973,65 +124,6 @@ export default function LandingScreen({
     } finally {
       setIsDonating(false);
     }
-  };
-
-  const donationAmounts = [
-    { amount: 500, label: "$5" },
-    { amount: 1000, label: "$10" },
-    { amount: 2500, label: "$25" },
-    { amount: 5000, label: "$50" },
-  ];
-
-  const faqs = [
-    {
-      question: "How does the AI recipe generation work?",
-      answer:
-        "Our AI analyzes the ingredients in your pantry and generates personalized recipes based on what you have. You can also specify dietary preferences, cooking time, and cuisine type for more tailored suggestions.",
-    },
-    {
-      question: "Is there a free trial available?",
-      answer:
-        "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
-    },
-    {
-      question: "Can I use the app on multiple devices?",
-      answer:
-        "Absolutely! Your account syncs across all your devices. Whether you're on your phone at the grocery store or tablet in the kitchen, your inventory stays up to date.",
-    },
-    {
-      question: "How accurate is the expiration tracking?",
-      answer:
-        "We use AI-powered shelf life estimation combined with product data to give you accurate expiration alerts. You'll receive notifications before items expire so you can plan meals accordingly.",
-    },
-    {
-      question: "Can I cancel my subscription anytime?",
-      answer:
-        "Yes, you can cancel your subscription at any time from your account settings. There are no long-term contracts or cancellation fees.",
-    },
-  ];
-
-  const trustLogos = [
-    { name: "App Store", iconType: "material", icon: "apple" },
-    { name: "Google Play", iconType: "material", icon: "google-play" },
-    { name: "Replit", iconType: "custom", icon: "replit" },
-    { name: "GitHub", iconType: "feather", icon: "github" },
-  ];
-
-  const ReplitLogo = ({
-    size = 24,
-    color = "rgba(255,255,255,0.5)",
-  }: {
-    size?: number;
-    color?: string;
-  }) => {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 50 50">
-        <Path
-          d="M40 32H27V19h13c1.657 0 3 1.343 3 3v7C43 30.657 41.657 32 40 32zM14 6h10c1.657 0 3 1.343 3 3v10H14c-1.657 0-3-1.343-3-3V9C11 7.343 12.343 6 14 6zM14 45h10c1.657 0 3-1.343 3-3V32H14c-1.657 0-3 1.343-3 3v7C11 43.657 12.343 45 14 45z"
-          fill={color}
-        />
-      </Svg>
-    );
   };
 
   return (
@@ -1097,32 +189,6 @@ export default function LandingScreen({
                 meals, and never let food go to waste again.
               </Text>
 
-              {/*
-              <View style={styles.heroButtons}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.primaryButton,
-                    pressed && styles.buttonPressed,
-                  ]}
-                  onPress={() => handleGetStarted()}
-                  data-testid="button-get-started"
-                >
-                  <LinearGradient
-                    colors={[AppColors.primary, "#1E8449"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.primaryButtonGradient}
-                  >
-                    <Text style={styles.primaryButtonText}>Get Started Free</Text>
-                    <Feather name="arrow-right" size={18} color="#FFFFFF" />
-                  </LinearGradient>
-                </Pressable>
-              </View>
-
-              <Text style={styles.trialText}>
-                7-day free trial, no credit card required
-              </Text>
-              */}
             </View>
 
             <View
@@ -1413,14 +479,7 @@ export default function LandingScreen({
               price={isAnnual ? "$49.90" : "$4.99"}
               period={isAnnual ? "year" : "month"}
               description="Perfect for getting started"
-              features={[
-                "25 pantry items",
-                "5 AI generated recipes per month",
-                "Basic storage areas",
-                "5 cookware items",
-                "Item scanning",
-                "Daily meal planning",
-              ]}
+              features={BASIC_FEATURES}
               buttonText="Download App"
               onPress={() => {}}
               testId="basic"
@@ -1434,14 +493,7 @@ export default function LandingScreen({
               price={isAnnual ? "$99.90" : "$9.99"}
               period={isAnnual ? "year" : "month"}
               description="Best for home cooks"
-              features={[
-                "Unlimited pantry items",
-                "Unlimited AI generated recipes",
-                "Recipe & Bulk Scanning",
-                "Customizable storage areas",
-                "Live AI Kitchen Assistant",
-                "Weekly meal prepping",
-              ]}
+              features={PRO_FEATURES}
               isPopular={true}
               buttonText="Download App"
               onPress={() => {}}
@@ -1453,37 +505,6 @@ export default function LandingScreen({
             />
           </View>
         </View>
-
-        {/*<View style={styles.section} data-testid="section-testimonials">
-          <Text
-            style={styles.sectionTitle}
-            data-testid="text-testimonials-title"
-          >
-            Loved by Thousands
-          </Text>
-          <Text
-            style={styles.sectionSubtitle}
-            data-testid="text-testimonials-subtitle"
-          >
-            See what our users are saying
-          </Text>
-
-          <View
-            style={[
-              styles.testimonialsGrid,
-              isWide && styles.testimonialsGridWide,
-            ]}
-          >
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard
-                key={index}
-                {...testimonial}
-                testId={`${index + 1}`}
-                isWide={isWide}
-              />
-            ))}
-          </View>
-        </View>*/}
 
         <View style={styles.section} data-testid="section-faq">
           <Text style={styles.sectionTitle} data-testid="text-faq-title">
@@ -1595,24 +616,24 @@ export default function LandingScreen({
             <View
               style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
             >
-              <Pressable onPress={handleAbout} data-testid="link-about">
+              <Pressable onPress={() => onAbout?.()} data-testid="link-about">
                 <Text style={styles.footerLink}>About</Text>
               </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Pressable onPress={handlePrivacy} data-testid="link-privacy">
+              <Pressable onPress={() => onPrivacy?.()} data-testid="link-privacy">
                 <Text style={styles.footerLink}>Privacy</Text>
               </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Pressable onPress={handleTerms} data-testid="link-terms">
+              <Pressable onPress={() => onTerms?.()} data-testid="link-terms">
                 <Text style={styles.footerLink}>Terms</Text>
               </Pressable>
               <Text style={styles.footerDivider}>|</Text>
-              <Pressable onPress={handleSupport} data-testid="link-support">
+              <Pressable onPress={() => onSupport?.()} data-testid="link-support">
                 <Text style={styles.footerLink}>Support</Text>
               </Pressable>
             </View>
             <Text style={styles.copyright}>
-              &copy; 2025 ChefSpAIce. All rights reserved.
+              &copy; {new Date().getFullYear()} ChefSpAIce. All rights reserved.
             </Text>
           </View>
         </View>
@@ -1693,9 +714,6 @@ const styles = StyleSheet.create({
   heroContentWide: {
     alignItems: "center",
   },
-  heroTitleWide: {
-    textAlign: "center",
-  },
   heroDeviceContainer: {
     marginTop: 8,
   },
@@ -1734,45 +752,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 28,
     maxWidth: 500,
-  },
-  heroButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 16,
-  },
-  primaryButton: {
-    borderRadius: GlassEffect.borderRadius.pill,
-    overflow: "hidden",
-  },
-  primaryButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  primaryButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  secondaryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: GlassEffect.borderRadius.pill,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  trialText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.6)",
   },
   trustSection: {
     paddingHorizontal: 24,
@@ -1843,36 +822,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 32,
   },
-  benefitCard: {
-    alignItems: "center",
-    padding: 24,
-  },
-  benefitCardWide: {
-    width: "45%",
-    minWidth: 280,
-  },
-  benefitIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  benefitTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  benefitDescription: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "center",
-    lineHeight: 24,
-  },
   featuresGrid: {
     flexDirection: "column",
     gap: 16,
@@ -1885,44 +834,6 @@ const styles = StyleSheet.create({
     maxWidth: 1000,
     gap: 20,
   },
-  glassCard: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    overflow: "hidden",
-  },
-  glassCardWeb: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    borderWidth: 1,
-  },
-  glassCardInner: {
-    borderRadius: GlassEffect.borderRadius.lg,
-    borderWidth: 1,
-    padding: 20,
-  },
-  featureCard: {
-    padding: 24,
-  },
-  featureCardWide: {
-    minWidth: 280,
-    maxWidth: 300,
-  },
-  featureIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(39, 174, 96, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  featureTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  featureDescription: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
   stepsContainer: {
     flexDirection: "column",
     gap: 16,
@@ -1933,41 +844,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     maxWidth: 1000,
     gap: 20,
-  },
-  stepCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    padding: 20,
-  },
-  stepCardWide: {
-    flex: 1,
-    minWidth: 280,
-  },
-  stepNumber: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: AppColors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepNumberText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  stepDescription: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   billingToggleContainer: {
     alignItems: "center",
@@ -2023,216 +899,10 @@ const styles = StyleSheet.create({
     maxWidth: 1000,
     gap: 24,
   },
-  pricingCard: {
-    padding: 28,
-    alignItems: "center",
-  },
-  pricingCardWide: {
-    flex: 1,
-    minWidth: 280,
-    maxWidth: 320,
-  },
-  pricingCardPopular: {
-    borderColor: AppColors.primary,
-    borderWidth: 2,
-  },
-  popularBadge: {
-    position: "absolute",
-    top: -12,
-    backgroundColor: AppColors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderRadius: GlassEffect.borderRadius.pill,
-  },
-  popularBadgeText: {
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  pricingTier: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  pricingPriceContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginBottom: 8,
-  },
-  pricingPrice: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  pricingPeriod: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.6)",
-  },
-  pricingDescription: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 24,
-  },
-  pricingFeatures: {
-    width: "100%",
-    gap: 12,
-    marginBottom: 24,
-  },
-  pricingFeatureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  pricingFeatureText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  pricingButtonPrimary: {
-    width: "100%",
-    borderRadius: GlassEffect.borderRadius.pill,
-    overflow: "hidden",
-  },
-  pricingButtonSecondary: {
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: GlassEffect.borderRadius.pill,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center",
-  },
-  pricingButtonGradient: {
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  pricingButtonTextPrimary: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  pricingButtonTextSecondary: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  downloadButtonsContainer: {
-    width: "100%",
-    alignItems: "center",
-    gap: 12,
-  },
-  downloadLabel: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 4,
-  },
-  downloadButtons: {
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-    justifyContent: "center",
-  },
-  downloadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: GlassEffect.borderRadius.pill,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  downloadButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.9)",
-  },
-  testimonialsGrid: {
-    flexDirection: "column",
-    gap: 20,
-    width: "100%",
-    maxWidth: 400,
-  },
-  testimonialsGridWide: {
-    flexDirection: "row",
-    justifyContent: "center",
-    maxWidth: 1000,
-    gap: 24,
-  },
-  testimonialCard: {
-    padding: 24,
-  },
-  testimonialCardWide: {
-    flex: 1,
-    minWidth: 280,
-    maxWidth: 320,
-  },
-  testimonialStars: {
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 16,
-  },
-  testimonialQuote: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.9)",
-    lineHeight: 24,
-    marginBottom: 20,
-    fontStyle: "italic",
-  },
-  testimonialAuthor: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  testimonialAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: AppColors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  testimonialAvatarText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  testimonialName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  testimonialRole: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.6)",
-  },
   faqContainer: {
     width: "100%",
     maxWidth: 700,
     gap: 12,
-  },
-  faqCard: {
-    padding: 20,
-  },
-  faqHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  faqQuestion: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-    flex: 1,
-    paddingRight: 16,
-  },
-  faqAnswer: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    lineHeight: 22,
-    marginTop: 16,
   },
   ctaSection: {
     paddingHorizontal: 24,
@@ -2257,24 +927,6 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
     marginBottom: 24,
-  },
-  ctaButton: {
-    borderRadius: GlassEffect.borderRadius.pill,
-    overflow: "hidden",
-  },
-  ctaButtonGradient: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  ctaButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-  ctaNote: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.5)",
-    marginTop: 16,
   },
   donationCard: {
     padding: 32,
@@ -2391,100 +1043,5 @@ const styles = StyleSheet.create({
   copyright: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.4)",
-  },
-});
-
-const deviceStyles = StyleSheet.create({
-  showcaseSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-    alignItems: "center",
-  },
-  showcaseTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  showcaseSubtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "center",
-    marginBottom: 32,
-    maxWidth: 500,
-  },
-  showcaseScroll: {
-    width: "100%",
-  },
-  showcaseScrollContent: {
-    paddingHorizontal: 16,
-    gap: 24,
-    justifyContent: "flex-start",
-  },
-  showcaseScrollContentWide: {
-    justifyContent: "center",
-    paddingHorizontal: 0,
-  },
-  mockupContainer: {
-    alignItems: "center",
-    gap: 12,
-  },
-  phoneFrame: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 3,
-    borderColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    ...(Platform.OS === "web"
-      ? {
-          boxShadow:
-            "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-        }
-      : {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 12 },
-          shadowOpacity: 0.5,
-          shadowRadius: 25,
-          elevation: 25,
-        }),
-  },
-  notch: {
-    backgroundColor: "#1a1a1a",
-    position: "absolute",
-    top: 0,
-    zIndex: 10,
-  },
-  screen: {
-    overflow: "hidden",
-    backgroundColor: "#0a0a0a",
-  },
-  homeIndicator: {
-    position: "absolute",
-    bottom: 8,
-    width: 100,
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 2,
-  },
-  mockupLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-    textAlign: "center",
-    marginTop: 4,
-  },
-  mockupDescription: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.6)",
-    textAlign: "center",
-  },
-  hoverHint: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.4)",
-    textAlign: "center",
-    marginTop: 16,
-    fontStyle: "italic",
   },
 });
