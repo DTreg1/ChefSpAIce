@@ -498,3 +498,18 @@ async function initStripe(retries = 3, delay = 2000) {
     },
   );
 })();
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Rejection", {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception", {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
+});
