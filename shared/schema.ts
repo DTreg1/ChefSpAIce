@@ -140,6 +140,9 @@ export const users = pgTable("users", {
   preRegisteredAt: timestamp("pre_registered_at"),
   isActivated: boolean("is_activated").notNull().default(true),
   apiKeyHash: varchar("api_key_hash"),
+  referralCode: varchar("referral_code", { length: 8 }).unique(),
+  referredBy: varchar("referred_by"),
+  aiRecipeBonusCredits: integer("ai_recipe_bonus_credits").notNull().default(0),
 });
 
 /**
@@ -816,6 +819,40 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
 
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
+
+// =============================================================================
+// REFERRALS TABLE
+// =============================================================================
+
+export const referrals = pgTable(
+  "referrals",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    referrerId: varchar("referrer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    referredUserId: varchar("referred_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" })
+      .unique(),
+    codeUsed: varchar("code_used", { length: 8 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("completed"),
+    bonusGranted: boolean("bonus_granted").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_referrals_referrer").on(table.referrerId),
+    index("idx_referrals_referred_user").on(table.referredUserId),
+  ],
+);
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true as any,
+  createdAt: true,
+});
+
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;
 
 // =============================================================================
 // NUTRITION UTILITY FUNCTIONS

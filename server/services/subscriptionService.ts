@@ -222,10 +222,13 @@ export async function checkAiRecipeLimit(
   const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
   const limits = getTierLimits(tier);
   const currentCount = user.aiRecipesGeneratedThisMonth || 0;
+  const bonusCredits = user.aiRecipeBonusCredits || 0;
 
-  const limit: number | "unlimited" = limits.maxAiRecipesPerMonth === -1 ? "unlimited" : limits.maxAiRecipesPerMonth;
-  const remaining = getRemainingQuota(tier, "maxAiRecipesPerMonth", currentCount);
-  const allowed = isWithinLimit(tier, "maxAiRecipesPerMonth", currentCount);
+  const baseLimit = limits.maxAiRecipesPerMonth;
+  const effectiveLimit = baseLimit === -1 ? -1 : baseLimit + bonusCredits;
+  const limit: number | "unlimited" = effectiveLimit === -1 ? "unlimited" : effectiveLimit;
+  const remaining = effectiveLimit === -1 ? ("unlimited" as const) : Math.max(0, effectiveLimit - currentCount);
+  const allowed = effectiveLimit === -1 ? true : currentCount < effectiveLimit;
 
   const result: LimitCheckResult = { allowed, remaining, limit };
   await setCachedAiLimit(userId, result);
@@ -462,11 +465,13 @@ export async function checkTrialExpiration(userId: string): Promise<boolean> {
 
 export async function ensureTrialSubscription(
   userId: string,
-  selectedPlan: 'monthly' | 'annual' = 'monthly'
+  selectedPlan: 'monthly' | 'annual' = 'monthly',
+  trialDaysOverride?: number
 ): Promise<{ created: boolean; trialEnd: Date }> {
   const now = new Date();
   const trialEnd = new Date(now);
-  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+  const effectiveTrialDays = trialDaysOverride ?? TRIAL_DAYS;
+  trialEnd.setDate(trialEnd.getDate() + effectiveTrialDays);
 
   const [existing] = await db
     .select()

@@ -157,6 +157,13 @@ export default function SettingsScreen() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [referralData, setReferralData] = useState<{
+    referralCode: string;
+    shareLink: string;
+    stats: { totalReferrals: number; completedSignups: number };
+  } | null>(null);
+  const [isLoadingReferral, setIsLoadingReferral] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -169,10 +176,32 @@ export default function SettingsScreen() {
     setLearnedPrefsCount(prefsCount);
   }, []);
 
+  const fetchReferralData = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setIsLoadingReferral(true);
+    try {
+      const authToken = await storage.getAuthToken();
+      if (!authToken) return;
+      const baseUrl = getApiUrl();
+      const response = await fetch(`${baseUrl}/api/referral/code`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReferralData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch referral data:", error);
+    } finally {
+      setIsLoadingReferral(false);
+    }
+  }, [isAuthenticated]);
+
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData]),
+      fetchReferralData();
+    }, [loadData, fetchReferralData]),
   );
 
   const handleToggleNotifications = async (value: boolean) => {
@@ -506,6 +535,48 @@ export default function SettingsScreen() {
     setShowDeleteModal(false);
     setDeleteConfirmText("");
     setIsDeleting(false);
+  };
+
+  const handleCopyReferralCode = async () => {
+    if (!referralData?.referralCode) return;
+    try {
+      if (Platform.OS === "web") {
+        await navigator.clipboard.writeText(referralData.shareLink);
+      } else {
+        const Clipboard = await import("expo-clipboard");
+        await Clipboard.setStringAsync(referralData.shareLink);
+      }
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
+  const handleShareReferral = async () => {
+    if (!referralData?.shareLink) return;
+    try {
+      if (Platform.OS === "web") {
+        if (navigator.share) {
+          await navigator.share({
+            title: "Join ChefSpAIce!",
+            text: `Use my referral code ${referralData.referralCode} to get an extended 14-day free trial on ChefSpAIce!`,
+            url: referralData.shareLink,
+          });
+        } else {
+          await navigator.clipboard.writeText(referralData.shareLink);
+          setReferralCopied(true);
+          setTimeout(() => setReferralCopied(false), 2000);
+        }
+      } else {
+        const { Share: RNShare } = await import("react-native");
+        await RNShare.share({
+          message: `Use my referral code ${referralData.referralCode} to get an extended 14-day free trial on ChefSpAIce! ${referralData.shareLink}`,
+        });
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+    }
   };
 
   const handleExportData = async () => {
@@ -1369,6 +1440,114 @@ export default function SettingsScreen() {
             </GlassButton>
           ) : null}
         </GlassCard>
+
+        {isAuthenticated && (
+          <GlassCard style={styles.section}>
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Refer a Friend
+            </ThemedText>
+
+            {isLoadingReferral ? (
+              <View style={{ alignItems: "center", padding: 16 }}>
+                <ActivityIndicator size="small" color={AppColors.primary} />
+              </View>
+            ) : referralData ? (
+              <>
+                <ThemedText type="caption" style={{ marginBottom: 12 }}>
+                  Share your referral code with friends. You'll earn 3 extra AI
+                  recipe generations, and they'll get an extended 14-day free trial!
+                </ThemedText>
+
+                <View
+                  style={[
+                    styles.settingRow,
+                    {
+                      backgroundColor: theme.glass.background,
+                      borderRadius: 8,
+                      padding: 12,
+                      marginBottom: 12,
+                    },
+                  ]}
+                  data-testid="text-referral-code"
+                >
+                  <View style={styles.settingInfo}>
+                    <Feather name="gift" size={20} color={AppColors.primary} />
+                    <View style={styles.settingText}>
+                      <ThemedText type="caption">Your Referral Code</ThemedText>
+                      <ThemedText
+                        type="h4"
+                        style={{ letterSpacing: 2, fontWeight: "700" }}
+                      >
+                        {referralData.referralCode}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+                  <GlassButton
+                    variant="outline"
+                    onPress={handleCopyReferralCode}
+                    style={{ flex: 1 }}
+                    icon={
+                      <Feather
+                        name={referralCopied ? "check" : "copy"}
+                        size={16}
+                        color={referralCopied ? AppColors.success : theme.text}
+                      />
+                    }
+                    data-testid="button-copy-referral"
+                  >
+                    <ThemedText>
+                      {referralCopied ? "Copied!" : "Copy Link"}
+                    </ThemedText>
+                  </GlassButton>
+
+                  <GlassButton
+                    variant="primary"
+                    onPress={handleShareReferral}
+                    style={{ flex: 1 }}
+                    icon={
+                      <Feather name="share-2" size={16} color="#fff" />
+                    }
+                    data-testid="button-share-referral"
+                  >
+                    <ThemedText style={{ color: "#fff" }}>Share</ThemedText>
+                  </GlassButton>
+                </View>
+
+                <View
+                  style={[
+                    styles.settingRow,
+                    {
+                      backgroundColor: theme.glass.background,
+                      borderRadius: 8,
+                      padding: 12,
+                    },
+                  ]}
+                >
+                  <View style={styles.settingInfo}>
+                    <Feather name="users" size={18} color={theme.textSecondary} />
+                    <View style={styles.settingText}>
+                      <ThemedText type="body">
+                        {referralData.stats.completedSignups} friend
+                        {referralData.stats.completedSignups !== 1 ? "s" : ""} signed up
+                      </ThemedText>
+                      <ThemedText type="caption">
+                        {referralData.stats.totalReferrals} total referral
+                        {referralData.stats.totalReferrals !== 1 ? "s" : ""}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <ThemedText type="caption">
+                Unable to load referral information. Please try again later.
+              </ThemedText>
+            )}
+          </GlassCard>
+        )}
 
         <GlassCard style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>

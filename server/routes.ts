@@ -67,6 +67,7 @@ import externalApiRouter from "./routers/external-api.router";
 import chatRouter from "./routers/chat.router";
 import shelfLifeRouter from "./routers/shelf-life.router";
 import foodRouter, { barcodeRawRouter } from "./routers/food.router";
+import referralRouter from "./routers/referral.router";
 import { db } from "./db";
 import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
@@ -129,6 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/instacart", instacartRouter); // Instacart grocery shopping integration
   app.use("/api/donations", donationsRouter); // Support donations via Stripe
   app.use("/api/external", externalApiRouter); // External API for Siri Shortcuts integration
+  app.use("/api/referral", referralRouter); // Referral system
 
   // =========================================================================
   // PRE-REGISTRATION ENDPOINT

@@ -126,7 +126,7 @@ function clearAuthCookie(res: Response): void {
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { email, password, displayName, selectedPlan } = req.body;
+    const { email, password, displayName, selectedPlan, referralCode } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
@@ -179,8 +179,48 @@ router.post("/register", async (req: Request, res: Response) => {
       userId: newUser.id,
     });
 
-    // Create trial subscription for new user (7-day free trial) with selected plan
-    await ensureTrialSubscription(newUser.id, plan);
+    // Handle referral code if provided
+    let referralTrialDays: number | undefined;
+    if (referralCode && typeof referralCode === 'string') {
+      try {
+        const [referrer] = await db
+          .select({ id: users.id, aiRecipeBonusCredits: users.aiRecipeBonusCredits, referralCode: users.referralCode })
+          .from(users)
+          .where(eq(users.referralCode, referralCode.toUpperCase()))
+          .limit(1);
+
+        if (referrer && referrer.id !== newUser.id) {
+          const { referrals } = await import("@shared/schema");
+          await db.insert(referrals).values({
+            referrerId: referrer.id,
+            referredUserId: newUser.id,
+            codeUsed: referralCode.toUpperCase(),
+            status: "completed",
+            bonusGranted: true,
+          });
+
+          await db
+            .update(users)
+            .set({ referredBy: referrer.id, updatedAt: new Date() })
+            .where(eq(users.id, newUser.id));
+
+          await db
+            .update(users)
+            .set({
+              aiRecipeBonusCredits: (referrer.aiRecipeBonusCredits || 0) + 3,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, referrer.id));
+
+          referralTrialDays = 14;
+        }
+      } catch (refError) {
+        console.error("Referral processing error (non-fatal):", refError);
+      }
+    }
+
+    // Create trial subscription for new user (7-day free trial, or 14-day if referred) with selected plan
+    await ensureTrialSubscription(newUser.id, plan, referralTrialDays);
 
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 

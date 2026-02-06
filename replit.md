@@ -22,3 +22,16 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 - **Instacart Connect API**: Grocery shopping integration.
 - **expo-camera**: Barcode scanning.
 - **@react-native-async-storage/async-storage**: Persistent local storage.
+
+## Recent Changes
+
+### Referral System (Feb 2026)
+- Added `referral_code` (unique 8-char alphanumeric) and `referred_by` fields to users table
+- Added `ai_recipe_bonus_credits` field to users table for referral rewards
+- Created `referrals` tracking table with referrer/referred user linkage and stats
+- New endpoints: `GET /api/referral/code` (auth required) and `POST /api/referral/apply` (auth required)
+- Registration (`POST /api/auth/register`) accepts optional `referralCode` parameter
+- Referral benefits: referrer gets +3 AI recipe bonus credits, referred user gets 14-day trial (vs 7-day default)
+- AI recipe limit checking in `subscriptionService.ts` accounts for bonus credits
+- "Refer a Friend" section added to SettingsScreen with code display, copy/share buttons, and referral stats
+- Router: `server/routers/referral.router.ts`, registered in `server/routes.ts`
