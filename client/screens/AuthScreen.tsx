@@ -28,6 +28,14 @@ import { syncManager } from "@/lib/sync-manager";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
+  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
+  if (!/[0-9]/.test(password)) return "Password must contain a number";
+  return null;
+}
+
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -68,6 +76,14 @@ export default function AuthScreen() {
     if (isSignUp && password !== confirmPassword) {
       setAuthError("Passwords do not match");
       return;
+    }
+
+    if (isSignUp) {
+      const pwError = validatePassword(password);
+      if (pwError) {
+        setAuthError(pwError);
+        return;
+      }
     }
 
     setAuthLoading(true);
@@ -458,6 +474,14 @@ export default function AuthScreen() {
                 />
               </Pressable>
             </View>
+
+            {isSignUp && (
+              <View style={{ paddingHorizontal: 4, marginTop: -4, marginBottom: 4 }}>
+                <ThemedText data-testid="text-password-requirements" style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 18 }}>
+                  Password must be at least 8 characters and contain an uppercase letter, lowercase letter, and number.
+                </ThemedText>
+              </View>
+            )}
 
             {isSignUp && (
               <View

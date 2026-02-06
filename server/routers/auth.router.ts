@@ -110,6 +110,14 @@ function getExpiryDate(): Date {
   return date;
 }
 
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
+  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
+  if (!/[0-9]/.test(password)) return "Password must contain a number";
+  return null;
+}
+
 const AUTH_COOKIE_NAME = "chefspaice_auth";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
@@ -142,8 +150,9 @@ router.post("/register", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Please enter a valid email address" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
     }
 
     // Validate selectedPlan if provided
