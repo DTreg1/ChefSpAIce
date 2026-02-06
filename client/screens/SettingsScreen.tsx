@@ -61,6 +61,7 @@ import { TrialStatusBadge } from "@/components/TrialStatusBadge";
 import { RegisterPrompt } from "@/components/RegisterPrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   storage,
@@ -134,6 +135,7 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
+  const biometric = useBiometricAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
@@ -608,6 +610,53 @@ export default function SettingsScreen() {
             <ThemedText type="caption" style={styles.dataInfo}>
               Signed in as {user?.email}. Your data is synced across devices.
             </ThemedText>
+          </GlassCard>
+        ) : null}
+
+        {isAuthenticated &&
+        biometric.isAvailable &&
+        biometric.isEnrolled &&
+        Platform.OS !== "web" ? (
+          <GlassCard style={styles.section}>
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Security
+            </ThemedText>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Feather
+                  name={
+                    biometric.biometricType === "Face ID"
+                      ? "eye"
+                      : "smartphone"
+                  }
+                  size={20}
+                  color={theme.text}
+                />
+                <View style={styles.settingText}>
+                  <ThemedText type="body">
+                    {biometric.biometricType || "Biometric"} Login
+                  </ThemedText>
+                  <ThemedText type="caption">
+                    Require {biometric.biometricType || "biometric verification"}{" "}
+                    to access the app
+                  </ThemedText>
+                </View>
+              </View>
+              <Switch
+                value={biometric.isEnabled}
+                onValueChange={async (value) => {
+                  await biometric.setEnabled(value);
+                }}
+                trackColor={{
+                  false: theme.backgroundSecondary,
+                  true: AppColors.primary,
+                }}
+                thumbColor="#FFFFFF"
+                accessibilityLabel={`Toggle ${biometric.biometricType || "biometric"} login`}
+                data-testid="switch-biometric-login"
+              />
+            </View>
           </GlassCard>
         ) : null}
 

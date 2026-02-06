@@ -55,6 +55,11 @@ import {
 import { storage } from "@/lib/storage";
 import { storeKitService } from "@/lib/storekit-service";
 import { logger } from "@/lib/logger";
+import {
+  isBiometricEnabled,
+  authenticateBiometric,
+  clearBiometricPreference,
+} from "@/hooks/useBiometricAuth";
 
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
@@ -228,6 +233,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         if (storedData) {
           const { user, token }: StoredAuthData = JSON.parse(storedData);
+
+          const biometricOn = await isBiometricEnabled();
+          if (biometricOn && !isWeb) {
+            logger.log("[Auth] Biometric auth enabled, prompting verification");
+            const verified = await authenticateBiometric(
+              "Verify your identity to sign in",
+            );
+            if (!verified) {
+              logger.log("[Auth] Biometric verification failed, showing login");
+              const guestInfo = await storage.getGuestUserInfo();
+              if (guestInfo && guestInfo.isGuest) {
+                setState({
+                  user: null,
+                  token: null,
+                  isLoading: false,
+                  isGuestUser: true,
+                  guestId: guestInfo.guestId,
+                  guestTrialStartDate: guestInfo.trialStartDate
+                    ? new Date(guestInfo.trialStartDate)
+                    : null,
+                });
+              } else {
+                setState((prev) => ({
+                  ...prev,
+                  isLoading: false,
+                  user: null,
+                  token: null,
+                }));
+              }
+              return;
+            }
+            logger.log("[Auth] Biometric verification successful");
+          }
+
           await storage.setAuthToken(token);
 
           // Set StoreKit auth token and user ID, sync any pending purchases
@@ -606,6 +645,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear stored auth data
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
+      await clearBiometricPreference();
 
       // Reset onboarding status so the app treats this as a fresh user
       // This is important when account is deleted and 401 forces sign out
