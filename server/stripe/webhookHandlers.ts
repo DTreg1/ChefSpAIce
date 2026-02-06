@@ -60,6 +60,7 @@ async function processSubscriptionEvent(event: Stripe.Event): Promise<void> {
     }
   } catch (error) {
     logger.error("Error processing webhook event", { eventType: event.type, error: error instanceof Error ? error.message : String(error) });
+    throw error;
   }
 }
 
