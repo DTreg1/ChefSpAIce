@@ -62,6 +62,7 @@
     "apple-signin-auth": "^2.0.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "csrf-csrf": "^4.0.3",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.0",

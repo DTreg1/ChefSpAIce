@@ -6,6 +6,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
+import { csrfProtection, generateCsrfToken } from "../middleware/csrf";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -183,6 +184,8 @@ router.post("/register", async (req: Request, res: Response) => {
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, token, req);
 
+    const csrfToken = generateCsrfToken(req, res);
+
     res.status(201).json({
       user: {
         id: newUser.id,
@@ -192,6 +195,7 @@ router.post("/register", async (req: Request, res: Response) => {
         ...subscriptionInfo,
       },
       token,
+      csrfToken,
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -236,6 +240,8 @@ router.post("/login", async (req: Request, res: Response) => {
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, token, req);
 
+    const csrfToken = generateCsrfToken(req, res);
+
     res.json({
       user: {
         id: user.id,
@@ -245,6 +251,7 @@ router.post("/login", async (req: Request, res: Response) => {
         ...subscriptionInfo,
       },
       token,
+      csrfToken,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -252,7 +259,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/logout", async (req: Request, res: Response) => {
+router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
@@ -358,6 +365,8 @@ router.get("/restore-session", async (req: Request, res: Response) => {
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
 
+    const csrfToken = generateCsrfToken(req, res);
+
     res.json({
       user: {
         id: user.id,
@@ -367,6 +376,7 @@ router.get("/restore-session", async (req: Request, res: Response) => {
         ...subscriptionInfo,
       },
       token: cookieToken,
+      csrfToken,
     });
   } catch (error) {
     console.error("Session restore error:", error);
@@ -898,7 +908,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
 
 const DEMO_EMAIL = "demo@chefspaice.com";
 
-router.delete("/delete-account", async (req: Request, res: Response) => {
+router.delete("/delete-account", csrfProtection, async (req: Request, res: Response) => {
   try {
     // Get auth token from header or cookie
     const authHeader = req.headers.authorization;
