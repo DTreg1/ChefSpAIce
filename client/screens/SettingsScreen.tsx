@@ -32,7 +32,7 @@
  * @module screens/SettingsScreen
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -41,6 +41,7 @@ import {
   Pressable,
   Platform,
   Linking,
+  ActivityIndicator,
 } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -149,6 +150,11 @@ export default function SettingsScreen() {
   });
   const [learnedPrefsCount, setLearnedPrefsCount] = useState(0);
   const [deleteStep, setDeleteStep] = useState<DeleteConfirmationStep>("none");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -543,6 +549,147 @@ export default function SettingsScreen() {
 
   const handleCancelDelete = () => {
     setDeleteStep("none");
+  };
+
+  const handleExportData = async () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Export Data", "Data export is available on the web version of ChefSpAIce.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const baseUrl = getApiUrl();
+      const token = await (async () => {
+        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
+        return stored ? JSON.parse(stored) : null;
+      })();
+
+      if (!token) {
+        window.alert("You must be signed in to export data.");
+        return;
+      }
+
+      const res = await fetch(`${baseUrl}/api/sync/export`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Export failed");
+      }
+
+      const backupData = await res.json();
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chefspaice-backup-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      window.alert("Your data backup has been downloaded.");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Export failed";
+      window.alert(`Export failed: ${msg}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportFilePick = () => {
+    if (Platform.OS === "web") {
+      if (!fileInputRef.current) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".json,application/json";
+        input.style.display = "none";
+        document.body.appendChild(input);
+        fileInputRef.current = input;
+      }
+      fileInputRef.current.onchange = (e: any) => {
+        const file = e.target?.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const parsed = JSON.parse(ev.target?.result as string);
+            if (!parsed.version || !parsed.data) {
+              window.alert("Invalid backup file. The file does not appear to be a valid ChefSpAIce backup.");
+              return;
+            }
+            setPendingImportFile(parsed);
+            setShowImportDialog(true);
+          } catch {
+            window.alert("Invalid file. Could not parse the selected file as JSON.");
+          }
+        };
+        reader.readAsText(file);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      };
+      fileInputRef.current.click();
+    } else {
+      Alert.alert("Import Data", "Data import from backup files is available on the web version of ChefSpAIce.");
+    }
+  };
+
+  const handleImportData = async (mode: "merge" | "replace") => {
+    if (!pendingImportFile) return;
+    setShowImportDialog(false);
+    setIsImporting(true);
+    try {
+      const baseUrl = getApiUrl();
+      const token = await (async () => {
+        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
+        return stored ? JSON.parse(stored) : null;
+      })();
+
+      if (!token) {
+        Alert.alert("Error", "You must be signed in to import data.");
+        return;
+      }
+
+      const res = await fetch(`${baseUrl}/api/sync/import`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ backup: pendingImportFile, mode }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || "Import failed");
+      }
+
+      let message = "Your data has been imported successfully.";
+      if (result.warnings && result.warnings.length > 0) {
+        message += "\n\nNote: " + result.warnings.join("\n");
+      }
+
+      if (Platform.OS === "web") {
+        window.alert(message);
+      } else {
+        Alert.alert("Import Complete", message);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Import failed";
+      if (Platform.OS === "web") {
+        window.alert(`Import failed: ${msg}`);
+      } else {
+        Alert.alert("Import Failed", msg);
+      }
+    } finally {
+      setIsImporting(false);
+      setPendingImportFile(null);
+    }
   };
 
   const handleResetForTesting = async () => {
@@ -1271,6 +1418,60 @@ export default function SettingsScreen() {
             Account & Data
           </ThemedText>
 
+          {isAuthenticated ? (
+            <>
+              <Pressable
+                style={[
+                  styles.legalMenuItem,
+                  { borderColor: theme.glass.border },
+                ]}
+                onPress={handleExportData}
+                disabled={isExporting}
+                data-testid="button-export-data"
+              >
+                <View style={styles.legalMenuIcon}>
+                  {isExporting ? (
+                    <ActivityIndicator size="small" color={AppColors.primary} />
+                  ) : (
+                    <Feather name="download" size={18} color={AppColors.primary} />
+                  )}
+                </View>
+                <View style={styles.legalMenuText}>
+                  <ThemedText type="body">Export My Data</ThemedText>
+                  <ThemedText type="caption">
+                    Download a full backup of all your data as a JSON file
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.legalMenuItem,
+                  { borderColor: theme.glass.border },
+                ]}
+                onPress={handleImportFilePick}
+                disabled={isImporting}
+                data-testid="button-import-data"
+              >
+                <View style={styles.legalMenuIcon}>
+                  {isImporting ? (
+                    <ActivityIndicator size="small" color={AppColors.primary} />
+                  ) : (
+                    <Feather name="upload" size={18} color={AppColors.primary} />
+                  )}
+                </View>
+                <View style={styles.legalMenuText}>
+                  <ThemedText type="body">Import Data</ThemedText>
+                  <ThemedText type="caption">
+                    Restore data from a previously exported backup file
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+              </Pressable>
+            </>
+          ) : null}
+
           {deleteStep === "none" ? (
             <>
               <Pressable
@@ -1420,6 +1621,69 @@ export default function SettingsScreen() {
           </View>
         </View>
       </KeyboardAwareScrollViewCompat>
+
+      {Platform.OS === "web" && showImportDialog ? (
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundRoot }]}>
+            <View style={styles.modalHeader}>
+              <Feather name="alert-circle" size={24} color={AppColors.primary} />
+              <ThemedText type="h4">Import Data</ThemedText>
+            </View>
+
+            <ThemedText type="body" style={styles.modalDescription}>
+              You are about to import data from a backup file. Choose how you would like to handle your existing data:
+            </ThemedText>
+
+            <View style={[styles.modalOption, { borderColor: theme.glass.border }]}>
+              <ThemedText type="body" style={{ fontWeight: "600" }}>Merge</ThemedText>
+              <ThemedText type="caption">
+                Combine the imported data with your existing data. Items with the same ID will be updated, and new items will be added.
+              </ThemedText>
+            </View>
+
+            <View style={[styles.modalOption, { borderColor: theme.glass.border }]}>
+              <ThemedText type="body" style={{ fontWeight: "600" }}>Replace</ThemedText>
+              <ThemedText type="caption">
+                Remove all your existing data and replace it entirely with the imported backup. This cannot be undone.
+              </ThemedText>
+            </View>
+
+            <ThemedText type="caption" style={{ marginTop: Spacing.xs }}>
+              Subscription limits apply. If the backup exceeds your plan's limits, some items may be trimmed.
+            </ThemedText>
+
+            <View style={styles.modalButtons}>
+              <GlassButton
+                variant="outline"
+                onPress={() => {
+                  setShowImportDialog(false);
+                  setPendingImportFile(null);
+                }}
+                style={styles.modalButton}
+                testID="button-import-cancel"
+              >
+                Cancel
+              </GlassButton>
+              <GlassButton
+                variant="secondary"
+                onPress={() => handleImportData("merge")}
+                style={styles.modalButton}
+                testID="button-import-merge"
+              >
+                Merge
+              </GlassButton>
+              <GlassButton
+                variant="primary"
+                onPress={() => handleImportData("replace")}
+                style={styles.modalButton}
+                testID="button-import-replace"
+              >
+                Replace
+              </GlassButton>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1666,5 +1930,45 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  modalOverlay: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: "90%" as any,
+    maxWidth: 440,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    gap: Spacing.md,
+  },
+  modalHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: Spacing.md,
+  },
+  modalDescription: {
+    lineHeight: 22,
+  },
+  modalOption: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.xs,
+  },
+  modalButtons: {
+    flexDirection: "row" as const,
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  modalButton: {
+    flex: 1,
   },
 });

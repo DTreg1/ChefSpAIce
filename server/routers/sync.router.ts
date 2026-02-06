@@ -1534,4 +1534,280 @@ router.get("/status", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/export", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    const syncData = existingSyncData.length > 0 ? existingSyncData[0] : null;
+
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: {
+        inventory: syncData?.inventory || [],
+        recipes: syncData?.recipes || [],
+        mealPlans: syncData?.mealPlans || [],
+        shoppingList: syncData?.shoppingList || [],
+        cookware: syncData?.cookware || [],
+        preferences: syncData?.preferences || null,
+        wasteLog: syncData?.wasteLog || [],
+        consumedLog: syncData?.consumedLog || [],
+        analytics: syncData?.analytics || null,
+        onboarding: syncData?.onboarding || null,
+        customLocations: syncData?.customLocations || null,
+        userProfile: syncData?.userProfile || null,
+      },
+    };
+
+    const date = new Date().toISOString().split("T")[0];
+    res.setHeader("Content-Disposition", `attachment; filename="chefspaice-backup-${date}.json"`);
+    res.setHeader("Content-Type", "application/json");
+    res.json(backup);
+  } catch (error) {
+    logger.error("Export failed", { error: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ error: "Failed to export data" });
+  }
+});
+
+const importRequestSchema = z.object({
+  backup: z.object({
+    version: z.literal(1),
+    exportedAt: z.string(),
+    data: z.record(z.unknown()),
+  }),
+  mode: z.enum(["merge", "replace"]),
+});
+
+function mergeArraysById(existing: unknown[], imported: unknown[]): unknown[] {
+  const map = new Map<string, unknown>();
+  const noIdItems: unknown[] = [];
+  for (const item of existing) {
+    const raw = (item as { id?: string | number }).id;
+    if (raw !== undefined && raw !== null) {
+      map.set(String(raw), item);
+    } else {
+      noIdItems.push(item);
+    }
+  }
+  for (const item of imported) {
+    const raw = (item as { id?: string | number }).id;
+    if (raw !== undefined && raw !== null) {
+      map.set(String(raw), item);
+    } else {
+      noIdItems.push(item);
+    }
+  }
+  return [...Array.from(map.values()), ...noIdItems];
+}
+
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] &&
+      typeof source[key] === "object" &&
+      !Array.isArray(source[key]) &&
+      target[key] &&
+      typeof target[key] === "object" &&
+      !Array.isArray(target[key])
+    ) {
+      result[key] = deepMerge(target[key] as Record<string, unknown>, source[key] as Record<string, unknown>);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+router.post("/import", async (req: Request, res: Response) => {
+  try {
+    const token = getAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const session = await getSessionFromToken(token);
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    const parseResult = importRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: parseResult.error.errors.map(e => e.message).join(", "),
+      });
+    }
+
+    const { backup, mode } = parseResult.data;
+    const importData = backup.data as Record<string, unknown>;
+
+    const existingSyncData = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, session.userId));
+
+    const existing = existingSyncData.length > 0 ? existingSyncData[0] : null;
+
+    const [pantryLimit, cookwareLimit] = await Promise.all([
+      checkPantryItemLimit(session.userId),
+      checkCookwareLimit(session.userId),
+    ]);
+
+    const importedInventory = Array.isArray(importData.inventory) ? importData.inventory : [];
+    const importedCookware = Array.isArray(importData.cookware) ? importData.cookware : [];
+
+    const truncationWarnings: string[] = [];
+
+    let finalInventory: unknown[];
+    let finalCookware: unknown[];
+
+    if (mode === "replace") {
+      finalInventory = importedInventory;
+      finalCookware = importedCookware;
+    } else {
+      const existingInventory = Array.isArray(existing?.inventory) ? (existing.inventory as unknown[]) : [];
+      const existingCookware = Array.isArray(existing?.cookware) ? (existing.cookware as unknown[]) : [];
+      finalInventory = mergeArraysById(existingInventory, importedInventory);
+      finalCookware = mergeArraysById(existingCookware, importedCookware);
+    }
+
+    const pantryMax = typeof pantryLimit.limit === "number" ? pantryLimit.limit : Infinity;
+    const cookwareMax = typeof cookwareLimit.limit === "number" ? cookwareLimit.limit : Infinity;
+
+    if (finalInventory.length > pantryMax) {
+      truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
+      finalInventory = finalInventory.slice(0, pantryMax);
+    }
+
+    if (finalCookware.length > cookwareMax) {
+      truncationWarnings.push(`Cookware truncated from ${finalCookware.length} to ${cookwareMax} items (plan limit)`);
+      finalCookware = finalCookware.slice(0, cookwareMax);
+    }
+
+    let finalRecipes: unknown[];
+    let finalMealPlans: unknown[];
+    let finalShoppingList: unknown[];
+    let finalWasteLog: unknown[];
+    let finalConsumedLog: unknown[];
+    let finalPreferences: unknown;
+    let finalAnalytics: unknown;
+    let finalOnboarding: unknown;
+    let finalCustomLocations: unknown;
+    let finalUserProfile: unknown;
+
+    if (mode === "replace") {
+      finalRecipes = Array.isArray(importData.recipes) ? importData.recipes : [];
+      finalMealPlans = Array.isArray(importData.mealPlans) ? importData.mealPlans : [];
+      finalShoppingList = Array.isArray(importData.shoppingList) ? importData.shoppingList : [];
+      finalWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog : [];
+      finalConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog : [];
+      finalPreferences = importData.preferences || null;
+      finalAnalytics = importData.analytics || null;
+      finalOnboarding = importData.onboarding || null;
+      finalCustomLocations = importData.customLocations || null;
+      finalUserProfile = importData.userProfile || null;
+    } else {
+      const existingRecipes = Array.isArray(existing?.recipes) ? (existing.recipes as unknown[]) : [];
+      const existingMealPlans = Array.isArray(existing?.mealPlans) ? (existing.mealPlans as unknown[]) : [];
+      const existingShoppingList = Array.isArray(existing?.shoppingList) ? (existing.shoppingList as unknown[]) : [];
+      const existingWasteLog = Array.isArray(existing?.wasteLog) ? (existing.wasteLog as unknown[]) : [];
+      const existingConsumedLog = Array.isArray(existing?.consumedLog) ? (existing.consumedLog as unknown[]) : [];
+
+      finalRecipes = mergeArraysById(existingRecipes, Array.isArray(importData.recipes) ? importData.recipes : []);
+      finalMealPlans = mergeArraysById(existingMealPlans, Array.isArray(importData.mealPlans) ? importData.mealPlans : []);
+      finalShoppingList = mergeArraysById(existingShoppingList, Array.isArray(importData.shoppingList) ? importData.shoppingList : []);
+      finalWasteLog = mergeArraysById(existingWasteLog, Array.isArray(importData.wasteLog) ? importData.wasteLog : []);
+      finalConsumedLog = mergeArraysById(existingConsumedLog, Array.isArray(importData.consumedLog) ? importData.consumedLog : []);
+
+      finalPreferences = importData.preferences && typeof importData.preferences === "object"
+        ? deepMerge((existing?.preferences as Record<string, unknown>) || {}, importData.preferences as Record<string, unknown>)
+        : existing?.preferences || null;
+      finalAnalytics = importData.analytics && typeof importData.analytics === "object"
+        ? deepMerge((existing?.analytics as Record<string, unknown>) || {}, importData.analytics as Record<string, unknown>)
+        : existing?.analytics || null;
+      finalOnboarding = importData.onboarding && typeof importData.onboarding === "object"
+        ? deepMerge((existing?.onboarding as Record<string, unknown>) || {}, importData.onboarding as Record<string, unknown>)
+        : existing?.onboarding || null;
+      finalCustomLocations = importData.customLocations && typeof importData.customLocations === "object"
+        ? deepMerge((existing?.customLocations as Record<string, unknown>) || {}, importData.customLocations as Record<string, unknown>)
+        : existing?.customLocations || null;
+      finalUserProfile = importData.userProfile && typeof importData.userProfile === "object"
+        ? deepMerge((existing?.userProfile as Record<string, unknown>) || {}, importData.userProfile as Record<string, unknown>)
+        : existing?.userProfile || null;
+    }
+
+    const updatePayload = {
+      inventory: finalInventory,
+      recipes: finalRecipes,
+      mealPlans: finalMealPlans,
+      shoppingList: finalShoppingList,
+      cookware: finalCookware,
+      preferences: finalPreferences,
+      wasteLog: finalWasteLog,
+      consumedLog: finalConsumedLog,
+      analytics: finalAnalytics,
+      onboarding: finalOnboarding,
+      customLocations: finalCustomLocations,
+      userProfile: finalUserProfile,
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (!existing) {
+      await db.insert(userSyncData).values({
+        userId: session.userId,
+        ...updatePayload,
+      });
+    } else {
+      await db
+        .update(userSyncData)
+        .set(updatePayload)
+        .where(eq(userSyncData.userId, session.userId));
+    }
+
+    const response: Record<string, unknown> = {
+      success: true,
+      mode,
+      importedAt: new Date().toISOString(),
+      summary: {
+        inventory: (finalInventory as unknown[]).length,
+        recipes: (finalRecipes as unknown[]).length,
+        mealPlans: (finalMealPlans as unknown[]).length,
+        shoppingList: (finalShoppingList as unknown[]).length,
+        cookware: (finalCookware as unknown[]).length,
+        wasteLog: (finalWasteLog as unknown[]).length,
+        consumedLog: (finalConsumedLog as unknown[]).length,
+        preferences: finalPreferences ? true : false,
+        analytics: finalAnalytics ? true : false,
+        onboarding: finalOnboarding ? true : false,
+        customLocations: finalCustomLocations ? true : false,
+        userProfile: finalUserProfile ? true : false,
+      },
+    };
+
+    if (truncationWarnings.length > 0) {
+      response.warnings = truncationWarnings;
+    }
+
+    res.json(response);
+  } catch (error) {
+    logger.error("Import failed", { error: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ error: "Failed to import data" });
+  }
+});
+
 export default router;
