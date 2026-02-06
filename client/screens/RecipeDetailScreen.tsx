@@ -508,6 +508,8 @@ export default function RecipeDetailScreen() {
             styles.notFoundContainer,
             { paddingTop: loadingHeaderPadding },
           ]}
+          accessibilityRole="text"
+          accessibilityLabel="Recipe not found. This recipe may have been deleted"
         >
           <Feather name="alert-circle" size={48} color={theme.textSecondary} />
           <ThemedText type="h3" style={styles.notFoundText}>
@@ -568,6 +570,8 @@ export default function RecipeDetailScreen() {
             style={styles.shareButton}
             testID="button-share-recipe"
             data-testid="button-share-recipe"
+            accessibilityRole="button"
+            accessibilityLabel="Share this recipe"
           >
             <Feather name="share" size={20} color={theme.text} />
           </Pressable>
@@ -591,6 +595,8 @@ export default function RecipeDetailScreen() {
             style={styles.heroImage}
             contentFit="cover"
             cachePolicy="memory-disk"
+            accessibilityLabel={`Photo of ${recipe.title}`}
+            accessibilityRole="image"
           />
         ) : (
           <View
@@ -598,6 +604,8 @@ export default function RecipeDetailScreen() {
               styles.heroPlaceholder,
               { backgroundColor: theme.backgroundDefault },
             ]}
+            accessibilityRole="image"
+            accessibilityLabel="No photo available for this recipe"
           >
             <Feather name="image" size={48} color={theme.textSecondary} />
           </View>
@@ -617,20 +625,20 @@ export default function RecipeDetailScreen() {
           </View>
 
           <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
+            <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`Total time ${recipe.prepTime + recipe.cookTime} minutes`}>
               <Feather name="clock" size={16} color={theme.textSecondary} />
               <ThemedText type="small" style={styles.metaText}>
                 {recipe.prepTime + recipe.cookTime} min
               </ThemedText>
             </View>
-            <View style={styles.metaItem}>
+            <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`${selectedServings} serving${selectedServings !== 1 ? 's' : ''}`}>
               <Feather name="users" size={16} color={theme.textSecondary} />
               <ThemedText type="small" style={styles.metaText}>
                 {selectedServings} serving{selectedServings !== 1 ? "s" : ""}
               </ThemedText>
             </View>
             {recipe.cuisine ? (
-              <View style={styles.metaItem}>
+              <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`Cuisine: ${recipe.cuisine}`}>
                 <Feather name="globe" size={16} color={theme.textSecondary} />
                 <ThemedText type="small" style={styles.metaText}>
                   {recipe.cuisine}
@@ -648,6 +656,8 @@ export default function RecipeDetailScreen() {
                     styles.tag,
                     { backgroundColor: theme.backgroundDefault },
                   ]}
+                  accessibilityRole="text"
+                  accessibilityLabel={`Dietary tag: ${tag}`}
                 >
                   <ThemedText type="caption">{tag}</ThemedText>
                 </View>
@@ -676,6 +686,8 @@ export default function RecipeDetailScreen() {
                     })
                   }
                   hitSlop={8}
+                  accessibilityRole="link"
+                  accessibilityLabel="View my cookware"
                 >
                   <ThemedText
                     type="caption"
@@ -791,6 +803,9 @@ export default function RecipeDetailScreen() {
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
                 disabled={selectedServings <= 1}
+                accessibilityRole="button"
+                accessibilityLabel="Decrease servings"
+                accessibilityState={{ disabled: selectedServings <= 1 }}
               >
                 <Feather
                   name="minus"
@@ -800,7 +815,13 @@ export default function RecipeDetailScreen() {
                   }
                 />
               </Pressable>
-              <ThemedText type="h4" style={styles.servingsValue}>
+              <ThemedText
+                type="h4"
+                style={styles.servingsValue}
+                accessibilityRole="text"
+                accessibilityLabel={`${selectedServings} servings`}
+                accessibilityLiveRegion="polite"
+              >
                 {selectedServings}
               </ThemedText>
               <Pressable
@@ -812,6 +833,9 @@ export default function RecipeDetailScreen() {
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
                 disabled={selectedServings >= 20}
+                accessibilityRole="button"
+                accessibilityLabel="Increase servings"
+                accessibilityState={{ disabled: selectedServings >= 20 }}
               >
                 <Feather
                   name="plus"
@@ -838,7 +862,7 @@ export default function RecipeDetailScreen() {
               ingredient.availabilityStatus === "partial" ||
               ingredient.availabilityStatus === "unavailable";
             return (
-              <View key={index} style={styles.ingredientRow}>
+              <View key={index} style={styles.ingredientRow} accessibilityRole="text" accessibilityLabel={`${ingredient.name}, ${scaledQty} ${ingredient.unit}, ${ingredient.availabilityStatus === 'available' ? 'in stock' : ingredient.availabilityStatus === 'partial' ? 'partially available' : 'not in stock'}`}>
                 <Feather
                   name={availability.icon}
                   size={20}
@@ -877,6 +901,8 @@ export default function RecipeDetailScreen() {
                     onPress={() => handleSwapPress(ingredient)}
                     hitSlop={8}
                     style={styles.swapButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Swap ${ingredient.name} for an alternative`}
                   >
                     <Feather name="repeat" size={16} color={AppColors.accent} />
                   </Pressable>
@@ -898,6 +924,8 @@ export default function RecipeDetailScreen() {
                     color={AppColors.primary}
                   />
                 }
+                accessibilityRole="button"
+                accessibilityLabel="Add missing ingredients to shopping list"
               >
                 Add Missing to List
               </GlassButton>
@@ -910,6 +938,8 @@ export default function RecipeDetailScreen() {
                     <Feather name="shopping-bag" size={18} color="#FFFFFF" />
                   }
                   testID="button-order-instacart-recipe"
+                  accessibilityRole="button"
+                  accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order missing ingredients on Instacart"}
                 >
                   {instacartLoading ? "Loading..." : "Order on Instacart"}
                 </GlassButton>
@@ -952,6 +982,9 @@ export default function RecipeDetailScreen() {
                         voiceNav.goToStep(index);
                       }
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Step ${index + 1}${isCurrentStep ? ', current step' : ''}${isPastStep ? ', completed' : ''}`}
+                    accessibilityHint={showVoiceControls ? "Tap to jump to this step" : ""}
                   >
                     <View
                       style={[

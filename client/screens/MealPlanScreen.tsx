@@ -205,6 +205,9 @@ export default function MealPlanScreen() {
               styles.navButton,
               !canUseWeeklyPrepping && styles.navButtonLocked,
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={canUseWeeklyPrepping ? "Go to previous week" : "Previous week, requires Pro upgrade"}
+            accessibilityState={{ disabled: !canUseWeeklyPrepping }}
           >
             {!canUseWeeklyPrepping && (
               <View style={styles.navLockBadge}>
@@ -236,6 +239,9 @@ export default function MealPlanScreen() {
               styles.navButton,
               !canUseWeeklyPrepping && styles.navButtonLocked,
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={canUseWeeklyPrepping ? "Go to next week" : "Next week, requires Pro upgrade"}
+            accessibilityState={{ disabled: !canUseWeeklyPrepping }}
           >
             {!canUseWeeklyPrepping && (
               <View style={styles.navLockBadge}>
@@ -304,6 +310,9 @@ export default function MealPlanScreen() {
                     },
                   ]}
                   onPress={() => setSelectedDay(day)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
+                  accessibilityState={{ selected: isSelected }}
                 >
                   {renderDayCardContent()}
                 </Pressable>
@@ -317,6 +326,9 @@ export default function MealPlanScreen() {
                   key={index}
                   onPress={() => setSelectedDay(day)}
                   style={[styles.dayCard, styles.dayCardGlass]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
+                  accessibilityState={{ selected: isSelected }}
                 >
                   {useLiquidGlass ? (
                     <GlassView
@@ -367,6 +379,9 @@ export default function MealPlanScreen() {
                   },
                 ]}
                 onPress={() => setSelectedDay(day)}
+                accessibilityRole="button"
+                accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
+                accessibilityState={{ selected: isSelected }}
               >
                 {renderDayCardContent()}
               </Pressable>
@@ -415,6 +430,9 @@ export default function MealPlanScreen() {
                     onPress={() =>
                       handleMealPress(selectedDay, slot.id, recipe)
                     }
+                    accessibilityRole="button"
+                    accessibilityLabel={`${recipe.title} for ${slot.name}, ${recipe.prepTime + recipe.cookTime} minutes`}
+                    accessibilityHint="Opens meal options"
                   >
                     <View style={styles.mealContentInner}>
                       <View style={styles.mealTextContainer}>
@@ -449,6 +467,9 @@ export default function MealPlanScreen() {
                         mealType: slot.id as "breakfast" | "lunch" | "dinner",
                       });
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${slot.name.toLowerCase()} for ${format(selectedDay, 'EEEE, MMMM d')}`}
+                    accessibilityHint="Opens recipe selection"
                   >
                     <Feather
                       name="plus"
@@ -471,7 +492,11 @@ export default function MealPlanScreen() {
         <GlassCard style={styles.statsCard}>
           <View style={styles.statsHeader}>
             <ThemedText type="h4">This Week</ThemedText>
-            <Pressable onPress={() => navigation.navigate("ShoppingList")}>
+            <Pressable
+              onPress={() => navigation.navigate("ShoppingList")}
+              accessibilityRole="link"
+              accessibilityLabel="Go to shopping list"
+            >
               <View style={styles.shoppingListLink}>
                 <Feather
                   name="shopping-cart"
@@ -486,7 +511,15 @@ export default function MealPlanScreen() {
           </View>
 
           <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessibilityRole="text"
+              accessibilityLabel={`${mealPlans.reduce(
+                (total, plan) =>
+                  total + Object.values(plan.meals).filter(Boolean).length,
+                0,
+              )} meals planned`}
+            >
               <ThemedText type="h2" style={{ color: AppColors.primary }}>
                 {mealPlans.reduce(
                   (total, plan) =>
@@ -496,13 +529,21 @@ export default function MealPlanScreen() {
               </ThemedText>
               <ThemedText type="caption">Meals Planned</ThemedText>
             </View>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessibilityRole="text"
+              accessibilityLabel={`${recipes.filter((r) => r.isFavorite).length} favorites`}
+            >
               <ThemedText type="h2" style={{ color: AppColors.secondary }}>
                 {recipes.filter((r) => r.isFavorite).length}
               </ThemedText>
               <ThemedText type="caption">Favorites</ThemedText>
             </View>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessibilityRole="text"
+              accessibilityLabel={`${recipes.length} recipes`}
+            >
               <ThemedText type="h2" style={{ color: AppColors.success }}>
                 {recipes.length}
               </ThemedText>
@@ -518,7 +559,12 @@ export default function MealPlanScreen() {
         animationType="fade"
         onRequestClose={closeActionSheet}
       >
-        <Pressable style={styles.modalOverlay} onPress={closeActionSheet}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={closeActionSheet}
+          accessibilityRole="button"
+          accessibilityLabel="Close meal options"
+        >
           <View
             style={[
               styles.actionSheet,
@@ -532,6 +578,8 @@ export default function MealPlanScreen() {
             <Pressable
               style={[styles.actionButton, { borderColor: theme.border }]}
               onPress={handleChangeRecipe}
+              accessibilityRole="button"
+              accessibilityLabel="Change recipe for this meal"
             >
               <Feather name="refresh-cw" size={20} color={AppColors.primary} />
               <ThemedText type="body" style={{ color: AppColors.primary }}>
@@ -544,6 +592,8 @@ export default function MealPlanScreen() {
               onPress={() =>
                 handleRemoveMeal(actionSheet.date, actionSheet.slotId)
               }
+              accessibilityRole="button"
+              accessibilityLabel="Remove this meal from your plan"
             >
               <Feather name="trash-2" size={20} color={AppColors.error} />
               <ThemedText type="body" style={{ color: AppColors.error }}>
@@ -558,6 +608,8 @@ export default function MealPlanScreen() {
                 { backgroundColor: theme.backgroundSecondary },
               ]}
               onPress={closeActionSheet}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <ThemedText type="body">Cancel</ThemedText>
             </Pressable>

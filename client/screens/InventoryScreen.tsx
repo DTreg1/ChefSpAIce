@@ -760,6 +760,8 @@ export default function InventoryScreen() {
           style={styles.consumedAction}
           onPress={handleConsumed}
           testID={`button-consumed-${item.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${item.name} as consumed`}
         >
           <LinearGradient
             colors={["rgba(46, 204, 113, 0.25)", "transparent"]}
@@ -782,6 +784,8 @@ export default function InventoryScreen() {
           style={styles.wastedAction}
           onPress={handleWasted}
           testID={`button-wasted-${item.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Mark ${item.name} as wasted`}
         >
           <LinearGradient
             colors={["transparent", "rgba(231, 76, 60, 0.25)"]}
@@ -807,6 +811,9 @@ export default function InventoryScreen() {
                 navigation.navigate("ItemDetail", { itemId: item.id })
               }
               testID={`card-inventory-item-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}, expires ${formatDate(item.expirationDate)}`}
+              accessibilityHint="Opens item details"
             >
               <GlassView
                 style={[
@@ -898,6 +905,9 @@ export default function InventoryScreen() {
           style={styles.sectionHeader}
           onPress={() => toggleSection(section.key)}
           testID={`button-toggle-section-${section.key}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${section.title} section, ${section.itemCount} items, ${isCollapsed ? 'collapsed' : 'expanded'}`}
+          accessibilityState={{ expanded: !isCollapsed }}
         >
           <View style={styles.sectionHeaderLeft}>
             <Feather
@@ -956,7 +966,7 @@ export default function InventoryScreen() {
     }
 
     return (
-      <View style={styles.emptyState} testID="container-empty-inventory">
+      <View style={styles.emptyState} testID="container-empty-inventory" accessibilityRole="text" accessibilityLabel="Your pantry is empty. Tap the plus button to add your first item">
         <View
           style={[
             styles.emptyIconContainer,
@@ -990,6 +1000,7 @@ export default function InventoryScreen() {
     <View
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       testID="screen-inventory"
+      accessibilityRole="none"
     >
       <ExpoGlassHeader
         title="Kitchen"
@@ -1010,6 +1021,9 @@ export default function InventoryScreen() {
               <Pressable
                 key={group.key}
                 testID={`filter-foodgroup-${group.key}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${group.label}, ${isSelected ? 'selected' : 'not selected'}`}
+                accessibilityState={{ selected: isSelected }}
                 style={[
                   styles.foodGroupChip,
                   {
@@ -1050,6 +1064,8 @@ export default function InventoryScreen() {
 
       <FlatList
         style={styles.list}
+        accessibilityRole="list"
+        accessibilityLabel="Inventory items"
         contentContainerStyle={[
           styles.listContent,
           {

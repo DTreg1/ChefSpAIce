@@ -127,6 +127,10 @@ export default function ShoppingListScreen() {
           style={styles.listItem}
           onPress={() => handleToggleItem(item.id)}
           testID={`card-shopping-item-${item.id}`}
+          accessibilityRole="checkbox"
+          accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}`}
+          accessibilityState={{ checked: item.isChecked }}
+          accessibilityHint="Double tap to toggle checked"
         >
           <View
             style={[
@@ -162,6 +166,8 @@ export default function ShoppingListScreen() {
             hitSlop={8}
             style={styles.deleteButton}
             testID={`button-delete-shopping-item-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${item.name} from shopping list`}
           >
             <Feather name="x" size={18} color={theme.textSecondary} />
           </Pressable>
@@ -171,7 +177,7 @@ export default function ShoppingListScreen() {
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState} testID="container-empty-shopping">
+    <View style={styles.emptyState} testID="container-empty-shopping" accessibilityRole="text" accessibilityLabel="Your shopping list is empty. Add missing ingredients from recipes to build your shopping list">
       <Feather name="shopping-cart" size={64} color={theme.textSecondary} />
       <ThemedText
         type="h3"
@@ -194,6 +200,7 @@ export default function ShoppingListScreen() {
     <View
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       testID="screen-shopping-list"
+      accessibilityRole="none"
     >
       <ExpoGlassHeader
         title="Shopping"
@@ -202,6 +209,8 @@ export default function ShoppingListScreen() {
         menuItems={menuItems}
       />
       <FlatList
+        accessibilityRole="list"
+        accessibilityLabel="Shopping list items"
         style={styles.list}
         contentContainerStyle={[
           styles.listContent,
@@ -218,13 +227,15 @@ export default function ShoppingListScreen() {
         ListHeaderComponent={
           items.length > 0 ? (
             <View style={styles.header} testID="container-shopping-header">
-              <ThemedText type="body" testID="text-items-remaining">
+              <ThemedText type="body" testID="text-items-remaining" accessibilityRole="text" accessibilityLabel={`${uncheckedItems.length} items remaining on your shopping list`}>
                 {uncheckedItems.length} items remaining
               </ThemedText>
               {checkedItems.length > 0 ? (
                 <Pressable
                   onPress={handleClearChecked}
                   testID="button-clear-checked"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Clear ${checkedItems.length} checked items`}
                 >
                   <ThemedText type="small" style={{ color: AppColors.error }}>
                     Clear checked
@@ -251,6 +262,8 @@ export default function ShoppingListScreen() {
             { backgroundColor: AppColors.success },
           ]}
           testID="container-completed-banner"
+          accessibilityRole="alert"
+          accessibilityLabel="Shopping complete! All items checked off"
         >
           <Feather name="check-circle" size={24} color="#FFFFFF" />
           <ThemedText
@@ -275,6 +288,9 @@ export default function ShoppingListScreen() {
             disabled={instacartLoading}
             style={styles.instacartButton}
             testID="button-order-instacart"
+            accessibilityRole="button"
+            accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order unchecked items on Instacart"}
+            accessibilityState={{ disabled: instacartLoading }}
           >
             <View style={styles.instacartButtonContent}>
               {instacartLoading ? (

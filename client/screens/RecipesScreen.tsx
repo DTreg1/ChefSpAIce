@@ -273,6 +273,8 @@ export default function RecipesScreen() {
           onPress={() =>
             navigation.navigate("RecipeDetail", { recipeId: recipe.id })
           }
+          accessibilityLabel={`${recipe.title}, ${matchPercentage}% ingredient match`}
+          accessibilityHint="Opens recipe details"
         >
           {recipe.imageUri ? (
             <View
@@ -287,7 +289,7 @@ export default function RecipesScreen() {
                 data-testid={`img-recipe-${recipe.id}`}
               />
               {hasCookwareData && !hasCookware ? (
-                <View style={styles.cookwareWarning}>
+                <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
                   <Feather
                     name="alert-circle"
                     size={14}
@@ -309,7 +311,7 @@ export default function RecipesScreen() {
             >
               <Feather name="book-open" size={32} color={theme.textSecondary} />
               {hasCookwareData && !hasCookware ? (
-                <View style={styles.cookwareWarning}>
+                <View style={styles.cookwareWarning} accessibilityRole="image" accessibilityLabel="Missing required cookware">
                   <Feather
                     name="alert-circle"
                     size={14}
@@ -357,6 +359,9 @@ export default function RecipesScreen() {
                 <Pressable
                   onPress={() => handleToggleFavorite(recipe)}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}, ${recipe.title}`}
+                  accessibilityState={{ selected: recipe.isFavorite }}
                 >
                   <Feather
                     name={recipe.isFavorite ? "heart" : "heart"}
@@ -381,7 +386,7 @@ export default function RecipesScreen() {
     }
 
     return (
-      <View style={styles.emptyState}>
+      <View style={styles.emptyState} accessibilityRole="text" accessibilityLabel="No recipes yet. Generate your first recipe based on what's in your kitchen">
         <View
           style={[
             styles.emptyIconContainer,
@@ -407,6 +412,9 @@ export default function RecipesScreen() {
           ]}
           onPress={generateQuickRecipe}
           disabled={isGenerating}
+          accessibilityRole="button"
+          accessibilityLabel={isGenerating ? "Generating recipe" : "Generate a recipe based on your kitchen inventory"}
+          accessibilityState={{ disabled: isGenerating }}
         >
           <Feather name="zap" size={18} color="#FFFFFF" />
           <ThemedText type="button" style={styles.generateButtonText}>
@@ -427,6 +435,8 @@ export default function RecipesScreen() {
         menuItems={menuItems}
       />
       <FlatList
+        accessibilityRole="list"
+        accessibilityLabel="Recipe collection"
         style={styles.list}
         contentContainerStyle={[
           styles.listContent,
