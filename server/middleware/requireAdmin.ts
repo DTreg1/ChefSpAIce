@@ -48,8 +48,8 @@ export async function requireAdmin(
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    (req as any).userId = user.id;
-    (req as any).user = user;
+    req.userId = user.id;
+    req.user = user;
 
     next();
   } catch (error) {

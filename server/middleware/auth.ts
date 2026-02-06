@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { db } from "../db";
-import { userSessions } from "@shared/schema";
+import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
@@ -13,6 +13,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      user?: typeof users.$inferSelect;
     }
   }
 }
