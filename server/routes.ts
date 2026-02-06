@@ -72,6 +72,7 @@ import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
+import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 
 
 /**
@@ -97,6 +98,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.head("/api/health", (_req: Request, res: Response) => {
     res.status(200).end();
   });
+
+  // =========================================================================
+  // RATE LIMITING - Applied to all /api/* routes as baseline protection
+  // =========================================================================
+  app.use("/api", generalLimiter);
+  app.use("/api/auth/login", authLimiter);
+  app.use("/api/auth/register", authLimiter);
+  app.use("/api/chat", aiLimiter);
+  app.use("/api/suggestions", aiLimiter);
+  app.use("/api/recipes/generate", aiLimiter);
 
   // =========================================================================
   // PUBLIC ROUTES - No authentication required

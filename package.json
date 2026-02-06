@@ -96,6 +96,7 @@
     "expo-web-browser": "~15.0.10",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.2.1",
     "google-auth-library": "^10.5.0",
     "http-proxy-middleware": "^3.0.5",
     "moti": "^0.30.0",
