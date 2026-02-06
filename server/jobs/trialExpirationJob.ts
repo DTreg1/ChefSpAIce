@@ -2,6 +2,7 @@ import { db } from "../db";
 import { subscriptions } from "@shared/schema";
 import { eq, and, lt } from "drizzle-orm";
 import { expireTrialSubscription } from "../services/subscriptionService";
+import { logger } from "../lib/logger";
 
 export async function checkExpiredTrials(): Promise<{ expired: number; errors: string[] }> {
   const now = new Date();
@@ -30,17 +31,17 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
       } catch (error) {
         const msg = `Failed to expire trial for user ${trial.userId}: ${error}`;
         errors.push(msg);
-        console.error(`[TrialJob] ${msg}`);
+        logger.error("Failed to expire trial", { userId: trial.userId, error: error instanceof Error ? error.message : String(error) });
       }
     }
 
     if (expiredCount > 0) {
-      console.log(`[TrialJob] Expired ${expiredCount} trial(s)`);
+      logger.info("Expired trials", { count: expiredCount });
     }
   } catch (error) {
     const msg = `Error querying expired trials: ${error}`;
     errors.push(msg);
-    console.error(`[TrialJob] ${msg}`);
+    logger.error("Error querying expired trials", { error: error instanceof Error ? error.message : String(error) });
   }
 
   return { expired: expiredCount, errors };
@@ -50,12 +51,12 @@ let jobInterval: NodeJS.Timeout | null = null;
 
 export function startTrialExpirationJob(intervalMs: number = 60 * 60 * 1000): void {
   if (jobInterval) {
-    console.log("[TrialJob] Job already running");
+    logger.info("Trial expiration job already running");
     return;
   }
 
   const intervalHours = Math.round(intervalMs / (60 * 60 * 1000));
-  console.log(`[TrialJob] Started (interval: ${intervalHours}h)`);
+  logger.info("Trial expiration job started", { intervalHours });
 
   checkExpiredTrials();
 
@@ -68,6 +69,6 @@ export function stopTrialExpirationJob(): void {
   if (jobInterval) {
     clearInterval(jobInterval);
     jobInterval = null;
-    console.log("[TrialJob] Stopped trial expiration job");
+    logger.info("Stopped trial expiration job");
   }
 }

@@ -3,6 +3,7 @@ import { db } from "../../db";
 import { subscriptions, users } from "../../../shared/schema";
 import { eq, sql, and, count } from "drizzle-orm";
 import { requireAdmin } from "../../middleware/requireAdmin";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -92,7 +93,7 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json(subscriptionsWithUsers);
   } catch (error) {
-    console.error("Error fetching admin subscriptions:", error);
+    logger.error("Error fetching admin subscriptions", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscriptions" });
   }
 });
@@ -191,7 +192,7 @@ router.get("/stats", async (_req: Request, res: Response) => {
       trialConversionRate,
     });
   } catch (error) {
-    console.error("Error fetching subscription stats:", error);
+    logger.error("Error fetching subscription stats", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscription stats" });
   }
 });
@@ -256,7 +257,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     res.json(subscription);
   } catch (error) {
-    console.error("Error fetching subscription details:", error);
+    logger.error("Error fetching subscription details", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscription details" });
   }
 });

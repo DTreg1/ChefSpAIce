@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import sharp from "sharp";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -104,7 +105,7 @@ router.get("/png", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", `attachment; filename="chefspace-logo-${size}.png"`);
     res.send(pngBuffer);
   } catch (error) {
-    console.error("Error generating PNG:", error);
+    logger.error("Error generating PNG", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to generate PNG" });
   }
 });
@@ -122,7 +123,7 @@ router.get("/favicon.ico", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "attachment; filename=\"favicon.ico\"");
     res.send(pngBuffer);
   } catch (error) {
-    console.error("Error generating favicon:", error);
+    logger.error("Error generating favicon", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to generate favicon" });
   }
 });
@@ -144,7 +145,7 @@ router.get("/favicon-png", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", `attachment; filename="favicon-${size}x${size}.png"`);
     res.send(pngBuffer);
   } catch (error) {
-    console.error("Error generating favicon PNG:", error);
+    logger.error("Error generating favicon PNG", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to generate favicon PNG" });
   }
 });
@@ -163,7 +164,7 @@ router.get("/apple-touch-icon", async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "attachment; filename=\"apple-touch-icon.png\"");
     res.send(pngBuffer);
   } catch (error) {
-    console.error("Error generating Apple touch icon:", error);
+    logger.error("Error generating Apple touch icon", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to generate Apple touch icon" });
   }
 });

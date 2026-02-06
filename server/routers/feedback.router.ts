@@ -5,6 +5,7 @@ import { db } from "../db";
 import { feedback, feedbackBuckets, userSessions, users } from "../../shared/schema";
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -139,7 +140,7 @@ ${feedbackItem.severity ? `Severity: ${feedbackItem.severity}` : ""}`
 
     return { bucketId: newBucket[0].id, isNewBucket: true };
   } catch (error) {
-    console.error("AI categorization failed, creating new bucket:", error);
+    logger.error("AI categorization failed, creating new bucket", { error: error instanceof Error ? error.message : String(error) });
     const newBucket = await createNewBucket(feedbackItem);
     return { bucketId: newBucket.id, isNewBucket: true };
   }
@@ -205,10 +206,10 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
           .where(eq(feedback.id, createdFeedback.id));
       }
     }).catch(err => {
-      console.error("Background categorization failed:", err);
+      logger.error("Background categorization failed", { error: err instanceof Error ? err.message : String(err) });
     });
 
-    console.log(`[Feedback] New ${validatedData.type} submitted:`, createdFeedback.id);
+    logger.info("New feedback submitted", { type: validatedData.type, feedbackId: createdFeedback.id });
 
     res.json({
       success: true,
@@ -253,7 +254,7 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json({ feedback: filtered });
   } catch (error) {
-    console.error("Feedback fetch error:", error);
+    logger.error("Feedback fetch error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch feedback" });
   }
 });
@@ -292,7 +293,7 @@ router.get("/stats", async (req: Request, res: Response) => {
 
     res.json(stats);
   } catch (error) {
-    console.error("Feedback stats error:", error);
+    logger.error("Feedback stats error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch feedback stats" });
   }
 });
@@ -328,7 +329,7 @@ router.get("/buckets", async (req: Request, res: Response) => {
 
     res.json({ buckets: bucketsWithItems });
   } catch (error) {
-    console.error("Buckets fetch error:", error);
+    logger.error("Buckets fetch error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch buckets" });
   }
 });
@@ -420,7 +421,7 @@ Generate a comprehensive implementation prompt for addressing all these feedback
 
       res.json({ prompt: generatedPrompt, bucketId: id });
     } catch (aiError) {
-      console.error("AI prompt generation failed:", aiError);
+      logger.error("AI prompt generation failed", { error: aiError instanceof Error ? aiError.message : String(aiError) });
 
       let fallbackPrompt = `## ${bucket.bucketType === "bug" ? "Bug Fix" : "Feature Implementation"}: ${bucket.title}
 
@@ -447,7 +448,7 @@ ${items.map((item, idx) => `${idx + 1}. Address: ${item.message.substring(0, 100
       res.json({ prompt: fallbackPrompt, bucketId: id });
     }
   } catch (error) {
-    console.error("Prompt generation error:", error);
+    logger.error("Prompt generation error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to generate prompt" });
   }
 });
@@ -484,11 +485,11 @@ router.post("/buckets/:id/complete", async (req: Request, res: Response) => {
       })
       .where(eq(feedback.bucketId, id));
 
-    console.log(`[Feedback] Bucket ${id} marked as completed`);
+    logger.info("Bucket marked as completed", { bucketId: id });
 
     res.json({ success: true, message: "Bucket and all feedback items marked as completed" });
   } catch (error) {
-    console.error("Bucket completion error:", error);
+    logger.error("Bucket completion error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to complete bucket" });
   }
 });
@@ -517,7 +518,7 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response) => 
           categorized++;
         }
       } catch (err) {
-        console.error(`Failed to categorize feedback ${item.id}:`, err);
+        logger.error("Failed to categorize feedback", { feedbackId: item.id, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -526,7 +527,7 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response) => 
       message: `Categorized ${categorized} of ${uncategorized.length} uncategorized items` 
     });
   } catch (error) {
-    console.error("Categorization error:", error);
+    logger.error("Categorization error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to categorize feedback" });
   }
 });
@@ -608,7 +609,7 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
       throw AppError.notFound("Feedback not found", "FEEDBACK_NOT_FOUND");
     }
 
-    console.log(`[Feedback] Updated feedback ${id}:`, Object.keys(updateValues));
+    logger.info("Feedback updated", { feedbackId: id, updatedFields: Object.keys(updateValues) });
 
     res.json(result[0]);
   } catch (error) {

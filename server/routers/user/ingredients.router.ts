@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
 import { AppError } from "../../middleware/errorHandler";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -173,7 +174,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
     const mimeType = detectMimeType(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(`[Ingredients] Scanning label: ${(base64Image.length / 1024).toFixed(1)}KB`);
+    logger.info("Scanning ingredient label", { imageSizeKB: (base64Image.length / 1024).toFixed(1) });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -214,13 +215,13 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
     try {
       rawResult = JSON.parse(content);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      logger.error("Failed to parse AI response for ingredient scan");
       throw AppError.internal("Failed to parse ingredient scan results", "AI_PARSE_ERROR");
     }
 
     const parseResult = scanResultSchema.safeParse(rawResult);
     if (!parseResult.success) {
-      console.error("AI response validation failed:", parseResult.error.errors);
+      logger.error("AI response validation failed for ingredient scan", { validationErrors: parseResult.error.errors });
       throw AppError.internal("Invalid response format from AI service", "AI_INVALID_FORMAT").withDetails({ suggestion: "Please try again with a clearer photo" });
     }
 
@@ -233,7 +234,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
-    console.log(`[Ingredients] Scan complete: ${result.ingredients.length} items found`);
+    logger.info("Ingredient scan complete", { itemCount: result.ingredients.length });
 
     return res.json({
       productName: result.productName,

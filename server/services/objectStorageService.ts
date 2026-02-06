@@ -1,4 +1,5 @@
 import { Client } from "@replit/object-storage";
+import { logger } from "../lib/logger";
 
 const storageClient = new Client();
 
@@ -17,12 +18,12 @@ export async function uploadRecipeImage(
   const result = await storageClient.uploadFromBytes(objectPath, buffer);
   
   if (!result.ok) {
-    console.error(`[ObjectStorage] Upload failed:`, result.error);
+    logger.error("Object storage upload failed", { error: result.error.message });
     throw new Error(`Failed to upload image: ${result.error.message}`);
   }
   
   const publicUrl = getPublicUrl(objectPath);
-  console.log(`[ObjectStorage] Uploaded recipe image: ${publicUrl}`);
+  logger.info("Uploaded recipe image", { recipeId, url: publicUrl });
   
   return publicUrl;
 }
@@ -35,13 +36,13 @@ export async function deleteRecipeImage(recipeId: string): Promise<void> {
     if (existsResult.ok && existsResult.value) {
       const deleteResult = await storageClient.delete(objectPath);
       if (deleteResult.ok) {
-        console.log(`[ObjectStorage] Deleted recipe image: ${objectPath}`);
+        logger.info("Deleted recipe image", { recipeId, objectPath });
       } else {
-        console.error(`[ObjectStorage] Delete failed:`, deleteResult.error);
+        logger.error("Object storage delete failed", { error: deleteResult.error.message });
       }
     }
   } catch (error) {
-    console.error(`[ObjectStorage] Error deleting recipe image:`, error);
+    logger.error("Error deleting recipe image", { recipeId, error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -54,7 +55,7 @@ export async function getRecipeImageUrl(recipeId: string): Promise<string | null
       return getPublicUrl(objectPath);
     }
   } catch (error) {
-    console.error(`[ObjectStorage] Error checking recipe image:`, error);
+    logger.error("Error checking recipe image", { recipeId, error: error instanceof Error ? error.message : String(error) });
   }
   
   return null;

@@ -1,4 +1,5 @@
 import { SubscriptionTier, MONTHLY_PRICES, ANNUAL_PRICES, TRIAL_CONFIG } from "@shared/subscription";
+import { logger } from "../lib/logger";
 
 export const SUBSCRIPTION_CONFIG = {
   TRIAL_DAYS: TRIAL_CONFIG.TRIAL_DAYS,
@@ -124,7 +125,7 @@ export async function getTierFromPriceId(
     
     return { tier, planType };
   } catch (error) {
-    console.error("[SubscriptionConfig] Error fetching price details:", error);
+    logger.error("Error fetching price details", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }

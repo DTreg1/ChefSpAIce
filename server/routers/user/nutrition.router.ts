@@ -3,6 +3,7 @@ import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { nutritionCorrections } from "@shared/schema";
 import { db } from "../../db";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -48,14 +49,14 @@ router.post("/corrections", async (req: Request, res: Response) => {
       })
       .returning();
 
-    console.log(`[Nutrition] Correction submitted for: ${data.productName}`);
+    logger.info("Nutrition correction submitted", { productName: data.productName });
 
     return res.status(201).json({
       message: "Correction submitted successfully",
       id: correction.id,
     });
   } catch (error) {
-    console.error("Error submitting nutrition correction:", error);
+    logger.error("Error submitting nutrition correction", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to submit correction" });
   }
 });
@@ -86,7 +87,7 @@ router.get("/corrections", async (req: Request, res: Response) => {
       offset,
     });
   } catch (error) {
-    console.error("Error fetching nutrition corrections:", error);
+    logger.error("Error fetching nutrition corrections", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to fetch corrections" });
   }
 });
@@ -121,7 +122,7 @@ router.patch("/corrections/:id", async (req: Request, res: Response) => {
 
     return res.json({ message: "Correction updated", correction: updated });
   } catch (error) {
-    console.error("Error updating nutrition correction:", error);
+    logger.error("Error updating nutrition correction", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to update correction" });
   }
 });

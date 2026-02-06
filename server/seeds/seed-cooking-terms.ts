@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import crypto from "crypto";
 import { cookingTerms } from "@shared/schema";
+import { logger } from "../lib/logger";
 
 const COOKING_TERMS_DATA = [
   // Techniques
@@ -476,7 +477,7 @@ async function seedCookingTerms() {
 
   const db = drizzle(pool);
 
-  console.log("Seeding cooking terms...");
+  logger.info("Seeding cooking terms...");
 
   try {
     for (const term of COOKING_TERMS_DATA) {
@@ -486,11 +487,9 @@ async function seedCookingTerms() {
       }).onConflictDoNothing();
     }
 
-    console.log(
-      `Successfully seeded ${COOKING_TERMS_DATA.length} cooking terms!`,
-    );
+    logger.info("Successfully seeded cooking terms", { count: COOKING_TERMS_DATA.length });
   } catch (error) {
-    console.error("Error seeding cooking terms:", error);
+    logger.error("Error seeding cooking terms", { error: error instanceof Error ? error.message : String(error) });
     throw error;
   } finally {
     await pool.end();
@@ -499,10 +498,10 @@ async function seedCookingTerms() {
 
 seedCookingTerms()
   .then(() => {
-    console.log("Seed complete!");
+    logger.info("Seed complete!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("Seed failed:", error);
+    logger.error("Seed failed", { error: error instanceof Error ? error.message : String(error) });
     process.exit(1);
   });

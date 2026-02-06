@@ -11,6 +11,7 @@ import {
   checkFeatureAccess,
 } from "../services/subscriptionService";
 import { SubscriptionTier } from "@shared/subscription";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -77,9 +78,9 @@ router.get("/prices", async (_req: Request, res: Response) => {
       expand: ["data.product"],
     });
 
-    console.log(`[Stripe Prices] Found ${prices.data.length} active recurring prices`);
+    logger.info("Found active recurring prices", { count: prices.data.length });
     for (const p of prices.data) {
-      console.log(`[Stripe Price] id=${p.id}, interval=${p.recurring?.interval}, interval_count=${p.recurring?.interval_count}, amount=${p.unit_amount}`);
+      logger.info("Stripe price details", { priceId: p.id, interval: p.recurring?.interval, intervalCount: p.recurring?.interval_count, amount: p.unit_amount });
     }
 
     let monthlyPrice: PriceInfo | null = null;
@@ -120,7 +121,7 @@ router.get("/prices", async (_req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    console.error("Error fetching subscription prices:", error);
+    logger.error("Error fetching subscription prices", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscription prices" });
   }
 });
@@ -200,7 +201,7 @@ router.post("/create-checkout-session", async (req: Request, res: Response) => {
       url: session.url,
     });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    logger.error("Error creating checkout session", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
@@ -235,7 +236,7 @@ router.post("/create-portal-session", async (req: Request, res: Response) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error("Error creating portal session:", error);
+    logger.error("Error creating portal session", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to create billing portal session" });
   }
 });
@@ -274,7 +275,7 @@ router.get("/status", async (req: Request, res: Response) => {
       canceledAt: subscription.canceledAt?.toISOString() || null,
     });
   } catch (error) {
-    console.error("Error fetching subscription status:", error);
+    logger.error("Error fetching subscription status", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscription status" });
   }
 });
@@ -284,7 +285,7 @@ router.get("/publishable-key", async (_req: Request, res: Response) => {
     const publishableKey = await getStripePublishableKey();
     res.json({ publishableKey });
   } catch (error) {
-    console.error("Error fetching publishable key:", error);
+    logger.error("Error fetching publishable key", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to get Stripe publishable key" });
   }
 });
@@ -323,7 +324,7 @@ router.get("/session/:sessionId", async (req: Request, res: Response) => {
       currency: session.currency,
     });
   } catch (error) {
-    console.error("Error fetching session details:", error);
+    logger.error("Error fetching session details", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch session details" });
   }
 });
@@ -367,7 +368,7 @@ router.post("/sync-revenuecat", async (req: Request, res: Response) => {
       .set(updateData)
       .where(eq(users.id, user.id));
 
-    console.log(`[Sync RevenueCat] Updated user ${user.id}: tier=${tier}, status=${status}`);
+    logger.info("RevenueCat purchase synced", { userId: user.id, tier, status });
 
     res.json({ 
       success: true,
@@ -375,7 +376,7 @@ router.post("/sync-revenuecat", async (req: Request, res: Response) => {
       status,
     });
   } catch (error) {
-    console.error("Error syncing RevenueCat purchase:", error);
+    logger.error("Error syncing RevenueCat purchase", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to sync purchase" });
   }
 });
@@ -408,7 +409,7 @@ router.get("/me", async (req: Request, res: Response) => {
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
     });
   } catch (error) {
-    console.error("Error fetching subscription entitlements:", error);
+    logger.error("Error fetching subscription entitlements", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch subscription info" });
   }
 });
@@ -439,7 +440,7 @@ router.get("/check-limit/:limitType", async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    console.error("Error checking limit:", error);
+    logger.error("Error checking limit", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to check limit" });
   }
 });
@@ -476,7 +477,7 @@ router.get("/check-feature/:feature", async (req: Request, res: Response) => {
       upgradeRequired: !allowed,
     });
   } catch (error) {
-    console.error("Error checking feature access:", error);
+    logger.error("Error checking feature access", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to check feature access" });
   }
 });
@@ -591,7 +592,7 @@ router.post("/upgrade", async (req: Request, res: Response) => {
       url: session.url,
     });
   } catch (error) {
-    console.error("Error creating upgrade checkout session:", error);
+    logger.error("Error creating upgrade checkout session", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to create upgrade session" });
   }
 });

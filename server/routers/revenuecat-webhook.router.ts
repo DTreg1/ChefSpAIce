@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { logger } from '../lib/logger';
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ interface RevenueCatWebhookEvent {
 
 function verifyWebhookSecret(req: Request): boolean {
   if (!REVENUECAT_WEBHOOK_SECRET) {
-    console.warn('[RevenueCat] No webhook secret configured');
+    logger.warn('No RevenueCat webhook secret configured');
     return true;
   }
 
@@ -83,7 +84,7 @@ async function handleSubscriptionUpdate(
   const productTier = mapProductIdToTier(event.product_id);
   const tier = entitlementTier || productTier;
 
-  console.log(`[RevenueCat] Processing: product=${event.product_id}, entitlement=${event.entitlement_id}, resolvedTier=${tier}`);
+  logger.info("RevenueCat processing subscription", { productId: event.product_id, entitlementId: event.entitlement_id, resolvedTier: tier });
 
   const [user] = await db
     .select()
@@ -92,7 +93,7 @@ async function handleSubscriptionUpdate(
     .limit(1);
 
   if (!user) {
-    console.log(`[RevenueCat] User not found: ${userId}`);
+    logger.info("RevenueCat user not found", { userId });
     return;
   }
 
@@ -105,20 +106,20 @@ async function handleSubscriptionUpdate(
     })
     .where(eq(users.id, userId));
 
-  console.log(`[RevenueCat] Updated subscription for user ${userId}: tier=${keepTier ? tier : 'BASIC'}, status=${status}`);
+  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'BASIC', status });
 }
 
 router.post('/', async (req: Request, res: Response) => {
   try {
     if (!verifyWebhookSecret(req)) {
-      console.warn('[RevenueCat] Invalid webhook secret');
+      logger.warn('RevenueCat invalid webhook secret');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const webhookData = req.body as RevenueCatWebhookEvent;
     const { event } = webhookData;
 
-    console.log(`[RevenueCat] Received event: ${event.type} for user ${event.app_user_id}`);
+    logger.info("RevenueCat received event", { eventType: event.type, userId: event.app_user_id });
 
     switch (event.type) {
       case 'INITIAL_PURCHASE':
@@ -141,16 +142,16 @@ router.post('/', async (req: Request, res: Response) => {
         break;
 
       case 'TEST':
-        console.log('[RevenueCat] Test event received');
+        logger.info('RevenueCat test event received');
         break;
 
       default:
-        console.log(`[RevenueCat] Unhandled event type: ${event.type}`);
+        logger.info("RevenueCat unhandled event type", { eventType: event.type });
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('[RevenueCat] Webhook error:', error);
+    logger.error('RevenueCat webhook error', { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

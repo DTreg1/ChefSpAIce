@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -183,14 +184,14 @@ router.post("/transcribe", async (req: Request, res: Response) => {
       response_format: "json",
     });
 
-    console.log(`[Voice] Transcription completed: "${response.text.substring(0, 50)}..."`);
+    logger.info("Transcription completed", { transcriptPreview: response.text.substring(0, 50) });
 
     return res.json({
       transcript: response.text,
       language,
     });
   } catch (error: any) {
-    console.error("Transcription error:", error);
+    logger.error("Transcription error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error.status === 429) {
       return res.status(429).json({
@@ -289,7 +290,7 @@ router.post("/speak", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[Voice] Speech generated for text: "${text.substring(0, 50)}..."`);
+    logger.info("Speech generated", { textPreview: text.substring(0, 50) });
 
     return res.json({
       audio: audioData.data,
@@ -297,7 +298,7 @@ router.post("/speak", async (req: Request, res: Response) => {
       duration: audioData.transcript ? undefined : undefined,
     });
   } catch (error: any) {
-    console.error("Text-to-speech error:", error);
+    logger.error("Text-to-speech error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error.status === 429) {
       return res.status(429).json({
@@ -417,14 +418,14 @@ Return ONLY valid JSON in this format:
 
     parsed.confidence = Math.max(0, Math.min(1, parsed.confidence));
 
-    console.log(`[Voice] Command parsed: "${text}" -> ${parsed.intent} (confidence: ${parsed.confidence})`);
+    logger.info("Command parsed", { text, intent: parsed.intent, confidence: parsed.confidence });
 
     return res.json({
       ...parsed,
       rawText: text,
     });
   } catch (error: any) {
-    console.error("Parse error:", error);
+    logger.error("Parse error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error.status === 429) {
       return res.status(429).json({
@@ -509,14 +510,14 @@ router.post("/chat", async (req: Request, res: Response) => {
           conversationHistory = validationResult.data;
         }
       } catch (parseError) {
-        console.warn("[Voice] Failed to parse conversation history, continuing without it");
+        logger.warn("Failed to parse conversation history, continuing without it");
       }
     }
 
     const mimeType = getAudioMimeType(filename) || "audio/m4a";
     const audioFile = new File([fileData], filename, { type: mimeType });
 
-    console.log("[Voice Chat] Transcribing user audio...");
+    logger.info("Transcribing user audio");
     const transcriptionResponse = await openai.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
@@ -525,7 +526,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     });
 
     const userTranscript = transcriptionResponse.text;
-    console.log(`[Voice Chat] User said: "${userTranscript.substring(0, 50)}..."`);
+    logger.info("User transcript received", { transcriptPreview: userTranscript.substring(0, 50) });
 
     const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       { role: "system", content: CHEF_SYSTEM_PROMPT },
@@ -537,7 +538,7 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     messages.push({ role: "user", content: userTranscript });
 
-    console.log("[Voice Chat] Getting AI chef response...");
+    logger.info("Getting AI chef response");
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
@@ -554,9 +555,9 @@ router.post("/chat", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[Voice Chat] Chef replied: "${aiResponse.substring(0, 50)}..."`);
+    logger.info("Chef response received", { responsePreview: aiResponse.substring(0, 50) });
 
-    console.log("[Voice Chat] Generating speech for AI response...");
+    logger.info("Generating speech for AI response");
     const ttsCompletion = await openai.chat.completions.create({
       model: "gpt-4o-mini-audio-preview",
       modalities: ["text", "audio"],
@@ -586,7 +587,7 @@ router.post("/chat", async (req: Request, res: Response) => {
       });
     }
 
-    console.log("[Voice Chat] Voice conversation complete");
+    logger.info("Voice conversation complete");
 
     return res.json({
       userTranscript,
@@ -595,7 +596,7 @@ router.post("/chat", async (req: Request, res: Response) => {
       audioFormat: "mp3",
     });
   } catch (error: any) {
-    console.error("Voice chat error:", error);
+    logger.error("Voice chat error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error.status === 429) {
       return res.status(429).json({

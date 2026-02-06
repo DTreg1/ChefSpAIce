@@ -3,6 +3,7 @@ import { db } from "../db";
 import { userSyncData, feedback } from "../../shared/schema";
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
+import { logger } from "./logger";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -469,7 +470,7 @@ export async function executeAddInventoryItem(
       actionType: "add_inventory_item"
     };
   } catch (error) {
-    console.error("Error adding inventory item:", error);
+    logger.error("Error adding inventory item", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: `Failed to add ${args.name} to inventory.`,
@@ -534,7 +535,7 @@ export async function executeConsumeItem(
       actionType: "consume_inventory_item"
     };
   } catch (error) {
-    console.error("Error consuming item:", error);
+    logger.error("Error consuming item", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: `Failed to mark ${args.itemName} as consumed.`,
@@ -601,7 +602,7 @@ export async function executeWasteItem(
       actionType: "waste_inventory_item"
     };
   } catch (error) {
-    console.error("Error logging waste:", error);
+    logger.error("Error logging waste", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: `Failed to log ${args.itemName} as wasted.`,
@@ -687,7 +688,7 @@ export async function executeGenerateRecipe(
       }
     };
   } catch (error) {
-    console.error("Error generating recipe:", error);
+    logger.error("Error generating recipe", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: "Failed to generate a recipe. Please try again.",
@@ -853,7 +854,7 @@ Return as JSON:
       actionType: "create_meal_plan"
     };
   } catch (error) {
-    console.error("Error creating meal plan:", error);
+    logger.error("Error creating meal plan", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: "Failed to create meal plan. Please try again.",
@@ -896,7 +897,7 @@ export async function executeAddToShoppingList(
       actionType: "add_to_shopping_list"
     };
   } catch (error) {
-    console.error("Error adding to shopping list:", error);
+    logger.error("Error adding to shopping list", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: "Failed to add items to shopping list.",
@@ -960,7 +961,7 @@ export async function executeGetInventorySummary(
       actionType: "get_inventory_summary"
     };
   } catch (error) {
-    console.error("Error getting inventory summary:", error);
+    logger.error("Error getting inventory summary", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: "Failed to retrieve inventory.",
@@ -995,7 +996,7 @@ export async function executeSaveFeedback(
       })
       .returning();
 
-    console.log(`[Chat] Feedback saved:`, feedbackEntry[0].id);
+    logger.info("Feedback saved", { feedbackId: feedbackEntry[0].id });
 
     const thankYouMessage = args.type === "bug"
       ? "Thank you for reporting this issue! Our team will look into it and work on a fix."
@@ -1008,7 +1009,7 @@ export async function executeSaveFeedback(
       actionType: "save_feedback"
     };
   } catch (error) {
-    console.error("Error saving feedback:", error);
+    logger.error("Error saving feedback", { error: error instanceof Error ? error.message : String(error) });
     return {
       success: false,
       message: "I'm sorry, there was an issue saving your feedback. Please try again later.",

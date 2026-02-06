@@ -11,9 +11,9 @@ import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
+import { logger } from "./lib/logger";
 
 const app = express();
-const log = console.log;
 
 declare module "http" {
   interface IncomingMessage {
@@ -117,7 +117,7 @@ function setupRequestLogging(app: express.Application) {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      logger.info(logLine);
     });
 
     next();
@@ -154,8 +154,7 @@ function serveLandingPage({
   const baseUrl = `${protocol}://${host}`;
   const expsUrl = `${host}`;
 
-  log(`baseUrl`, baseUrl);
-  log(`expsUrl`, expsUrl);
+  logger.debug("Landing page URL resolution", { baseUrl, expsUrl });
 
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
@@ -194,7 +193,7 @@ function configureExpoRouting(app: express.Application) {
   const expoWebBuildExists = fs.existsSync(path.join(expoWebBuildPath, "index.html"));
   
   if (!isDevelopment && expoWebBuildExists) {
-    log(`[Expo] Found web build at ${expoWebBuildPath}`);
+    logger.info("Found Expo web build", { path: expoWebBuildPath });
   }
 
   let metroProxy: ReturnType<typeof createProxyMiddleware> | null = null;
@@ -206,7 +205,7 @@ function configureExpoRouting(app: express.Application) {
       ws: true,
       on: {
         error: (err: Error, req: any, res: any) => {
-          log(`[Expo] Metro proxy error: ${err.message}`);
+          logger.error("Metro proxy error", { error: err.message });
           if (res && !res.headersSent && res.writeHead) {
             res.writeHead(502, { "Content-Type": "text/html" });
             res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
@@ -231,7 +230,7 @@ function configureExpoRouting(app: express.Application) {
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Debug logging for API routes
     if (req.path.startsWith("/api/test")) {
-      log(`[DEBUG] Test API route: ${req.method} ${req.path}`);
+      logger.debug("Test API route", { method: req.method, path: req.path });
     }
     
     if (req.path.startsWith("/api")) {
@@ -291,7 +290,7 @@ function configureExpoRouting(app: express.Application) {
     next();
   });
 
-  log(`[Expo] Routing ready (${isDevelopment ? "dev: Metro proxy" : expoWebBuildExists ? "prod: Expo web build" : "prod: landing page fallback"})`);
+  logger.info("Expo routing ready", { mode: isDevelopment ? "dev: Metro proxy" : expoWebBuildExists ? "prod: Expo web build" : "prod: landing page fallback" });
 }
 
 function configureStaticFiles(app: express.Application) {
@@ -327,7 +326,7 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
       await client.connect();
       await client.query('SELECT 1');
       await client.end();
-      log(`[Database] Connected (attempt ${attempt}/${retries})`);
+      logger.info("Database connected", { attempt, retries });
       return true;
     } catch (error) {
       try {
@@ -335,10 +334,10 @@ async function warmupDatabase(databaseUrl: string, retries = 3, delay = 2000): P
       } catch {}
       
       if (attempt === retries) {
-        console.error("Failed to connect to database after retries:", error);
+        logger.error("Failed to connect to database after retries", { error: error instanceof Error ? error.message : String(error) });
         return false;
       }
-      log(`[Database] Connection failed (attempt ${attempt}/${retries}), retrying...`);
+      logger.info("Database connection failed, retrying", { attempt, retries });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -349,13 +348,13 @@ async function initStripe(retries = 3, delay = 2000) {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    log("[Stripe] DATABASE_URL not found, skipping Stripe initialization");
+    logger.info("DATABASE_URL not found, skipping Stripe initialization");
     return;
   }
 
   const dbReady = await warmupDatabase(databaseUrl);
   if (!dbReady) {
-    log("[Stripe] Database not available, skipping Stripe initialization");
+    logger.info("Database not available, skipping Stripe initialization");
     return;
   }
 
@@ -364,7 +363,7 @@ async function initStripe(retries = 3, delay = 2000) {
       databaseUrl,
     });
   } catch (migrationError) {
-    console.error("Failed to initialize Stripe schema:", migrationError);
+    logger.error("Failed to initialize Stripe schema", { error: migrationError instanceof Error ? migrationError.message : String(migrationError) });
     return;
   }
 
@@ -380,22 +379,20 @@ async function initStripe(retries = 3, delay = 2000) {
         description: "Managed webhook for Stripe sync",
       },
     );
-    log(`[Stripe] Ready (webhook: ${uuid.slice(0, 8)}...)`);
+    logger.info("Stripe ready", { webhookId: uuid.slice(0, 8) });
 
-    // Skip full backfill sync for faster startup - webhook handles new events
-    // Only sync checkout_sessions which we need for subscriptions
     stripeSync
       .syncBackfill({
         include: ["checkout_sessions"],
       })
       .then(() => {
-        log("[Stripe] Sessions synced");
+        logger.info("Stripe sessions synced");
       })
       .catch((err: Error) => {
-        console.error("Error syncing Stripe data:", err);
+        logger.error("Error syncing Stripe data", { error: err.message });
       });
   } catch (error) {
-    console.error("Failed to initialize Stripe:", error);
+    logger.error("Failed to initialize Stripe", { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -426,7 +423,7 @@ async function initStripe(retries = 3, delay = 2000) {
         const sig = Array.isArray(signature) ? signature[0] : signature;
 
         if (!Buffer.isBuffer(req.body)) {
-          console.error("STRIPE WEBHOOK ERROR: req.body is not a Buffer");
+          logger.error("Stripe webhook error: req.body is not a Buffer");
           return res.status(500).json({ error: "Webhook processing error" });
         }
 
@@ -435,7 +432,7 @@ async function initStripe(retries = 3, delay = 2000) {
 
         res.status(200).json({ received: true });
       } catch (error: any) {
-        console.error("Webhook error:", error.message);
+        logger.error("Webhook error", { error: error.message });
         res.status(400).json({ error: "Webhook processing error" });
       }
     },
@@ -477,11 +474,10 @@ async function initStripe(retries = 3, delay = 2000) {
       reusePort: true,
     },
     () => {
-      log(`[Server] Express server serving on port ${port}`);
+      logger.info("Express server serving", { port });
 
-      // Initialize Stripe in background after server starts
       initStripe().catch((err) => {
-        console.error("Background Stripe init failed:", err);
+        logger.error("Background Stripe init failed", { error: err instanceof Error ? err.message : String(err) });
       });
 
       // Start trial expiration background job (runs every hour)

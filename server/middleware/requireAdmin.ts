@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { users, userSessions } from "../../shared/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 export async function requireAdmin(
   req: Request,
@@ -46,7 +47,7 @@ export async function requireAdmin(
 
     next();
   } catch (error) {
-    console.error("Admin middleware error:", error);
+    logger.error("Admin middleware error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to verify admin access" });
   }
 }

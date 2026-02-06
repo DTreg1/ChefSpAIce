@@ -1,6 +1,7 @@
 import express, { Router, Request, Response } from "express";
 import { z } from "zod";
 import { uploadRecipeImage, deleteRecipeImage } from "../services/objectStorageService";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -33,7 +34,7 @@ router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res
       recipeId,
     });
   } catch (error) {
-    console.error("[RecipeImages] Upload error:", error);
+    logger.error("Recipe image upload error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to upload recipe image" });
   }
 });
@@ -49,7 +50,7 @@ router.delete("/:recipeId", async (req: Request, res: Response) => {
       recipeId,
     });
   } catch (error) {
-    console.error("[RecipeImages] Delete error:", error);
+    logger.error("Recipe image delete error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to delete recipe image" });
   }
 });

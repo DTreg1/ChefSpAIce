@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "../../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -86,7 +87,7 @@ router.get("/", async (req: Request, res: Response) => {
 
     res.json(terms.map(formatTermResponse));
   } catch (error) {
-    console.error("Error fetching cooking terms:", error);
+    logger.error("Error fetching cooking terms", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch cooking terms" });
   }
 });
@@ -127,7 +128,7 @@ router.get("/detect", async (req: Request, res: Response) => {
 
     res.json(foundTerms.map(formatTermResponse));
   } catch (error) {
-    console.error("Error detecting cooking terms:", error);
+    logger.error("Error detecting cooking terms", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to detect cooking terms" });
   }
 });
@@ -162,7 +163,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    console.error("Error fetching cooking term:", error);
+    logger.error("Error fetching cooking term", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch cooking term" });
   }
 });

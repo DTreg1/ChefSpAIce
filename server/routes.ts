@@ -76,6 +76,7 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware, globalErrorHandler } from "./middleware/errorHandler";
+import { logger } from "./lib/logger";
 
 
 /**
@@ -185,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
       });
     } catch (error) {
-      console.error("Pre-registration error:", error);
+      logger.error("Pre-registration error", { error: error instanceof Error ? error.message : String(error) });
       return res.status(500).json({ error: "Something went wrong. Please try again." });
     }
   });
@@ -223,11 +224,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Development-only endpoint to set user subscription tier for testing
   if (process.env.NODE_ENV !== 'production') {
-    console.log("[TEST] Registering test endpoints for development mode");
+    logger.info("Registering test endpoints for development mode");
     
     // Create a test user and establish session for e2e testing
     app.post("/api/test/create-test-user", async (req: Request, res: Response) => {
-      console.log("[TEST] create-test-user endpoint hit");
+      logger.info("create-test-user endpoint hit");
       try {
         const crypto = await import("crypto");
         const bcrypt = await import("bcrypt");
@@ -275,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           path: "/",
         });
         
-        console.log(`[TEST] Created test user: ${email} (id: ${newUser.id})`);
+        logger.info("Created test user", { userId: newUser.id });
         
         res.json({
           success: true,
@@ -287,14 +288,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Test user created with PRO trial. Session cookie set.",
         });
       } catch (error) {
-        console.error("Error creating test user:", error);
+        logger.error("Error creating test user", { error: error instanceof Error ? error.message : String(error) });
         res.status(500).json({ error: "Failed to create test user" });
       }
     });
     
     // Version with auth
     app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response) => {
-      console.log("[TEST] set-subscription-tier endpoint hit (with auth)");
+      logger.info("set-subscription-tier endpoint hit");
       try {
         const userId = req.userId;
         if (!userId) {
@@ -330,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .where(eq(subscriptions.userId, userId));
 
-        console.log(`[TEST] Set user ${userId} to tier: ${tier}, status: ${newStatus}`);
+        logger.info("Set user subscription tier", { userId, tier, status: newStatus });
         
         res.json({ 
           success: true, 
@@ -339,14 +340,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `Subscription updated to ${tier} (${newStatus})`
         });
       } catch (error) {
-        console.error("Error setting subscription tier:", error);
+        logger.error("Error setting subscription tier", { error: error instanceof Error ? error.message : String(error) });
         res.status(500).json({ error: "Failed to set subscription tier" });
       }
     });
 
-    // Version without auth - uses email to find user (for testing only)
     app.post("/api/test/set-tier-by-email", async (req: Request, res: Response) => {
-      console.log("[TEST] set-tier-by-email endpoint hit");
+      logger.info("set-tier-by-email endpoint hit");
       try {
         const { email, tier, status } = req.body;
         
@@ -392,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .where(eq(subscriptions.userId, user.id));
 
-        console.log(`[TEST] Set user ${user.id} (${email}) to tier: ${tier}, status: ${newStatus}`);
+        logger.info("Set user subscription tier by email", { userId: user.id, tier, status: newStatus });
         
         res.json({ 
           success: true, 
@@ -403,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `Subscription updated to ${tier} (${newStatus})`
         });
       } catch (error) {
-        console.error("Error setting subscription tier:", error);
+        logger.error("Error setting subscription tier", { error: error instanceof Error ? error.message : String(error) });
         res.status(500).json({ error: "Failed to set subscription tier" });
       }
     });

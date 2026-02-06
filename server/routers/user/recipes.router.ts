@@ -15,6 +15,7 @@ import {
   incrementAiRecipeCount,
   checkFeatureAccess,
 } from "../../services/subscriptionService";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -479,10 +480,9 @@ router.post("/generate", async (req: Request, res: Response) => {
     });
 
     if (process.env.NODE_ENV !== "production") {
-      console.log(
-        "[Recipe] Smart generation prompt:",
-        prompt.substring(0, 500) + "...",
-      );
+      logger.debug("Smart generation prompt", {
+        promptPreview: prompt.substring(0, 500),
+      });
     }
 
     const effectiveIngredientCount = ingredientCount || { min: 4, max: 6 };
@@ -734,7 +734,7 @@ KEY PRINCIPLES:
         // Allow universal utilities like water even if not in inventory
         if (isAllowedUtility(ing.name)) {
           if (process.env.NODE_ENV !== "production") {
-            console.log(`[Recipe] Allowing utility ingredient: ${ing.name}`);
+            logger.debug("Allowing utility ingredient", { ingredient: ing.name });
           }
           return { 
             ...ing, 
@@ -746,7 +746,7 @@ KEY PRINCIPLES:
 
         // Ingredient doesn't match inventory - remove it (no exceptions for oil, salt, etc.)
         if (process.env.NODE_ENV !== "production") {
-          console.log(`[Recipe] Removing ingredient not in inventory: ${ing.name}`);
+          logger.debug("Removing ingredient not in inventory", { ingredient: ing.name });
         }
         return null;
       })
@@ -758,9 +758,7 @@ KEY PRINCIPLES:
       (ing) => ing.fromInventory === true,
     );
     if (inventoryIngredients.length < 2) {
-      console.error(
-        `Recipe has only ${inventoryIngredients.length} valid inventory ingredients after filtering`,
-      );
+      logger.error("Insufficient inventory ingredients after filtering", { validCount: inventoryIngredients.length });
       return res.status(400).json({
         error: "Could not generate a valid recipe",
         details:
@@ -956,7 +954,7 @@ KEY PRINCIPLES:
     const descPhantoms = findUnmatchedIngredients(recipe.description || "");
     if (descPhantoms.length > 0) {
       if (process.env.NODE_ENV !== "production") {
-        console.log(`[Recipe] Description mentions invalid ingredients: ${descPhantoms.join(", ")}. Rewriting.`);
+        logger.debug("Description mentions invalid ingredients, rewriting", { phantomIngredients: descPhantoms });
       }
       const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
       recipe.description = `A delicious dish featuring ${ingredientList}.`;
@@ -967,7 +965,7 @@ KEY PRINCIPLES:
     const instrPhantoms = findUnmatchedIngredients(instructionsText);
     if (instrPhantoms.length > 0) {
       if (process.env.NODE_ENV !== "production") {
-        console.log(`[Recipe] Instructions mention invalid ingredients: ${instrPhantoms.join(", ")}. Filtering.`);
+        logger.debug("Instructions mention invalid ingredients, filtering", { phantomIngredients: instrPhantoms });
       }
       // Rewrite instructions to use generic terms instead of specific phantom ingredients
       recipe.instructions = (recipe.instructions || []).map((step) => {
@@ -988,14 +986,14 @@ KEY PRINCIPLES:
 
     const filteredCount = originalIngredientCount - recipe.ingredients.length;
     if (filteredCount > 0 && process.env.NODE_ENV !== "production") {
-      console.log(`[Recipe] Filtered out ${filteredCount} ingredients not in inventory`);
+      logger.debug("Filtered out ingredients not in inventory", { filteredCount });
     }
 
     if (quickRecipe) {
       const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
       if (totalTime > 20) {
         if (process.env.NODE_ENV !== "production") {
-          console.log(`[Recipe] Quick recipe time exceeded (${totalTime} min), clamping to 20 min total`);
+          logger.debug("Quick recipe time exceeded, clamping to 20 min total", { totalTime });
         }
         const ratio = 20 / totalTime;
         recipe.prepTime = Math.max(
@@ -1009,7 +1007,7 @@ KEY PRINCIPLES:
     const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
     recipe.usedExpiringCount = usedExpiringCount;
 
-    console.log(`[Recipe] Generated: "${recipe.title}" using ${usedExpiringCount}/${expiringItems.length} expiring items`);
+    logger.info("Recipe generated", { title: recipe.title, usedExpiringCount, totalExpiringItems: expiringItems.length });
 
     await incrementAiRecipeCount(req.userId!);
 
@@ -1025,7 +1023,7 @@ KEY PRINCIPLES:
       },
     });
   } catch (error) {
-    console.error("Smart recipe generation error:", error);
+    logger.error("Smart recipe generation error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({ error: "Failed to generate recipe" });
   }
 });
@@ -1094,7 +1092,7 @@ router.post("/generate-image", async (req: Request, res: Response) => {
     // Enhanced styling for more vibrant, appetizing images
     imagePrompt += `. Hero shot composition with dramatic lighting from the side creating beautiful shadows and highlights. Rich, saturated colors that make the food look irresistible. Steam or fresh garnishes add life to the dish. Artfully arranged on a beautiful plate or bowl that complements the cuisine. Rustic wooden table or marble surface background with subtle props like fresh herbs, spices, or ingredients scattered artistically. Bokeh background effect. Magazine-quality food styling, Michelin-star presentation. Warm color temperature. Shot with a 50mm lens at f/2.8. Ultra high definition, photorealistic, no text or watermarks.`;
 
-    console.log(`[Recipe] Generating image for: "${safeTitle}"`);
+    logger.info("Generating recipe image", { title: safeTitle });
 
     const response = await openai.images.generate({
       model: "gpt-image-1",
@@ -1125,7 +1123,7 @@ router.post("/generate-image", async (req: Request, res: Response) => {
       throw new Error("No image URL or data returned");
     }
   } catch (error) {
-    console.error("Recipe image generation error:", error);
+    logger.error("Recipe image generation error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({
       error: "Failed to generate image",
       success: false,
@@ -1223,7 +1221,7 @@ router.post("/scan", async (req: Request, res: Response) => {
     const mimeType = detectMimeType(base64Image);
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(`[Recipe] Scanning image: ${(base64Image.length / 1024).toFixed(1)}KB`);
+    logger.info("Scanning recipe image", { imageSizeKB: (base64Image.length / 1024).toFixed(1) });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -1266,7 +1264,7 @@ router.post("/scan", async (req: Request, res: Response) => {
     try {
       result = JSON.parse(content);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      logger.error("Failed to parse AI response");
       return res.status(500).json({
         error: "Failed to parse recipe scan results",
       });
@@ -1279,7 +1277,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[Recipe] Scan complete: "${result.title}"`);
+    logger.info("Recipe scan complete", { title: result.title });
 
     return res.json({
       title: result.title || "Untitled Recipe",
@@ -1292,7 +1290,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       notes: result.notes || "",
     });
   } catch (error) {
-    console.error("Recipe scan error:", error);
+    logger.error("Recipe scan error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({
       error: "Failed to scan recipe",
       details: error instanceof Error ? error.message : "Unknown error",

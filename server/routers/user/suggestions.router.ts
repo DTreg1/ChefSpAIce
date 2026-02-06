@@ -7,6 +7,7 @@ import {
   type ExpiringItem,
   type WasteReductionCacheEntry,
 } from "../../lib/waste-reduction-utils";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -127,7 +128,7 @@ Return JSON:
 
     return res.json(result);
   } catch (error) {
-    console.error("Shelf life suggestion error:", error);
+    logger.error("Shelf life suggestion error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({
       suggestedDays: 7,
       confidence: "low",
@@ -167,7 +168,7 @@ router.post("/waste-reduction", async (req: Request, res: Response) => {
     const cached = getFromCache(cacheKey);
     if (cached && !forceRefresh) {
       if (process.env.NODE_ENV !== "production") {
-        console.log(`[Suggestions] Cache hit for device: ${deviceId}`);
+        logger.debug("Waste reduction cache hit", { deviceId });
       }
       return res.json({
         suggestions: cached.suggestions,
@@ -251,14 +252,14 @@ Return JSON:
       const suggestions = parseTips(rawSuggestions);
 
       setInCache(cacheKey, { suggestions, expiringItems });
-      console.log(`[Suggestions] Waste reduction tips generated for device: ${deviceId}`);
+      logger.info("Waste reduction tips generated", { deviceId });
 
       return res.json({
         suggestions,
         expiringItems,
       });
     } catch (aiError) {
-      console.error("AI waste reduction tips error:", aiError);
+      logger.error("AI waste reduction tips error", { error: aiError instanceof Error ? aiError.message : String(aiError) });
 
       return res.json({
         suggestions: [],
@@ -266,7 +267,7 @@ Return JSON:
       });
     }
   } catch (error) {
-    console.error("Waste reduction endpoint error:", error);
+    logger.error("Waste reduction endpoint error", { error: error instanceof Error ? error.message : String(error) });
     return res.status(500).json({
       error: "Failed to get waste reduction tips",
       suggestions: [],
@@ -354,7 +355,7 @@ Return JSON: { "fact": "<your fun fact>" }`;
 
     return res.json({ fact });
   } catch (error) {
-    console.error("Fun fact generation error:", error);
+    logger.error("Fun fact generation error", { error: error instanceof Error ? error.message : String(error) });
     return res.json({
       fact: "Your kitchen is stocked with tasty ingredients!",
     });

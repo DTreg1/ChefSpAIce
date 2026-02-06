@@ -10,6 +10,7 @@ import { csrfProtection, generateCsrfToken } from "../middleware/csrf";
 import { requireAuth } from "../middleware/auth";
 import { getUncachableStripeClient } from "../stripe/stripeClient";
 import { deleteRecipeImage } from "../services/objectStorageService";
+import { logger } from "../lib/logger";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -215,7 +216,7 @@ router.post("/register", async (req: Request, res: Response) => {
           referralTrialDays = 14;
         }
       } catch (refError) {
-        console.error("Referral processing error (non-fatal):", refError);
+        logger.error("Referral processing error (non-fatal)", { error: refError instanceof Error ? refError.message : String(refError) });
       }
     }
 
@@ -241,7 +242,7 @@ router.post("/register", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    logger.error("Registration error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Registration failed. Please try again." });
   }
 });
@@ -297,7 +298,7 @@ router.post("/login", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    logger.error("Login error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Login failed. Please try again." });
   }
 });
@@ -324,7 +325,7 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Logout error:", error);
+    logger.error("Logout error", { error: error instanceof Error ? error.message : String(error) });
     clearAuthCookie(res);
     res.status(200).json({ success: true });
   }
@@ -371,7 +372,7 @@ router.get("/me", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Auth check error:", error);
+    logger.error("Auth check error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to verify authentication" });
   }
 });
@@ -422,7 +423,7 @@ router.get("/restore-session", async (req: Request, res: Response) => {
       csrfToken,
     });
   } catch (error) {
-    console.error("Session restore error:", error);
+    logger.error("Session restore error", { error: error instanceof Error ? error.message : String(error) });
     clearAuthCookie(res);
     res.status(500).json({ error: "Failed to restore session" });
   }
@@ -486,7 +487,7 @@ router.get("/sync", async (req: Request, res: Response) => {
       lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
     });
   } catch (error) {
-    console.error("Sync fetch error:", error);
+    logger.error("Sync fetch error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to fetch sync data" });
   }
 });
@@ -585,7 +586,7 @@ router.post("/sync", async (req: Request, res: Response) => {
       } else {
         prefsSynced = false;
         prefsError = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
-        console.warn(`[Sync] Invalid preferences for user ${session.userId}:`, prefsError);
+        logger.warn("Invalid sync preferences", { userId: session.userId, prefsError });
       }
     }
 
@@ -685,7 +686,7 @@ router.post("/sync", async (req: Request, res: Response) => {
       ...(prefsError && { prefsError })
     });
   } catch (error) {
-    console.error("Sync save error:", error);
+    logger.error("Sync save error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to save sync data" });
   }
 });
@@ -720,7 +721,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "No data provided for migration" });
     }
 
-    console.log(`[MigrateGuestData] Starting migration for user ${session.userId}, guest ${guestId}`);
+    logger.info("Starting guest data migration", { userId: session.userId, guestId });
 
     // Check for existing data in user's sync record
     const [existingSyncData] = await db
@@ -738,7 +739,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
     );
 
     if (hasExistingData) {
-      console.log(`[MigrateGuestData] User ${session.userId} has existing data, merging...`);
+      logger.info("User has existing data, merging", { userId: session.userId });
     }
 
     // Prepare sync update with guest data
@@ -792,7 +793,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
         // Truncate guest cookware to fit within limit
         const slotsAvailable = Math.max(0, maxLimit - currentCookware.length);
         data.cookware = data.cookware.slice(0, slotsAvailable);
-        console.log(`[MigrateGuestData] Truncated cookware to ${slotsAvailable} items due to limit`);
+        logger.info("Truncated cookware due to limit", { slotsAvailable });
       }
     }
 
@@ -801,7 +802,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
       if (!hasAccess) {
         // Skip custom locations migration for non-Pro users
-        console.log(`[MigrateGuestData] Skipping custom locations - user doesn't have Pro access`);
+        logger.info("Skipping custom locations - user doesn't have Pro access");
         delete data.customLocations;
       }
     }
@@ -931,7 +932,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
         .where(eq(users.id, session.userId));
     }
 
-    console.log(`[MigrateGuestData] Successfully migrated data for user ${session.userId}`);
+    logger.info("Successfully migrated guest data", { userId: session.userId });
 
     res.json({ 
       success: true, 
@@ -939,7 +940,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       merged: hasExistingData,
     });
   } catch (error) {
-    console.error("Guest data migration error:", error);
+    logger.error("Guest data migration error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to migrate guest data" });
   }
 });
@@ -993,7 +994,7 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
       });
     }
 
-    console.log(`[DeleteAccount] Starting deletion for user: ${userId} (${user.email})`);
+    logger.info("Starting account deletion", { userId });
 
     // Delete all user data in a transaction
     // Note: Due to cascade delete on users table, most data will be automatically deleted
@@ -1002,43 +1003,43 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     try {
       // Delete user appliances
       await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
-      console.log(`[DeleteAccount] Deleted user appliances`);
+      logger.info("Deleted user appliances", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting appliances:`, e);
+      logger.warn("Error deleting appliances", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       // Delete subscriptions
       await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
-      console.log(`[DeleteAccount] Deleted subscriptions`);
+      logger.info("Deleted subscriptions", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting subscriptions:`, e);
+      logger.warn("Error deleting subscriptions", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       // Delete sync data
       await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
-      console.log(`[DeleteAccount] Deleted sync data`);
+      logger.info("Deleted sync data", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting sync data:`, e);
+      logger.warn("Error deleting sync data", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       // Delete all sessions
       await db.delete(userSessions).where(eq(userSessions.userId, userId));
-      console.log(`[DeleteAccount] Deleted sessions`);
+      logger.info("Deleted sessions", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting sessions:`, e);
+      logger.warn("Error deleting sessions", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     // Finally, delete the user (this should cascade delete remaining data)
     await db.delete(users).where(eq(users.id, userId));
-    console.log(`[DeleteAccount] Deleted user record`);
+    logger.info("Deleted user record", { userId });
 
     // Clear auth cookie
     clearAuthCookie(res);
 
-    console.log(`[DeleteAccount] User ${userId} deleted successfully`);
+    logger.info("User deleted successfully", { userId });
 
     res.json({ 
       success: true, 
@@ -1046,7 +1047,7 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     });
 
   } catch (error) {
-    console.error(`[DeleteAccount] Error:`, error);
+    logger.error("Account deletion error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ 
       error: "Failed to delete account. Please try again or contact support." 
     });
@@ -1082,7 +1083,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[DeleteAccount] Starting account deletion for user: ${userId} (${user.email})`);
+    logger.info("Starting account deletion", { userId });
 
     try {
       const [subscription] = await db
@@ -1094,10 +1095,10 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
       if (subscription?.stripeSubscriptionId) {
         const stripe = await getUncachableStripeClient();
         await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-        console.log(`[DeleteAccount] Cancelled Stripe subscription: ${subscription.stripeSubscriptionId}`);
+        logger.info("Cancelled Stripe subscription", { stripeSubscriptionId: subscription.stripeSubscriptionId });
       }
     } catch (e) {
-      console.warn(`[DeleteAccount] Error cancelling Stripe subscription:`, e);
+      logger.warn("Error cancelling Stripe subscription", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
@@ -1115,65 +1116,65 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
               try {
                 await deleteRecipeImage(String(recipe.id));
               } catch (imgErr) {
-                console.warn(`[DeleteAccount] Error deleting recipe image ${recipe.id}:`, imgErr);
+                logger.warn("Error deleting recipe image", { recipeId: String(recipe.id), error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
               }
             }
           }
-          console.log(`[DeleteAccount] Processed ${recipes.length} recipe images for deletion`);
+          logger.info("Processed recipe images for deletion", { count: recipes.length });
         }
       }
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting recipe images:`, e);
+      logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(feedback).where(eq(feedback.userId, userId));
-      console.log(`[DeleteAccount] Deleted feedback`);
+      logger.info("Deleted feedback", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting feedback:`, e);
+      logger.warn("Error deleting feedback", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(authProviders).where(eq(authProviders.userId, userId));
-      console.log(`[DeleteAccount] Deleted auth providers`);
+      logger.info("Deleted auth providers", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting auth providers:`, e);
+      logger.warn("Error deleting auth providers", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
-      console.log(`[DeleteAccount] Deleted user appliances`);
+      logger.info("Deleted user appliances", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting appliances:`, e);
+      logger.warn("Error deleting appliances", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
-      console.log(`[DeleteAccount] Deleted subscriptions`);
+      logger.info("Deleted subscriptions", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting subscriptions:`, e);
+      logger.warn("Error deleting subscriptions", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
-      console.log(`[DeleteAccount] Deleted sync data`);
+      logger.info("Deleted sync data", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting sync data:`, e);
+      logger.warn("Error deleting sync data", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     try {
       await db.delete(userSessions).where(eq(userSessions.userId, userId));
-      console.log(`[DeleteAccount] Deleted sessions`);
+      logger.info("Deleted sessions", { userId });
     } catch (e) {
-      console.warn(`[DeleteAccount] Error deleting sessions:`, e);
+      logger.warn("Error deleting sessions", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
     await db.delete(users).where(eq(users.id, userId));
-    console.log(`[DeleteAccount] Deleted user record`);
+    logger.info("Deleted user record", { userId });
 
     clearAuthCookie(res);
 
-    console.log(`[DeleteAccount] User ${userId} account deleted successfully`);
+    logger.info("User account deleted successfully", { userId });
 
     res.json({
       success: true,
@@ -1181,7 +1182,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error(`[DeleteAccount] Error:`, error);
+    logger.error("Account deletion error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({
       error: "Failed to delete account. Please try again or contact support."
     });

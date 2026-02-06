@@ -1,3 +1,5 @@
+import { logger } from "../lib/logger";
+
 const USDA_API_KEY = process.env.USDA_API_KEY;
 const USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
 
@@ -95,7 +97,7 @@ export async function searchUSDA(
   pageSize: number = 25,
 ): Promise<USDASearchResult[]> {
   if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
+    logger.error("USDA_API_KEY is not configured");
     return [];
   }
 
@@ -120,14 +122,12 @@ export async function searchUSDA(
     });
 
     if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      logger.error("USDA API rate limit exceeded", { endpoint: "search" });
       return [];
     }
 
     if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`,
-      );
+      logger.error("USDA API error", { status: response.status, statusText: response.statusText, endpoint: "search" });
       return [];
     }
 
@@ -138,7 +138,7 @@ export async function searchUSDA(
 
     return results;
   } catch (error) {
-    console.error("Error searching USDA API:", error);
+    logger.error("Error searching USDA API", { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -147,7 +147,7 @@ export async function getUSDAFood(
   fdcId: number,
 ): Promise<USDAFoodDetail | null> {
   if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
+    logger.error("USDA_API_KEY is not configured");
     return null;
   }
 
@@ -174,14 +174,12 @@ export async function getUSDAFood(
     }
 
     if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      logger.error("USDA API rate limit exceeded", { endpoint: "food" });
       return null;
     }
 
     if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`,
-      );
+      logger.error("USDA API error", { status: response.status, statusText: response.statusText, endpoint: "food" });
       return null;
     }
 
@@ -191,7 +189,7 @@ export async function getUSDAFood(
 
     return data;
   } catch (error) {
-    console.error("Error fetching USDA food:", error);
+    logger.error("Error fetching USDA food", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -270,7 +268,7 @@ export async function lookupUSDABarcode(
   barcode: string,
 ): Promise<USDABrandedFood | null> {
   if (!USDA_API_KEY) {
-    console.error("USDA_API_KEY is not configured");
+    logger.error("USDA_API_KEY is not configured");
     return null;
   }
 
@@ -298,14 +296,12 @@ export async function lookupUSDABarcode(
     );
 
     if (response.status === 429) {
-      console.error("USDA API rate limit exceeded (1000 requests/hour)");
+      logger.error("USDA API rate limit exceeded", { endpoint: "barcode" });
       return null;
     }
 
     if (!response.ok) {
-      console.error(
-        `USDA API error: ${response.status} ${response.statusText}`,
-      );
+      logger.error("USDA API error", { status: response.status, statusText: response.statusText, endpoint: "barcode" });
       return null;
     }
 
@@ -340,7 +336,7 @@ export async function lookupUSDABarcode(
     barcodeCache.set(cleanBarcode, { data: null, timestamp: Date.now() });
     return null;
   } catch (error) {
-    console.error("Error looking up USDA barcode:", error);
+    logger.error("Error looking up USDA barcode", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }

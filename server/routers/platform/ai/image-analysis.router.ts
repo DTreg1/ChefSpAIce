@@ -8,6 +8,7 @@ import {
   SUPPORTED_IMAGE_FORMATS,
   MAX_FILE_SIZE,
 } from "../../../lib/food-analysis-parser";
+import { logger } from "../../../lib/logger";
 
 const router = Router();
 
@@ -126,7 +127,7 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
     const base64Image = fileData.toString("base64");
     const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    console.log(`[ImageAnalysis] Analyzing food image: ${filename} (${(fileData.length / 1024).toFixed(1)}KB, ${mimeType})`);
+    logger.info("Analyzing food image", { filename, sizeKB: (fileData.length / 1024).toFixed(1), mimeType });
 
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
@@ -162,17 +163,17 @@ router.post("/analyze-food", async (req: Request, res: Response) => {
     const parseResult = parseAnalysisResponse(content || null);
 
     if (!parseResult.success) {
-      console.error("Failed to parse response:", parseResult.error);
+      logger.error("Failed to parse image analysis response", { error: parseResult.error });
       return res.status(500).json({
         items: [],
         error: parseResult.error || "Failed to parse AI response",
       });
     }
 
-    console.log(`[ImageAnalysis] Complete: ${parseResult.data!.items.length} items identified`);
+    logger.info("Image analysis complete", { itemCount: parseResult.data!.items.length });
     return res.json(parseResult.data);
   } catch (error: any) {
-    console.error("Image analysis error:", error);
+    logger.error("Image analysis error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error.status === 429) {
       return res.status(429).json({

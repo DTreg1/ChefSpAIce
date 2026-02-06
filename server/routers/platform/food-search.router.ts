@@ -9,6 +9,7 @@ import {
   lookupBarcode,
   mapOFFToFoodItem,
 } from "../../integrations/openFoodFacts";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -264,7 +265,7 @@ router.get("/search", async (req: Request, res: Response) => {
             }),
           )
           .catch((err) => {
-            console.error("USDA search error:", err);
+            logger.error("USDA search error", { error: err instanceof Error ? err.message : String(err) });
             return [];
           }),
       );
@@ -300,7 +301,7 @@ router.get("/search", async (req: Request, res: Response) => {
               }),
           )
           .catch((err) => {
-            console.error("OpenFoodFacts search error:", err);
+            logger.error("OpenFoodFacts search error", { error: err instanceof Error ? err.message : String(err) });
             return [];
           }),
       );
@@ -347,7 +348,7 @@ router.get("/search", async (req: Request, res: Response) => {
     setCachedSearch(cacheKey, response);
     res.json(response);
   } catch (error) {
-    console.error("Food search error:", error);
+    logger.error("Food search error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to search food database" });
   }
 });
@@ -422,7 +423,7 @@ router.get("/barcode/:code", async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    console.error("Barcode lookup error:", error);
+    logger.error("Barcode lookup error", { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: "Failed to lookup barcode" });
   }
 });

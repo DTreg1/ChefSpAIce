@@ -1,3 +1,5 @@
+import { logger } from "../lib/logger";
+
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OFF_PRODUCT_URL = "https://world.openfoodfacts.org/api/v0/product";
 const USER_AGENT = "ChefSpAIce/1.0 (contact@chefspaice.app)";
@@ -104,16 +106,14 @@ export async function searchOpenFoodFacts(
     });
 
     if (!response.ok) {
-      console.error(
-        `OpenFoodFacts search error: ${response.status} ${response.statusText}`,
-      );
+      logger.error("OpenFoodFacts search error", { status: response.status, statusText: response.statusText });
       return [];
     }
 
     const data: OFFSearchResponse = await response.json();
     return data.products || [];
   } catch (error) {
-    console.error("Error searching OpenFoodFacts:", error);
+    logger.error("Error searching OpenFoodFacts", { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -135,9 +135,7 @@ export async function lookupBarcode(
     });
 
     if (!response.ok) {
-      console.error(
-        `OpenFoodFacts lookup error: ${response.status} ${response.statusText}`,
-      );
+      logger.error("OpenFoodFacts lookup error", { status: response.status, statusText: response.statusText });
       return null;
     }
 
@@ -149,7 +147,7 @@ export async function lookupBarcode(
 
     return data.product;
   } catch (error) {
-    console.error("Error looking up barcode:", error);
+    logger.error("Error looking up barcode", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }

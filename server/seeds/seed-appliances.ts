@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { appliances } from "@shared/schema";
+import { logger } from "../lib/logger";
 
 const APPLIANCES_DATA = [
   // ESSENTIAL (is_common: true)
@@ -555,13 +556,13 @@ export async function seedAppliances() {
 
   const db = drizzle(pool);
 
-  console.log("Seeding appliances...");
+  logger.info("Seeding appliances...");
 
   try {
     await db.insert(appliances).values(APPLIANCES_DATA).onConflictDoNothing();
-    console.log(`Seeded ${APPLIANCES_DATA.length} appliances successfully`);
+    logger.info("Seeded appliances successfully", { count: APPLIANCES_DATA.length });
   } catch (error) {
-    console.error("Error seeding appliances:", error);
+    logger.error("Error seeding appliances", { error: error instanceof Error ? error.message : String(error) });
     throw error;
   } finally {
     await pool.end();
