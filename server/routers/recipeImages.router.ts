@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import express, { Router, Request, Response } from "express";
 import { z } from "zod";
 import { uploadRecipeImage, deleteRecipeImage } from "../services/objectStorageService";
 
@@ -10,7 +10,10 @@ const uploadSchema = z.object({
   contentType: z.string().optional(),
 });
 
-router.post("/upload", async (req: Request, res: Response) => {
+// 10 MB limit for image uploads — base64-encoded images are ~33% larger than
+// the raw file, so 10 MB JSON allows roughly 7.5 MB of actual image data.
+// This overrides the global 1 MB express.json() limit for this route only.
+router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res: Response) => {
   try {
     const parseResult = uploadSchema.safeParse(req.body);
     if (!parseResult.success) {

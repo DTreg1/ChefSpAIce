@@ -68,15 +68,20 @@ function setupCors(app: express.Application) {
 function setupBodyParsing(app: express.Application) {
   app.use(cookieParser());
   
+  // 1 MB default limit protects against oversized payloads while covering
+  // typical API requests (JSON data, form submissions, sync payloads).
+  // The recipe-image upload route overrides this with a higher limit below.
   app.use(
     express.json({
+      limit: "1mb",
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       },
     }),
   );
 
-  app.use(express.urlencoded({ extended: false }));
+  // 1 MB limit for URL-encoded form data, consistent with the JSON limit.
+  app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 
   app.use(
     fileUpload({
@@ -404,10 +409,12 @@ async function initStripe(retries = 3, delay = 2000) {
 
   setupCors(app);
 
-  // Register webhook route before body parsing (needs raw body)
+  // Register webhook route before body parsing so Stripe receives the raw,
+  // unmodified body for signature verification. 5 MB limit accommodates large
+  // event payloads (e.g. invoices with many line items) while still capping input.
   app.post(
     "/api/stripe/webhook/:uuid",
-    express.raw({ type: "application/json" }),
+    express.raw({ type: "application/json", limit: "5mb" }),
     async (req, res) => {
       const signature = req.headers["stripe-signature"];
 
