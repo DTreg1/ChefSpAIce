@@ -13,6 +13,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
+import { LoadingState } from "@/components/LoadingState";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
@@ -223,7 +224,7 @@ export default function ShoppingListScreen() {
         data={[...uncheckedItems, ...checkedItems]}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={!loading ? renderEmptyState : null}
+        ListEmptyComponent={loading ? <LoadingState variant="list" count={5} /> : renderEmptyState()}
         ListHeaderComponent={
           items.length > 0 ? (
             <View style={styles.header} testID="container-shopping-header">

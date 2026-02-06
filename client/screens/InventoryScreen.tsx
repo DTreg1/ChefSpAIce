@@ -65,7 +65,7 @@ import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { NutritionBadge } from "@/components/NutritionBadge";
 import { NutritionScoreBadge } from "@/components/NutritionScoreBadge";
-import { InventoryListSkeleton } from "@/components/Skeleton";
+import { LoadingState } from "@/components/LoadingState";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -962,7 +962,7 @@ export default function InventoryScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <InventoryListSkeleton sectionCount={3} />;
+      return <LoadingState variant="list" count={6} />;
     }
 
     return (

@@ -53,7 +53,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { RecipeGridSkeleton } from "@/components/Skeleton";
+import { LoadingState } from "@/components/LoadingState";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { CookPotLoader } from "@/components/CookPotLoader";
@@ -382,7 +382,7 @@ export default function RecipesScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <RecipeGridSkeleton count={4} />;
+      return <LoadingState variant="card-grid" count={4} />;
     }
 
     return (

@@ -25,6 +25,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { LoadingState } from "@/components/LoadingState";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
@@ -64,6 +65,7 @@ export default function MealPlanScreen() {
   }>({ visible: false, recipe: null, slotId: "", date: new Date() });
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const canUseWeeklyPrepping = checkFeature("canUseWeeklyMealPrepping");
 
@@ -73,14 +75,18 @@ export default function MealPlanScreen() {
   const mealSlots = currentPreset.slots;
 
   const loadData = useCallback(async () => {
-    const [plans, loadedRecipes, prefs] = await Promise.all([
-      storage.getMealPlans(),
-      storage.getRecipes(),
-      storage.getPreferences(),
-    ]);
-    setMealPlans(plans);
-    setRecipes(loadedRecipes);
-    setPreferences(prefs);
+    try {
+      const [plans, loadedRecipes, prefs] = await Promise.all([
+        storage.getMealPlans(),
+        storage.getRecipes(),
+        storage.getPreferences(),
+      ]);
+      setMealPlans(plans);
+      setRecipes(loadedRecipes);
+      setPreferences(prefs);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(
@@ -198,6 +204,10 @@ export default function MealPlanScreen() {
           />
         }
       >
+        {loading ? (
+          <LoadingState variant="detail" />
+        ) : (
+        <>
         <View style={styles.weekNavigation}>
           <Pressable
             onPress={navigatePrevWeek}
@@ -551,6 +561,8 @@ export default function MealPlanScreen() {
             </View>
           </View>
         </GlassCard>
+        </>
+        )}
       </ScrollView>
 
       <Modal
