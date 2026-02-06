@@ -58,7 +58,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         </Pressable>
       ) : null}
 
-      <View style={styles.content}>
+      <View style={styles.content} accessibilityRole="alert" accessibilityLiveRegion="assertive">
         <ThemedText type="h1" style={styles.title}>
           Something went wrong
         </ThemedText>

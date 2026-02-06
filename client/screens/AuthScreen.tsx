@@ -387,6 +387,8 @@ export default function AuthScreen() {
                 styles.authErrorContainer,
                 { backgroundColor: `${AppColors.error}15` },
               ]}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="assertive"
             >
               <Feather name="alert-circle" size={16} color={AppColors.error} />
               <ThemedText

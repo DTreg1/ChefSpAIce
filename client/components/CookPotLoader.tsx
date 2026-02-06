@@ -137,7 +137,7 @@ export function CookPotLoader({
   const textColor = theme.text;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLiveRegion="polite" accessibilityLabel={text}>
       <View
         style={{ width: dimensions.container, height: dimensions.container }}
       >

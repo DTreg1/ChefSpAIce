@@ -517,7 +517,7 @@ export default function InventoryScreen() {
         {showFunFact && (
           <GlassCard style={styles.funFactCard}>
             {funFact && (
-              <View style={styles.funFactContainer}>
+              <View style={styles.funFactContainer} accessibilityLiveRegion="polite">
                 <View style={styles.funFactHeader}>
                   <Feather name="info" size={14} color={AppColors.primary} />
                   {funFactTimeRemaining && (
@@ -566,7 +566,7 @@ export default function InventoryScreen() {
     if (nutritionTotals.itemsWithNutrition === 0) return null;
 
     return (
-      <View style={styles.listFooter}>
+      <View style={styles.listFooter} accessibilityLiveRegion="polite">
         <GlassCard style={styles.nutritionSummary}>
           <View style={styles.nutritionSummaryContent}>
             <Feather name="zap" size={16} color={AppColors.primary} />

@@ -814,7 +814,7 @@ export function ChatModal() {
         )}
 
         {voiceChat.error && (
-          <View style={styles.voiceErrorContainer} accessibilityRole="alert">
+          <View style={styles.voiceErrorContainer} accessibilityRole="alert" accessibilityLiveRegion="assertive">
             <ThemedText
               type="caption"
               style={{ color: AppColors.error, textAlign: "center" }}

@@ -643,7 +643,7 @@ export default function GenerateRecipeScreen() {
               text={`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}
             />
             {expiringItems.length > 0 ? (
-              <View style={styles.progressExpiringNote}>
+              <View style={styles.progressExpiringNote} accessibilityLiveRegion="polite">
                 <Feather name="clock" size={16} color={AppColors.warning} />
                 <ThemedText type="caption" style={{ color: AppColors.warning }}>
                   Considering {expiringItems.length} item
