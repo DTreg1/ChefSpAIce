@@ -45,6 +45,10 @@ The backend is powered by Express.js and Node.js, utilizing Drizzle ORM with Pos
 - **Instacart Integration:** Users can order missing ingredients directly from Instacart. Available in ShoppingListScreen (order all unchecked items) and RecipeDetailScreen (order missing ingredients scaled to selected servings). Uses `useInstacart` hook for API calls and link handling.
 - **Siri Shortcuts Integration:** External API for Siri Shortcuts with four actions: add_item, check_inventory, what_expires, quick_recipe. Users generate API keys from Settings > Integrations > Siri Shortcuts. API keys use "csa_" prefix with 64-character hex string, stored as SHA-256 hash in database. Pro subscription required. In-app guide (`SiriShortcutsGuideScreen`) provides step-by-step setup instructions.
 
+## Recent Changes
+- **Landing Page Refactor (Feb 2026):** Refactored `client/screens/LandingScreen.tsx` from ~2,490 lines to ~1,048 lines (58% reduction). Extracted 11 components into `client/components/landing/` (GlassCard, FeatureCard, StepCard, BenefitCard, PricingCard, PhoneFrame, HeroDeviceMockup, DeviceMockup, ScreenshotShowcase, FAQItem, ReplitLogo). Moved static data to `client/data/landing-data.ts`. Created shared PhoneFrame component to deduplicate device mockup rendering. Removed ~173 lines of dead code. Fixed dynamic copyright year.
+- **Improvement Guide Created (Feb 2026):** Created `IMPROVEMENT_GUIDE.md` with 26 copyable prompts organized by priority across 10 categories (UI/UX, Core Features, Performance, Security, Error Handling, Accessibility, Code Quality, Mobile, Data Management, Monetization). Overall score: 8.7/10.
+
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation and conversational assistance (gpt-4o-mini).
 - **USDA FoodData Central API**: Comprehensive nutrition data lookup.
