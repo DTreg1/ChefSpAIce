@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
@@ -100,6 +100,10 @@ function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 function getExpiryDate(): Date {
   const date = new Date();
   date.setDate(date.getDate() + 30);
@@ -167,12 +171,13 @@ router.post("/register", async (req: Request, res: Response) => {
       })
       .returning();
 
-    const token = generateToken();
+    const rawToken = generateToken();
+    const hashedToken = hashToken(rawToken);
     const expiresAt = getExpiryDate();
 
     await db.insert(userSessions).values({
       userId: newUser.id,
-      token,
+      token: hashedToken,
       expiresAt,
     });
 
@@ -226,7 +231,7 @@ router.post("/register", async (req: Request, res: Response) => {
     const subscriptionInfo = await getSubscriptionInfo(newUser.id);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token, req);
+    setAuthCookie(res, rawToken, req);
 
     const csrfToken = generateCsrfToken(req, res);
 
@@ -238,7 +243,7 @@ router.post("/register", async (req: Request, res: Response) => {
         createdAt: newUser.createdAt?.toISOString() || new Date().toISOString(),
         ...subscriptionInfo,
       },
-      token,
+      token: rawToken,
       csrfToken,
     });
   } catch (error) {
@@ -270,19 +275,20 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = generateToken();
+    const rawToken = generateToken();
+    const hashedToken = hashToken(rawToken);
     const expiresAt = getExpiryDate();
 
     await db.insert(userSessions).values({
       userId: user.id,
-      token,
+      token: hashedToken,
       expiresAt,
     });
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token, req);
+    setAuthCookie(res, rawToken, req);
 
     const csrfToken = generateCsrfToken(req, res);
 
@@ -294,7 +300,7 @@ router.post("/login", async (req: Request, res: Response) => {
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
         ...subscriptionInfo,
       },
-      token,
+      token: rawToken,
       csrfToken,
     });
   } catch (error) {
@@ -317,7 +323,8 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response) => {
     }
     
     if (token) {
-      await db.delete(userSessions).where(eq(userSessions.token, token));
+      const hashed = hashToken(token);
+      await db.delete(userSessions).where(eq(userSessions.token, hashed));
     }
 
     // Always clear the auth cookie
@@ -338,12 +345,13 @@ router.get("/me", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const token = authHeader.substring(7);
+    const rawToken = authHeader.substring(7);
+    const hashedToken = hashToken(rawToken);
 
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
@@ -385,10 +393,12 @@ router.get("/restore-session", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "No session cookie" });
     }
 
+    const hashedCookieToken = hashToken(cookieToken);
+
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, cookieToken))
+      .where(eq(userSessions.token, hashedCookieToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
@@ -436,12 +446,13 @@ router.get("/sync", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const token = authHeader.substring(7);
+    const rawToken = authHeader.substring(7);
+    const hashedToken = hashToken(rawToken);
 
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
@@ -547,12 +558,13 @@ router.post("/sync", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const token = authHeader.substring(7);
+    const rawToken = authHeader.substring(7);
+    const hashedToken = hashToken(rawToken);
 
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
@@ -777,12 +789,13 @@ router.post("/migrate-guest-data", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const token = authHeader.substring(7);
+    const rawToken = authHeader.substring(7);
+    const hashedToken = hashToken(rawToken);
 
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
@@ -1031,17 +1044,19 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
     // Get auth token from header or cookie
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
-    const token = authHeader?.replace("Bearer ", "") || cookieToken;
+    const rawToken = authHeader?.replace("Bearer ", "") || cookieToken;
 
-    if (!token) {
+    if (!rawToken) {
       return res.status(401).json({ error: "Authentication required" });
     }
+
+    const hashedToken = hashToken(rawToken);
 
     // Validate session
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import pg from "pg";
 import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
@@ -39,17 +39,22 @@ function setAuthCookie(res: Response, token: string, req?: Request): void {
   });
 }
 
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {
-  const token = generateToken();
+  const rawToken = generateToken();
+  const hashedToken = hashToken(rawToken);
   const expiresAt = getExpiryDate();
   
   await db.insert(userSessions).values({
     userId,
-    token,
+    token: hashedToken,
     expiresAt,
   });
   
-  return { token, expiresAt };
+  return { token: rawToken, expiresAt };
 }
 
 async function createSyncDataIfNeeded(userId: string): Promise<void> {

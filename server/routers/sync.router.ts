@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { createHash } from "crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
@@ -151,10 +152,11 @@ type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 async function getSessionFromToken(token: string) {
   if (!token) return null;
   
+  const hashedToken = createHash("sha256").update(token).digest("hex");
   const sessions = await db
     .select()
     .from(userSessions)
-    .where(eq(userSessions.token, token));
+    .where(eq(userSessions.token, hashedToken));
   
   if (sessions.length === 0) return null;
   

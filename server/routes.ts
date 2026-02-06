@@ -257,18 +257,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Create a session token
-        const sessionToken = crypto.randomBytes(32).toString("hex");
+        const rawSessionToken = crypto.randomBytes(32).toString("hex");
+        const hashedSessionToken = crypto.createHash("sha256").update(rawSessionToken).digest("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
         
         await db.insert(userSessions).values({
           userId: newUser.id,
-          token: sessionToken,
+          token: hashedSessionToken,
           expiresAt,
           createdAt: new Date(),
         });
         
         // Set the auth cookie
-        res.cookie("chefspaice_auth", sessionToken, {
+        res.cookie("chefspaice_auth", rawSessionToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
@@ -283,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: newUser.id,
           email,
           password: plainPassword,
-          sessionToken,
+          sessionToken: rawSessionToken,
           tier: "PRO",
           message: "Test user created with PRO trial. Session cookie set.",
         });

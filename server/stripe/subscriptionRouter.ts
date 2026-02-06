@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { createHash } from "crypto";
 import { db } from "../db";
 import { users, userSessions, subscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -43,12 +44,13 @@ async function getAuthenticatedUser(req: Request): Promise<{ id: string; email: 
     return null;
   }
 
-  const token = authHeader.substring(7);
+  const rawToken = authHeader.substring(7);
+  const hashedToken = createHash("sha256").update(rawToken).digest("hex");
 
   const [session] = await db
     .select()
     .from(userSessions)
-    .where(eq(userSessions.token, token))
+    .where(eq(userSessions.token, hashedToken))
     .limit(1);
 
   if (!session || new Date(session.expiresAt) < new Date()) {

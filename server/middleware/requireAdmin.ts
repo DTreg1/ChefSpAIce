@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from "express";
+import { createHash } from "crypto";
 import { db } from "../db";
 import { users, userSessions } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export async function requireAdmin(
   req: Request,
@@ -16,12 +21,13 @@ export async function requireAdmin(
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const token = authHeader.slice(7);
+    const rawToken = authHeader.slice(7);
+    const hashedToken = hashToken(rawToken);
     
     const [session] = await db
       .select()
       .from(userSessions)
-      .where(eq(userSessions.token, token))
+      .where(eq(userSessions.token, hashedToken))
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {

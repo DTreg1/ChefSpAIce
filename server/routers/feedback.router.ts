@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { createHash } from "crypto";
 import { z } from "zod";
 import { AppError } from "../middleware/errorHandler";
 import { db } from "../db";
@@ -6,6 +7,10 @@ import { feedback, feedbackBuckets, userSessions, users } from "../../shared/sch
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 const router = Router();
 
@@ -43,11 +48,12 @@ async function getAuthenticatedAdmin(authHeader: string | undefined): Promise<Au
     return { error: "Authentication required", status: 401 };
   }
   
-  const token = authHeader.slice(7);
+  const rawToken = authHeader.slice(7);
+  const hashedToken = hashToken(rawToken);
   const sessions = await db
     .select()
     .from(userSessions)
-    .where(eq(userSessions.token, token));
+    .where(eq(userSessions.token, hashedToken));
   
   if (sessions.length === 0 || new Date(sessions[0].expiresAt) <= new Date()) {
     return { error: "Invalid session", status: 401 };
@@ -168,11 +174,12 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
+      const rawToken = authHeader.slice(7);
+      const hashedToken = hashToken(rawToken);
       const sessions = await db
         .select()
         .from(userSessions)
-        .where(eq(userSessions.token, token));
+        .where(eq(userSessions.token, hashedToken));
       
       if (sessions.length > 0 && new Date(sessions[0].expiresAt) > new Date()) {
         userId = sessions[0].userId;
