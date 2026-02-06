@@ -73,6 +73,7 @@ import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
+import { requestIdMiddleware, globalErrorHandler } from "./middleware/errorHandler";
 
 
 /**
@@ -89,6 +90,11 @@ import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter
  * @returns HTTP server instance
  */
 export async function registerRoutes(app: Express): Promise<Server> {
+  // =========================================================================
+  // REQUEST ID - Attach a unique ID to every request for tracing
+  // =========================================================================
+  app.use(requestIdMiddleware);
+
   // =========================================================================
   // HEALTH CHECK - Used by client for network detection
   // =========================================================================
@@ -442,6 +448,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
     res.sendFile(featurePath);
   });
+
+  // =========================================================================
+  // GLOBAL ERROR HANDLER - Must be registered last
+  // =========================================================================
+  app.use(globalErrorHandler);
 
   const httpServer = createServer(app);
   return httpServer;

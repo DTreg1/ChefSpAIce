@@ -1,6 +1,7 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
+import { AppError } from "../../middleware/errorHandler";
 
 const router = Router();
 
@@ -131,7 +132,7 @@ interface _ScanResult {
 // @ts-ignore - defined for future use
 type ScanResult = _ScanResult;
 
-router.post("/scan", async (req: Request, res: Response) => {
+router.post("/scan", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const contentType = req.headers["content-type"] || "";
 
@@ -142,43 +143,31 @@ router.post("/scan", async (req: Request, res: Response) => {
       const file = files?.image || files?.file;
 
       if (!file) {
-        return res.status(400).json({
-          error: "No image file provided",
-          suggestion: "Please upload an image of the ingredient label",
-        });
+        throw AppError.badRequest("No image file provided", "NO_IMAGE").withDetails({ suggestion: "Please upload an image of the ingredient label" });
       }
 
       const fileData = file.data || file.buffer;
       if (!fileData || fileData.length === 0) {
-        return res.status(400).json({
-          error: "The uploaded image file appears to be empty",
-        });
+        throw AppError.badRequest("The uploaded image file appears to be empty", "EMPTY_IMAGE");
       }
 
       const maxSize = 10 * 1024 * 1024;
       if (fileData.length > maxSize) {
-        return res.status(400).json({
-          error: `Image file too large. Maximum size is ${maxSize / 256 / 256}MB`,
-        });
+        throw AppError.badRequest(`Image file too large. Maximum size is ${maxSize / 256 / 256}MB`, "IMAGE_TOO_LARGE");
       }
 
       base64Image = fileData.toString("base64");
     } else if (contentType.includes("application/json")) {
       const parseResult = scanRequestSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: "Invalid request body",
-          details: parseResult.error.errors,
-        });
+        throw AppError.badRequest("Invalid request body", "VALIDATION_ERROR").withDetails(parseResult.error.errors);
       }
       base64Image = parseResult.data.image.replace(
         /^data:image\/\w+;base64,/,
         "",
       );
     } else {
-      return res.status(400).json({
-        error: "Expected multipart/form-data or application/json",
-      });
+      throw AppError.badRequest("Expected multipart/form-data or application/json", "INVALID_CONTENT_TYPE");
     }
 
     const mimeType = detectMimeType(base64Image);
@@ -218,9 +207,7 @@ router.post("/scan", async (req: Request, res: Response) => {
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      return res.status(500).json({
-        error: "No response from AI service",
-      });
+      throw AppError.internal("No response from AI service", "AI_NO_RESPONSE");
     }
 
     let rawResult: unknown;
@@ -228,18 +215,13 @@ router.post("/scan", async (req: Request, res: Response) => {
       rawResult = JSON.parse(content);
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      return res.status(500).json({
-        error: "Failed to parse ingredient scan results",
-      });
+      throw AppError.internal("Failed to parse ingredient scan results", "AI_PARSE_ERROR");
     }
 
     const parseResult = scanResultSchema.safeParse(rawResult);
     if (!parseResult.success) {
       console.error("AI response validation failed:", parseResult.error.errors);
-      return res.status(500).json({
-        error: "Invalid response format from AI service",
-        suggestion: "Please try again with a clearer photo",
-      });
+      throw AppError.internal("Invalid response format from AI service", "AI_INVALID_FORMAT").withDetails({ suggestion: "Please try again with a clearer photo" });
     }
 
     const result = parseResult.data;
@@ -262,11 +244,7 @@ router.post("/scan", async (req: Request, res: Response) => {
       notes: result.notes,
     });
   } catch (error) {
-    console.error("Ingredient scan error:", error);
-    return res.status(500).json({
-      error: "Failed to scan ingredient label",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
   }
 });
 

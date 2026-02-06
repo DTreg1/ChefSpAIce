@@ -1,5 +1,6 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { AppError } from "../middleware/errorHandler";
 import { db } from "../db";
 import { feedback, feedbackBuckets, userSessions, users } from "../../shared/schema";
 import { eq, desc, isNull } from "drizzle-orm";
@@ -158,7 +159,7 @@ async function createNewBucket(feedbackItem: typeof feedback.$inferSelect) {
   return bucketResult[0];
 }
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = feedbackRequestSchema.parse(req.body);
     
@@ -217,11 +218,10 @@ router.post("/", async (req: Request, res: Response) => {
       id: createdFeedback.id,
     });
   } catch (error) {
-    console.error("Feedback submission error:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+      return next(AppError.badRequest("Invalid feedback data", "VALIDATION_ERROR").withDetails(error.errors));
     }
-    res.status(500).json({ error: "Failed to submit feedback" });
+    next(error);
   }
 });
 
@@ -531,7 +531,7 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response) => 
   }
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -540,7 +540,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid feedback ID" });
+      throw AppError.badRequest("Invalid feedback ID", "INVALID_FEEDBACK_ID");
     }
 
     const result = await db
@@ -549,17 +549,16 @@ router.get("/:id", async (req: Request, res: Response) => {
       .where(eq(feedback.id, id));
 
     if (result.length === 0) {
-      return res.status(404).json({ error: "Feedback not found" });
+      throw AppError.notFound("Feedback not found", "FEEDBACK_NOT_FOUND");
     }
 
     res.json(result[0]);
   } catch (error) {
-    console.error("Feedback fetch error:", error);
-    res.status(500).json({ error: "Failed to fetch feedback" });
+    next(error);
   }
 });
 
-router.patch("/:id", async (req: Request, res: Response) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authResult = await getAuthenticatedAdmin(req.headers.authorization);
     if ("error" in authResult) {
@@ -568,7 +567,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid feedback ID" });
+      throw AppError.badRequest("Invalid feedback ID", "INVALID_FEEDBACK_ID");
     }
 
     const validatedData = updateFeedbackSchema.parse(req.body);
@@ -606,18 +605,17 @@ router.patch("/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (result.length === 0) {
-      return res.status(404).json({ error: "Feedback not found" });
+      throw AppError.notFound("Feedback not found", "FEEDBACK_NOT_FOUND");
     }
 
     console.log(`[Feedback] Updated feedback ${id}:`, Object.keys(updateValues));
 
     res.json(result[0]);
   } catch (error) {
-    console.error("Feedback update error:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid update data", details: error.errors });
+      return next(AppError.badRequest("Invalid update data", "VALIDATION_ERROR").withDetails(error.errors));
     }
-    res.status(500).json({ error: "Failed to update feedback" });
+    next(error);
   }
 });
 
