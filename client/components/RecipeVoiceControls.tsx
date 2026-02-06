@@ -296,7 +296,9 @@ export function RecipeVoiceControls({
             },
           ]}
           disabled={currentStep === 0}
+          accessibilityRole="button"
           accessibilityLabel="Previous step"
+          accessibilityState={{ disabled: currentStep === 0 }}
         >
           <Feather
             name="skip-back"
@@ -314,6 +316,7 @@ export function RecipeVoiceControls({
               opacity: pressed ? 0.7 : 1,
             },
           ]}
+          accessibilityRole="button"
           accessibilityLabel="Repeat current step"
         >
           <Feather name="repeat" size={20} color={theme.text} />
@@ -330,9 +333,11 @@ export function RecipeVoiceControls({
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
+            accessibilityRole="button"
             accessibilityLabel={
               isListening ? "Stop listening" : "Start voice command"
             }
+            accessibilityState={{ disabled: isProcessing }}
           >
             <Feather name="mic" size={24} color="#FFFFFF" />
           </Pressable>
@@ -347,6 +352,7 @@ export function RecipeVoiceControls({
               opacity: pressed ? 0.7 : 1,
             },
           ]}
+          accessibilityRole="button"
           accessibilityLabel={isSpeaking && !isPaused ? "Pause" : "Play recipe"}
         >
           <Feather
@@ -368,7 +374,9 @@ export function RecipeVoiceControls({
             },
           ]}
           disabled={currentStep >= totalSteps - 1}
+          accessibilityRole="button"
           accessibilityLabel="Next step"
+          accessibilityState={{ disabled: currentStep >= totalSteps - 1 }}
         >
           <Feather
             name="skip-forward"
@@ -392,12 +400,14 @@ export function RecipeVoiceControls({
               },
             ]}
             disabled={speechRate <= 0.5}
+            accessibilityRole="button"
             accessibilityLabel="Decrease speed"
+            accessibilityState={{ disabled: speechRate <= 0.5 }}
           >
             <Feather name="minus" size={16} color={theme.text} />
           </Pressable>
 
-          <ThemedText type="caption" style={styles.speedText}>
+          <ThemedText type="caption" style={styles.speedText} accessibilityRole="text" accessibilityLabel={`Speech speed ${speechRate.toFixed(1)} times`} accessibilityLiveRegion="polite">
             {speechRate.toFixed(1)}x
           </ThemedText>
 
@@ -411,7 +421,9 @@ export function RecipeVoiceControls({
               },
             ]}
             disabled={speechRate >= 2.0}
+            accessibilityRole="button"
             accessibilityLabel="Increase speed"
+            accessibilityState={{ disabled: speechRate >= 2.0 }}
           >
             <Feather name="plus" size={16} color={theme.text} />
           </Pressable>
@@ -428,11 +440,13 @@ export function RecipeVoiceControls({
               opacity: pressed ? 0.7 : 1,
             },
           ]}
+          accessibilityRole="button"
           accessibilityLabel={
             handsFreeModeEnabled
               ? "Disable hands-free mode"
               : "Enable hands-free mode"
           }
+          accessibilityState={{ selected: handsFreeModeEnabled }}
         >
           <Feather
             name="headphones"

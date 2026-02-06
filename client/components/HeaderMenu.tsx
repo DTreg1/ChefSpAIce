@@ -49,6 +49,7 @@ export function HeaderMenu({
         testID={testID}
         accessibilityLabel="Options menu"
         accessibilityRole="button"
+        accessibilityHint="Opens a menu with additional actions"
       >
         <Feather name="more-vertical" size={22} color={theme.text} />
       </Pressable>
@@ -58,8 +59,13 @@ export function HeaderMenu({
         transparent
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}
+        accessibilityViewIsModal={true}
       >
-        <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setIsOpen(false)}
+          accessibilityLabel="Close options menu"
+          accessibilityRole="button"
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View
@@ -70,6 +76,7 @@ export function HeaderMenu({
                     borderColor: theme.glass.border,
                   },
                 ]}
+                accessibilityRole="menu"
               >
                 {items.map((item, index) => (
                   <Pressable
@@ -85,6 +92,9 @@ export function HeaderMenu({
                     onPress={() => handleItemPress(item)}
                     disabled={item.disabled}
                     testID={`menu-item-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                    accessibilityRole="menuitem"
+                    accessibilityLabel={`${item.label}${item.active ? ', currently active' : ''}${item.disabled ? ', unavailable' : ''}`}
+                    accessibilityState={{ disabled: item.disabled, selected: item.active }}
                   >
                     <View style={styles.menuItemContent}>
                       <Feather
