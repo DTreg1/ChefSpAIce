@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FEATURE ROUTERS - Extracted to dedicated modules
   // =========================================================================
   app.use("/api/chat", requireAuth, requireSubscription, chatRouter);
-  app.use("/api/food", foodRouter);
+  app.use("/api/food", requireAuth, foodRouter);
   app.use("/api/barcode/raw", barcodeRawRouter);
   app.use("/api/suggestions/shelf-life", shelfLifeRouter);
 
