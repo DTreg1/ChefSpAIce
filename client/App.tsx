@@ -61,6 +61,8 @@ SplashScreen.preventAutoHideAsync();
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { storeKitService } from "@/lib/storekit-service";
+import { linkingConfig, savePendingDeepLink } from '@/lib/deep-linking';
+import * as Linking from 'expo-linking';
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -187,6 +189,33 @@ function MobileAppContent() {
    * from flashing during initial navigation setup, before we know which screen
    * the user is on. This ensures the button never appears on auth/onboarding screens.
    */
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  const linking = useMemo(() => ({
+    ...linkingConfig,
+    async getInitialURL() {
+      const url = await Linking.getInitialURL();
+      if (url && !isAuthenticatedRef.current) {
+        await savePendingDeepLink(url);
+        return null;
+      }
+      return url;
+    },
+    subscribe(listener: (url: string) => void) {
+      const subscription = Linking.addEventListener('url', ({ url }) => {
+        if (!isAuthenticatedRef.current) {
+          savePendingDeepLink(url);
+          return;
+        }
+        listener(url);
+      });
+      return () => subscription.remove();
+    },
+  }), []);
+
   const showChat =
     currentRoute !== undefined &&
     !isAuthLoading &&
@@ -203,6 +232,7 @@ function MobileAppContent() {
         ref={navigationRef}
         theme={navigationTheme}
         onStateChange={onStateChange}
+        linking={linking}
       >
         {/* Animated gradient background - full screen, outside max-width container */}
         <AnimatedBackground bubbleCount={20} />

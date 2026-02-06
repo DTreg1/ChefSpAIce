@@ -49,6 +49,7 @@ import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import { logger } from "@/lib/logger";
+import { consumePendingDeepLink } from '@/lib/deep-linking';
 import DrawerNavigator from "@/navigation/DrawerNavigator";
 import AddItemScreen from "@/screens/AddItemScreen";
 import AddFoodBatchScreen from "@/screens/AddFoodBatchScreen";
@@ -258,6 +259,80 @@ function AuthGuardedNavigator() {
     isLoading,
     needsOnboarding,
   ]);
+
+  useEffect(() => {
+    if (isLoading || authLoading || subscriptionLoading) return;
+    if (!isAuthenticated && !(!isWeb && !isTrialExpired)) return;
+    if (needsOnboarding) return;
+    if (isAuthenticated && !isActive) return;
+
+    const timer = setTimeout(async () => {
+      const pending = await consumePendingDeepLink();
+      if (!pending) return;
+
+      const { path } = pending;
+      logger.log(`[DeepLink] Consuming pending deep link: ${path}`);
+
+      if (path.startsWith('recipe/')) {
+        const recipeId = path.replace('recipe/', '');
+        if (recipeId) {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{
+                name: 'Main',
+                state: {
+                  routes: [{
+                    name: 'Tabs',
+                    state: {
+                      routes: [{
+                        name: 'RecipesTab',
+                        state: {
+                          routes: [
+                            { name: 'Recipes' },
+                            { name: 'RecipeDetail', params: { recipeId } },
+                          ],
+                        },
+                      }],
+                    },
+                  }],
+                },
+              }],
+            })
+          );
+        }
+      } else if (path === 'inventory') {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{
+              name: 'Main',
+              state: {
+                routes: [{
+                  name: 'Tabs',
+                  state: {
+                    routes: [{ name: 'KitchenTab' }],
+                  },
+                }],
+              },
+            }],
+          })
+        );
+      } else if (path === 'scan') {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              { name: 'Main' },
+              { name: 'ScanHub' },
+            ],
+          })
+        );
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, authLoading, subscriptionLoading, isAuthenticated, isActive, needsOnboarding, isTrialExpired, navigation]);
 
   const checkTrialExpired = (trialStartDate: string): boolean => {
     const startDate = new Date(trialStartDate);
