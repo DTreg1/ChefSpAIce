@@ -6,6 +6,7 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -37,6 +38,7 @@ export default function ShoppingListScreen() {
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadItems = useCallback(async () => {
     const list = await storage.getShoppingList();
@@ -49,6 +51,12 @@ export default function ShoppingListScreen() {
       loadItems();
     }, [loadItems]),
   );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadItems();
+    setRefreshing(false);
+  };
 
   const handleToggleItem = async (id: string) => {
     const updatedItems = items.map((item) =>
@@ -227,6 +235,13 @@ export default function ShoppingListScreen() {
           ) : null
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={AppColors.primary}
+          />
+        }
       />
 
       {checkedItems.length > 0 && uncheckedItems.length === 0 ? (

@@ -6,6 +6,7 @@ import {
   Pressable,
   Platform,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -62,6 +63,7 @@ export default function MealPlanScreen() {
     date: Date;
   }>({ visible: false, recipe: null, slotId: "", date: new Date() });
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const canUseWeeklyPrepping = checkFeature("canUseWeeklyMealPrepping");
 
@@ -86,6 +88,12 @@ export default function MealPlanScreen() {
       loadData();
     }, [loadData]),
   );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
   const navigatePrevWeek = () => {
     if (!canUseWeeklyPrepping) {
@@ -182,6 +190,13 @@ export default function MealPlanScreen() {
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={AppColors.primary}
+          />
+        }
       >
         <View style={styles.weekNavigation}>
           <Pressable
