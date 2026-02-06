@@ -25,6 +25,14 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 
 ## Recent Changes
 
+### Admin Analytics Dashboard (Feb 2026)
+- Created `GET /api/admin/analytics` endpoint behind `requireAdmin` middleware
+  - Returns: userMetrics (total, 7d/30d new, 7d active), subscriptionBreakdown (basic/pro/trialing/active/canceled/expired), revenueMetrics (MRR, ARR, subscriber counts), aiUsage (recipes this month), topFoodItems, userGrowth (12-month history)
+- Created admin dashboard HTML page at `/admin` with login form, metrics cards, Chart.js bar/doughnut charts, and top food items list
+- Router: `server/routers/admin/analytics.router.ts`
+- Template: `server/templates/admin-dashboard.html`
+- Admin page served from `server/index.ts`, analytics API registered in `server/routes.ts`
+
 ### Referral System (Feb 2026)
 - Added `referral_code` (unique 8-char alphanumeric) and `referred_by` fields to users table
 - Added `ai_recipe_bonus_credits` field to users table for referral rewards

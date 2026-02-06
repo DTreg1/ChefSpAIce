@@ -60,6 +60,7 @@ import feedbackRouter from "./routers/feedback.router";
 import logoExportRouter from "./routers/logo-export.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
+import adminAnalyticsRouter from "./routers/admin/analytics.router";
 import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
 import instacartRouter from "./routers/instacart.router";
 import donationsRouter from "./routers/donations.router";
@@ -193,6 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ADMIN ROUTES - Require admin authentication
   // =========================================================================
   app.use("/api/admin/subscriptions", requireAdmin, adminSubscriptionsRouter);
+  app.use("/api/admin/analytics", requireAdmin, adminAnalyticsRouter);
 
   // =========================================================================
   // PROTECTED ROUTES - Require auth + active subscription

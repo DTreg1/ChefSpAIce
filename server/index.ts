@@ -456,6 +456,11 @@ async function initStripe(retries = 3, delay = 2000) {
     res.redirect(301, `/public/showcase/${category}/${filename}`);
   });
 
+  app.get("/admin", (_req: Request, res: Response) => {
+    const adminPath = path.resolve(process.cwd(), "server", "templates", "admin-dashboard.html");
+    res.sendFile(adminPath);
+  });
+
   configureExpoRouting(app);
 
   const server = await registerRoutes(app);
