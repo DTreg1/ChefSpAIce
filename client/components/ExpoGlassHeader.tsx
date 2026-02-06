@@ -38,6 +38,7 @@ interface ExpoGlassHeaderProps {
   showSearch?: boolean;
   showMenu?: boolean;
   showBackButton?: boolean;
+  headerRight?: React.ReactNode;
 }
 
 export function ExpoGlassHeader({
@@ -49,6 +50,7 @@ export function ExpoGlassHeader({
   showSearch = true,
   showMenu = true,
   showBackButton = false,
+  headerRight,
 }: ExpoGlassHeaderProps) {
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -264,6 +266,7 @@ export function ExpoGlassHeader({
 
         {/* Right side: menu */}
         <View style={styles.rightContainer}>
+          {headerRight}
           {showMenu && menuItems.length > 0 && (
             <HeaderMenu items={menuItems} testID={`button-${screenKey}-menu`} />
           )}
