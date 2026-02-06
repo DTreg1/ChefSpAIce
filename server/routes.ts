@@ -219,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/chat", requireAuth, requireSubscription, chatRouter);
   app.use("/api/food", requireAuth, foodRouter);
   app.use("/api/barcode/raw", barcodeRawRouter);
-  app.use("/api/suggestions/shelf-life", shelfLifeRouter);
+  app.use("/api/suggestions/shelf-life", requireAuth, requireSubscription, shelfLifeRouter);
 
   // Development-only endpoint to set user subscription tier for testing
   if (process.env.NODE_ENV !== 'production') {
