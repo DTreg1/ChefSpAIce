@@ -15,6 +15,7 @@ declare global {
     interface Request {
       userId?: string;
       user?: typeof users.$inferSelect;
+      subscriptionTier?: string;
     }
   }
 }

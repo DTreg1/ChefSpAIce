@@ -40,7 +40,7 @@ export async function requireSubscription(
 
     if (!subscriptionStatus) {
       if (userTier && [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PRO].includes(userTier as SubscriptionTier)) {
-        (req as any).subscriptionTier = userTier;
+        req.subscriptionTier = userTier;
         return next();
       }
 
@@ -64,7 +64,7 @@ export async function requireSubscription(
       }
     }
 
-    (req as any).subscriptionTier = userTier || 'FREE';
+    req.subscriptionTier = userTier || 'FREE';
     next();
   } catch (error) {
     next(error);
