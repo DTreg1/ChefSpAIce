@@ -34,7 +34,9 @@ import { GlassButton } from "@/components/GlassButton";
 import { CookPotLoader } from "@/components/CookPotLoader";
 import { StorageSuggestionBadge } from "@/components/StorageSuggestionBadge";
 import { NutritionSection } from "@/components/NutritionSection";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   useShelfLifeSuggestion,
   ConfidenceLevel,
@@ -160,6 +162,8 @@ export default function AddItemScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AddItem">>();
+  const { checkLimit, entitlements } = useSubscription();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const menuItems: MenuItemConfig[] = [];
 
   const today = new Date().toISOString().split("T")[0];
@@ -529,6 +533,12 @@ export default function AddItemScreen() {
   };
 
   const handleSaveAndScanNext = async () => {
+    const pantryLimit = checkLimit("pantryItems");
+    if (!pantryLimit.allowed) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     if (!hasSelectedFood || !name.trim()) {
       Alert.alert("Error", "Please complete the item details first");
       return;
@@ -594,6 +604,12 @@ export default function AddItemScreen() {
   };
 
   const saveItem = async () => {
+    const pantryLimit = checkLimit("pantryItems");
+    if (!pantryLimit.allowed) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -1427,6 +1443,35 @@ export default function AddItemScreen() {
           </GlassButton>
         </View>
       </KeyboardAwareScrollViewCompat>
+
+      <Modal
+        visible={showUpgradePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUpgradePrompt(false)}
+        accessibilityViewIsModal={true}
+        data-testid="modal-upgrade-pantry-limit"
+      >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }}>
+          <UpgradePrompt
+            type="limit"
+            limitName="pantry items"
+            remaining={0}
+            max={typeof entitlements.maxPantryItems === "number" ? entitlements.maxPantryItems : 25}
+            onUpgrade={() => {
+              setShowUpgradePrompt(false);
+              navigation.navigate("Main" as any, {
+                screen: "Tabs",
+                params: {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
+                },
+              });
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }

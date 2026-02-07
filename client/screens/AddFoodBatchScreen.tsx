@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   TextInput,
+  Modal,
 } from "react-native";
 import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +26,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   storage,
@@ -241,6 +244,8 @@ export default function AddFoodBatchScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
+  const { checkLimit, entitlements } = useSubscription();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const initialItems: BatchItem[] = (route.params?.items || []).map(
     (item: IdentifiedFood, idx: number) => ({
@@ -320,12 +325,26 @@ export default function AddFoodBatchScreen() {
   };
 
   const handleAddItems = async () => {
+    const pantryLimit = checkLimit("pantryItems");
+    if (!pantryLimit.allowed) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     const selectedItems = items.filter((item) => item.selected);
 
     if (selectedItems.length === 0) {
       Alert.alert(
         "No Items Selected",
         "Please select at least one item to add.",
+      );
+      return;
+    }
+
+    if (typeof pantryLimit.remaining === "number" && selectedItems.length > pantryLimit.remaining) {
+      Alert.alert(
+        "Limit Exceeded",
+        `You can only add ${pantryLimit.remaining} more item${pantryLimit.remaining !== 1 ? 's' : ''} on your current plan. Please deselect some items or upgrade to Pro for unlimited items.`,
       );
       return;
     }
@@ -510,6 +529,35 @@ export default function AddFoodBatchScreen() {
           onClose={closeEditModal}
         />
       ) : null}
+
+      <Modal
+        visible={showUpgradePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUpgradePrompt(false)}
+        accessibilityViewIsModal={true}
+        data-testid="modal-upgrade-pantry-limit"
+      >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }}>
+          <UpgradePrompt
+            type="limit"
+            limitName="pantry items"
+            remaining={0}
+            max={typeof entitlements.maxPantryItems === "number" ? entitlements.maxPantryItems : 25}
+            onUpgrade={() => {
+              setShowUpgradePrompt(false);
+              navigation.navigate("Main" as any, {
+                screen: "Tabs",
+                params: {
+                  screen: "ProfileTab",
+                  params: { screen: "Subscription" },
+                },
+              });
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
