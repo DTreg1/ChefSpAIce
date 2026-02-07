@@ -240,6 +240,9 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
     const dataIdStr = String(data.id);
 
     if (operation === "create") {
+      // Create: upsert the item. If the (userId, itemId) pair already exists
+      // (e.g. a retry after a network timeout), overwrite with the client's data.
+      // No timestamp comparison on create — client data always wins for new items.
       const [{ value: currentCount }] = await db.select({ value: count() }).from(userInventoryItems).where(eq(userInventoryItems.userId, session.userId));
       const limitCheck = await checkPantryItemLimit(session.userId);
       const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
@@ -289,6 +292,12 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
         },
       });
     } else if (operation === "update") {
+      // Update with last-write-wins conflict resolution:
+      // Compare the client's updatedAt against the server row's updatedAt.
+      // If the client timestamp is older or equal, skip the update (the server
+      // already has a newer version, likely from another device). The client
+      // receives { operation: "skipped", reason: "stale_update" } which it
+      // interprets as a 409 conflict.
       const existingRows = await db.select().from(userInventoryItems).where(
         and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
       );
@@ -298,16 +307,21 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
         if (data.updatedAt && existing.updatedAt) {
           const incomingTime = new Date(data.updatedAt).getTime();
           const existingTime = new Date(existing.updatedAt).getTime();
+          // Last-write-wins: reject if incoming timestamp <= server timestamp.
+          // Include reason: "stale_update" so the client can detect this as a
+          // conflict and mark the queue item fatal (see syncItem() in sync-manager).
           if (incomingTime <= existingTime) {
             await updateSectionTimestamp(session.userId, "inventory");
             res.json(successResponse({
               syncedAt: new Date().toISOString(),
               operation: "skipped",
+              reason: "stale_update",
               itemId: dataIdStr,
             }));
             return;
           }
         }
+        // Client has a newer timestamp — apply the update.
         await db.update(userInventoryItems).set({
           name: data.name,
           barcode: data.barcode,
@@ -355,6 +369,8 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
         });
       }
     } else if (operation === "delete") {
+      // Hard delete: permanently remove the row. Used when an item's soft-delete
+      // period (30 days) has expired and the client triggers a permanent purge.
       await db.delete(userInventoryItems).where(
         and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
       );
@@ -398,6 +414,9 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
 
+    // PUT handler: last-write-wins using updatedAt (or clientTimestamp as fallback).
+    // If the incoming timestamp is older than the server row, respond with
+    // "stale_update" so the client knows its version was rejected.
     const existingRows = await db.select().from(userInventoryItems).where(
       and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
     );
@@ -409,6 +428,7 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
 
+      // Last-write-wins gate: reject stale updates.
       if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
@@ -418,6 +438,7 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
         }));
       }
 
+      // Client timestamp is newer — apply the update.
       await db.update(userInventoryItems).set({
         name: data.name,
         barcode: data.barcode,
@@ -589,11 +610,15 @@ router.post("/recipes", async (req: Request, res: Response, next: NextFunction) 
         if (data.updatedAt && existing.updatedAt) {
           const incomingTime = new Date(data.updatedAt).getTime();
           const existingTime = new Date(existing.updatedAt).getTime();
+          // Last-write-wins: reject if incoming timestamp <= server timestamp.
+          // Include reason: "stale_update" so the client can detect this as a
+          // conflict and mark the queue item fatal (see syncItem() in sync-manager).
           if (incomingTime <= existingTime) {
             await updateSectionTimestamp(session.userId, "recipes");
             res.json(successResponse({
               syncedAt: new Date().toISOString(),
               operation: "skipped",
+              reason: "stale_update",
               itemId: dataIdStr,
             }));
             return;
@@ -838,11 +863,15 @@ router.post("/mealPlans", async (req: Request, res: Response, next: NextFunction
         if (data.updatedAt && existing.updatedAt) {
           const incomingTime = new Date(data.updatedAt).getTime();
           const existingTime = new Date(existing.updatedAt).getTime();
+          // Last-write-wins: reject if incoming timestamp <= server timestamp.
+          // Include reason: "stale_update" so the client can detect this as a
+          // conflict and mark the queue item fatal (see syncItem() in sync-manager).
           if (incomingTime <= existingTime) {
             await updateSectionTimestamp(session.userId, "mealPlans");
             res.json(successResponse({
               syncedAt: new Date().toISOString(),
               operation: "skipped",
+              reason: "stale_update",
               itemId: dataIdStr,
             }));
             return;
@@ -1076,11 +1105,15 @@ router.post("/cookware", async (req: Request, res: Response, next: NextFunction)
         if (data.updatedAt && existing.updatedAt) {
           const incomingTime = new Date(data.updatedAt).getTime();
           const existingTime = new Date(existing.updatedAt).getTime();
+          // Last-write-wins: reject if incoming timestamp <= server timestamp.
+          // Include reason: "stale_update" so the client can detect this as a
+          // conflict and mark the queue item fatal (see syncItem() in sync-manager).
           if (incomingTime <= existingTime) {
             await updateSectionTimestamp(session.userId, "cookware");
             res.json(successResponse({
               syncedAt: new Date().toISOString(),
               operation: "skipped",
+              reason: "stale_update",
               itemId: dataIdStr,
             }));
             return;
@@ -1329,11 +1362,15 @@ router.post("/shoppingList", async (req: Request, res: Response, next: NextFunct
         if (data.updatedAt && existing.updatedAt) {
           const incomingTime = new Date(data.updatedAt).getTime();
           const existingTime = new Date(existing.updatedAt).getTime();
+          // Last-write-wins: reject if incoming timestamp <= server timestamp.
+          // Include reason: "stale_update" so the client can detect this as a
+          // conflict and mark the queue item fatal (see syncItem() in sync-manager).
           if (incomingTime <= existingTime) {
             await updateSectionTimestamp(session.userId, "shoppingList");
             res.json(successResponse({
               syncedAt: new Date().toISOString(),
               operation: "skipped",
+              reason: "stale_update",
               itemId: dataIdStr,
             }));
             return;

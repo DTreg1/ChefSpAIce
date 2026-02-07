@@ -1,3 +1,72 @@
+/**
+ * SyncManager — Local-First Cloud Sync Engine
+ *
+ * ## When Sync Occurs
+ * - **App foreground**: When the app transitions from background/inactive to active,
+ *   `resumeSync()` immediately processes any queued changes and flushes pending
+ *   preferences/profile updates.
+ * - **After mutations**: Every local write (add, update, delete an inventory item,
+ *   recipe, meal plan, or shopping list item) calls `queueChange()`, which
+ *   debounces and triggers `processSyncQueue()` after 2 seconds of inactivity.
+ * - **Periodic timer**: A network-health check runs every 60 seconds. When the
+ *   manager detects connectivity has been restored (after 3+ consecutive failures),
+ *   it automatically drains the queue.
+ * - **Manual full sync**: `fullSync()` can be called explicitly (e.g. after a chat
+ *   action or pull-to-refresh). It first drains the outbound queue, then fetches
+ *   the latest server state via GET /api/auth/sync.
+ *
+ * ## Conflict Resolution Strategy (Last-Write-Wins)
+ * Each item carries an `updatedAt` ISO timestamp set at mutation time on the client.
+ *
+ * **Client → Server (outbound)**:
+ * On POST (create) the server upserts — if the item already exists, it overwrites.
+ * On PUT (update) the server compares `data.updatedAt` against the existing row's
+ * `updatedAt`. If the incoming timestamp is older or equal, the server responds
+ * with `{ operation: "skipped", reason: "stale_update" }` and the client treats
+ * this as a 409 conflict, marking the queue item as fatal. The newer version on
+ * the server is preserved.
+ *
+ * **Server → Client (inbound / full sync)**:
+ * `fullSync()` fetches the server's current state and overwrites local storage
+ * wholesale (per data section). This means the server is the source of truth
+ * after a full sync — any local-only changes that were not yet pushed will be
+ * lost unless they are still in the sync queue (which is drained first).
+ *
+ * ## Offline Behavior
+ * - Changes are persisted to the sync queue in AsyncStorage and survive app restarts.
+ * - Network status is inferred heuristically: 3+ consecutive fetch failures → offline.
+ *   A single successful request → online.
+ * - While offline, `processSyncQueue()` is a no-op. When connectivity returns
+ *   (detected by the 60-second health check or an unrelated successful API call),
+ *   the queue is automatically drained.
+ * - Failed items are retried with exponential back-off (2^n seconds, max 30 s).
+ *   After 5 retries or a 4xx status, the item is marked `isFatal` and surfaced
+ *   to the user via an alert.
+ *
+ * ## Queue Coalescing
+ * When a new change is queued for an item that already has a pending entry
+ * (matched by `dataType` + `data.id`):
+ * - A "delete" always replaces the earlier entry.
+ * - An "update" on top of a pending "create" keeps the operation as "create"
+ *   (the server only needs the final state).
+ * - Otherwise the newer entry replaces the older one.
+ *
+ * ## How Deletions Are Handled
+ * - **Soft delete** (inventory): The client sets `deletedAt` on the item and
+ *   syncs it as an "update" operation. The server persists `deleted_at` on the
+ *   row. The GET sync endpoint filters out soft-deleted items with
+ *   `isNull(deletedAt)`, so they do not come back on full sync.
+ * - **Permanent purge** (inventory, after 30 days): The client sends a "delete"
+ *   operation. The server physically removes the row.
+ * - **Hard delete** (recipes, meal plans, shopping list, cookware): The client
+ *   sends a "delete" operation and the server removes the row immediately.
+ *
+ * ## Known Edge Case
+ * If the same item is edited on two devices while both are offline, the device
+ * that syncs last wins (last-write-wins). The earlier device's changes are
+ * silently overwritten. Conflict items with a stale timestamp are marked fatal
+ * in the queue and the user is notified, but the server version is not rolled back.
+ */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
@@ -266,6 +335,8 @@ class SyncManager {
   ): Promise<void> {
     const queue = await this.getQueue();
 
+    // Queue coalescing: find an existing entry for the same item (by dataType + id)
+    // so we can merge operations instead of sending redundant requests.
     const existingIndex = queue.findIndex(
       (item) =>
         item.dataType === dataType &&
@@ -283,14 +354,19 @@ class SyncManager {
     };
 
     if (existingIndex !== -1) {
+      // Coalescing rules — collapse multiple operations on the same item:
       if (operation === "delete") {
+        // A delete always wins: replace whatever was queued before.
         queue[existingIndex] = newItem;
       } else if (
         queue[existingIndex].operation === "create" &&
         operation === "update"
       ) {
+        // Update-after-create: keep "create" operation but use the latest data,
+        // because the server only needs the final state for a new item.
         queue[existingIndex] = { ...newItem, operation: "create" };
       } else {
+        // Default: replace with the newer operation and data.
         queue[existingIndex] = newItem;
       }
     } else {
@@ -373,6 +449,10 @@ class SyncManager {
         }
 
         if (isConflict) {
+          // Last-write-wins conflict: server responded with "stale_update" because
+          // the server row has a newer updatedAt than our outgoing data. The server
+          // version is preserved. Mark this item fatal so the user is notified and
+          // can resolve by doing a full sync (which will pull the server's version).
           logger.warn("[Sync] Conflict detected - server has newer version", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id });
           failedItems.push({
             ...item,
@@ -475,6 +555,9 @@ class SyncManager {
 
     const result = (await response.json()).data;
 
+    // Server signals a last-write-wins conflict: the row on the server has a
+    // newer updatedAt than the timestamp we sent. Treat this as a 409 conflict
+    // so processSyncQueue() marks the item fatal and notifies the user.
     if (result.operation === "skipped" && result.reason === "stale_update") {
       const error = new Error(
         "Update was stale - server has newer version",
@@ -497,6 +580,12 @@ class SyncManager {
     }
   }
 
+  // Full sync: push-then-pull. First drain the outbound queue (local→server),
+  // then fetch the server's current state and overwrite local storage per section.
+  // This ensures local pending changes are sent before the server snapshot replaces
+  // local data. Uses delta sync via lastSyncedAt to avoid re-downloading unchanged
+  // sections. After a full sync, the server is the source of truth for all sections
+  // that were returned.
   async fullSync(): Promise<{ success: boolean; error?: string }> {
     const token = await this.getAuthToken();
     if (!token) {
@@ -507,6 +596,7 @@ class SyncManager {
     this.notifyListeners();
 
     try {
+      // Step 1: Push — drain outbound queue so local changes reach the server first.
       await this.processSyncQueue();
 
       const baseUrl = getApiUrl();
@@ -553,6 +643,8 @@ class SyncManager {
 
       const { data } = result;
 
+      // Step 2: Pull — overwrite local storage with the server's latest snapshot.
+      // Each section is replaced entirely; the server is the source of truth.
       if (data) {
         if (data.inventory) {
           await AsyncStorage.setItem(
