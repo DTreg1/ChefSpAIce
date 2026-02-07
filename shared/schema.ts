@@ -217,6 +217,8 @@ export const userSessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     token: text("token").notNull().unique(),
+    userAgent: text("user_agent"),
+    ipAddress: varchar("ip_address", { length: 45 }),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
