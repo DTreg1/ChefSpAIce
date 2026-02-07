@@ -59,3 +59,13 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
   - Server (GET /api/auth/sync): Accepts optional `?lastSyncedAt=ISO` query param. Returns `unchanged: true` if nothing changed, or only changed sections with `delta: true`. Always includes `serverTimestamp`.
   - Server (sync write operations): All POST/PUT/DELETE handlers in sync.router.ts and auth.router.ts update `sectionUpdatedAt` for their respective sections.
   - Client (client/lib/sync-manager.ts): Stores `serverTimestamp` in AsyncStorage, sends it as `lastSyncedAt` on next fullSync(). Handles `unchanged` responses by skipping data writes.
+
+### Accessibility Improvements (Feb 2026)
+- **Live Region Announcements**: Added `accessibilityLiveRegion` across 6 files for screen reader dynamic content announcements:
+  - "polite" for non-urgent: fun facts, nutrition summaries, loading states (InventoryScreen, CookPotLoader, GenerateRecipeScreen)
+  - "assertive" for urgent: auth errors (AuthScreen), voice errors (ChatModal), app errors (ErrorFallback)
+- **WCAG AA Glass Contrast**: Improved text contrast on translucent glass-effect components:
+  - GlassCard: Added semi-opaque text backing layer (dark: rgba(0,0,0,0.6), light: rgba(255,255,255,0.7)) with matching borderRadius
+  - GlassButton: Increased primary/secondary opacity from 50% to 80%; strengthened outline/ghost backing; corrected text colors per mode for 4.5:1+ contrast
+  - ChatModal: Strengthened assistant bubble, header, input container, and empty state backgrounds
+  - VoiceQuickAction: Strengthened transcript bubble background
