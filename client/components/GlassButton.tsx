@@ -79,17 +79,17 @@ export const GlassButton = memo(function GlassButton({
   const backgroundColor = useMemo(() => {
     switch (variant) {
       case "primary":
-        return `${AppColors.primary}80`;
+        return `${AppColors.primary}CC`;
       case "secondary":
-        return `${AppColors.secondary}80`;
+        return `${AppColors.secondary}CC`;
       case "outline":
-        return theme.glass.background;
+        return isDark ? "rgba(0, 0, 0, 0.45)" : "rgba(255, 255, 255, 0.8)";
       case "ghost":
-        return theme.glass.background;
+        return isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.75)";
       default:
-        return `${AppColors.primary}80`;
+        return `${AppColors.primary}CC`;
     }
-  }, [variant, theme.glass.background]);
+  }, [variant, isDark]);
 
   const textColor = useMemo(() => {
     switch (variant) {
@@ -97,13 +97,13 @@ export const GlassButton = memo(function GlassButton({
       case "secondary":
         return "#FFFFFF";
       case "outline":
-        return AppColors.primary;
+        return isDark ? "#8FBF5F" : "#3D6B1A";
       case "ghost":
-        return theme.textOnGlass;
+        return isDark ? "#FFFFFF" : theme.text;
       default:
         return "#FFFFFF";
     }
-  }, [variant, theme.textOnGlass]);
+  }, [variant, isDark, theme.text]);
 
   const borderStyle = useMemo(() => {
     if (variant === "outline") {

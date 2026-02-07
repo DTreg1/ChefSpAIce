@@ -486,8 +486,8 @@ export function ChatModal() {
             styles.assistantBubble,
             {
               backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.05)",
+                ? "rgba(0, 0, 0, 0.6)"
+                : "rgba(255, 255, 255, 0.7)",
             },
           ]}
         >
@@ -552,7 +552,7 @@ export function ChatModal() {
   };
 
   const renderEmptyState = () => (
-    <GlassView style={styles.emptyState}>
+    <GlassView style={[styles.emptyState, { backgroundColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.6)" }]}>
       <Image
         source={chefHatDark}
         style={{ width: 32, height: 32, opacity: 0.7 }}
@@ -858,7 +858,7 @@ export function ChatModal() {
 
   const chatContent = (
     <>
-      <GlassView style={styles.header}>
+      <GlassView style={[styles.header, { backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)" }]}>
         <GlassView style={styles.headerLeft}>
           <Image
             source={chefHatDark}
@@ -967,6 +967,7 @@ export function ChatModal() {
             styles.voiceInputWrapper,
             {
               borderTopColor: theme.glass.border,
+              backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
             },
           ]}
         >
@@ -995,6 +996,7 @@ export function ChatModal() {
             styles.inputContainer,
             {
               borderTopColor: theme.glass.border,
+              backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)",
             },
           ]}
         >

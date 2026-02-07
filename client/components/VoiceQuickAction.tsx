@@ -494,7 +494,7 @@ export function VoiceQuickAction() {
               <GlassView
                 style={[
                   styles.transcriptBubble,
-                  { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" },
+                  { backgroundColor: isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)" },
                 ]}
               >
                 <ThemedText type="small" style={{ color: theme.text, textAlign: "center" }}>

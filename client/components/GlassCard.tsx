@@ -190,9 +190,11 @@ export function GlassCard({
     borderWidth: useLiquidGlass ? 0 : GlassEffect.borderWidth,
   };
 
+  const textBackingColor = isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)";
+
   const content = (
     <GlassProvider>
-      <View style={[styles.content, contentStyle]}>
+      <View style={[styles.content, { backgroundColor: textBackingColor }, contentStyle]}>
         {title ? (
           <ThemedText type="h4" style={styles.cardTitle}>
             {title}
@@ -334,6 +336,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.lg,
+    borderRadius: GlassEffect.borderRadius.lg,
   },
   glassOverlay: {
     flex: 1,
