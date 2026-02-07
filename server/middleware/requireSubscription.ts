@@ -57,10 +57,10 @@ export async function requireSubscription(
       gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
 
       if (new Date() > gracePeriodEnd) {
-        return res.status(403).json({
-          error: "payment_required",
-          message: "Your payment failed. Please update your payment method.",
-        });
+        return next(AppError.forbidden(
+          "Your payment failed. Please update your payment method.",
+          "PAYMENT_REQUIRED"
+        ));
       }
     }
 
