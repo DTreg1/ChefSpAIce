@@ -61,6 +61,7 @@ import logoExportRouter from "./routers/logo-export.router";
 import subscriptionRouter from "./stripe/subscriptionRouter";
 import adminSubscriptionsRouter from "./routers/admin/subscriptions.router";
 import adminAnalyticsRouter from "./routers/admin/analytics.router";
+import adminDataExportRouter from "./routers/admin/data-export.router";
 import revenuecatWebhookRouter from "./routers/revenuecat-webhook.router";
 import instacartRouter from "./routers/instacart.router";
 import donationsRouter from "./routers/donations.router";
@@ -189,6 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
   app.use("/api/admin/subscriptions", requireAdmin, adminSubscriptionsRouter);
   app.use("/api/admin/analytics", requireAdmin, adminAnalyticsRouter);
+  app.use("/api/admin/export-all-data", requireAdmin, adminDataExportRouter);
 
   // =========================================================================
   // PROTECTED ROUTES - Require auth + active subscription
