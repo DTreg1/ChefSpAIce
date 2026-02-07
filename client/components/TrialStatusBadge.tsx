@@ -57,14 +57,14 @@ export function TrialStatusBadge({
   };
 
   const getStatusColor = () => {
-    if (isExpired) return AppColors.error;
-    if (daysRemaining <= 2) return AppColors.warning;
+    if (isExpired || daysRemaining <= 1) return AppColors.error;
+    if (daysRemaining <= 3) return AppColors.warning;
     return AppColors.success;
   };
 
   const getStatusIcon = (): keyof typeof Feather.glyphMap => {
-    if (isExpired) return "alert-circle";
-    if (daysRemaining <= 2) return "clock";
+    if (isExpired || daysRemaining <= 1) return "alert-circle";
+    if (daysRemaining <= 3) return "clock";
     return "check-circle";
   };
 
@@ -73,9 +73,9 @@ export function TrialStatusBadge({
       return "Trial expired";
     }
     if (daysRemaining === 1) {
-      return "1 day left";
+      return "Trial: 1 day left";
     }
-    return `${daysRemaining} days left`;
+    return `Trial: ${daysRemaining} days left`;
   };
 
   const statusColor = getStatusColor();

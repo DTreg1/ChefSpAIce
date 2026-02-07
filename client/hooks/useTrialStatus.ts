@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { AppState } from "react-native";
 import { storage } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
@@ -54,6 +55,15 @@ export function useTrialStatus(): TrialStatus {
 
   useEffect(() => {
     fetchTrialStatus();
+  }, [fetchTrialStatus]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        fetchTrialStatus();
+      }
+    });
+    return () => subscription.remove();
   }, [fetchTrialStatus]);
 
   const calculateTrialStatus = useCallback(() => {

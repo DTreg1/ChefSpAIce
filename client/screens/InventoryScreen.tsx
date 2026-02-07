@@ -38,6 +38,12 @@ import { InventoryFunFact } from "@/components/inventory/InventoryFunFact";
 import { InventoryNutritionSummary } from "@/components/inventory/InventoryNutritionSummary";
 import { InventoryGroupSection } from "@/components/inventory/InventoryGroupSection";
 import { useFunFact } from "@/components/inventory/useFunFact";
+import { TrialStatusBadge } from "@/components/TrialStatusBadge";
+import { TrialMilestoneBanner } from "@/components/TrialMilestoneBanner";
+import { TrialExpiringModal } from "@/components/TrialExpiringModal";
+import { useTrialStatus } from "@/hooks/useTrialStatus";
+import { useSubscription } from "@/hooks/useSubscription";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type { FoodGroup };
 
@@ -80,6 +86,39 @@ export default function InventoryScreen() {
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
+
+  const { isTrialing, daysRemaining } = useTrialStatus();
+  const { isActive: hasActiveSubscription, isTrialing: serverTrialing } = useSubscription();
+
+  const showTrialing = isTrialing || serverTrialing;
+  const effectiveDaysRemaining = daysRemaining;
+
+  const [showExpiringModal, setShowExpiringModal] = useState(false);
+  const [expiringModalDismissed, setExpiringModalDismissed] = useState(false);
+
+  useEffect(() => {
+    const checkMilestone = async () => {
+      if (!showTrialing || hasActiveSubscription) return;
+
+      if (effectiveDaysRemaining <= 1 && effectiveDaysRemaining > 0 && !expiringModalDismissed) {
+        const dismissed = await AsyncStorage.getItem("@trial_expiring_modal_dismissed");
+        if (!dismissed) {
+          setShowExpiringModal(true);
+        } else {
+          setExpiringModalDismissed(true);
+        }
+      }
+    };
+    checkMilestone();
+  }, [showTrialing, effectiveDaysRemaining, hasActiveSubscription, expiringModalDismissed]);
+
+  const handleDismissExpiringModal = async () => {
+    setShowExpiringModal(false);
+    setExpiringModalDismissed(true);
+    await AsyncStorage.setItem("@trial_expiring_modal_dismissed", "true");
+  };
+
+  const showMilestoneBanner = showTrialing && !hasActiveSubscription && effectiveDaysRemaining <= 3 && effectiveDaysRemaining > 0;
 
   const loadItems = useCallback(async (isInitialLoad = false) => {
     try {
@@ -260,14 +299,19 @@ export default function InventoryScreen() {
   };
 
   const renderListHeader = () => (
-    <InventoryFunFact
-      funFact={funFact}
-      funFactLoading={funFactLoading}
-      funFactTimeRemaining={funFactTimeRemaining}
-      onRefresh={handleRefreshFunFact}
-      theme={theme}
-      showFunFact={showFunFact}
-    />
+    <>
+      {showMilestoneBanner && (
+        <TrialMilestoneBanner daysRemaining={effectiveDaysRemaining} />
+      )}
+      <InventoryFunFact
+        funFact={funFact}
+        funFactLoading={funFactLoading}
+        funFactTimeRemaining={funFactTimeRemaining}
+        onRefresh={handleRefreshFunFact}
+        theme={theme}
+        showFunFact={showFunFact}
+      />
+    </>
   );
 
   const renderListFooter = () => {
@@ -329,6 +373,7 @@ export default function InventoryScreen() {
         screenKey="inventory"
         searchPlaceholder="Search items..."
         menuItems={menuItems}
+        headerRight={<TrialStatusBadge compact />}
       />
       <View
         style={[styles.searchContainer, { top: 56 + insets.top }]}
@@ -366,6 +411,10 @@ export default function InventoryScreen() {
             tintColor={AppColors.primary}
           />
         }
+      />
+      <TrialExpiringModal
+        visible={showExpiringModal}
+        onDismiss={handleDismissExpiringModal}
       />
     </View>
   );
