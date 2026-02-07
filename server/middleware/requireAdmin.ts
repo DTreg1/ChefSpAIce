@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { db } from "../db";
-import { users, userSessions } from "../../shared/schema";
+import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
 
@@ -11,14 +11,15 @@ function hashToken(token: string): string {
 
 export async function requireAdmin(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader?.startsWith("Bearer ")) {
-      return next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
+      next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
+      return;
     }
 
     const rawToken = authHeader.slice(7);
@@ -31,7 +32,8 @@ export async function requireAdmin(
       .limit(1);
 
     if (!session || new Date(session.expiresAt) < new Date()) {
-      return next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
+      next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
+      return;
     }
 
     const [user] = await db
@@ -41,11 +43,13 @@ export async function requireAdmin(
       .limit(1);
 
     if (!user) {
-      return next(AppError.unauthorized("User not found", "USER_NOT_FOUND"));
+      next(AppError.unauthorized("User not found", "USER_NOT_FOUND"));
+      return;
     }
 
     if (!user.isAdmin) {
-      return next(AppError.forbidden("Admin access required", "ADMIN_REQUIRED"));
+      next(AppError.forbidden("Admin access required", "ADMIN_REQUIRED"));
+      return;
     }
 
     req.userId = user.id;
