@@ -102,6 +102,12 @@ const SCREENS_WITHOUT_CHAT = [
   "Settings",
 ];
 
+const CONTENT_HEAVY_SCREENS = [
+  "ItemDetail",
+  "RecipeDetail",
+  "Chat",
+];
+
 /**
  * Recursively traverses the navigation state to find the currently active screen.
  * React Navigation stores state as a nested structure, so we need to traverse
@@ -244,8 +250,11 @@ function MobileAppContent() {
         onStateChange={onStateChange}
         linking={linking}
       >
-        {/* Animated gradient background - full screen, outside max-width container */}
-        <AnimatedBackground bubbleCount={20} />
+        {/* Animated gradient background - disabled on content-heavy screens for performance */}
+        <AnimatedBackground
+          bubbleCount={20}
+          enabled={!currentRoute || !CONTENT_HEAVY_SCREENS.includes(currentRoute)}
+        />
 
         {/* Shows when device is offline */}
         <OfflineIndicator />

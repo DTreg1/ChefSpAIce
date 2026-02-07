@@ -126,10 +126,12 @@ function GradientBackground({ isDark }: { isDark: boolean }) {
 
 interface AnimatedBackgroundProps {
   bubbleCount?: number;
+  enabled?: boolean;
 }
 
 export function AnimatedBackground({
   bubbleCount = 15,
+  enabled = true,
 }: AnimatedBackgroundProps) {
   const { isDark } = useTheme();
 
@@ -148,6 +150,14 @@ export function AnimatedBackground({
     }
     return configs;
   }, [bubbleCount]);
+
+  if (!enabled) {
+    return (
+      <View style={[styles.container, styles.noPointerEvents]}>
+        <GradientBackground isDark={isDark} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, styles.noPointerEvents]}>
