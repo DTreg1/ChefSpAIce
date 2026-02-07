@@ -20,33 +20,39 @@ export async function requireSubscription(
       return next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
     }
 
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, userId))
+    const [result] = await db
+      .select({
+        subscriptionStatus: subscriptions.status,
+        subscriptionPaymentFailedAt: subscriptions.paymentFailedAt,
+        subscriptionUpdatedAt: subscriptions.updatedAt,
+        userTier: users.subscriptionTier,
+      })
+      .from(users)
+      .leftJoin(subscriptions, eq(subscriptions.userId, users.id))
+      .where(eq(users.id, userId))
       .limit(1);
 
-    if (!subscription) {
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+    if (!result) {
+      return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
+    }
 
-      if (userRecord && [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PRO].includes(userRecord.subscriptionTier as SubscriptionTier)) {
-        (req as any).subscriptionTier = userRecord.subscriptionTier;
+    const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, userTier } = result;
+
+    if (!subscriptionStatus) {
+      if (userTier && [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PRO].includes(userTier as SubscriptionTier)) {
+        (req as any).subscriptionTier = userTier;
         return next();
       }
 
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
-    if (!ACTIVE_STATUSES.includes(subscription.status)) {
+    if (!ACTIVE_STATUSES.includes(subscriptionStatus)) {
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
-    if (subscription.status === "past_due") {
-      const paymentFailedAt = subscription.paymentFailedAt || subscription.updatedAt || new Date();
+    if (subscriptionStatus === "past_due") {
+      const paymentFailedAt = subscriptionPaymentFailedAt || subscriptionUpdatedAt || new Date();
       const gracePeriodEnd = new Date(paymentFailedAt);
       gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
 
@@ -58,12 +64,7 @@ export async function requireSubscription(
       }
     }
 
-    const [subUser] = await db
-      .select({ subscriptionTier: users.subscriptionTier })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    (req as any).subscriptionTier = subUser?.subscriptionTier || 'FREE';
+    (req as any).subscriptionTier = userTier || 'FREE';
     next();
   } catch (error) {
     next(error);
