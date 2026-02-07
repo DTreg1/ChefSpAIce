@@ -21,6 +21,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { storage } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/lib/logger";
 
 const TRIAL_DURATION_DAYS = 7;
 
@@ -44,7 +45,7 @@ export function useTrialStatus(): TrialStatus {
       const trialStart = await storage.getTrialStartDate();
       setStartDate(trialStart);
     } catch (error) {
-      console.error("[useTrialStatus] Error fetching trial status:", error);
+      logger.error("[useTrialStatus] Error fetching trial status:", error);
       setStartDate(null);
     } finally {
       setIsLoading(false);

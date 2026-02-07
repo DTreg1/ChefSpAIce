@@ -35,6 +35,7 @@ import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { storage, FoodItem, generateId } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -114,7 +115,7 @@ export function VoiceQuickAction() {
     },
     onError: (error) => {
       if (Platform.OS === "web") {
-        console.error("Voice Error:", error.message);
+        logger.error("Voice Error:", error.message);
       } else {
         Alert.alert("Voice Error", error.message);
       }

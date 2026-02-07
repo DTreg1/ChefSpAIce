@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "@/lib/logger";
 
 const STORAGE_PREFS_KEY = "@user_storage_preferences";
 const PREFS_VERSION_KEY = "@user_storage_preferences_version";
@@ -71,7 +72,7 @@ async function loadPreferences(): Promise<UserStoragePreferences> {
     cachedPreferences = prefs;
     return cachedPreferences;
   } catch (error) {
-    console.error("Error loading storage preferences:", error);
+    logger.error("Error loading storage preferences:", error);
     cachedPreferences = {};
     return cachedPreferences;
   }
@@ -83,7 +84,7 @@ async function savePreferences(prefs: UserStoragePreferences): Promise<void> {
     await AsyncStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(prefs));
     await AsyncStorage.setItem(PREFS_VERSION_KEY, CURRENT_VERSION.toString());
   } catch (error) {
-    console.error("Error saving storage preferences:", error);
+    logger.error("Error saving storage preferences:", error);
   }
 }
 
@@ -205,7 +206,7 @@ export async function clearPreferences(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_PREFS_KEY);
     await AsyncStorage.removeItem(PREFS_VERSION_KEY);
   } catch (error) {
-    console.error("Error clearing storage preferences:", error);
+    logger.error("Error clearing storage preferences:", error);
   }
 }
 

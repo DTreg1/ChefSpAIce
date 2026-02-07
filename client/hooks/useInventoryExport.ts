@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Alert } from "react-native";
 import { storage, FoodItem } from "@/lib/storage";
 import { exportInventoryToCSV, exportInventoryToPDF } from "@/lib/export";
+import { logger } from "@/lib/logger";
 
 export function useInventoryExport() {
   const [items, setItems] = useState<FoodItem[]>([]);
@@ -13,7 +14,7 @@ export function useInventoryExport() {
         const inventoryItems = await storage.getInventory();
         setItems(inventoryItems);
       } catch (error) {
-        console.error("Error loading inventory for export:", error);
+        logger.error("Error loading inventory for export:", error);
       }
     };
     loadItems();

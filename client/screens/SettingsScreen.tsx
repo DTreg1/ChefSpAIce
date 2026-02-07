@@ -74,6 +74,7 @@ import {
 } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { MEAL_PLAN_PRESETS, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
+import { logger } from "@/lib/logger";
 
 const CUISINE_OPTIONS = [
   "Italian",
@@ -191,7 +192,7 @@ export default function SettingsScreen() {
         setReferralData(data);
       }
     } catch (error) {
-      console.error("Failed to fetch referral data:", error);
+      logger.error("Failed to fetch referral data:", error);
     } finally {
       setIsLoadingReferral(false);
     }
@@ -549,7 +550,7 @@ export default function SettingsScreen() {
       setReferralCopied(true);
       setTimeout(() => setReferralCopied(false), 2000);
     } catch (error) {
-      console.error("Failed to copy:", error);
+      logger.error("Failed to copy:", error);
     }
   };
 
@@ -575,7 +576,7 @@ export default function SettingsScreen() {
         });
       }
     } catch (error) {
-      console.error("Share failed:", error);
+      logger.error("Share failed:", error);
     }
   };
 

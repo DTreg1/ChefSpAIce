@@ -199,7 +199,7 @@ export function ChatModal() {
           setCurrentTip(data.suggestions[randomIndex]);
         }
       } catch (error) {
-        console.error("Failed to load tip:", error);
+        logger.error("Failed to load tip:", error);
         setCurrentTip(null);
       } finally {
         setTipLoading(false);
@@ -346,7 +346,7 @@ export function ChatModal() {
             loadTip(updatedInventory);
           }
         } catch (syncError) {
-          console.error("Failed to sync after chat action:", syncError);
+          logger.error("Failed to sync after chat action:", syncError);
         }
       }
 
@@ -370,7 +370,7 @@ export function ChatModal() {
         }, 300);
       }
     } catch (error) {
-      console.error("Chat error:", error);
+      logger.error("Chat error:", error);
 
       const errorMessage: ChatMessage = {
         id: generateId(),
@@ -443,7 +443,7 @@ export function ChatModal() {
         }
       }
     } catch (error) {
-      console.error("Failed to replay message:", error);
+      logger.error("Failed to replay message:", error);
     } finally {
       setIsReplayLoading(null);
     }

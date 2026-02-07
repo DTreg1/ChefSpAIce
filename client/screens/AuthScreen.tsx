@@ -26,6 +26,7 @@ import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
+import { logger } from "@/lib/logger";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -154,7 +155,7 @@ export default function AuthScreen() {
         );
       }
     } catch (err) {
-      console.error("Auth error:", err);
+      logger.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
     } finally {
       setAuthLoading(false);
@@ -231,7 +232,7 @@ export default function AuthScreen() {
         );
       }
     } catch (err) {
-      console.error("Social auth error:", err);
+      logger.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");
     } finally {
       setAuthLoading(false);

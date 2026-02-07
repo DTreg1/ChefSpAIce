@@ -21,6 +21,7 @@
 
 import React from "react";
 import { Platform, View, ViewProps } from "react-native";
+import { logger } from "@/lib/logger";
 
 let GlassViewNative: React.ComponentType<any> | null = null;
 let isLiquidGlassAvailableNative: (() => boolean) | null = null;
@@ -102,7 +103,7 @@ function tryLoadGlassModule(): boolean {
     GlassViewNative = module.GlassView;
     return true;
   } catch (error) {
-    console.warn("Failed to load expo-glass-effect:", error);
+    logger.warn("Failed to load expo-glass-effect:", error);
     return false;
   }
 }
@@ -127,7 +128,7 @@ export function isLiquidGlassAvailable(): boolean {
     try {
       return isLiquidGlassAvailableNative();
     } catch (error) {
-      console.warn("Glass effect check failed:", error);
+      logger.warn("Glass effect check failed:", error);
       return false;
     }
   }

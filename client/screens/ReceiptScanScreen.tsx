@@ -38,6 +38,7 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
+import { logger } from "@/lib/logger";
 
 export interface ReceiptItem {
   name: string;
@@ -479,7 +480,7 @@ export default function ReceiptScanScreen() {
       }
     },
     onError: (error) => {
-      console.error("[ReceiptScan] Analysis error:", error);
+      logger.error("[ReceiptScan] Analysis error:", error);
       Alert.alert(
         "Analysis Failed",
         error instanceof Error
@@ -508,7 +509,7 @@ export default function ReceiptScanScreen() {
         setScreenState("preview");
       }
     } catch (error) {
-      console.error("[ReceiptScan] Capture error:", error);
+      logger.error("[ReceiptScan] Capture error:", error);
       Alert.alert("Error", "Failed to capture photo. Please try again.");
     }
   };
@@ -526,7 +527,7 @@ export default function ReceiptScanScreen() {
         setScreenState("preview");
       }
     } catch (error) {
-      console.error("[ReceiptScan] Pick image error:", error);
+      logger.error("[ReceiptScan] Pick image error:", error);
       Alert.alert("Error", "Failed to select image. Please try again.");
     }
   };

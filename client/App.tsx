@@ -32,6 +32,7 @@ import React, {
   useEffect,
 } from "react";
 import { StyleSheet, View, Platform } from "react-native";
+import { logger } from "@/lib/logger";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import {
@@ -329,7 +330,7 @@ export default function App() {
           ...Entypo.font,
         });
       } catch (e) {
-        console.warn("Error loading fonts:", e);
+        logger.warn("Error loading fonts:", e);
       } finally {
         setFontsLoaded(true);
       }

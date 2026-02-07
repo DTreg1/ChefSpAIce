@@ -162,7 +162,7 @@ export default function RecipeDetailScreen() {
           setUserCookware(cookwareNames);
         }
       } catch (err) {
-        console.error("Error loading cookware:", err);
+        logger.error("Error loading cookware:", err);
       }
     }
 
@@ -443,7 +443,7 @@ export default function RecipeDetailScreen() {
         });
       }
     } catch (error) {
-      console.error("Error sharing recipe:", error);
+      logger.error("Error sharing recipe:", error);
     }
   };
 
@@ -453,7 +453,7 @@ export default function RecipeDetailScreen() {
     try {
       await exportSingleRecipeToPDF(recipe);
     } catch (error) {
-      console.error("Error exporting recipe:", error);
+      logger.error("Error exporting recipe:", error);
       Alert.alert(
         "Export Error",
         "Failed to export the recipe. Please try again.",

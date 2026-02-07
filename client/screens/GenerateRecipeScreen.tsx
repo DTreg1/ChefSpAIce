@@ -169,7 +169,7 @@ export default function GenerateRecipeScreen() {
               setCookware(userCookware);
             }
           } catch (err) {
-            console.error("Error loading cookware:", err);
+            logger.error("Error loading cookware:", err);
           }
         } else {
           // Reset cookware if user removed all selections
@@ -384,7 +384,7 @@ export default function GenerateRecipeScreen() {
         }),
       );
     } catch (error) {
-      console.error("Error generating recipe:", error);
+      logger.error("Error generating recipe:", error);
 
       const ingredientNames = inventory.slice(0, 5).map((i) => i.name);
 

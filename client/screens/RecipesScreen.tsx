@@ -72,6 +72,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
+import { logger } from "@/lib/logger";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
@@ -194,7 +195,7 @@ export default function RecipesScreen() {
             setUserCookware(cookwareNames);
           }
         } catch (err) {
-          console.error("Error loading cookware:", err);
+          logger.error("Error loading cookware:", err);
         }
       }
     } finally {

@@ -11,6 +11,7 @@ import {
   PaywallResult,
 } from "@/lib/storekit-service";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/lib/logger";
 
 interface UseStoreKitReturn {
   isLoading: boolean;
@@ -96,7 +97,7 @@ export function useStoreKit(): UseStoreKitReturn {
           setCustomerInfo(fetchedCustomerInfo);
         }
       } catch (error) {
-        console.error("useStoreKit: Failed to load data", error);
+        logger.error("useStoreKit: Failed to load data", error);
         setIsAvailable(false);
         setIsPaywallAvailable(false);
         setIsCustomerCenterAvailable(false);

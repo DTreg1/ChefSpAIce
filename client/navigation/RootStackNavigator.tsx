@@ -365,7 +365,7 @@ function AuthGuardedNavigator() {
         setIsTrialExpired(false);
       }
     } catch (err) {
-      console.error("[Nav] Error checking onboarding/guest status:", err);
+      logger.error("[Nav] Error checking onboarding/guest status:", err);
     } finally {
       setIsLoading(false);
     }

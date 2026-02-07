@@ -276,7 +276,7 @@ export default function InventoryScreen() {
       setItems(inventoryItems);
       hasLoadedRef.current = true;
     } catch (error) {
-      console.error("Error loading inventory:", error);
+      logger.error("Error loading inventory:", error);
     } finally {
       if (isInitialLoad) {
         setLoading(false);
@@ -292,7 +292,7 @@ export default function InventoryScreen() {
         ...allLocations,
       ]);
     } catch (error) {
-      console.error("Error loading storage locations:", error);
+      logger.error("Error loading storage locations:", error);
     }
   }, []);
 
@@ -430,7 +430,7 @@ export default function InventoryScreen() {
         );
       }
     } catch (error) {
-      console.error("Error fetching fun fact:", error);
+      logger.error("Error fetching fun fact:", error);
     } finally {
       setFunFactLoading(false);
     }

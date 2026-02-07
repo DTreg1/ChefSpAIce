@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { storage } from "./storage";
+import { logger } from "@/lib/logger";
 
 // Check if running in Expo Go (notifications have limited functionality in SDK 53+)
 // Android: Remote push notifications completely removed
@@ -216,7 +217,7 @@ export async function initializeNotifications(): Promise<void> {
 
     await scheduleExpirationNotifications();
   } catch (error) {
-    console.error("Failed to initialize notifications:", error);
+    logger.error("Failed to initialize notifications:", error);
   }
 }
 

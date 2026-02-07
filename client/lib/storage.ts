@@ -64,7 +64,7 @@ function triggerNotificationReschedule() {
     try {
       await scheduleNotifications();
     } catch (error) {
-      console.error("Failed to reschedule notifications:", error);
+      logger.error("Failed to reschedule notifications:", error);
     }
   }, 5000); // 5 second debounce
 }
@@ -315,7 +315,7 @@ async function getItem<T>(key: string): Promise<T | null> {
     const value = await AsyncStorage.getItem(key);
     return value ? JSON.parse(value) : null;
   } catch (error) {
-    console.error(`Error reading ${key}:`, error);
+    logger.error(`Error reading ${key}:`, error);
     return null;
   }
 }
@@ -324,7 +324,7 @@ async function setItem<T>(key: string, value: T): Promise<void> {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(`Error writing ${key}:`, error);
+    logger.error(`Error writing ${key}:`, error);
     throw error;
   }
 }
@@ -883,7 +883,7 @@ export const storage = {
           body: JSON.stringify({ applianceIds }),
         });
       } catch (error) {
-        console.error("[storage.setCookware] Failed to sync to server:", error);
+        logger.error("[storage.setCookware] Failed to sync to server:", error);
       }
     }
   },
@@ -907,7 +907,7 @@ export const storage = {
             body: JSON.stringify({ applianceId }),
           });
         } catch (error) {
-          console.error(
+          logger.error(
             "[storage.addCookware] Failed to sync to server:",
             error,
           );
@@ -935,7 +935,7 @@ export const storage = {
           },
         );
       } catch (error) {
-        console.error(
+        logger.error(
           "[storage.removeCookware] Failed to sync to server:",
           error,
         );
@@ -1020,7 +1020,7 @@ export const storage = {
       return true;
     } catch (error) {
       // On any error, default to NOT needing onboarding to prevent redirect loops
-      console.error(
+      logger.error(
         `[Storage] needsOnboarding error, defaulting to false:`,
         error,
       );
@@ -1386,7 +1386,7 @@ export const storage = {
 
       return { success: true };
     } catch (error) {
-      console.error("Cloud sync error:", error);
+      logger.error("Cloud sync error:", error);
       return { success: false, error: "Failed to sync to cloud" };
     }
   },
@@ -1498,7 +1498,7 @@ export const storage = {
       logger.log("[Storage] migrateGuestDataToAccount: Migration successful");
       return { success: true };
     } catch (error) {
-      console.error("Guest data migration error:", error);
+      logger.error("Guest data migration error:", error);
       return { success: false, error: "Failed to migrate guest data" };
     }
   },
@@ -1550,7 +1550,7 @@ export const storage = {
 
       return { success: true };
     } catch (error) {
-      console.error("Cloud sync error:", error);
+      logger.error("Cloud sync error:", error);
       return { success: false, error: "Failed to sync from cloud" };
     }
   },

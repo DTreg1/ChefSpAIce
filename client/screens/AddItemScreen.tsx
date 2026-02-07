@@ -483,7 +483,7 @@ export default function AddItemScreen() {
           setBarcodeError("Product not found. Try searching by name instead.");
         }
       } catch (error) {
-        console.error("Barcode lookup error:", error);
+        logger.error("Barcode lookup error:", error);
         setBarcodeError(
           "Could not look up product. Try searching by name instead.",
         );
@@ -557,7 +557,7 @@ export default function AddItemScreen() {
       // Navigate to barcode scanner to scan next item
       navigation.replace("IngredientScanner", { mode: "barcode" });
     } catch (error) {
-      console.error("Error saving item:", error);
+      logger.error("Error saving item:", error);
       Alert.alert("Error", "Failed to save item. Please try again.");
     } finally {
       setSaving(false);

@@ -39,6 +39,7 @@ import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSearch } from "@/contexts/SearchContext";
+import { logger } from "@/lib/logger";
 
 const BASIC_COOKWARE_LIMIT = 5;
 
@@ -341,7 +342,7 @@ export default function CookwareScreen() {
       // Always update first-time setup status based on current cookware
       setShowFirstTimeSetup(ids.length === 0);
     } catch (error) {
-      console.error("Error loading cookware:", error);
+      logger.error("Error loading cookware:", error);
     } finally {
       setLoadingLocal(false);
     }
@@ -388,7 +389,7 @@ export default function CookwareScreen() {
           Haptics.selectionAsync();
         }
       } catch (error) {
-        console.error("Error toggling appliance:", error);
+        logger.error("Error toggling appliance:", error);
       } finally {
         setTogglingIds((prev) => {
           const next = new Set(prev);
@@ -421,7 +422,7 @@ export default function CookwareScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
-      console.error("Error adding common appliances:", error);
+      logger.error("Error adding common appliances:", error);
     } finally {
       setSavingCommon(false);
     }
@@ -437,7 +438,7 @@ export default function CookwareScreen() {
         queryKey: ["/api/appliances/common"],
       });
     } catch (error) {
-      console.error("Error refreshing:", error);
+      logger.error("Error refreshing:", error);
     } finally {
       setLoadingLocal(false);
     }

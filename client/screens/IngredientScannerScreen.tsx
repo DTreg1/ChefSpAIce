@@ -192,7 +192,7 @@ export default function IngredientScannerScreen() {
         }
       }
     } catch (error) {
-      console.error("Scan error:", error);
+      logger.error("Scan error:", error);
       Alert.alert(
         "Error",
         "Failed to scan ingredient label. Please try again.",

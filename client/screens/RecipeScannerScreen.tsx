@@ -159,7 +159,7 @@ export default function RecipeScannerScreen() {
         }
       }
     } catch (error) {
-      console.error("Recipe scan error:", error);
+      logger.error("Recipe scan error:", error);
       Alert.alert("Error", "Failed to scan recipe. Please try again.");
     } finally {
       setIsCapturing(false);
@@ -210,7 +210,7 @@ export default function RecipeScannerScreen() {
         ],
       );
     } catch (error) {
-      console.error("Failed to save recipe:", error);
+      logger.error("Failed to save recipe:", error);
       Alert.alert("Error", "Failed to save recipe. Please try again.");
     }
   };

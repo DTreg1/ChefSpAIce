@@ -17,6 +17,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Linking, Alert } from "react-native";
 import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 
 interface InstacartProduct {
   name: string;
@@ -54,7 +55,7 @@ export function useInstacart() {
         setIsConfigured(false);
       }
     } catch (error) {
-      console.error("[Instacart] Status check failed:", error);
+      logger.error("[Instacart] Status check failed:", error);
       setIsConfigured(false);
     } finally {
       setIsCheckingStatus(false);
@@ -103,7 +104,7 @@ export function useInstacart() {
           throw new Error(data.error || "Failed to create shopping link");
         }
       } catch (error) {
-        console.error("[Instacart] Create shopping link failed:", error);
+        logger.error("[Instacart] Create shopping link failed:", error);
         Alert.alert(
           "Error",
           "Failed to create Instacart shopping link. Please try again.",
@@ -152,7 +153,7 @@ export function useInstacart() {
           throw new Error(data.error || "Failed to create recipe link");
         }
       } catch (error) {
-        console.error("[Instacart] Create recipe link failed:", error);
+        logger.error("[Instacart] Create recipe link failed:", error);
         Alert.alert(
           "Error",
           "Failed to create Instacart shopping link. Please try again.",

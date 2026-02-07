@@ -10,6 +10,7 @@ import {
 import { Platform, Alert } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 import { SubscriptionTier, TIER_CONFIG } from "../../shared/subscription";
 import { TrialEndedModal } from "@/components/TrialEndedModal";
 import { useStoreKit } from "@/hooks/useStoreKit";
@@ -235,7 +236,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         }
       }
     } catch (error) {
-      console.error(
+      logger.error(
         "Error fetching subscription:",
         error instanceof Error ? error.message : error,
       );
@@ -395,7 +396,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           }
         }
       } catch (error) {
-        console.error("Error starting checkout:", error);
+        logger.error("Error starting checkout:", error);
         Alert.alert("Error", "Something went wrong. Please try again later.");
       } finally {
         setIsPurchasing(false);

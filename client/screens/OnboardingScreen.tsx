@@ -33,6 +33,7 @@ import { storage, FoodItem, generateId, NutritionInfo } from "@/lib/storage";
 import { STARTER_FOOD_IMAGES } from "@/lib/food-images";
 import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
+import { logger } from "@/lib/logger";
 
 const BASIC_COOKWARE_LIMIT = 5;
 
@@ -760,7 +761,7 @@ export default function OnboardingScreen() {
           setStep(savedStep as OnboardingStep);
         }
       } catch (err) {
-        console.error("Error loading saved onboarding step:", err);
+        logger.error("Error loading saved onboarding step:", err);
       } finally {
         setStepLoaded(true);
       }
@@ -772,7 +773,7 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (stepLoaded && step !== "complete") {
       storage.setOnboardingStep(step).catch((err) => {
-        console.error("Error saving onboarding step:", err);
+        logger.error("Error saving onboarding step:", err);
       });
     }
   }, [step, stepLoaded]);
@@ -830,7 +831,7 @@ export default function OnboardingScreen() {
         setAppliancesLoaded(true);
       }
     } catch (err) {
-      console.error("Error loading appliances:", err);
+      logger.error("Error loading appliances:", err);
     } finally {
       setLoading(false);
     }
@@ -1067,7 +1068,7 @@ export default function OnboardingScreen() {
       // Save all data directly to database (not via sync queue)
       const saveResult = await storage.syncToCloud();
       if (!saveResult.success) {
-        console.warn("Initial data save failed:", saveResult.error);
+        logger.warn("Initial data save failed:", saveResult.error);
       }
 
       if (Platform.OS !== "web") {
@@ -1081,7 +1082,7 @@ export default function OnboardingScreen() {
         }),
       );
     } catch (err) {
-      console.error("Error completing onboarding:", err);
+      logger.error("Error completing onboarding:", err);
     } finally {
       setSaving(false);
     }

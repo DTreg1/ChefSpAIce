@@ -275,13 +275,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             storeKitService
               .setUserId(String(user.id))
               .catch((err) =>
-                console.warn("[Auth] Failed to set StoreKit user ID:", err),
+                logger.warn("[Auth] Failed to set StoreKit user ID:", err),
               );
           }
           storeKitService
             .syncPendingPurchases()
             .catch((err) =>
-              console.warn(
+              logger.warn(
                 "[Auth] Failed to sync pending purchases on restore:",
                 err,
               ),
@@ -305,7 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             })
             .catch((err) => {
-              console.error("[Auth] Failed to auto-sync from cloud:", err);
+              logger.error("[Auth] Failed to auto-sync from cloud:", err);
             });
           return;
         }
@@ -340,13 +340,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 storeKitService
                   .setUserId(String(data.user.id))
                   .catch((err) =>
-                    console.warn("[Auth] Failed to set StoreKit user ID:", err),
+                    logger.warn("[Auth] Failed to set StoreKit user ID:", err),
                   );
               }
               storeKitService
                 .syncPendingPurchases()
                 .catch((err) =>
-                  console.warn(
+                  logger.warn(
                     "[Auth] Failed to sync pending purchases on cookie restore:",
                     err,
                   ),
@@ -374,7 +374,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   }
                 })
                 .catch((err) => {
-                  console.error("[Auth] Failed to auto-sync from cloud:", err);
+                  logger.error("[Auth] Failed to auto-sync from cloud:", err);
                 });
               return;
             }
@@ -421,7 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (error) {
-        console.error("Error loading auth state:", error);
+        logger.error("Error loading auth state:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     };
@@ -448,7 +448,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Validate required fields from server response
       if (!data.user || !data.user.id || !data.token) {
-        console.error("Login: Invalid server response - missing user or token");
+        logger.error("Login: Invalid server response - missing user or token");
         return {
           success: false,
           error: "Invalid server response. Please try again.",
@@ -467,10 +467,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       storeKitService.setAuthToken(data.token);
       storeKitService
         .setUserId(String(data.user.id))
-        .catch((err) => console.warn("Failed to set StoreKit user ID:", err));
+        .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
       storeKitService
         .syncPendingPurchases()
-        .catch((err) => console.warn("Failed to sync pending purchases:", err));
+        .catch((err) => logger.warn("Failed to sync pending purchases:", err));
 
       // Check if user was a guest and migrate their data
       const isGuest = await storage.getIsGuestUser();
@@ -505,7 +505,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (error) {
-      console.error("Sign in error:", error);
+      logger.error("Sign in error:", error);
       return { success: false, error: "Network error. Please try again." };
     }
   }, []);
@@ -554,7 +554,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {
-          console.error(
+          logger.error(
             "SignUp: Invalid server response - missing user or token",
           );
           return {
@@ -575,11 +575,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         storeKitService.setAuthToken(data.token);
         storeKitService
           .setUserId(String(data.user.id))
-          .catch((err) => console.warn("Failed to set StoreKit user ID:", err));
+          .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
         storeKitService
           .syncPendingPurchases()
           .catch((err) =>
-            console.warn("Failed to sync pending purchases:", err),
+            logger.warn("Failed to sync pending purchases:", err),
           );
 
         // Check if user was a guest and migrate their data
@@ -620,7 +620,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return { success: true };
       } catch (error) {
-        console.error("Sign up error:", error);
+        logger.error("Sign up error:", error);
         return { success: false, error: "Network error. Please try again." };
       }
     },
@@ -680,7 +680,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOutCallbackRef.current();
       }
     } catch (error) {
-      console.error("Sign out error:", error);
+      logger.error("Sign out error:", error);
     }
   }, [state.token]);
 
@@ -764,14 +764,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           clearTimeout(timeoutId);
           const fetchErr = fetchError as { name?: string; message?: string };
           if (fetchErr.name === "AbortError") {
-            console.error("Apple auth request timed out");
+            logger.error("Apple auth request timed out");
             return {
               success: false,
               error:
                 "Request timed out. Please check your connection and try again.",
             };
           }
-          console.error("Apple auth fetch error:", fetchError);
+          logger.error("Apple auth fetch error:", fetchError);
           return {
             success: false,
             error:
@@ -780,7 +780,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!response.ok) {
-          console.error("Apple auth server error:", response.status, data);
+          logger.error("Apple auth server error:", response.status, data);
           return {
             success: false,
             error: data.error || "Apple sign in failed. Please try again.",
@@ -789,7 +789,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {
-          console.error(
+          logger.error(
             "Apple auth: Invalid server response - missing user or token",
           );
           return {
@@ -820,11 +820,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         storeKitService.setAuthToken(authToken);
         storeKitService
           .setUserId(String(userData.id))
-          .catch((err) => console.warn("Failed to set StoreKit user ID:", err));
+          .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
         storeKitService
           .syncPendingPurchases()
           .catch((err) =>
-            console.warn("Failed to sync pending purchases:", err),
+            logger.warn("Failed to sync pending purchases:", err),
           );
 
         // Check if user was a guest and migrate their data FIRST
@@ -877,7 +877,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: true };
       } catch (error: unknown) {
         const errorWithCode = error as { code?: string; message?: string };
-        console.error("Apple sign in error:", error);
+        logger.error("Apple sign in error:", error);
 
         // Handle specific Apple Sign-In error codes
         switch (errorWithCode.code) {
@@ -942,7 +942,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const accessToken = result.authentication?.accessToken;
 
         if (!idToken) {
-          console.error("Google sign in: no id_token received", result);
+          logger.error("Google sign in: no id_token received", result);
           return { success: false, error: "No ID token received from Google" };
         }
 
@@ -971,7 +971,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {
-          console.error(
+          logger.error(
             "Google auth: Invalid server response - missing user or token",
           );
           return {
@@ -1002,11 +1002,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         storeKitService.setAuthToken(authToken);
         storeKitService
           .setUserId(String(userData.id))
-          .catch((err) => console.warn("Failed to set StoreKit user ID:", err));
+          .catch((err) => logger.warn("Failed to set StoreKit user ID:", err));
         storeKitService
           .syncPendingPurchases()
           .catch((err) =>
-            console.warn("Failed to sync pending purchases:", err),
+            logger.warn("Failed to sync pending purchases:", err),
           );
 
         // Check if user was a guest and migrate their data FIRST
@@ -1058,7 +1058,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return { success: true };
       } catch (error) {
-        console.error("Google sign in error:", error);
+        logger.error("Google sign in error:", error);
         return { success: false, error: "Google sign in failed" };
       }
     },
@@ -1092,7 +1092,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         guestTrialStartDate: trialStartDate,
       });
     } catch (error) {
-      console.error("Error initializing as guest:", error);
+      logger.error("Error initializing as guest:", error);
     }
   }, []);
 

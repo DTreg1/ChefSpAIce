@@ -30,6 +30,7 @@
 
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "@/lib/logger";
 
 const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
 
@@ -52,7 +53,7 @@ export function getApiUrl(): string {
 
   // Fallback to production domain if env var is not set (for production builds)
   if (!host) {
-    console.warn("[API] EXPO_PUBLIC_DOMAIN not set, using production fallback: chefspaice.com");
+    logger.warn("[API] EXPO_PUBLIC_DOMAIN not set, using production fallback: chefspaice.com");
     host = "chefspaice.com";
   }
 

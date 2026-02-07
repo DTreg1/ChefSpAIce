@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassButton } from "@/components/GlassButton";
+import { logger } from "@/lib/logger";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
@@ -60,7 +61,7 @@ export function RegisterPrompt({
       const shouldShow = await storage.shouldShowRegisterPrompt(dismissHours);
       setIsVisible(shouldShow);
     } catch (error) {
-      console.error("[RegisterPrompt] Error checking visibility:", error);
+      logger.error("[RegisterPrompt] Error checking visibility:", error);
       setIsVisible(false);
     } finally {
       setIsLoading(false);
@@ -76,7 +77,7 @@ export function RegisterPrompt({
     try {
       await storage.setRegisterPromptDismissedAt(new Date().toISOString());
     } catch (error) {
-      console.error("[RegisterPrompt] Error saving dismissal:", error);
+      logger.error("[RegisterPrompt] Error saving dismissal:", error);
     }
   }, []);
 

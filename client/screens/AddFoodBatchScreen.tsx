@@ -375,7 +375,7 @@ export default function AddFoodBatchScreen() {
         ],
       );
     } catch (error) {
-      console.error("Error adding items:", error);
+      logger.error("Error adding items:", error);
       Alert.alert(
         "Error",
         "Failed to add items to inventory. Please try again.",

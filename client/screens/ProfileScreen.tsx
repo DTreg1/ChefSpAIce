@@ -41,6 +41,7 @@ import {
 } from "@/lib/storage";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -175,7 +176,7 @@ export default function ProfileScreen() {
         await presentCustomerCenter();
         return;
       } catch (error) {
-        console.error("Error opening customer center:", error);
+        logger.error("Error opening customer center:", error);
       }
     }
 
@@ -204,7 +205,7 @@ export default function ProfileScreen() {
         }
       }
     } catch (error) {
-      console.error("Error opening subscription portal:", error);
+      logger.error("Error opening subscription portal:", error);
     }
   };
 

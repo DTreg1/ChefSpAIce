@@ -45,7 +45,7 @@ class StoreKitService {
         logger.log("StoreKit: Pending purchase saved successfully");
         return true; // Return true because purchase is valid, just pending server sync
       } catch (error) {
-        console.error("StoreKit: Failed to save pending purchase", error);
+        logger.error("StoreKit: Failed to save pending purchase", error);
         return false;
       }
     }
@@ -100,14 +100,14 @@ class StoreKitService {
         await storage.clearPendingPurchase();
         return true;
       } else {
-        console.error(
+        logger.error(
           "StoreKit: Failed to sync purchase with server",
           await response.text(),
         );
         return false;
       }
     } catch (error) {
-      console.error("StoreKit: Error syncing purchase with server", error);
+      logger.error("StoreKit: Error syncing purchase with server", error);
       return false;
     }
   }
@@ -118,7 +118,7 @@ class StoreKitService {
    */
   async syncPendingPurchases(): Promise<boolean> {
     if (!this.authToken) {
-      console.warn(
+      logger.warn(
         "StoreKit: Cannot sync pending purchases without auth token",
       );
       return false;
@@ -154,10 +154,10 @@ class StoreKitService {
         }
       }
 
-      console.warn("StoreKit: Failed to sync pending purchase");
+      logger.warn("StoreKit: Failed to sync pending purchase");
       return false;
     } catch (error) {
-      console.error("StoreKit: Error syncing pending purchases", error);
+      logger.error("StoreKit: Error syncing pending purchases", error);
       return false;
     }
   }
@@ -227,9 +227,9 @@ class StoreKitService {
           return;
         }
 
-        console.warn("StoreKit: No valid API key available");
+        logger.warn("StoreKit: No valid API key available");
       } catch (error) {
-        console.error("StoreKit: Failed to initialize", error);
+        logger.error("StoreKit: Failed to initialize", error);
       }
     })();
 
@@ -253,7 +253,7 @@ class StoreKitService {
       await Purchases.logIn(userId);
       logger.log("StoreKit: User ID set", userId);
     } catch (error) {
-      console.error("StoreKit: Failed to set user ID", error);
+      logger.error("StoreKit: Failed to set user ID", error);
     }
   }
 
@@ -264,7 +264,7 @@ class StoreKitService {
       await Purchases.logOut();
       logger.log("StoreKit: User logged out");
     } catch (error) {
-      console.error("StoreKit: Failed to logout", error);
+      logger.error("StoreKit: Failed to logout", error);
     }
   }
 
@@ -275,7 +275,7 @@ class StoreKitService {
       const offerings = await Purchases.getOfferings();
       return offerings.current;
     } catch (error) {
-      console.error("StoreKit: Failed to get offerings", error);
+      logger.error("StoreKit: Failed to get offerings", error);
       return null;
     }
   }
@@ -287,7 +287,7 @@ class StoreKitService {
       const offerings = await Purchases.getOfferings();
       return offerings.all;
     } catch (error) {
-      console.error("StoreKit: Failed to get all offerings", error);
+      logger.error("StoreKit: Failed to get all offerings", error);
       return null;
     }
   }
@@ -298,7 +298,7 @@ class StoreKitService {
     try {
       return await Purchases.getCustomerInfo();
     } catch (error) {
-      console.error("StoreKit: Failed to get customer info", error);
+      logger.error("StoreKit: Failed to get customer info", error);
       return null;
     }
   }
@@ -324,7 +324,7 @@ class StoreKitService {
 
       return { isActive: false, tier: null };
     } catch (error) {
-      console.error("StoreKit: Failed to check subscription", error);
+      logger.error("StoreKit: Failed to check subscription", error);
       return { isActive: false, tier: null };
     }
   }
@@ -352,7 +352,7 @@ class StoreKitService {
       if (purchaseError.userCancelled) {
         return { success: false, error: "User cancelled" };
       }
-      console.error("StoreKit: Purchase failed", error);
+      logger.error("StoreKit: Purchase failed", error);
       return {
         success: false,
         error: purchaseError.message || "Purchase failed",
@@ -377,7 +377,7 @@ class StoreKitService {
       return { success: true, customerInfo };
     } catch (error: unknown) {
       const restoreError = error as { message?: string };
-      console.error("StoreKit: Restore failed", error);
+      logger.error("StoreKit: Restore failed", error);
       return {
         success: false,
         error: restoreError.message || "Restore failed",
@@ -418,7 +418,7 @@ class StoreKitService {
           return "not_presented";
       }
     } catch (error) {
-      console.error("StoreKit: Failed to present paywall", error);
+      logger.error("StoreKit: Failed to present paywall", error);
       return "error";
     }
   }
@@ -459,7 +459,7 @@ class StoreKitService {
           return "not_presented";
       }
     } catch (error) {
-      console.error("StoreKit: Failed to present paywall if needed", error);
+      logger.error("StoreKit: Failed to present paywall if needed", error);
       return "error";
     }
   }
@@ -492,7 +492,7 @@ class StoreKitService {
             );
           },
           onRestoreFailed: ({ error }) => {
-            console.error(
+            logger.error(
               "StoreKit: Restore failed from Customer Center",
               error,
             );
@@ -516,7 +516,7 @@ class StoreKitService {
         },
       });
     } catch (error) {
-      console.error("StoreKit: Failed to present Customer Center", error);
+      logger.error("StoreKit: Failed to present Customer Center", error);
     }
   }
 

@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { storage } from "@/lib/storage";
+import { logger } from "@/lib/logger";
 
 interface OnboardingContextType {
   isOnboardingComplete: boolean;
@@ -40,7 +41,7 @@ export function OnboardingProvider({
         const needsOnboarding = await storage.needsOnboarding();
         setIsOnboardingComplete(!needsOnboarding);
       } catch (error) {
-        console.error("Error checking onboarding status:", error);
+        logger.error("Error checking onboarding status:", error);
         setIsOnboardingComplete(false);
       } finally {
         setIsCheckingOnboarding(false);
@@ -62,7 +63,7 @@ export function OnboardingProvider({
       const needsOnboarding = await storage.needsOnboarding();
       setIsOnboardingComplete(!needsOnboarding);
     } catch (error) {
-      console.error("Error rechecking onboarding status:", error);
+      logger.error("Error rechecking onboarding status:", error);
     }
   }, []);
 

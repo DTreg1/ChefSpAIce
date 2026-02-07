@@ -34,6 +34,7 @@ import {
 } from "../../shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { logger } from "@/lib/logger";
 
 const PRO_FEATURES = [
   { key: "pantryItems", name: "Pantry Items", basic: "25", pro: "Unlimited" },
@@ -193,10 +194,10 @@ export default function SubscriptionScreen() {
           }
         }
       } else {
-        console.error("Failed to create portal session");
+        logger.error("Failed to create portal session");
       }
     } catch (error) {
-      console.error("Error opening billing portal:", error);
+      logger.error("Error opening billing portal:", error);
     } finally {
       setIsManaging(false);
     }
@@ -351,7 +352,7 @@ export default function SubscriptionScreen() {
         }
       }
     } catch (error) {
-      console.error("Error starting checkout:", error);
+      logger.error("Error starting checkout:", error);
       Alert.alert("Error", "Something went wrong. Please try again later.");
     } finally {
       setIsCheckingOut(false);
@@ -390,7 +391,7 @@ export default function SubscriptionScreen() {
       await presentCustomerCenter();
       refetch();
     } catch (error) {
-      console.error("Error opening customer center:", error);
+      logger.error("Error opening customer center:", error);
       handleManageSubscription();
     }
   };

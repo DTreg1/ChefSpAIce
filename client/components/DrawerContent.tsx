@@ -26,6 +26,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { getApiUrl } from "@/lib/query-client";
+import { logger } from "@/lib/logger";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 function TrialBadge() {
@@ -62,7 +63,7 @@ function TrialBadge() {
         }
       }
     } catch (error) {
-      console.error("Error opening subscription portal:", error);
+      logger.error("Error opening subscription portal:", error);
     }
   };
 

@@ -1,6 +1,7 @@
 import { StyleSheet, View, ScrollView, useWindowDimensions, Linking } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
+import { logger } from "@/lib/logger";
 
 import {
   HeroSection,
@@ -35,7 +36,7 @@ export default function LandingScreen({
   const handleDownloadApp = (store: "ios" | "android") => {
     const url = store === "ios" ? APP_STORE_URL : PLAY_STORE_URL;
     Linking.openURL(url).catch((err) => {
-      console.error("Failed to open app store:", err);
+      logger.error("Failed to open app store:", err);
     });
   };
 

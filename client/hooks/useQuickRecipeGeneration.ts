@@ -130,7 +130,7 @@ export function useQuickRecipeGeneration() {
               }));
           }
         } catch (err) {
-          console.error("Error loading cookware:", err);
+          logger.error("Error loading cookware:", err);
         }
       }
 
@@ -277,7 +277,7 @@ export function useQuickRecipeGeneration() {
         }),
       );
     } catch (error) {
-      console.error("Error generating quick recipe:", error);
+      logger.error("Error generating quick recipe:", error);
 
       try {
         const items = await storage.getInventory();
@@ -337,7 +337,7 @@ export function useQuickRecipeGeneration() {
           }),
         );
       } catch (fallbackError) {
-        console.error("Error creating fallback recipe:", fallbackError);
+        logger.error("Error creating fallback recipe:", fallbackError);
         setIsGenerating(false);
         setProgressStage("loading");
         Alert.alert(

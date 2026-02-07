@@ -3,6 +3,7 @@ import { View, Modal, Pressable, StyleSheet, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 
+import { logger } from "@/lib/logger";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
@@ -158,7 +159,7 @@ export function RecipeSettingsModal({
         onGenerate(settings);
       }
     } catch (error) {
-      console.error("Error saving preferences:", error);
+      logger.error("Error saving preferences:", error);
     } finally {
       setSaving(false);
     }

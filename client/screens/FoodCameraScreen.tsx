@@ -229,7 +229,7 @@ export default function FoodCameraScreen() {
       }
     },
     onError: (error: Error) => {
-      console.error("Food analysis error:", error);
+      logger.error("Food analysis error:", error);
       setScreenState("preview");
 
       if (Platform.OS !== "web") {
@@ -277,7 +277,7 @@ export default function FoodCameraScreen() {
         setScreenState("preview");
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
+      logger.error("Error taking photo:", error);
     }
   };
 
@@ -293,7 +293,7 @@ export default function FoodCameraScreen() {
         setScreenState("preview");
       }
     } catch (error) {
-      console.error("Error picking image:", error);
+      logger.error("Error picking image:", error);
     }
   };
 
@@ -388,7 +388,7 @@ export default function FoodCameraScreen() {
 
       navigation.goBack();
     } catch (error) {
-      console.error("Error quick adding items:", error);
+      logger.error("Error quick adding items:", error);
     }
   };
 

@@ -39,7 +39,7 @@ export function ScreenIdentifierOverlay({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (error) {
-      console.error("Failed to copy screen name:", error);
+      logger.error("Failed to copy screen name:", error);
     }
   };
 
@@ -103,7 +103,7 @@ export function ScreenIdentifierOverlay({
           );
         }
       } catch (err) {
-        console.error("Failed to reset:", err);
+        logger.error("Failed to reset:", err);
         if (Platform.OS === "web") {
           window.location.reload();
         } else {

@@ -6,6 +6,7 @@ import { AppColors } from "@/constants/theme";
 import { GlassCard } from "./GlassCard";
 import { donationAmounts } from "@/data/landing-data";
 import { sharedStyles } from "./shared-styles";
+import { logger } from "@/lib/logger";
 
 const isWeb = Platform.OS === "web";
 
@@ -46,7 +47,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
       );
 
       if (!response.ok) {
-        console.error(
+        logger.error(
           "Donation API error:",
           response.status,
           response.statusText,
@@ -63,10 +64,10 @@ export function DonationSection({ isWide }: DonationSectionProps) {
           Linking.openURL(data.url);
         }
       } else if (data.error) {
-        console.error("Donation error:", data.error);
+        logger.error("Donation error:", data.error);
       }
     } catch (error) {
-      console.error("Donation error:", error);
+      logger.error("Donation error:", error);
     } finally {
       setIsDonating(false);
     }

@@ -34,6 +34,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { storage } from "@/lib/storage";
+import { logger } from "@/lib/logger";
 
 type StepData = {
   number: number;
@@ -139,7 +140,7 @@ export default function SiriShortcutsGuideScreen() {
         Alert.alert("Error", data.message || "Failed to generate API key");
       }
     } catch (error) {
-      console.error("Generate API key error:", error);
+      logger.error("Generate API key error:", error);
       Alert.alert("Error", "Failed to generate API key. Please try again.");
     } finally {
       setIsGeneratingKey(false);
@@ -155,7 +156,7 @@ export default function SiriShortcutsGuideScreen() {
         Alert.alert("Copied", `${label} copied to clipboard!`);
       }
     } catch (error) {
-      console.error("Copy error:", error);
+      logger.error("Copy error:", error);
     }
   };
 

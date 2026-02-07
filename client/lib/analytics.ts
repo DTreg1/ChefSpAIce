@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "@/lib/logger";
 import {
   RecipeGenerationEvent,
   RecipeSaveEvent,
@@ -101,7 +102,7 @@ async function getAnalyticsData(): Promise<AnalyticsData> {
       return JSON.parse(value);
     }
   } catch (error) {
-    console.error("Error reading analytics:", error);
+    logger.error("Error reading analytics:", error);
   }
   return {
     recipeGenerationEvents: [],
@@ -114,7 +115,7 @@ async function saveAnalyticsData(data: AnalyticsData): Promise<void> {
   try {
     await AsyncStorage.setItem(ANALYTICS_KEY, JSON.stringify(data));
   } catch (error) {
-    console.error("Error saving analytics:", error);
+    logger.error("Error saving analytics:", error);
   }
 }
 
