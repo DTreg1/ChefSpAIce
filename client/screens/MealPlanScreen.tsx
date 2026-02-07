@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -12,6 +12,11 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { format, addDays, startOfWeek } from "date-fns";
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -26,10 +31,17 @@ import { MealPlanSlotCard } from "@/components/meal-plan/MealPlanSlotCard";
 import { MealPlanActionSheet } from "@/components/meal-plan/MealPlanActionSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
+
+interface DraggableSlotItem {
+  slotId: string;
+  slotName: string;
+  slotIcon: any;
+  recipe: Recipe | undefined;
+}
 
 export default function MealPlanScreen() {
   const insets = useSafeAreaInsets();
@@ -176,6 +188,120 @@ export default function MealPlanScreen() {
     });
   };
 
+  const handleDragEnd = async ({
+    data: reorderedItems,
+  }: {
+    data: DraggableSlotItem[];
+  }) => {
+    const dateStr = format(selectedDay, "yyyy-MM-dd");
+    const planIndex = mealPlans.findIndex((p) => p.date === dateStr);
+    const updatedPlans = [...mealPlans];
+
+    const existingMeals =
+      planIndex !== -1 ? { ...updatedPlans[planIndex].meals } : {};
+
+    const draggedSlotIds = new Set(mealSlots.map((s) => s.id));
+
+    const newMeals: Record<string, string | undefined> = {};
+    Object.entries(existingMeals).forEach(([slotId, recipeId]) => {
+      if (!draggedSlotIds.has(slotId) && recipeId) {
+        newMeals[slotId] = recipeId;
+      }
+    });
+
+    reorderedItems.forEach((item, index) => {
+      if (index < mealSlots.length) {
+        const targetSlot = mealSlots[index];
+        if (item.recipe) {
+          newMeals[targetSlot.id] = item.recipe.id;
+        }
+      }
+    });
+
+    if (planIndex === -1) {
+      if (Object.keys(newMeals).length > 0) {
+        updatedPlans.push({
+          id: `plan-${dateStr}`,
+          date: dateStr,
+          meals: newMeals,
+        });
+      }
+    } else {
+      updatedPlans[planIndex] = {
+        ...updatedPlans[planIndex],
+        meals: newMeals,
+      };
+    }
+
+    await storage.setMealPlans(updatedPlans);
+    setMealPlans(updatedPlans);
+  };
+
+  const draggableSlotItems: DraggableSlotItem[] = useMemo(
+    () =>
+      mealSlots.map((slot) => ({
+        slotId: slot.id,
+        slotName: slot.name,
+        slotIcon: slot.icon,
+        recipe: getMealForDay(selectedDay, slot.id),
+      })),
+    [mealSlots, selectedDay, mealPlans, recipes],
+  );
+
+  const renderDraggableSlot = ({
+    item,
+    drag,
+    isActive,
+  }: RenderItemParams<DraggableSlotItem>) => {
+    return (
+      <ScaleDecorator>
+        <View
+          style={[
+            styles.draggableSlotWrapper,
+            isActive && styles.draggableSlotActive,
+          ]}
+        >
+          <View style={styles.slotRow}>
+            <Pressable
+              onLongPress={drag}
+              delayLongPress={150}
+              style={[
+                styles.dragHandle,
+                {
+                  backgroundColor: theme.glass.background,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Drag to reorder ${item.slotName}`}
+              accessibilityHint="Long press and drag to move this meal to a different slot"
+              testID={`drag-handle-${item.slotId}`}
+            >
+              <Feather
+                name="menu"
+                size={16}
+                color={theme.textSecondary}
+              />
+            </Pressable>
+            <View style={styles.slotCardContent}>
+              <MealPlanSlotCard
+                slot={{
+                  id: item.slotId,
+                  name: item.slotName,
+                  icon: item.slotIcon,
+                }}
+                recipe={item.recipe}
+                selectedDay={selectedDay}
+                onMealPress={handleMealPress}
+                onAddMeal={handleAddMeal}
+              />
+            </View>
+          </View>
+        </View>
+      </ScaleDecorator>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ExpoGlassHeader
@@ -243,25 +369,35 @@ export default function MealPlanScreen() {
           />
         ) : (
         <GlassCard style={styles.selectedDayCard}>
-          <ThemedText type="h3" style={styles.selectedDayTitle}>
-            {format(selectedDay, "EEEE, MMMM d")}
-          </ThemedText>
-
-          <View accessibilityRole="list" accessibilityLabel="Meal slots for selected day">
-          {mealSlots.map((slot) => {
-            const recipe = getMealForDay(selectedDay, slot.id);
-            return (
-              <MealPlanSlotCard
-                key={slot.id}
-                slot={slot}
-                recipe={recipe}
-                selectedDay={selectedDay}
-                onMealPress={handleMealPress}
-                onAddMeal={handleAddMeal}
-              />
-            );
-          })}
+          <View style={styles.selectedDayHeader}>
+            <ThemedText type="h3" style={styles.selectedDayTitle}>
+              {format(selectedDay, "EEEE, MMMM d")}
+            </ThemedText>
+            {draggableSlotItems.some((s) => s.recipe) && (
+              <View style={styles.dragHintRow}>
+                <Feather name="move" size={12} color={theme.textSecondary} />
+                <ThemedText
+                  type="caption"
+                  style={{ color: theme.textSecondary }}
+                >
+                  Hold & drag to reorder
+                </ThemedText>
+              </View>
+            )}
           </View>
+
+          <GestureHandlerRootView>
+            <DraggableFlatList
+              data={draggableSlotItems}
+              keyExtractor={(item) => item.slotId}
+              renderItem={renderDraggableSlot}
+              onDragEnd={handleDragEnd}
+              containerStyle={styles.draggableListContainer}
+              scrollEnabled={false}
+              accessibilityRole="list"
+              accessibilityLabel="Meal slots for selected day, drag to reorder"
+            />
+          </GestureHandlerRootView>
         </GlassCard>
         )}
 
@@ -377,8 +513,43 @@ const styles = StyleSheet.create({
   selectedDayCard: {
     gap: Spacing.md,
   },
+  selectedDayHeader: {
+    gap: Spacing.xs,
+  },
   selectedDayTitle: {
+    marginBottom: 0,
+  },
+  dragHintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  draggableListContainer: {
+    gap: Spacing.sm,
+  },
+  draggableSlotWrapper: {
     marginBottom: Spacing.xs,
+  },
+  draggableSlotActive: {
+    opacity: 0.9,
+    transform: [{ scale: 1.02 }],
+  },
+  slotRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+  },
+  dragHandle: {
+    width: 32,
+    height: 32,
+    borderRadius: GlassEffect.borderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  slotCardContent: {
+    flex: 1,
   },
   statsCard: {
     gap: Spacing.md,
