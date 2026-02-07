@@ -1656,3 +1656,14 @@ export function formatDate(dateString: string): string {
     year: "numeric",
   });
 }
+
+const SWIPE_HINT_KEY = "@chefspaice_swipe_hint_shown";
+
+export async function hasSeenSwipeHint(): Promise<boolean> {
+  const val = await AsyncStorage.getItem(SWIPE_HINT_KEY);
+  return val === "true";
+}
+
+export async function markSwipeHintSeen(): Promise<void> {
+  await AsyncStorage.setItem(SWIPE_HINT_KEY, "true");
+}

@@ -24,6 +24,7 @@ interface InventoryGroupSectionProps {
   onWasted: (item: FoodItem) => void;
   onItemPress: (itemId: string) => void;
   theme: any;
+  showSwipeHintOnFirst?: boolean;
 }
 
 export function InventoryGroupSection({
@@ -34,6 +35,7 @@ export function InventoryGroupSection({
   onWasted,
   onItemPress,
   theme,
+  showSwipeHintOnFirst,
 }: InventoryGroupSectionProps) {
   return (
     <GlassCard
@@ -78,7 +80,7 @@ export function InventoryGroupSection({
       </Pressable>
       {!isCollapsed && section.items.length > 0 ? (
         <View style={styles.groupItems}>
-          {section.items.map((item) => (
+          {section.items.map((item, index) => (
             <SwipeableItemCard
               key={item.id}
               item={item}
@@ -86,6 +88,7 @@ export function InventoryGroupSection({
               onWasted={onWasted}
               onPress={onItemPress}
               theme={theme}
+              showHint={showSwipeHintOnFirst && index === 0}
             />
           ))}
         </View>

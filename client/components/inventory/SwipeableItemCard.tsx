@@ -7,6 +7,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  withDelay,
+  withSequence,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
@@ -34,6 +37,7 @@ interface SwipeableItemCardProps {
   onWasted: (item: FoodItem) => void;
   onPress: (itemId: string) => void;
   theme: any;
+  showHint?: boolean;
 }
 
 export function SwipeableItemCard({
@@ -42,9 +46,23 @@ export function SwipeableItemCard({
   onWasted,
   onPress,
   theme,
+  showHint,
 }: SwipeableItemCardProps) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (showHint) {
+      translateX.value = withDelay(
+        600,
+        withSequence(
+          withTiming(-60, { duration: 500 }),
+          withDelay(700, withTiming(0, { duration: 500 }))
+        )
+      );
+    }
+  }, [showHint]);
+
   const status = getExpirationStatus(item.expirationDate);
   const daysLeft = getDaysUntilExpiration(item.expirationDate);
 

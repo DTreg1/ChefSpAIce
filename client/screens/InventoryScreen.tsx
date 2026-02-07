@@ -26,6 +26,8 @@ import {
   ConsumedLogEntry,
   WasteLogEntry,
   DEFAULT_STORAGE_LOCATIONS,
+  hasSeenSwipeHint,
+  markSwipeHintSeen,
 } from "@/lib/storage";
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
@@ -165,6 +167,17 @@ export default function InventoryScreen() {
   useEffect(() => {
     loadItems(true);
     loadStorageLocations();
+  }, []);
+
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+
+  useEffect(() => {
+    hasSeenSwipeHint().then((seen) => {
+      if (!seen) {
+        setShowSwipeHint(true);
+        markSwipeHintSeen();
+      }
+    });
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -323,6 +336,7 @@ export default function InventoryScreen() {
 
   const renderGroupedSection = ({
     item,
+    index,
   }: {
     item: {
       title: string;
@@ -331,6 +345,7 @@ export default function InventoryScreen() {
       items: FoodItem[];
       itemCount: number;
     };
+    index: number;
   }) => {
     return (
       <InventoryGroupSection
@@ -341,6 +356,7 @@ export default function InventoryScreen() {
         onWasted={handleMarkAsWasted}
         onItemPress={handleItemPress}
         theme={theme}
+        showSwipeHintOnFirst={showSwipeHint && index === 0}
       />
     );
   };
