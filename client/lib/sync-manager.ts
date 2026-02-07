@@ -824,17 +824,28 @@ class SyncManager {
 
   private notifySyncFailure(dataType: string, itemName: string) {
     const title = "Sync Issue";
-    const message = `We're having trouble syncing your ${dataType} item "${itemName}". Please check your connection and try again.`;
+    const message =
+      "Some changes couldn't be saved to the cloud. Your data is safe on this device. "
+      + "Try these steps:\n\n"
+      + "1. Check your internet connection\n"
+      + "2. Go to Settings > Account > Sync Now\n"
+      + "3. If the problem persists, contact support";
     try {
       Alert.alert(title, message, [
-        { text: "Dismiss", style: "cancel" },
         {
-          text: "Retry Now",
+          text: "Go to Settings",
           onPress: () => {
-            this.consecutiveItemFailures.clear();
-            this.processSyncQueue();
+            try {
+              const { navigationRef } = require("./navigationRef");
+              if (navigationRef.isReady()) {
+                navigationRef.navigate("Main" as never);
+              }
+            } catch {
+              logger.warn("[Sync] Could not navigate to Settings");
+            }
           },
         },
+        { text: "Dismiss", style: "cancel" },
       ]);
     } catch {
       logger.warn("[Sync] Could not show sync failure alert", { dataType, itemName });

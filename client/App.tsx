@@ -41,7 +41,6 @@ import {
   DarkTheme,
   Theme,
   NavigationState,
-  NavigationContainerRef,
 } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -85,8 +84,8 @@ import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { usePaymentNotifications } from "@/hooks/usePaymentNotifications";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { initOfflineProcessor } from "@/lib/offline-processor";
+import { navigationRef } from "@/lib/navigationRef";
 
 /**
  * Screens where the floating chat button should NOT appear even after auth/onboarding.
@@ -153,8 +152,8 @@ function MobileAppContent() {
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
-  const navigationRef =
-    useRef<NavigationContainerRef<RootStackParamList>>(null);
+  // Using shared navigationRef from @/lib/navigationRef
+  // so non-React code (e.g. SyncManager) can navigate.
 
   useExpirationNotifications();
   usePaymentNotifications();
