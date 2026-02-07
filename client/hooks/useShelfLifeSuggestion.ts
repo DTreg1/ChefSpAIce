@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addDays } from "date-fns";
 import {
@@ -9,6 +9,7 @@ import {
   getShelfLifeForFood,
 } from "@/lib/shelf-life-data";
 import { getApiUrl } from "@/lib/query-client";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
@@ -180,22 +181,6 @@ async function fetchAIShelfLife(
   }
 
   return (await response.json()).data as any;
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }
 
 interface LocalSuggestionResult {

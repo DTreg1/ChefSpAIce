@@ -20,6 +20,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Spacing, BorderRadius, Shadows, AppColors } from "@/constants/theme";
 
 type FoodSource = "usda" | "openfoodfacts" | "local";
@@ -67,22 +68,6 @@ const SOURCE_LABELS: Record<FoodSource, string> = {
   openfoodfacts: "OFF",
   local: "Local",
 };
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 function HighlightedText({
   text,
