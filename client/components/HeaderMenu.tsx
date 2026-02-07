@@ -14,6 +14,7 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
 export interface MenuItemConfig {
   label: string;
+  sublabel?: string;
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void | Promise<void>;
   disabled?: boolean;
@@ -108,15 +109,27 @@ export function HeaderMenu({
                               : theme.text
                         }
                       />
-                      <ThemedText
-                        style={[
-                          styles.menuItemText,
-                          item.disabled && { color: theme.textSecondary },
-                          item.active && { color: AppColors.primary },
-                        ]}
-                      >
-                        {item.label}
-                      </ThemedText>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText
+                          style={[
+                            styles.menuItemText,
+                            item.disabled && { color: theme.textSecondary },
+                            item.active && { color: AppColors.primary },
+                          ]}
+                        >
+                          {item.label}
+                        </ThemedText>
+                        {item.sublabel ? (
+                          <ThemedText
+                            style={[
+                              styles.menuItemSublabel,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            {item.sublabel}
+                          </ThemedText>
+                        ) : null}
+                      </View>
                       {item.active && (
                         <Feather
                           name="check"
@@ -176,7 +189,10 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-    flex: 1,
+  },
+  menuItemSublabel: {
+    fontSize: 12,
+    marginTop: 2,
   },
   activeCheck: {
     marginLeft: "auto",

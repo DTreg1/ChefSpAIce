@@ -13,6 +13,7 @@ import {
   Text,
   Platform,
   Modal,
+  Alert,
 } from "react-native";
 import {
   GlassView,
@@ -35,6 +36,7 @@ import { AppColors, Spacing, GlassColors, Colors } from "@/constants/theme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,
@@ -206,6 +208,7 @@ export const AddMenu = memo(function AddMenu({
 
   const { checkLimit, entitlements } = useSubscription();
   const { generateQuickRecipe } = useQuickRecipeGeneration();
+  const isOnline = useOnlineStatus();
 
   const p0 = useSharedValue(0);
   const p1 = useSharedValue(0);
@@ -273,6 +276,11 @@ export const AddMenu = memo(function AddMenu({
         }
       }
 
+      if (itemId === "quick-recipe" && !isOnline) {
+        Alert.alert("Offline", "This feature is available when online.");
+        return;
+      }
+
       onClose();
 
       setTimeout(async () => {
@@ -289,7 +297,7 @@ export const AddMenu = memo(function AddMenu({
         }
       }, 250);
     },
-    [checkLimit, onClose, onNavigate, generateQuickRecipe],
+    [checkLimit, onClose, onNavigate, generateQuickRecipe, isOnline],
   );
 
   const handleUpgrade = useCallback(() => {

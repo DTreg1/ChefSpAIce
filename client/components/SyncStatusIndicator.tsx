@@ -103,6 +103,7 @@ export function SyncStatusIndicator({
   const statusInfo = getStatusInfo();
 
   const handlePress = () => {
+    if (!isOnline) return;
     if (onPress) {
       onPress();
     } else if (status === "error") {
@@ -140,7 +141,7 @@ export function SyncStatusIndicator({
       style={styles.container}
       accessibilityRole="button"
       accessibilityLabel={getSyncAccessibilityLabel()}
-      accessibilityHint={status === "error" ? "Tap to retry failed items" : "Tap to sync now"}
+      accessibilityHint={!isOnline ? "Available when online" : (status === "error" ? "Tap to retry failed items" : "Tap to sync now")}
       accessibilityLiveRegion="polite"
     >
       <Animated.View

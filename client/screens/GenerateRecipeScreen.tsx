@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { View, StyleSheet, Modal, Platform } from "react-native";
+import { View, StyleSheet, Modal, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -41,6 +41,7 @@ import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 const EXPIRING_THRESHOLD_DAYS = 3;
 
@@ -107,6 +108,7 @@ export default function GenerateRecipeScreen() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const autoGenerateTriggered = useRef(false);
+  const isOnline = useOnlineStatus();
 
   const { mealType, greeting } = useMemo(() => getMealTypeFromTime(), []);
 
@@ -187,14 +189,20 @@ export default function GenerateRecipeScreen() {
       dataLoaded &&
       inventory.length > 0 &&
       !autoGenerateTriggered.current &&
-      !generating
+      !generating &&
+      isOnline
     ) {
       autoGenerateTriggered.current = true;
       handleGenerate();
     }
-  }, [dataLoaded, inventory, generating]);
+  }, [dataLoaded, inventory, generating, isOnline]);
 
   const handleGenerate = async () => {
+    if (!isOnline) {
+      Alert.alert("Offline", "Recipe generation requires an internet connection. Please try again when you're back online.");
+      return;
+    }
+
     if (inventory.length === 0) {
       return;
     }

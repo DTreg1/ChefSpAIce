@@ -73,6 +73,7 @@ import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
@@ -84,6 +85,7 @@ export default function RecipesScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
 
+  const isOnline = useOnlineStatus();
   const { getSearchQuery, collapseSearch } = useSearch();
   const searchQuery = getSearchQuery("recipes");
 
@@ -125,12 +127,15 @@ export default function RecipesScreen() {
         label: "Custom Recipe",
         icon: "sliders",
         onPress: () => setShowSettingsModal(true),
+        disabled: !isOnline,
+        sublabel: !isOnline ? "Available when online" : undefined,
       },
       {
-        label: isGenerating ? "Generating..." : "Quick Recipe",
+        label: !isOnline ? "Quick Recipe" : (isGenerating ? "Generating..." : "Quick Recipe"),
         icon: "zap",
         onPress: generateQuickRecipe,
-        disabled: isGenerating,
+        disabled: isGenerating || !isOnline,
+        sublabel: !isOnline ? "Available when online" : undefined,
       },
       {
         label: exporting ? "Exporting..." : "Export to CSV",
@@ -168,6 +173,7 @@ export default function RecipesScreen() {
       exporting,
       isGenerating,
       generateQuickRecipe,
+      isOnline,
     ],
   );
 
@@ -395,9 +401,9 @@ export default function RecipesScreen() {
         icon="book-open"
         title="No recipes yet"
         description="Generate your first AI recipe!"
-        actionLabel={isGenerating ? "Generating..." : "Generate Recipe"}
+        actionLabel={!isOnline ? "Available when online" : (isGenerating ? "Generating..." : "Generate Recipe")}
         onAction={generateQuickRecipe}
-        actionDisabled={isGenerating}
+        actionDisabled={isGenerating || !isOnline}
       />
     );
   };
