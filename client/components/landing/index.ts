@@ -9,6 +9,7 @@ export { DeviceMockup } from "./DeviceMockup";
 export { ScreenshotShowcase } from "./ScreenshotShowcase";
 export { FAQItem } from "./FAQItem";
 export { ReplitLogo } from "./ReplitLogo";
+export { DownloadBanner } from "./DownloadBanner";
 export { HeroSection } from "./HeroSection";
 export { BenefitsSection } from "./BenefitsSection";
 export { HowItWorksSection } from "./HowItWorksSection";
