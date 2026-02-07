@@ -50,7 +50,7 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 - Router: `server/routers/referral.router.ts`, registered in `server/routes.ts`
 
 ### Performance Optimization (Feb 2026)
-- **Structured Logging**: Migrated 270+ console.log/error/warn calls to structured `logger` (server/lib/logger.ts) across ~40 server files. Uses JSON output in production with context objects.
+- **Structured Logging**: Migrated all console.log/error/warn calls to structured `logger` across both server (~40 files, server/lib/logger.ts) and client (~40 files, client/lib/logger.ts). Server uses JSON output in production with context objects. Client logger suppresses logs in production builds except errors.
 - **Response Compression**: Added gzip/brotli compression middleware (compression package) in server/index.ts after CORS. Level 6, 1KB threshold, skippable via `x-no-compression` header.
 - **Database Pool**: Increased PostgreSQL connection pool from 10 to 20 max connections in server/db.ts for better concurrency.
 - **Delta Sync**: Added section-level delta sync to reduce API payload sizes:
