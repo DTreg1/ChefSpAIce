@@ -98,7 +98,6 @@ export function ExpiryBadge({
   const displayText = getDisplayText(daysUntilExpiry);
   const sizeStyles = getSizeStyles(size);
   const isUrgent = daysUntilExpiry <= 1;
-  const showIcon = daysUntilExpiry <= 3;
 
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(1);
@@ -139,7 +138,11 @@ export function ExpiryBadge({
     opacity: pulseOpacity.value,
   }));
 
-  const iconName = isUrgent ? "alert-circle" : "clock";
+  const iconName: keyof typeof Feather.glyphMap = isUrgent
+    ? "alert-triangle"
+    : daysUntilExpiry <= 3
+      ? "alert-circle"
+      : "clock";
 
   return (
     <Animated.View
@@ -156,9 +159,7 @@ export function ExpiryBadge({
       accessibilityRole="text"
       accessibilityLabel={getAccessibilityLabel(daysUntilExpiry)}
     >
-      {showIcon ? (
-        <Feather name={iconName} size={sizeStyles.iconSize} color={textColor} />
-      ) : null}
+      <Feather name={iconName} size={sizeStyles.iconSize} color={textColor} />
       <ThemedText
         type={sizeStyles.textType}
         style={[styles.text, { color: textColor }]}

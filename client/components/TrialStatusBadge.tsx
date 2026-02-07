@@ -89,7 +89,7 @@ export function TrialStatusBadge({
         style={[styles.compactContainer, { backgroundColor: statusColor + "20" }]}
         data-testid="badge-trial-status-compact"
         accessibilityRole="text"
-        accessibilityLabel={`Trial: ${getStatusText()}`}
+        accessibilityLabel={`Trial: ${daysRemaining} days remaining. ${isExpired || daysRemaining <= 1 ? "High" : daysRemaining <= 3 ? "Medium" : "Low"} priority.`}
       >
         <Feather name={getStatusIcon()} size={12} color={statusColor} />
         <ThemedText style={[styles.compactText, { color: statusColor }]}>
@@ -110,7 +110,7 @@ export function TrialStatusBadge({
       ]}
       data-testid="card-trial-status"
       accessibilityRole="text"
-      accessibilityLabel={`${isGuestTrial ? "Guest Trial" : "Free Trial"}: ${getStatusText()}`}
+      accessibilityLabel={`${isGuestTrial ? "Guest Trial" : "Free Trial"}: ${daysRemaining} days remaining. ${isExpired || daysRemaining <= 1 ? "High" : daysRemaining <= 3 ? "Medium" : "Low"} priority.`}
     >
       <View style={styles.header}>
         <View
