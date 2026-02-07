@@ -30,7 +30,9 @@
 
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 import { logger } from "@/lib/logger";
+import { offlineMutationQueue } from "@/lib/offline-queue";
 
 const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
 
@@ -112,6 +114,8 @@ function unwrapApiBody(body: unknown): unknown {
   return body;
 }
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 export async function apiRequest(
   method: string,
   route: string,
@@ -131,15 +135,56 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+  } catch (error) {
+    const isNetworkError =
+      error instanceof TypeError &&
+      (error.message.includes("Network request failed") ||
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("network") ||
+        error.message.includes("fetch"));
+
+    if (isNetworkError && MUTATING_METHODS.has(method.toUpperCase())) {
+      await offlineMutationQueue.enqueue({
+        endpoint: route,
+        method: method.toUpperCase(),
+        body: data,
+      });
+      logger.log("[API] Mutation queued for offline retry", { method, route });
+      try {
+        Alert.alert(
+          "Saved offline",
+          "Will sync when connected.",
+          [{ text: "OK" }],
+        );
+      } catch {
+        // Alert may fail in some contexts
+      }
+    }
+    throw error;
+  }
 
   if (res.status === 401) {
     handleAuthError();
+  }
+
+  if (
+    (res.status >= 500 || res.status === 408 || res.status === 429) &&
+    MUTATING_METHODS.has(method.toUpperCase())
+  ) {
+    await offlineMutationQueue.enqueue({
+      endpoint: route,
+      method: method.toUpperCase(),
+      body: data,
+    });
+    logger.log("[API] Server error - mutation queued for retry", { method, route, status: res.status });
   }
 
   await throwIfResNotOk(res);

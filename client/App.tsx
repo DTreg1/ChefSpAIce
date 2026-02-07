@@ -83,6 +83,7 @@ import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { initOfflineProcessor } from "@/lib/offline-processor";
 
 /**
  * Screens where the floating chat button should NOT appear even after auth/onboarding.
@@ -159,6 +160,10 @@ function MobileAppContent() {
       storeKitService.logout();
     });
   }, [setSignOutCallback]);
+
+  useEffect(() => {
+    initOfflineProcessor();
+  }, []);
 
   const navigationTheme: Theme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;

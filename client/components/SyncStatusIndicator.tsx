@@ -30,6 +30,7 @@ export function SyncStatusIndicator({
     status,
     isOnline,
     pendingChanges,
+    pendingMutations,
     failedItems,
     lastSyncAt,
     fullSync,
@@ -93,6 +94,14 @@ export function SyncStatusIndicator({
       };
     }
 
+    if (pendingMutations > 0) {
+      return {
+        icon: "upload-cloud" as const,
+        color: theme.secondary,
+        label: `${pendingMutations} change${pendingMutations > 1 ? "s" : ""} pending sync`,
+      };
+    }
+
     return {
       icon: "check-circle" as const,
       color: theme.success,
@@ -132,6 +141,7 @@ export function SyncStatusIndicator({
     if (status === "syncing") return "Sync status: Syncing in progress";
     if (status === "error") return `Sync status: ${failedItems > 1 ? `${failedItems} items failed` : "1 item failed"} to sync`;
     if (pendingChanges > 0) return `Sync status: ${pendingChanges} changes pending`;
+    if (pendingMutations > 0) return `Sync status: ${pendingMutations} offline changes pending sync`;
     return "Sync status: All data synced";
   };
 

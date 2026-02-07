@@ -89,6 +89,12 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
   - SyncStatusIndicator: Sync/retry actions blocked; accessibility hint updated
 - **HeaderMenu sublabel support** (`client/components/HeaderMenu.tsx`): Added optional `sublabel` field to `MenuItemConfig` interface for contextual messages like "Available when online"
 
+### Offline Mutation Queue (Feb 2026)
+- **Offline Queue** (`client/lib/offline-queue.ts`): Persistent mutation queue using AsyncStorage. Stores failed POST/PUT/PATCH/DELETE requests with retry count tracking. Subscribe pattern for UI updates on queue changes. Operations: enqueue, remove, getAll, clear, updateRetryCount.
+- **Offline Processor** (`client/lib/offline-processor.ts`): Replays queued mutations when connectivity is restored. Categorizes failures: auth_expired (401/403 - discarded immediately), retriable (5xx/408/429 - retried up to 3 times), permanent_fail (4xx - discarded). 5-second delay between retry cycles. Alert shown for permanently failed mutations.
+- **API Integration** (`client/lib/query-client.ts`): `apiRequest` catches network errors (TypeError) and server errors (5xx/408/429) for mutating methods and enqueues them. Shows "Saved offline" alert for network errors.
+- **UI Integration**: `useSyncStatus` hook exposes `pendingMutations` count. SyncStatusIndicator shows "X change(s) pending sync" when mutations are queued. Offline processor initialized in App.tsx on mount.
+
 ### Accessibility Improvements (Feb 2026)
 - **Live Region Announcements**: Added `accessibilityLiveRegion` across 6 files for screen reader dynamic content announcements:
   - "polite" for non-urgent: fun facts, nutrition summaries, loading states (InventoryScreen, CookPotLoader, GenerateRecipeScreen)
