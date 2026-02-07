@@ -118,6 +118,7 @@ export default function SettingsScreen() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingData, setIsDownloadingData] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState<any>(null);
@@ -582,6 +583,56 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleDownloadMyData = async () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Download My Data", "Data download is available on the web version of ChefSpAIce.");
+      return;
+    }
+    setIsDownloadingData(true);
+    try {
+      const baseUrl = getApiUrl();
+      const token = await (async () => {
+        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
+        return stored ? JSON.parse(stored) : null;
+      })();
+
+      if (!token) {
+        window.alert("You must be signed in to download your data.");
+        return;
+      }
+
+      const res = await fetch(`${baseUrl}/api/user/export-data`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Download failed");
+      }
+
+      const responseData = (await res.json()).data as any;
+      const jsonString = JSON.stringify(responseData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chefspaice-data-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      window.alert("Your personal data has been downloaded.");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Download failed";
+      window.alert(`Download failed: ${msg}`);
+    } finally {
+      setIsDownloadingData(false);
+    }
+  };
+
   const handleImportFilePick = () => {
     if (Platform.OS === "web") {
       if (!fileInputRef.current) {
@@ -875,11 +926,13 @@ export default function SettingsScreen() {
           isAuthenticated={isAuthenticated}
           isExporting={isExporting}
           isImporting={isImporting}
+          isDownloadingData={isDownloadingData}
           showDeleteModal={showDeleteModal}
           deleteConfirmText={deleteConfirmText}
           isDeleting={isDeleting}
           onExportData={handleExportData}
           onImportFilePick={handleImportFilePick}
+          onDownloadMyData={handleDownloadMyData}
           onDeleteAccountPress={handleDeleteAccountPress}
           onDeleteAccountConfirm={handleDeleteAccountConfirm}
           onCancelDelete={handleCancelDelete}

@@ -68,6 +68,7 @@ import donationsRouter from "./routers/donations.router";
 import externalApiRouter from "./routers/external-api.router";
 import chatRouter from "./routers/chat.router";
 import shelfLifeRouter from "./routers/shelf-life.router";
+import dataExportRouter from "./routers/user/data-export.router";
 import foodRouter, { barcodeRawRouter } from "./routers/food.router";
 import referralRouter from "./routers/referral.router";
 import { db } from "./db";
@@ -198,6 +199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 1. User is authenticated (requireAuth)
   // 2. User has active subscription or free trial (requireSubscription)
   // =========================================================================
+  app.use("/api/user/export-data", requireAuth, dataExportRouter);
+
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
   app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);
   app.use("/api/nutrition", requireAuth, requireSubscription, nutritionRouter);

@@ -17,11 +17,13 @@ interface SettingsAccountDataProps {
   isAuthenticated: boolean;
   isExporting: boolean;
   isImporting: boolean;
+  isDownloadingData: boolean;
   showDeleteModal: boolean;
   deleteConfirmText: string;
   isDeleting: boolean;
   onExportData: () => void;
   onImportFilePick: () => void;
+  onDownloadMyData: () => void;
   onDeleteAccountPress: () => void;
   onDeleteAccountConfirm: () => void;
   onCancelDelete: () => void;
@@ -35,11 +37,13 @@ export function SettingsAccountData({
   isAuthenticated,
   isExporting,
   isImporting,
+  isDownloadingData,
   showDeleteModal,
   deleteConfirmText,
   isDeleting,
   onExportData,
   onImportFilePick,
+  onDownloadMyData,
   onDeleteAccountPress,
   onDeleteAccountConfirm,
   onCancelDelete,
@@ -101,6 +105,34 @@ export function SettingsAccountData({
               <ThemedText type="body">Import Data</ThemedText>
               <ThemedText type="caption">
                 Restore data from a previously exported backup file
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.legalMenuItem,
+              { borderColor: theme.glass.border },
+            ]}
+            onPress={onDownloadMyData}
+            disabled={isDownloadingData}
+            data-testid="button-download-my-data"
+            accessibilityRole="button"
+            accessibilityLabel="Download my data"
+            accessibilityHint="Downloads all your personal data as a JSON file for GDPR compliance"
+          >
+            <View style={styles.legalMenuIcon}>
+              {isDownloadingData ? (
+                <ActivityIndicator size="small" color={AppColors.primary} />
+              ) : (
+                <Feather name="shield" size={18} color={AppColors.primary} />
+              )}
+            </View>
+            <View style={styles.legalMenuText}>
+              <ThemedText type="body">Download My Data</ThemedText>
+              <ThemedText type="caption">
+                Get a copy of all your personal data (GDPR)
               </ThemedText>
             </View>
             <Feather name="chevron-right" size={16} color={theme.textSecondary} />
