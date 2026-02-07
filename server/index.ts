@@ -211,7 +211,27 @@ function configureExpoRouting(app: express.Application) {
           logger.error("Metro proxy error", { error: err.message });
           if (res && !res.headersSent && res.writeHead) {
             res.writeHead(502, { "Content-Type": "text/html" });
-            res.end("<h1>Metro bundler not available</h1><p>Please wait for Metro to start or refresh the page.</p>");
+            res.end(`
+    <html>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                  display: flex; align-items: center; justify-content: center;
+                  height: 100vh; margin: 0; background: #f8f9fa; color: #333;">
+      <div style="text-align: center; padding: 40px; max-width: 400px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+        <h1 style="font-size: 24px; margin-bottom: 8px;">Starting up...</h1>
+        <p style="font-size: 16px; color: #666; line-height: 1.5;">
+          The development server is loading. Please refresh in a moment.
+        </p>
+        <button onclick="location.reload()"
+                style="margin-top: 20px; padding: 10px 24px; font-size: 14px;
+                       border: 1px solid #ddd; border-radius: 6px; background: white;
+                       cursor: pointer;">
+          Refresh
+        </button>
+      </div>
+    </body>
+    </html>
+  `);
           }
         },
       },
