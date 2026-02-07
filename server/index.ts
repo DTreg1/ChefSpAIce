@@ -14,7 +14,7 @@ import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
 import { logger } from "./lib/logger";
-import { AppError, globalErrorHandler } from "./middleware/errorHandler";
+import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/requireAdmin";
 
@@ -418,6 +418,7 @@ async function initStripe(retries = 3, delay = 2000) {
   });
 
 
+  app.use(requestIdMiddleware);
   setupCors(app);
 
   app.use(helmet({
