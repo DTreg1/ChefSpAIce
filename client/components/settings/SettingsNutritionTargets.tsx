@@ -60,6 +60,7 @@ export function SettingsNutritionTargets({
                   styles.macroButton,
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityLabel="Decrease macro target"
               >
                 <Feather name="minus" size={16} color={theme.text} />
@@ -83,6 +84,7 @@ export function SettingsNutritionTargets({
                   styles.macroButton,
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityLabel="Increase macro target"
               >
                 <Feather name="plus" size={16} color={theme.text} />
@@ -146,6 +148,7 @@ const styles = StyleSheet.create({
   macroButton: {
     width: 32,
     height: 32,
+    minHeight: 44,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",

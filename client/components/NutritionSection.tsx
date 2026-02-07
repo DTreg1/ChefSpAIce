@@ -128,6 +128,7 @@ export function NutritionSection({
                 { backgroundColor: theme.backgroundSecondary },
               ]}
               onPress={() => adjustServing(-1)}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               accessibilityLabel="Decrease serving"
             >
               <Feather name="minus" size={18} color={theme.text} />
@@ -141,6 +142,7 @@ export function NutritionSection({
                 { backgroundColor: theme.backgroundSecondary },
               ]}
               onPress={() => adjustServing(1)}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               accessibilityLabel="Increase serving"
             >
               <Feather name="plus" size={18} color={theme.text} />
@@ -287,6 +289,7 @@ const styles = StyleSheet.create({
   servingButton: {
     width: 36,
     height: 36,
+    minHeight: 44,
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",

@@ -400,6 +400,7 @@ export function RecipeVoiceControls({
               },
             ]}
             disabled={speechRate <= 0.5}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Decrease speed"
             accessibilityState={{ disabled: speechRate <= 0.5 }}
@@ -421,6 +422,7 @@ export function RecipeVoiceControls({
               },
             ]}
             disabled={speechRate >= 2.0}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Increase speed"
             accessibilityState={{ disabled: speechRate >= 2.0 }}
@@ -579,6 +581,7 @@ const styles = StyleSheet.create({
   speedButton: {
     width: 28,
     height: 28,
+    minHeight: 44,
     borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",

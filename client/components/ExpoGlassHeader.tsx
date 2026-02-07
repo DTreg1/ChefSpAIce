@@ -230,6 +230,7 @@ export function ExpoGlassHeader({
                   <Pressable
                     style={styles.searchCloseButton}
                     onPress={handleCloseSearch}
+                    hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
                     accessibilityLabel="Close search"
                   >
                     <Feather
@@ -259,6 +260,7 @@ export function ExpoGlassHeader({
                     <Pressable
                       style={styles.searchClearButton}
                       onPress={handleClearSearch}
+                      hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
                       accessibilityLabel="Clear search"
                     >
                       <Feather name="x" size={18} color={secondaryColor} />
@@ -329,6 +331,7 @@ const styles = StyleSheet.create({
   searchCloseButton: {
     width: 40,
     height: 40,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -346,6 +349,7 @@ const styles = StyleSheet.create({
   searchClearButton: {
     width: 40,
     height: 40,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
   },

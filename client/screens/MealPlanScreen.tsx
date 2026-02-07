@@ -265,6 +265,7 @@ export default function MealPlanScreen() {
             <Pressable
               onLongPress={drag}
               delayLongPress={150}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               style={[
                 styles.dragHandle,
                 {
@@ -542,6 +543,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 32,
     height: 32,
+    minHeight: 44,
     borderRadius: GlassEffect.borderRadius.md,
     borderWidth: 1,
     alignItems: "center",

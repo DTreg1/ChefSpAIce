@@ -504,6 +504,7 @@ export function ChatModal() {
             },
           ]}
           onPress={() => handleReplayMessage(messageId, content)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           disabled={isReplayLoading !== null || replayVoice.isSpeaking}
           data-testid={`button-replay-${messageId}`}
           accessibilityRole="button"
@@ -982,6 +983,7 @@ export function ChatModal() {
               },
             ]}
             onPress={() => setIsVoiceMode(false)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             data-testid="button-mode-text"
             accessibilityRole="button"
             accessibilityLabel="Switch to text mode"
@@ -1030,6 +1032,7 @@ export function ChatModal() {
               },
             ]}
             onPress={() => setIsVoiceMode(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             data-testid="button-mode-voice"
             accessibilityRole="button"
             accessibilityLabel="Switch to voice mode"
@@ -1047,6 +1050,7 @@ export function ChatModal() {
               },
             ]}
             onPress={handleSend}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             disabled={!inputText.trim() || sending}
             data-testid="button-chat-send"
             accessibilityRole="button"
@@ -1220,6 +1224,7 @@ const styles = StyleSheet.create({
   replayButton: {
     width: 24,
     height: 24,
+    minHeight: 44,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -1251,6 +1256,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 28,
     height: 28,
+    minHeight: 44,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -1258,6 +1264,7 @@ const styles = StyleSheet.create({
   modeToggleButton: {
     width: 28,
     height: 28,
+    minHeight: 44,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",

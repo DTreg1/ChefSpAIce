@@ -271,6 +271,7 @@ export function NutritionCorrectionModal({
                     <Pressable
                       style={styles.removeImageButton}
                       onPress={handleRemoveImage}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       accessibilityRole="button"
                       accessibilityLabel="Remove uploaded image"
                     >
@@ -489,6 +490,7 @@ const styles = StyleSheet.create({
     right: Spacing.sm,
     width: 28,
     height: 28,
+    minHeight: 44,
     borderRadius: 14,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",

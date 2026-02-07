@@ -376,6 +376,7 @@ export default function ProfileScreen() {
                     <Pressable
                       key={option}
                       onPress={() => setThemePreference(option)}
+                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                       style={[
                         styles.themeToggleButton,
                         {
@@ -1232,6 +1233,7 @@ const styles = StyleSheet.create({
   themeToggleButton: {
     width: 36,
     height: 36,
+    minHeight: 44,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",

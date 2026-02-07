@@ -79,6 +79,7 @@ export function RecipeIngredientsList({
               { backgroundColor: theme.backgroundSecondary },
             ]}
             disabled={selectedServings <= 1}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel="Decrease servings"
             accessibilityState={{ disabled: selectedServings <= 1 }}
@@ -109,6 +110,7 @@ export function RecipeIngredientsList({
               { backgroundColor: theme.backgroundSecondary },
             ]}
             disabled={selectedServings >= 20}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel="Increase servings"
             accessibilityState={{ disabled: selectedServings >= 20 }}
@@ -276,6 +278,7 @@ const styles = StyleSheet.create({
   stepperButton: {
     width: 36,
     height: 36,
+    minHeight: 44,
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
