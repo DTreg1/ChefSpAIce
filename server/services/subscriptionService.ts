@@ -352,22 +352,24 @@ export async function upgradeUserTier(
 }
 
 export async function downgradeUserTier(userId: string): Promise<void> {
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'canceled',
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.userId, userId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        status: 'canceled',
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.userId, userId));
 
-  await db
-    .update(users)
-    .set({
-      subscriptionTier: SubscriptionTier.FREE,
-      subscriptionStatus: "canceled",
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId));
+    await tx
+      .update(users)
+      .set({
+        subscriptionTier: SubscriptionTier.FREE,
+        subscriptionStatus: "canceled",
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  });
 }
 
 export async function setTrialExpiration(
@@ -377,24 +379,26 @@ export async function setTrialExpiration(
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'trialing',
-      trialEnd: trialEndsAt,
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.userId, userId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        status: 'trialing',
+        trialEnd: trialEndsAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.userId, userId));
 
-  await db
-    .update(users)
-    .set({
-      subscriptionTier: SubscriptionTier.PRO,
-      subscriptionStatus: "trialing",
-      trialEndsAt,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId));
+    await tx
+      .update(users)
+      .set({
+        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionStatus: "trialing",
+        trialEndsAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  });
 }
 
 export async function checkTrialExpiration(userId: string): Promise<boolean> {
@@ -453,26 +457,28 @@ export async function ensureTrialSubscription(
   }
 
   try {
-    await db.insert(subscriptions).values({
-      userId,
-      status: 'trialing',
-      planType: selectedPlan,
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-      trialStart: now,
-      trialEnd: trialEnd,
-      cancelAtPeriodEnd: false,
-    });
+    await db.transaction(async (tx) => {
+      await tx.insert(subscriptions).values({
+        userId,
+        status: 'trialing',
+        planType: selectedPlan,
+        currentPeriodStart: now,
+        currentPeriodEnd: trialEnd,
+        trialStart: now,
+        trialEnd: trialEnd,
+        cancelAtPeriodEnd: false,
+      });
 
-    await db
-      .update(users)
-      .set({
-        subscriptionTier: SubscriptionTier.PRO,
-        subscriptionStatus: 'trialing',
-        trialEndsAt: trialEnd,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+      await tx
+        .update(users)
+        .set({
+          subscriptionTier: SubscriptionTier.PRO,
+          subscriptionStatus: 'trialing',
+          trialEndsAt: trialEnd,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+    });
 
     return { created: true, trialEnd };
   } catch (error: unknown) {
@@ -516,70 +522,74 @@ export async function checkAndRedeemReferralCredits(userId: string): Promise<voi
   const unredeemedCount = result?.value ?? 0;
 
   if (unredeemedCount >= 3) {
-    await db.execute(
-      sql`UPDATE referrals SET bonus_granted = true WHERE id IN (SELECT id FROM referrals WHERE referrer_id = ${userId} AND status = 'completed' AND bonus_granted = false ORDER BY created_at ASC LIMIT 3)`
-    );
+    await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`UPDATE referrals SET bonus_granted = true WHERE id IN (SELECT id FROM referrals WHERE referrer_id = ${userId} AND status = 'completed' AND bonus_granted = false ORDER BY created_at ASC LIMIT 3)`
+      );
 
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, userId))
-      .limit(1);
+      const [subscription] = await tx
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
 
-    if (subscription) {
-      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (subscription) {
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 
-      if (subscription.status === "trialing") {
-        const newTrialEnd = new Date((subscription.trialEnd?.getTime() || Date.now()) + thirtyDays);
-        const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+        if (subscription.status === "trialing") {
+          const newTrialEnd = new Date((subscription.trialEnd?.getTime() || Date.now()) + thirtyDays);
+          const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
 
-        await db
-          .update(subscriptions)
-          .set({
-            trialEnd: newTrialEnd,
-            currentPeriodEnd: newPeriodEnd,
-            updatedAt: new Date(),
-          })
-          .where(eq(subscriptions.userId, userId));
+          await tx
+            .update(subscriptions)
+            .set({
+              trialEnd: newTrialEnd,
+              currentPeriodEnd: newPeriodEnd,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.userId, userId));
 
-        await db
-          .update(users)
-          .set({
-            trialEndsAt: newTrialEnd,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, userId));
-      } else if (subscription.status === "active") {
-        const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+          await tx
+            .update(users)
+            .set({
+              trialEndsAt: newTrialEnd,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, userId));
+        } else if (subscription.status === "active") {
+          const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
 
-        await db
-          .update(subscriptions)
-          .set({
-            currentPeriodEnd: newPeriodEnd,
-            updatedAt: new Date(),
-          })
-          .where(eq(subscriptions.userId, userId));
+          await tx
+            .update(subscriptions)
+            .set({
+              currentPeriodEnd: newPeriodEnd,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.userId, userId));
+        }
       }
-    }
+    });
 
     logger.info("Referral reward granted: 1 month free", { userId, creditsRedeemed: 3 });
   }
 }
 
 export async function expireTrialSubscription(userId: string): Promise<void> {
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'expired',
-    })
-    .where(eq(subscriptions.userId, userId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        status: 'expired',
+      })
+      .where(eq(subscriptions.userId, userId));
 
-  await db
-    .update(users)
-    .set({
-      subscriptionTier: SubscriptionTier.FREE,
-      subscriptionStatus: 'expired',
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId));
+    await tx
+      .update(users)
+      .set({
+        subscriptionTier: SubscriptionTier.FREE,
+        subscriptionStatus: 'expired',
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  });
 }

@@ -169,64 +169,68 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
 
     const hashedPassword = await hashPassword(password);
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        displayName: displayName || email.split("@")[0],
-      })
-      .returning();
+    const { newUser, referralTrialDays, rawToken } = await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          displayName: displayName || email.split("@")[0],
+        })
+        .returning();
 
-    const rawToken = generateToken();
-    const hashedToken = hashToken(rawToken);
-    const expiresAt = getExpiryDate();
+      const rawTokenInner = generateToken();
+      const hashedTokenInner = hashToken(rawTokenInner);
+      const expiresAtInner = getExpiryDate();
 
-    await db.insert(userSessions).values({
-      userId: newUser.id,
-      token: hashedToken,
-      userAgent: req.headers["user-agent"] || "unknown",
-      ipAddress: req.ip || "unknown",
-      expiresAt,
-    });
+      await tx.insert(userSessions).values({
+        userId: createdUser.id,
+        token: hashedTokenInner,
+        userAgent: req.headers["user-agent"] || "unknown",
+        ipAddress: req.ip || "unknown",
+        expiresAt: expiresAtInner,
+      });
 
-    await db.insert(userSyncData).values({
-      userId: newUser.id,
-    });
+      await tx.insert(userSyncData).values({
+        userId: createdUser.id,
+      });
 
-    let referralTrialDays: number | undefined;
-    if (referralCode && typeof referralCode === 'string') {
-      try {
-        const [referrer] = await db
-          .select({ id: users.id, referralCode: users.referralCode })
-          .from(users)
-          .where(eq(users.referralCode, referralCode.toUpperCase()))
-          .limit(1);
+      let trialDays: number | undefined;
+      if (referralCode && typeof referralCode === 'string') {
+        try {
+          const [referrer] = await tx
+            .select({ id: users.id, referralCode: users.referralCode })
+            .from(users)
+            .where(eq(users.referralCode, referralCode.toUpperCase()))
+            .limit(1);
 
-        if (referrer && referrer.id !== newUser.id) {
-          const { referrals } = await import("@shared/schema");
-          await db.insert(referrals).values({
-            referrerId: referrer.id,
-            referredUserId: newUser.id,
-            codeUsed: referralCode.toUpperCase(),
-            status: "completed",
-            bonusGranted: false,
-          });
+          if (referrer && referrer.id !== createdUser.id) {
+            const { referrals } = await import("@shared/schema");
+            await tx.insert(referrals).values({
+              referrerId: referrer.id,
+              referredUserId: createdUser.id,
+              codeUsed: referralCode.toUpperCase(),
+              status: "completed",
+              bonusGranted: false,
+            });
 
-          await db
-            .update(users)
-            .set({ referredBy: referrer.id, updatedAt: new Date() })
-            .where(eq(users.id, newUser.id));
+            await tx
+              .update(users)
+              .set({ referredBy: referrer.id, updatedAt: new Date() })
+              .where(eq(users.id, createdUser.id));
 
-          const { checkAndRedeemReferralCredits } = await import("../services/subscriptionService");
-          await checkAndRedeemReferralCredits(referrer.id);
+            const { checkAndRedeemReferralCredits } = await import("../services/subscriptionService");
+            await checkAndRedeemReferralCredits(referrer.id);
 
-          referralTrialDays = 14;
+            trialDays = 14;
+          }
+        } catch (refError) {
+          logger.error("Referral processing error (non-fatal)", { error: refError instanceof Error ? refError.message : String(refError) });
         }
-      } catch (refError) {
-        logger.error("Referral processing error (non-fatal)", { error: refError instanceof Error ? refError.message : String(refError) });
       }
-    }
+
+      return { newUser: createdUser, referralTrialDays: trialDays, rawToken: rawTokenInner };
+    });
 
     await ensureTrialSubscription(newUser.id, plan, referralTrialDays);
 
@@ -1230,36 +1234,22 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
 
     logger.info("Starting account deletion", { userId });
 
-    try {
-      await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
       logger.info("Deleted user appliances", { userId });
-    } catch (e) {
-      logger.warn("Error deleting appliances", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+      await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
       logger.info("Deleted subscriptions", { userId });
-    } catch (e) {
-      logger.warn("Error deleting subscriptions", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
+      await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
       logger.info("Deleted sync data", { userId });
-    } catch (e) {
-      logger.warn("Error deleting sync data", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(userSessions).where(eq(userSessions.userId, userId));
+      await tx.delete(userSessions).where(eq(userSessions.userId, userId));
       logger.info("Deleted sessions", { userId });
-    } catch (e) {
-      logger.warn("Error deleting sessions", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    await db.delete(users).where(eq(users.id, userId));
-    logger.info("Deleted user record", { userId });
+      await tx.delete(users).where(eq(users.id, userId));
+      logger.info("Deleted user record", { userId });
+    });
 
     clearAuthCookie(res);
 
@@ -1343,50 +1333,28 @@ router.delete("/account", requireAuth, async (req: Request, res: Response, next:
       logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
     }
 
-    try {
-      await db.delete(feedback).where(eq(feedback.userId, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(feedback).where(eq(feedback.userId, userId));
       logger.info("Deleted feedback", { userId });
-    } catch (e) {
-      logger.warn("Error deleting feedback", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(authProviders).where(eq(authProviders.userId, userId));
+      await tx.delete(authProviders).where(eq(authProviders.userId, userId));
       logger.info("Deleted auth providers", { userId });
-    } catch (e) {
-      logger.warn("Error deleting auth providers", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(userAppliances).where(eq(userAppliances.userId, userId));
+      await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
       logger.info("Deleted user appliances", { userId });
-    } catch (e) {
-      logger.warn("Error deleting appliances", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+      await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
       logger.info("Deleted subscriptions", { userId });
-    } catch (e) {
-      logger.warn("Error deleting subscriptions", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(userSyncData).where(eq(userSyncData.userId, userId));
+      await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
       logger.info("Deleted sync data", { userId });
-    } catch (e) {
-      logger.warn("Error deleting sync data", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    try {
-      await db.delete(userSessions).where(eq(userSessions.userId, userId));
+      await tx.delete(userSessions).where(eq(userSessions.userId, userId));
       logger.info("Deleted sessions", { userId });
-    } catch (e) {
-      logger.warn("Error deleting sessions", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
 
-    await db.delete(users).where(eq(users.id, userId));
-    logger.info("Deleted user record", { userId });
+      await tx.delete(users).where(eq(users.id, userId));
+      logger.info("Deleted user record", { userId });
+    });
 
     clearAuthCookie(res);
 
