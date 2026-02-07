@@ -1,4 +1,5 @@
 import { StyleSheet, View, Text, Pressable, Image } from "react-native";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import QRCode from "react-native-qrcode-svg";
 
 const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
@@ -46,19 +47,19 @@ export function FooterSection({
         <View
           style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
         >
-          <Pressable onPress={() => onAbout?.()} data-testid="link-about">
+          <Pressable onPress={() => onAbout?.()} {...webAccessibilityProps(() => onAbout?.())} data-testid="link-about">
             <Text style={styles.footerLink}>About</Text>
           </Pressable>
           <Text style={styles.footerDivider}>|</Text>
-          <Pressable onPress={() => onPrivacy?.()} data-testid="link-privacy">
+          <Pressable onPress={() => onPrivacy?.()} {...webAccessibilityProps(() => onPrivacy?.())} data-testid="link-privacy">
             <Text style={styles.footerLink}>Privacy</Text>
           </Pressable>
           <Text style={styles.footerDivider}>|</Text>
-          <Pressable onPress={() => onTerms?.()} data-testid="link-terms">
+          <Pressable onPress={() => onTerms?.()} {...webAccessibilityProps(() => onTerms?.())} data-testid="link-terms">
             <Text style={styles.footerLink}>Terms</Text>
           </Pressable>
           <Text style={styles.footerDivider}>|</Text>
-          <Pressable onPress={() => onSupport?.()} data-testid="link-support">
+          <Pressable onPress={() => onSupport?.()} {...webAccessibilityProps(() => onSupport?.())} data-testid="link-support">
             <Text style={styles.footerLink}>Support</Text>
           </Pressable>
         </View>

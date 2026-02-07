@@ -26,6 +26,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import {
   MONTHLY_PRICES,
   ANNUAL_PRICES,
@@ -755,6 +756,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedPlan("monthly")}
                 data-testid="button-billing-monthly"
+                {...webAccessibilityProps(() => setSelectedPlan("monthly"))}
               >
                 <ThemedText
                   style={[
@@ -773,6 +775,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedPlan("annual")}
                 data-testid="button-billing-annual"
+                {...webAccessibilityProps(() => setSelectedPlan("annual"))}
               >
                 <ThemedText
                   style={[
@@ -803,6 +806,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedTier("basic")}
                 data-testid="button-select-basic"
+                {...webAccessibilityProps(() => setSelectedTier("basic"))}
               >
                 <View style={styles.tierCardHeader}>
                   <ThemedText style={styles.tierCardName}>Basic</ThemedText>
@@ -866,6 +870,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedTier("pro")}
                 data-testid="button-select-pro"
+                {...webAccessibilityProps(() => setSelectedTier("pro"))}
               >
                 <View
                   style={[
@@ -961,6 +966,7 @@ export default function SubscriptionScreen() {
               <Pressable
                 onPress={handleOpenPrivacyPolicy}
                 data-testid="link-privacy-policy"
+                {...webAccessibilityProps(handleOpenPrivacyPolicy)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -976,6 +982,7 @@ export default function SubscriptionScreen() {
               <Pressable
                 onPress={handleOpenTermsOfUse}
                 data-testid="link-terms-of-use"
+                {...webAccessibilityProps(handleOpenTermsOfUse)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -1073,6 +1080,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedPlan("monthly")}
                 data-testid="button-trial-billing-monthly"
+                {...webAccessibilityProps(() => setSelectedPlan("monthly"))}
               >
                 <ThemedText
                   style={[
@@ -1091,6 +1099,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedPlan("annual")}
                 data-testid="button-trial-billing-annual"
+                {...webAccessibilityProps(() => setSelectedPlan("annual"))}
               >
                 <ThemedText
                   style={[
@@ -1121,6 +1130,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedTier("basic")}
                 data-testid="button-trial-select-basic"
+                {...webAccessibilityProps(() => setSelectedTier("basic"))}
               >
                 <View style={styles.tierCardHeader}>
                   <ThemedText style={styles.tierCardName}>Basic</ThemedText>
@@ -1184,6 +1194,7 @@ export default function SubscriptionScreen() {
                 ]}
                 onPress={() => setSelectedTier("pro")}
                 data-testid="button-trial-select-pro"
+                {...webAccessibilityProps(() => setSelectedTier("pro"))}
               >
                 <View
                   style={[
@@ -1279,6 +1290,7 @@ export default function SubscriptionScreen() {
               <Pressable
                 onPress={handleOpenPrivacyPolicy}
                 data-testid="link-trial-privacy-policy"
+                {...webAccessibilityProps(handleOpenPrivacyPolicy)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -1294,6 +1306,7 @@ export default function SubscriptionScreen() {
               <Pressable
                 onPress={handleOpenTermsOfUse}
                 data-testid="link-trial-terms-of-use"
+                {...webAccessibilityProps(handleOpenTermsOfUse)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -1311,6 +1324,7 @@ export default function SubscriptionScreen() {
             disabled={isRestoring}
             style={[styles.refreshButton, { borderColor: theme.border }]}
             data-testid="button-restore-purchases"
+            {...webAccessibilityProps(handleRestorePurchases)}
           >
             {isRestoring ? (
               <ActivityIndicator
@@ -1340,6 +1354,7 @@ export default function SubscriptionScreen() {
             onPress={refetch}
             style={[styles.refreshButton, { borderColor: theme.border }]}
             data-testid="button-refresh-subscription"
+            {...webAccessibilityProps(refetch)}
           >
             <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
             <ThemedText

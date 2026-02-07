@@ -1,4 +1,5 @@
 import { StyleSheet, View, Text, Pressable } from "react-native";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
@@ -88,6 +89,7 @@ export function PricingCard({
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadiOS}
+              {...webAccessibilityProps(onDownloadiOS)}
               data-testid={`button-download-ios-${testId}`}
             >
               <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
@@ -99,6 +101,7 @@ export function PricingCard({
                 pressed && styles.buttonPressed,
               ]}
               onPress={onDownloadAndroid}
+              {...webAccessibilityProps(onDownloadAndroid)}
               data-testid={`button-download-android-${testId}`}
             >
               <MaterialCommunityIcons
@@ -119,6 +122,7 @@ export function PricingCard({
             pressed && styles.buttonPressed,
           ]}
           onPress={onPress}
+          {...webAccessibilityProps(onPress)}
           data-testid={`button-pricing-${testId}`}
         >
           {isPopular ? (

@@ -1,5 +1,6 @@
 import { StyleSheet, View, Text, Pressable } from "react-native";
 import { useState } from "react";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { AppColors } from "@/constants/theme";
 import { PricingCard } from "./PricingCard";
 import { BASIC_FEATURES, PRO_FEATURES } from "@/data/landing-data";
@@ -29,6 +30,7 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
         <Pressable
           style={styles.billingToggle}
           onPress={() => setIsAnnual(!isAnnual)}
+          {...webAccessibilityProps(() => setIsAnnual(!isAnnual))}
           data-testid="toggle-billing-period"
         >
           <View

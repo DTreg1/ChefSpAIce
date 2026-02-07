@@ -1,4 +1,5 @@
 import { StyleSheet, View, Text, Pressable, Platform, Linking } from "react-native";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { AppColors } from "@/constants/theme";
@@ -120,6 +121,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
                     isDonating && styles.donationButtonDisabled,
                   ]}
                   onPress={() => handleDonate(item.amount)}
+                  {...webAccessibilityProps(() => handleDonate(item.amount))}
                   disabled={isDonating}
                   data-testid={`button-donate-${item.label}`}
                 >

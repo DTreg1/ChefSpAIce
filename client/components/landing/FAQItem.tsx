@@ -1,4 +1,5 @@
 import { StyleSheet, View, Text, Pressable } from "react-native";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { Feather } from "@expo/vector-icons";
 import { GlassCard } from "./GlassCard";
 
@@ -12,7 +13,7 @@ interface FAQItemProps {
 
 export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
   return (
-    <Pressable onPress={onToggle} data-testid={`faq-item-${testId}`}>
+    <Pressable onPress={onToggle} {...webAccessibilityProps(onToggle)} data-testid={`faq-item-${testId}`}>
       <GlassCard style={styles.faqCard}>
         <View style={styles.faqHeader}>
           <Text

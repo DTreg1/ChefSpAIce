@@ -25,6 +25,9 @@ import TermsScreen from "@/screens/web/TermsScreen";
 import SupportScreen from "@/screens/web/SupportScreen";
 import Constants from "expo-constants";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { injectWebFocusCSS } from "@/lib/web-accessibility";
+
+injectWebFocusCSS();
 
 /**
  * Get the Expo Go deep link URL for mobile app downloads

@@ -25,6 +25,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -468,6 +469,7 @@ export default function AuthScreen() {
               <Pressable
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.authEyeButton}
+                {...webAccessibilityProps(() => setShowPassword(!showPassword))}
               >
                 <Feather
                   name={showPassword ? "eye-off" : "eye"}
@@ -527,6 +529,7 @@ export default function AuthScreen() {
             onPress={handleAuth}
             disabled={authLoading}
             data-testid="button-auth-submit"
+            {...webAccessibilityProps(handleAuth)}
           >
             {authLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -544,6 +547,7 @@ export default function AuthScreen() {
             }}
             style={styles.authSwitchButton}
             data-testid="button-switch-auth-mode"
+            {...webAccessibilityProps(() => { setIsSignUp(!isSignUp); setAuthError(null); })}
           >
             <ThemedText
               style={[styles.authSwitchText, { color: theme.textSecondary }]}
@@ -597,6 +601,7 @@ export default function AuthScreen() {
                     onPress={() => handleSocialAuth("apple")}
                     disabled={authLoading}
                     data-testid="button-signin-apple"
+                    {...webAccessibilityProps(() => handleSocialAuth("apple"))}
                   >
                     <Ionicons name="logo-apple" size={24} color={theme.text} />
                     <ThemedText style={styles.authSocialButtonText}>
@@ -617,6 +622,7 @@ export default function AuthScreen() {
                     onPress={() => handleSocialAuth("google")}
                     disabled={authLoading}
                     data-testid="button-signin-google"
+                    {...webAccessibilityProps(() => handleSocialAuth("google"))}
                   >
                     <Image
                       source={{ uri: "https://www.google.com/favicon.ico" }}

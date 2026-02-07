@@ -1,4 +1,5 @@
 import { StyleSheet, View, Text, Pressable, Image, Platform } from "react-native";
+import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { GlassEffect } from "@/constants/theme";
 import { HeroDeviceMockup } from "./HeroDeviceMockup";
@@ -31,6 +32,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
               pressed && styles.buttonPressed,
             ]}
             onPress={onSupport}
+            {...webAccessibilityProps(onSupport)}
             data-testid="button-support"
           >
             <Text style={styles.signInButtonText}>Support</Text>
