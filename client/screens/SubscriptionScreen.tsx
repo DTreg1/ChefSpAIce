@@ -37,29 +37,14 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { logger } from "@/lib/logger";
 
 const PRO_FEATURES = [
-  { key: "pantryItems", name: "Pantry Items", basic: "25", pro: "Unlimited" },
-  { key: "aiRecipes", name: "AI Recipes/Month", basic: "5", pro: "Unlimited" },
-  { key: "cookware", name: "Cookware Items", basic: "5", pro: "Unlimited" },
-  { key: "recipeScanning", name: "Recipe Scanning", basic: false, pro: true },
-  { key: "bulkScanning", name: "Bulk Scanning", basic: false, pro: true },
-  {
-    key: "aiAssistant",
-    name: "Live AI Kitchen Assistant",
-    basic: false,
-    pro: true,
-  },
-  {
-    key: "customStorage",
-    name: "Custom Storage Areas",
-    basic: false,
-    pro: true,
-  },
-  {
-    key: "weeklyMealPrep",
-    name: "Weekly Meal Prepping",
-    basic: false,
-    pro: true,
-  },
+  { key: "pantryItems", name: "Pantry Items", free: "10", basic: "25", pro: "Unlimited" },
+  { key: "aiRecipes", name: "AI Recipes/Month", free: "2", basic: "5", pro: "Unlimited" },
+  { key: "cookware", name: "Cookware Items", free: "3", basic: "5", pro: "Unlimited" },
+  { key: "recipeScanning", name: "Recipe Scanning", free: false, basic: false, pro: true },
+  { key: "bulkScanning", name: "Bulk Scanning", free: false, basic: false, pro: true },
+  { key: "aiAssistant", name: "Live AI Kitchen Assistant", free: false, basic: false, pro: true },
+  { key: "customStorage", name: "Custom Storage Areas", free: false, basic: false, pro: true },
+  { key: "weeklyMealPrep", name: "Weekly Meal Prepping", free: false, basic: false, pro: true },
 ];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -126,7 +111,7 @@ export default function SubscriptionScreen() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );
-  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
+  const [selectedTier, setSelectedTier] = useState<"free" | "basic" | "pro">("pro");
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -156,17 +141,15 @@ export default function SubscriptionScreen() {
   };
 
   const getPlanName = (): string => {
-    if (tier === SubscriptionTier.PRO) {
-      return "Pro";
-    }
-    return "Basic";
+    if (tier === SubscriptionTier.PRO) return "Pro";
+    if (tier === SubscriptionTier.BASIC) return "Basic";
+    return "Free";
   };
 
   const getMonthlyPrice = (): string => {
-    if (tier === SubscriptionTier.PRO) {
-      return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
-    }
-    return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+    if (tier === SubscriptionTier.PRO) return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
+    if (tier === SubscriptionTier.BASIC) return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+    return "Free";
   };
 
   const handleManageSubscription = async () => {
@@ -471,7 +454,7 @@ export default function SubscriptionScreen() {
             <View style={styles.planInfo}>
               <View style={styles.planBadge}>
                 <Feather
-                  name={isProUser ? "star" : "user"}
+                  name={isProUser ? "star" : tier === SubscriptionTier.BASIC ? "user" : "gift"}
                   size={20}
                   color={isProUser ? AppColors.warning : AppColors.primary}
                 />
@@ -642,6 +625,11 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.tierLabel, { color: theme.textSecondary }]}
             >
+              Free
+            </ThemedText>
+            <ThemedText
+              style={[styles.tierLabel, { color: theme.textSecondary }]}
+            >
               Basic
             </ThemedText>
             <ThemedText
@@ -673,6 +661,27 @@ export default function SubscriptionScreen() {
                 >
                   {feature.name}
                 </ThemedText>
+                <View style={styles.tierValue}>
+                  {typeof feature.free === "boolean" ? (
+                    <Feather
+                      name={feature.free ? "check" : "x"}
+                      size={16}
+                      color={
+                        feature.free ? AppColors.success : theme.textSecondary
+                      }
+                    />
+                  ) : (
+                    <ThemedText
+                      style={[
+                        styles.tierValueText,
+                        { color: theme.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {feature.free}
+                    </ThemedText>
+                  )}
+                </View>
                 <View style={styles.tierValue}>
                   {typeof feature.basic === "boolean" ? (
                     <Feather
@@ -794,6 +803,57 @@ export default function SubscriptionScreen() {
 
             {/* Tier Selection */}
             <View style={styles.tierSelectionContainer}>
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
+                      selectedTier === "free"
+                        ? AppColors.success
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("free")}
+                data-testid="button-select-free"
+                {...webAccessibilityProps(() => setSelectedTier("free"))}
+              >
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Free</ThemedText>
+                  {selectedTier === "free" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.success },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.success }]}
+                >
+                  $0
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {" "}forever
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  10 pantry items, 2 AI recipes/mo
+                </ThemedText>
+              </Pressable>
+
               <Pressable
                 style={[
                   styles.tierCard,
@@ -934,7 +994,13 @@ export default function SubscriptionScreen() {
             </View>
 
             <GlassButton
-              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              onPress={() => {
+                if (selectedTier === "free") {
+                  navigation.goBack();
+                  return;
+                }
+                handleUpgrade(selectedTier, selectedPlan);
+              }}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -942,7 +1008,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    name={selectedTier === "pro" ? "star" : selectedTier === "basic" ? "check-circle" : "gift"}
                     size={18}
                     color="#FFFFFF"
                   />
@@ -952,7 +1018,9 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+                : selectedTier === "free"
+                  ? "Continue with Free"
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
             </GlassButton>
 
             <ThemedText
@@ -1124,6 +1192,57 @@ export default function SubscriptionScreen() {
                   {
                     backgroundColor: theme.glass.background,
                     borderColor:
+                      selectedTier === "free"
+                        ? AppColors.success
+                        : theme.glass.border,
+                  },
+                ]}
+                onPress={() => setSelectedTier("free")}
+                data-testid="button-trial-select-free"
+                {...webAccessibilityProps(() => setSelectedTier("free"))}
+              >
+                <View style={styles.tierCardHeader}>
+                  <ThemedText style={styles.tierCardName}>Free</ThemedText>
+                  {selectedTier === "free" && (
+                    <View
+                      style={[
+                        styles.tierSelectedBadge,
+                        { backgroundColor: AppColors.success },
+                      ]}
+                    >
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <ThemedText
+                  style={[styles.tierCardPrice, { color: AppColors.success }]}
+                >
+                  $0
+                  <ThemedText
+                    style={[
+                      styles.tierCardInterval,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {" "}forever
+                  </ThemedText>
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.tierCardFeature,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  10 pantry items, 2 AI recipes/mo
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.tierCard,
+                  {
+                    backgroundColor: theme.glass.background,
+                    borderColor:
                       selectedTier === "basic"
                         ? AppColors.primary
                         : theme.glass.border,
@@ -1258,7 +1377,13 @@ export default function SubscriptionScreen() {
             </View>
 
             <GlassButton
-              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              onPress={() => {
+                if (selectedTier === "free") {
+                  navigation.goBack();
+                  return;
+                }
+                handleUpgrade(selectedTier, selectedPlan);
+              }}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -1266,7 +1391,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    name={selectedTier === "pro" ? "star" : selectedTier === "basic" ? "check-circle" : "gift"}
                     size={18}
                     color="#FFFFFF"
                   />
@@ -1276,7 +1401,9 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+                : selectedTier === "free"
+                  ? "Continue with Free"
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
             </GlassButton>
 
             <ThemedText

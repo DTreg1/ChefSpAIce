@@ -80,7 +80,7 @@ import { z } from "zod";
  * - primaryProviderId: Provider's unique ID for this user
  *
  * Subscription fields:
- * - subscriptionTier: "BASIC" or "PRO" (default: BASIC)
+ * - subscriptionTier: "FREE", "BASIC", or "PRO" (default: FREE)
  * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
  * - stripeCustomerId: Stripe customer ID for payment processing
  * - stripeSubscriptionId: Stripe subscription ID for managing subscription
@@ -128,7 +128,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   primaryProvider: varchar("primary_provider"),
   primaryProviderId: varchar("primary_provider_id"),
-  subscriptionTier: text("subscription_tier").notNull().default("BASIC"),
+  subscriptionTier: text("subscription_tier").notNull().default("FREE"),
   subscriptionStatus: text("subscription_status").notNull().default("trialing"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

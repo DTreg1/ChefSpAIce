@@ -73,6 +73,7 @@ interface UpgradePromptProps {
   featureName?: string;
   remaining?: number;
   max?: number;
+  currentTier?: string;
   onUpgrade: () => void;
   onDismiss: () => void;
 }
@@ -93,6 +94,7 @@ export function UpgradePrompt({
   featureName,
   remaining,
   max,
+  currentTier = "FREE",
   onUpgrade,
   onDismiss,
 }: UpgradePromptProps) {
@@ -106,21 +108,27 @@ export function UpgradePrompt({
 
   const benefits = PRO_BENEFITS[benefitKey] || PRO_BENEFITS.default;
 
+  const getUpgradeMessage = () => {
+    if (currentTier === "FREE") return "Upgrade to Basic or Pro for more access.";
+    if (currentTier === "BASIC") return "Upgrade to Pro for unlimited access.";
+    return "Upgrade for more access.";
+  };
+
   const getMessage = () => {
     if (type === "limit" && limitName) {
       if (remaining !== undefined && max !== undefined) {
         const used = max - remaining;
-        return `You've used ${used} of ${max} ${limitName}. Upgrade to Pro for unlimited access.`;
+        return `You've used ${used} of ${max} ${limitName}. ${getUpgradeMessage()}`;
       }
       if (remaining === 0) {
-        return `You've reached your ${limitName} limit. Upgrade to Pro for unlimited access.`;
+        return `You've reached your ${limitName} limit. ${getUpgradeMessage()}`;
       }
-      return `You're running low on ${limitName}. Upgrade to Pro for unlimited access.`;
+      return `You're running low on ${limitName}. ${getUpgradeMessage()}`;
     }
     if (type === "feature" && featureName) {
-      return `${featureName} is a Pro feature. Upgrade to unlock it.`;
+      return `${featureName} is a premium feature. ${getUpgradeMessage()}`;
     }
-    return "Upgrade to Pro to unlock all features.";
+    return getUpgradeMessage();
   };
 
   const getTitle = () => {
@@ -208,7 +216,7 @@ export function UpgradePrompt({
           testID="button-upgrade-to-pro"
           icon={<Ionicons name="rocket" size={18} color="#FFFFFF" />}
         >
-          Upgrade to Pro
+          {currentTier === "BASIC" ? "Upgrade to Pro" : "Upgrade Plan"}
         </GlassButton>
         <GlassButton
           variant="ghost"

@@ -41,7 +41,6 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
 
-const BASIC_COOKWARE_LIMIT = 5;
 
 interface Appliance {
   id: number;
@@ -311,7 +310,8 @@ export default function CookwareScreen() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   const isPro = entitlements.maxCookware === "unlimited";
-  const isAtLimit = !isPro && ownedCookwareIds.length >= BASIC_COOKWARE_LIMIT;
+  const cookwareLimit = typeof entitlements.maxCookware === "number" ? entitlements.maxCookware : Infinity;
+  const isAtLimit = !isPro && ownedCookwareIds.length >= cookwareLimit;
 
   const toggleSection = useCallback((key: string) => {
     setCollapsedSections((prev) => ({
@@ -601,7 +601,7 @@ export default function CookwareScreen() {
             type="small"
             style={{ color: AppColors.warning, flex: 1 }}
           >
-            Limit reached ({ownedCookwareIds.length}/{BASIC_COOKWARE_LIMIT}).
+            Limit reached ({ownedCookwareIds.length}/{cookwareLimit}).
             Remove an item to select a different one.
           </ThemedText>
           <View style={styles.upgradeChip}>
@@ -690,7 +690,7 @@ export default function CookwareScreen() {
           type="limit"
           limitName="Cookware"
           remaining={0}
-          max={BASIC_COOKWARE_LIMIT}
+          max={cookwareLimit}
           onUpgrade={() => {
             setShowUpgradePrompt(false);
             // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root

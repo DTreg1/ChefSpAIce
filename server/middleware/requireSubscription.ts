@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { subscriptions } from "@shared/schema";
+import { subscriptions, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
+import { SubscriptionTier } from "@shared/subscription";
 
 const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
 const GRACE_PERIOD_DAYS = 7;
@@ -26,6 +27,17 @@ export async function requireSubscription(
       .limit(1);
 
     if (!subscription) {
+      const [userRecord] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (userRecord && [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PRO].includes(userRecord.subscriptionTier as SubscriptionTier)) {
+        (req as any).subscriptionTier = userRecord.subscriptionTier;
+        return next();
+      }
+
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));
     }
 
@@ -46,6 +58,12 @@ export async function requireSubscription(
       }
     }
 
+    const [subUser] = await db
+      .select({ subscriptionTier: users.subscriptionTier })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    (req as any).subscriptionTier = subUser?.subscriptionTier || 'FREE';
     next();
   } catch (error) {
     next(error);

@@ -339,11 +339,11 @@ router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFu
       throw AppError.badRequest("tier and status are required", "MISSING_REQUIRED_FIELDS");
     }
 
-    const validTiers = ['BASIC', 'PRO'];
+    const validTiers = ['FREE', 'BASIC', 'PRO'];
     const validStatuses = ['active', 'trialing', 'canceled', 'expired', 'past_due'];
 
     if (!validTiers.includes(tier)) {
-      throw AppError.badRequest("Invalid tier. Must be BASIC or PRO", "INVALID_TIER");
+      throw AppError.badRequest("Invalid tier. Must be FREE, BASIC, or PRO", "INVALID_TIER");
     }
 
     if (!validStatuses.includes(status)) {

@@ -124,13 +124,13 @@ export async function getUserEntitlements(
     throw new Error("User not found after refresh");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.FREE;
   const limits = getTierLimits(tier);
   const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
 
   return {
     tier,
-    status: user.subscriptionStatus || "trialing",
+    status: user.subscriptionStatus || "active",
     limits,
     usage: {
       pantryItemCount,
@@ -176,7 +176,7 @@ export async function checkAiRecipeLimit(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.FREE;
   const limits = getTierLimits(tier);
   const currentCount = user.aiRecipesGeneratedThisMonth || 0;
   const bonusCredits = user.aiRecipeBonusCredits || 0;
@@ -230,7 +230,7 @@ export async function checkFeatureAccess(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.FREE;
   const limits = getTierLimits(tier);
 
   const limitKey = featureToLimitKey[feature];
@@ -363,7 +363,7 @@ export async function downgradeUserTier(userId: string): Promise<void> {
   await db
     .update(users)
     .set({
-      subscriptionTier: SubscriptionTier.BASIC,
+      subscriptionTier: SubscriptionTier.FREE,
       subscriptionStatus: "canceled",
       updatedAt: new Date(),
     })
@@ -577,7 +577,7 @@ export async function expireTrialSubscription(userId: string): Promise<void> {
   await db
     .update(users)
     .set({
-      subscriptionTier: SubscriptionTier.BASIC,
+      subscriptionTier: SubscriptionTier.FREE,
       subscriptionStatus: 'expired',
       updatedAt: new Date(),
     })

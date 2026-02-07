@@ -35,7 +35,6 @@ import { getApiUrl } from "@/lib/query-client";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { logger } from "@/lib/logger";
 
-const BASIC_COOKWARE_LIMIT = 5;
 
 interface Appliance {
   id: number;
@@ -734,6 +733,7 @@ export default function OnboardingScreen() {
   const { entitlements } = useSubscription();
 
   const isPro = entitlements.maxCookware === "unlimited";
+  const cookwareLimit = typeof entitlements.maxCookware === "number" ? entitlements.maxCookware : Infinity;
 
   const [step, setStep] = useState<OnboardingStep>("preferences");
   const [stepLoaded, setStepLoaded] = useState(false);
@@ -823,7 +823,7 @@ export default function OnboardingScreen() {
         const commonItems = data.filter((a: Appliance) => a.isCommon);
         setAppliances(data);
         // Pre-select up to 5 common items (limit will be enforced by the effect above)
-        const itemsToSelect = commonItems.slice(0, BASIC_COOKWARE_LIMIT);
+        const itemsToSelect = commonItems.slice(0, cookwareLimit);
         const commonIds = new Set<number>(
           itemsToSelect.map((a: Appliance) => a.id),
         );
@@ -840,7 +840,7 @@ export default function OnboardingScreen() {
   const equipmentSelectedCount = selectedEquipmentIds.size;
   const foodSelectedCount = selectedFoodIds.size;
   const isAtEquipmentLimit =
-    !isPro && equipmentSelectedCount >= BASIC_COOKWARE_LIMIT;
+    !isPro && equipmentSelectedCount >= cookwareLimit;
 
   const toggleAppliance = useCallback(
     (id: number) => {
@@ -851,7 +851,7 @@ export default function OnboardingScreen() {
           newSet.delete(id);
         } else {
           // Check limit before adding
-          if (!isPro && newSet.size >= BASIC_COOKWARE_LIMIT) {
+          if (!isPro && newSet.size >= cookwareLimit) {
             // At limit, don't add more
             return prev;
           }
@@ -1587,7 +1587,7 @@ export default function OnboardingScreen() {
             >
               {isPro
                 ? `${equipmentSelectedCount} Cookware`
-                : `${equipmentSelectedCount}/${BASIC_COOKWARE_LIMIT} Cookware`}
+                : `${equipmentSelectedCount}/${cookwareLimit} Cookware`}
             </ThemedText>
           </View>
           {isAtEquipmentLimit && (

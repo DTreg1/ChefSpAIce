@@ -77,6 +77,7 @@ export interface SubscriptionContextValue {
   status: SubscriptionStatus;
   planType: "monthly" | "annual" | "trial" | null;
   isProUser: boolean;
+  isFreeUser: boolean;
   isTrialing: boolean;
   isActive: boolean;
   isLoading: boolean;
@@ -100,9 +101,9 @@ export interface SubscriptionContextValue {
 }
 
 const defaultEntitlements: Entitlements = {
-  maxPantryItems: TIER_CONFIG[SubscriptionTier.BASIC].maxPantryItems,
-  maxAiRecipes: TIER_CONFIG[SubscriptionTier.BASIC].maxAiRecipesPerMonth,
-  maxCookware: TIER_CONFIG[SubscriptionTier.BASIC].maxCookwareItems,
+  maxPantryItems: TIER_CONFIG[SubscriptionTier.FREE].maxPantryItems,
+  maxAiRecipes: TIER_CONFIG[SubscriptionTier.FREE].maxAiRecipesPerMonth,
+  maxCookware: TIER_CONFIG[SubscriptionTier.FREE].maxCookwareItems,
   canCustomizeStorageAreas: false,
   canUseRecipeScanning: false,
   canUseBulkScanning: false,
@@ -117,12 +118,13 @@ const defaultUsage: Usage = {
 };
 
 const SubscriptionContext = createContext<SubscriptionContextValue>({
-  tier: SubscriptionTier.BASIC,
+  tier: SubscriptionTier.FREE,
   status: "none",
   planType: null,
   isProUser: false,
+  isFreeUser: true,
   isTrialing: false,
-  isActive: false,
+  isActive: true,
   isLoading: true,
   isTrialExpired: false,
   trialDaysRemaining: null,
@@ -190,10 +192,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
-          TIER_CONFIG[SubscriptionTier.BASIC];
+          TIER_CONFIG[SubscriptionTier.FREE];
 
         const sub: SubscriptionData = {
-          tier: data.tier || SubscriptionTier.BASIC,
+          tier: data.tier || SubscriptionTier.FREE,
           status: data.status || "none",
           planType: data.planType || null,
           entitlements: {
@@ -272,14 +274,15 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     fetchSubscription();
   }, [token, fetchSubscription]);
 
-  const tier = subscriptionData?.tier ?? SubscriptionTier.BASIC;
+  const tier = subscriptionData?.tier ?? SubscriptionTier.FREE;
   const status = subscriptionData?.status ?? "none";
   const planType = subscriptionData?.planType ?? null;
   const isProUser = tier === SubscriptionTier.PRO;
+  const isFreeUser = tier === SubscriptionTier.FREE;
   const isTrialing = status === "trialing";
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
-  const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
+  const isActive = isFreeUser || status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
   const isTrialExpired =
     status === "expired" || (planType === "trial" && status === "canceled");
 
@@ -452,6 +455,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       status,
       planType,
       isProUser,
+      isFreeUser,
       isTrialing,
       isActive,
       isLoading,
@@ -471,6 +475,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       status,
       planType,
       isProUser,
+      isFreeUser,
       isTrialing,
       isActive,
       isLoading,

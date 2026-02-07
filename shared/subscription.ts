@@ -1,4 +1,5 @@
 export enum SubscriptionTier {
+  FREE = "FREE",
   BASIC = "BASIC",
   PRO = "PRO",
 }
@@ -15,6 +16,16 @@ export interface TierLimits {
 }
 
 export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
+  [SubscriptionTier.FREE]: {
+    maxPantryItems: 10,
+    maxAiRecipesPerMonth: 2,
+    maxCookwareItems: 3,
+    canCustomizeStorageAreas: false,
+    canUseRecipeScanning: false,
+    canUseBulkScanning: false,
+    canUseAiKitchenAssistant: false,
+    canUseWeeklyMealPrepping: false,
+  },
   [SubscriptionTier.BASIC]: {
     maxPantryItems: 25,
     maxAiRecipesPerMonth: 5,
@@ -38,11 +49,13 @@ export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
 };
 
 export const MONTHLY_PRICES = {
+  FREE: 0,
   BASIC: 4.99,
   PRO: 9.99,
 } as const;
 
 export const ANNUAL_PRICES = {
+  FREE: 0,
   BASIC: 49.9,
   PRO: 99.9,
 } as const;
@@ -91,11 +104,11 @@ export const ERROR_CODES = {
 
 export const ERROR_MESSAGES: Record<string, string> = {
   [ERROR_CODES.PANTRY_LIMIT_REACHED]:
-    "You have reached your pantry item limit. Upgrade to Pro for unlimited items.",
+    "You have reached your pantry item limit. Upgrade to Basic or Pro for more items.",
   [ERROR_CODES.COOKWARE_LIMIT_REACHED]:
-    "You have reached your cookware limit. Upgrade to Pro for unlimited cookware.",
+    "You have reached your cookware limit. Upgrade to Basic or Pro for more cookware.",
   [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]:
-    "You have reached your monthly AI recipe generation limit. Upgrade to Pro for unlimited recipes.",
+    "You have reached your monthly AI recipe generation limit. Upgrade to Basic or Pro for more recipes.",
   [ERROR_CODES.FEATURE_NOT_AVAILABLE]:
-    "This feature is not available on your current plan. Upgrade to Pro to unlock it.",
+    "This feature is not available on your current plan. Upgrade to Basic or Pro to unlock it.",
 };
