@@ -84,6 +84,7 @@ function CodeBlock({ code, theme, onCopy }: { code: string; theme: ReturnType<ty
       <Pressable
         onPress={onCopy}
         style={[styles.copyButton, { backgroundColor: theme.glass.background }]}
+        accessibilityLabel="Copy code"
         data-testid="button-copy-code"
       >
         <Feather name="copy" size={14} color={theme.textSecondary} />

@@ -302,6 +302,7 @@ export default function RecipeScannerScreen() {
             testID="button-close-recipe-scanner"
             onPress={handleClose}
             style={styles.headerButton}
+            accessibilityLabel="Close scanner"
           >
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
@@ -451,6 +452,7 @@ export default function RecipeScannerScreen() {
                 testID="button-close-recipe-scanner"
                 onPress={handleClose}
                 style={styles.cameraButton}
+                accessibilityLabel="Close scanner"
               >
                 <Feather name="x" size={24} color="#FFFFFF" />
               </Pressable>

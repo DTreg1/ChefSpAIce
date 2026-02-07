@@ -226,7 +226,7 @@ export default function CookingTermsScreen() {
             autoCorrect={false}
           />
           {search.length > 0 ? (
-            <Pressable onPress={() => setSearch("")}>
+            <Pressable onPress={() => setSearch("")} accessibilityLabel="Clear search">
               <Feather name="x" size={20} color={theme.textSecondary} />
             </Pressable>
           ) : null}
@@ -276,6 +276,7 @@ export default function CookingTermsScreen() {
             >
               <View style={styles.modalHandle} />
               <Pressable
+                accessibilityLabel="Close term details"
                 style={styles.closeButton}
                 onPress={() => setSelectedTerm(null)}
               >

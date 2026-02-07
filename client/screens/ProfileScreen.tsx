@@ -328,7 +328,7 @@ export default function ProfileScreen() {
                 onBlur={handleSaveName}
                 onSubmitEditing={handleSaveName}
               />
-              <Pressable onPress={handleSaveName} style={styles.saveButton}>
+              <Pressable onPress={handleSaveName} style={styles.saveButton} accessibilityLabel="Save name">
                 <Feather name="check" size={20} color={AppColors.primary} />
               </Pressable>
             </View>
@@ -606,6 +606,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("Subscription")}
+            accessibilityLabel="Subscription"
             data-testid="link-subscription"
           >
             <View
@@ -634,6 +635,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("Analytics")}
+            accessibilityLabel="Analytics"
           >
             <View
               style={[
@@ -661,6 +663,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("StorageLocations")}
+            accessibilityLabel="Storage locations"
           >
             <View
               style={[
@@ -688,6 +691,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("CookingTerms")}
+            accessibilityLabel="Cooking terms"
           >
             <View
               style={[
@@ -715,6 +719,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("Cookware")}
+            accessibilityLabel="Cookware"
           >
             <View
               style={[
@@ -744,6 +749,7 @@ export default function ProfileScreen() {
               <Pressable
                 style={styles.menuItem}
                 onPress={() => navigation.navigate("DevComponents")}
+                accessibilityLabel="Dev components"
               >
                 <View
                   style={[
@@ -773,6 +779,7 @@ export default function ProfileScreen() {
           <Pressable
             style={styles.menuItem}
             onPress={() => navigation.navigate("BarcodeTest")}
+            accessibilityLabel="Barcode test"
           >
             <View
               style={[

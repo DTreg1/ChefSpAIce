@@ -187,6 +187,7 @@ function ReceiptResultsView({
         <Pressable
           onPress={onRetake}
           style={styles.retakeButton}
+          accessibilityLabel="Retake photo"
           data-testid="button-retake"
         >
           <Feather name="arrow-left" size={24} color={theme.text} />
@@ -650,6 +651,7 @@ export default function ReceiptScanScreen() {
               <Pressable
                 onPress={handleClose}
                 style={styles.closeButton}
+                accessibilityLabel="Close scanner"
                 data-testid="button-close"
               >
                 <Feather name="x" size={28} color="#FFFFFF" />
@@ -727,6 +729,7 @@ export default function ReceiptScanScreen() {
               <Pressable
                 onPress={handleRetake}
                 style={styles.closeButton}
+                accessibilityLabel="Retake photo"
                 data-testid="button-retake-preview"
               >
                 <Feather name="arrow-left" size={28} color="#FFFFFF" />

@@ -485,6 +485,7 @@ export function FoodSearchAutocomplete({
             onPress={handleClear}
             style={styles.clearButton}
             hitSlop={8}
+            accessibilityLabel="Clear search"
           >
             <Feather name="x-circle" size={20} color={theme.textSecondary} />
           </Pressable>

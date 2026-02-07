@@ -481,11 +481,19 @@ export default function FoodCameraScreen() {
             { paddingTop: insets.top + Spacing.md },
           ]}
         >
-          <Pressable style={styles.headerButton} onPress={handleRetake}>
+          <Pressable
+            style={styles.headerButton}
+            onPress={handleRetake}
+            accessibilityLabel="Retake photo"
+          >
             <Feather name="arrow-left" size={24} color={theme.text} />
           </Pressable>
           <ThemedText type="h4">Analysis Results</ThemedText>
-          <Pressable style={styles.headerButton} onPress={handleClose}>
+          <Pressable
+            style={styles.headerButton}
+            onPress={handleClose}
+            accessibilityLabel="Close camera"
+          >
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
         </View>
@@ -523,13 +531,21 @@ export default function FoodCameraScreen() {
             { paddingTop: insets.top + Spacing.md },
           ]}
         >
-          <Pressable style={styles.headerButton} onPress={handleRetake}>
+          <Pressable
+            style={styles.headerButton}
+            onPress={handleRetake}
+            accessibilityLabel="Retake photo"
+          >
             <Feather name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
           <ThemedText type="h4" style={styles.previewHeaderTitle}>
             Review Photo
           </ThemedText>
-          <Pressable style={styles.headerButton} onPress={handleClose}>
+          <Pressable
+            style={styles.headerButton}
+            onPress={handleClose}
+            accessibilityLabel="Close camera"
+          >
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
         </View>
@@ -575,7 +591,11 @@ export default function FoodCameraScreen() {
               <ThemedText type="h4" style={styles.cameraHeaderTitle}>
                 Scan Food
               </ThemedText>
-              <Pressable style={styles.headerButton} onPress={handleClose}>
+              <Pressable
+                style={styles.headerButton}
+                onPress={handleClose}
+                accessibilityLabel="Close camera"
+              >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -601,7 +621,11 @@ export default function FoodCameraScreen() {
       <View
         style={[styles.controls, { paddingBottom: insets.bottom + Spacing.xl }]}
       >
-        <Pressable style={styles.galleryButton} onPress={pickFromGallery}>
+        <Pressable
+          style={styles.galleryButton}
+          onPress={pickFromGallery}
+          accessibilityLabel="Pick from gallery"
+        >
           <Feather name="image" size={24} color="#FFFFFF" />
         </Pressable>
 
@@ -609,7 +633,11 @@ export default function FoodCameraScreen() {
           <View style={styles.captureInner} />
         </Pressable>
 
-        <Pressable style={styles.closeButtonControl} onPress={handleClose}>
+        <Pressable
+          style={styles.closeButtonControl}
+          onPress={handleClose}
+          accessibilityLabel="Close camera"
+        >
           <Feather name="x" size={24} color="#FFFFFF" />
         </Pressable>
       </View>

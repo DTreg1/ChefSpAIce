@@ -46,6 +46,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
     <ThemedView style={styles.container}>
       {__DEV__ ? (
         <Pressable
+          accessibilityLabel="View error details"
           onPress={() => setIsModalVisible(true)}
           style={({ pressed }) => [
             styles.topButton,
@@ -102,6 +103,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                   Error Details
                 </ThemedText>
                 <Pressable
+                  accessibilityLabel="Close error details"
                   onPress={() => setIsModalVisible(false)}
                   style={({ pressed }) => [
                     styles.closeButton,

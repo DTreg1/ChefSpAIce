@@ -468,6 +468,7 @@ export default function AuthScreen() {
                 data-testid="input-password"
               />
               <Pressable
+                accessibilityLabel="Toggle password visibility"
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.authEyeButton}
                 {...webAccessibilityProps(() => setShowPassword(!showPassword))}

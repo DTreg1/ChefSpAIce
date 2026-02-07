@@ -605,6 +605,7 @@ export function ImageAnalysisResult({
         <Pressable
           style={[styles.addMissingButton, { borderColor: theme.border }]}
           onPress={addMissingItem}
+          accessibilityLabel="Add missing item"
         >
           <View
             style={[

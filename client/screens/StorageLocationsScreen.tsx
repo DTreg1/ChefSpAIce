@@ -259,6 +259,7 @@ export default function StorageLocationsScreen() {
                     onPress={() =>
                       handleRemoveLocation(location.key, location.label)
                     }
+                    accessibilityLabel="Remove location"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <Feather name="trash-2" size={18} color={AppColors.error} />

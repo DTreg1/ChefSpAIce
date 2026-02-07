@@ -103,6 +103,7 @@ export function PricingCard({
               onPress={onDownloadAndroid}
               {...webAccessibilityProps(onDownloadAndroid)}
               data-testid={`button-download-android-${testId}`}
+              accessibilityLabel="Download on Google Play"
             >
               <MaterialCommunityIcons
                 name="google-play"

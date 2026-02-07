@@ -654,6 +654,7 @@ function EditModal({
         <View style={styles.modalHeader}>
           <ThemedText type="h3">Edit Item</ThemedText>
           <Pressable
+            accessibilityLabel="Close"
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >

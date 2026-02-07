@@ -128,6 +128,7 @@ export function NutritionSection({
                 { backgroundColor: theme.backgroundSecondary },
               ]}
               onPress={() => adjustServing(-1)}
+              accessibilityLabel="Decrease serving"
             >
               <Feather name="minus" size={18} color={theme.text} />
             </Pressable>
@@ -140,6 +141,7 @@ export function NutritionSection({
                 { backgroundColor: theme.backgroundSecondary },
               ]}
               onPress={() => adjustServing(1)}
+              accessibilityLabel="Increase serving"
             >
               <Feather name="plus" size={18} color={theme.text} />
             </Pressable>

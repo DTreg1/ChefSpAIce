@@ -411,11 +411,19 @@ export default function IngredientScannerScreen() {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.resultsHeader}>
-          <Pressable onPress={handleRetake} style={styles.headerButton}>
+          <Pressable
+            onPress={handleRetake}
+            style={styles.headerButton}
+            accessibilityLabel="Retake photo"
+          >
             <Feather name="arrow-left" size={24} color={theme.text} />
           </Pressable>
           <ThemedText type="h3">Scan Results</ThemedText>
-          <Pressable onPress={handleClose} style={styles.headerButton}>
+          <Pressable
+            onPress={handleClose}
+            style={styles.headerButton}
+            accessibilityLabel="Close scanner"
+          >
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
         </View>
@@ -538,7 +546,11 @@ export default function IngredientScannerScreen() {
         <CameraView ref={cameraRef} style={styles.camera} facing="back">
           <View style={[styles.overlay, { paddingTop: insets.top }]}>
             <View style={styles.header}>
-              <Pressable onPress={handleClose} style={styles.closeButton}>
+              <Pressable
+                onPress={handleClose}
+                style={styles.closeButton}
+                accessibilityLabel="Close scanner"
+              >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
             </View>

@@ -230,6 +230,7 @@ export function ExpoGlassHeader({
                   <Pressable
                     style={styles.searchCloseButton}
                     onPress={handleCloseSearch}
+                    accessibilityLabel="Close search"
                   >
                     <Feather
                       name="arrow-left"
@@ -258,6 +259,7 @@ export function ExpoGlassHeader({
                     <Pressable
                       style={styles.searchClearButton}
                       onPress={handleClearSearch}
+                      accessibilityLabel="Clear search"
                     >
                       <Feather name="x" size={18} color={secondaryColor} />
                     </Pressable>

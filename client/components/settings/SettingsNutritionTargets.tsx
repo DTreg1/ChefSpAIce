@@ -60,6 +60,7 @@ export function SettingsNutritionTargets({
                   styles.macroButton,
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
+                accessibilityLabel="Decrease macro target"
               >
                 <Feather name="minus" size={16} color={theme.text} />
               </Pressable>
@@ -82,6 +83,7 @@ export function SettingsNutritionTargets({
                   styles.macroButton,
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
+                accessibilityLabel="Increase macro target"
               >
                 <Feather name="plus" size={16} color={theme.text} />
               </Pressable>

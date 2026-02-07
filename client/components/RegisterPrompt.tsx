@@ -122,6 +122,7 @@ export function RegisterPrompt({
             style={styles.dismissButton}
             hitSlop={12}
             data-testid="button-dismiss-register-prompt"
+            accessibilityLabel="Dismiss prompt"
           >
             <Feather name="x" size={18} color={theme.textSecondary} />
           </Pressable>
@@ -225,6 +226,7 @@ export function RegisterPrompt({
           style={styles.bannerDismiss}
           hitSlop={8}
           data-testid="button-dismiss-banner"
+          accessibilityLabel="Dismiss prompt"
         >
           <Feather name="x" size={16} color={theme.textSecondary} />
         </Pressable>

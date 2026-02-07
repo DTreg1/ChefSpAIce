@@ -336,7 +336,7 @@ export default function FoodSearchScreen() {
             autoFocus
           />
           {searchQuery.length > 0 ? (
-            <Pressable onPress={() => setSearchQuery("")}>
+            <Pressable onPress={() => setSearchQuery("")} accessibilityLabel="Clear search">
               <Feather name="x" size={20} color={theme.textSecondary} />
             </Pressable>
           ) : null}
