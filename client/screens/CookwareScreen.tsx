@@ -671,6 +671,8 @@ export default function CookwareScreen() {
             keyExtractor={(item) => item.key}
             renderItem={renderGroupedSection}
             ListEmptyComponent={renderEmptyState}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
             refreshControl={
               <RefreshControl
                 refreshing={false}

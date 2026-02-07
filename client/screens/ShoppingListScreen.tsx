@@ -27,6 +27,15 @@ import { useInstacart } from "@/hooks/useInstacart";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, ShoppingListItem } from "@/lib/storage";
 
+const ITEM_HEIGHT = 80;
+const SEPARATOR_HEIGHT = Spacing.sm;
+
+const getItemLayout = (_data: any, index: number) => ({
+  length: ITEM_HEIGHT,
+  offset: (ITEM_HEIGHT + SEPARATOR_HEIGHT) * index,
+  index,
+});
+
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -238,6 +247,9 @@ export default function ShoppingListScreen() {
             </View>
           ) : null
         }
+        getItemLayout={getItemLayout}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshControl={
           <RefreshControl

@@ -369,6 +369,8 @@ export default function FoodSearchScreen() {
           styles.listContent,
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />

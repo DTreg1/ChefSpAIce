@@ -491,6 +491,8 @@ export default function RecipesScreen() {
         data={filteredRecipes}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
         renderItem={renderRecipeCard}
         ListHeaderComponent={
           <View style={styles.searchSection}>

@@ -41,6 +41,15 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: AppColors.error,
 };
 
+const TERM_ITEM_HEIGHT = 100;
+const TERM_GAP = Spacing.md;
+
+const getTermItemLayout = (_data: any, index: number) => ({
+  length: TERM_ITEM_HEIGHT,
+  offset: (TERM_ITEM_HEIGHT + TERM_GAP) * index,
+  index,
+});
+
 export default function CookingTermsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -242,6 +251,9 @@ export default function CookingTermsScreen() {
           styles.list,
           { paddingBottom: tabBarHeight + Spacing.xl },
         ]}
+        getItemLayout={getTermItemLayout}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />

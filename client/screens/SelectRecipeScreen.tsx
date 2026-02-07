@@ -232,6 +232,8 @@ export default function SelectRecipeScreen() {
               styles.listContent,
               { paddingBottom: insets.bottom + Spacing.xl },
             ]}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
             showsVerticalScrollIndicator={false}
           />
         )}

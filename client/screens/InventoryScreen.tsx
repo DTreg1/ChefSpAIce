@@ -468,6 +468,8 @@ export default function InventoryScreen() {
         ListHeaderComponent={renderListHeader}
         ListFooterComponent={renderListFooter}
         ListEmptyComponent={renderEmptyState}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
