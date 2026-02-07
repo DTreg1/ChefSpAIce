@@ -87,11 +87,11 @@ export default function InventoryScreen() {
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
 
-  const { isTrialing, daysRemaining } = useTrialStatus();
-  const { isActive: hasActiveSubscription, isTrialing: serverTrialing } = useSubscription();
+  const { isTrialing: localTrialing, daysRemaining: localDaysRemaining } = useTrialStatus();
+  const { isActive: hasActiveSubscription, isTrialing: serverTrialing, trialDaysRemaining: serverDaysRemaining } = useSubscription();
 
-  const showTrialing = isTrialing || serverTrialing;
-  const effectiveDaysRemaining = daysRemaining;
+  const showTrialing = localTrialing || serverTrialing;
+  const effectiveDaysRemaining = serverTrialing && serverDaysRemaining !== null ? serverDaysRemaining : localDaysRemaining;
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
   const [expiringModalDismissed, setExpiringModalDismissed] = useState(false);
@@ -100,7 +100,7 @@ export default function InventoryScreen() {
     const checkMilestone = async () => {
       if (!showTrialing || hasActiveSubscription) return;
 
-      if (effectiveDaysRemaining <= 1 && effectiveDaysRemaining > 0 && !expiringModalDismissed) {
+      if (effectiveDaysRemaining === 1 && !expiringModalDismissed) {
         const dismissed = await AsyncStorage.getItem("@trial_expiring_modal_dismissed");
         if (!dismissed) {
           setShowExpiringModal(true);
@@ -118,7 +118,7 @@ export default function InventoryScreen() {
     await AsyncStorage.setItem("@trial_expiring_modal_dismissed", "true");
   };
 
-  const showMilestoneBanner = showTrialing && !hasActiveSubscription && effectiveDaysRemaining <= 3 && effectiveDaysRemaining > 0;
+  const showMilestoneBanner = showTrialing && !hasActiveSubscription && effectiveDaysRemaining <= 3 && effectiveDaysRemaining > 1;
 
   const loadItems = useCallback(async (isInitialLoad = false) => {
     try {

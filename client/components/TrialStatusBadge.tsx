@@ -35,16 +35,19 @@ export function TrialStatusBadge({
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAuthenticated } = useAuth();
-  const { isActive: hasActiveSubscription, isLoading: subscriptionLoading } =
+  const { isActive: hasActiveSubscription, isLoading: subscriptionLoading, isTrialing: serverTrialing, trialDaysRemaining: serverDaysRemaining } =
     useSubscription();
-  const { isTrialing, daysRemaining, isExpired, isLoading, isGuestTrial } =
+  const { isTrialing: localTrialing, daysRemaining: localDaysRemaining, isExpired, isLoading, isGuestTrial } =
     useTrialStatus();
+
+  const isTrialing = localTrialing || serverTrialing;
+  const daysRemaining = serverTrialing && serverDaysRemaining !== null ? serverDaysRemaining : localDaysRemaining;
 
   if (isLoading || subscriptionLoading) {
     return null;
   }
 
-  if (hasActiveSubscription && !isGuestTrial) {
+  if (hasActiveSubscription && !isTrialing && !isGuestTrial) {
     return null;
   }
 
