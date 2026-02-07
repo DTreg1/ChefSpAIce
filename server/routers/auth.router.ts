@@ -185,6 +185,8 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
     await db.insert(userSessions).values({
       userId: newUser.id,
       token: hashedToken,
+      userAgent: req.headers["user-agent"] || "unknown",
+      ipAddress: req.ip || "unknown",
       expiresAt,
     });
 
@@ -280,6 +282,8 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     await db.insert(userSessions).values({
       userId: user.id,
       token: hashedToken,
+      userAgent: req.headers["user-agent"] || "unknown",
+      ipAddress: req.ip || "unknown",
       expiresAt,
     });
 
@@ -423,6 +427,105 @@ router.get("/restore-session", async (req: Request, res: Response, next: NextFun
       token: cookieToken,
       csrfToken,
     }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/sessions", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId!;
+    const now = new Date();
+
+    const sessions = await db
+      .select({
+        id: userSessions.id,
+        userAgent: userSessions.userAgent,
+        ipAddress: userSessions.ipAddress,
+        createdAt: userSessions.createdAt,
+        expiresAt: userSessions.expiresAt,
+        token: userSessions.token,
+      })
+      .from(userSessions)
+      .where(eq(userSessions.userId, userId))
+      .orderBy(userSessions.createdAt);
+
+    const currentToken = req.headers.authorization?.substring(7);
+    const currentHashedToken = currentToken ? hashToken(currentToken) : null;
+
+    const activeSessions = sessions
+      .filter((s) => new Date(s.expiresAt) > now)
+      .map((s) => ({
+        id: s.id,
+        userAgent: s.userAgent || "Unknown device",
+        ipAddress: s.ipAddress || "Unknown",
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        isCurrent: s.token === currentHashedToken,
+      }));
+
+    res.json(successResponse({ sessions: activeSessions }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/sessions/:sessionId", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId!;
+    const { sessionId } = req.params;
+
+    const [session] = await db
+      .select({ id: userSessions.id, userId: userSessions.userId, token: userSessions.token })
+      .from(userSessions)
+      .where(and(
+        eq(userSessions.id, sessionId),
+        eq(userSessions.userId, userId),
+      ))
+      .limit(1);
+
+    if (!session) {
+      throw AppError.notFound("Session not found", "SESSION_NOT_FOUND");
+    }
+
+    const currentToken = req.headers.authorization?.substring(7);
+    const currentHashedToken = currentToken ? hashToken(currentToken) : null;
+    if (session.token === currentHashedToken) {
+      throw AppError.badRequest("Cannot revoke your current session", "CANNOT_REVOKE_CURRENT");
+    }
+
+    await db.delete(userSessions).where(eq(userSessions.id, sessionId));
+
+    res.json(successResponse({ message: "Session revoked successfully" }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/sessions", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId!;
+    const currentToken = req.headers.authorization?.substring(7);
+    const currentHashedToken = currentToken ? hashToken(currentToken) : null;
+
+    if (!currentHashedToken) {
+      throw AppError.badRequest("Unable to identify current session", "NO_CURRENT_SESSION");
+    }
+
+    const allSessions = await db
+      .select({ id: userSessions.id, token: userSessions.token })
+      .from(userSessions)
+      .where(eq(userSessions.userId, userId));
+
+    const otherSessionIds = allSessions
+      .filter((s) => s.token !== currentHashedToken)
+      .map((s) => s.id);
+
+    if (otherSessionIds.length > 0) {
+      await db.delete(userSessions).where(inArray(userSessions.id, otherSessionIds));
+    }
+
+    res.json(successResponse({ message: `Revoked ${otherSessionIds.length} other session(s)` }));
   } catch (error) {
     next(error);
   }

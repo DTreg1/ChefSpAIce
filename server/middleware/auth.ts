@@ -4,6 +4,7 @@ import { db } from "../db";
 import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
+import { logger } from "../lib/logger";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -57,6 +58,17 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     if (new Date(session.expiresAt) < new Date()) {
       await db.delete(userSessions).where(eq(userSessions.token, hashedToken));
       return next(AppError.unauthorized("Session expired", "SESSION_EXPIRED"));
+    }
+
+    const currentUserAgent = req.headers["user-agent"] || "unknown";
+    if (session.userAgent && session.userAgent !== "unknown" && session.userAgent !== currentUserAgent) {
+      logger.warn("Session user-agent mismatch detected", {
+        sessionId: session.id,
+        userId: session.userId,
+        storedAgent: session.userAgent?.substring(0, 80),
+        currentAgent: currentUserAgent.substring(0, 80),
+        ip: req.ip,
+      });
     }
 
     req.userId = session.userId;

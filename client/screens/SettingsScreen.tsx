@@ -95,6 +95,7 @@ import { SettingsStoragePrefs } from "@/components/settings/SettingsStoragePrefs
 import { SettingsReferral } from "@/components/settings/SettingsReferral";
 import { SettingsAccountData } from "@/components/settings/SettingsAccountData";
 import { SettingsRecentlyDeleted } from "@/components/settings/SettingsRecentlyDeleted";
+import { SettingsActiveSessions } from "@/components/settings/SettingsActiveSessions";
 import { SettingsFooter } from "@/components/settings/SettingsFooter";
 import { SettingsImportDialog } from "@/components/settings/SettingsImportDialog";
 
@@ -832,6 +833,10 @@ export default function SettingsScreen() {
 
         {isAuthenticated ? (
           <SettingsBiometric biometric={biometric} theme={theme} />
+        ) : null}
+
+        {isAuthenticated ? (
+          <SettingsActiveSessions theme={theme} />
         ) : null}
 
         <SettingsNotifications
