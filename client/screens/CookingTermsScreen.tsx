@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -173,18 +174,11 @@ export default function CookingTermsScreen() {
     }
 
     return (
-      <View style={styles.emptyState}>
-        <Feather name="search" size={48} color={theme.textSecondary} />
-        <ThemedText type="h4" style={styles.emptyTitle}>
-          No terms found
-        </ThemedText>
-        <ThemedText
-          type="body"
-          style={[styles.emptyText, { color: theme.textSecondary }]}
-        >
-          Try adjusting your search or filter
-        </ThemedText>
-      </View>
+      <EmptyState
+        icon="search"
+        title="No Terms Found"
+        description="Try adjusting your search or filter."
+      />
     );
   }, [isLoading, theme]);
 

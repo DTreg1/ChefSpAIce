@@ -33,6 +33,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
+import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
@@ -225,22 +226,13 @@ function ReceiptResultsView({
             </GlassButton>
           </View>
         ) : result.items.length === 0 ? (
-          <View style={styles.errorContainer}>
-            <Feather
-              name="shopping-bag"
-              size={48}
-              color={theme.textSecondary}
-            />
-            <ThemedText
-              type="body"
-              style={[styles.errorText, { color: theme.textSecondary }]}
-            >
-              No food items found on this receipt
-            </ThemedText>
-            <GlassButton onPress={onRetake} style={styles.retryButton}>
-              Try Another Receipt
-            </GlassButton>
-          </View>
+          <EmptyState
+            icon="shopping-bag"
+            title="No Items Found"
+            description="No food items were detected on this receipt."
+            actionLabel="Try Another Receipt"
+            onAction={onRetake}
+          />
         ) : (
           <>
             <View style={styles.summaryCard}>

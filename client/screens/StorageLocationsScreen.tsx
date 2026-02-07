@@ -20,6 +20,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -275,15 +276,13 @@ export default function StorageLocationsScreen() {
             ))}
           </GlassCard>
         ) : (
-          <GlassCard style={styles.emptyCard}>
-            <Feather name="inbox" size={40} color={theme.textSecondary} />
-            <ThemedText
-              type="body"
-              style={{ color: theme.textSecondary, marginTop: Spacing.md }}
-            >
-              No custom locations yet
-            </ThemedText>
-          </GlassCard>
+          <EmptyState
+            icon="inbox"
+            title="No Custom Locations"
+            description="Add a custom storage location to organize your pantry."
+            actionLabel={canCustomize ? "Add Location" : undefined}
+            onAction={canCustomize ? () => setIsAdding(true) : undefined}
+          />
         )}
 
         {canCustomize ? (

@@ -28,6 +28,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -615,15 +616,11 @@ export default function CookwareScreen() {
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Feather name="search" size={48} color={theme.textSecondary} />
-      <ThemedText type="body" style={{ color: theme.textSecondary }}>
-        No cookware found
-      </ThemedText>
-      <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-        Try adjusting your search or filters
-      </ThemedText>
-    </View>
+    <EmptyState
+      icon="search"
+      title="No Cookware Found"
+      description="Try adjusting your search or filters."
+    />
   );
 
   if (loading) {

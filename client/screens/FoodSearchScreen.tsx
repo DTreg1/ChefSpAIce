@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -277,35 +278,21 @@ export default function FoodSearchScreen() {
 
     if (searched && results.length === 0) {
       return (
-        <View style={styles.emptyState}>
-          <Feather name="search" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={styles.emptyText}>
-            No foods found for "{searchQuery}"
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center" }}
-          >
-            Try a different search term or check spelling
-          </ThemedText>
-        </View>
+        <EmptyState
+          icon="search"
+          title={`No Foods Found`}
+          description={`No results for "${searchQuery}". Try a different search term or check spelling.`}
+        />
       );
     }
 
     if (!searched) {
       return (
-        <View style={styles.emptyState}>
-          <Feather name="search" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={styles.emptyText}>
-            Search Food Databases
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center" }}
-          >
-            Find nutrition info from USDA and Open Food Facts
-          </ThemedText>
-        </View>
+        <EmptyState
+          icon="search"
+          title="Search Food Databases"
+          description="Find nutrition info from USDA and Open Food Facts."
+        />
       );
     }
 
