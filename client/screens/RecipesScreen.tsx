@@ -40,6 +40,7 @@ import {
   RefreshControl,
   Dimensions,
   Modal,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -268,6 +269,8 @@ export default function RecipesScreen() {
         entering={FadeIn.delay(index * 50)}
         style={styles.cardWrapper}
         data-testid={`card-recipe-${recipe.id}`}
+        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+        accessibilityLabel={`${recipe.title}, ${getMatchPercentage(recipe)}% ingredient match`}
       >
         <GlassCard
           style={styles.recipeCard}

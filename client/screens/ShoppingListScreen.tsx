@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -123,6 +124,8 @@ export default function ShoppingListScreen() {
       entering={FadeIn}
       exiting={FadeOut}
       layout={Layout.springify()}
+      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+      accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}${item.isChecked ? ', checked' : ''}`}
     >
       <GlassCard>
         <Pressable

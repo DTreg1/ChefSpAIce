@@ -427,10 +427,11 @@ export default function MealPlanScreen() {
             {format(selectedDay, "EEEE, MMMM d")}
           </ThemedText>
 
+          <View accessibilityRole="list" accessibilityLabel="Meal slots for selected day">
           {mealSlots.map((slot) => {
             const recipe = getMealForDay(selectedDay, slot.id);
             return (
-              <View key={slot.id} style={styles.mealSlot}>
+              <View key={slot.id} style={styles.mealSlot} {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})} accessibilityLabel={`${slot.name}${recipe ? `, ${recipe.title}` : ', empty'}`}>
                 <View style={styles.mealHeader}>
                   <Feather
                     name={slot.icon}
@@ -510,6 +511,7 @@ export default function MealPlanScreen() {
               </View>
             );
           })}
+          </View>
         </GlassCard>
         )}
 

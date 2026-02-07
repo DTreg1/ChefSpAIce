@@ -759,6 +759,8 @@ export default function InventoryScreen() {
         entering={FadeIn}
         exiting={FadeOut}
         style={styles.swipeContainer}
+        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+        accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}, expires ${formatDate(item.expirationDate)}`}
       >
         <Pressable
           style={styles.consumedAction}
@@ -904,6 +906,8 @@ export default function InventoryScreen() {
       <GlassCard
         style={styles.groupCard}
         contentStyle={styles.groupCardContent}
+        {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+        accessibilityLabel={`${section.title} group, ${section.itemCount} items`}
       >
         <Pressable
           style={styles.sectionHeader}
