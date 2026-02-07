@@ -36,16 +36,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { logger } from "@/lib/logger";
 
-const PRO_FEATURES = [
-  { key: "pantryItems", name: "Pantry Items", free: "10", basic: "25", pro: "Unlimited" },
-  { key: "aiRecipes", name: "AI Recipes/Month", free: "2", basic: "5", pro: "Unlimited" },
-  { key: "cookware", name: "Cookware Items", free: "3", basic: "5", pro: "Unlimited" },
-  { key: "recipeScanning", name: "Recipe Scanning", free: false, basic: false, pro: true },
-  { key: "bulkScanning", name: "Bulk Scanning", free: false, basic: false, pro: true },
-  { key: "aiAssistant", name: "Live AI Kitchen Assistant", free: false, basic: false, pro: true },
-  { key: "customStorage", name: "Custom Storage Areas", free: false, basic: false, pro: true },
-  { key: "weeklyMealPrep", name: "Weekly Meal Prepping", free: false, basic: false, pro: true },
-];
+import { CurrentPlanCard } from "@/components/subscription/CurrentPlanCard";
+import { FeatureComparisonTable, PRO_FEATURES } from "@/components/subscription/FeatureComparisonTable";
+import { PlanToggle } from "@/components/subscription/PlanToggle";
+import { TierSelector } from "@/components/subscription/TierSelector";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SubscriptionRouteProp = RouteProp<RootStackParamList, "Subscription">;
@@ -71,21 +65,17 @@ export default function SubscriptionScreen() {
     refetch,
   } = useSubscription();
 
-  // Check if this is a blocking subscription gate (trial/subscription expired)
-  // Block when: routed with expired reason, trial is expired, or subscription is inactive (but user is authenticated)
   const reason = route.params?.reason;
   const subscriptionInactive = !isActive && !isLoading && isAuthenticated;
   const isBlocking =
     reason === "expired" || isTrialExpired || subscriptionInactive;
 
-  // Block hardware back button when subscription is required
   useEffect(() => {
     if (!isBlocking) return;
 
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        // Prevent going back when subscription is required
         return true;
       },
     );
@@ -224,14 +214,10 @@ export default function SubscriptionScreen() {
           return;
         }
 
-        // Build tier-specific package identifier
-        // RevenueCat packages should be named: basic_monthly, basic_annual, pro_monthly, pro_annual
         const expectedPackageId = `${tier}_${plan}`;
 
-        // Find package that matches the specific tier and plan - NO FALLBACK to prevent wrong tier purchase
         const pkg = offerings.availablePackages.find((p) => {
           const id = p.identifier.toLowerCase();
-          // Match tier-specific identifiers only
           return (
             id === expectedPackageId ||
             (id.includes(tier) && id.includes(plan)) ||
@@ -252,7 +238,6 @@ export default function SubscriptionScreen() {
         const success = await purchasePackage(pkg);
         if (success) {
           refetch();
-          // Show different message for unauthenticated users (Apple 5.1.1 compliance)
           if (!isAuthenticated) {
             Alert.alert(
               "Subscription Active!",
@@ -283,7 +268,6 @@ export default function SubscriptionScreen() {
         );
         const prices = (await pricesResponse.json()).data as any;
 
-        // Get price ID based on tier and plan - require exact match, no fallback
         const priceKey =
           tier === "pro"
             ? plan === "monthly"
@@ -434,85 +418,15 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        <GlassCard style={styles.planCard}>
-          <View style={styles.sectionHeader}>
-            <Feather
-              name="credit-card"
-              size={20}
-              color={theme.textSecondaryOnGlass}
-            />
-            <ThemedText
-              style={[
-                styles.sectionTitle,
-                { color: theme.textSecondaryOnGlass },
-              ]}
-            >
-              Current Plan
-            </ThemedText>
-          </View>
-          <View style={styles.planHeader}>
-            <View style={styles.planInfo}>
-              <View style={styles.planBadge}>
-                <Feather
-                  name={isProUser ? "star" : tier === SubscriptionTier.BASIC ? "user" : "gift"}
-                  size={20}
-                  color={isProUser ? AppColors.warning : AppColors.primary}
-                />
-              </View>
-              <View>
-                <ThemedText style={styles.planName}>{getPlanName()}</ThemedText>
-                <ThemedText
-                  style={[styles.planPrice, { color: theme.textSecondary }]}
-                >
-                  {getMonthlyPrice()}
-                </ThemedText>
-              </View>
-            </View>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: `${statusInfo.color}20` },
-              ]}
-            >
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: statusInfo.color },
-                ]}
-              />
-              <ThemedText
-                style={[styles.statusText, { color: statusInfo.color }]}
-              >
-                {statusInfo.label}
-              </ThemedText>
-            </View>
-          </View>
-
-          {isTrialing && trialDaysRemaining !== null && (
-            <View
-              style={[
-                styles.trialBanner,
-                { backgroundColor: `${AppColors.warning}15` },
-              ]}
-            >
-              <Feather name="clock" size={16} color={AppColors.warning} />
-              <View style={styles.trialTextContainer}>
-                <ThemedText
-                  style={[styles.trialTitle, { color: AppColors.warning }]}
-                >
-                  Trial expires in {trialDaysRemaining} day
-                  {trialDaysRemaining !== 1 ? "s" : ""}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.trialSubtitle, { color: theme.textSecondary }]}
-                >
-                  Choose a plan below to continue using ChefSpAIce after your
-                  trial.
-                </ThemedText>
-              </View>
-            </View>
-          )}
-        </GlassCard>
+        <CurrentPlanCard
+          planName={getPlanName()}
+          monthlyPrice={getMonthlyPrice()}
+          isProUser={isProUser}
+          tier={tier}
+          statusInfo={statusInfo}
+          isTrialing={isTrialing}
+          trialDaysRemaining={trialDaysRemaining}
+        />
 
         <GlassCard style={styles.usageCard}>
           <View style={styles.sectionHeader}>
@@ -602,134 +516,11 @@ export default function SubscriptionScreen() {
           </View>
         </GlassCard>
 
-        <GlassCard style={styles.featuresCard}>
-          <View style={styles.sectionHeader}>
-            <Feather
-              name="layers"
-              size={20}
-              color={theme.textSecondaryOnGlass}
-            />
-            <ThemedText
-              style={[
-                styles.sectionTitle,
-                { color: theme.textSecondaryOnGlass },
-              ]}
-            >
-              Feature Comparison
-            </ThemedText>
-          </View>
-          <View style={styles.comparisonHeader}>
-            <ThemedText style={[styles.featureLabel, { flex: 1 }]}>
-              Feature
-            </ThemedText>
-            <ThemedText
-              style={[styles.tierLabel, { color: theme.textSecondary }]}
-            >
-              Free
-            </ThemedText>
-            <ThemedText
-              style={[styles.tierLabel, { color: theme.textSecondary }]}
-            >
-              Basic
-            </ThemedText>
-            <ThemedText
-              style={[styles.tierLabel, { color: AppColors.warning }]}
-            >
-              Pro
-            </ThemedText>
-          </View>
+        <FeatureComparisonTable
+          features={PRO_FEATURES}
+          isProUser={isProUser}
+        />
 
-          {PRO_FEATURES.map((feature, index) => {
-            const isUpgradeHighlight = !isProUser && feature.pro === true;
-            return (
-              <View
-                key={feature.key}
-                style={[
-                  styles.featureRow,
-                  index === PRO_FEATURES.length - 1 && styles.featureRowLast,
-                  isUpgradeHighlight && {
-                    backgroundColor: `${AppColors.primary}08`,
-                  },
-                ]}
-              >
-                <ThemedText
-                  style={[
-                    styles.featureName,
-                    { color: theme.textSecondaryOnGlass },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {feature.name}
-                </ThemedText>
-                <View style={styles.tierValue}>
-                  {typeof feature.free === "boolean" ? (
-                    <Feather
-                      name={feature.free ? "check" : "x"}
-                      size={16}
-                      color={
-                        feature.free ? AppColors.success : theme.textSecondary
-                      }
-                    />
-                  ) : (
-                    <ThemedText
-                      style={[
-                        styles.tierValueText,
-                        { color: theme.textSecondary },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {feature.free}
-                    </ThemedText>
-                  )}
-                </View>
-                <View style={styles.tierValue}>
-                  {typeof feature.basic === "boolean" ? (
-                    <Feather
-                      name={feature.basic ? "check" : "x"}
-                      size={16}
-                      color={
-                        feature.basic ? AppColors.success : theme.textSecondary
-                      }
-                    />
-                  ) : (
-                    <ThemedText
-                      style={[
-                        styles.tierValueText,
-                        { color: theme.textSecondary },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {feature.basic}
-                    </ThemedText>
-                  )}
-                </View>
-                <View style={styles.tierValue}>
-                  {typeof feature.pro === "boolean" ? (
-                    <Feather
-                      name={feature.pro ? "check" : "x"}
-                      size={16}
-                      color={
-                        feature.pro ? AppColors.success : theme.textSecondary
-                      }
-                    />
-                  ) : (
-                    <ThemedText
-                      style={[
-                        styles.tierValueText,
-                        { color: AppColors.success },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {feature.pro}
-                    </ThemedText>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </GlassCard>
-
-        {/* Show purchase options for: unauthenticated users OR authenticated users without subscription */}
         {(!isAuthenticated || (!isProUser && !isTrialing)) && (
           <GlassCard style={styles.upgradeCard}>
             <View style={styles.upgradeHeader}>
@@ -756,242 +547,16 @@ export default function SubscriptionScreen() {
               Select the plan that works best for you.
             </ThemedText>
 
-            {/* Billing Period Toggle */}
-            <View style={styles.billingToggleContainer}>
-              <Pressable
-                style={[
-                  styles.billingToggleButton,
-                  selectedPlan === "monthly" &&
-                    styles.billingToggleButtonActive,
-                ]}
-                onPress={() => setSelectedPlan("monthly")}
-                data-testid="button-billing-monthly"
-                {...webAccessibilityProps(() => setSelectedPlan("monthly"))}
-              >
-                <ThemedText
-                  style={[
-                    styles.billingToggleText,
-                    selectedPlan === "monthly" &&
-                      styles.billingToggleTextActive,
-                  ]}
-                >
-                  Monthly
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.billingToggleButton,
-                  selectedPlan === "annual" && styles.billingToggleButtonActive,
-                ]}
-                onPress={() => setSelectedPlan("annual")}
-                data-testid="button-billing-annual"
-                {...webAccessibilityProps(() => setSelectedPlan("annual"))}
-              >
-                <ThemedText
-                  style={[
-                    styles.billingToggleText,
-                    selectedPlan === "annual" && styles.billingToggleTextActive,
-                  ]}
-                >
-                  Annual
-                </ThemedText>
-                <View style={styles.saveBadge}>
-                  <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-                </View>
-              </Pressable>
-            </View>
+            <PlanToggle
+              selectedPlan={selectedPlan}
+              onSelectPlan={setSelectedPlan}
+            />
 
-            {/* Tier Selection */}
-            <View style={styles.tierSelectionContainer}>
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "free"
-                        ? AppColors.success
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("free")}
-                data-testid="button-select-free"
-                {...webAccessibilityProps(() => setSelectedTier("free"))}
-              >
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Free</ThemedText>
-                  {selectedTier === "free" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.success },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.success }]}
-                >
-                  $0
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {" "}forever
-                  </ThemedText>
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  10 pantry items, 2 AI recipes/mo
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "basic"
-                        ? AppColors.primary
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("basic")}
-                data-testid="button-select-basic"
-                {...webAccessibilityProps(() => setSelectedTier("basic"))}
-              >
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Basic</ThemedText>
-                  {selectedTier === "basic" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.primary },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.primary }]}
-                >
-                  $
-                  {selectedPlan === "monthly"
-                    ? MONTHLY_PRICES.BASIC.toFixed(2)
-                    : ANNUAL_PRICES.BASIC.toFixed(2)}
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {selectedPlan === "monthly" ? "/month" : "/year"}
-                  </ThemedText>
-                </ThemedText>
-                {selectedPlan === "annual" && (
-                  <ThemedText
-                    style={[
-                      styles.tierCardMonthlyCalc,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    (${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo equivalent)
-                  </ThemedText>
-                )}
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  25 pantry items, 5 AI recipes/mo
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "pro"
-                        ? AppColors.warning
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("pro")}
-                data-testid="button-select-pro"
-                {...webAccessibilityProps(() => setSelectedTier("pro"))}
-              >
-                <View
-                  style={[
-                    styles.popularBadge,
-                    { backgroundColor: AppColors.warning },
-                  ]}
-                >
-                  <ThemedText style={styles.popularBadgeText}>
-                    Popular
-                  </ThemedText>
-                </View>
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Pro</ThemedText>
-                  {selectedTier === "pro" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.warning },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.warning }]}
-                >
-                  $
-                  {selectedPlan === "monthly"
-                    ? MONTHLY_PRICES.PRO.toFixed(2)
-                    : ANNUAL_PRICES.PRO.toFixed(2)}
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {selectedPlan === "monthly" ? "/month" : "/year"}
-                  </ThemedText>
-                </ThemedText>
-                {selectedPlan === "annual" && (
-                  <ThemedText
-                    style={[
-                      styles.tierCardMonthlyCalc,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    (${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo equivalent)
-                  </ThemedText>
-                )}
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  Unlimited everything
-                </ThemedText>
-              </Pressable>
-            </View>
+            <TierSelector
+              selectedTier={selectedTier}
+              onSelectTier={setSelectedTier}
+              selectedPlan={selectedPlan}
+            />
 
             <GlassButton
               onPress={() => {
@@ -1139,242 +704,18 @@ export default function SubscriptionScreen() {
               Your trial ends soon. Choose a plan to continue using ChefSpAIce.
             </ThemedText>
 
-            {/* Billing Period Toggle */}
-            <View style={styles.billingToggleContainer}>
-              <Pressable
-                style={[
-                  styles.billingToggleButton,
-                  selectedPlan === "monthly" &&
-                    styles.billingToggleButtonActive,
-                ]}
-                onPress={() => setSelectedPlan("monthly")}
-                data-testid="button-trial-billing-monthly"
-                {...webAccessibilityProps(() => setSelectedPlan("monthly"))}
-              >
-                <ThemedText
-                  style={[
-                    styles.billingToggleText,
-                    selectedPlan === "monthly" &&
-                      styles.billingToggleTextActive,
-                  ]}
-                >
-                  Monthly
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.billingToggleButton,
-                  selectedPlan === "annual" && styles.billingToggleButtonActive,
-                ]}
-                onPress={() => setSelectedPlan("annual")}
-                data-testid="button-trial-billing-annual"
-                {...webAccessibilityProps(() => setSelectedPlan("annual"))}
-              >
-                <ThemedText
-                  style={[
-                    styles.billingToggleText,
-                    selectedPlan === "annual" && styles.billingToggleTextActive,
-                  ]}
-                >
-                  Annual
-                </ThemedText>
-                <View style={styles.saveBadge}>
-                  <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
-                </View>
-              </Pressable>
-            </View>
+            <PlanToggle
+              selectedPlan={selectedPlan}
+              onSelectPlan={setSelectedPlan}
+              testIdPrefix="trial"
+            />
 
-            {/* Tier Selection */}
-            <View style={styles.tierSelectionContainer}>
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "free"
-                        ? AppColors.success
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("free")}
-                data-testid="button-trial-select-free"
-                {...webAccessibilityProps(() => setSelectedTier("free"))}
-              >
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Free</ThemedText>
-                  {selectedTier === "free" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.success },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.success }]}
-                >
-                  $0
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {" "}forever
-                  </ThemedText>
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  10 pantry items, 2 AI recipes/mo
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "basic"
-                        ? AppColors.primary
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("basic")}
-                data-testid="button-trial-select-basic"
-                {...webAccessibilityProps(() => setSelectedTier("basic"))}
-              >
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Basic</ThemedText>
-                  {selectedTier === "basic" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.primary },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.primary }]}
-                >
-                  $
-                  {selectedPlan === "monthly"
-                    ? MONTHLY_PRICES.BASIC.toFixed(2)
-                    : ANNUAL_PRICES.BASIC.toFixed(2)}
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {selectedPlan === "monthly" ? "/month" : "/year"}
-                  </ThemedText>
-                </ThemedText>
-                {selectedPlan === "annual" && (
-                  <ThemedText
-                    style={[
-                      styles.tierCardMonthlyCalc,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    (${(ANNUAL_PRICES.BASIC / 12).toFixed(2)}/mo equivalent)
-                  </ThemedText>
-                )}
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  25 pantry items, 5 AI recipes/mo
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor:
-                      selectedTier === "pro"
-                        ? AppColors.warning
-                        : theme.glass.border,
-                  },
-                ]}
-                onPress={() => setSelectedTier("pro")}
-                data-testid="button-trial-select-pro"
-                {...webAccessibilityProps(() => setSelectedTier("pro"))}
-              >
-                <View
-                  style={[
-                    styles.popularBadge,
-                    { backgroundColor: AppColors.warning },
-                  ]}
-                >
-                  <ThemedText style={styles.popularBadgeText}>
-                    Popular
-                  </ThemedText>
-                </View>
-                <View style={styles.tierCardHeader}>
-                  <ThemedText style={styles.tierCardName}>Pro</ThemedText>
-                  {selectedTier === "pro" && (
-                    <View
-                      style={[
-                        styles.tierSelectedBadge,
-                        { backgroundColor: AppColors.warning },
-                      ]}
-                    >
-                      <Feather name="check" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <ThemedText
-                  style={[styles.tierCardPrice, { color: AppColors.warning }]}
-                >
-                  $
-                  {selectedPlan === "monthly"
-                    ? MONTHLY_PRICES.PRO.toFixed(2)
-                    : ANNUAL_PRICES.PRO.toFixed(2)}
-                  <ThemedText
-                    style={[
-                      styles.tierCardInterval,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {selectedPlan === "monthly" ? "/month" : "/year"}
-                  </ThemedText>
-                </ThemedText>
-                {selectedPlan === "annual" && (
-                  <ThemedText
-                    style={[
-                      styles.tierCardMonthlyCalc,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    (${(ANNUAL_PRICES.PRO / 12).toFixed(2)}/mo equivalent)
-                  </ThemedText>
-                )}
-                <ThemedText
-                  style={[
-                    styles.tierCardFeature,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  Unlimited everything
-                </ThemedText>
-              </Pressable>
-            </View>
+            <TierSelector
+              selectedTier={selectedTier}
+              onSelectTier={setSelectedTier}
+              selectedPlan={selectedPlan}
+              testIdPrefix="trial"
+            />
 
             <GlassButton
               onPress={() => {
@@ -1493,7 +834,6 @@ export default function SubscriptionScreen() {
           </Pressable>
         )}
 
-        {/* Continue to App option for unauthenticated users with active subscription (Apple 5.1.1 compliance) */}
         {!isAuthenticated && isActive && (
           <GlassCard style={styles.successCard}>
             <View style={styles.sectionHeader}>
@@ -1527,7 +867,6 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        {/* Optional account creation for unauthenticated users (Apple 5.1.1 compliance) */}
         {!isAuthenticated && (
           <GlassCard style={styles.signInCard}>
             <View style={styles.sectionHeader}>
@@ -1592,63 +931,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
   },
-  planCard: {
-    padding: Spacing.lg,
-  },
-  planHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  planInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  planBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.md,
-    backgroundColor: `${AppColors.primary}15`,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  planName: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  planPrice: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.pill,
-    gap: 6,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  trialBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.md,
-    gap: Spacing.sm,
-  },
-  trialTextContainer: {
-    flex: 1,
-  },
   blockingBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1658,15 +940,6 @@ const styles = StyleSheet.create({
   },
   blockingTextContainer: {
     flex: 1,
-  },
-  trialTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  trialSubtitle: {
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 18,
   },
   usageCard: {
     padding: Spacing.lg,
@@ -1707,56 +980,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  featuresCard: {
-    padding: Spacing.lg,
-  },
-  comparisonHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingBottom: Spacing.sm,
-    marginBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  featureLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  tierLabel: {
-    width: 60,
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    marginHorizontal: -Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-  },
-  featureRowLast: {
-    borderBottomWidth: 0,
-  },
-  featureName: {
-    flex: 1,
-    fontSize: 14,
-  },
-  tierValue: {
-    width: 70,
-    alignItems: "center",
-  },
-  tierValueText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   upgradeCard: {
     padding: Spacing.lg,
   },
@@ -1774,51 +997,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: Spacing.lg,
-  },
-  pricingOptions: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  priceOption: {
-    flex: 1,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
-    alignItems: "center",
-  },
-  priceOptionHighlight: {
-    borderColor: AppColors.primary,
-    borderWidth: 2,
-    position: "relative",
-  },
-  savingsBadge: {
-    position: "absolute",
-    top: -10,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.pill,
-  },
-  savingsText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  priceLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  priceAmount: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  priceFrequency: {
-    fontSize: 11,
-    marginTop: 2,
-    textAlign: "center",
   },
   upgradeButton: {
     marginTop: Spacing.sm,
@@ -1853,106 +1031,6 @@ const styles = StyleSheet.create({
   refreshText: {
     fontSize: 14,
   },
-  tierSelectionContainer: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  tierCard: {
-    flex: 1,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 2,
-    position: "relative",
-  },
-  tierCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.xs,
-  },
-  tierCardName: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  tierSelectedBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tierCardPrice: {
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  tierCardInterval: {
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  tierCardMonthlyCalc: {
-    fontSize: 9,
-    fontWeight: "400",
-    marginTop: 4,
-    opacity: 0.5,
-  },
-  tierCardFeature: {
-    fontSize: 11,
-    marginTop: Spacing.xs,
-  },
-  popularBadge: {
-    position: "absolute",
-    top: -10,
-    right: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.pill,
-  },
-  popularBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  billingToggleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.md,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: 24,
-    padding: 4,
-  },
-  billingToggleButton: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  billingToggleButtonActive: {
-    backgroundColor: AppColors.primary,
-  },
-  billingToggleText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-  },
-  billingToggleTextActive: {
-    color: "#FFFFFF",
-  },
-  saveBadge: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  saveBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
   successCard: {
     padding: Spacing.lg,
     marginTop: Spacing.sm,
@@ -1968,16 +1046,6 @@ const styles = StyleSheet.create({
   signInCard: {
     padding: Spacing.lg,
     marginTop: Spacing.sm,
-  },
-  signInHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  signInTitle: {
-    fontSize: 18,
-    fontWeight: "600",
   },
   signInDescription: {
     fontSize: 14,
