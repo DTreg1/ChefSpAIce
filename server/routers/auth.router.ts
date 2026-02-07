@@ -8,6 +8,7 @@ import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
 import { csrfProtection, generateCsrfToken } from "../middleware/csrf";
 import { requireAuth } from "../middleware/auth";
+import { passwordResetLimiter } from "../middleware/rateLimiter";
 import { getUncachableStripeClient } from "../stripe/stripeClient";
 import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
@@ -422,6 +423,98 @@ router.get("/restore-session", async (req: Request, res: Response, next: NextFun
       token: cookieToken,
       csrfToken,
     }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const passwordResetTokens = new Map<string, { userId: string; expiresAt: number }>();
+
+function cleanupExpiredResetTokens() {
+  const now = Date.now();
+  for (const [hash, entry] of passwordResetTokens) {
+    if (entry.expiresAt < now) {
+      passwordResetTokens.delete(hash);
+    }
+  }
+}
+
+const PASSWORD_RESET_SUCCESS_MESSAGE = "If an account with that email exists, a password reset link has been sent.";
+
+router.post("/forgot-password", passwordResetLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw AppError.badRequest("Email is required", "MISSING_EMAIL");
+    }
+
+    cleanupExpiredResetTokens();
+
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    if (!user) {
+      return res.json(successResponse({ message: PASSWORD_RESET_SUCCESS_MESSAGE }));
+    }
+
+    const resetToken = randomBytes(32).toString("hex");
+    const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
+
+    passwordResetTokens.set(hashedResetToken, {
+      userId: user.id,
+      expiresAt: Date.now() + PASSWORD_RESET_EXPIRY_MS,
+    });
+
+    logger.info("Password reset token generated", { userId: user.id, token: resetToken });
+
+    res.json(successResponse({ message: PASSWORD_RESET_SUCCESS_MESSAGE }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/reset-password", passwordResetLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token: resetToken, password } = req.body;
+
+    if (!resetToken || !password) {
+      throw AppError.badRequest("Token and new password are required", "MISSING_FIELDS");
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      throw AppError.badRequest(passwordError, "WEAK_PASSWORD");
+    }
+
+    cleanupExpiredResetTokens();
+
+    const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
+    const entry = passwordResetTokens.get(hashedResetToken);
+
+    if (!entry || entry.expiresAt < Date.now()) {
+      passwordResetTokens.delete(hashedResetToken);
+      throw AppError.badRequest("Invalid or expired reset token", "INVALID_RESET_TOKEN");
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, entry.userId));
+
+    passwordResetTokens.delete(hashedResetToken);
+
+    await db
+      .delete(userSessions)
+      .where(eq(userSessions.userId, entry.userId));
+
+    res.json(successResponse({ message: "Password has been reset successfully." }));
   } catch (error) {
     next(error);
   }
