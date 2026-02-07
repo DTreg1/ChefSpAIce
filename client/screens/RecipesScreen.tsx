@@ -41,6 +41,8 @@ import {
   Dimensions,
   Modal,
   Platform,
+  TextInput,
+  ScrollView,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -104,6 +106,9 @@ export default function RecipesScreen() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedDietaryTags, setSelectedDietaryTags] = useState<string[]>([]);
 
   const {
     generateQuickRecipe,
@@ -246,13 +251,67 @@ export default function RecipesScreen() {
     );
   };
 
-  const filteredRecipes = recipes.filter((recipe) => {
-    const matchesSearch =
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFavorite = showFavoritesOnly ? recipe.isFavorite : true;
-    return matchesSearch && matchesFavorite;
-  });
+  const availableCuisines = useMemo(() => {
+    const set = new Set<string>();
+    recipes.forEach((r) => {
+      if (r.cuisine) set.add(r.cuisine);
+    });
+    return Array.from(set).sort();
+  }, [recipes]);
+
+  const availableDietaryTags = useMemo(() => {
+    const set = new Set<string>();
+    recipes.forEach((r) => {
+      r.dietaryTags?.forEach((t) => set.add(t));
+    });
+    return Array.from(set).sort();
+  }, [recipes]);
+
+  const filteredRecipes = useMemo(() => {
+    const headerQ = searchQuery.toLowerCase();
+    const localQ = localSearchQuery.trim().toLowerCase();
+
+    return recipes.filter((recipe) => {
+      if (headerQ) {
+        const matchesHeader =
+          recipe.title.toLowerCase().includes(headerQ) ||
+          recipe.description.toLowerCase().includes(headerQ);
+        if (!matchesHeader) return false;
+      }
+
+      if (localQ) {
+        const matchesLocal =
+          recipe.title.toLowerCase().includes(localQ) ||
+          recipe.ingredients?.some((i) =>
+            i.name.toLowerCase().includes(localQ),
+          ) ||
+          recipe.cuisine?.toLowerCase().includes(localQ);
+        if (!matchesLocal) return false;
+      }
+
+      if (showFavoritesOnly && !recipe.isFavorite) return false;
+
+      if (
+        selectedCuisines.length > 0 &&
+        (!recipe.cuisine || !selectedCuisines.includes(recipe.cuisine))
+      )
+        return false;
+
+      if (selectedDietaryTags.length > 0) {
+        const tags = recipe.dietaryTags || [];
+        if (!selectedDietaryTags.some((t) => tags.includes(t))) return false;
+      }
+
+      return true;
+    });
+  }, [
+    recipes,
+    searchQuery,
+    localSearchQuery,
+    showFavoritesOnly,
+    selectedCuisines,
+    selectedDietaryTags,
+  ]);
 
   const handleToggleFavorite = async (recipe: Recipe) => {
     await storage.toggleRecipeFavorite(recipe.id);
@@ -433,6 +492,156 @@ export default function RecipesScreen() {
         keyExtractor={(item) => item.id}
         numColumns={2}
         renderItem={renderRecipeCard}
+        ListHeaderComponent={
+          <View style={styles.searchSection}>
+            <View
+              style={[
+                styles.searchInputContainer,
+                {
+                  backgroundColor: theme.glass.background,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+            >
+              <Feather
+                name="search"
+                size={18}
+                color={theme.textSecondary}
+              />
+              <TextInput
+                testID="input-recipe-search"
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search by name, ingredient, cuisine..."
+                placeholderTextColor={theme.textSecondary}
+                value={localSearchQuery}
+                onChangeText={setLocalSearchQuery}
+                returnKeyType="search"
+                autoCorrect={false}
+                accessibilityLabel="Search recipes"
+              />
+              {localSearchQuery.length > 0 && (
+                <Pressable
+                  testID="button-clear-recipe-search"
+                  onPress={() => setLocalSearchQuery("")}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                >
+                  <Feather
+                    name="x"
+                    size={18}
+                    color={theme.textSecondary}
+                  />
+                </Pressable>
+              )}
+            </View>
+
+            {(availableCuisines.length > 0 ||
+              availableDietaryTags.length > 0) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipScrollContent}
+              >
+                {availableCuisines.map((cuisine) => {
+                  const isSelected = selectedCuisines.includes(cuisine);
+                  return (
+                    <Pressable
+                      key={`cuisine-${cuisine}`}
+                      testID={`filter-cuisine-${cuisine}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${cuisine} cuisine, ${isSelected ? "selected" : "not selected"}`}
+                      accessibilityState={{ selected: isSelected }}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: isSelected
+                            ? AppColors.primary
+                            : theme.glass.background,
+                          borderColor: isSelected
+                            ? AppColors.primary
+                            : theme.glass.border,
+                          borderWidth: 1,
+                        },
+                      ]}
+                      onPress={() =>
+                        setSelectedCuisines((prev) =>
+                          isSelected
+                            ? prev.filter((c) => c !== cuisine)
+                            : [...prev, cuisine],
+                        )
+                      }
+                    >
+                      <Feather
+                        name="globe"
+                        size={12}
+                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                        style={{ marginRight: 4 }}
+                      />
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          color: isSelected ? "#FFFFFF" : theme.textSecondary,
+                          fontWeight: isSelected ? "600" : "400",
+                        }}
+                      >
+                        {cuisine}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+
+                {availableDietaryTags.map((tag) => {
+                  const isSelected = selectedDietaryTags.includes(tag);
+                  return (
+                    <Pressable
+                      key={`diet-${tag}`}
+                      testID={`filter-dietary-${tag}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${tag}, ${isSelected ? "selected" : "not selected"}`}
+                      accessibilityState={{ selected: isSelected }}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: isSelected
+                            ? AppColors.accent
+                            : theme.glass.background,
+                          borderColor: isSelected
+                            ? AppColors.accent
+                            : theme.glass.border,
+                          borderWidth: 1,
+                        },
+                      ]}
+                      onPress={() =>
+                        setSelectedDietaryTags((prev) =>
+                          isSelected
+                            ? prev.filter((t) => t !== tag)
+                            : [...prev, tag],
+                        )
+                      }
+                    >
+                      <Feather
+                        name="check-circle"
+                        size={12}
+                        color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                        style={{ marginRight: 4 }}
+                      />
+                      <ThemedText
+                        type="caption"
+                        style={{
+                          color: isSelected ? "#FFFFFF" : theme.textSecondary,
+                          fontWeight: isSelected ? "600" : "400",
+                        }}
+                      >
+                        {tag}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
+        }
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
@@ -540,6 +749,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+  },
+  chipScrollContent: {
+    gap: Spacing.sm,
+    paddingTop: Spacing.xs,
   },
   filterChip: {
     flexDirection: "row",
