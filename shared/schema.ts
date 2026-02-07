@@ -300,12 +300,14 @@ export const userInventoryItems = pgTable(
     fdcId: integer("fdc_id"),
     addedAt: timestamp("added_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     uniqueIndex("idx_user_inventory_user_item").on(table.userId, table.itemId),
     index("idx_user_inventory_user").on(table.userId),
     index("idx_user_inventory_user_category").on(table.userId, table.category),
     index("idx_user_inventory_user_expiration").on(table.userId, table.expirationDate),
+    index("idx_user_inventory_user_deleted").on(table.userId, table.deletedAt),
   ],
 );
 
@@ -313,6 +315,7 @@ export const insertUserInventoryItemSchema = createInsertSchema(userInventoryIte
   id: true as any,
   addedAt: true,
   updatedAt: true,
+  deletedAt: true,
 });
 export type InsertUserInventoryItem = z.infer<typeof insertUserInventoryItemSchema>;
 export type UserInventoryItem = typeof userInventoryItems.$inferSelect;

@@ -93,6 +93,7 @@ import { SettingsLegalSupport } from "@/components/settings/SettingsLegalSupport
 import { SettingsStoragePrefs } from "@/components/settings/SettingsStoragePrefs";
 import { SettingsReferral } from "@/components/settings/SettingsReferral";
 import { SettingsAccountData } from "@/components/settings/SettingsAccountData";
+import { SettingsRecentlyDeleted } from "@/components/settings/SettingsRecentlyDeleted";
 import { SettingsFooter } from "@/components/settings/SettingsFooter";
 import { SettingsImportDialog } from "@/components/settings/SettingsImportDialog";
 
@@ -921,6 +922,8 @@ export default function SettingsScreen() {
             theme={theme}
           />
         )}
+
+        <SettingsRecentlyDeleted theme={theme} />
 
         <SettingsAccountData
           isAuthenticated={isAuthenticated}

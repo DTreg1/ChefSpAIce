@@ -62,6 +62,7 @@ SplashScreen.preventAutoHideAsync();
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { storeKitService } from "@/lib/storekit-service";
+import { storage } from "@/lib/storage";
 import { linkingConfig, savePendingDeepLink } from '@/lib/deep-linking';
 import * as Linking from 'expo-linking';
 
@@ -287,6 +288,13 @@ function MobileAppContent() {
 function RootWrapper() {
   useEffect(() => {
     storeKitService.initialize();
+    storage.cleanupDeletedInventory().then((purged) => {
+      if (purged > 0) {
+        logger.log(`[Cleanup] Purged ${purged} expired soft-deleted inventory items`);
+      }
+    }).catch((err) => {
+      logger.warn("[Cleanup] Failed to cleanup deleted inventory:", err);
+    });
   }, []);
 
   return (

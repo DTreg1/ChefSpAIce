@@ -142,6 +142,7 @@ export interface FoodItem {
   imageUri?: string;
   fdcId?: number;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface NutritionInfo {
@@ -331,7 +332,16 @@ async function setItem<T>(key: string, value: T): Promise<void> {
 
 export const storage = {
   async getInventory(): Promise<FoodItem[]> {
-    return (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    return allItems.filter(item => !item.deletedAt);
+  },
+
+  async getDeletedInventory(): Promise<FoodItem[]> {
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return allItems.filter(item =>
+      item.deletedAt && new Date(item.deletedAt).getTime() > thirtyDaysAgo
+    );
   },
 
   async setInventory(items: FoodItem[]): Promise<void> {
@@ -339,10 +349,10 @@ export const storage = {
   },
 
   async addInventoryItem(item: FoodItem): Promise<void> {
-    const items = await this.getInventory();
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
     const itemWithTimestamp = { ...item, updatedAt: new Date().toISOString() };
-    items.push(itemWithTimestamp);
-    await this.setInventory(items);
+    allItems.push(itemWithTimestamp);
+    await setItem(STORAGE_KEYS.INVENTORY, allItems);
 
     const token = await this.getAuthToken();
     if (token) {
@@ -358,7 +368,7 @@ export const storage = {
     newItems: FoodItem[],
     options?: { skipSync?: boolean },
   ): Promise<{ added: number; failed: number }> {
-    const items = await this.getInventory();
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
     let added = 0;
     let failed = 0;
     const timestamp = new Date().toISOString();
@@ -367,7 +377,7 @@ export const storage = {
     for (const item of newItems) {
       try {
         const itemWithTimestamp = { ...item, updatedAt: timestamp };
-        items.push(itemWithTimestamp);
+        allItems.push(itemWithTimestamp);
         itemsWithTimestamp.push(itemWithTimestamp);
         added++;
       } catch {
@@ -375,7 +385,7 @@ export const storage = {
       }
     }
 
-    await this.setInventory(items);
+    await setItem(STORAGE_KEYS.INVENTORY, allItems);
 
     // Skip sync if requested (e.g., during onboarding before subscription)
     if (!options?.skipSync) {
@@ -398,16 +408,16 @@ export const storage = {
     item: FoodItem,
     options?: { skipSync?: boolean },
   ): Promise<void> {
-    const items = await this.getInventory();
-    const index = items.findIndex((i) => i.id === item.id);
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const index = allItems.findIndex((i) => i.id === item.id);
     if (index !== -1) {
-      const oldItem = items[index];
+      const oldItem = allItems[index];
       const itemWithTimestamp = {
         ...item,
         updatedAt: new Date().toISOString(),
       };
-      items[index] = itemWithTimestamp;
-      await this.setInventory(items);
+      allItems[index] = itemWithTimestamp;
+      await setItem(STORAGE_KEYS.INVENTORY, allItems);
 
       // Skip sync if requested (e.g., during onboarding before subscription)
       if (!options?.skipSync) {
@@ -427,18 +437,67 @@ export const storage = {
   },
 
   async deleteInventoryItem(id: string): Promise<void> {
-    const items = await this.getInventory();
-    const deletedItem = items.find((i) => i.id === id);
-    await this.setInventory(items.filter((i) => i.id !== id));
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const index = allItems.findIndex((i) => i.id === id);
+    if (index !== -1) {
+      const now = new Date().toISOString();
+      allItems[index] = { ...allItems[index], deletedAt: now, updatedAt: now };
+      await setItem(STORAGE_KEYS.INVENTORY, allItems);
 
-    const token = await this.getAuthToken();
-    if (token) {
-      syncManager.queueChange("inventory", "delete", { id });
+      const token = await this.getAuthToken();
+      if (token) {
+        syncManager.queueChange("inventory", "update", allItems[index]);
+      }
+
+      if (allItems[index].expirationDate) {
+        triggerNotificationReschedule();
+      }
+    }
+  },
+
+  async restoreInventoryItem(id: string): Promise<void> {
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const index = allItems.findIndex(i => i.id === id);
+    if (index !== -1) {
+      allItems[index] = { ...allItems[index], deletedAt: null, updatedAt: new Date().toISOString() };
+      await setItem(STORAGE_KEYS.INVENTORY, allItems);
+
+      const token = await this.getAuthToken();
+      if (token) {
+        syncManager.queueChange("inventory", "update", allItems[index]);
+      }
+
+      if (allItems[index].expirationDate) {
+        triggerNotificationReschedule();
+      }
+    }
+  },
+
+  async cleanupDeletedInventory(): Promise<number> {
+    const allItems = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const toKeep: FoodItem[] = [];
+    const toPurge: FoodItem[] = [];
+
+    for (const item of allItems) {
+      if (item.deletedAt && new Date(item.deletedAt).getTime() <= thirtyDaysAgo) {
+        toPurge.push(item);
+      } else {
+        toKeep.push(item);
+      }
     }
 
-    if (deletedItem?.expirationDate) {
-      triggerNotificationReschedule();
+    if (toPurge.length > 0) {
+      await setItem(STORAGE_KEYS.INVENTORY, toKeep);
+      const token = await this.getAuthToken();
+      if (token) {
+        for (const item of toPurge) {
+          syncManager.queueChange("inventory", "delete", { id: item.id });
+        }
+      }
     }
+
+    return toPurge.length;
   },
 
   async getRawRecipes(): Promise<Recipe[]> {
@@ -1097,10 +1156,10 @@ export const storage = {
       locations.filter((l) => l.key !== key),
     );
 
-    const inventory = await this.getInventory();
+    const allInventory = (await getItem<FoodItem[]>(STORAGE_KEYS.INVENTORY)) || [];
     let migratedCount = 0;
-    const updatedInventory = inventory.map((item) => {
-      if (item.storageLocation === key) {
+    const updatedInventory = allInventory.map((item) => {
+      if (item.storageLocation === key && !item.deletedAt) {
         migratedCount++;
         return { ...item, storageLocation: migrateToLocation };
       }

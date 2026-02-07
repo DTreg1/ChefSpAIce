@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import { userSessions, userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "../../shared/schema";
@@ -56,6 +56,7 @@ const inventoryItemSchema = z.object({
   imageUri: z.string().optional(),
   fdcId: z.number().optional(),
   updatedAt: z.string().optional(),
+  deletedAt: z.string().optional().nullable(),
 });
 
 const recipeSchema = z.object({
@@ -266,6 +267,7 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
         imageUri: data.imageUri,
         fdcId: data.fdcId,
         updatedAt: new Date(),
+        deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
       }).onConflictDoUpdate({
         target: [userInventoryItems.userId, userInventoryItems.itemId],
         set: {
@@ -283,6 +285,7 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
           imageUri: data.imageUri,
           fdcId: data.fdcId,
           updatedAt: new Date(),
+          deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
         },
       });
     } else if (operation === "update") {
@@ -320,6 +323,7 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
           imageUri: data.imageUri,
           fdcId: data.fdcId,
           updatedAt: new Date(),
+          deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
         }).where(and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr)));
       } else {
         const limitCheck = await checkPantryItemLimit(session.userId);
@@ -347,6 +351,7 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
           imageUri: data.imageUri,
           fdcId: data.fdcId,
           updatedAt: new Date(),
+          deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
         });
       }
     } else if (operation === "delete") {
@@ -428,6 +433,7 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
         imageUri: data.imageUri,
         fdcId: data.fdcId,
         updatedAt: new Date(),
+        deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
       }).where(
         and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
       );
@@ -458,6 +464,7 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
         imageUri: data.imageUri,
         fdcId: data.fdcId,
         updatedAt: new Date(),
+        deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
       });
     }
 
@@ -1576,7 +1583,7 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
     }
 
     const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, syncDataRows] = await Promise.all([
-      db.select().from(userInventoryItems).where(eq(userInventoryItems.userId, session.userId)),
+      db.select().from(userInventoryItems).where(and(eq(userInventoryItems.userId, session.userId), isNull(userInventoryItems.deletedAt))),
       db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, session.userId)),
       db.select().from(userMealPlans).where(eq(userMealPlans.userId, session.userId)),
       db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, session.userId)),
