@@ -4,8 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Platform,
-  Modal,
   RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,12 +11,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import {
-  GlassView,
-  isLiquidGlassAvailable,
-} from "@/components/GlassViewWithContext";
-import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { format, addDays, startOfWeek } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -27,24 +20,21 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
+import { MealPlanWeekNav } from "@/components/meal-plan/MealPlanWeekNav";
+import { MealPlanDaySelector } from "@/components/meal-plan/MealPlanDaySelector";
+import { MealPlanSlotCard } from "@/components/meal-plan/MealPlanSlotCard";
+import { MealPlanActionSheet } from "@/components/meal-plan/MealPlanActionSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import {
-  Spacing,
-  BorderRadius,
-  AppColors,
-  GlassEffect,
-} from "@/constants/theme";
+import { Spacing, AppColors } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export default function MealPlanScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
   const { checkFeature } = useSubscription();
@@ -179,6 +169,13 @@ export default function MealPlanScreen() {
     });
   };
 
+  const handleAddMeal = (date: string, slotId: string) => {
+    navigation.navigate("SelectRecipe", {
+      date,
+      mealType: slotId as "breakfast" | "lunch" | "dinner",
+    });
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ExpoGlassHeader
@@ -209,196 +206,19 @@ export default function MealPlanScreen() {
           <LoadingState variant="detail" />
         ) : (
         <>
-        <View style={styles.weekNavigation}>
-          <Pressable
-            onPress={navigatePrevWeek}
-            style={[
-              styles.navButton,
-              !canUseWeeklyPrepping && styles.navButtonLocked,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={canUseWeeklyPrepping ? "Go to previous week" : "Previous week, requires Pro upgrade"}
-            accessibilityState={{ disabled: !canUseWeeklyPrepping }}
-          >
-            {!canUseWeeklyPrepping && (
-              <View style={styles.navLockBadge}>
-                <Feather name="lock" size={8} color="#FFFFFF" />
-              </View>
-            )}
-            <Feather
-              name="chevron-left"
-              size={24}
-              color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text}
-            />
-          </Pressable>
-          <View style={styles.weekTitleContainer}>
-            <ThemedText type="h4">
-              {format(currentWeekStart, "MMM d")} -{" "}
-              {format(addDays(currentWeekStart, 6), "MMM d, yyyy")}
-            </ThemedText>
-            {!canUseWeeklyPrepping && (
-              <View style={styles.weekProBadge}>
-                <ThemedText type="small" style={styles.weekProBadgeText}>
-                  PRO
-                </ThemedText>
-              </View>
-            )}
-          </View>
-          <Pressable
-            onPress={navigateNextWeek}
-            style={[
-              styles.navButton,
-              !canUseWeeklyPrepping && styles.navButtonLocked,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={canUseWeeklyPrepping ? "Go to next week" : "Next week, requires Pro upgrade"}
-            accessibilityState={{ disabled: !canUseWeeklyPrepping }}
-          >
-            {!canUseWeeklyPrepping && (
-              <View style={styles.navLockBadge}>
-                <Feather name="lock" size={8} color="#FFFFFF" />
-              </View>
-            )}
-            <Feather
-              name="chevron-right"
-              size={24}
-              color={!canUseWeeklyPrepping ? theme.textSecondary : theme.text}
-            />
-          </Pressable>
-        </View>
+        <MealPlanWeekNav
+          currentWeekStart={currentWeekStart}
+          canUseWeeklyPrepping={canUseWeeklyPrepping}
+          onPrevWeek={navigatePrevWeek}
+          onNextWeek={navigateNextWeek}
+        />
 
-        <View style={styles.weekGrid}>
-          {getWeekDays().map((day, index) => {
-            const isSelected = isSameDay(day, selectedDay);
-            const isToday = isSameDay(day, new Date());
-            const hasMeals = mealPlans.some(
-              (p) =>
-                p.date === format(day, "yyyy-MM-dd") &&
-                Object.values(p.meals).some(Boolean),
-            );
-
-            const renderDayCardContent = () => (
-              <>
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: isSelected ? "#FFFFFF" : theme.textSecondary,
-                  }}
-                >
-                  {DAYS[day.getDay()]}
-                </ThemedText>
-                <ThemedText
-                  type="h4"
-                  style={{ color: isSelected ? "#FFFFFF" : theme.text }}
-                >
-                  {format(day, "d")}
-                </ThemedText>
-                {hasMeals ? (
-                  <View
-                    style={[
-                      styles.mealIndicator,
-                      {
-                        backgroundColor: isSelected
-                          ? "#FFFFFF"
-                          : AppColors.success,
-                      },
-                    ]}
-                  />
-                ) : null}
-              </>
-            );
-
-            if (isSelected) {
-              return (
-                <Pressable
-                  key={index}
-                  style={[
-                    styles.dayCard,
-                    {
-                      backgroundColor: AppColors.primary,
-                      borderColor: isToday ? AppColors.primary : "transparent",
-                      borderWidth: isToday && !isSelected ? 2 : 0,
-                    },
-                  ]}
-                  onPress={() => setSelectedDay(day)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  {renderDayCardContent()}
-                </Pressable>
-              );
-            }
-
-            if (Platform.OS === "ios") {
-              const useLiquidGlass = isLiquidGlassAvailable();
-              return (
-                <Pressable
-                  key={index}
-                  onPress={() => setSelectedDay(day)}
-                  style={[styles.dayCard, styles.dayCardGlass]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  {useLiquidGlass ? (
-                    <GlassView
-                      glassEffectStyle="regular"
-                      style={[
-                        StyleSheet.absoluteFill,
-                        styles.dayCardBlur,
-                        {
-                          borderColor: isToday
-                            ? AppColors.primary
-                            : "transparent",
-                          borderWidth: isToday ? 2 : 0,
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <BlurView
-                      intensity={40}
-                      tint={isDark ? "dark" : "light"}
-                      style={[
-                        StyleSheet.absoluteFill,
-                        styles.dayCardBlur,
-                        {
-                          borderColor: isToday
-                            ? AppColors.primary
-                            : theme.glass.border,
-                          borderWidth: isToday ? 2 : 1,
-                        },
-                      ]}
-                    />
-                  )}
-                  {renderDayCardContent()}
-                </Pressable>
-              );
-            }
-
-            return (
-              <Pressable
-                key={index}
-                style={[
-                  styles.dayCard,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor: isToday
-                      ? AppColors.primary
-                      : theme.glass.border,
-                    borderWidth: isToday ? 2 : 1,
-                  },
-                ]}
-                onPress={() => setSelectedDay(day)}
-                accessibilityRole="button"
-                accessibilityLabel={`${DAYS[day.getDay()]} ${format(day, 'd')}, ${isToday ? 'today, ' : ''}${isSelected ? 'selected, ' : ''}${hasMeals ? 'has meals planned' : 'no meals planned'}`}
-                accessibilityState={{ selected: isSelected }}
-              >
-                {renderDayCardContent()}
-              </Pressable>
-            );
-          })}
-        </View>
+        <MealPlanDaySelector
+          weekDays={getWeekDays()}
+          selectedDay={selectedDay}
+          mealPlans={mealPlans}
+          onSelectDay={setSelectedDay}
+        />
 
         <View style={styles.hintRow}>
           <Feather name="info" size={16} color={theme.textSecondary} />
@@ -431,84 +251,14 @@ export default function MealPlanScreen() {
           {mealSlots.map((slot) => {
             const recipe = getMealForDay(selectedDay, slot.id);
             return (
-              <View key={slot.id} style={styles.mealSlot} {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})} accessibilityLabel={`${slot.name}${recipe ? `, ${recipe.title}` : ', empty'}`}>
-                <View style={styles.mealHeader}>
-                  <Feather
-                    name={slot.icon}
-                    size={18}
-                    color={theme.textSecondary}
-                  />
-                  <ThemedText type="small" style={styles.mealLabel}>
-                    {slot.name}
-                  </ThemedText>
-                </View>
-                {recipe ? (
-                  <Pressable
-                    style={[
-                      styles.mealContent,
-                      {
-                        backgroundColor: theme.glass.background,
-                        borderColor: theme.glass.border,
-                      },
-                    ]}
-                    onPress={() =>
-                      handleMealPress(selectedDay, slot.id, recipe)
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={`${recipe.title} for ${slot.name}, ${recipe.prepTime + recipe.cookTime} minutes`}
-                    accessibilityHint="Opens meal options"
-                  >
-                    <View style={styles.mealContentInner}>
-                      <View style={styles.mealTextContainer}>
-                        <ThemedText type="body">{recipe.title}</ThemedText>
-                        <View style={styles.mealMeta}>
-                          <Feather
-                            name="clock"
-                            size={14}
-                            color={theme.textSecondary}
-                          />
-                          <ThemedText type="caption">
-                            {recipe.prepTime + recipe.cookTime} min
-                          </ThemedText>
-                        </View>
-                      </View>
-                      <Feather
-                        name="more-horizontal"
-                        size={20}
-                        color={theme.textSecondary}
-                      />
-                    </View>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    style={[
-                      styles.addMealButton,
-                      { borderColor: theme.glass.border },
-                    ]}
-                    onPress={() => {
-                      navigation.navigate("SelectRecipe", {
-                        date: format(selectedDay, "yyyy-MM-dd"),
-                        mealType: slot.id as "breakfast" | "lunch" | "dinner",
-                      });
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Add ${slot.name.toLowerCase()} for ${format(selectedDay, 'EEEE, MMMM d')}`}
-                    accessibilityHint="Opens recipe selection"
-                  >
-                    <Feather
-                      name="plus"
-                      size={18}
-                      color={theme.textSecondary}
-                    />
-                    <ThemedText
-                      type="small"
-                      style={{ color: theme.textSecondary }}
-                    >
-                      Add {slot.name.toLowerCase()}
-                    </ThemedText>
-                  </Pressable>
-                )}
-              </View>
+              <MealPlanSlotCard
+                key={slot.id}
+                slot={slot}
+                recipe={recipe}
+                selectedDay={selectedDay}
+                onMealPress={handleMealPress}
+                onAddMeal={handleAddMeal}
+              />
             );
           })}
           </View>
@@ -581,69 +331,13 @@ export default function MealPlanScreen() {
         )}
       </ScrollView>
 
-      <Modal
+      <MealPlanActionSheet
         visible={actionSheet.visible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeActionSheet}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={closeActionSheet}
-          accessibilityRole="button"
-          accessibilityLabel="Close meal options"
-        >
-          <View
-            style={[
-              styles.actionSheet,
-              { backgroundColor: theme.backgroundDefault },
-            ]}
-          >
-            <ThemedText type="h4" style={styles.actionSheetTitle}>
-              {actionSheet.recipe?.title || "Meal Options"}
-            </ThemedText>
-
-            <Pressable
-              style={[styles.actionButton, { borderColor: theme.border }]}
-              onPress={handleChangeRecipe}
-              accessibilityRole="button"
-              accessibilityLabel="Change recipe for this meal"
-            >
-              <Feather name="refresh-cw" size={20} color={AppColors.primary} />
-              <ThemedText type="body" style={{ color: AppColors.primary }}>
-                Change Recipe
-              </ThemedText>
-            </Pressable>
-
-            <Pressable
-              style={[styles.actionButton, { borderColor: theme.border }]}
-              onPress={() =>
-                handleRemoveMeal(actionSheet.date, actionSheet.slotId)
-              }
-              accessibilityRole="button"
-              accessibilityLabel="Remove this meal from your plan"
-            >
-              <Feather name="trash-2" size={20} color={AppColors.error} />
-              <ThemedText type="body" style={{ color: AppColors.error }}>
-                Remove from Plan
-              </ThemedText>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.actionButton,
-                styles.cancelButton,
-                { backgroundColor: theme.backgroundSecondary },
-              ]}
-              onPress={closeActionSheet}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-            >
-              <ThemedText type="body">Cancel</ThemedText>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
+        recipe={actionSheet.recipe}
+        onChangeRecipe={handleChangeRecipe}
+        onRemoveMeal={() => handleRemoveMeal(actionSheet.date, actionSheet.slotId)}
+        onClose={closeActionSheet}
+      />
 
       {showUpgradePrompt && (
         <UpgradePrompt
@@ -651,7 +345,6 @@ export default function MealPlanScreen() {
           featureName="Weekly Meal Prepping"
           onUpgrade={() => {
             setShowUpgradePrompt(false);
-            // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
             const rootNav = navigation.getParent()?.getParent()?.getParent();
             if (rootNav) {
               rootNav.navigate("Main" as any, {
@@ -681,116 +374,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
   },
-  weekNavigation: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  navButton: {
-    padding: Spacing.sm,
-    position: "relative",
-  },
-  navButtonLocked: {
-    opacity: 0.6,
-  },
-  navLockBadge: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: AppColors.warning,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  weekTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  weekProBadge: {
-    backgroundColor: AppColors.warning,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  weekProBadgeText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  weekGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dayCard: {
-    width: 44,
-    height: 72,
-    borderRadius: GlassEffect.borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xs,
-  },
-  dayCardGlass: {
-    backgroundColor: "transparent",
-  },
-  dayCardBlur: {
-    borderRadius: GlassEffect.borderRadius.md,
-  },
-  mealIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
   selectedDayCard: {
     gap: Spacing.md,
   },
   selectedDayTitle: {
     marginBottom: Spacing.xs,
-  },
-  mealSlot: {
-    gap: Spacing.sm,
-  },
-  mealHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  mealLabel: {
-    textTransform: "capitalize",
-    fontWeight: "600",
-  },
-  mealContent: {
-    padding: Spacing.md,
-    borderRadius: GlassEffect.borderRadius.md,
-    borderWidth: 1,
-  },
-  mealContentInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  mealTextContainer: {
-    flex: 1,
-  },
-  mealMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
-  },
-  addMealButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
   },
   statsCard: {
     gap: Spacing.md,
@@ -816,34 +404,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  actionSheet: {
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  actionSheetTitle: {
-    textAlign: "center",
-    marginBottom: Spacing.sm,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-  },
-  cancelButton: {
-    marginTop: Spacing.sm,
-    justifyContent: "center",
-    borderWidth: 0,
   },
 });

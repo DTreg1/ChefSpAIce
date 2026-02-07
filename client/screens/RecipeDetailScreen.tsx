@@ -9,7 +9,6 @@ import {
   Platform,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -21,18 +20,15 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
-import { GlassCard } from "@/components/GlassCard";
-import { GlassButton } from "@/components/GlassButton";
 import { RecipeVoiceControls } from "@/components/RecipeVoiceControls";
-import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
+import { CookingTerm } from "@/components/TermHighlighter";
 import { TermTooltip } from "@/components/TermTooltip";
 import { IngredientSwapModal } from "@/components/IngredientSwapModal";
 import { RecipeDetailSkeleton } from "@/components/Skeleton";
-import { NutritionBadge } from "@/components/NutritionBadge";
 import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useRecipeVoiceNavigation } from "@/hooks/useRecipeVoiceNavigation";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import {
   storage,
   Recipe,
@@ -40,10 +36,9 @@ import {
   FoodItem,
   ShoppingListItem,
   generateId,
-  IngredientAvailability,
 } from "@/lib/storage";
 
-import { hasSwapsAvailable, IngredientSwap } from "@/lib/ingredient-swaps";
+import { IngredientSwap } from "@/lib/ingredient-swaps";
 import { exportSingleRecipeToPDF } from "@/lib/export";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useInstacart } from "@/hooks/useInstacart";
@@ -53,22 +48,12 @@ import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { logger } from "@/lib/logger";
 
-// Helper to get color and icon for availability status
-function getAvailabilityIndicator(status?: IngredientAvailability): {
-  color: string;
-  icon: "check-circle" | "alert-circle" | "x-circle";
-} {
-  switch (status) {
-    case "available":
-      return { color: AppColors.success, icon: "check-circle" };
-    case "partial":
-      return { color: AppColors.warning, icon: "alert-circle" };
-    case "unavailable":
-      return { color: AppColors.error, icon: "x-circle" };
-    default:
-      return { color: AppColors.success, icon: "check-circle" };
-  }
-}
+import { RecipeHero } from "@/components/recipe-detail/RecipeHero";
+import { RecipeHeader } from "@/components/recipe-detail/RecipeHeader";
+import { RecipeCookwareSection } from "@/components/recipe-detail/RecipeCookwareSection";
+import { RecipeNutritionCard } from "@/components/recipe-detail/RecipeNutritionCard";
+import { RecipeIngredientsList } from "@/components/recipe-detail/RecipeIngredientsList";
+import { RecipeInstructions } from "@/components/recipe-detail/RecipeInstructions";
 
 export default function RecipeDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -137,8 +122,6 @@ export default function RecipeDetailScreen() {
       storage.getPreferences(),
       storage.getCookware(),
     ]);
-    // Use initialRecipe if passed via navigation (has image data for freshly generated recipes)
-    // Otherwise fall back to storage lookup
     const initialRecipe = route.params.initialRecipe;
     const found =
       initialRecipe || recipes.find((r) => r.id === route.params.recipeId);
@@ -218,13 +201,11 @@ export default function RecipeDetailScreen() {
     }, [loadData]),
   );
 
-  // Generate image if AI recipe has no image, then poll for updates
   useEffect(() => {
     if (!recipe || recipe.imageUri || !recipe.isAIGenerated) {
       return;
     }
 
-    // Prevent duplicate image generation calls
     if (imageGenerationInProgress.current.has(recipe.id)) {
       return;
     }
@@ -233,7 +214,6 @@ export default function RecipeDetailScreen() {
     let intervalId: NodeJS.Timeout | null = null;
 
     const generateAndSaveImage = async () => {
-      // Double-check to prevent race conditions
       if (imageGenerationInProgress.current.has(recipe.id)) {
         return;
       }
@@ -591,468 +571,63 @@ export default function RecipeDetailScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        {recipe.imageUri ? (
-          <Image
-            source={{ uri: recipe.imageUri }}
-            style={styles.heroImage}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            accessibilityLabel={`Photo of ${recipe.title}`}
-            accessibilityRole="image"
+        <RecipeHero
+          imageUri={recipe.imageUri}
+          title={recipe.title}
+          theme={theme}
+        />
+
+        <View style={styles.headerGroup}>
+          <RecipeHeader
+            recipe={recipe}
+            selectedServings={selectedServings}
+            termHighlightingEnabled={termHighlightingEnabled}
+            onTermPress={handleTermPress}
+            theme={theme}
           />
-        ) : (
-          <View
-            style={[
-              styles.heroPlaceholder,
-              { backgroundColor: theme.backgroundDefault },
-            ]}
-            accessibilityRole="image"
-            accessibilityLabel="No photo available for this recipe"
-          >
-            <Feather name="image" size={48} color={theme.textSecondary} />
-          </View>
-        )}
 
-        <View style={styles.header}>
-          <ThemedText type="h2">{recipe.title}</ThemedText>
-          <View style={styles.description}>
-            {termHighlightingEnabled ? (
-              <TermHighlighter
-                text={recipe.description}
-                onTermPress={handleTermPress}
-              />
-            ) : (
-              <ThemedText type="body">{recipe.description}</ThemedText>
-            )}
-          </View>
-
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`Total time ${recipe.prepTime + recipe.cookTime} minutes`}>
-              <Feather name="clock" size={16} color={theme.textSecondary} />
-              <ThemedText type="small" style={styles.metaText}>
-                {recipe.prepTime + recipe.cookTime} min
-              </ThemedText>
-            </View>
-            <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`${selectedServings} serving${selectedServings !== 1 ? 's' : ''}`}>
-              <Feather name="users" size={16} color={theme.textSecondary} />
-              <ThemedText type="small" style={styles.metaText}>
-                {selectedServings} serving{selectedServings !== 1 ? "s" : ""}
-              </ThemedText>
-            </View>
-            {recipe.cuisine ? (
-              <View style={styles.metaItem} accessibilityRole="text" accessibilityLabel={`Cuisine: ${recipe.cuisine}`}>
-                <Feather name="globe" size={16} color={theme.textSecondary} />
-                <ThemedText type="small" style={styles.metaText}>
-                  {recipe.cuisine}
-                </ThemedText>
-              </View>
-            ) : null}
-          </View>
-
-          {recipe.dietaryTags && recipe.dietaryTags.length > 0 ? (
-            <View style={styles.tagRow}>
-              {recipe.dietaryTags.map((tag) => (
-                <View
-                  key={tag}
-                  style={[
-                    styles.tag,
-                    { backgroundColor: theme.backgroundDefault },
-                  ]}
-                  accessibilityRole="text"
-                  accessibilityLabel={`Dietary tag: ${tag}`}
-                >
-                  <ThemedText type="caption">{tag}</ThemedText>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {(recipe.requiredCookware && recipe.requiredCookware.length > 0) ||
-          (recipe.optionalCookware && recipe.optionalCookware.length > 0) ? (
-            <GlassCard style={styles.cookwareSection}>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: Spacing.xs,
-                  }}
-                >
-                  <Feather name="tool" size={16} color={theme.text} />
-                  <ThemedText type="h4">Cookware</ThemedText>
-                </View>
-                <Pressable
-                  onPress={() =>
-                    (navigation as any).navigate("CookwareTab", {
-                      screen: "Cookware",
-                    })
-                  }
-                  hitSlop={8}
-                  accessibilityRole="link"
-                  accessibilityLabel="View my cookware"
-                >
-                  <ThemedText
-                    type="caption"
-                    style={{ color: AppColors.primary }}
-                  >
-                    My Cookware
-                  </ThemedText>
-                </Pressable>
-              </View>
-              <View style={styles.cookwareList}>
-                {recipe.requiredCookware?.map((eq, idx) => {
-                  const hasIt = userCookware.includes(eq.toLowerCase());
-                  return (
-                    <View
-                      key={`req-${idx}`}
-                      style={[
-                        styles.cookwareBadge,
-                        {
-                          backgroundColor: hasIt
-                            ? AppColors.success + "20"
-                            : AppColors.warning + "20",
-                        },
-                      ]}
-                    >
-                      <Feather
-                        name={hasIt ? "check" : "alert-circle"}
-                        size={12}
-                        color={hasIt ? AppColors.success : AppColors.warning}
-                        style={{ marginRight: Spacing.xs }}
-                      />
-                      <ThemedText
-                        type="caption"
-                        style={{
-                          color: hasIt ? AppColors.success : AppColors.warning,
-                        }}
-                      >
-                        {eq}
-                      </ThemedText>
-                    </View>
-                  );
-                })}
-                {recipe.optionalCookware?.map((eq, idx) => (
-                  <View
-                    key={`opt-${idx}`}
-                    style={[
-                      styles.cookwareBadge,
-                      { backgroundColor: theme.backgroundSecondary },
-                    ]}
-                  >
-                    <ThemedText type="caption">{eq} (optional)</ThemedText>
-                  </View>
-                ))}
-              </View>
-              {recipe.requiredCookware?.some(
-                (eq) => !userCookware.includes(eq.toLowerCase()),
-              ) ? (
-                <ThemedText type="caption" style={{ marginTop: Spacing.sm }}>
-                  Some cookware is missing. Check alternatives or update your
-                  cookware list.
-                </ThemedText>
-              ) : null}
-            </GlassCard>
-          ) : null}
+          <RecipeCookwareSection
+            recipe={recipe}
+            userCookware={userCookware}
+            navigation={navigation}
+            theme={theme}
+          />
         </View>
 
         {recipe.nutrition ? (
-          <GlassCard style={styles.nutritionCard}>
-            <View style={styles.nutritionHeader}>
-              <View style={styles.nutritionTitleRow}>
-                <Feather name="zap" size={18} color={theme.text} />
-                <ThemedText type="h4">Nutrition</ThemedText>
-              </View>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                per serving
-              </ThemedText>
-            </View>
-            <View style={styles.nutritionContent}>
-              <View style={styles.caloriesDisplay}>
-                <ThemedText type="h2" style={{ color: AppColors.primary }}>
-                  {recipe.nutrition.calories}
-                </ThemedText>
-                <ThemedText type="caption">calories</ThemedText>
-              </View>
-              <View style={styles.macrosDisplay}>
-                <NutritionBadge
-                  nutrition={recipe.nutrition}
-                  quantity={1}
-                  showCalories={false}
-                  showMacros={true}
-                />
-              </View>
-            </View>
-          </GlassCard>
+          <RecipeNutritionCard
+            nutrition={recipe.nutrition}
+            theme={theme}
+          />
         ) : null}
 
-        <GlassCard style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="h4">Ingredients</ThemedText>
-            <ThemedText type="caption">
-              {availableCount}/{totalCount} available
-            </ThemedText>
-          </View>
+        <RecipeIngredientsList
+          recipe={recipe}
+          selectedServings={selectedServings}
+          onServingsChange={setSelectedServings}
+          scaleQuantity={scaleQuantity}
+          onSwapPress={handleSwapPress}
+          onAddMissingToShoppingList={handleAddMissingToShoppingList}
+          availableCount={availableCount}
+          totalCount={totalCount}
+          instacartConfigured={instacartConfigured}
+          instacartLoading={instacartLoading}
+          onOrderInstacart={handleOrderMissingOnInstacart}
+          theme={theme}
+        />
 
-          <View style={styles.servingsStepper}>
-            <ThemedText type="body">Servings</ThemedText>
-            <View style={styles.stepperControls}>
-              <Pressable
-                onPress={() =>
-                  setSelectedServings(Math.max(1, selectedServings - 1))
-                }
-                style={[
-                  styles.stepperButton,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-                disabled={selectedServings <= 1}
-                accessibilityRole="button"
-                accessibilityLabel="Decrease servings"
-                accessibilityState={{ disabled: selectedServings <= 1 }}
-              >
-                <Feather
-                  name="minus"
-                  size={18}
-                  color={
-                    selectedServings <= 1 ? theme.textSecondary : theme.text
-                  }
-                />
-              </Pressable>
-              <ThemedText
-                type="h4"
-                style={styles.servingsValue}
-                accessibilityRole="text"
-                accessibilityLabel={`${selectedServings} servings`}
-                accessibilityLiveRegion="polite"
-              >
-                {selectedServings}
-              </ThemedText>
-              <Pressable
-                onPress={() =>
-                  setSelectedServings(Math.min(20, selectedServings + 1))
-                }
-                style={[
-                  styles.stepperButton,
-                  { backgroundColor: theme.backgroundSecondary },
-                ]}
-                disabled={selectedServings >= 20}
-                accessibilityRole="button"
-                accessibilityLabel="Increase servings"
-                accessibilityState={{ disabled: selectedServings >= 20 }}
-              >
-                <Feather
-                  name="plus"
-                  size={18}
-                  color={
-                    selectedServings >= 20 ? theme.textSecondary : theme.text
-                  }
-                />
-              </Pressable>
-            </View>
-          </View>
-
-          {recipe.ingredients.map((ingredient, index) => {
-            const availability = getAvailabilityIndicator(
-              ingredient.availabilityStatus,
-            );
-            const canSwap = hasSwapsAvailable(ingredient.name);
-            const scaledQty = scaleQuantity(
-              ingredient.quantity,
-              recipe.servings || 1,
-              selectedServings,
-            );
-            const isLowOrMissing =
-              ingredient.availabilityStatus === "partial" ||
-              ingredient.availabilityStatus === "unavailable";
-            return (
-              <View key={index} style={styles.ingredientRow} accessibilityRole="text" accessibilityLabel={`${ingredient.name}, ${scaledQty} ${ingredient.unit}, ${ingredient.availabilityStatus === 'available' ? 'in stock' : ingredient.availabilityStatus === 'partial' ? 'partially available' : 'not in stock'}`}>
-                <Feather
-                  name={availability.icon}
-                  size={20}
-                  color={availability.color}
-                />
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: Spacing.xs,
-                  }}
-                >
-                  <ThemedText
-                    type="body"
-                    style={[
-                      styles.ingredientText,
-                      isLowOrMissing && styles.missingIngredient,
-                    ]}
-                  >
-                    {scaledQty} {ingredient.unit} {ingredient.name}
-                    {ingredient.isOptional ? " (optional)" : ""}
-                  </ThemedText>
-                  {ingredient.availabilityStatus === "partial" &&
-                  ingredient.percentAvailable ? (
-                    <ThemedText
-                      type="caption"
-                      style={{ color: AppColors.warning }}
-                    >
-                      ({ingredient.percentAvailable}%)
-                    </ThemedText>
-                  ) : null}
-                </View>
-                {canSwap ? (
-                  <Pressable
-                    onPress={() => handleSwapPress(ingredient)}
-                    hitSlop={8}
-                    style={styles.swapButton}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Swap ${ingredient.name} for an alternative`}
-                  >
-                    <Feather name="repeat" size={16} color={AppColors.accent} />
-                  </Pressable>
-                ) : null}
-              </View>
-            );
-          })}
-
-          {availableCount < totalCount ? (
-            <View style={styles.missingActionsContainer}>
-              <GlassButton
-                variant="outline"
-                onPress={handleAddMissingToShoppingList}
-                style={styles.addMissingButton}
-                icon={
-                  <Feather
-                    name="shopping-cart"
-                    size={18}
-                    color={AppColors.primary}
-                  />
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Add missing ingredients to shopping list"
-              >
-                Add Missing to List
-              </GlassButton>
-              {instacartConfigured ? (
-                <GlassButton
-                  onPress={handleOrderMissingOnInstacart}
-                  disabled={instacartLoading}
-                  style={styles.instacartButton}
-                  icon={
-                    <Feather name="shopping-bag" size={18} color="#FFFFFF" />
-                  }
-                  testID="button-order-instacart-recipe"
-                  accessibilityRole="button"
-                  accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order missing ingredients on Instacart"}
-                >
-                  {instacartLoading ? "Loading..." : "Order on Instacart"}
-                </GlassButton>
-              ) : null}
-            </View>
-          ) : null}
-        </GlassCard>
-
-        <View
-          onLayout={(e) => {
-            instructionSectionY.current = e.nativeEvent.layout.y;
+        <RecipeInstructions
+          recipe={recipe}
+          showVoiceControls={showVoiceControls}
+          voiceNav={voiceNav}
+          termHighlightingEnabled={termHighlightingEnabled}
+          onTermPress={handleTermPress}
+          stepPositions={stepPositions}
+          onInstructionSectionLayout={(y) => {
+            instructionSectionY.current = y;
           }}
-        >
-          <GlassCard style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText type="h4">Instructions</ThemedText>
-              {showVoiceControls ? (
-                <ThemedText type="caption" style={{ color: AppColors.primary }}>
-                  Step {voiceNav.currentStep + 1}/{recipe.instructions.length}
-                </ThemedText>
-              ) : null}
-            </View>
-
-            {recipe.instructions.map((instruction, index) => {
-              const isCurrentStep =
-                showVoiceControls && voiceNav.currentStep === index;
-              const isPastStep =
-                showVoiceControls && index < voiceNav.currentStep;
-
-              return (
-                <View
-                  key={index}
-                  onLayout={(e) => {
-                    stepPositions.current[index] = e.nativeEvent.layout.y;
-                  }}
-                >
-                  <Pressable
-                    onPress={() => {
-                      if (showVoiceControls) {
-                        voiceNav.goToStep(index);
-                      }
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Step ${index + 1}${isCurrentStep ? ', current step' : ''}${isPastStep ? ', completed' : ''}`}
-                    accessibilityHint={showVoiceControls ? "Tap to jump to this step" : ""}
-                  >
-                    <View
-                      style={[
-                        styles.instructionRow,
-                        isCurrentStep && styles.currentStepRow,
-                        isPastStep && styles.pastStepRow,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.stepNumber,
-                          {
-                            backgroundColor: isCurrentStep
-                              ? AppColors.primary
-                              : isPastStep
-                                ? AppColors.success
-                                : theme.backgroundDefault,
-                          },
-                        ]}
-                      >
-                        {isPastStep ? (
-                          <Feather name="check" size={14} color="#FFFFFF" />
-                        ) : (
-                          <ThemedText
-                            type="small"
-                            style={[
-                              styles.stepNumberText,
-                              { color: isCurrentStep ? "#FFFFFF" : theme.text },
-                            ]}
-                          >
-                            {index + 1}
-                          </ThemedText>
-                        )}
-                      </View>
-                      <View style={styles.instructionText}>
-                        {termHighlightingEnabled ? (
-                          <TermHighlighter
-                            text={instruction}
-                            onTermPress={handleTermPress}
-                          />
-                        ) : (
-                          <ThemedText
-                            type="body"
-                            style={[
-                              isCurrentStep && styles.currentStepText,
-                              isPastStep && styles.pastStepText,
-                            ]}
-                          >
-                            {instruction}
-                          </ThemedText>
-                        )}
-                      </View>
-                      {isCurrentStep && voiceNav.isSpeaking ? (
-                        <Feather
-                          name="volume-2"
-                          size={16}
-                          color={AppColors.primary}
-                        />
-                      ) : null}
-                    </View>
-                  </Pressable>
-                </View>
-              );
-            })}
-          </GlassCard>
-        </View>
+          theme={theme}
+        />
       </ScrollView>
 
       {showVoiceControls ? (
@@ -1120,186 +695,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
   },
-  heroImage: {
-    height: 250,
-    borderRadius: BorderRadius.lg,
-    width: "100%",
-  },
-  heroPlaceholder: {
-    height: 200,
-    borderRadius: BorderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  header: {
+  headerGroup: {
     gap: Spacing.sm,
-  },
-  description: {},
-  metaRow: {
-    flexDirection: "row",
-    gap: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  metaText: {},
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  tag: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  cookwareRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
-  cookwareSection: {
-    gap: Spacing.md,
-  },
-  cookwareList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.xs,
-  },
-  cookwareBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  section: {
-    gap: Spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionTitle: {
-    marginBottom: Spacing.xs,
-  },
-  ingredientRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingVertical: Spacing.xs,
-  },
-  ingredientText: {
-    flex: 1,
-  },
-  missingIngredient: {},
-  swapButton: {
-    padding: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  addMissingButton: {
-    flex: 1,
-  },
-  missingActionsContainer: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  instacartButton: {
-    flex: 1,
-    backgroundColor: "#43B02A",
-  },
-  instructionRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    marginBottom: Spacing.md,
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    alignItems: "flex-start",
-  },
-  currentStepRow: {
-    backgroundColor: "rgba(0, 122, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: AppColors.primary,
-  },
-  pastStepRow: {},
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepNumberText: {
-    fontWeight: "600",
-  },
-  instructionText: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  currentStepText: {
-    fontWeight: "600",
-  },
-  pastStepText: {
-    textDecorationLine: "line-through",
-  },
-  nutritionCard: {
-    gap: Spacing.md,
-  },
-  nutritionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  nutritionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  nutritionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  caloriesDisplay: {
-    alignItems: "flex-start",
-  },
-  macrosDisplay: {
-    alignItems: "flex-end",
   },
   voiceControlsContainer: {
     position: "absolute",
     left: Spacing.lg,
     right: Spacing.lg,
-  },
-  servingsStepper: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  stepperControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  stepperButton: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  servingsValue: {
-    minWidth: 32,
-    textAlign: "center",
   },
   notFoundContainer: {
     flex: 1,

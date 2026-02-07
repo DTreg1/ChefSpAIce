@@ -60,6 +60,15 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
   - Server (sync write operations): All POST/PUT/DELETE handlers in sync.router.ts and auth.router.ts update `sectionUpdatedAt` for their respective sections.
   - Client (client/lib/sync-manager.ts): Stores `serverTimestamp` in AsyncStorage, sends it as `lastSyncedAt` on next fullSync(). Handles `unchanged` responses by skipping data writes.
 
+### Screen Refactoring (Feb 2026)
+- Refactored 4 oversized screen files into composable components while preserving all functionality and accessibility:
+  - **InventoryScreen**: 1,376 → 396 lines. Extracted 5 components + 2 utility modules into `client/components/inventory/` (InventoryFilters, InventoryFunFact, InventoryNutritionSummary, SwipeableItemCard, InventoryGroupSection, inventory-utils.ts, useFunFact.ts)
+  - **RecipeDetailScreen**: 1,325 → 726 lines. Extracted 6 components into `client/components/recipe-detail/` (RecipeHero, RecipeHeader, RecipeCookwareSection, RecipeNutritionCard, RecipeIngredientsList, RecipeInstructions). Remaining lines are required logic/callbacks.
+  - **MealPlanScreen**: 849 → 408 lines. Extracted 4 components into `client/components/meal-plan/` (MealPlanWeekNav, MealPlanDaySelector, MealPlanSlotCard, MealPlanActionSheet)
+  - **SettingsScreen**: 2,190 → 914 lines. Extracted 15 components + constants file into `client/components/settings/` (SettingsChipSelector reusable for 5 chip-selection sections, SettingsNotifications, SettingsNutritionTargets, SettingsAccountData, SettingsReferral, etc.)
+- Pattern: UI rendering extracted to components; all hooks, state, callbacks, and business logic remain in screen files
+- All testIDs, accessibilityRole/Label/Hint/State props, and Platform.OS conditionals preserved exactly
+
 ### Accessibility Improvements (Feb 2026)
 - **Live Region Announcements**: Added `accessibilityLiveRegion` across 6 files for screen reader dynamic content announcements:
   - "polite" for non-urgent: fun facts, nutrition summaries, loading states (InventoryScreen, CookPotLoader, GenerateRecipeScreen)
