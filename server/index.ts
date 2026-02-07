@@ -40,11 +40,13 @@ function setupCors(app: express.Application) {
       });
     }
 
-    // Allow localhost origins for development
-    origins.add("http://localhost:8081");
-    origins.add("http://127.0.0.1:8081");
-    origins.add("http://localhost:5000");
-    origins.add("http://127.0.0.1:5000");
+    // Only allow localhost in development
+    if (process.env.NODE_ENV !== "production") {
+      origins.add("http://localhost:8081");
+      origins.add("http://127.0.0.1:8081");
+      origins.add("http://localhost:5000");
+      origins.add("http://127.0.0.1:5000");
+    }
 
     const origin = req.header("origin");
 
