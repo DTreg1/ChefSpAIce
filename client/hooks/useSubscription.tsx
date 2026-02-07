@@ -5,9 +5,10 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   ReactNode,
 } from "react";
-import { Platform, Alert } from "react-native";
+import { Platform, Alert, AppState, AppStateStatus } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
@@ -146,6 +147,8 @@ interface SubscriptionProviderProps {
   children: ReactNode;
 }
 
+const STALE_TIME_MS = 5 * 60 * 1000;
+
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const { isAuthenticated, token } = useAuth();
 
@@ -166,7 +169,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     purchasePackage,
   } = useStoreKit();
 
-  const fetchSubscription = useCallback(async () => {
+  const lastFetchRef = useRef<number>(0);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const backgroundTimestampRef = useRef<number>(0);
+
+  const performFetch = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setSubscriptionData(null);
       if (typeof window !== "undefined") {
@@ -255,9 +262,15 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         window.__subscriptionCache = null;
       }
     } finally {
+      lastFetchRef.current = Date.now();
       setIsLoading(false);
     }
   }, [isAuthenticated, token]);
+
+  const forceRefetch = useCallback(async () => {
+    lastFetchRef.current = 0;
+    await performFetch();
+  }, [performFetch]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -271,8 +284,29 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       window.__subscriptionFetched = true;
       window.__subscriptionLastToken = token;
     }
-    fetchSubscription();
-  }, [token, fetchSubscription]);
+    lastFetchRef.current = 0;
+    performFetch();
+  }, [token, performFetch]);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextState === "active"
+      ) {
+        const elapsed = Date.now() - backgroundTimestampRef.current;
+        if (elapsed >= STALE_TIME_MS) {
+          forceRefetch();
+        }
+      } else if (nextState.match(/inactive|background/)) {
+        backgroundTimestampRef.current = Date.now();
+      }
+      appStateRef.current = nextState;
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, [forceRefetch]);
 
   const tier = subscriptionData?.tier ?? SubscriptionTier.FREE;
   const status = subscriptionData?.status ?? "none";
@@ -344,7 +378,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           if (success) {
             Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
             setShowTrialEndedModal(false);
-            await fetchSubscription();
+            await forceRefetch();
           }
           return;
         }
@@ -414,7 +448,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         setIsPurchasing(false);
       }
     },
-    [isStoreKitAvailable, offerings, purchasePackage, fetchSubscription, token],
+    [isStoreKitAvailable, offerings, purchasePackage, forceRefetch, token],
   );
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
@@ -468,7 +502,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       graceDaysRemaining,
       checkLimit,
       checkFeature,
-      refetch: fetchSubscription,
+      refetch: forceRefetch,
     }),
     [
       tier,
@@ -488,7 +522,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       graceDaysRemaining,
       checkLimit,
       checkFeature,
-      fetchSubscription,
+      forceRefetch,
     ],
   );
 
