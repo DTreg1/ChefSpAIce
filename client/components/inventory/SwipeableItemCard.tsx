@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Platform, ActionSheetIOS, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
   FadeIn,
@@ -98,6 +98,28 @@ export function SwipeableItemCard({
   const handleWasted = () => {
     translateX.value = withSpring(0);
     onWasted(item);
+  };
+
+  const handleLongPress = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Mark Consumed", "Delete", "Cancel"],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 2,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) handleConsumed();
+          if (buttonIndex === 1) handleWasted();
+        },
+      );
+    } else {
+      Alert.alert(item.name, "Choose an action", [
+        { text: "Mark Consumed", onPress: handleConsumed },
+        { text: "Delete", onPress: handleWasted, style: "destructive" },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
   };
 
   const panGesture = Gesture.Pan()
@@ -225,10 +247,25 @@ export function SwipeableItemCard({
         <Animated.View style={[cardStyle, styles.cardWrapper]}>
           <Pressable
             onPress={() => onPress(item.id)}
+            onLongPress={handleLongPress}
             testID={`card-inventory-item-${item.id}`}
             accessibilityRole="button"
             accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}, expires ${formatDate(item.expirationDate)}`}
-            accessibilityHint="Opens item details"
+            accessibilityHint="Opens item details. Long press for more options."
+            accessibilityActions={[
+              { name: "consumed", label: "Mark as consumed" },
+              { name: "delete", label: "Delete item" },
+            ]}
+            onAccessibilityAction={(event) => {
+              switch (event.nativeEvent.actionName) {
+                case "consumed":
+                  handleConsumed();
+                  break;
+                case "delete":
+                  handleWasted();
+                  break;
+              }
+            }}
           >
             <GlassView
               style={[
