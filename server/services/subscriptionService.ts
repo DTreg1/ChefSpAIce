@@ -22,8 +22,8 @@
  */
 
 import { db } from "../db";
-import { users, userSyncData, subscriptions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, subscriptions, userInventoryItems, userCookwareItems } from "@shared/schema";
+import { eq, count } from "drizzle-orm";
 import {
   SubscriptionTier,
   TierLimits,
@@ -87,75 +87,37 @@ async function getUserById(userId: string) {
   return user;
 }
 
-async function getUserSyncData(userId: string) {
-  const [syncData] = await db
-    .select()
-    .from(userSyncData)
-    .where(eq(userSyncData.userId, userId))
-    .limit(1);
-  return syncData;
+async function getInventoryCount(userId: string): Promise<number> {
+  const [result] = await db
+    .select({ value: count() })
+    .from(userInventoryItems)
+    .where(eq(userInventoryItems.userId, userId));
+  return result?.value ?? 0;
 }
 
-interface ParsedInventoryItem {
-  id: string;
-  name: string;
-  quantity?: number;
-  [key: string]: unknown;
-}
-
-interface ParsedCookwareItem {
-  id: number | string;
-  name?: string;
-  [key: string]: unknown;
-}
-
-function parseInventoryArray(value: unknown): ParsedInventoryItem[] {
-  if (!value) return [];
-  if (Array.isArray(value)) {
-    return value as ParsedInventoryItem[];
-  }
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as ParsedInventoryItem[];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-function parseCookwareArray(value: unknown): ParsedCookwareItem[] {
-  if (!value) return [];
-  if (Array.isArray(value)) {
-    return value as ParsedCookwareItem[];
-  }
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as ParsedCookwareItem[];
-    } catch {
-      return [];
-    }
-  }
-  return [];
+async function getCookwareCount(userId: string): Promise<number> {
+  const [result] = await db
+    .select({ value: count() })
+    .from(userCookwareItems)
+    .where(eq(userCookwareItems.userId, userId));
+  return result?.value ?? 0;
 }
 
 export async function getUserEntitlements(
   userId: string
 ): Promise<UserEntitlements> {
-  // Optimized: Fetch user and sync data in parallel, then check monthly reset
-  const [initialUser, syncData] = await Promise.all([
+  const [initialUser, pantryItemCount, cookwareCount] = await Promise.all([
     getUserById(userId),
-    getUserSyncData(userId),
+    getInventoryCount(userId),
+    getCookwareCount(userId),
   ]);
 
   if (!initialUser) {
     throw new Error("User not found");
   }
 
-  // Check if monthly counters need reset (only re-fetches user if update occurred)
   const wasReset = await resetMonthlyCountsIfNeededOptimized(userId, initialUser);
   
-  // Use refreshed user only if reset occurred, otherwise use cached user
   const user = wasReset ? await getUserById(userId) : initialUser;
   if (!user) {
     throw new Error("User not found after refresh");
@@ -163,12 +125,6 @@ export async function getUserEntitlements(
 
   const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.BASIC;
   const limits = getTierLimits(tier);
-
-  const inventory = parseInventoryArray(syncData?.inventory || null);
-  const cookware = parseCookwareArray(syncData?.cookware || null);
-
-  const pantryItemCount = inventory.length;
-  const cookwareCount = cookware.length;
   const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
 
   return {

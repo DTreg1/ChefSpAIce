@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
-import { eq } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
-import { userSessions, userSyncData } from "../../shared/schema";
+import { userSessions, userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
 import { AppError } from "../middleware/errorHandler";
@@ -177,6 +177,45 @@ function getAuthToken(req: Request): string | null {
   return authHeader.slice(7);
 }
 
+async function updateSectionTimestamp(userId: string, section: string) {
+  const existing = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
+  const now = new Date();
+  if (existing.length === 0) {
+    await db.insert(userSyncData).values({
+      userId,
+      sectionUpdatedAt: { [section]: now.toISOString() },
+      lastSyncedAt: now,
+      updatedAt: now,
+    });
+  } else {
+    await db.update(userSyncData).set({
+      sectionUpdatedAt: {
+        ...(existing[0].sectionUpdatedAt as Record<string, string> || {}),
+        [section]: now.toISOString(),
+      },
+      lastSyncedAt: now,
+      updatedAt: now,
+    }).where(eq(userSyncData.userId, userId));
+  }
+}
+
+const recipeKnownKeys = new Set(["id", "title", "description", "ingredients", "instructions", "prepTime", "cookTime", "servings", "imageUri", "cloudImageUri", "nutrition", "isFavorite", "updatedAt"]);
+const mealPlanKnownKeys = new Set(["id", "date", "meals", "updatedAt"]);
+const shoppingListKnownKeys = new Set(["id", "name", "quantity", "unit", "isChecked", "category", "recipeId", "updatedAt"]);
+const cookwareKnownKeys = new Set(["id", "name", "category", "alternatives", "updatedAt"]);
+
+function extractExtraData(data: Record<string, unknown>, knownKeys: Set<string>): Record<string, unknown> | null {
+  const extra: Record<string, unknown> = {};
+  let hasExtra = false;
+  for (const key of Object.keys(data)) {
+    if (!knownKeys.has(key)) {
+      extra[key] = data[key];
+      hasExtra = true;
+    }
+  }
+  return hasExtra ? extra : null;
+}
+
 router.post("/inventory", async (req: Request, res: Response, next: NextFunction) => {
   let userId: string | undefined;
   try {
@@ -197,38 +236,91 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
     }
 
     const { operation, data } = parseResult.data;
+    const dataIdStr = String(data.id);
 
     if (operation === "create") {
+      const [{ value: currentCount }] = await db.select({ value: count() }).from(userInventoryItems).where(eq(userInventoryItems.userId, session.userId));
       const limitCheck = await checkPantryItemLimit(session.userId);
-      const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
-      if (remaining < 1) {
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+      if (currentCount >= maxLimit) {
         throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
           limit: limitCheck.limit,
           remaining: 0,
         });
       }
-    }
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentInventory: InventoryItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
-    }
-
-    const dataIdStr = String(data.id);
-    
-    if (operation === "create") {
-      currentInventory.push(data);
+      await db.insert(userInventoryItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        barcode: data.barcode,
+        quantity: data.quantity,
+        unit: data.unit,
+        storageLocation: data.storageLocation,
+        purchaseDate: data.purchaseDate,
+        expirationDate: data.expirationDate,
+        category: data.category,
+        usdaCategory: data.usdaCategory,
+        nutrition: data.nutrition,
+        notes: data.notes,
+        imageUri: data.imageUri,
+        fdcId: data.fdcId,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [userInventoryItems.userId, userInventoryItems.itemId],
+        set: {
+          name: data.name,
+          barcode: data.barcode,
+          quantity: data.quantity,
+          unit: data.unit,
+          storageLocation: data.storageLocation,
+          purchaseDate: data.purchaseDate,
+          expirationDate: data.expirationDate,
+          category: data.category,
+          usdaCategory: data.usdaCategory,
+          nutrition: data.nutrition,
+          notes: data.notes,
+          imageUri: data.imageUri,
+          fdcId: data.fdcId,
+          updatedAt: new Date(),
+        },
+      });
     } else if (operation === "update") {
-      const index = currentInventory.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+      const existingRows = await db.select().from(userInventoryItems).where(
+        and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
       );
-      if (index !== -1) {
-        currentInventory[index] = data;
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        if (data.updatedAt && existing.updatedAt) {
+          const incomingTime = new Date(data.updatedAt).getTime();
+          const existingTime = new Date(existing.updatedAt).getTime();
+          if (incomingTime <= existingTime) {
+            await updateSectionTimestamp(session.userId, "inventory");
+            res.json(successResponse({
+              syncedAt: new Date().toISOString(),
+              operation: "skipped",
+              itemId: dataIdStr,
+            }));
+            return;
+          }
+        }
+        await db.update(userInventoryItems).set({
+          name: data.name,
+          barcode: data.barcode,
+          quantity: data.quantity,
+          unit: data.unit,
+          storageLocation: data.storageLocation,
+          purchaseDate: data.purchaseDate,
+          expirationDate: data.expirationDate,
+          category: data.category,
+          usdaCategory: data.usdaCategory,
+          nutrition: data.nutrition,
+          notes: data.notes,
+          imageUri: data.imageUri,
+          fdcId: data.fdcId,
+          updatedAt: new Date(),
+        }).where(and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr)));
       } else {
         const limitCheck = await checkPantryItemLimit(session.userId);
         const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
@@ -238,43 +330,32 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
             remaining: 0,
           });
         }
-        currentInventory.push(data);
+        await db.insert(userInventoryItems).values({
+          userId: session.userId,
+          itemId: dataIdStr,
+          name: data.name,
+          barcode: data.barcode,
+          quantity: data.quantity,
+          unit: data.unit,
+          storageLocation: data.storageLocation,
+          purchaseDate: data.purchaseDate,
+          expirationDate: data.expirationDate,
+          category: data.category,
+          usdaCategory: data.usdaCategory,
+          nutrition: data.nutrition,
+          notes: data.notes,
+          imageUri: data.imageUri,
+          fdcId: data.fdcId,
+          updatedAt: new Date(),
+        });
       }
     } else if (operation === "delete") {
-      currentInventory = currentInventory.filter(
-        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      await db.delete(userInventoryItems).where(
+        and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
       );
     }
 
-    const finalLimitCheck = await checkPantryItemLimit(session.userId);
-    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
-    if (currentInventory.length > maxLimit) {
-      throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
-        limit: finalLimitCheck.limit,
-        count: currentInventory.length,
-      });
-    }
-
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        inventory: currentInventory,
-        sectionUpdatedAt: { inventory: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          inventory: currentInventory,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            inventory: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "inventory");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -312,32 +393,18 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentInventory: InventoryItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
-    }
-
-    const index = currentInventory.findIndex(
-      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    const existingRows = await db.select().from(userInventoryItems).where(
+      and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
     );
-    
-    if (index !== -1) {
-      const existingItem = currentInventory[index] as { updatedAt?: string };
+
+    if (existingRows.length > 0) {
+      const existingItem = existingRows[0];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      // Prefer data.updatedAt (actual modification time), fallback to clientTimestamp (queue time), then Date.now()
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const dataUpdatedAt = data.updatedAt;
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
-      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
-      
-      if (newTimestamp >= existingTimestamp) {
-        currentInventory[index] = { ...data, updatedAt: finalTimestamp };
-      } else {
+
+      if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
@@ -345,6 +412,25 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
           itemId: dataIdStr,
         }));
       }
+
+      await db.update(userInventoryItems).set({
+        name: data.name,
+        barcode: data.barcode,
+        quantity: data.quantity,
+        unit: data.unit,
+        storageLocation: data.storageLocation,
+        purchaseDate: data.purchaseDate,
+        expirationDate: data.expirationDate,
+        category: data.category,
+        usdaCategory: data.usdaCategory,
+        nutrition: data.nutrition,
+        notes: data.notes,
+        imageUri: data.imageUri,
+        fdcId: data.fdcId,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
+      );
     } else {
       const limitCheck = await checkPantryItemLimit(session.userId);
       const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
@@ -354,31 +440,28 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
           remaining: 0,
         });
       }
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
-      currentInventory.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
-    }
 
-    const finalLimitCheck = await checkPantryItemLimit(session.userId);
-    const maxLimit = typeof finalLimitCheck.limit === 'number' ? finalLimitCheck.limit : Infinity;
-    if (currentInventory.length > maxLimit) {
-      throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.PANTRY_LIMIT_REACHED], ERROR_CODES.PANTRY_LIMIT_REACHED).withDetails({
-        limit: finalLimitCheck.limit,
-        count: currentInventory.length,
+      await db.insert(userInventoryItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        barcode: data.barcode,
+        quantity: data.quantity,
+        unit: data.unit,
+        storageLocation: data.storageLocation,
+        purchaseDate: data.purchaseDate,
+        expirationDate: data.expirationDate,
+        category: data.category,
+        usdaCategory: data.usdaCategory,
+        nutrition: data.nutrition,
+        notes: data.notes,
+        imageUri: data.imageUri,
+        fdcId: data.fdcId,
+        updatedAt: new Date(),
       });
     }
 
-    await db
-      .update(userSyncData)
-      .set({
-        inventory: currentInventory,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          inventory: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "inventory");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -415,32 +498,11 @@ router.delete("/inventory", async (req: Request, res: Response, next: NextFuncti
     const { data } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentInventory: InventoryItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].inventory) {
-      currentInventory = (existingSyncData[0].inventory as InventoryItem[]) || [];
-    }
-
-    currentInventory = currentInventory.filter(
-      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    await db.delete(userInventoryItems).where(
+      and(eq(userInventoryItems.userId, session.userId), eq(userInventoryItems.itemId, dataIdStr))
     );
 
-    await db
-      .update(userSyncData)
-      .set({
-        inventory: currentInventory,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          inventory: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "inventory");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -473,54 +535,104 @@ router.post("/recipes", async (req: Request, res: Response, next: NextFunction) 
 
     const { operation, data } = parseResult.data;
     const dataIdStr = String(data.id);
-
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentRecipes: Recipe[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
-    }
+    const extraData = extractExtraData(data as Record<string, unknown>, recipeKnownKeys);
 
     if (operation === "create") {
-      currentRecipes.push(data);
+      await db.insert(userSavedRecipes).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        title: data.title,
+        description: data.description,
+        ingredients: data.ingredients,
+        instructions: data.instructions,
+        prepTime: data.prepTime,
+        cookTime: data.cookTime,
+        servings: data.servings,
+        imageUri: data.imageUri,
+        cloudImageUri: data.cloudImageUri,
+        nutrition: data.nutrition,
+        isFavorite: data.isFavorite,
+        extraData,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [userSavedRecipes.userId, userSavedRecipes.itemId],
+        set: {
+          title: data.title,
+          description: data.description,
+          ingredients: data.ingredients,
+          instructions: data.instructions,
+          prepTime: data.prepTime,
+          cookTime: data.cookTime,
+          servings: data.servings,
+          imageUri: data.imageUri,
+          cloudImageUri: data.cloudImageUri,
+          nutrition: data.nutrition,
+          isFavorite: data.isFavorite,
+          extraData,
+          updatedAt: new Date(),
+        },
+      });
     } else if (operation === "update") {
-      const index = currentRecipes.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+      const existingRows = await db.select().from(userSavedRecipes).where(
+        and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr))
       );
-      if (index !== -1) {
-        currentRecipes[index] = data;
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        if (data.updatedAt && existing.updatedAt) {
+          const incomingTime = new Date(data.updatedAt).getTime();
+          const existingTime = new Date(existing.updatedAt).getTime();
+          if (incomingTime <= existingTime) {
+            await updateSectionTimestamp(session.userId, "recipes");
+            res.json(successResponse({
+              syncedAt: new Date().toISOString(),
+              operation: "skipped",
+              itemId: dataIdStr,
+            }));
+            return;
+          }
+        }
+        await db.update(userSavedRecipes).set({
+          title: data.title,
+          description: data.description,
+          ingredients: data.ingredients,
+          instructions: data.instructions,
+          prepTime: data.prepTime,
+          cookTime: data.cookTime,
+          servings: data.servings,
+          imageUri: data.imageUri,
+          cloudImageUri: data.cloudImageUri,
+          nutrition: data.nutrition,
+          isFavorite: data.isFavorite,
+          extraData,
+          updatedAt: new Date(),
+        }).where(and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr)));
       } else {
-        currentRecipes.push(data);
+        await db.insert(userSavedRecipes).values({
+          userId: session.userId,
+          itemId: dataIdStr,
+          title: data.title,
+          description: data.description,
+          ingredients: data.ingredients,
+          instructions: data.instructions,
+          prepTime: data.prepTime,
+          cookTime: data.cookTime,
+          servings: data.servings,
+          imageUri: data.imageUri,
+          cloudImageUri: data.cloudImageUri,
+          nutrition: data.nutrition,
+          isFavorite: data.isFavorite,
+          extraData,
+          updatedAt: new Date(),
+        });
       }
     } else if (operation === "delete") {
-      currentRecipes = currentRecipes.filter(
-        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      await db.delete(userSavedRecipes).where(
+        and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr))
       );
     }
 
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        recipes: currentRecipes,
-        sectionUpdatedAt: { recipes: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          recipes: currentRecipes,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            recipes: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "recipes");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -557,32 +669,20 @@ router.put("/recipes", async (req: Request, res: Response, next: NextFunction) =
 
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
+    const extraData = extractExtraData(data as Record<string, unknown>, recipeKnownKeys);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentRecipes: Recipe[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
-    }
-
-    const index = currentRecipes.findIndex(
-      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    const existingRows = await db.select().from(userSavedRecipes).where(
+      and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr))
     );
-    
-    if (index !== -1) {
-      const existingItem = currentRecipes[index] as { updatedAt?: string };
+
+    if (existingRows.length > 0) {
+      const existingItem = existingRows[0];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const dataUpdatedAt = data.updatedAt;
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
-      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
-      
-      if (newTimestamp >= existingTimestamp) {
-        currentRecipes[index] = { ...data, updatedAt: finalTimestamp };
-      } else {
+
+      if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
@@ -590,23 +690,45 @@ router.put("/recipes", async (req: Request, res: Response, next: NextFunction) =
           itemId: dataIdStr,
         }));
       }
+
+      await db.update(userSavedRecipes).set({
+        title: data.title,
+        description: data.description,
+        ingredients: data.ingredients,
+        instructions: data.instructions,
+        prepTime: data.prepTime,
+        cookTime: data.cookTime,
+        servings: data.servings,
+        imageUri: data.imageUri,
+        cloudImageUri: data.cloudImageUri,
+        nutrition: data.nutrition,
+        isFavorite: data.isFavorite,
+        extraData,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr))
+      );
     } else {
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
-      currentRecipes.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
+      await db.insert(userSavedRecipes).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        title: data.title,
+        description: data.description,
+        ingredients: data.ingredients,
+        instructions: data.instructions,
+        prepTime: data.prepTime,
+        cookTime: data.cookTime,
+        servings: data.servings,
+        imageUri: data.imageUri,
+        cloudImageUri: data.cloudImageUri,
+        nutrition: data.nutrition,
+        isFavorite: data.isFavorite,
+        extraData,
+        updatedAt: new Date(),
+      });
     }
 
-    await db
-      .update(userSyncData)
-      .set({
-        recipes: currentRecipes,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          recipes: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "recipes");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -643,32 +765,11 @@ router.delete("/recipes", async (req: Request, res: Response, next: NextFunction
     const { data } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentRecipes: Recipe[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].recipes) {
-      currentRecipes = (existingSyncData[0].recipes as Recipe[]) || [];
-    }
-
-    currentRecipes = currentRecipes.filter(
-      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    await db.delete(userSavedRecipes).where(
+      and(eq(userSavedRecipes.userId, session.userId), eq(userSavedRecipes.itemId, dataIdStr))
     );
 
-    await db
-      .update(userSyncData)
-      .set({
-        recipes: currentRecipes,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          recipes: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "recipes");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -701,54 +802,68 @@ router.post("/mealPlans", async (req: Request, res: Response, next: NextFunction
 
     const { operation, data } = parseResult.data;
     const dataIdStr = String(data.id);
-
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentMealPlans: MealPlan[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
-    }
+    const extraData = extractExtraData(data as Record<string, unknown>, mealPlanKnownKeys);
 
     if (operation === "create") {
-      currentMealPlans.push(data);
+      await db.insert(userMealPlans).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        date: data.date,
+        meals: data.meals,
+        extraData,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [userMealPlans.userId, userMealPlans.itemId],
+        set: {
+          date: data.date,
+          meals: data.meals,
+          extraData,
+          updatedAt: new Date(),
+        },
+      });
     } else if (operation === "update") {
-      const index = currentMealPlans.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+      const existingRows = await db.select().from(userMealPlans).where(
+        and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr))
       );
-      if (index !== -1) {
-        currentMealPlans[index] = data;
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        if (data.updatedAt && existing.updatedAt) {
+          const incomingTime = new Date(data.updatedAt).getTime();
+          const existingTime = new Date(existing.updatedAt).getTime();
+          if (incomingTime <= existingTime) {
+            await updateSectionTimestamp(session.userId, "mealPlans");
+            res.json(successResponse({
+              syncedAt: new Date().toISOString(),
+              operation: "skipped",
+              itemId: dataIdStr,
+            }));
+            return;
+          }
+        }
+        await db.update(userMealPlans).set({
+          date: data.date,
+          meals: data.meals,
+          extraData,
+          updatedAt: new Date(),
+        }).where(and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr)));
       } else {
-        currentMealPlans.push(data);
+        await db.insert(userMealPlans).values({
+          userId: session.userId,
+          itemId: dataIdStr,
+          date: data.date,
+          meals: data.meals,
+          extraData,
+          updatedAt: new Date(),
+        });
       }
     } else if (operation === "delete") {
-      currentMealPlans = currentMealPlans.filter(
-        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      await db.delete(userMealPlans).where(
+        and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr))
       );
     }
 
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        mealPlans: currentMealPlans,
-        sectionUpdatedAt: { mealPlans: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          mealPlans: currentMealPlans,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            mealPlans: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "mealPlans");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -785,32 +900,20 @@ router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction)
 
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
+    const extraData = extractExtraData(data as Record<string, unknown>, mealPlanKnownKeys);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentMealPlans: MealPlan[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
-    }
-
-    const index = currentMealPlans.findIndex(
-      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    const existingRows = await db.select().from(userMealPlans).where(
+      and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr))
     );
-    
-    if (index !== -1) {
-      const existingItem = currentMealPlans[index] as { updatedAt?: string };
+
+    if (existingRows.length > 0) {
+      const existingItem = existingRows[0];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const dataUpdatedAt = data.updatedAt;
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
-      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
-      
-      if (newTimestamp >= existingTimestamp) {
-        currentMealPlans[index] = { ...data, updatedAt: finalTimestamp };
-      } else {
+
+      if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
@@ -818,23 +921,27 @@ router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction)
           itemId: dataIdStr,
         }));
       }
+
+      await db.update(userMealPlans).set({
+        date: data.date,
+        meals: data.meals,
+        extraData,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr))
+      );
     } else {
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
-      currentMealPlans.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
+      await db.insert(userMealPlans).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        date: data.date,
+        meals: data.meals,
+        extraData,
+        updatedAt: new Date(),
+      });
     }
 
-    await db
-      .update(userSyncData)
-      .set({
-        mealPlans: currentMealPlans,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          mealPlans: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "mealPlans");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -871,32 +978,11 @@ router.delete("/mealPlans", async (req: Request, res: Response, next: NextFuncti
     const { data } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentMealPlans: MealPlan[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].mealPlans) {
-      currentMealPlans = (existingSyncData[0].mealPlans as MealPlan[]) || [];
-    }
-
-    currentMealPlans = currentMealPlans.filter(
-      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    await db.delete(userMealPlans).where(
+      and(eq(userMealPlans.userId, session.userId), eq(userMealPlans.itemId, dataIdStr))
     );
 
-    await db
-      .update(userSyncData)
-      .set({
-        mealPlans: currentMealPlans,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          mealPlans: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "mealPlans");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -933,79 +1019,103 @@ router.post("/cookware", async (req: Request, res: Response, next: NextFunction)
 
     const { operation, data } = parseResult.data;
     const dataIdStr = String(data.id);
+    const extraData = extractExtraData(data as Record<string, unknown>, cookwareKnownKeys);
 
-    // Fetch existing cookware FIRST before any mutation decisions
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
+    if (operation === "create") {
+      const existingRows = await db.select().from(userCookwareItems).where(
+        and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
+      );
+      const isAddingNewItem = existingRows.length === 0;
 
-    let currentCookware: Cookware[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
-    }
+      if (isAddingNewItem) {
+        const [{ value: currentCount }] = await db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId));
+        const limitCheck = await checkCookwareLimit(session.userId);
+        const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
 
-    // Determine if this operation would add a new item
-    const isAddingNewItem = operation === "create" || 
-      (operation === "update" && currentCookware.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
-      ) === -1);
+        if (currentCount >= maxLimit) {
+          throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
+            limit: limitCheck.limit,
+            remaining: 0,
+            count: currentCount,
+          });
+        }
+      }
 
-    // Check limit BEFORE any mutation if adding a new item
-    if (isAddingNewItem) {
-      const limitCheck = await checkCookwareLimit(session.userId);
-      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
-      
-      // Check if current count would exceed limit after adding
-      if (currentCookware.length >= maxLimit) {
-        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
-          limit: limitCheck.limit,
-          remaining: 0,
-          count: currentCookware.length,
+      await db.insert(userCookwareItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        category: data.category,
+        alternatives: data.alternatives,
+        extraData,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [userCookwareItems.userId, userCookwareItems.itemId],
+        set: {
+          name: data.name,
+          category: data.category,
+          alternatives: data.alternatives,
+          extraData,
+          updatedAt: new Date(),
+        },
+      });
+    } else if (operation === "update") {
+      const existingRows = await db.select().from(userCookwareItems).where(
+        and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
+      );
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        if (data.updatedAt && existing.updatedAt) {
+          const incomingTime = new Date(data.updatedAt).getTime();
+          const existingTime = new Date(existing.updatedAt).getTime();
+          if (incomingTime <= existingTime) {
+            await updateSectionTimestamp(session.userId, "cookware");
+            res.json(successResponse({
+              syncedAt: new Date().toISOString(),
+              operation: "skipped",
+              itemId: dataIdStr,
+            }));
+            return;
+          }
+        }
+        await db.update(userCookwareItems).set({
+          name: data.name,
+          category: data.category,
+          alternatives: data.alternatives,
+          extraData,
+          updatedAt: new Date(),
+        }).where(and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr)));
+      } else {
+        const [{ value: currentCount }] = await db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId));
+        const limitCheck = await checkCookwareLimit(session.userId);
+        const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+
+        if (currentCount >= maxLimit) {
+          throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
+            limit: limitCheck.limit,
+            remaining: 0,
+            count: currentCount,
+          });
+        }
+
+        await db.insert(userCookwareItems).values({
+          userId: session.userId,
+          itemId: dataIdStr,
+          name: data.name,
+          category: data.category,
+          alternatives: data.alternatives,
+          extraData,
+          updatedAt: new Date(),
         });
       }
-    }
-
-    // Now safe to mutate the array
-    if (operation === "create") {
-      currentCookware.push(data);
-    } else if (operation === "update") {
-      const index = currentCookware.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
-      );
-      if (index !== -1) {
-        currentCookware[index] = data;
-      } else {
-        // Already checked limit above, safe to push
-        currentCookware.push(data);
-      }
     } else if (operation === "delete") {
-      currentCookware = currentCookware.filter(
-        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      await db.delete(userCookwareItems).where(
+        and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
       );
     }
 
-    // Persist to database
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        cookware: currentCookware,
-        sectionUpdatedAt: { cookware: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          cookware: currentCookware,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            cookware: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "cookware");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1042,49 +1152,20 @@ router.put("/cookware", async (req: Request, res: Response, next: NextFunction) 
 
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
+    const extraData = extractExtraData(data as Record<string, unknown>, cookwareKnownKeys);
 
-    // Fetch existing cookware FIRST before any mutation decisions
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentCookware: Cookware[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
-    }
-
-    const index = currentCookware.findIndex(
-      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    const existingRows = await db.select().from(userCookwareItems).where(
+      and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
     );
-    
-    // If item not found, this would add a new one - check limit FIRST
-    if (index === -1) {
-      const limitCheck = await checkCookwareLimit(session.userId);
-      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
-      
-      if (currentCookware.length >= maxLimit) {
-        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
-          limit: limitCheck.limit,
-          remaining: 0,
-          count: currentCookware.length,
-        });
-      }
-      // Safe to add new item
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
-      currentCookware.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
-    } else {
-      // Update existing item - check timestamps for conflict resolution
-      const existingItem = currentCookware[index] as { updatedAt?: string };
+
+    if (existingRows.length > 0) {
+      const existingItem = existingRows[0];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
       const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
-      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
-      
-      if (newTimestamp >= existingTimestamp) {
-        currentCookware[index] = { ...data, updatedAt: finalTimestamp };
-      } else {
+
+      if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
@@ -1092,29 +1173,41 @@ router.put("/cookware", async (req: Request, res: Response, next: NextFunction) 
           itemId: dataIdStr,
         }));
       }
+
+      await db.update(userCookwareItems).set({
+        name: data.name,
+        category: data.category,
+        alternatives: data.alternatives,
+        extraData,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
+      );
+    } else {
+      const [{ value: currentCount }] = await db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId));
+      const limitCheck = await checkCookwareLimit(session.userId);
+      const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
+
+      if (currentCount >= maxLimit) {
+        throw AppError.forbidden(ERROR_MESSAGES[ERROR_CODES.COOKWARE_LIMIT_REACHED], ERROR_CODES.COOKWARE_LIMIT_REACHED).withDetails({
+          limit: limitCheck.limit,
+          remaining: 0,
+          count: currentCount,
+        });
+      }
+
+      await db.insert(userCookwareItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        category: data.category,
+        alternatives: data.alternatives,
+        extraData,
+        updatedAt: new Date(),
+      });
     }
 
-    // Persist to database
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        cookware: currentCookware,
-        sectionUpdatedAt: { cookware: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          cookware: currentCookware,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            cookware: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "cookware");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1151,32 +1244,11 @@ router.delete("/cookware", async (req: Request, res: Response, next: NextFunctio
     const { data } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentCookware: Cookware[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].cookware) {
-      currentCookware = (existingSyncData[0].cookware as Cookware[]) || [];
-    }
-
-    currentCookware = currentCookware.filter(
-      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    await db.delete(userCookwareItems).where(
+      and(eq(userCookwareItems.userId, session.userId), eq(userCookwareItems.itemId, dataIdStr))
     );
 
-    await db
-      .update(userSyncData)
-      .set({
-        cookware: currentCookware,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          cookware: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "cookware");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1213,54 +1285,84 @@ router.post("/shoppingList", async (req: Request, res: Response, next: NextFunct
 
     const { operation, data } = parseResult.data;
     const dataIdStr = String(data.id);
-
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentShoppingList: ShoppingListItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
-    }
+    const extraData = extractExtraData(data as Record<string, unknown>, shoppingListKnownKeys);
 
     if (operation === "create") {
-      currentShoppingList.push(data);
+      await db.insert(userShoppingItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        quantity: data.quantity,
+        unit: data.unit,
+        isChecked: data.isChecked,
+        category: data.category,
+        recipeId: data.recipeId,
+        extraData,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [userShoppingItems.userId, userShoppingItems.itemId],
+        set: {
+          name: data.name,
+          quantity: data.quantity,
+          unit: data.unit,
+          isChecked: data.isChecked,
+          category: data.category,
+          recipeId: data.recipeId,
+          extraData,
+          updatedAt: new Date(),
+        },
+      });
     } else if (operation === "update") {
-      const index = currentShoppingList.findIndex(
-        (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+      const existingRows = await db.select().from(userShoppingItems).where(
+        and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr))
       );
-      if (index !== -1) {
-        currentShoppingList[index] = data;
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        if (data.updatedAt && existing.updatedAt) {
+          const incomingTime = new Date(data.updatedAt).getTime();
+          const existingTime = new Date(existing.updatedAt).getTime();
+          if (incomingTime <= existingTime) {
+            await updateSectionTimestamp(session.userId, "shoppingList");
+            res.json(successResponse({
+              syncedAt: new Date().toISOString(),
+              operation: "skipped",
+              itemId: dataIdStr,
+            }));
+            return;
+          }
+        }
+        await db.update(userShoppingItems).set({
+          name: data.name,
+          quantity: data.quantity,
+          unit: data.unit,
+          isChecked: data.isChecked,
+          category: data.category,
+          recipeId: data.recipeId,
+          extraData,
+          updatedAt: new Date(),
+        }).where(and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr)));
       } else {
-        currentShoppingList.push(data);
+        await db.insert(userShoppingItems).values({
+          userId: session.userId,
+          itemId: dataIdStr,
+          name: data.name,
+          quantity: data.quantity,
+          unit: data.unit,
+          isChecked: data.isChecked,
+          category: data.category,
+          recipeId: data.recipeId,
+          extraData,
+          updatedAt: new Date(),
+        });
       }
     } else if (operation === "delete") {
-      currentShoppingList = currentShoppingList.filter(
-        (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+      await db.delete(userShoppingItems).where(
+        and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr))
       );
     }
 
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        shoppingList: currentShoppingList,
-        sectionUpdatedAt: { shoppingList: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          shoppingList: currentShoppingList,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            shoppingList: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "shoppingList");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1297,32 +1399,20 @@ router.put("/shoppingList", async (req: Request, res: Response, next: NextFuncti
 
     const { data, clientTimestamp } = parseResult.data;
     const dataIdStr = String(data.id);
+    const extraData = extractExtraData(data as Record<string, unknown>, shoppingListKnownKeys);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentShoppingList: ShoppingListItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
-    }
-
-    const index = currentShoppingList.findIndex(
-      (item: unknown) => String((item as { id: string | number }).id) === dataIdStr
+    const existingRows = await db.select().from(userShoppingItems).where(
+      and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr))
     );
-    
-    if (index !== -1) {
-      const existingItem = currentShoppingList[index] as { updatedAt?: string };
+
+    if (existingRows.length > 0) {
+      const existingItem = existingRows[0];
       const existingTimestamp = existingItem.updatedAt ? new Date(existingItem.updatedAt).getTime() : 0;
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
+      const dataUpdatedAt = data.updatedAt;
       const newTimestamp = dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 
                            clientTimestamp ? new Date(clientTimestamp).getTime() : Date.now();
-      const finalTimestamp = dataUpdatedAt || clientTimestamp || new Date().toISOString();
-      
-      if (newTimestamp >= existingTimestamp) {
-        currentShoppingList[index] = { ...data, updatedAt: finalTimestamp };
-      } else {
+
+      if (newTimestamp < existingTimestamp) {
         return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
@@ -1330,31 +1420,35 @@ router.put("/shoppingList", async (req: Request, res: Response, next: NextFuncti
           itemId: dataIdStr,
         }));
       }
+
+      await db.update(userShoppingItems).set({
+        name: data.name,
+        quantity: data.quantity,
+        unit: data.unit,
+        isChecked: data.isChecked,
+        category: data.category,
+        recipeId: data.recipeId,
+        extraData,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr))
+      );
     } else {
-      const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
-      currentShoppingList.push({ ...data, updatedAt: dataUpdatedAt || clientTimestamp || new Date().toISOString() });
+      await db.insert(userShoppingItems).values({
+        userId: session.userId,
+        itemId: dataIdStr,
+        name: data.name,
+        quantity: data.quantity,
+        unit: data.unit,
+        isChecked: data.isChecked,
+        category: data.category,
+        recipeId: data.recipeId,
+        extraData,
+        updatedAt: new Date(),
+      });
     }
 
-    if (existingSyncData.length === 0) {
-      await db.insert(userSyncData).values({
-        userId: session.userId,
-        shoppingList: currentShoppingList,
-        sectionUpdatedAt: { shoppingList: new Date().toISOString() },
-      });
-    } else {
-      await db
-        .update(userSyncData)
-        .set({
-          shoppingList: currentShoppingList,
-          lastSyncedAt: new Date(),
-          updatedAt: new Date(),
-          sectionUpdatedAt: {
-            ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-            shoppingList: new Date().toISOString(),
-          },
-        })
-        .where(eq(userSyncData.userId, session.userId));
-    }
+    await updateSectionTimestamp(session.userId, "shoppingList");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1391,32 +1485,11 @@ router.delete("/shoppingList", async (req: Request, res: Response, next: NextFun
     const { data } = parseResult.data;
     const dataIdStr = String(data.id);
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    let currentShoppingList: ShoppingListItem[] = [];
-    if (existingSyncData.length > 0 && existingSyncData[0].shoppingList) {
-      currentShoppingList = (existingSyncData[0].shoppingList as ShoppingListItem[]) || [];
-    }
-
-    currentShoppingList = currentShoppingList.filter(
-      (item: unknown) => String((item as { id: string | number }).id) !== dataIdStr
+    await db.delete(userShoppingItems).where(
+      and(eq(userShoppingItems.userId, session.userId), eq(userShoppingItems.itemId, dataIdStr))
     );
 
-    await db
-      .update(userSyncData)
-      .set({
-        shoppingList: currentShoppingList,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-        sectionUpdatedAt: {
-          ...(existingSyncData[0]?.sectionUpdatedAt as Record<string, string> || {}),
-          shoppingList: new Date().toISOString(),
-        },
-      })
-      .where(eq(userSyncData.userId, session.userId));
+    await updateSectionTimestamp(session.userId, "shoppingList");
 
     res.json(successResponse({
       syncedAt: new Date().toISOString(),
@@ -1440,10 +1513,21 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
       throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
+    const [
+      existingSyncData,
+      [{ value: inventoryCount }],
+      [{ value: recipesCount }],
+      [{ value: mealPlansCount }],
+      [{ value: shoppingListCount }],
+      [{ value: cookwareCount }],
+    ] = await Promise.all([
+      db.select().from(userSyncData).where(eq(userSyncData.userId, session.userId)),
+      db.select({ value: count() }).from(userInventoryItems).where(eq(userInventoryItems.userId, session.userId)),
+      db.select({ value: count() }).from(userSavedRecipes).where(eq(userSavedRecipes.userId, session.userId)),
+      db.select({ value: count() }).from(userMealPlans).where(eq(userMealPlans.userId, session.userId)),
+      db.select({ value: count() }).from(userShoppingItems).where(eq(userShoppingItems.userId, session.userId)),
+      db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId)),
+    ]);
 
     const lastSyncedAt = existingSyncData.length > 0 && existingSyncData[0].lastSyncedAt
       ? existingSyncData[0].lastSyncedAt.toISOString()
@@ -1466,13 +1550,13 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
         timestamp: f.timestamp.toISOString(),
       })),
       isConsistent,
-      dataTypes: syncData ? {
-        inventory: Array.isArray(syncData.inventory) ? (syncData.inventory as unknown[]).length : 0,
-        recipes: Array.isArray(syncData.recipes) ? (syncData.recipes as unknown[]).length : 0,
-        mealPlans: Array.isArray(syncData.mealPlans) ? (syncData.mealPlans as unknown[]).length : 0,
-        shoppingList: Array.isArray(syncData.shoppingList) ? (syncData.shoppingList as unknown[]).length : 0,
-        cookware: Array.isArray(syncData.cookware) ? (syncData.cookware as unknown[]).length : 0,
-      } : null,
+      dataTypes: {
+        inventory: inventoryCount,
+        recipes: recipesCount,
+        mealPlans: mealPlansCount,
+        shoppingList: shoppingListCount,
+        cookware: cookwareCount,
+      },
     }));
   } catch (error) {
     next(error);
@@ -1491,22 +1575,90 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
       throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
+    const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, syncDataRows] = await Promise.all([
+      db.select().from(userInventoryItems).where(eq(userInventoryItems.userId, session.userId)),
+      db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, session.userId)),
+      db.select().from(userMealPlans).where(eq(userMealPlans.userId, session.userId)),
+      db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, session.userId)),
+      db.select().from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId)),
+      db.select().from(userSyncData).where(eq(userSyncData.userId, session.userId)),
+    ]);
 
-    const syncData = existingSyncData.length > 0 ? existingSyncData[0] : null;
+    const syncData = syncDataRows.length > 0 ? syncDataRows[0] : null;
+
+    const exportInventory = inventoryRows.map(item => ({
+      id: item.itemId,
+      name: item.name,
+      barcode: item.barcode,
+      quantity: item.quantity,
+      unit: item.unit,
+      storageLocation: item.storageLocation,
+      purchaseDate: item.purchaseDate,
+      expirationDate: item.expirationDate,
+      category: item.category,
+      usdaCategory: item.usdaCategory,
+      nutrition: item.nutrition,
+      notes: item.notes,
+      imageUri: item.imageUri,
+      fdcId: item.fdcId,
+      updatedAt: item.updatedAt?.toISOString(),
+    }));
+
+    const exportRecipes = recipeRows.map(r => ({
+      id: r.itemId,
+      title: r.title,
+      description: r.description,
+      ingredients: r.ingredients,
+      instructions: r.instructions,
+      prepTime: r.prepTime,
+      cookTime: r.cookTime,
+      servings: r.servings,
+      imageUri: r.imageUri,
+      cloudImageUri: r.cloudImageUri,
+      nutrition: r.nutrition,
+      isFavorite: r.isFavorite,
+      updatedAt: r.updatedAt?.toISOString(),
+      ...(r.extraData as Record<string, unknown> || {}),
+    }));
+
+    const exportMealPlans = mealPlanRows.map(m => ({
+      id: m.itemId,
+      date: m.date,
+      meals: m.meals,
+      updatedAt: m.updatedAt?.toISOString(),
+      ...(m.extraData as Record<string, unknown> || {}),
+    }));
+
+    const exportShoppingList = shoppingRows.map(s => ({
+      id: s.itemId,
+      name: s.name,
+      quantity: s.quantity,
+      unit: s.unit,
+      isChecked: s.isChecked,
+      category: s.category,
+      recipeId: s.recipeId,
+      updatedAt: s.updatedAt?.toISOString(),
+      ...(s.extraData as Record<string, unknown> || {}),
+    }));
+
+    const exportCookware = cookwareRows.map(c => ({
+      id: c.itemId,
+      name: c.name,
+      category: c.category,
+      alternatives: c.alternatives,
+      updatedAt: c.updatedAt?.toISOString(),
+      ...(c.extraData as Record<string, unknown> || {}),
+    }));
 
     const backup = {
       version: 1,
       exportedAt: new Date().toISOString(),
       data: {
-        inventory: syncData?.inventory || [],
-        recipes: syncData?.recipes || [],
-        mealPlans: syncData?.mealPlans || [],
-        shoppingList: syncData?.shoppingList || [],
-        cookware: syncData?.cookware || [],
+        inventory: exportInventory,
+        recipes: exportRecipes,
+        mealPlans: exportMealPlans,
+        shoppingList: exportShoppingList,
+        cookware: exportCookware,
         preferences: syncData?.preferences || null,
         wasteLog: syncData?.wasteLog || [],
         consumedLog: syncData?.consumedLog || [],
@@ -1534,28 +1686,6 @@ const importRequestSchema = z.object({
   }),
   mode: z.enum(["merge", "replace"]),
 });
-
-function mergeArraysById(existing: unknown[], imported: unknown[]): unknown[] {
-  const map = new Map<string, unknown>();
-  const noIdItems: unknown[] = [];
-  for (const item of existing) {
-    const raw = (item as { id?: string | number }).id;
-    if (raw !== undefined && raw !== null) {
-      map.set(String(raw), item);
-    } else {
-      noIdItems.push(item);
-    }
-  }
-  for (const item of imported) {
-    const raw = (item as { id?: string | number }).id;
-    if (raw !== undefined && raw !== null) {
-      map.set(String(raw), item);
-    } else {
-      noIdItems.push(item);
-    }
-  }
-  return [...Array.from(map.values()), ...noIdItems];
-}
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
   const result = { ...target };
@@ -1595,55 +1725,318 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
 
     const { backup, mode } = parseResult.data;
     const importData = backup.data as Record<string, unknown>;
-
-    const existingSyncData = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId));
-
-    const existing = existingSyncData.length > 0 ? existingSyncData[0] : null;
+    const userId = session.userId;
 
     const [pantryLimit, cookwareLimit] = await Promise.all([
-      checkPantryItemLimit(session.userId),
-      checkCookwareLimit(session.userId),
+      checkPantryItemLimit(userId),
+      checkCookwareLimit(userId),
     ]);
 
-    const importedInventory = Array.isArray(importData.inventory) ? importData.inventory : [];
-    const importedCookware = Array.isArray(importData.cookware) ? importData.cookware : [];
+    const importedInventory = Array.isArray(importData.inventory) ? importData.inventory as Record<string, unknown>[] : [];
+    const importedRecipes = Array.isArray(importData.recipes) ? importData.recipes as Record<string, unknown>[] : [];
+    const importedMealPlans = Array.isArray(importData.mealPlans) ? importData.mealPlans as Record<string, unknown>[] : [];
+    const importedShoppingList = Array.isArray(importData.shoppingList) ? importData.shoppingList as Record<string, unknown>[] : [];
+    const importedCookware = Array.isArray(importData.cookware) ? importData.cookware as Record<string, unknown>[] : [];
 
     const truncationWarnings: string[] = [];
-
-    let finalInventory: unknown[];
-    let finalCookware: unknown[];
-
-    if (mode === "replace") {
-      finalInventory = importedInventory;
-      finalCookware = importedCookware;
-    } else {
-      const existingInventory = Array.isArray(existing?.inventory) ? (existing.inventory as unknown[]) : [];
-      const existingCookware = Array.isArray(existing?.cookware) ? (existing.cookware as unknown[]) : [];
-      finalInventory = mergeArraysById(existingInventory, importedInventory);
-      finalCookware = mergeArraysById(existingCookware, importedCookware);
-    }
 
     const pantryMax = typeof pantryLimit.limit === "number" ? pantryLimit.limit : Infinity;
     const cookwareMax = typeof cookwareLimit.limit === "number" ? cookwareLimit.limit : Infinity;
 
-    if (finalInventory.length > pantryMax) {
-      truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
-      finalInventory = finalInventory.slice(0, pantryMax);
+    let finalInventory = importedInventory;
+    let finalCookware = importedCookware;
+
+    if (mode === "replace") {
+      await Promise.all([
+        db.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId)),
+        db.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
+        db.delete(userMealPlans).where(eq(userMealPlans.userId, userId)),
+        db.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
+        db.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
+      ]);
+
+      if (finalInventory.length > pantryMax) {
+        truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
+        finalInventory = finalInventory.slice(0, pantryMax);
+      }
+      if (finalCookware.length > cookwareMax) {
+        truncationWarnings.push(`Cookware truncated from ${finalCookware.length} to ${cookwareMax} items (plan limit)`);
+        finalCookware = finalCookware.slice(0, cookwareMax);
+      }
+
+      const insertPromises: Promise<unknown>[] = [];
+
+      if (finalInventory.length > 0) {
+        insertPromises.push(db.insert(userInventoryItems).values(
+          finalInventory.map(item => ({
+            userId,
+            itemId: String(item.id),
+            name: String(item.name || ""),
+            barcode: item.barcode as string | undefined,
+            quantity: Number(item.quantity) || 1,
+            unit: String(item.unit || "unit"),
+            storageLocation: String(item.storageLocation || "pantry"),
+            purchaseDate: item.purchaseDate as string | undefined,
+            expirationDate: item.expirationDate as string | undefined,
+            category: String(item.category || "other"),
+            usdaCategory: item.usdaCategory as string | undefined,
+            nutrition: item.nutrition as Record<string, unknown> | undefined,
+            notes: item.notes as string | undefined,
+            imageUri: item.imageUri as string | undefined,
+            fdcId: item.fdcId as number | undefined,
+            updatedAt: new Date(),
+          }))
+        ));
+      }
+
+      if (importedRecipes.length > 0) {
+        insertPromises.push(db.insert(userSavedRecipes).values(
+          importedRecipes.map(r => {
+            const extra = extractExtraData(r, recipeKnownKeys);
+            return {
+              userId,
+              itemId: String(r.id),
+              title: String(r.title || ""),
+              description: r.description as string | undefined,
+              ingredients: r.ingredients as unknown,
+              instructions: r.instructions as unknown,
+              prepTime: r.prepTime as number | undefined,
+              cookTime: r.cookTime as number | undefined,
+              servings: r.servings as number | undefined,
+              imageUri: r.imageUri as string | undefined,
+              cloudImageUri: r.cloudImageUri as string | undefined,
+              nutrition: r.nutrition as Record<string, unknown> | undefined,
+              isFavorite: r.isFavorite as boolean | undefined,
+              extraData: extra,
+              updatedAt: new Date(),
+            };
+          })
+        ));
+      }
+
+      if (importedMealPlans.length > 0) {
+        insertPromises.push(db.insert(userMealPlans).values(
+          importedMealPlans.map(m => {
+            const extra = extractExtraData(m, mealPlanKnownKeys);
+            return {
+              userId,
+              itemId: String(m.id),
+              date: String(m.date || ""),
+              meals: m.meals as unknown,
+              extraData: extra,
+              updatedAt: new Date(),
+            };
+          })
+        ));
+      }
+
+      if (importedShoppingList.length > 0) {
+        insertPromises.push(db.insert(userShoppingItems).values(
+          importedShoppingList.map(s => {
+            const extra = extractExtraData(s, shoppingListKnownKeys);
+            return {
+              userId,
+              itemId: String(s.id),
+              name: String(s.name || ""),
+              quantity: Number(s.quantity) || 1,
+              unit: String(s.unit || "unit"),
+              isChecked: Boolean(s.isChecked),
+              category: s.category as string | undefined,
+              recipeId: s.recipeId as string | undefined,
+              extraData: extra,
+              updatedAt: new Date(),
+            };
+          })
+        ));
+      }
+
+      if (finalCookware.length > 0) {
+        insertPromises.push(db.insert(userCookwareItems).values(
+          finalCookware.map(c => {
+            const extra = extractExtraData(c, cookwareKnownKeys);
+            return {
+              userId,
+              itemId: String(c.id),
+              name: c.name as string | undefined,
+              category: c.category as string | undefined,
+              alternatives: c.alternatives as string[] | undefined,
+              extraData: extra,
+              updatedAt: new Date(),
+            };
+          })
+        ));
+      }
+
+      await Promise.all(insertPromises);
+    } else {
+      // merge mode: upsert each item
+      if (finalInventory.length > pantryMax) {
+        truncationWarnings.push(`Inventory truncated from ${finalInventory.length} to ${pantryMax} items (plan limit)`);
+        finalInventory = finalInventory.slice(0, pantryMax);
+      }
+      if (finalCookware.length > cookwareMax) {
+        truncationWarnings.push(`Cookware truncated from ${finalCookware.length} to ${cookwareMax} items (plan limit)`);
+        finalCookware = finalCookware.slice(0, cookwareMax);
+      }
+
+      const upsertPromises: Promise<unknown>[] = [];
+
+      for (const item of finalInventory) {
+        upsertPromises.push(db.insert(userInventoryItems).values({
+          userId,
+          itemId: String(item.id),
+          name: String(item.name || ""),
+          barcode: item.barcode as string | undefined,
+          quantity: Number(item.quantity) || 1,
+          unit: String(item.unit || "unit"),
+          storageLocation: String(item.storageLocation || "pantry"),
+          purchaseDate: item.purchaseDate as string | undefined,
+          expirationDate: item.expirationDate as string | undefined,
+          category: String(item.category || "other"),
+          usdaCategory: item.usdaCategory as string | undefined,
+          nutrition: item.nutrition as Record<string, unknown> | undefined,
+          notes: item.notes as string | undefined,
+          imageUri: item.imageUri as string | undefined,
+          fdcId: item.fdcId as number | undefined,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: [userInventoryItems.userId, userInventoryItems.itemId],
+          set: {
+            name: String(item.name || ""),
+            barcode: item.barcode as string | undefined,
+            quantity: Number(item.quantity) || 1,
+            unit: String(item.unit || "unit"),
+            storageLocation: String(item.storageLocation || "pantry"),
+            purchaseDate: item.purchaseDate as string | undefined,
+            expirationDate: item.expirationDate as string | undefined,
+            category: String(item.category || "other"),
+            usdaCategory: item.usdaCategory as string | undefined,
+            nutrition: item.nutrition as Record<string, unknown> | undefined,
+            notes: item.notes as string | undefined,
+            imageUri: item.imageUri as string | undefined,
+            fdcId: item.fdcId as number | undefined,
+            updatedAt: new Date(),
+          },
+        }));
+      }
+
+      for (const r of importedRecipes) {
+        const extra = extractExtraData(r, recipeKnownKeys);
+        upsertPromises.push(db.insert(userSavedRecipes).values({
+          userId,
+          itemId: String(r.id),
+          title: String(r.title || ""),
+          description: r.description as string | undefined,
+          ingredients: r.ingredients as unknown,
+          instructions: r.instructions as unknown,
+          prepTime: r.prepTime as number | undefined,
+          cookTime: r.cookTime as number | undefined,
+          servings: r.servings as number | undefined,
+          imageUri: r.imageUri as string | undefined,
+          cloudImageUri: r.cloudImageUri as string | undefined,
+          nutrition: r.nutrition as Record<string, unknown> | undefined,
+          isFavorite: r.isFavorite as boolean | undefined,
+          extraData: extra,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: [userSavedRecipes.userId, userSavedRecipes.itemId],
+          set: {
+            title: String(r.title || ""),
+            description: r.description as string | undefined,
+            ingredients: r.ingredients as unknown,
+            instructions: r.instructions as unknown,
+            prepTime: r.prepTime as number | undefined,
+            cookTime: r.cookTime as number | undefined,
+            servings: r.servings as number | undefined,
+            imageUri: r.imageUri as string | undefined,
+            cloudImageUri: r.cloudImageUri as string | undefined,
+            nutrition: r.nutrition as Record<string, unknown> | undefined,
+            isFavorite: r.isFavorite as boolean | undefined,
+            extraData: extra,
+            updatedAt: new Date(),
+          },
+        }));
+      }
+
+      for (const m of importedMealPlans) {
+        const extra = extractExtraData(m, mealPlanKnownKeys);
+        upsertPromises.push(db.insert(userMealPlans).values({
+          userId,
+          itemId: String(m.id),
+          date: String(m.date || ""),
+          meals: m.meals as unknown,
+          extraData: extra,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: [userMealPlans.userId, userMealPlans.itemId],
+          set: {
+            date: String(m.date || ""),
+            meals: m.meals as unknown,
+            extraData: extra,
+            updatedAt: new Date(),
+          },
+        }));
+      }
+
+      for (const s of importedShoppingList) {
+        const extra = extractExtraData(s, shoppingListKnownKeys);
+        upsertPromises.push(db.insert(userShoppingItems).values({
+          userId,
+          itemId: String(s.id),
+          name: String(s.name || ""),
+          quantity: Number(s.quantity) || 1,
+          unit: String(s.unit || "unit"),
+          isChecked: Boolean(s.isChecked),
+          category: s.category as string | undefined,
+          recipeId: s.recipeId as string | undefined,
+          extraData: extra,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: [userShoppingItems.userId, userShoppingItems.itemId],
+          set: {
+            name: String(s.name || ""),
+            quantity: Number(s.quantity) || 1,
+            unit: String(s.unit || "unit"),
+            isChecked: Boolean(s.isChecked),
+            category: s.category as string | undefined,
+            recipeId: s.recipeId as string | undefined,
+            extraData: extra,
+            updatedAt: new Date(),
+          },
+        }));
+      }
+
+      for (const c of finalCookware) {
+        const extra = extractExtraData(c, cookwareKnownKeys);
+        upsertPromises.push(db.insert(userCookwareItems).values({
+          userId,
+          itemId: String(c.id),
+          name: c.name as string | undefined,
+          category: c.category as string | undefined,
+          alternatives: c.alternatives as string[] | undefined,
+          extraData: extra,
+          updatedAt: new Date(),
+        }).onConflictDoUpdate({
+          target: [userCookwareItems.userId, userCookwareItems.itemId],
+          set: {
+            name: c.name as string | undefined,
+            category: c.category as string | undefined,
+            alternatives: c.alternatives as string[] | undefined,
+            extraData: extra,
+            updatedAt: new Date(),
+          },
+        }));
+      }
+
+      await Promise.all(upsertPromises);
     }
 
-    if (finalCookware.length > cookwareMax) {
-      truncationWarnings.push(`Cookware truncated from ${finalCookware.length} to ${cookwareMax} items (plan limit)`);
-      finalCookware = finalCookware.slice(0, cookwareMax);
-    }
+    // Handle JSONB-only fields in user_sync_data
+    const existingSyncData = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
+    const existing = existingSyncData.length > 0 ? existingSyncData[0] : null;
 
-    let finalRecipes: unknown[];
-    let finalMealPlans: unknown[];
-    let finalShoppingList: unknown[];
-    let finalWasteLog: unknown[];
-    let finalConsumedLog: unknown[];
+    let finalWasteLog: unknown;
+    let finalConsumedLog: unknown;
     let finalPreferences: unknown;
     let finalAnalytics: unknown;
     let finalOnboarding: unknown;
@@ -1651,9 +2044,6 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
     let finalUserProfile: unknown;
 
     if (mode === "replace") {
-      finalRecipes = Array.isArray(importData.recipes) ? importData.recipes : [];
-      finalMealPlans = Array.isArray(importData.mealPlans) ? importData.mealPlans : [];
-      finalShoppingList = Array.isArray(importData.shoppingList) ? importData.shoppingList : [];
       finalWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog : [];
       finalConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog : [];
       finalPreferences = importData.preferences || null;
@@ -1662,17 +2052,11 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
       finalCustomLocations = importData.customLocations || null;
       finalUserProfile = importData.userProfile || null;
     } else {
-      const existingRecipes = Array.isArray(existing?.recipes) ? (existing.recipes as unknown[]) : [];
-      const existingMealPlans = Array.isArray(existing?.mealPlans) ? (existing.mealPlans as unknown[]) : [];
-      const existingShoppingList = Array.isArray(existing?.shoppingList) ? (existing.shoppingList as unknown[]) : [];
       const existingWasteLog = Array.isArray(existing?.wasteLog) ? (existing.wasteLog as unknown[]) : [];
       const existingConsumedLog = Array.isArray(existing?.consumedLog) ? (existing.consumedLog as unknown[]) : [];
 
-      finalRecipes = mergeArraysById(existingRecipes, Array.isArray(importData.recipes) ? importData.recipes : []);
-      finalMealPlans = mergeArraysById(existingMealPlans, Array.isArray(importData.mealPlans) ? importData.mealPlans : []);
-      finalShoppingList = mergeArraysById(existingShoppingList, Array.isArray(importData.shoppingList) ? importData.shoppingList : []);
-      finalWasteLog = mergeArraysById(existingWasteLog, Array.isArray(importData.wasteLog) ? importData.wasteLog : []);
-      finalConsumedLog = mergeArraysById(existingConsumedLog, Array.isArray(importData.consumedLog) ? importData.consumedLog : []);
+      finalWasteLog = [...existingWasteLog, ...(Array.isArray(importData.wasteLog) ? importData.wasteLog : [])];
+      finalConsumedLog = [...existingConsumedLog, ...(Array.isArray(importData.consumedLog) ? importData.consumedLog : [])];
 
       finalPreferences = importData.preferences && typeof importData.preferences === "object"
         ? deepMerge((existing?.preferences as Record<string, unknown>) || {}, importData.preferences as Record<string, unknown>)
@@ -1691,29 +2075,25 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
         : existing?.userProfile || null;
     }
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
     const importSectionTimestamps: Record<string, string> = {
       ...(existing?.sectionUpdatedAt as Record<string, string> || {}),
-      inventory: now,
-      recipes: now,
-      mealPlans: now,
-      shoppingList: now,
-      cookware: now,
-      preferences: now,
-      wasteLog: now,
-      consumedLog: now,
-      analytics: now,
-      onboarding: now,
-      customLocations: now,
-      userProfile: now,
+      inventory: nowIso,
+      recipes: nowIso,
+      mealPlans: nowIso,
+      shoppingList: nowIso,
+      cookware: nowIso,
+      preferences: nowIso,
+      wasteLog: nowIso,
+      consumedLog: nowIso,
+      analytics: nowIso,
+      onboarding: nowIso,
+      customLocations: nowIso,
+      userProfile: nowIso,
     };
 
-    const updatePayload = {
-      inventory: finalInventory,
-      recipes: finalRecipes,
-      mealPlans: finalMealPlans,
-      shoppingList: finalShoppingList,
-      cookware: finalCookware,
+    const syncUpdatePayload = {
       preferences: finalPreferences,
       wasteLog: finalWasteLog,
       consumedLog: finalConsumedLog,
@@ -1722,33 +2102,45 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
       customLocations: finalCustomLocations,
       userProfile: finalUserProfile,
       sectionUpdatedAt: importSectionTimestamps,
-      lastSyncedAt: new Date(),
-      updatedAt: new Date(),
+      lastSyncedAt: now,
+      updatedAt: now,
     };
 
     if (!existing) {
       await db.insert(userSyncData).values({
-        userId: session.userId,
-        ...updatePayload,
+        userId,
+        ...syncUpdatePayload,
       });
     } else {
-      await db
-        .update(userSyncData)
-        .set(updatePayload)
-        .where(eq(userSyncData.userId, session.userId));
+      await db.update(userSyncData).set(syncUpdatePayload).where(eq(userSyncData.userId, userId));
     }
+
+    // Count final rows for the summary
+    const [
+      [{ value: finalInventoryCount }],
+      [{ value: finalRecipesCount }],
+      [{ value: finalMealPlansCount }],
+      [{ value: finalShoppingListCount }],
+      [{ value: finalCookwareCount }],
+    ] = await Promise.all([
+      db.select({ value: count() }).from(userInventoryItems).where(eq(userInventoryItems.userId, userId)),
+      db.select({ value: count() }).from(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
+      db.select({ value: count() }).from(userMealPlans).where(eq(userMealPlans.userId, userId)),
+      db.select({ value: count() }).from(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
+      db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
+    ]);
 
     const responseData: Record<string, unknown> = {
       mode,
-      importedAt: new Date().toISOString(),
+      importedAt: nowIso,
       summary: {
-        inventory: (finalInventory as unknown[]).length,
-        recipes: (finalRecipes as unknown[]).length,
-        mealPlans: (finalMealPlans as unknown[]).length,
-        shoppingList: (finalShoppingList as unknown[]).length,
-        cookware: (finalCookware as unknown[]).length,
-        wasteLog: (finalWasteLog as unknown[]).length,
-        consumedLog: (finalConsumedLog as unknown[]).length,
+        inventory: finalInventoryCount,
+        recipes: finalRecipesCount,
+        mealPlans: finalMealPlansCount,
+        shoppingList: finalShoppingListCount,
+        cookware: finalCookwareCount,
+        wasteLog: Array.isArray(finalWasteLog) ? (finalWasteLog as unknown[]).length : 0,
+        consumedLog: Array.isArray(finalConsumedLog) ? (finalConsumedLog as unknown[]).length : 0,
         preferences: finalPreferences ? true : false,
         analytics: finalAnalytics ? true : false,
         onboarding: finalOnboarding ? true : false,

@@ -25,6 +25,22 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 
 ## Recent Changes
 
+### Database Normalization (Feb 2026)
+- **Normalized user_sync_data JSONB blobs into 5 relational tables**:
+  - `user_inventory_items` - inventory items with proper columns, indexes on (userId, itemId), (userId, category), (userId, expirationDate)
+  - `user_saved_recipes` - saved recipes with JSONB for complex nested data (ingredients, instructions, nutrition)
+  - `user_meal_plans` - meal plans with JSONB meals column
+  - `user_shopping_items` - shopping list items with proper columns
+  - `user_cookware_items` - cookware items with text[] alternatives column
+- Each table has unique constraint on (user_id, item_id) where item_id is the client-side identifier
+- `extraData` JSONB column on recipes/mealPlans/shoppingList/cookware for passthrough schema fields
+- **sync.router.ts fully rewritten** to use direct SQL operations (INSERT/UPDATE/DELETE) on normalized tables instead of JSONB array manipulation
+- **subscriptionService.ts updated** to use COUNT queries on normalized tables instead of parsing JSONB arrays
+- Timestamp-based conflict resolution preserved in all POST/PUT update operations
+- JSONB-only fields (preferences, analytics, onboarding, customLocations, userProfile, wasteLog, consumedLog) remain in user_sync_data
+- user_sync_data table kept as backup during migration transition
+- REST API contract fully preserved for mobile client backward compatibility
+
 ### Security Hardening (Feb 2026)
 - **HTTP Security Headers**: Added `helmet` middleware in `server/index.ts` with configured Content-Security-Policy (allows Stripe and OpenAI domains), Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, and X-XSS-Protection headers.
 - **Session Token Hashing**: All session tokens are now hashed with SHA-256 (`createHash("sha256")`) before storage in `user_sessions` table. Raw tokens are returned to clients; only hashed values are stored/queried. Updated across 13 files: `auth.router.ts`, `social-auth.router.ts`, `routes.ts`, `auth.ts` middleware, `requireAdmin.ts` middleware, `subscriptionRouter.ts`, `feedback.router.ts`, `sync.router.ts`, `chat.router.ts`.

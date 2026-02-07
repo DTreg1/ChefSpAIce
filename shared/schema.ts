@@ -33,6 +33,7 @@ import {
   boolean,
   uniqueIndex,
   jsonb,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -271,6 +272,179 @@ export const userSyncData = pgTable("user_sync_data", {
   lastSyncedAt: timestamp("last_synced_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// =============================================================================
+// NORMALIZED SYNC DATA TABLES
+// =============================================================================
+
+export const userInventoryItems = pgTable(
+  "user_inventory_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    name: text("name").notNull(),
+    barcode: text("barcode"),
+    quantity: doublePrecision("quantity").notNull().default(1),
+    unit: text("unit").notNull().default("unit"),
+    storageLocation: text("storage_location").notNull().default("pantry"),
+    purchaseDate: text("purchase_date"),
+    expirationDate: text("expiration_date"),
+    category: text("category").notNull().default("other"),
+    usdaCategory: text("usda_category"),
+    nutrition: jsonb("nutrition"),
+    notes: text("notes"),
+    imageUri: text("image_uri"),
+    fdcId: integer("fdc_id"),
+    addedAt: timestamp("added_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_inventory_user_item").on(table.userId, table.itemId),
+    index("idx_user_inventory_user").on(table.userId),
+    index("idx_user_inventory_user_category").on(table.userId, table.category),
+    index("idx_user_inventory_user_expiration").on(table.userId, table.expirationDate),
+  ],
+);
+
+export const insertUserInventoryItemSchema = createInsertSchema(userInventoryItems).omit({
+  id: true as any,
+  addedAt: true,
+  updatedAt: true,
+});
+export type InsertUserInventoryItem = z.infer<typeof insertUserInventoryItemSchema>;
+export type UserInventoryItem = typeof userInventoryItems.$inferSelect;
+
+export const userSavedRecipes = pgTable(
+  "user_saved_recipes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    ingredients: jsonb("ingredients"),
+    instructions: jsonb("instructions"),
+    prepTime: integer("prep_time"),
+    cookTime: integer("cook_time"),
+    servings: integer("servings"),
+    imageUri: text("image_uri"),
+    cloudImageUri: text("cloud_image_uri"),
+    nutrition: jsonb("nutrition"),
+    isFavorite: boolean("is_favorite").default(false),
+    extraData: jsonb("extra_data"),
+    savedAt: timestamp("saved_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_recipes_user_item").on(table.userId, table.itemId),
+    index("idx_user_recipes_user").on(table.userId),
+    index("idx_user_recipes_user_favorite").on(table.userId, table.isFavorite),
+  ],
+);
+
+export const insertUserSavedRecipeSchema = createInsertSchema(userSavedRecipes).omit({
+  id: true as any,
+  savedAt: true,
+  updatedAt: true,
+});
+export type InsertUserSavedRecipe = z.infer<typeof insertUserSavedRecipeSchema>;
+export type UserSavedRecipe = typeof userSavedRecipes.$inferSelect;
+
+export const userMealPlans = pgTable(
+  "user_meal_plans",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    date: text("date").notNull(),
+    meals: jsonb("meals"),
+    extraData: jsonb("extra_data"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_meal_plans_user_item").on(table.userId, table.itemId),
+    index("idx_user_meal_plans_user").on(table.userId),
+    index("idx_user_meal_plans_user_date").on(table.userId, table.date),
+  ],
+);
+
+export const insertUserMealPlanSchema = createInsertSchema(userMealPlans).omit({
+  id: true as any,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserMealPlan = z.infer<typeof insertUserMealPlanSchema>;
+export type UserMealPlan = typeof userMealPlans.$inferSelect;
+
+export const userShoppingItems = pgTable(
+  "user_shopping_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    name: text("name").notNull(),
+    quantity: doublePrecision("quantity").notNull().default(1),
+    unit: text("unit").notNull().default("unit"),
+    isChecked: boolean("is_checked").notNull().default(false),
+    category: text("category"),
+    recipeId: text("recipe_id"),
+    extraData: jsonb("extra_data"),
+    addedAt: timestamp("added_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_shopping_user_item").on(table.userId, table.itemId),
+    index("idx_user_shopping_user").on(table.userId),
+    index("idx_user_shopping_user_checked").on(table.userId, table.isChecked),
+  ],
+);
+
+export const insertUserShoppingItemSchema = createInsertSchema(userShoppingItems).omit({
+  id: true as any,
+  addedAt: true,
+  updatedAt: true,
+});
+export type InsertUserShoppingItem = z.infer<typeof insertUserShoppingItemSchema>;
+export type UserShoppingItem = typeof userShoppingItems.$inferSelect;
+
+export const userCookwareItems = pgTable(
+  "user_cookware_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    name: text("name"),
+    category: text("category"),
+    alternatives: text("alternatives").array(),
+    extraData: jsonb("extra_data"),
+    addedAt: timestamp("added_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_cookware_user_item").on(table.userId, table.itemId),
+    index("idx_user_cookware_user").on(table.userId),
+  ],
+);
+
+export const insertUserCookwareItemSchema = createInsertSchema(userCookwareItems).omit({
+  id: true as any,
+  addedAt: true,
+  updatedAt: true,
+});
+export type InsertUserCookwareItem = z.infer<typeof insertUserCookwareItemSchema>;
+export type UserCookwareItem = typeof userCookwareItems.$inferSelect;
 
 // =============================================================================
 // REFERENCE DATA TABLES
