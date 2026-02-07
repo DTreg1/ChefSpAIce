@@ -15,6 +15,8 @@ import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
 import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler } from "./middleware/errorHandler";
+import { requireAuth } from "./middleware/auth";
+import { requireAdmin } from "./middleware/requireAdmin";
 
 const app = express();
 
@@ -486,7 +488,7 @@ async function initStripe(retries = 3, delay = 2000) {
     res.redirect(301, `/public/showcase/${category}/${filename}`);
   });
 
-  app.get("/admin", (_req: Request, res: Response) => {
+  app.get("/admin", requireAuth, requireAdmin, (_req: Request, res: Response) => {
     const adminPath = path.resolve(process.cwd(), "server", "templates", "admin-dashboard.html");
     res.sendFile(adminPath);
   });
