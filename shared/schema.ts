@@ -977,6 +977,7 @@ export const subscriptions = pgTable(
     trialEnd: timestamp("trial_end"),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
     canceledAt: timestamp("canceled_at"),
+    paymentFailedAt: timestamp("payment_failed_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

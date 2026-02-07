@@ -62,6 +62,9 @@ export interface SubscriptionData {
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  paymentFailedAt: string | null;
+  gracePeriodEnd: string | null;
+  graceDaysRemaining: number | null;
 }
 
 export interface LimitCheckResult {
@@ -83,6 +86,7 @@ export interface SubscriptionContextValue {
   usage: Usage;
   subscription: SubscriptionData | null;
   isPastDue: boolean;
+  graceDaysRemaining: number | null;
   checkLimit: (
     type: "pantryItems" | "aiRecipes" | "cookware",
   ) => LimitCheckResult;
@@ -126,6 +130,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   usage: defaultUsage,
   subscription: null,
   isPastDue: false,
+  graceDaysRemaining: null,
   checkLimit: () => ({ allowed: true, remaining: "unlimited" }),
   checkFeature: () => false,
   refetch: async () => {},
@@ -223,6 +228,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           trialEndsAt: data.trialEndsAt || null,
           currentPeriodEnd: data.currentPeriodEnd || null,
           cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+          paymentFailedAt: data.paymentFailedAt || null,
+          gracePeriodEnd: data.gracePeriodEnd || null,
+          graceDaysRemaining: data.graceDaysRemaining ?? null,
         };
 
         setSubscriptionData(sub);
@@ -269,8 +277,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const planType = subscriptionData?.planType ?? null;
   const isProUser = tier === SubscriptionTier.PRO;
   const isTrialing = status === "trialing";
-  const isActive = status === "active" || status === "trialing";
   const isPastDue = status === "past_due";
+  const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
+  const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
   const isTrialExpired =
     status === "expired" || (planType === "trial" && status === "canceled");
 
@@ -452,6 +461,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       usage,
       subscription: subscriptionData,
       isPastDue,
+      graceDaysRemaining,
       checkLimit,
       checkFeature,
       refetch: fetchSubscription,
@@ -470,6 +480,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       usage,
       subscriptionData,
       isPastDue,
+      graceDaysRemaining,
       checkLimit,
       checkFeature,
       fetchSubscription,

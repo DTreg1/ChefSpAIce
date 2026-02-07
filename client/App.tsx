@@ -70,6 +70,7 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PaymentFailedBanner } from "@/components/PaymentFailedBanner";
 import { FloatingChatProvider } from "@/contexts/FloatingChatContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import {
@@ -83,6 +84,7 @@ import { ChatModal } from "@/components/ChatModal";
 import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
 import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
+import { usePaymentNotifications } from "@/hooks/usePaymentNotifications";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { initOfflineProcessor } from "@/lib/offline-processor";
 
@@ -149,6 +151,7 @@ function MobileAppContent() {
     useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useExpirationNotifications();
+  usePaymentNotifications();
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -246,6 +249,9 @@ function MobileAppContent() {
 
         {/* Shows when device is offline */}
         <OfflineIndicator />
+
+        {/* Shows when payment has failed during grace period */}
+        <PaymentFailedBanner />
 
         {/* Web max-width container for better readability on large screens */}
         <View style={styles.webContainer}>

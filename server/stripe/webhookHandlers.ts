@@ -420,6 +420,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
       status: "active",
       currentPeriodStart,
       currentPeriodEnd,
+      paymentFailedAt: null,
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
@@ -445,11 +446,13 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
     return;
   }
 
+  const now = new Date();
   await db
     .update(subscriptions)
     .set({
       status: "past_due",
-      updatedAt: new Date(),
+      paymentFailedAt: now,
+      updatedAt: now,
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 

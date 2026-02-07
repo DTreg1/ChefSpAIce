@@ -31,7 +31,7 @@ import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 function TrialBadge() {
   const { isAuthenticated, token } = useAuth();
-  const { isTrialing, isPastDue, trialDaysRemaining, isLoading, subscription } =
+  const { isTrialing, isPastDue, trialDaysRemaining, graceDaysRemaining, isLoading, subscription } =
     useSubscription();
 
   if (isLoading || !isAuthenticated) {
@@ -89,6 +89,15 @@ function TrialBadge() {
   }
 
   if (isPastDue) {
+    const daysText =
+      graceDaysRemaining === null || graceDaysRemaining === undefined
+        ? "Payment issue"
+        : graceDaysRemaining === 0
+          ? "Payment due today"
+          : graceDaysRemaining === 1
+            ? "1 day to fix payment"
+            : `${graceDaysRemaining} days to fix payment`;
+
     return (
       <Pressable
         style={[styles.trialBadge, styles.pastDueBadge]}
@@ -96,7 +105,7 @@ function TrialBadge() {
         data-testid="drawer-past-due-badge"
       >
         <Feather name="alert-circle" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>Payment issue</ThemedText>
+        <ThemedText style={styles.trialText}>{daysText}</ThemedText>
         <Feather name="chevron-right" size={12} color="#fff" />
       </Pressable>
     );

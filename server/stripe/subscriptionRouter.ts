@@ -388,6 +388,27 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
       .where(eq(subscriptions.userId, user.id))
       .limit(1);
 
+    let gracePeriodInfo: {
+      paymentFailedAt: string | null;
+      gracePeriodEnd: string | null;
+      graceDaysRemaining: number | null;
+    } = { paymentFailedAt: null, gracePeriodEnd: null, graceDaysRemaining: null };
+
+    if (subscription?.status === "past_due") {
+      const paymentFailedAt = subscription.paymentFailedAt || subscription.updatedAt || new Date();
+      const gracePeriodEnd = new Date(paymentFailedAt);
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
+      const now = new Date();
+      const msRemaining = gracePeriodEnd.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
+
+      gracePeriodInfo = {
+        paymentFailedAt: paymentFailedAt.toISOString(),
+        gracePeriodEnd: gracePeriodEnd.toISOString(),
+        graceDaysRemaining: daysRemaining,
+      };
+    }
+
     res.json(successResponse({
       tier: entitlements.tier,
       status: entitlements.status,
@@ -398,6 +419,7 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
       trialEndsAt: entitlements.trialEndsAt?.toISOString() || null,
       currentPeriodEnd: subscription?.currentPeriodEnd?.toISOString() || null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
+      ...gracePeriodInfo,
     }));
   } catch (error) {
     next(error);
