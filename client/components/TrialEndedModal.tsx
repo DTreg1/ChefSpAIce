@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
-import { MONTHLY_PRICES, ANNUAL_PRICES } from "../../shared/subscription";
+import { MONTHLY_PRICES, ANNUAL_PRICES } from "@shared/subscription";
 
 const PRO_FEATURES = [
   {

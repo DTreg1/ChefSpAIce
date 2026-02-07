@@ -12,7 +12,7 @@ import { Platform, Alert, AppState, AppStateStatus } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
-import { SubscriptionTier, TIER_CONFIG } from "../../shared/subscription";
+import { SubscriptionTier, TIER_CONFIG } from "@shared/subscription";
 import { TrialEndedModal } from "@/components/TrialEndedModal";
 import { useStoreKit } from "@/hooks/useStoreKit";
 

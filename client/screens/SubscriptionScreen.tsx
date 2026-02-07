@@ -31,7 +31,7 @@ import {
   MONTHLY_PRICES,
   ANNUAL_PRICES,
   SubscriptionTier,
-} from "../../shared/subscription";
+} from "@shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { logger } from "@/lib/logger";
