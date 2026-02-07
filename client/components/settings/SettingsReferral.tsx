@@ -36,8 +36,8 @@ export function SettingsReferral({
       ) : referralData ? (
         <>
           <ThemedText type="caption" style={{ marginBottom: 12 }}>
-            Share your referral code with friends. You'll earn 3 extra AI
-            recipe generations, and they'll get an extended 14-day free trial!
+            Share your referral code with friends. They'll get 7 extra days
+            on their trial! Every 3 successful referrals earns you 1 month free.
           </ThemedText>
 
           <View
@@ -105,19 +105,46 @@ export function SettingsReferral({
                 backgroundColor: theme.glass.background,
                 borderRadius: 8,
                 padding: 12,
+                marginBottom: 12,
               },
             ]}
+            data-testid="text-referral-stats"
           >
             <View style={styles.settingInfo}>
               <Feather name="users" size={18} color={theme.textSecondary} />
               <View style={styles.settingText}>
                 <ThemedText type="body">
-                  {referralData.stats.completedSignups} friend
-                  {referralData.stats.completedSignups !== 1 ? "s" : ""} signed up
+                  {referralData.stats.successfulReferrals} successful referral
+                  {referralData.stats.successfulReferrals !== 1 ? "s" : ""}
                 </ThemedText>
                 <ThemedText type="caption">
-                  {referralData.stats.totalReferrals} total referral
-                  {referralData.stats.totalReferrals !== 1 ? "s" : ""}
+                  {referralData.stats.rewardsEarned} month
+                  {referralData.stats.rewardsEarned !== 1 ? "s" : ""} earned
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.settingRow,
+              {
+                backgroundColor: theme.glass.background,
+                borderRadius: 8,
+                padding: 12,
+              },
+            ]}
+            data-testid="text-referral-credits"
+          >
+            <View style={styles.settingInfo}>
+              <Feather name="star" size={18} color={AppColors.primary} />
+              <View style={styles.settingText}>
+                <ThemedText type="body">
+                  {referralData.stats.creditsRemaining} / 3 credits toward next reward
+                </ThemedText>
+                <ThemedText type="caption">
+                  {referralData.stats.creditsNeededForReward} more referral
+                  {referralData.stats.creditsNeededForReward !== 1 ? "s" : ""} for 1 month free
                 </ThemedText>
               </View>
             </View>

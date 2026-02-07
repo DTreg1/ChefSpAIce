@@ -195,7 +195,7 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
     if (referralCode && typeof referralCode === 'string') {
       try {
         const [referrer] = await db
-          .select({ id: users.id, aiRecipeBonusCredits: users.aiRecipeBonusCredits, referralCode: users.referralCode })
+          .select({ id: users.id, referralCode: users.referralCode })
           .from(users)
           .where(eq(users.referralCode, referralCode.toUpperCase()))
           .limit(1);
@@ -207,7 +207,7 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
             referredUserId: newUser.id,
             codeUsed: referralCode.toUpperCase(),
             status: "completed",
-            bonusGranted: true,
+            bonusGranted: false,
           });
 
           await db
@@ -215,13 +215,8 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
             .set({ referredBy: referrer.id, updatedAt: new Date() })
             .where(eq(users.id, newUser.id));
 
-          await db
-            .update(users)
-            .set({
-              aiRecipeBonusCredits: (referrer.aiRecipeBonusCredits || 0) + 3,
-              updatedAt: new Date(),
-            })
-            .where(eq(users.id, referrer.id));
+          const { checkAndRedeemReferralCredits } = await import("../services/subscriptionService");
+          await checkAndRedeemReferralCredits(referrer.id);
 
           referralTrialDays = 14;
         }

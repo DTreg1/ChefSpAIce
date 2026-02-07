@@ -22,8 +22,9 @@
  */
 
 import { db } from "../db";
-import { users, subscriptions, userInventoryItems, userCookwareItems } from "@shared/schema";
-import { eq, count } from "drizzle-orm";
+import { users, subscriptions, userInventoryItems, userCookwareItems, referrals } from "@shared/schema";
+import { eq, and, count, sql } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import {
   SubscriptionTier,
   TierLimits,
@@ -497,6 +498,71 @@ export async function ensureTrialSubscription(
       return { created: false, trialEnd: sub?.trialEnd || trialEnd };
     }
     throw error;
+  }
+}
+
+export async function checkAndRedeemReferralCredits(userId: string): Promise<void> {
+  const [result] = await db
+    .select({ value: count() })
+    .from(referrals)
+    .where(
+      and(
+        eq(referrals.referrerId, userId),
+        eq(referrals.status, "completed"),
+        eq(referrals.bonusGranted, false)
+      )
+    );
+
+  const unredeemedCount = result?.value ?? 0;
+
+  if (unredeemedCount >= 3) {
+    await db.execute(
+      sql`UPDATE referrals SET bonus_granted = true WHERE id IN (SELECT id FROM referrals WHERE referrer_id = ${userId} AND status = 'completed' AND bonus_granted = false ORDER BY created_at ASC LIMIT 3)`
+    );
+
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(1);
+
+    if (subscription) {
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+
+      if (subscription.status === "trialing") {
+        const newTrialEnd = new Date((subscription.trialEnd?.getTime() || Date.now()) + thirtyDays);
+        const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+
+        await db
+          .update(subscriptions)
+          .set({
+            trialEnd: newTrialEnd,
+            currentPeriodEnd: newPeriodEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.userId, userId));
+
+        await db
+          .update(users)
+          .set({
+            trialEndsAt: newTrialEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+      } else if (subscription.status === "active") {
+        const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
+
+        await db
+          .update(subscriptions)
+          .set({
+            currentPeriodEnd: newPeriodEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.userId, userId));
+      }
+    }
+
+    logger.info("Referral reward granted: 1 month free", { userId, creditsRedeemed: 3 });
   }
 }
 
