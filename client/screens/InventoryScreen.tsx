@@ -6,10 +6,11 @@ import {
   RefreshControl,
   Alert,
   Platform,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -43,6 +44,8 @@ import { useFunFact } from "@/components/inventory/useFunFact";
 import { TrialStatusBadge } from "@/components/TrialStatusBadge";
 import { TrialMilestoneBanner } from "@/components/TrialMilestoneBanner";
 import { TrialExpiringModal } from "@/components/TrialExpiringModal";
+import { Feather } from "@expo/vector-icons";
+import { ThemedText } from "@/components/ThemedText";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -124,8 +127,12 @@ export default function InventoryScreen() {
 
   const loadItems = useCallback(async (isInitialLoad = false) => {
     try {
-      const inventoryItems = await storage.getInventory();
+      const [inventoryItems, deletedItems] = await Promise.all([
+        storage.getInventory(),
+        storage.getDeletedInventory(),
+      ]);
       setItems(inventoryItems);
+      setRecentlyDeletedCount(deletedItems.length);
       hasLoadedRef.current = true;
     } catch (error) {
       logger.error("Error loading inventory:", error);
@@ -170,6 +177,7 @@ export default function InventoryScreen() {
   }, []);
 
   const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [recentlyDeletedCount, setRecentlyDeletedCount] = useState(0);
 
   useEffect(() => {
     hasSeenSwipeHint().then((seen) => {
@@ -328,10 +336,50 @@ export default function InventoryScreen() {
   );
 
   const renderListFooter = () => {
-    if (items.length === 0) return null;
-    if (nutritionTotals.itemsWithNutrition === 0) return null;
+    const showNutrition = items.length > 0 && nutritionTotals.itemsWithNutrition > 0;
 
-    return <InventoryNutritionSummary nutritionTotals={nutritionTotals} />;
+    return (
+      <>
+        {showNutrition && (
+          <InventoryNutritionSummary nutritionTotals={nutritionTotals} />
+        )}
+        {recentlyDeletedCount > 0 && (
+          <Pressable
+            onPress={() => {
+              navigation.getParent()?.dispatch(
+                CommonActions.navigate({
+                  name: "ProfileTab",
+                  params: {
+                    screen: "Settings",
+                    params: { scrollTo: "recentlyDeleted" },
+                  },
+                })
+              );
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              paddingVertical: Spacing.md,
+              marginTop: Spacing.sm,
+            }}
+            testID="button-recently-deleted"
+            accessibilityRole="button"
+            accessibilityLabel={`${recentlyDeletedCount} recently deleted items. Tap to recover.`}
+          >
+            <Feather name="trash-2" size={14} color={AppColors.primary} />
+            <ThemedText
+              type="caption"
+              style={{ color: AppColors.primary }}
+              testID="text-recently-deleted-count"
+            >
+              {recentlyDeletedCount} recently deleted {recentlyDeletedCount === 1 ? "item" : "items"} — Tap to recover
+            </ThemedText>
+          </Pressable>
+        )}
+      </>
+    );
   };
 
   const renderGroupedSection = ({

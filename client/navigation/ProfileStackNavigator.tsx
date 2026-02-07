@@ -15,7 +15,7 @@ import SiriShortcutsGuideScreen from "@/screens/SiriShortcutsGuideScreen";
 
 export type ProfileStackParamList = {
   Profile: undefined;
-  Settings: undefined;
+  Settings: { scrollTo?: string } | undefined;
   Analytics: undefined;
   CookingTerms: undefined;
   Cookware: undefined;

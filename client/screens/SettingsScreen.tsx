@@ -32,17 +32,18 @@
  * @module screens/SettingsScreen
  */
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
   Alert,
   Platform,
+  ScrollView,
 } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 
@@ -105,6 +106,7 @@ export default function SettingsScreen() {
   const biometric = useBiometricAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+  const route = useRoute<RouteProp<ProfileStackParamList, "Settings">>();
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     dietaryRestrictions: [],
@@ -124,6 +126,9 @@ export default function SettingsScreen() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const recentlyDeletedRef = useRef<View>(null);
+  const recentlyDeletedY = useRef<number>(0);
   const [referralData, setReferralData] = useState<{
     referralCode: string;
     shareLink: string;
@@ -170,6 +175,14 @@ export default function SettingsScreen() {
       fetchReferralData();
     }, [loadData, fetchReferralData]),
   );
+
+  useEffect(() => {
+    if (route.params?.scrollTo === "recentlyDeleted" && recentlyDeletedY.current > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: recentlyDeletedY.current, animated: true });
+      }, 300);
+    }
+  }, [route.params?.scrollTo]);
 
   const handleToggleNotifications = async (value: boolean) => {
     if (value) {
@@ -799,6 +812,7 @@ export default function SettingsScreen() {
         menuItems={menuItems}
       />
       <KeyboardAwareScrollViewCompat
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
@@ -923,7 +937,14 @@ export default function SettingsScreen() {
           />
         )}
 
-        <SettingsRecentlyDeleted theme={theme} />
+        <View
+          ref={recentlyDeletedRef}
+          onLayout={(e) => {
+            recentlyDeletedY.current = e.nativeEvent.layout.y;
+          }}
+        >
+          <SettingsRecentlyDeleted theme={theme} />
+        </View>
 
         <SettingsAccountData
           isAuthenticated={isAuthenticated}
