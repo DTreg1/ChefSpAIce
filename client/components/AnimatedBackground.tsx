@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, Dimensions, View } from "react-native";
+import { StyleSheet, Dimensions, View, PixelRatio } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import Animated, {
   useSharedValue,
@@ -9,10 +9,15 @@ import Animated, {
   withDelay,
   Easing,
   interpolate,
+  useReducedMotion,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const MAX_ANIMATED_VALUES = 16;
+const isLowEnd = PixelRatio.get() < 2;
+const defaultBubbleCount = isLowEnd ? 4 : 8;
 
 const LIME_950 = "#1a2e05";
 const LIME_900 = "#3d6b1c";
@@ -130,14 +135,17 @@ interface AnimatedBackgroundProps {
 }
 
 export function AnimatedBackground({
-  bubbleCount = 15,
+  bubbleCount = defaultBubbleCount,
   enabled = true,
 }: AnimatedBackgroundProps) {
   const { isDark } = useTheme();
+  const reduceMotion = useReducedMotion();
+
+  const cappedCount = Math.min(bubbleCount, Math.floor(MAX_ANIMATED_VALUES / 2));
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];
-    for (let i = 0; i < bubbleCount; i++) {
+    for (let i = 0; i < cappedCount; i++) {
       configs.push({
         id: i,
         size: Math.random() * 15 + 8,
@@ -149,9 +157,9 @@ export function AnimatedBackground({
       });
     }
     return configs;
-  }, [bubbleCount]);
+  }, [cappedCount]);
 
-  if (!enabled) {
+  if (!enabled || reduceMotion) {
     return (
       <View style={[styles.container, styles.noPointerEvents]}>
         <GradientBackground isDark={isDark} />
