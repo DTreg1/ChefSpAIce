@@ -78,6 +78,17 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
   - Added `unwrapApiBody()` helper and `apiRequestJson<T>()` convenience function
   - All ~38 client files updated to unwrap `.data` from `response.json()` for our API calls
 
+### Offline Mode UX Improvements (Feb 2026)
+- **Enhanced OfflineIndicator** (`client/components/OfflineIndicator.tsx`): Fixed banner at top of screen with warning icon, "You're offline" text, animated appear/disappear (spring + opacity), and a "Dismiss" button that hides the banner temporarily. If still offline after 60 seconds, the banner re-appears automatically. Timer properly cleaned up on unmount and on reconnect.
+- **Root-level placement**: OfflineIndicator is rendered in `MobileAppContent` (client/App.tsx) so it appears on ALL screens across the entire navigation hierarchy.
+- **useOnlineStatus hook** (`client/hooks/useOnlineStatus.ts`): Lightweight hook that subscribes to syncManager and exposes a boolean `isOnline` state for use across any component.
+- **Network-dependent button guards**: When offline, the following actions are disabled/muted with "Available when online" messaging:
+  - RecipesScreen: "Quick Recipe" and "Custom Recipe" menu items show sublabel; empty state action button disabled
+  - GenerateRecipeScreen: Auto-generation blocked; manual generate shows Alert explaining offline state
+  - AddMenu: "Quick Recipe" tap shows Alert when offline
+  - SyncStatusIndicator: Sync/retry actions blocked; accessibility hint updated
+- **HeaderMenu sublabel support** (`client/components/HeaderMenu.tsx`): Added optional `sublabel` field to `MenuItemConfig` interface for contextual messages like "Available when online"
+
 ### Accessibility Improvements (Feb 2026)
 - **Live Region Announcements**: Added `accessibilityLiveRegion` across 6 files for screen reader dynamic content announcements:
   - "polite" for non-urgent: fun facts, nutrition summaries, loading states (InventoryScreen, CookPotLoader, GenerateRecipeScreen)
