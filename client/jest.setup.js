@@ -1,3 +1,5 @@
+require("@testing-library/jest-native/extend-expect");
+
 const mockStorage = {};
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
