@@ -432,6 +432,7 @@ async function initStripe(retries = 3, delay = 2000) {
       },
     },
     crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   }));
 
   app.use(compression({
