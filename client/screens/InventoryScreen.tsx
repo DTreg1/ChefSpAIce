@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { LoadingState } from "@/components/LoadingState";
+import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, AppColors } from "@/constants/theme";
@@ -347,7 +347,7 @@ export default function InventoryScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <LoadingState variant="list" count={6} />;
+      return <InventorySkeleton />;
     }
 
     return (
@@ -403,7 +403,7 @@ export default function InventoryScreen() {
         renderItem={renderGroupedSection}
         ListHeaderComponent={renderListHeader}
         ListFooterComponent={renderListFooter}
-        ListEmptyComponent={!loading ? renderEmptyState : null}
+        ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

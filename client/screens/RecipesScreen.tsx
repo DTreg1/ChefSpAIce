@@ -54,7 +54,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
-import { LoadingState } from "@/components/LoadingState";
+import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -393,7 +393,7 @@ export default function RecipesScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <LoadingState variant="card-grid" count={4} />;
+      return <RecipesSkeleton count={4} />;
     }
 
     return (
