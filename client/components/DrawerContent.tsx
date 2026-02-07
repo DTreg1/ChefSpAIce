@@ -53,7 +53,7 @@ function TrialBadge() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data;
         if (data.url) {
           if (Platform.OS === "web") {
             window.location.href = data.url;

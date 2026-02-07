@@ -79,7 +79,7 @@ export function useFunFact(items: FoodItem[], nutritionTotals: NutritionTotals) 
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         const timestamp = Date.now();
         setFunFact(data.fact);
         setFunFactTimestamp(timestamp);

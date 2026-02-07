@@ -11,6 +11,7 @@ import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../../middleware/auth";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 export const appliancesRouter = Router();
 export const userAppliancesRouter = Router();
@@ -656,7 +657,7 @@ appliancesRouter.get("/", async (req: Request, res: Response, next: NextFunction
     allAppliances.sort((a, b) => a.name.localeCompare(b.name));
 
     res.set("Cache-Control", "public, max-age=86400");
-    res.json(allAppliances.map(formatApplianceResponse));
+    res.json(successResponse(allAppliances.map(formatApplianceResponse)));
   } catch (error) {
     next(error);
   }
@@ -670,7 +671,7 @@ appliancesRouter.get("/common", async (req: Request, res: Response, next: NextFu
     commonAppliances.sort((a, b) => a.name.localeCompare(b.name));
 
     res.set("Cache-Control", "public, max-age=86400");
-    res.json(commonAppliances.map(formatApplianceResponse));
+    res.json(successResponse(commonAppliances.map(formatApplianceResponse)));
   } catch (error) {
     next(error);
   }
@@ -686,7 +687,7 @@ userAppliancesRouter.get("/", async (req: Request, res: Response, next: NextFunc
       .where(eq(userAppliances.userId, userId));
 
     if (userAppliancesList.length === 0) {
-      return res.json([]);
+      return res.json(successResponse([]));
     }
 
     const allAppliances = await getCachedAppliances();
@@ -700,7 +701,7 @@ userAppliancesRouter.get("/", async (req: Request, res: Response, next: NextFunc
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
-    res.json(result);
+    res.json(successResponse(result));
   } catch (error) {
     next(error);
   }
@@ -751,7 +752,7 @@ userAppliancesRouter.post("/", async (req: Request, res: Response, next: NextFun
 
     res
       .status(201)
-      .json(formatUserApplianceResponse({ ...created, appliance }));
+      .json(successResponse(formatUserApplianceResponse({ ...created, appliance })));
   } catch (error) {
     next(error);
   }
@@ -785,7 +786,7 @@ userAppliancesRouter.delete(
 
       await updateCookwareSectionTimestamp(userId);
 
-      res.json({ success: true, message: "Appliance removed from kitchen" });
+      res.json(successResponse(null, "Appliance removed from kitchen"));
     } catch (error) {
       next(error);
     }
@@ -854,12 +855,11 @@ userAppliancesRouter.post("/bulk", async (req: Request, res: Response, next: Nex
       await updateCookwareSectionTimestamp(userId);
     }
 
-    res.json({
+    res.json(successResponse({
       added: toAdd.length,
       removed: toRemove.length,
       total: validIds.length,
-      message: `Synced ${validIds.length} appliances`,
-    });
+    }, `Synced ${validIds.length} appliances`));
   } catch (error) {
     next(error);
   }

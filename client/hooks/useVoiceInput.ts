@@ -74,7 +74,7 @@ async function transcribeAudio(uri: string): Promise<string> {
     throw new Error(errorData.message || "Transcription failed");
   }
 
-  const { transcript } = await response.json();
+  const { transcript } = (await response.json()).data as any;
   return transcript;
 }
 

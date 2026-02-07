@@ -4,6 +4,7 @@ import { subscriptions, users } from "../../../shared/schema";
 import { eq, sql, and, count } from "drizzle-orm";
 import { requireAdmin } from "../../middleware/requireAdmin";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -91,7 +92,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       },
     }));
 
-    res.json(subscriptionsWithUsers);
+    res.json(successResponse(subscriptionsWithUsers));
   } catch (error) {
     next(error);
   }
@@ -179,7 +180,7 @@ router.get("/stats", async (_req: Request, res: Response, next: NextFunction) =>
       ? Math.round((Number(convertedFromTrial) / Number(totalTrialsStarted)) * 100)
       : 0;
 
-    res.json({
+    res.json(successResponse({
       totalActive: Number(totalActive),
       totalTrialing: Number(totalTrialing),
       totalPastDue: Number(totalPastDue),
@@ -189,7 +190,7 @@ router.get("/stats", async (_req: Request, res: Response, next: NextFunction) =>
       annualActive: Number(annualActive),
       mrr: totalMRR,
       trialConversionRate,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -253,7 +254,7 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
       },
     };
 
-    res.json(subscription);
+    res.json(successResponse(subscription));
   } catch (error) {
     next(error);
   }

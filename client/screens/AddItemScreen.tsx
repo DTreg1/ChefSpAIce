@@ -450,7 +450,7 @@ export default function AddItemScreen() {
           throw new Error("Failed to lookup barcode");
         }
 
-        const data = await response.json();
+        const data = (await response.json()).data as any;
 
         if (data.product) {
           const product = data.product;

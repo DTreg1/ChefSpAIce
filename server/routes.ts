@@ -76,6 +76,7 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
+import { successResponse } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
 
 
@@ -102,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HEALTH CHECK - Used by client for network detection
   // =========================================================================
   app.get("/api/health", (_req: Request, res: Response) => {
-    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+    res.status(200).json(successResponse({ status: "ok", timestamp: new Date().toISOString() }));
   });
   app.head("/api/health", (_req: Request, res: Response) => {
     res.status(200).end();
@@ -161,11 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .limit(1);
 
       if (existingUser) {
-        // User already exists - return success anyway (don't reveal if email exists)
-        return res.json({ 
-          success: true, 
-          message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
-        });
+        return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
       }
 
       // Create a new pre-registered user
@@ -181,10 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionTier: "BASIC",
       });
 
-      return res.json({ 
-        success: true, 
-        message: "Thanks! We'll notify you when the app is available in the App Store and Google Play." 
-      });
+      return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
     } catch (error) {
       next(error);
     }
@@ -278,15 +272,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         logger.info("Created test user", { userId: newUser.id });
         
-        res.json({
-          success: true,
+        res.json(successResponse({
           userId: newUser.id,
           email,
           password: plainPassword,
           sessionToken: rawSessionToken,
           tier: "PRO",
-          message: "Test user created with PRO trial. Session cookie set.",
-        });
+        }, "Test user created with PRO trial. Session cookie set."));
       } catch (error) {
         next(error);
       }
@@ -332,12 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         logger.info("Set user subscription tier", { userId, tier, status: newStatus });
         
-        res.json({ 
-          success: true, 
-          tier, 
-          status: newStatus,
-          message: `Subscription updated to ${tier} (${newStatus})`
-        });
+        res.json(successResponse({ tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));
       } catch (error) {
         next(error);
       }
@@ -392,14 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         logger.info("Set user subscription tier by email", { userId: user.id, tier, status: newStatus });
         
-        res.json({ 
-          success: true, 
-          userId: user.id,
-          email,
-          tier, 
-          status: newStatus,
-          message: `Subscription updated to ${tier} (${newStatus})`
-        });
+        res.json(successResponse({ userId: user.id, email, tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));
       } catch (error) {
         next(error);
       }

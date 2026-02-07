@@ -473,7 +473,7 @@ class SyncManager {
       return;
     }
 
-    const result = await response.json();
+    const result = (await response.json()).data;
 
     if (result.operation === "skipped" && result.reason === "stale_update") {
       const error = new Error(
@@ -537,7 +537,8 @@ class SyncManager {
         throw new Error("Failed to fetch from server");
       }
 
-      const result = await response.json();
+      const responseData = await response.json();
+      const result = responseData.data;
 
       if (result.serverTimestamp) {
         await AsyncStorage.setItem(SYNC_KEYS.SERVER_TIMESTAMP, result.serverTimestamp);

@@ -194,7 +194,7 @@ export default function ProfileScreen() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         if (data.url) {
           if (Platform.OS === "web") {
             (window as Window).location.href = data.url;

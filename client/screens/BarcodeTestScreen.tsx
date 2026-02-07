@@ -220,12 +220,13 @@ export default function BarcodeTestScreen() {
       url.searchParams.set("barcode", scanResult.data);
 
       const response = await fetch(url.toString());
-      const data = await response.json();
+      const rawJson = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to lookup barcode");
+        throw new Error(rawJson.error || "Failed to lookup barcode");
       }
 
+      const data = rawJson.data;
       setResult({
         ...data,
         barcodeType: scanResult.type,

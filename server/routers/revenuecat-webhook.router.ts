@@ -4,6 +4,7 @@ import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../lib/logger';
 import { AppError } from '../middleware/errorHandler';
+import { successResponse } from '../lib/apiResponse';
 
 const router = express.Router();
 
@@ -149,7 +150,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         logger.info("RevenueCat unhandled event type", { eventType: event.type });
     }
 
-    return res.status(200).json({ received: true });
+    return res.status(200).json(successResponse({ received: true }));
   } catch (error) {
     next(error);
   }

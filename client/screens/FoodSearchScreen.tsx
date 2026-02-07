@@ -131,7 +131,7 @@ export default function FoodSearchScreen() {
         throw new Error("Failed to search foods");
       }
 
-      const data = await response.json();
+      const data = (await response.json()).data as any;
       setResults(data.results || []);
     } catch (err) {
       setError("Unable to search foods. Please try again.");

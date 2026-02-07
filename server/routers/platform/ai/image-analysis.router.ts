@@ -10,6 +10,7 @@ import {
 } from "../../../lib/food-analysis-parser";
 import { AppError } from "../../../middleware/errorHandler";
 import { logger } from "../../../lib/logger";
+import { successResponse } from "../../../lib/apiResponse";
 
 const router = Router();
 
@@ -153,19 +154,19 @@ router.post("/analyze-food", async (req: Request, res: Response, next: NextFunct
     }
 
     logger.info("Image analysis complete", { itemCount: parseResult.data!.items.length });
-    return res.json(parseResult.data);
+    return res.json(successResponse(parseResult.data));
   } catch (error) {
     next(error);
   }
 });
 
 router.get("/health", (_req: Request, res: Response) => {
-  res.json({
+  res.json(successResponse({
     status: "ok",
     supportedFormats: SUPPORTED_IMAGE_FORMATS,
     maxFileSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
     model: "gpt-4o",
-  });
+  }));
 });
 
 export default router;

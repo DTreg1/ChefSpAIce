@@ -5,6 +5,7 @@ import { nutritionCorrections } from "@shared/schema";
 import { db } from "../../db";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -51,10 +52,7 @@ router.post("/corrections", async (req: Request, res: Response, next: NextFuncti
 
     logger.info("Nutrition correction submitted", { productName: data.productName });
 
-    return res.status(201).json({
-      message: "Correction submitted successfully",
-      id: correction.id,
-    });
+    return res.status(201).json(successResponse({ id: correction.id }, "Correction submitted successfully"));
   } catch (error) {
     next(error);
   }
@@ -79,12 +77,12 @@ router.get("/corrections", async (req: Request, res: Response, next: NextFunctio
           .limit(limit)
           .offset(offset);
 
-    return res.json({
+    return res.json(successResponse({
       corrections,
       count: corrections.length,
       limit,
       offset,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -118,7 +116,7 @@ router.patch("/corrections/:id", async (req: Request, res: Response, next: NextF
       throw AppError.notFound("Correction not found", "CORRECTION_NOT_FOUND");
     }
 
-    return res.json({ message: "Correction updated", correction: updated });
+    return res.json(successResponse({ correction: updated }, "Correction updated"));
   } catch (error) {
     next(error);
   }

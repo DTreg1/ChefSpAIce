@@ -37,7 +37,7 @@ import {
   DEFAULT_MACRO_TARGETS,
 } from "@/lib/storage";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
-import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
@@ -158,7 +158,7 @@ export default function GenerateRecipeScreen() {
             const url = new URL("/api/appliances", baseUrl);
             const response = await fetch(url, { credentials: "include" });
             if (response.ok) {
-              const allAppliances = await response.json();
+              const allAppliances = (await response.json()).data;
               const userCookware = allAppliances
                 .filter((a: any) => cookwareIds.includes(a.id))
                 .map((a: any) => ({
@@ -249,7 +249,7 @@ export default function GenerateRecipeScreen() {
       const effectiveMealType = customSettings?.mealType ?? mealType;
       const effectiveIngredientCount = customSettings?.ingredientCount;
 
-      const response = await apiRequest("POST", "/api/recipes/generate", {
+      const generatedRecipe: any = await apiRequestJson("POST", "/api/recipes/generate", {
         prioritizeExpiring: true,
         quickRecipe: isQuickRecipe,
         inventory: inventoryPayload,
@@ -263,8 +263,6 @@ export default function GenerateRecipeScreen() {
         previousRecipeTitles: previousRecipeTitles.slice(-5), // Send last 5 for variety
         ingredientCount: effectiveIngredientCount,
       });
-
-      const generatedRecipe = await response.json();
 
       const usedExpiringItems = generatedRecipe.usedExpiringItems || [];
       const expiringItemsUsed = usedExpiringItems.length;
@@ -316,7 +314,7 @@ export default function GenerateRecipeScreen() {
       // Generate image before saving (so recipe loads complete)
       setProgressStage("image");
       try {
-        const imageResponse = await apiRequest(
+        const imageData: any = await apiRequestJson(
           "POST",
           "/api/recipes/generate-image",
           {
@@ -326,37 +324,32 @@ export default function GenerateRecipeScreen() {
           },
         );
 
-        logger.log("[GenerateRecipe] Image response status:", imageResponse.ok);
-        if (imageResponse.ok) {
-          const imageData = await imageResponse.json();
-          logger.log("[GenerateRecipe] Image data success:", imageData.success);
-          logger.log("[GenerateRecipe] Has base64:", !!imageData.imageBase64);
-          logger.log("[GenerateRecipe] Has URL:", !!imageData.imageUrl);
-          if (imageData.success) {
-            let imageUri: string | undefined;
-            if (imageData.imageBase64) {
-              imageUri = await saveRecipeImage(
-                newRecipe.id,
-                imageData.imageBase64,
-              );
-              logger.log(
-                "[GenerateRecipe] Saved base64 image, URI:",
-                imageUri?.substring(0, 50),
-              );
-            } else if (imageData.imageUrl) {
-              imageUri = await saveRecipeImageFromUrl(
-                newRecipe.id,
-                imageData.imageUrl,
-              );
-              logger.log("[GenerateRecipe] Saved URL image, URI:", imageUri);
-            }
-            if (imageUri) {
-              newRecipe.imageUri = imageUri;
-              logger.log(
-                "[GenerateRecipe] Recipe imageUri set:",
-                !!newRecipe.imageUri,
-              );
-            }
+        logger.log("[GenerateRecipe] Has base64:", !!imageData.imageBase64);
+        logger.log("[GenerateRecipe] Has URL:", !!imageData.imageUrl);
+        if (imageData) {
+          let imageUri: string | undefined;
+          if (imageData.imageBase64) {
+            imageUri = await saveRecipeImage(
+              newRecipe.id,
+              imageData.imageBase64,
+            );
+            logger.log(
+              "[GenerateRecipe] Saved base64 image, URI:",
+              imageUri?.substring(0, 50),
+            );
+          } else if (imageData.imageUrl) {
+            imageUri = await saveRecipeImageFromUrl(
+              newRecipe.id,
+              imageData.imageUrl,
+            );
+            logger.log("[GenerateRecipe] Saved URL image, URI:", imageUri);
+          }
+          if (imageUri) {
+            newRecipe.imageUri = imageUri;
+            logger.log(
+              "[GenerateRecipe] Recipe imageUri set:",
+              !!newRecipe.imageUri,
+            );
           }
         }
       } catch (imgError) {

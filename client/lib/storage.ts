@@ -611,7 +611,7 @@ export const storage = {
       );
 
       if (response.ok) {
-        const result = await response.json();
+        const result = (await response.json()).data;
         logger.log(
           "[storage.uploadRecipeImageToCloud] Success:",
           result.cloudImageUri,
@@ -1525,13 +1525,14 @@ export const storage = {
         return { success: false, error: "Failed to fetch cloud data" };
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
+      const data = responseData.data;
 
-      if (!data.data) {
+      if (!data) {
         return { success: true };
       }
 
-      const syncData = data.data;
+      const syncData = data;
 
       await Promise.all(
         [

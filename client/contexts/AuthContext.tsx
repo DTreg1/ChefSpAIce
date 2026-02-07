@@ -321,7 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (response.ok) {
-              const data = await response.json();
+              const data = (await response.json()).data as any;
               const authData: StoredAuthData = {
                 user: data.user,
                 token: data.token,
@@ -440,11 +440,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const body = await response.json();
 
       if (!response.ok) {
-        return { success: false, error: data.error || "Sign in failed" };
+        return { success: false, error: body.error || "Sign in failed" };
       }
+
+      const data = body.data as any;
 
       // Validate required fields from server response
       if (!data.user || !data.user.id || !data.token) {
@@ -545,12 +547,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         logger.log("[SignUp] Response status:", response.status);
 
-        const data = await response.json();
-        logger.log("[SignUp] Response data:", data);
+        const body = await response.json();
+        logger.log("[SignUp] Response data:", body);
 
         if (!response.ok) {
-          return { success: false, error: data.error || "Registration failed" };
+          return { success: false, error: body.error || "Registration failed" };
         }
+
+        const data = body.data as any;
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {
@@ -759,7 +763,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           clearTimeout(timeoutId);
 
-          data = await response.json();
+          const _body: any = await response.json();
+          data = response.ok ? _body.data : _body;
         } catch (fetchError: unknown) {
           clearTimeout(timeoutId);
           const fetchErr = fetchError as { name?: string; message?: string };
@@ -960,14 +965,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }),
         });
 
-        const data = await response.json();
+        const body = await response.json();
 
         if (!response.ok) {
           return {
             success: false,
-            error: data.error || "Google sign in failed",
+            error: body.error || "Google sign in failed",
           };
         }
+
+        const data = body.data as any;
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {

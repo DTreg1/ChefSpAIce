@@ -152,7 +152,7 @@ export default function SettingsScreen() {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         setReferralData(data);
       }
     } catch (error) {
@@ -561,7 +561,7 @@ export default function SettingsScreen() {
         throw new Error(text || "Export failed");
       }
 
-      const backupData = await res.json();
+      const backupData = (await res.json()).data as any;
       const jsonString = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -644,11 +644,13 @@ export default function SettingsScreen() {
         body: JSON.stringify({ backup: pendingImportFile, mode }),
       });
 
-      const result = await res.json();
+      const body = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.error || "Import failed");
+        throw new Error(body.error || "Import failed");
       }
+
+      const result = body.data as any;
 
       let message = "Your data has been imported successfully.";
       if (result.warnings && result.warnings.length > 0) {

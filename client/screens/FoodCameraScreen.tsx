@@ -220,7 +220,7 @@ export default function FoodCameraScreen() {
         throw new Error(errorData.error || "Failed to analyze image");
       }
 
-      return response.json();
+      return (await response.json()).data;
     },
     onSuccess: (data) => {
       setScreenState("results");

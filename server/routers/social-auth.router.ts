@@ -7,6 +7,7 @@ import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
 import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
+import { successResponse, errorResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -229,7 +230,7 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, token, req);
 
-    res.json({
+    res.json(successResponse({
       user: {
         id: dbUser.id,
         email: dbUser.email,
@@ -241,7 +242,7 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
       },
       token,
       expiresAt: expiresAt.toISOString(),
-    });
+    }));
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
     next(error);
@@ -386,7 +387,7 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, token, req);
 
-    res.json({
+    res.json(successResponse({
       user: {
         id: dbUser.id,
         email: dbUser.email,
@@ -398,7 +399,7 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
       },
       token,
       expiresAt: expiresAt.toISOString(),
-    });
+    }));
   } catch (error) {
     await dbClient.query("ROLLBACK").catch(() => {});
     next(error);

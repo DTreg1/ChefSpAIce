@@ -17,6 +17,7 @@ import {
 } from "../../services/subscriptionService";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse, errorResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -1007,7 +1008,7 @@ KEY PRINCIPLES:
 
     const updatedLimit = await checkAiRecipeLimit(req.userId!);
 
-    return res.json({
+    return res.json(successResponse({
       ...recipe,
       totalExpiringItems: expiringItems.length,
       prioritizedExpiring: prioritizeExpiring,
@@ -1015,7 +1016,7 @@ KEY PRINCIPLES:
         aiRecipesRemaining: updatedLimit.remaining,
         aiRecipesLimit: updatedLimit.limit,
       },
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1103,15 +1104,13 @@ router.post("/generate-image", async (req: Request, res: Response, next: NextFun
 
     // gpt-image-1 returns b64_json
     if (imageData.b64_json) {
-      return res.json({
-        success: true,
+      return res.json(successResponse({
         imageBase64: imageData.b64_json,
-      });
+      }));
     } else if (imageData.url) {
-      return res.json({
-        success: true,
+      return res.json(successResponse({
         imageUrl: imageData.url,
-      });
+      }));
     } else {
       throw new Error("No image URL or data returned");
     }
@@ -1249,15 +1248,12 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (result.error) {
-      return res.status(200).json({
-        error: result.error,
-        suggestion: result.suggestion,
-      });
+      return res.status(200).json(errorResponse(result.error, "SCAN_FAILED", { suggestion: result.suggestion }));
     }
 
     logger.info("Recipe scan complete", { title: result.title });
 
-    return res.json({
+    return res.json(successResponse({
       title: result.title || "Untitled Recipe",
       description: result.description || "",
       ingredients: result.ingredients || [],
@@ -1266,7 +1262,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
       cookTime: result.cookTime || "",
       servings: result.servings || 4,
       notes: result.notes || "",
-    });
+    }));
   } catch (error) {
     next(error);
   }

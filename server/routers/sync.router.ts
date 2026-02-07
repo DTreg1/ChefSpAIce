@@ -7,6 +7,7 @@ import { userSessions, userSyncData } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
 import { AppError } from "../middleware/errorHandler";
+import { successResponse, errorResponse } from "../lib/apiResponse";
 
 interface SyncFailureRecord {
   dataType: string;
@@ -275,12 +276,11 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation,
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -338,13 +338,12 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
       if (newTimestamp >= existingTimestamp) {
         currentInventory[index] = { ...data, updatedAt: finalTimestamp };
       } else {
-        return res.json({
-          success: true,
+        return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
-        });
+        }));
       }
     } else {
       const limitCheck = await checkPantryItemLimit(session.userId);
@@ -381,12 +380,11 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "update",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -444,12 +442,11 @@ router.delete("/inventory", async (req: Request, res: Response, next: NextFuncti
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "delete",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -525,12 +522,11 @@ router.post("/recipes", async (req: Request, res: Response, next: NextFunction) 
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation,
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -587,13 +583,12 @@ router.put("/recipes", async (req: Request, res: Response, next: NextFunction) =
       if (newTimestamp >= existingTimestamp) {
         currentRecipes[index] = { ...data, updatedAt: finalTimestamp };
       } else {
-        return res.json({
-          success: true,
+        return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
-        });
+        }));
       }
     } else {
       const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
@@ -613,12 +608,11 @@ router.put("/recipes", async (req: Request, res: Response, next: NextFunction) =
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "update",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -676,12 +670,11 @@ router.delete("/recipes", async (req: Request, res: Response, next: NextFunction
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "delete",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -757,12 +750,11 @@ router.post("/mealPlans", async (req: Request, res: Response, next: NextFunction
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation,
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -819,13 +811,12 @@ router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction)
       if (newTimestamp >= existingTimestamp) {
         currentMealPlans[index] = { ...data, updatedAt: finalTimestamp };
       } else {
-        return res.json({
-          success: true,
+        return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
-        });
+        }));
       }
     } else {
       const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
@@ -845,12 +836,11 @@ router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction)
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "update",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -908,12 +898,11 @@ router.delete("/mealPlans", async (req: Request, res: Response, next: NextFuncti
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "delete",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1018,12 +1007,11 @@ router.post("/cookware", async (req: Request, res: Response, next: NextFunction)
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation,
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1097,13 +1085,12 @@ router.put("/cookware", async (req: Request, res: Response, next: NextFunction) 
       if (newTimestamp >= existingTimestamp) {
         currentCookware[index] = { ...data, updatedAt: finalTimestamp };
       } else {
-        return res.json({
-          success: true,
+        return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
-        });
+        }));
       }
     }
 
@@ -1129,12 +1116,11 @@ router.put("/cookware", async (req: Request, res: Response, next: NextFunction) 
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "update",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1192,12 +1178,11 @@ router.delete("/cookware", async (req: Request, res: Response, next: NextFunctio
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "delete",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1277,12 +1262,11 @@ router.post("/shoppingList", async (req: Request, res: Response, next: NextFunct
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation,
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1339,13 +1323,12 @@ router.put("/shoppingList", async (req: Request, res: Response, next: NextFuncti
       if (newTimestamp >= existingTimestamp) {
         currentShoppingList[index] = { ...data, updatedAt: finalTimestamp };
       } else {
-        return res.json({
-          success: true,
+        return res.json(successResponse({
           syncedAt: new Date().toISOString(),
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
-        });
+        }));
       }
     } else {
       const dataUpdatedAt = (data as { updatedAt?: string }).updatedAt;
@@ -1373,12 +1356,11 @@ router.put("/shoppingList", async (req: Request, res: Response, next: NextFuncti
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "update",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1436,12 +1418,11 @@ router.delete("/shoppingList", async (req: Request, res: Response, next: NextFun
       })
       .where(eq(userSyncData.userId, session.userId));
 
-    res.json({
-      success: true,
+    res.json(successResponse({
       syncedAt: new Date().toISOString(),
       operation: "delete",
       itemId: dataIdStr,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1475,7 +1456,7 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
     const syncData = existingSyncData.length > 0 ? existingSyncData[0] : null;
     const isConsistent = syncData !== null && syncData.lastSyncedAt !== null;
 
-    res.json({
+    res.json(successResponse({
       lastSyncedAt,
       failedOperations24h: userFailures.length,
       recentFailures: userFailures.slice(-10).map(f => ({
@@ -1492,7 +1473,7 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
         shoppingList: Array.isArray(syncData.shoppingList) ? (syncData.shoppingList as unknown[]).length : 0,
         cookware: Array.isArray(syncData.cookware) ? (syncData.cookware as unknown[]).length : 0,
       } : null,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1539,7 +1520,7 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
     const date = new Date().toISOString().split("T")[0];
     res.setHeader("Content-Disposition", `attachment; filename="chefspaice-backup-${date}.json"`);
     res.setHeader("Content-Type", "application/json");
-    res.json(backup);
+    res.json(successResponse(backup));
   } catch (error) {
     next(error);
   }
@@ -1757,8 +1738,7 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
         .where(eq(userSyncData.userId, session.userId));
     }
 
-    const response: Record<string, unknown> = {
-      success: true,
+    const responseData: Record<string, unknown> = {
       mode,
       importedAt: new Date().toISOString(),
       summary: {
@@ -1778,10 +1758,10 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
     };
 
     if (truncationWarnings.length > 0) {
-      response.warnings = truncationWarnings;
+      responseData.warnings = truncationWarnings;
     }
 
-    res.json(response);
+    res.json(successResponse(responseData));
   } catch (error) {
     next(error);
   }

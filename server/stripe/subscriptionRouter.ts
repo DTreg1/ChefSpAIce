@@ -13,6 +13,7 @@ import {
 } from "../services/subscriptionService";
 import { SubscriptionTier } from "@shared/subscription";
 import { AppError } from "../middleware/errorHandler";
+import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -70,7 +71,7 @@ async function getAuthenticatedUser(req: Request): Promise<{ id: string; email: 
 router.get("/prices", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     if (pricesCache.data && Date.now() - pricesCache.timestamp < PRICES_CACHE_TTL_MS) {
-      return res.json(pricesCache.data);
+      return res.json(successResponse(pricesCache.data));
     }
 
     const stripe = await getUncachableStripeClient();
@@ -121,7 +122,7 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
       pricesCache.timestamp = Date.now();
     }
 
-    res.json(result);
+    res.json(successResponse(result));
   } catch (error) {
     next(error);
   }
@@ -197,10 +198,10 @@ router.post("/create-checkout-session", async (req: Request, res: Response, next
       },
     });
 
-    res.json({
+    res.json(successResponse({
       sessionId: session.id,
       url: session.url,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -234,7 +235,7 @@ router.post("/create-portal-session", async (req: Request, res: Response, next: 
       return_url: req.body.returnUrl || `${baseUrl}/settings`,
     });
 
-    res.json({ url: session.url });
+    res.json(successResponse({ url: session.url }));
   } catch (error) {
     next(error);
   }
@@ -254,16 +255,16 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
       .limit(1);
 
     if (!subscription) {
-      return res.json({
+      return res.json(successResponse({
         status: "none",
         planType: null,
         currentPeriodEnd: null,
         trialEnd: null,
         cancelAtPeriodEnd: false,
-      });
+      }));
     }
 
-    res.json({
+    res.json(successResponse({
       status: subscription.status,
       planType: subscription.planType,
       currentPeriodStart: subscription.currentPeriodStart?.toISOString() || null,
@@ -272,7 +273,7 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
       trialEnd: subscription.trialEnd?.toISOString() || null,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       canceledAt: subscription.canceledAt?.toISOString() || null,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -281,7 +282,7 @@ router.get("/status", async (req: Request, res: Response, next: NextFunction) =>
 router.get("/publishable-key", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const publishableKey = await getStripePublishableKey();
-    res.json({ publishableKey });
+    res.json(successResponse({ publishableKey }));
   } catch (error) {
     next(error);
   }
@@ -312,14 +313,14 @@ router.get("/session/:sessionId", async (req: Request, res: Response, next: Next
       items?: { data?: Array<{ price?: { recurring?: { interval?: string } } }> };
     } | null;
 
-    res.json({
+    res.json(successResponse({
       customerEmail: session.customer_email || session.customer_details?.email || null,
       subscriptionId: typeof session.subscription === "string" ? session.subscription : subscription?.id || null,
       planType: subscription?.items?.data?.[0]?.price?.recurring?.interval === "year" ? "annual" : "monthly",
       trialEnd: subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
       amount: session.amount_total,
       currency: session.currency,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -366,11 +367,7 @@ router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFu
 
     logger.info("RevenueCat purchase synced", { userId: user.id, tier, status });
 
-    res.json({ 
-      success: true,
-      tier,
-      status,
-    });
+    res.json(successResponse({ tier, status }));
   } catch (error) {
     next(error);
   }
@@ -391,7 +388,7 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
       .where(eq(subscriptions.userId, user.id))
       .limit(1);
 
-    res.json({
+    res.json(successResponse({
       tier: entitlements.tier,
       status: entitlements.status,
       planType: subscription?.planType || null,
@@ -401,7 +398,7 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
       trialEndsAt: entitlements.trialEndsAt?.toISOString() || null,
       currentPeriodEnd: subscription?.currentPeriodEnd?.toISOString() || null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -431,7 +428,7 @@ router.get("/check-limit/:limitType", async (req: Request, res: Response, next: 
         throw AppError.badRequest("Invalid limit type. Use: pantryItems, aiRecipes, or cookware", "INVALID_LIMIT_TYPE");
     }
 
-    res.json(result);
+    res.json(successResponse(result));
   } catch (error) {
     next(error);
   }
@@ -465,10 +462,10 @@ router.get("/check-feature/:feature", async (req: Request, res: Response, next: 
       feature as "recipeScanning" | "bulkScanning" | "aiKitchenAssistant" | "weeklyMealPrepping" | "customStorageAreas"
     );
 
-    res.json({
+    res.json(successResponse({
       allowed,
       upgradeRequired: !allowed,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -579,10 +576,10 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
       },
     });
 
-    res.json({
+    res.json(successResponse({
       sessionId: session.id,
       url: session.url,
-    });
+    }));
   } catch (error) {
     next(error);
   }

@@ -819,7 +819,7 @@ export default function OnboardingScreen() {
         cache: "no-store",
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         const commonItems = data.filter((a: Appliance) => a.isCommon);
         setAppliances(data);
         // Pre-select up to 5 common items (limit will be enforced by the effect above)

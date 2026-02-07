@@ -137,7 +137,7 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
         throw new Error(errorData.message || "Voice chat request failed");
       }
 
-      const data = await response.json();
+      const data = (await response.json()).data as any;
       const { userTranscript, assistantMessage, audioUrl } = data;
 
       const userMessage: VoiceChatMessage = {

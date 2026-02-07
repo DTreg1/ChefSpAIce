@@ -16,7 +16,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Linking, Alert } from "react-native";
-import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
 
 interface InstacartProduct {
@@ -49,7 +49,7 @@ export function useInstacart() {
       });
 
       if (response.ok) {
-        const data: InstacartStatus = await response.json();
+        const data: InstacartStatus = (await response.json()).data;
         setIsConfigured(data.configured);
       } else {
         setIsConfigured(false);
@@ -87,7 +87,7 @@ export function useInstacart() {
       try {
         setIsLoading(true);
 
-        const response = await apiRequest(
+        const data: InstacartLinkResponse = await apiRequestJson(
           "POST",
           "/api/instacart/products-link",
           {
@@ -95,8 +95,6 @@ export function useInstacart() {
             title: title || "ChefSpAIce Shopping List",
           },
         );
-
-        const data: InstacartLinkResponse = await response.json();
 
         if (data.products_link_url) {
           return data.products_link_url;
@@ -139,13 +137,11 @@ export function useInstacart() {
       try {
         setIsLoading(true);
 
-        const response = await apiRequest("POST", "/api/instacart/recipe", {
+        const data: InstacartLinkResponse = await apiRequestJson("POST", "/api/instacart/recipe", {
           title,
           ingredients,
           imageUrl,
         });
-
-        const data: InstacartLinkResponse = await response.json();
 
         if (data.products_link_url) {
           return data.products_link_url;

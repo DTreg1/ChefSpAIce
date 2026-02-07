@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../lib/logger";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -109,10 +110,10 @@ router.post("/transcribe", async (req: Request, res: Response, next: NextFunctio
           response_format: "json",
         });
 
-        return res.json({
+        return res.json(successResponse({
           transcript: response.text,
           language,
-        });
+        }));
       }
 
       throw AppError.badRequest("Expected multipart/form-data with audio file or JSON with audioBase64 and filename", "INVALID_REQUEST_FORMAT");
@@ -155,10 +156,10 @@ router.post("/transcribe", async (req: Request, res: Response, next: NextFunctio
 
     logger.info("Transcription completed", { transcriptPreview: response.text.substring(0, 50) });
 
-    return res.json({
+    return res.json(successResponse({
       transcript: response.text,
       language,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -220,11 +221,11 @@ router.post("/speak", async (req: Request, res: Response, next: NextFunction) =>
 
     logger.info("Speech generated", { textPreview: text.substring(0, 50) });
 
-    return res.json({
+    return res.json(successResponse({
       audio: audioData.data,
       format: "mp3",
       duration: audioData.transcript ? undefined : undefined,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -323,10 +324,10 @@ Return ONLY valid JSON in this format:
 
     logger.info("Command parsed", { text, intent: parsed.intent, confidence: parsed.confidence });
 
-    return res.json({
+    return res.json(successResponse({
       ...parsed,
       rawText: text,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -457,23 +458,23 @@ router.post("/chat", async (req: Request, res: Response, next: NextFunction) => 
 
     logger.info("Voice conversation complete");
 
-    return res.json({
+    return res.json(successResponse({
       userTranscript,
       aiResponse,
       audioResponse: audioData.data,
       audioFormat: "mp3",
-    });
+    }));
   } catch (error) {
     next(error);
   }
 });
 
 router.get("/health", (_req: Request, res: Response) => {
-  res.json({
+  res.json(successResponse({
     status: "ok",
     supportedFormats: SUPPORTED_AUDIO_FORMATS,
     maxFileSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
-  });
+  }));
 });
 
 export default router;

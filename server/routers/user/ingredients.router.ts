@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../lib/logger";
+import { successResponse, errorResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -228,22 +229,19 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
     const result = parseResult.data;
 
     if (result.error) {
-      return res.status(200).json({
-        error: result.error,
-        suggestion: result.suggestion,
-      });
+      return res.status(200).json(errorResponse(result.error, "SCAN_FAILED", { suggestion: result.suggestion }));
     }
 
     logger.info("Ingredient scan complete", { itemCount: result.ingredients.length });
 
-    return res.json({
+    return res.json(successResponse({
       productName: result.productName,
       ingredients: result.ingredients,
       nutrition: result.nutrition,
       rawText: result.rawText,
       confidence: result.confidence,
       notes: result.notes,
-    });
+    }));
   } catch (error) {
     next(error);
   }

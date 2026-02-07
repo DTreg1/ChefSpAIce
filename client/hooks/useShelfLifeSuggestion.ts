@@ -179,7 +179,7 @@ async function fetchAIShelfLife(
     throw new Error(`API error: ${response.status}`);
   }
 
-  return response.json();
+  return (await response.json()).data as any;
 }
 
 function useDebounce<T>(value: T, delay: number): T {

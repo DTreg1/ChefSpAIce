@@ -185,7 +185,7 @@ export default function SubscriptionScreen() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         if (data.url) {
           if (Platform.OS === "web") {
             window.open(data.url, "_blank");
@@ -298,7 +298,7 @@ export default function SubscriptionScreen() {
         const pricesResponse = await fetch(
           `${baseUrl}/api/subscriptions/prices`,
         );
-        const prices = await pricesResponse.json();
+        const prices = (await pricesResponse.json()).data as any;
 
         // Get price ID based on tier and plan - require exact match, no fallback
         const priceKey =
@@ -339,7 +339,7 @@ export default function SubscriptionScreen() {
         );
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()).data as any;
           if (data.url) {
             window.location.href = data.url;
           }

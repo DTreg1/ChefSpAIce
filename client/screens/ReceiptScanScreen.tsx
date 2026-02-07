@@ -470,7 +470,7 @@ export default function ReceiptScanScreen() {
         throw new Error(error.error || "Failed to analyze receipt");
       }
 
-      return response.json() as Promise<ReceiptAnalysisResult>;
+      return (await response.json()).data as ReceiptAnalysisResult;
     },
     onSuccess: (data) => {
       setAnalysisResult(data);

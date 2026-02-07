@@ -9,6 +9,7 @@ import {
 } from "../../lib/waste-reduction-utils";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -64,13 +65,13 @@ router.post("/shelf-life", async (req: Request, res: Response, next: NextFunctio
     const cacheKey = `${foodName.toLowerCase()}:${category?.toLowerCase() || ""}:${storageLocation.toLowerCase()}`;
     const cached = shelfLifeCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
-      return res.json({
+      return res.json(successResponse({
         suggestedDays: cached.suggestedDays,
         confidence: cached.confidence,
         source: cached.source,
         notes: cached.notes,
         signsOfSpoilage: cached.signsOfSpoilage,
-      });
+      }));
     }
 
     const prompt = `You are a food safety expert. Determine the shelf life for the following food item.
@@ -125,7 +126,7 @@ Return JSON:
 
     shelfLifeCache.set(cacheKey, { ...result, timestamp: Date.now() });
 
-    return res.json(result);
+    return res.json(successResponse(result));
   } catch (error) {
     next(error);
   }
@@ -137,10 +138,10 @@ router.post("/waste-reduction", async (req: Request, res: Response, next: NextFu
     const clientItems = req.body.expiringItems || [];
 
     if (!Array.isArray(clientItems) || clientItems.length === 0) {
-      return res.json({
+      return res.json(successResponse({
         suggestions: [],
         expiringItems: [],
-      });
+      }));
     }
 
     const expiringItems: ExpiringItem[] = clientItems.map((item: any) => ({
@@ -163,10 +164,10 @@ router.post("/waste-reduction", async (req: Request, res: Response, next: NextFu
       if (process.env.NODE_ENV !== "production") {
         logger.debug("Waste reduction cache hit", { deviceId });
       }
-      return res.json({
+      return res.json(successResponse({
         suggestions: cached.suggestions,
         expiringItems: cached.expiringItems,
-      });
+      }));
     }
 
     const itemsList = expiringItems
@@ -247,17 +248,17 @@ Return JSON:
       setInCache(cacheKey, { suggestions, expiringItems });
       logger.info("Waste reduction tips generated", { deviceId });
 
-      return res.json({
+      return res.json(successResponse({
         suggestions,
         expiringItems,
-      });
+      }));
     } catch (aiError) {
       logger.error("AI waste reduction tips error", { error: aiError instanceof Error ? aiError.message : String(aiError) });
 
-      return res.json({
+      return res.json(successResponse({
         suggestions: [],
         expiringItems,
-      });
+      }));
     }
   } catch (error) {
     next(error);
@@ -279,9 +280,9 @@ router.post("/fun-fact", async (req: Request, res: Response, next: NextFunction)
     const { items, nutritionTotals } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.json({
+      return res.json(successResponse({
         fact: "Add some items to your inventory to discover fun facts about your food!",
-      });
+      }));
     }
 
     const itemNames = items.map((i: any) => i.name).slice(0, 20);
@@ -289,7 +290,7 @@ router.post("/fun-fact", async (req: Request, res: Response, next: NextFunction)
     
     const cached = funFactCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < FUN_FACT_CACHE_TTL) {
-      return res.json({ fact: cached.fact });
+      return res.json(successResponse({ fact: cached.fact }));
     }
 
     const itemList = itemNames.join(", ");
@@ -341,7 +342,7 @@ Return JSON: { "fact": "<your fun fact>" }`;
 
     funFactCache.set(cacheKey, { fact, timestamp: Date.now() });
 
-    return res.json({ fact });
+    return res.json(successResponse({ fact }));
   } catch (error) {
     next(error);
   }

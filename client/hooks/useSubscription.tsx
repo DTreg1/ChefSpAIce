@@ -181,7 +181,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
@@ -343,7 +343,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           const pricesResponse = await fetch(
             `${baseUrl}/api/subscriptions/prices`,
           );
-          const prices = await pricesResponse.json();
+          const prices = (await pricesResponse.json()).data as any;
 
           const priceKey =
             tier === "pro"
@@ -383,15 +383,15 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           );
 
           if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()).data as any;
             if (data.url) {
               window.location.href = data.url;
             }
           } else {
-            const errorData = await response.json();
+            const errorBody = await response.json();
             Alert.alert(
               "Error",
-              errorData.error || "Failed to start checkout. Please try again.",
+              errorBody.error || "Failed to start checkout. Please try again.",
             );
           }
         }

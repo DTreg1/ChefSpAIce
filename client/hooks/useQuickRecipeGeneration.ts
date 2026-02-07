@@ -10,7 +10,7 @@ import {
   generateId,
   DEFAULT_MACRO_TARGETS,
 } from "@/lib/storage";
-import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -120,7 +120,7 @@ export function useQuickRecipeGeneration() {
           const url = new URL("/api/appliances", baseUrl);
           const response = await fetch(url, { credentials: "include" });
           if (response.ok) {
-            const allAppliances = await response.json();
+            const allAppliances = (await response.json()).data;
             cookware = allAppliances
               .filter((a: any) => cookwareIds.includes(a.id))
               .map((a: any) => ({
@@ -163,7 +163,7 @@ export function useQuickRecipeGeneration() {
           item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS,
       );
 
-      const response = await apiRequest("POST", "/api/recipes/generate", {
+      const generatedRecipe: any = await apiRequestJson("POST", "/api/recipes/generate", {
         prioritizeExpiring: true,
         quickRecipe: true,
         inventory: inventoryPayload,
@@ -175,8 +175,6 @@ export function useQuickRecipeGeneration() {
         cuisine: cuisinePreference,
         macroTargets,
       });
-
-      const generatedRecipe = await response.json();
 
       const usedExpiringItems = generatedRecipe.usedExpiringItems || [];
       const expiringItemsUsed = usedExpiringItems.length;
@@ -224,7 +222,7 @@ export function useQuickRecipeGeneration() {
 
       setProgressStage("image");
       try {
-        const imageResponse = await apiRequest(
+        const imageData: any = await apiRequestJson(
           "POST",
           "/api/recipes/generate-image",
           {
@@ -234,24 +232,21 @@ export function useQuickRecipeGeneration() {
           },
         );
 
-        if (imageResponse.ok) {
-          const imageData = await imageResponse.json();
-          if (imageData.success) {
-            let imageUri: string | undefined;
-            if (imageData.imageBase64) {
-              imageUri = await saveRecipeImage(
-                newRecipe.id,
-                imageData.imageBase64,
-              );
-            } else if (imageData.imageUrl) {
-              imageUri = await saveRecipeImageFromUrl(
-                newRecipe.id,
-                imageData.imageUrl,
-              );
-            }
-            if (imageUri) {
-              newRecipe.imageUri = imageUri;
-            }
+        if (imageData) {
+          let imageUri: string | undefined;
+          if (imageData.imageBase64) {
+            imageUri = await saveRecipeImage(
+              newRecipe.id,
+              imageData.imageBase64,
+            );
+          } else if (imageData.imageUrl) {
+            imageUri = await saveRecipeImageFromUrl(
+              newRecipe.id,
+              imageData.imageUrl,
+            );
+          }
+          if (imageUri) {
+            newRecipe.imageUri = imageUri;
           }
         }
       } catch (imgError) {

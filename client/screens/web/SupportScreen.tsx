@@ -73,7 +73,7 @@ export default function SupportScreen() {
         },
       );
 
-      const data = await response.json();
+      const data = (await response.json()).data as any;
 
       if (data.url) {
         window.location.href = data.url;

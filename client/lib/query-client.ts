@@ -101,6 +101,17 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+function unwrapApiBody(body: unknown): unknown {
+  if (body && typeof body === "object" && "success" in body) {
+    const typed = body as { success: boolean; data?: unknown; error?: string; errorCode?: string };
+    if (!typed.success) {
+      throw new Error(`${typed.errorCode || "ERROR"}: ${typed.error || "Request failed"}`);
+    }
+    return typed.data;
+  }
+  return body;
+}
+
 export async function apiRequest(
   method: string,
   route: string,
@@ -127,13 +138,22 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  // Handle 401 errors by triggering auth error callback
   if (res.status === 401) {
     handleAuthError();
   }
 
   await throwIfResNotOk(res);
   return res;
+}
+
+export async function apiRequestJson<T = unknown>(
+  method: string,
+  route: string,
+  data?: unknown,
+): Promise<T> {
+  const res = await apiRequest(method, route, data);
+  const body = await res.json();
+  return unwrapApiBody(body) as T;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -158,16 +178,15 @@ const getQueryFn: <T>(options: {
     });
 
     if (res.status === 401) {
-      // Always trigger auth error callback on 401
       handleAuthError();
-
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const body = await res.json();
+    return unwrapApiBody(body) as T;
   };
 
 export const queryClient = new QueryClient({

@@ -132,7 +132,7 @@ export default function AuthScreen() {
           credentials: "include",
         },
       );
-      const subscriptionData = await subscriptionResponse.json();
+      const subscriptionData = (await subscriptionResponse.json()).data as any;
       const isSubscriptionActive =
         subscriptionData?.status === "active" ||
         subscriptionData?.status === "trialing";
@@ -209,7 +209,7 @@ export default function AuthScreen() {
           credentials: "include",
         },
       );
-      const subscriptionData = await subscriptionResponse.json();
+      const subscriptionData = (await subscriptionResponse.json()).data as any;
       const isSubscriptionActive =
         subscriptionData?.status === "active" ||
         subscriptionData?.status === "trialing";

@@ -44,7 +44,7 @@ import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useInstacart } from "@/hooks/useInstacart";
 import { getRecipeDeepLink } from "@/lib/deep-linking";
 
-import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { getApiUrl, apiRequestJson } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { logger } from "@/lib/logger";
 
@@ -138,7 +138,7 @@ export default function RecipeDetailScreen() {
         const url = new URL("/api/appliances", baseUrl);
         const response = await fetch(url, { credentials: "include" });
         if (response.ok) {
-          const allAppliances = await response.json();
+          const allAppliances = (await response.json()).data;
           const cookwareNames = allAppliances
             .filter((a: any) => cookwareIds.includes(a.id))
             .map((a: any) => a.name.toLowerCase());
@@ -221,7 +221,7 @@ export default function RecipeDetailScreen() {
 
       try {
         logger.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
-        const imageResponse = await apiRequest(
+        const imageData: any = await apiRequestJson(
           "POST",
           "/api/recipes/generate-image",
           {
@@ -231,9 +231,7 @@ export default function RecipeDetailScreen() {
         );
 
         if (isCancelled) return;
-
-        const imageData = await imageResponse.json();
-        if (!imageData.success || isCancelled) return;
+        if (!imageData || isCancelled) return;
 
         let imageUri: string | undefined;
         if (imageData.imageBase64) {

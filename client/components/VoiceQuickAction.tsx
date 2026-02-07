@@ -163,7 +163,7 @@ export function VoiceQuickAction() {
       throw new Error("Failed to parse command");
     }
 
-    return response.json();
+    return (await response.json()).data as ParsedIntent;
   };
 
   const synthesizeSpeech = async (text: string): Promise<string> => {
@@ -181,7 +181,7 @@ export function VoiceQuickAction() {
       throw new Error("Failed to synthesize speech");
     }
 
-    const { audioUrl } = await response.json();
+    const { audioUrl } = (await response.json()).data as any;
     return audioUrl;
   };
 

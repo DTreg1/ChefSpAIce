@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { db } from "../../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -85,7 +86,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       terms.sort((a, b) => a.term.localeCompare(b.term));
     }
 
-    res.json(terms.map(formatTermResponse));
+    res.json(successResponse(terms.map(formatTermResponse)));
   } catch (error) {
     next(error);
   }
@@ -125,7 +126,7 @@ router.get("/detect", async (req: Request, res: Response, next: NextFunction) =>
       }
     }
 
-    res.json(foundTerms.map(formatTermResponse));
+    res.json(successResponse(foundTerms.map(formatTermResponse)));
   } catch (error) {
     next(error);
   }
@@ -153,13 +154,13 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
         .filter((t) => term.relatedTerms?.includes(t.term))
         .map(formatTermResponse);
 
-      return res.json({
+      return res.json(successResponse({
         ...response,
         relatedTermDetails: relatedDetails,
-      });
+      }));
     }
 
-    res.json(response);
+    res.json(successResponse(response));
   } catch (error) {
     next(error);
   }

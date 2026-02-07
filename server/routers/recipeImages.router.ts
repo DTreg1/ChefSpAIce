@@ -2,6 +2,7 @@ import express, { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { uploadRecipeImage, deleteRecipeImage } from "../services/objectStorageService";
 import { AppError } from "../middleware/errorHandler";
+import { successResponse } from "../lib/apiResponse";
 
 const router = Router();
 
@@ -25,11 +26,10 @@ router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res
     
     const cloudUrl = await uploadRecipeImage(recipeId, base64Data, contentType || "image/jpeg");
     
-    res.json({
-      success: true,
+    res.json(successResponse({
       cloudImageUri: cloudUrl,
       recipeId,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -41,10 +41,9 @@ router.delete("/:recipeId", async (req: Request, res: Response, next: NextFuncti
     
     await deleteRecipeImage(recipeId);
     
-    res.json({
-      success: true,
+    res.json(successResponse({
       recipeId,
-    });
+    }));
   } catch (error) {
     next(error);
   }

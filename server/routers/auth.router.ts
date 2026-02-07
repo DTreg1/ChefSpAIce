@@ -12,6 +12,7 @@ import { getUncachableStripeClient } from "../stripe/stripeClient";
 import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
 import { AppError } from "../middleware/errorHandler";
+import { successResponse, errorResponse } from "../lib/apiResponse";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -237,7 +238,7 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
 
     const csrfToken = generateCsrfToken(req, res);
 
-    res.status(201).json({
+    res.status(201).json(successResponse({
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -247,7 +248,7 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
       },
       token: rawToken,
       csrfToken,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -292,7 +293,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
 
     const csrfToken = generateCsrfToken(req, res);
 
-    res.json({
+    res.json(successResponse({
       user: {
         id: user.id,
         email: user.email,
@@ -302,7 +303,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
       },
       token: rawToken,
       csrfToken,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -327,11 +328,11 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response, next:
 
     clearAuthCookie(res);
 
-    res.json({ success: true });
+    res.json(successResponse(null));
   } catch (error) {
     logger.error("Logout error", { error: error instanceof Error ? error.message : String(error) });
     clearAuthCookie(res);
-    res.status(200).json({ success: true });
+    res.status(200).json(successResponse(null));
   }
 });
 
@@ -367,7 +368,7 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
 
     const subscriptionInfo = await getSubscriptionInfo(user.id);
 
-    res.json({
+    res.json(successResponse({
       user: {
         id: user.id,
         email: user.email,
@@ -375,7 +376,7 @@ router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
         createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
         ...subscriptionInfo,
       },
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -415,7 +416,7 @@ router.get("/restore-session", async (req: Request, res: Response, next: NextFun
 
     const csrfToken = generateCsrfToken(req, res);
 
-    res.json({
+    res.json(successResponse({
       user: {
         id: user.id,
         email: user.email,
@@ -425,7 +426,7 @@ router.get("/restore-session", async (req: Request, res: Response, next: NextFun
       },
       token: cookieToken,
       csrfToken,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -468,11 +469,11 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
     const clientLastSyncedAt = req.query.lastSyncedAt as string | undefined;
 
     if (!syncData) {
-      return res.json({ 
+      return res.json(successResponse({ 
         data: { cookware: cookwareIds }, 
         lastSyncedAt: null,
         serverTimestamp,
-      });
+      }));
     }
 
     if (clientLastSyncedAt) {
@@ -483,12 +484,12 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
       const rowUpdatedAt = syncData.updatedAt ? new Date(syncData.updatedAt) : null;
       
       if (rowUpdatedAt && rowUpdatedAt <= clientTime) {
-        return res.json({
+        return res.json(successResponse({
           data: null,
           unchanged: true,
           serverTimestamp,
           lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
-        });
+        }));
       }
       
       const sectionTimestamps = (syncData.sectionUpdatedAt as Record<string, string>) || {};
@@ -509,16 +510,16 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
       
       deltaData.cookware = cookwareIds;
       
-      return res.json({
+      return res.json(successResponse({
         data: deltaData,
         delta: true,
         serverTimestamp,
         lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
-      });
+      }));
       }
     }
 
-    res.json({
+    res.json(successResponse({
       data: {
         inventory: syncData.inventory ?? null,
         recipes: syncData.recipes ?? null,
@@ -535,7 +536,7 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
       },
       lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
       serverTimestamp,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -748,12 +749,11 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
         .where(eq(users.id, session.userId));
     }
 
-    res.json({ 
-      success: true, 
+    res.json(successResponse({ 
       syncedAt: new Date().toISOString(),
       prefsSynced,
       ...(prefsError && { prefsError })
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -983,11 +983,10 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
 
     logger.info("Successfully migrated guest data", { userId: session.userId });
 
-    res.json({ 
-      success: true, 
+    res.json(successResponse({ 
       migratedAt: new Date().toISOString(),
       merged: hasExistingData,
-    });
+    }));
   } catch (error) {
     next(error);
   }
@@ -1075,10 +1074,7 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
 
     logger.info("User deleted successfully", { userId });
 
-    res.json({ 
-      success: true, 
-      message: "Account and all associated data have been permanently deleted" 
-    });
+    res.json(successResponse(null, "Account and all associated data have been permanently deleted"));
 
   } catch (error) {
     next(error);
@@ -1205,10 +1201,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response, next:
 
     logger.info("User account deleted successfully", { userId });
 
-    res.json({
-      success: true,
-      message: "Your account and all associated data have been permanently deleted."
-    });
+    res.json(successResponse(null, "Your account and all associated data have been permanently deleted."));
 
   } catch (error) {
     next(error);

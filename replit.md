@@ -69,6 +69,15 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 - Pattern: UI rendering extracted to components; all hooks, state, callbacks, and business logic remain in screen files
 - All testIDs, accessibilityRole/Label/Hint/State props, and Platform.OS conditionals preserved exactly
 
+### Consistent API Response Format (Feb 2026)
+- Created `server/lib/apiResponse.ts` with `successResponse(data, message?)` and `errorResponse(message, errorCode, details?)` helpers
+- All API responses now follow a consistent envelope: `{ success: true, data: ... }` for success, `{ success: false, error: "...", errorCode: "..." }` for errors
+- Updated all ~26 router files, `server/routes.ts` inline handlers, and `server/middleware/errorHandler.ts` (globalErrorHandler)
+- Client `query-client.ts` updated:
+  - `getQueryFn` automatically unwraps `.data` from API responses
+  - Added `unwrapApiBody()` helper and `apiRequestJson<T>()` convenience function
+  - All ~38 client files updated to unwrap `.data` from `response.json()` for our API calls
+
 ### Accessibility Improvements (Feb 2026)
 - **Live Region Announcements**: Added `accessibilityLiveRegion` across 6 files for screen reader dynamic content announcements:
   - "polite" for non-urgent: fun facts, nutrition summaries, loading states (InventoryScreen, CookPotLoader, GenerateRecipeScreen)

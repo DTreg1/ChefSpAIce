@@ -188,7 +188,7 @@ export default function RecipesScreen() {
           const url = new URL("/api/appliances", baseUrl);
           const response = await fetch(url, { credentials: "include" });
           if (response.ok) {
-            const allAppliances = await response.json();
+            const allAppliances = (await response.json()).data as any;
             const cookwareNames = allAppliances
               .filter((a: any) => cookwareIds.includes(a.id))
               .map((a: any) => a.name.toLowerCase());

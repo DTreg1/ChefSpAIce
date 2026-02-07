@@ -11,6 +11,7 @@ import {
 } from "../../integrations/openFoodFacts";
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
+import { successResponse } from "../../lib/apiResponse";
 
 const router = Router();
 
@@ -229,7 +230,7 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
     const cacheKey = `${query.toLowerCase().trim()}:${sources.sort().join(",")}:${limit}`;
     const cached = getCachedSearch(cacheKey);
     if (cached) {
-      return res.json(cached);
+      return res.json(successResponse(cached));
     }
 
     const fetchLimit = (parsedQuery.brand || parsedQuery.store) ? limit * 3 : Math.ceil(limit / 2);
@@ -347,7 +348,7 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
     };
 
     setCachedSearch(cacheKey, response);
-    res.json(response);
+    res.json(successResponse(response));
   } catch (error) {
     next(error);
   }
@@ -387,7 +388,7 @@ router.get("/barcode/:code", async (req: Request, res: Response, next: NextFunct
         item: result,
       };
 
-      return res.json(response);
+      return res.json(successResponse(response));
     }
 
     const offProduct = await lookupBarcode(cleanCode);
@@ -414,14 +415,14 @@ router.get("/barcode/:code", async (req: Request, res: Response, next: NextFunct
         item: result,
       };
 
-      return res.json(response);
+      return res.json(successResponse(response));
     }
 
     const response: BarcodeResponse = {
       found: false,
     };
 
-    res.json(response);
+    res.json(successResponse(response));
   } catch (error) {
     next(error);
   }

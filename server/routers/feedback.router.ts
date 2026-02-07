@@ -7,6 +7,7 @@ import { feedback, feedbackBuckets, userSessions, users } from "../../shared/sch
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
+import { successResponse, errorResponse } from "../lib/apiResponse";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -214,13 +215,12 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
     logger.info("New feedback submitted", { type: validatedData.type, feedbackId: createdFeedback.id });
 
-    res.json({
-      success: true,
-      message: validatedData.type === "bug" 
+    res.json(successResponse(
+      { id: createdFeedback.id },
+      validatedData.type === "bug" 
         ? "Thank you for reporting this issue. We'll look into it!" 
-        : "Thank you for your feedback!",
-      id: createdFeedback.id,
-    });
+        : "Thank you for your feedback!"
+    ));
   } catch (error) {
     if (error instanceof z.ZodError) {
       return next(AppError.badRequest("Invalid feedback data", "VALIDATION_ERROR").withDetails(error.errors));
@@ -252,7 +252,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       filtered = filtered.filter(f => f.priority === priority);
     }
 
-    res.json({ feedback: filtered });
+    res.json(successResponse({ feedback: filtered }));
   } catch (error) {
     next(error);
   }
@@ -287,7 +287,7 @@ router.get("/stats", async (req: Request, res: Response, next: NextFunction) => 
       },
     };
 
-    res.json(stats);
+    res.json(successResponse(stats));
   } catch (error) {
     next(error);
   }
@@ -319,7 +319,7 @@ router.get("/buckets", async (req: Request, res: Response, next: NextFunction) =
       })
     );
 
-    res.json({ buckets: bucketsWithItems });
+    res.json(successResponse({ buckets: bucketsWithItems }));
   } catch (error) {
     next(error);
   }
@@ -407,7 +407,7 @@ Generate a comprehensive implementation prompt for addressing all these feedback
         .set({ generatedPrompt, updatedAt: new Date() })
         .where(eq(feedbackBuckets.id, id));
 
-      res.json({ prompt: generatedPrompt, bucketId: id });
+      res.json(successResponse({ prompt: generatedPrompt, bucketId: id }));
     } catch (aiError) {
       logger.error("AI prompt generation failed", { error: aiError instanceof Error ? aiError.message : String(aiError) });
 
@@ -433,7 +433,7 @@ ${items.map((item, idx) => `${idx + 1}. Address: ${item.message.substring(0, 100
         .set({ generatedPrompt: fallbackPrompt, updatedAt: new Date() })
         .where(eq(feedbackBuckets.id, id));
 
-      res.json({ prompt: fallbackPrompt, bucketId: id });
+      res.json(successResponse({ prompt: fallbackPrompt, bucketId: id }));
     }
   } catch (error) {
     next(error);
@@ -471,7 +471,7 @@ router.post("/buckets/:id/complete", async (req: Request, res: Response, next: N
 
     logger.info("Bucket marked as completed", { bucketId: id });
 
-    res.json({ success: true, message: "Bucket and all feedback items marked as completed" });
+    res.json(successResponse(null, "Bucket and all feedback items marked as completed"));
   } catch (error) {
     next(error);
   }
@@ -502,10 +502,7 @@ router.post("/categorize-uncategorized", async (req: Request, res: Response, nex
       }
     }
 
-    res.json({ 
-      success: true, 
-      message: `Categorized ${categorized} of ${uncategorized.length} uncategorized items` 
-    });
+    res.json(successResponse(null, `Categorized ${categorized} of ${uncategorized.length} uncategorized items`));
   } catch (error) {
     next(error);
   }
@@ -529,7 +526,7 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
       throw AppError.notFound("Feedback not found", "FEEDBACK_NOT_FOUND");
     }
 
-    res.json(result[0]);
+    res.json(successResponse(result[0]));
   } catch (error) {
     next(error);
   }
@@ -584,7 +581,7 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
 
     logger.info("Feedback updated", { feedbackId: id, updatedFields: Object.keys(updateValues) });
 
-    res.json(result[0]);
+    res.json(successResponse(result[0]));
   } catch (error) {
     if (error instanceof z.ZodError) {
       return next(AppError.badRequest("Invalid update data", "VALIDATION_ERROR").withDetails(error.errors));

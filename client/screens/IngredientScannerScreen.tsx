@@ -165,7 +165,7 @@ export default function IngredientScannerScreen() {
         throw new Error(errorData.error || `Server error (${response.status})`);
       }
 
-      const result: ScanResult = await response.json();
+      const result: ScanResult = (await response.json()).data;
 
       if (result.error) {
         Alert.alert("Scan Failed", result.error, [

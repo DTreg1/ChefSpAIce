@@ -40,7 +40,7 @@ import {
   getDaysUntilExpiration,
   UserPreferences,
 } from "@/lib/storage";
-import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { getApiUrl, apiRequestJson } from "@/lib/query-client";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useAIVoice } from "@/hooks/useAIVoice";
 
@@ -185,12 +185,11 @@ export function ChatModal() {
 
       setTipLoading(true);
       try {
-        const response = await apiRequest(
+        const data = await apiRequestJson<any>(
           "POST",
           "/api/suggestions/waste-reduction",
           { expiringItems },
         );
-        const data = await response.json();
 
         if (data.suggestions && data.suggestions.length > 0) {
           const randomIndex = Math.floor(
@@ -321,7 +320,7 @@ export function ChatModal() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()).data as any;
 
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -437,7 +436,7 @@ export function ChatModal() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()).data as any;
         if (data.audioUrl) {
           await replayVoice.play(data.audioUrl);
         }
