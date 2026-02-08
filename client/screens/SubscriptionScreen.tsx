@@ -40,6 +40,7 @@ import { CurrentPlanCard } from "@/components/subscription/CurrentPlanCard";
 import { FeatureComparisonTable, PRO_FEATURES } from "@/components/subscription/FeatureComparisonTable";
 import { PlanToggle } from "@/components/subscription/PlanToggle";
 import { TierSelector } from "@/components/subscription/TierSelector";
+import { CancellationFlowModal } from "@/components/subscription/CancellationFlowModal";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SubscriptionRouteProp = RouteProp<RootStackParamList, "Subscription">;
@@ -98,6 +99,7 @@ export default function SubscriptionScreen() {
   const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [prorationPreview, setProrationPreview] = useState<{ proratedAmount: number; creditAmount: number; newAmount: number; currency: string } | null>(null);
   const [isPreviewingProration, setIsPreviewingProration] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
@@ -718,7 +720,7 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        {isProUser && isActive && !isTrialing && (
+        {(isProUser || currentTier === SubscriptionTier.BASIC) && isActive && !isTrialing && (
           <GlassCard style={styles.manageCard}>
             <View style={styles.sectionHeader}>
               <Feather
@@ -738,7 +740,7 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.manageDescription, { color: theme.textSecondary }]}
             >
-              Update your payment method, change your billing cycle, or cancel
+              Update your payment method, change your billing cycle, or manage
               your subscription.
             </ThemedText>
 
@@ -765,6 +767,24 @@ export default function SubscriptionScreen() {
             >
               {isManaging ? "Opening..." : "Manage Subscription"}
             </GlassButton>
+
+            {!shouldUseStoreKit && (
+              <GlassButton
+                onPress={() => setShowCancelModal(true)}
+                variant="outline"
+                style={styles.cancelButton}
+                icon={
+                  <Feather
+                    name="x-circle"
+                    size={18}
+                    color={AppColors.error}
+                  />
+                }
+                testID="button-cancel-subscription"
+              >
+                Cancel Subscription
+              </GlassButton>
+            )}
           </GlassCard>
         )}
 
@@ -1000,6 +1020,13 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
       </ScrollView>
+
+      <CancellationFlowModal
+        visible={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onCanceled={() => refetch()}
+        token={token}
+      />
     </View>
   );
 }
@@ -1106,6 +1133,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   manageButton: {
+    marginTop: Spacing.sm,
+  },
+  cancelButton: {
     marginTop: Spacing.sm,
   },
   refreshButton: {

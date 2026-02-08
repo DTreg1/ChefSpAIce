@@ -30,6 +30,18 @@ Stripe proration is enabled for subscription upgrades/downgrades:
 - Server validates price IDs against active Stripe prices before applying
 - Client shows confirmation dialog with prorated amount before confirming upgrade
 
+## Cancellation Flow
+Multi-step cancellation retention flow with targeted offers:
+- **Database**: `cancellation_reasons` table stores userId, reason, details, offerShown, offerAccepted, createdAt
+- `POST /api/subscriptions/cancel`: Cancel subscription at period end with reason tracking (allowed reasons: too_expensive, not_using, missing_features, other)
+- `POST /api/subscriptions/pause`: Pause subscription for 1-3 months via Stripe `pause_collection` (behavior: void, resumes_at timestamp)
+- `POST /api/subscriptions/apply-retention-offer`: Create and apply 50% off coupon for 3 months via Stripe
+- **CancellationFlowModal**: 3-step UI (reason selection → targeted retention offer → confirm cancellation)
+  - Step 1: Select reason with optional details
+  - Step 2: Targeted offer based on reason (discount for "too_expensive"/"other", pause for "not_using", roadmap for "missing_features")
+  - Step 3: Final confirmation showing what they'll lose
+- Cancel button shows for both BASIC and PRO active subscribers (non-StoreKit only)
+
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation, conversational assistance, and vision-based scanning.
 - **USDA FoodData Central API**: Comprehensive nutrition data lookup.

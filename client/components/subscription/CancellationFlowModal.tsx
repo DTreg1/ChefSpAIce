@@ -118,6 +118,23 @@ export function CancellationFlowModal({
     setStep(2);
   };
 
+  const logCancellationFlow = async (accepted: boolean) => {
+    try {
+      const baseUrl = getApiUrl();
+      await fetch(`${baseUrl}/api/subscriptions/log-cancellation-flow`, {
+        method: "POST",
+        headers: getHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          reason: selectedReason,
+          details: details || featureFeedback || null,
+          offerShown,
+          offerAccepted: accepted,
+        }),
+      });
+    } catch {}
+  };
+
   const handleAcceptDiscount = async () => {
     setIsSubmitting(true);
     try {
@@ -126,12 +143,12 @@ export function CancellationFlowModal({
         method: "POST",
         headers: getHeaders(),
         credentials: "include",
-        body: JSON.stringify({ reason: selectedReason, details }),
       });
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Failed to apply offer");
       }
+      await logCancellationFlow(true);
       Alert.alert("Offer Applied!", "Your 50% discount has been applied for the next 3 months.");
       onCanceled();
       handleClose();
@@ -156,6 +173,7 @@ export function CancellationFlowModal({
         const text = await response.text();
         throw new Error(text || "Failed to pause subscription");
       }
+      await logCancellationFlow(true);
       Alert.alert("Subscription Paused", `Your subscription has been paused for ${pauseDuration} month${pauseDuration > 1 ? "s" : ""}.`);
       onCanceled();
       handleClose();
@@ -437,7 +455,10 @@ export function CancellationFlowModal({
 
       <GlassButton
         variant="primary"
-        onPress={handleClose}
+        onPress={async () => {
+          await logCancellationFlow(true);
+          handleClose();
+        }}
         testID="button-ill-stay"
         style={styles.actionButton}
       >

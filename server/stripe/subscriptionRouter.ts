@@ -929,6 +929,41 @@ router.post("/pause", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+router.post("/log-cancellation-flow", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
+    }
+
+    const { reason, details, offerShown, offerAccepted } = req.body;
+
+    const allowedReasons = ["too_expensive", "not_using", "missing_features", "other"];
+    if (reason && !allowedReasons.includes(reason)) {
+      throw AppError.badRequest("Invalid cancellation reason", "INVALID_REASON");
+    }
+
+    await db.insert(cancellationReasons).values({
+      userId: user.id,
+      reason: reason || "unknown",
+      details: details || null,
+      offerShown: offerShown || null,
+      offerAccepted: offerAccepted || false,
+    });
+
+    logger.info("Cancellation flow interaction logged", {
+      userId: user.id,
+      reason,
+      offerShown,
+      offerAccepted,
+    });
+
+    res.json(successResponse({ logged: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/apply-retention-offer", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getAuthenticatedUser(req);
