@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { db } from "../db";
-import { users, userSessions, subscriptions } from "@shared/schema";
+import { users, userSessions, subscriptions, cancellationReasons } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import {
@@ -797,6 +797,181 @@ router.post("/preview-proration", async (req: Request, res: Response, next: Next
       newAmount,
       currency: previewInvoice.currency || "usd",
       immediatePayment,
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/cancel", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
+    }
+
+    const { reason, details, offerShown, offerAccepted } = req.body;
+
+    if (!reason) {
+      throw AppError.badRequest("Cancellation reason is required", "MISSING_REASON");
+    }
+
+    const allowedReasons = ["too_expensive", "not_using", "missing_features", "other"];
+    if (!allowedReasons.includes(reason)) {
+      throw AppError.badRequest("Invalid cancellation reason", "INVALID_REASON");
+    }
+
+    const [existingSubscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
+    if (!existingSubscription || !existingSubscription.stripeSubscriptionId) {
+      throw AppError.badRequest("No active subscription found", "NO_ACTIVE_SUBSCRIPTION");
+    }
+
+    if (existingSubscription.status !== "active" && existingSubscription.status !== "trialing") {
+      throw AppError.badRequest("Subscription is not active", "SUBSCRIPTION_NOT_ACTIVE");
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    await stripe.subscriptions.update(existingSubscription.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+
+    await db.update(subscriptions).set({
+      cancelAtPeriodEnd: true,
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.userId, user.id));
+
+    await db.insert(cancellationReasons).values({
+      userId: user.id,
+      reason,
+      details: details || null,
+      offerShown: offerShown || null,
+      offerAccepted: offerAccepted || false,
+    });
+
+    logger.info("Subscription cancellation scheduled", {
+      userId: user.id,
+      reason,
+      offerShown,
+      offerAccepted,
+    });
+
+    res.json(successResponse({
+      canceled: true,
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: existingSubscription.currentPeriodEnd?.toISOString(),
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/pause", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
+    }
+
+    const { durationMonths = 1 } = req.body;
+
+    if (![1, 2, 3].includes(durationMonths)) {
+      throw AppError.badRequest("Duration must be 1, 2, or 3 months", "INVALID_DURATION");
+    }
+
+    const [existingSubscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
+    if (!existingSubscription || !existingSubscription.stripeSubscriptionId) {
+      throw AppError.badRequest("No active subscription found", "NO_ACTIVE_SUBSCRIPTION");
+    }
+
+    if (existingSubscription.status !== "active" && existingSubscription.status !== "trialing") {
+      throw AppError.badRequest("Subscription is not active", "SUBSCRIPTION_NOT_ACTIVE");
+    }
+
+    const stripe = await getUncachableStripeClient();
+    const resumesAt = Math.floor(Date.now() / 1000) + (durationMonths * 30 * 24 * 60 * 60);
+
+    await stripe.subscriptions.update(existingSubscription.stripeSubscriptionId, {
+      pause_collection: {
+        behavior: "void",
+        resumes_at: resumesAt,
+      },
+    });
+
+    await db.update(subscriptions).set({
+      status: "paused",
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.userId, user.id));
+
+    logger.info("Subscription paused", {
+      userId: user.id,
+      durationMonths,
+      resumesAt: new Date(resumesAt * 1000).toISOString(),
+    });
+
+    res.json(successResponse({
+      paused: true,
+      resumesAt: new Date(resumesAt * 1000).toISOString(),
+      durationMonths,
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/apply-retention-offer", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
+    }
+
+    const [existingSubscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
+    if (!existingSubscription || !existingSubscription.stripeSubscriptionId) {
+      throw AppError.badRequest("No active subscription found", "NO_ACTIVE_SUBSCRIPTION");
+    }
+
+    if (existingSubscription.status !== "active" && existingSubscription.status !== "trialing") {
+      throw AppError.badRequest("Subscription is not active", "SUBSCRIPTION_NOT_ACTIVE");
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    const coupon = await stripe.coupons.create({
+      percent_off: 50,
+      duration: "repeating",
+      duration_in_months: 3,
+      name: "Retention Offer - 50% Off for 3 Months",
+    });
+
+    await stripe.subscriptions.update(existingSubscription.stripeSubscriptionId, {
+      coupon: coupon.id,
+    });
+
+    logger.info("Retention offer applied", {
+      userId: user.id,
+      couponId: coupon.id,
+    });
+
+    res.json(successResponse({
+      applied: true,
+      discountPercent: 50,
+      durationMonths: 3,
     }));
   } catch (error) {
     next(error);

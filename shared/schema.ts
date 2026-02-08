@@ -1029,6 +1029,31 @@ export type ConversionEvent = typeof conversionEvents.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 
 // =============================================================================
+// CANCELLATION REASONS TABLE
+// =============================================================================
+
+export const cancellationReasons = pgTable("cancellation_reasons", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  reason: varchar("reason").notNull(),
+  details: text("details"),
+  offerShown: varchar("offer_shown"),
+  offerAccepted: boolean("offer_accepted").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_cancellation_reasons_user").on(table.userId),
+  index("idx_cancellation_reasons_created").on(table.createdAt),
+]);
+
+export const insertCancellationReasonSchema = createInsertSchema(cancellationReasons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCancellationReason = z.infer<typeof insertCancellationReasonSchema>;
+export type CancellationReason = typeof cancellationReasons.$inferSelect;
+
+// =============================================================================
 // REFERRALS TABLE
 // =============================================================================
 
