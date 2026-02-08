@@ -256,6 +256,11 @@ export function useQuickRecipeGeneration() {
       await storage.addRecipe(newRecipe);
       await refetchSubscription();
 
+      try {
+        const Haptics = await import("expo-haptics");
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+
       setProgressStage("done");
       setIsGenerating(false);
 

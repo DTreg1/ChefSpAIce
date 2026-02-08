@@ -74,6 +74,11 @@ export default function SelectRecipeScreen() {
       await storage.addMealPlan(newPlan);
     }
 
+    try {
+      const Haptics = await import("expo-haptics");
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
     navigation.goBack();
   };
 

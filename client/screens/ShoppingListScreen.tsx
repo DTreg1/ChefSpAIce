@@ -25,6 +25,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { EmptyState } from "@/components/EmptyState";
 import { useInstacart } from "@/hooks/useInstacart";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import * as Haptics from "expo-haptics";
 import { storage, ShoppingListItem } from "@/lib/storage";
 
 const ITEM_HEIGHT = 80;
@@ -77,6 +78,10 @@ export default function ShoppingListScreen() {
     );
     setItems(updatedItems);
     await storage.setShoppingList(updatedItems);
+
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
   };
 
   const handleDeleteItem = async (id: string) => {

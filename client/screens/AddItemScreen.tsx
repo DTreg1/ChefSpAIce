@@ -638,6 +638,12 @@ export default function AddItemScreen() {
       await recordChoice(category, storageLocation, suggestedLoc, name);
 
       await storage.addInventoryItem(newItem);
+
+      try {
+        const Haptics = await import("expo-haptics");
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+
       navigation.goBack();
     } catch (error) {
       Alert.alert("Error", "Failed to save item");

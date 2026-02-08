@@ -68,9 +68,10 @@ export default function BarcodeScannerScreen() {
 
     setScanned(true);
 
-    if (Platform.OS !== "web") {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
 
     navigation.replace("AddItem", {
       barcode: result.data,
