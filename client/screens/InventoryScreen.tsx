@@ -45,6 +45,7 @@ import { useFunFact } from "@/components/inventory/useFunFact";
 import { TrialStatusBadge } from "@/components/TrialStatusBadge";
 import { TrialMilestoneBanner } from "@/components/TrialMilestoneBanner";
 import { TrialExpiringModal } from "@/components/TrialExpiringModal";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
@@ -441,7 +442,12 @@ export default function InventoryScreen() {
         screenKey="inventory"
         searchPlaceholder="Search items..."
         menuItems={menuItems}
-        headerRight={<TrialStatusBadge compact />}
+        headerRight={
+          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+            <SyncStatusIndicator />
+            <TrialStatusBadge compact />
+          </View>
+        }
       />
       <View
         style={[styles.searchContainer, { top: 56 + insets.top }]}
