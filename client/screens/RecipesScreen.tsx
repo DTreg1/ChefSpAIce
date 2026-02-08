@@ -107,6 +107,7 @@ export default function RecipesScreen() {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedDietaryTags, setSelectedDietaryTags] = useState<string[]>([]);
+  const [recipesStatusLabel, setRecipesStatusLabel] = useState("");
 
   const {
     generateQuickRecipe,
@@ -117,6 +118,14 @@ export default function RecipesScreen() {
     entitlements,
     checkLimit,
   } = useQuickRecipeGeneration();
+
+  useEffect(() => {
+    if (loading) {
+      setRecipesStatusLabel("Loading recipes");
+    } else {
+      setRecipesStatusLabel(`${recipes.length} recipe${recipes.length !== 1 ? "s" : ""} in collection`);
+    }
+  }, [loading, recipes.length]);
 
   const menuItems: MenuItemConfig[] = useMemo(
     () => [
@@ -450,18 +459,24 @@ export default function RecipesScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <RecipesSkeleton count={4} />;
+      return (
+        <View accessibilityLiveRegion="polite" accessibilityLabel="Loading recipes">
+          <RecipesSkeleton count={4} />
+        </View>
+      );
     }
 
     return (
-      <EmptyState
-        icon="book-open"
-        title="No recipes yet"
-        description="Generate your first AI recipe!"
-        actionLabel={!isOnline ? "Available when online" : (isGenerating ? "Generating..." : "Generate Recipe")}
-        onAction={generateQuickRecipe}
-        actionDisabled={isGenerating || !isOnline}
-      />
+      <View accessibilityLiveRegion="polite" accessibilityLabel="Recipes loaded, no recipes found">
+        <EmptyState
+          icon="book-open"
+          title="No recipes yet"
+          description="Generate your first AI recipe!"
+          actionLabel={!isOnline ? "Available when online" : (isGenerating ? "Generating..." : "Generate Recipe")}
+          onAction={generateQuickRecipe}
+          actionDisabled={isGenerating || !isOnline}
+        />
+      </View>
     );
   };
 
@@ -473,6 +488,11 @@ export default function RecipesScreen() {
         screenKey="recipes"
         searchPlaceholder="Search recipes..."
         menuItems={menuItems}
+      />
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={recipesStatusLabel}
+        style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
       />
       <FlatList
         accessibilityRole="list"
@@ -671,18 +691,31 @@ export default function RecipesScreen() {
               { backgroundColor: theme.glass.background },
             ]}
           >
-            <CookPotLoader
-              size="lg"
-              text={
+            <View
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={
                 progressStage === "loading"
-                  ? "Loading your kitchen..."
+                  ? "Loading your kitchen"
                   : progressStage === "recipe"
-                    ? "Creating your recipe..."
+                    ? "Creating your recipe"
                     : progressStage === "image"
-                      ? "Generating image..."
-                      : "Almost done..."
+                      ? "Generating image"
+                      : "Almost done"
               }
-            />
+            >
+              <CookPotLoader
+                size="lg"
+                text={
+                  progressStage === "loading"
+                    ? "Loading your kitchen..."
+                    : progressStage === "recipe"
+                      ? "Creating your recipe..."
+                      : progressStage === "image"
+                        ? "Generating image..."
+                        : "Almost done..."
+                }
+              />
+            </View>
           </View>
         </View>
       </Modal>

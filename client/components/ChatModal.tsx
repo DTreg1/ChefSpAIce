@@ -92,6 +92,8 @@ export function ChatModal() {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isReplayLoading, setIsReplayLoading] = useState<string | null>(null);
   const isPressAndHoldRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+  const [chatStatusLabel, setChatStatusLabel] = useState("");
 
   const animationProgress = useSharedValue(0);
   const pulseAnimation = useSharedValue(1);
@@ -227,6 +229,19 @@ export function ChatModal() {
       loadData();
     }
   }, [isChatOpen, loadData]);
+
+  useEffect(() => {
+    const currentCount = messages.length;
+    if (sending) {
+      setChatStatusLabel("Sending message");
+    } else if (currentCount > prevMessageCountRef.current) {
+      const lastMessage = messages[currentCount - 1];
+      if (lastMessage?.role === "assistant") {
+        setChatStatusLabel("New response received");
+      }
+    }
+    prevMessageCountRef.current = currentCount;
+  }, [messages.length, sending]);
 
   const pendingInitialMessageRef = useRef<string | null>(null);
 
@@ -946,6 +961,11 @@ export function ChatModal() {
         </Pressable>
       ) : null}
 
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={chatStatusLabel}
+        style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
+      />
       <FlatList
         ref={flatListRef}
         style={styles.messageList}

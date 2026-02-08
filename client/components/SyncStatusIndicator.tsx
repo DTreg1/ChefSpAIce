@@ -152,7 +152,7 @@ export function SyncStatusIndicator({
       accessibilityRole="button"
       accessibilityLabel={getSyncAccessibilityLabel()}
       accessibilityHint={!isOnline ? "Available when online" : (status === "error" ? "Tap to retry failed items" : "Tap to sync now")}
-      accessibilityLiveRegion="polite"
+      accessibilityLiveRegion={status === "error" || !isOnline ? "assertive" : "polite"}
     >
       <Animated.View
         style={[

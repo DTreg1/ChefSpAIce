@@ -53,7 +53,13 @@ export function PaymentFailedBanner() {
         : `within ${graceDaysRemaining} days`;
 
   return (
-    <View style={styles.container} data-testid="banner-payment-failed">
+    <View
+      style={styles.container}
+      data-testid="banner-payment-failed"
+      accessibilityRole="alert"
+      accessibilityLiveRegion="assertive"
+      accessibilityLabel={`Payment failed. Please update your payment method ${daysText} to keep your subscription active.`}
+    >
       <View style={styles.content}>
         <Feather name="alert-circle" size={18} color="#fff" style={styles.icon} />
         <View style={styles.textContainer}>

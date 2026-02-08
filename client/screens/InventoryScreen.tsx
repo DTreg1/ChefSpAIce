@@ -90,6 +90,7 @@ export default function InventoryScreen() {
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
+  const [inventoryStatusLabel, setInventoryStatusLabel] = useState("");
   const [storageLocations, setStorageLocations] = useState<StorageLocationOption[]>([
     { key: "all", label: "All", icon: "grid" },
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
@@ -190,6 +191,14 @@ export default function InventoryScreen() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      setInventoryStatusLabel("Loading inventory");
+    } else {
+      setInventoryStatusLabel(`${items.length} item${items.length !== 1 ? "s" : ""} in inventory`);
+    }
+  }, [loading, items.length]);
 
   const filteredItems = useMemo(() => {
     let filtered = items;
@@ -416,17 +425,23 @@ export default function InventoryScreen() {
 
   const renderEmptyState = () => {
     if (loading) {
-      return <InventorySkeleton />;
+      return (
+        <View accessibilityLiveRegion="polite" accessibilityLabel="Loading inventory">
+          <InventorySkeleton />
+        </View>
+      );
     }
 
     return (
-      <EmptyState
-        icon="package"
-        title="Your pantry is empty"
-        description="Add your first item to start tracking!"
-        actionLabel="Add Item"
-        onAction={() => navigation.navigate("AddItem" as any)}
-      />
+      <View accessibilityLiveRegion="polite" accessibilityLabel="Inventory loaded, no items found">
+        <EmptyState
+          icon="package"
+          title="Your pantry is empty"
+          description="Add your first item to start tracking!"
+          actionLabel="Add Item"
+          onAction={() => navigation.navigate("AddItem" as any)}
+        />
+      </View>
     );
   };
 
@@ -460,6 +475,11 @@ export default function InventoryScreen() {
         />
       </View>
 
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={inventoryStatusLabel}
+        style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
+      />
       <FlatList
         key={isTablet ? "tablet" : "phone"}
         style={styles.list}
