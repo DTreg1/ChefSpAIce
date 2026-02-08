@@ -42,6 +42,36 @@ Multi-step cancellation retention flow with targeted offers:
   - Step 3: Final confirmation showing what they'll lose
 - Cancel button shows for both BASIC and PRO active subscribers (non-StoreKit only)
 
+## Database Migrations
+
+### Configuration
+- **Config file**: `drizzle.config.ts` — schema source: `./shared/schema.ts`, output: `./migrations/`, dialect: `postgresql`
+- **Migrations directory**: `./migrations/` — contains SQL migration files and a `meta/` folder used by Drizzle Kit
+
+### How to Generate a Migration
+After making changes to `shared/schema.ts`, run:
+```
+npx drizzle-kit generate
+```
+This compares your current schema against the last migration snapshot and produces a new `.sql` file in `./migrations/`.
+
+### How to Apply Migrations
+```
+npx drizzle-kit migrate
+```
+This runs any pending migration files against the database specified by `DATABASE_URL`.
+
+### Pre-Migration Checklist
+1. Back up the database before applying migrations to production
+2. Test the migration on the dev database first — verify it applies cleanly and the app works afterward
+3. Review the generated `.sql` file to confirm the changes match your intent (watch for destructive operations like column drops)
+4. Ensure no other processes are writing to the database during migration
+
+### Rollback Strategy
+- Keep the previous schema version in source control so you can revert if needed
+- If a migration has not yet been applied, use `npx drizzle-kit drop` to remove the last generated migration file
+- If a migration has already been applied and needs reversal, write a corrective migration that undoes the changes (Drizzle Kit does not auto-generate rollback scripts)
+
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation, conversational assistance, and vision-based scanning.
 - **USDA FoodData Central API**: Comprehensive nutrition data lookup.
