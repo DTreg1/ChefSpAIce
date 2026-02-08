@@ -317,6 +317,24 @@ router.post("/inventory", async (req: Request, res: Response, next: NextFunction
               operation: "skipped",
               reason: "stale_update",
               itemId: dataIdStr,
+              serverVersion: {
+                id: existing.itemId,
+                name: existing.name,
+                barcode: existing.barcode,
+                quantity: existing.quantity,
+                unit: existing.unit,
+                storageLocation: existing.storageLocation,
+                purchaseDate: existing.purchaseDate,
+                expirationDate: existing.expirationDate,
+                category: existing.category,
+                usdaCategory: existing.usdaCategory,
+                nutrition: existing.nutrition,
+                notes: existing.notes,
+                imageUri: existing.imageUri,
+                fdcId: existing.fdcId,
+                updatedAt: existing.updatedAt?.toISOString(),
+                deletedAt: existing.deletedAt?.toISOString() ?? null,
+              },
             }));
             return;
           }
@@ -435,6 +453,24 @@ router.put("/inventory", async (req: Request, res: Response, next: NextFunction)
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
+          serverVersion: {
+            id: existingItem.itemId,
+            name: existingItem.name,
+            barcode: existingItem.barcode,
+            quantity: existingItem.quantity,
+            unit: existingItem.unit,
+            storageLocation: existingItem.storageLocation,
+            purchaseDate: existingItem.purchaseDate,
+            expirationDate: existingItem.expirationDate,
+            category: existingItem.category,
+            usdaCategory: existingItem.usdaCategory,
+            nutrition: existingItem.nutrition,
+            notes: existingItem.notes,
+            imageUri: existingItem.imageUri,
+            fdcId: existingItem.fdcId,
+            updatedAt: existingItem.updatedAt?.toISOString(),
+            deletedAt: existingItem.deletedAt?.toISOString() ?? null,
+          },
         }));
       }
 
@@ -620,6 +656,22 @@ router.post("/recipes", async (req: Request, res: Response, next: NextFunction) 
               operation: "skipped",
               reason: "stale_update",
               itemId: dataIdStr,
+              serverVersion: {
+                id: existing.itemId,
+                title: existing.title,
+                description: existing.description,
+                ingredients: existing.ingredients,
+                instructions: existing.instructions,
+                prepTime: existing.prepTime,
+                cookTime: existing.cookTime,
+                servings: existing.servings,
+                imageUri: existing.imageUri,
+                cloudImageUri: existing.cloudImageUri,
+                nutrition: existing.nutrition,
+                isFavorite: existing.isFavorite,
+                updatedAt: existing.updatedAt?.toISOString(),
+                ...(existing.extraData as Record<string, unknown> || {}),
+              },
             }));
             return;
           }
@@ -720,6 +772,22 @@ router.put("/recipes", async (req: Request, res: Response, next: NextFunction) =
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
+          serverVersion: {
+            id: existingItem.itemId,
+            title: existingItem.title,
+            description: existingItem.description,
+            ingredients: existingItem.ingredients,
+            instructions: existingItem.instructions,
+            prepTime: existingItem.prepTime,
+            cookTime: existingItem.cookTime,
+            servings: existingItem.servings,
+            imageUri: existingItem.imageUri,
+            cloudImageUri: existingItem.cloudImageUri,
+            nutrition: existingItem.nutrition,
+            isFavorite: existingItem.isFavorite,
+            updatedAt: existingItem.updatedAt?.toISOString(),
+            ...(existingItem.extraData as Record<string, unknown> || {}),
+          },
         }));
       }
 
@@ -873,6 +941,13 @@ router.post("/mealPlans", async (req: Request, res: Response, next: NextFunction
               operation: "skipped",
               reason: "stale_update",
               itemId: dataIdStr,
+              serverVersion: {
+                id: existing.itemId,
+                date: existing.date,
+                meals: existing.meals,
+                updatedAt: existing.updatedAt?.toISOString(),
+                ...(existing.extraData as Record<string, unknown> || {}),
+              },
             }));
             return;
           }
@@ -955,6 +1030,13 @@ router.put("/mealPlans", async (req: Request, res: Response, next: NextFunction)
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
+          serverVersion: {
+            id: existingItem.itemId,
+            date: existingItem.date,
+            meals: existingItem.meals,
+            updatedAt: existingItem.updatedAt?.toISOString(),
+            ...(existingItem.extraData as Record<string, unknown> || {}),
+          },
         }));
       }
 
@@ -1115,6 +1197,14 @@ router.post("/cookware", async (req: Request, res: Response, next: NextFunction)
               operation: "skipped",
               reason: "stale_update",
               itemId: dataIdStr,
+              serverVersion: {
+                id: existing.itemId,
+                name: existing.name,
+                category: existing.category,
+                alternatives: existing.alternatives,
+                updatedAt: existing.updatedAt?.toISOString(),
+                ...(existing.extraData as Record<string, unknown> || {}),
+              },
             }));
             return;
           }
@@ -1211,6 +1301,14 @@ router.put("/cookware", async (req: Request, res: Response, next: NextFunction) 
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
+          serverVersion: {
+            id: existingItem.itemId,
+            name: existingItem.name,
+            category: existingItem.category,
+            alternatives: existingItem.alternatives,
+            updatedAt: existingItem.updatedAt?.toISOString(),
+            ...(existingItem.extraData as Record<string, unknown> || {}),
+          },
         }));
       }
 
@@ -1372,6 +1470,17 @@ router.post("/shoppingList", async (req: Request, res: Response, next: NextFunct
               operation: "skipped",
               reason: "stale_update",
               itemId: dataIdStr,
+              serverVersion: {
+                id: existing.itemId,
+                name: existing.name,
+                quantity: existing.quantity,
+                unit: existing.unit,
+                isChecked: existing.isChecked,
+                category: existing.category,
+                recipeId: existing.recipeId,
+                updatedAt: existing.updatedAt?.toISOString(),
+                ...(existing.extraData as Record<string, unknown> || {}),
+              },
             }));
             return;
           }
@@ -1462,6 +1571,17 @@ router.put("/shoppingList", async (req: Request, res: Response, next: NextFuncti
           operation: "skipped",
           reason: "stale_update",
           itemId: dataIdStr,
+          serverVersion: {
+            id: existingItem.itemId,
+            name: existingItem.name,
+            quantity: existingItem.quantity,
+            unit: existingItem.unit,
+            isChecked: existingItem.isChecked,
+            category: existingItem.category,
+            recipeId: existingItem.recipeId,
+            updatedAt: existingItem.updatedAt?.toISOString(),
+            ...(existingItem.extraData as Record<string, unknown> || {}),
+          },
         }));
       }
 

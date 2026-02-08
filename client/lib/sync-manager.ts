@@ -15,16 +15,20 @@
  *   action or pull-to-refresh). It first drains the outbound queue, then fetches
  *   the latest server state via GET /api/auth/sync.
  *
- * ## Conflict Resolution Strategy (Last-Write-Wins)
+ * ## Conflict Resolution Strategy (User Choice)
  * Each item carries an `updatedAt` ISO timestamp set at mutation time on the client.
  *
  * **Client → Server (outbound)**:
  * On POST (create) the server upserts — if the item already exists, it overwrites.
  * On PUT (update) the server compares `data.updatedAt` against the existing row's
  * `updatedAt`. If the incoming timestamp is older or equal, the server responds
- * with `{ operation: "skipped", reason: "stale_update" }` and the client treats
- * this as a 409 conflict, marking the queue item as fatal. The newer version on
- * the server is preserved.
+ * with `{ operation: "skipped", reason: "stale_update", serverVersion: {...} }`
+ * including the full server row. The client detects this as a conflict and
+ * presents an Alert with two choices:
+ *   - "This Device": re-sends the local data with a fresh `updatedAt` to
+ *     override the server version.
+ *   - "Other Device": discards the local queue item and runs `fullSync()` to
+ *     pull the server's version.
  *
  * **Server → Client (inbound / full sync)**:
  * `fullSync()` fetches the server's current state and overwrites local storage
@@ -63,9 +67,9 @@
  *
  * ## Known Edge Case
  * If the same item is edited on two devices while both are offline, the device
- * that syncs last wins (last-write-wins). The earlier device's changes are
- * silently overwritten. Conflict items with a stale timestamp are marked fatal
- * in the queue and the user is notified, but the server version is not rolled back.
+ * that syncs last triggers a conflict. The earlier device sees an Alert showing
+ * both versions and can choose "This Device" (override with fresh timestamp) or
+ * "Other Device" (discard local change and pull server version via fullSync).
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, AppState, AppStateStatus } from "react-native";
@@ -432,6 +436,7 @@ class SyncManager {
           statusCode?: number;
           message?: string;
           isConflict?: boolean;
+          serverVersion?: unknown;
         };
         const statusCode = syncError.statusCode || 0;
         const is4xxError = statusCode >= 400 && statusCode < 500;
@@ -449,18 +454,33 @@ class SyncManager {
         }
 
         if (isConflict) {
-          // Last-write-wins conflict: server responded with "stale_update" because
-          // the server row has a newer updatedAt than our outgoing data. The server
-          // version is preserved. Mark this item fatal so the user is notified and
-          // can resolve by doing a full sync (which will pull the server's version).
-          logger.warn("[Sync] Conflict detected - server has newer version", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id });
-          failedItems.push({
+          logger.warn("[Sync] Conflict detected — pausing queue to ask user", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id });
+          const serverVersion = syncError.serverVersion;
+
+          const conflictItem: SyncQueueItem = {
             ...item,
             isFatal: true,
-            errorMessage:
-              "Your changes were overwritten by a newer version from another device",
+            errorMessage: "Sync conflict — waiting for your choice",
             retryCount: item.retryCount + 1,
-          });
+          };
+          const remainingUnprocessed = queue.filter(
+            (q) => !processedIds.has(q.id) && q.id !== item.id && !failedItems.some((f) => f.id === q.id),
+          );
+          const currentQueue = await this.getQueue();
+          const newlyAddedItems = currentQueue.filter(
+            (q) => !queue.some((oldItem) => oldItem.id === q.id),
+          );
+          const pausedQueue = [conflictItem, ...failedItems, ...remainingUnprocessed, ...newlyAddedItems];
+          await this.setQueue(pausedQueue);
+
+          if (processedIds.size > 0) {
+            await AsyncStorage.setItem(SYNC_KEYS.LAST_SYNC, new Date().toISOString());
+          }
+
+          this.isSyncing = false;
+          this.notifyListeners();
+          this.showConflictAlert(conflictItem, serverVersion);
+          return;
         } else if (is4xxError || item.retryCount >= maxRetries) {
           logger.warn("[Sync] Marking item as fatal", { dataType: item.dataType, itemId: (item.data as { id?: string })?.id, retryCount: item.retryCount, statusCode });
           failedItems.push({
@@ -555,18 +575,17 @@ class SyncManager {
 
     const result = (await response.json()).data;
 
-    // Server signals a last-write-wins conflict: the row on the server has a
-    // newer updatedAt than the timestamp we sent. Treat this as a 409 conflict
-    // so processSyncQueue() marks the item fatal and notifies the user.
     if (result.operation === "skipped" && result.reason === "stale_update") {
       const error = new Error(
         "Update was stale - server has newer version",
       ) as Error & {
         statusCode: number;
         isConflict: boolean;
+        serverVersion: unknown;
       };
       error.statusCode = 409;
       error.isConflict = true;
+      error.serverVersion = result.serverVersion || null;
       throw error;
     }
   }
@@ -819,6 +838,78 @@ class SyncManager {
       this.userProfileSyncTimer = setTimeout(() => {
         this.flushUserProfileSync();
       }, 5000);
+    }
+  }
+
+  private showConflictAlert(item: SyncQueueItem, serverVersion: unknown) {
+    const localData = item.data as { name?: string; title?: string; id?: string };
+    const serverData = serverVersion as { name?: string; title?: string; id?: string } | null;
+    const itemName = localData.name || localData.title || localData.id || "Unknown item";
+    const serverName = serverData?.name || serverData?.title || serverData?.id || "Unknown item";
+
+    const localLabel = `This Device: "${itemName}"`;
+    const serverLabel = `Other Device: "${serverName}"`;
+
+    Alert.alert(
+      "Sync Conflict",
+      `This item was modified on another device. Which version would you like to keep?\n\n${localLabel}\n${serverLabel}`,
+      [
+        {
+          text: "This Device",
+          onPress: () => {
+            this.resolveConflict(item, "local").catch((err) => {
+              logger.error("[Sync] Failed to resolve conflict with local version", { error: (err as Error).message });
+            });
+          },
+        },
+        {
+          text: "Other Device",
+          onPress: () => {
+            this.resolveConflict(item, "remote").catch((err) => {
+              logger.error("[Sync] Failed to resolve conflict with remote version", { error: (err as Error).message });
+            });
+          },
+        },
+      ],
+    );
+  }
+
+  private async resolveConflict(
+    item: SyncQueueItem,
+    choice: "local" | "remote",
+  ): Promise<void> {
+    const queue = await this.getQueue();
+    const itemId = (item.data as { id?: string })?.id;
+
+    if (choice === "local") {
+      logger.log("[Sync] User chose local version — re-sending with fresh timestamp", { dataType: item.dataType, itemId });
+      const freshTimestamp = new Date().toISOString();
+      const updatedData = {
+        ...(item.data as Record<string, unknown>),
+        updatedAt: freshTimestamp,
+      };
+      const newQueue = queue.map((q) => {
+        if (q.id === item.id) {
+          return {
+            ...q,
+            data: updatedData,
+            timestamp: freshTimestamp,
+            isFatal: false,
+            retryCount: 0,
+            errorMessage: undefined,
+          };
+        }
+        return q;
+      });
+      await this.setQueue(newQueue);
+      this.notifyListeners();
+      this.processSyncQueue();
+    } else {
+      logger.log("[Sync] User chose remote version — discarding local change", { dataType: item.dataType, itemId });
+      const newQueue = queue.filter((q) => q.id !== item.id);
+      await this.setQueue(newQueue);
+      this.notifyListeners();
+      await this.fullSync();
     }
   }
 
