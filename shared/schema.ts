@@ -145,7 +145,11 @@ export const users = pgTable("users", {
   referralCode: varchar("referral_code", { length: 8 }).unique(),
   referredBy: varchar("referred_by"),
   aiRecipeBonusCredits: integer("ai_recipe_bonus_credits").notNull().default(0),
-});
+}, (table) => [
+  index("idx_users_created_at").on(table.createdAt),
+  index("idx_users_subscription_tier").on(table.subscriptionTier),
+  index("idx_users_subscription_status").on(table.subscriptionStatus),
+]);
 
 /**
  * AUTH PROVIDERS TABLE
@@ -274,7 +278,9 @@ export const userSyncData = pgTable("user_sync_data", {
   sectionUpdatedAt: jsonb("section_updated_at"),
   lastSyncedAt: timestamp("last_synced_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_user_sync_data_last_synced").on(table.lastSyncedAt),
+]);
 
 // =============================================================================
 // NORMALIZED SYNC DATA TABLES
@@ -984,7 +990,9 @@ export const subscriptions = pgTable(
     index("idx_subscriptions_stripe_subscription").on(
       table.stripeSubscriptionId,
     ),
-    index("idx_subscriptions_status").on(table.status),
+    index("idx_subscriptions_status_plan").on(table.status, table.planType),
+    index("idx_subscriptions_canceled_at").on(table.canceledAt),
+    index("idx_subscriptions_period_start").on(table.currentPeriodStart),
   ],
 );
 
@@ -1012,6 +1020,7 @@ export const conversionEvents = pgTable("conversion_events", {
   index("idx_conversion_events_user").on(table.userId),
   index("idx_conversion_events_created").on(table.createdAt),
   uniqueIndex("idx_conversion_events_session").on(table.stripeSessionId),
+  index("idx_conversion_events_tiers").on(table.fromTier, table.toTier),
 ]);
 
 export const insertConversionEventSchema = createInsertSchema(conversionEvents).omit({
