@@ -315,7 +315,6 @@ export const userInventoryItems = pgTable(
 );
 
 export const insertUserInventoryItemSchema = createInsertSchema(userInventoryItems).omit({
-  id: true as any,
   addedAt: true,
   updatedAt: true,
   deletedAt: true,
@@ -354,7 +353,6 @@ export const userSavedRecipes = pgTable(
 );
 
 export const insertUserSavedRecipeSchema = createInsertSchema(userSavedRecipes).omit({
-  id: true as any,
   savedAt: true,
   updatedAt: true,
 });
@@ -383,7 +381,6 @@ export const userMealPlans = pgTable(
 );
 
 export const insertUserMealPlanSchema = createInsertSchema(userMealPlans).omit({
-  id: true as any,
   createdAt: true,
   updatedAt: true,
 });
@@ -416,7 +413,6 @@ export const userShoppingItems = pgTable(
 );
 
 export const insertUserShoppingItemSchema = createInsertSchema(userShoppingItems).omit({
-  id: true as any,
   addedAt: true,
   updatedAt: true,
 });
@@ -445,7 +441,6 @@ export const userCookwareItems = pgTable(
 );
 
 export const insertUserCookwareItemSchema = createInsertSchema(userCookwareItems).omit({
-  id: true as any,
   addedAt: true,
   updatedAt: true,
 });
@@ -1080,7 +1075,6 @@ export const referrals = pgTable(
 );
 
 export const insertReferralSchema = createInsertSchema(referrals).omit({
-  id: true as any,
   createdAt: true,
 });
 
