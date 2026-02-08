@@ -76,6 +76,8 @@ import { Alert, AppState, AppStateStatus } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
 
+const MAX_SYNC_QUEUE_SIZE = 500;
+
 const SYNC_KEYS = {
   SYNC_QUEUE: "@chefspaice/sync_queue",
   LAST_SYNC: "@chefspaice/last_sync",
@@ -374,7 +376,17 @@ class SyncManager {
         queue[existingIndex] = newItem;
       }
     } else {
+      if (queue.length >= MAX_SYNC_QUEUE_SIZE) {
+        const oldestUpdateIndex = queue.findIndex(item => item.operation === "update");
+        if (oldestUpdateIndex !== -1) {
+          queue.splice(oldestUpdateIndex, 1);
+        }
+      }
       queue.push(newItem);
+    }
+
+    if (queue.length > MAX_SYNC_QUEUE_SIZE * 0.8) {
+      this.showQueueCapacityWarning();
     }
 
     await this.setQueue(queue);
@@ -910,6 +922,18 @@ class SyncManager {
       await this.setQueue(newQueue);
       this.notifyListeners();
       await this.fullSync();
+    }
+  }
+
+  private showQueueCapacityWarning() {
+    try {
+      Alert.alert(
+        "Many Unsynced Changes",
+        "You have many unsynced changes. Connect to the internet to sync your data.",
+        [{ text: "OK", style: "default" }],
+      );
+    } catch {
+      logger.warn("[Sync] Could not show queue capacity warning");
     }
   }
 
