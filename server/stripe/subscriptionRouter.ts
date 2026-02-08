@@ -213,6 +213,7 @@ router.post("/create-checkout-session", async (req: Request, res: Response, next
       ],
       subscription_data: {
         trial_period_days: 7,
+        proration_behavior: "create_prorations",
         metadata: {
           userId: user.id,
         },
@@ -528,7 +529,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
       throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
     }
 
-    const { billingPeriod = "monthly", successUrl, cancelUrl } = req.body;
+    const { billingPeriod = "monthly", priceId: requestedPriceId, successUrl, cancelUrl } = req.body;
 
     const stripe = await getUncachableStripeClient();
 
@@ -566,17 +567,28 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
     });
 
     let priceId: string | null = null;
-    for (const price of prices.data) {
-      const product = price.product as { name?: string } | null;
-      const productName = (typeof product === "object" && product?.name) || "";
 
-      if (productName.toLowerCase().includes("pro")) {
-        if (billingPeriod === "annual" && price.recurring?.interval === "year") {
-          priceId = price.id;
-          break;
-        } else if (billingPeriod === "monthly" && price.recurring?.interval === "month") {
-          priceId = price.id;
-          break;
+    if (requestedPriceId) {
+      const isValidPrice = prices.data.some((p) => p.id === requestedPriceId && p.active);
+      if (!isValidPrice) {
+        throw AppError.badRequest("Invalid price ID", "INVALID_PRICE_ID");
+      }
+      priceId = requestedPriceId;
+    }
+
+    if (!priceId) {
+      for (const price of prices.data) {
+        const product = price.product as { name?: string } | null;
+        const productName = (typeof product === "object" && product?.name) || "";
+
+        if (productName.toLowerCase().includes("pro")) {
+          if (billingPeriod === "annual" && price.recurring?.interval === "year") {
+            priceId = price.id;
+            break;
+          } else if (billingPeriod === "monthly" && price.recurring?.interval === "month") {
+            priceId = price.id;
+            break;
+          }
         }
       }
     }
@@ -597,6 +609,66 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
       throw AppError.badRequest("No suitable price found for Pro upgrade", "NO_PRICE_FOUND");
     }
 
+    const hasActiveStripeSubscription =
+      existingSubscription?.stripeSubscriptionId &&
+      (existingSubscription.status === "active" || existingSubscription.status === "trialing");
+
+    if (hasActiveStripeSubscription) {
+      const stripeSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripeSubscriptionId!);
+      const existingItemId = stripeSubscription.items.data[0]?.id;
+
+      if (!existingItemId) {
+        throw AppError.badRequest("Could not find existing subscription item", "NO_SUBSCRIPTION_ITEM");
+      }
+
+      const updatedSubscription = await stripe.subscriptions.update(existingSubscription.stripeSubscriptionId!, {
+        items: [{ id: existingItemId, price: priceId }],
+        proration_behavior: "create_prorations",
+      });
+
+      const newPrice = updatedSubscription.items.data[0]?.price;
+      const product = newPrice?.product;
+      const productObj = typeof product === "string" ? await stripe.products.retrieve(product) : product;
+      const productName = (productObj && typeof productObj === "object" && "name" in productObj) ? productObj.name : "";
+      const nameLower = (productName || "").toLowerCase();
+      const newTier = nameLower.includes("pro") ? "PRO" : nameLower.includes("basic") ? "BASIC" : "PRO";
+      const newPlanType = newPrice?.recurring?.interval === "year" ? "annual" : "monthly";
+
+      await db
+        .update(subscriptions)
+        .set({
+          stripePriceId: priceId,
+          planType: newPlanType,
+          status: updatedSubscription.status === "active" ? "active" : updatedSubscription.status === "trialing" ? "trialing" : existingSubscription.status,
+          currentPeriodStart: new Date(updatedSubscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptions.userId, user.id));
+
+      await db
+        .update(users)
+        .set({
+          subscriptionTier: newTier,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
+
+      logger.info("Subscription upgraded in-place with proration", {
+        userId: user.id,
+        newTier,
+        newPlanType,
+        subscriptionId: existingSubscription.stripeSubscriptionId,
+      });
+
+      return res.json(successResponse({
+        upgraded: true,
+        tier: newTier,
+        planType: newPlanType,
+        status: updatedSubscription.status,
+      }));
+    }
+
     const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
       ? `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`
       : "http://localhost:5000";
@@ -611,6 +683,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
         },
       ],
       subscription_data: {
+        proration_behavior: "create_prorations",
         metadata: {
           userId: user.id,
           tier: SubscriptionTier.PRO,
@@ -629,6 +702,101 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
     res.json(successResponse({
       sessionId: session.id,
       url: session.url,
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/preview-proration", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
+    }
+
+    const { newPriceId } = req.body;
+
+    if (!newPriceId) {
+      throw AppError.badRequest("newPriceId is required", "MISSING_PRICE_ID");
+    }
+
+    const [existingSubscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+
+    if (!existingSubscription || !existingSubscription.stripeSubscriptionId) {
+      throw AppError.badRequest("No active subscription found", "NO_ACTIVE_SUBSCRIPTION");
+    }
+
+    if (existingSubscription.status !== "active" && existingSubscription.status !== "trialing") {
+      throw AppError.badRequest("Subscription is not active", "SUBSCRIPTION_NOT_ACTIVE");
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    const allowedPrices = await stripe.prices.list({ active: true, type: "recurring" });
+    const isAllowedPrice = allowedPrices.data.some((p) => p.id === newPriceId);
+    if (!isAllowedPrice) {
+      throw AppError.badRequest("Invalid price ID", "INVALID_PRICE_ID");
+    }
+
+    let stripeCustomerId = existingSubscription.stripeCustomerId;
+    if (!stripeCustomerId) {
+      const existingCustomers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (existingCustomers.data.length > 0) {
+        stripeCustomerId = existingCustomers.data[0].id;
+      } else {
+        throw AppError.badRequest("No Stripe customer found for this account", "NO_STRIPE_CUSTOMER");
+      }
+    }
+
+    const stripeSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripeSubscriptionId);
+    const existingItemId = stripeSubscription.items.data[0]?.id;
+
+    if (!existingItemId) {
+      throw AppError.badRequest("Could not find existing subscription item", "NO_SUBSCRIPTION_ITEM");
+    }
+
+    const previewInvoice = await stripe.invoices.createPreview({
+      customer: stripeCustomerId,
+      subscription: existingSubscription.stripeSubscriptionId,
+      subscription_details: {
+        items: [{ id: existingItemId, price: newPriceId }],
+        proration_behavior: "create_prorations",
+      },
+    });
+
+    const prorationLines = (previewInvoice.lines?.data || []).filter(
+      (line: any) => line.proration
+    );
+    const creditAmount = prorationLines
+      .filter((line: any) => line.amount < 0)
+      .reduce((sum: number, line: any) => sum + Math.abs(line.amount), 0);
+    const proratedAmount = prorationLines
+      .filter((line: any) => line.amount > 0)
+      .reduce((sum: number, line: any) => sum + line.amount, 0);
+
+    const immediatePayment = Math.max(0, (previewInvoice.amount_due || 0));
+    const newAmount = previewInvoice.total || 0;
+
+    logger.info("Proration preview generated", {
+      userId: user.id,
+      newPriceId,
+      proratedAmount,
+      creditAmount,
+      newAmount,
+      immediatePayment,
+    });
+
+    res.json(successResponse({
+      proratedAmount,
+      creditAmount,
+      newAmount,
+      currency: previewInvoice.currency || "usd",
+      immediatePayment,
     }));
   } catch (error) {
     next(error);

@@ -22,6 +22,14 @@ The admin dashboard is served at `/admin` (requires auth + admin role). It inclu
 - **Conversion funnel** (`GET /api/admin/analytics/conversion-funnel`): FREE→Trial→Basic→Pro conversion rates
 - Pricing used in MRR calculations: BASIC $4.99/mo, $39.99/yr; PRO $9.99/mo, $79.99/yr
 
+## Subscription Proration
+Stripe proration is enabled for subscription upgrades/downgrades:
+- `POST /api/subscriptions/preview-proration`: Preview prorated amount before confirming plan change (requires `newPriceId`)
+- `POST /api/subscriptions/upgrade`: For existing active/trialing subscribers, uses `stripe.subscriptions.update()` with `proration_behavior: "create_prorations"` for in-place upgrades; for new subscribers, falls back to checkout session
+- `POST /api/subscriptions/create-checkout-session`: Also includes `proration_behavior: "create_prorations"` in subscription_data
+- Server validates price IDs against active Stripe prices before applying
+- Client shows confirmation dialog with prorated amount before confirming upgrade
+
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation, conversational assistance, and vision-based scanning.
 - **USDA FoodData Central API**: Comprehensive nutrition data lookup.

@@ -52,8 +52,8 @@ export default function SubscriptionScreen() {
   const menuItems: MenuItemConfig[] = [];
   const { token, isAuthenticated } = useAuth();
   const {
-    tier,
-    status,
+    tier: currentTier,
+    status: currentStatus,
     isProUser,
     isTrialing,
     isActive,
@@ -98,6 +98,8 @@ export default function SubscriptionScreen() {
   const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [prorationPreview, setProrationPreview] = useState<{ proratedAmount: number; creditAmount: number; newAmount: number; currency: string } | null>(null);
+  const [isPreviewingProration, setIsPreviewingProration] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );
@@ -111,7 +113,7 @@ export default function SubscriptionScreen() {
   };
 
   const getStatusDisplay = (): { label: string; color: string } => {
-    switch (status) {
+    switch (currentStatus) {
       case "active":
         return { label: "Active", color: AppColors.success };
       case "trialing":
@@ -131,14 +133,14 @@ export default function SubscriptionScreen() {
   };
 
   const getPlanName = (): string => {
-    if (tier === SubscriptionTier.PRO) return "Pro";
-    if (tier === SubscriptionTier.BASIC) return "Basic";
+    if (currentTier === SubscriptionTier.PRO) return "Pro";
+    if (currentTier === SubscriptionTier.BASIC) return "Basic";
     return "Free";
   };
 
   const getMonthlyPrice = (): string => {
-    if (tier === SubscriptionTier.PRO) return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
-    if (tier === SubscriptionTier.BASIC) return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+    if (currentTier === SubscriptionTier.PRO) return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
+    if (currentTier === SubscriptionTier.BASIC) return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
     return "Free";
   };
 
@@ -277,14 +279,101 @@ export default function SubscriptionScreen() {
               ? "basicMonthly"
               : "basicAnnual";
         const fallbackKey = plan === "monthly" ? "monthly" : "annual";
-        const priceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
+        const selectedPriceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
 
-        if (!priceId) {
+        if (!selectedPriceId) {
           Alert.alert(
             "Price Not Available",
             `The ${tierName} ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
             [{ text: "OK" }],
           );
+          return;
+        }
+
+        const isExistingPaidSubscriber =
+          (currentStatus === "active" || currentStatus === "trialing") &&
+          (currentTier === SubscriptionTier.BASIC || currentTier === SubscriptionTier.PRO);
+
+        if (isExistingPaidSubscriber) {
+          setIsPreviewingProration(true);
+          try {
+            const previewResponse = await fetch(
+              `${baseUrl}/api/subscriptions/preview-proration`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                credentials: "include",
+                body: JSON.stringify({ newPriceId: selectedPriceId }),
+              },
+            );
+
+            if (!previewResponse.ok) {
+              const errorData = await previewResponse.json();
+              Alert.alert("Error", errorData.error || "Failed to preview proration.");
+              return;
+            }
+
+            const preview = (await previewResponse.json()).data as any;
+            setProrationPreview(preview);
+
+            const formattedAmount = (preview.immediatePayment / 100).toFixed(2);
+            const currencySymbol = preview.currency === "usd" ? "$" : preview.currency.toUpperCase() + " ";
+
+            Alert.alert(
+              "Confirm Plan Change",
+              `You'll be charged ${currencySymbol}${formattedAmount} now (prorated for the remaining billing period). Your new plan starts immediately.`,
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Confirm Upgrade",
+                  onPress: async () => {
+                    try {
+                      setIsCheckingOut(true);
+                      const upgradeResponse = await fetch(
+                        `${baseUrl}/api/subscriptions/upgrade`,
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                          },
+                          credentials: "include",
+                          body: JSON.stringify({
+                            priceId: selectedPriceId,
+                            billingPeriod: plan,
+                          }),
+                        },
+                      );
+
+                      if (upgradeResponse.ok) {
+                        const upgradeData = (await upgradeResponse.json()).data as any;
+                        if (upgradeData.upgraded) {
+                          await refetch();
+                          Alert.alert("Success", `Your plan has been upgraded to ${tierName}!`);
+                        }
+                      } else {
+                        const errorData = await upgradeResponse.json();
+                        Alert.alert("Error", errorData.error || "Failed to upgrade. Please try again.");
+                      }
+                    } catch (err) {
+                      logger.error("Error upgrading subscription:", err);
+                      Alert.alert("Error", "Something went wrong during upgrade.");
+                    } finally {
+                      setIsCheckingOut(false);
+                    }
+                  },
+                },
+              ],
+            );
+          } catch (err) {
+            logger.error("Error previewing proration:", err);
+            Alert.alert("Error", "Failed to preview plan change. Please try again.");
+          } finally {
+            setIsPreviewingProration(false);
+          }
           return;
         }
 
@@ -298,7 +387,7 @@ export default function SubscriptionScreen() {
             },
             credentials: "include",
             body: JSON.stringify({
-              priceId,
+              priceId: selectedPriceId,
               tier,
               successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
               cancelUrl: `${window.location.origin}/subscription-canceled`,
@@ -423,7 +512,7 @@ export default function SubscriptionScreen() {
           planName={getPlanName()}
           monthlyPrice={getMonthlyPrice()}
           isProUser={isProUser}
-          tier={tier}
+          tier={currentTier}
           statusInfo={statusInfo}
           isTrialing={isTrialing}
           trialDaysRemaining={trialDaysRemaining}
