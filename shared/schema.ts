@@ -34,6 +34,7 @@ import {
   uniqueIndex,
   jsonb,
   doublePrecision,
+  serial,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -999,6 +1000,30 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
 });
 
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+
+// =============================================================================
+// CONVERSION EVENTS TABLE
+// =============================================================================
+
+export const conversionEvents = pgTable("conversion_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  fromTier: varchar("from_tier").notNull(),
+  toTier: varchar("to_tier").notNull(),
+  source: varchar("source"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_conversion_events_user").on(table.userId),
+  index("idx_conversion_events_created").on(table.createdAt),
+]);
+
+export const insertConversionEventSchema = createInsertSchema(conversionEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertConversionEvent = z.infer<typeof insertConversionEventSchema>;
+export type ConversionEvent = typeof conversionEvents.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 
 // =============================================================================
