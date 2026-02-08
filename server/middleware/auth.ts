@@ -1,14 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import { createHash } from "crypto";
 import { db } from "../db";
 import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
 import { logger } from "../lib/logger";
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
+import { hashToken, getSessionByToken } from "../lib/auth-utils";
 
 declare global {
   namespace Express {
@@ -44,19 +40,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     const rawToken = authHeader.substring(7);
-    const hashedToken = hashToken(rawToken);
-    
-    const [session] = await db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.token, hashedToken))
-      .limit(1);
+    const session = await getSessionByToken(rawToken);
 
     if (!session) {
       return next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
     }
 
     if (new Date(session.expiresAt) < new Date()) {
+      const hashedToken = hashToken(rawToken);
       await db.delete(userSessions).where(eq(userSessions.token, hashedToken));
       return next(AppError.unauthorized("Session expired", "SESSION_EXPIRED"));
     }

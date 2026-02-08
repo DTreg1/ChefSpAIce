@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { createHash } from "crypto";
 import { db } from "../db";
-import { users, userSessions, subscriptions, cancellationReasons } from "@shared/schema";
+import { users, subscriptions, cancellationReasons } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { getUserByToken } from "../lib/auth-utils";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import {
   getUserEntitlements,
@@ -56,24 +56,7 @@ async function getAuthenticatedUser(req: Request): Promise<{ id: string; email: 
   }
 
   const rawToken = authHeader.substring(7);
-  const hashedToken = createHash("sha256").update(rawToken).digest("hex");
-
-  const [session] = await db
-    .select()
-    .from(userSessions)
-    .where(eq(userSessions.token, hashedToken))
-    .limit(1);
-
-  if (!session || new Date(session.expiresAt) < new Date()) {
-    return null;
-  }
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.userId))
-    .limit(1);
-
+  const user = await getUserByToken(rawToken);
   return user ? { id: user.id, email: user.email } : null;
 }
 
