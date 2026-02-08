@@ -11,7 +11,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator,
@@ -31,6 +31,7 @@ import { MealPlanSlotCard } from "@/components/meal-plan/MealPlanSlotCard";
 import { MealPlanActionSheet } from "@/components/meal-plan/MealPlanActionSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
 import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
@@ -50,6 +51,7 @@ export default function MealPlanScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
   const { checkFeature } = useSubscription();
+  const { isTablet } = useDeviceType();
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -340,66 +342,136 @@ export default function MealPlanScreen() {
           onNextWeek={navigateNextWeek}
         />
 
-        <MealPlanDaySelector
-          weekDays={getWeekDays()}
-          selectedDay={selectedDay}
-          mealPlans={mealPlans}
-          onSelectDay={setSelectedDay}
-        />
+        {isTablet ? (
+          <>
+            <View style={styles.hintRow}>
+              <Feather name="info" size={16} color={theme.textSecondary} />
+              <ThemedText
+                type="caption"
+                style={{ color: theme.textSecondary, flex: 1 }}
+              >
+                Browse recipes and tap "Add to Meal Plan" to schedule your meals
+              </ThemedText>
+            </View>
 
-        <View style={styles.hintRow}>
-          <Feather name="info" size={16} color={theme.textSecondary} />
-          <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, flex: 1 }}
-          >
-            Browse recipes and tap "Add to Meal Plan" to schedule your meals
-          </ThemedText>
-        </View>
-
-        {mealPlans.length === 0 && recipes.length === 0 ? (
-          <EmptyState
-            icon="calendar"
-            title="No meal plan yet"
-            description="Create your first weekly plan!"
-            actionLabel="Create Plan"
-            onAction={() => navigation.navigate("SelectRecipe" as any, {
-              date: format(selectedDay, "yyyy-MM-dd"),
-              mealType: "dinner" as const,
-            })}
-          />
-        ) : (
-        <GlassCard style={styles.selectedDayCard}>
-          <View style={styles.selectedDayHeader}>
-            <ThemedText type="h3" style={styles.selectedDayTitle}>
-              {format(selectedDay, "EEEE, MMMM d")}
-            </ThemedText>
-            {draggableSlotItems.some((s) => s.recipe) && (
-              <View style={styles.dragHintRow}>
-                <Feather name="move" size={12} color={theme.textSecondary} />
-                <ThemedText
-                  type="caption"
-                  style={{ color: theme.textSecondary }}
-                >
-                  Hold & drag to reorder
-                </ThemedText>
-              </View>
+            {mealPlans.length === 0 && recipes.length === 0 ? (
+              <EmptyState
+                icon="calendar"
+                title="No meal plan yet"
+                description="Create your first weekly plan!"
+                actionLabel="Create Plan"
+                onAction={() => navigation.navigate("SelectRecipe" as any, {
+                  date: format(selectedDay, "yyyy-MM-dd"),
+                  mealType: "dinner" as const,
+                })}
+              />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tabletDaysContainer}
+              >
+                {getWeekDays().map((day) => {
+                  const isToday = isSameDay(day, new Date());
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  return (
+                    <GlassCard
+                      key={dateStr}
+                      style={[
+                        styles.tabletDayColumn,
+                        isToday && { borderColor: AppColors.primary, borderWidth: 2 },
+                      ]}
+                    >
+                      <View style={styles.tabletDayHeader}>
+                        <ThemedText type="h4" style={styles.tabletDayTitle}>
+                          {format(day, "EEE")}
+                        </ThemedText>
+                        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                          {format(day, "MMM d")}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.tabletDaySlots}>
+                        {mealSlots.map((slot) => (
+                          <MealPlanSlotCard
+                            key={slot.id}
+                            slot={slot}
+                            recipe={getMealForDay(day, slot.id)}
+                            selectedDay={day}
+                            onMealPress={handleMealPress}
+                            onAddMeal={handleAddMeal}
+                          />
+                        ))}
+                      </View>
+                    </GlassCard>
+                  );
+                })}
+              </ScrollView>
             )}
-          </View>
-
-          <GestureHandlerRootView>
-            <DraggableFlatList
-              data={draggableSlotItems}
-              keyExtractor={(item) => item.slotId}
-              renderItem={renderDraggableSlot}
-              onDragEnd={handleDragEnd}
-              containerStyle={styles.draggableListContainer}
-              scrollEnabled={false}
-              accessibilityRole="list"
-              accessibilityLabel="Meal slots for selected day, drag to reorder"
+          </>
+        ) : (
+          <>
+            <MealPlanDaySelector
+              weekDays={getWeekDays()}
+              selectedDay={selectedDay}
+              mealPlans={mealPlans}
+              onSelectDay={setSelectedDay}
             />
-          </GestureHandlerRootView>
-        </GlassCard>
+
+            <View style={styles.hintRow}>
+              <Feather name="info" size={16} color={theme.textSecondary} />
+              <ThemedText
+                type="caption"
+                style={{ color: theme.textSecondary, flex: 1 }}
+              >
+                Browse recipes and tap "Add to Meal Plan" to schedule your meals
+              </ThemedText>
+            </View>
+
+            {mealPlans.length === 0 && recipes.length === 0 ? (
+              <EmptyState
+                icon="calendar"
+                title="No meal plan yet"
+                description="Create your first weekly plan!"
+                actionLabel="Create Plan"
+                onAction={() => navigation.navigate("SelectRecipe" as any, {
+                  date: format(selectedDay, "yyyy-MM-dd"),
+                  mealType: "dinner" as const,
+                })}
+              />
+            ) : (
+              <GlassCard style={styles.selectedDayCard}>
+                <View style={styles.selectedDayHeader}>
+                  <ThemedText type="h3" style={styles.selectedDayTitle}>
+                    {format(selectedDay, "EEEE, MMMM d")}
+                  </ThemedText>
+                  {draggableSlotItems.some((s) => s.recipe) && (
+                    <View style={styles.dragHintRow}>
+                      <Feather name="move" size={12} color={theme.textSecondary} />
+                      <ThemedText
+                        type="caption"
+                        style={{ color: theme.textSecondary }}
+                      >
+                        Hold & drag to reorder
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+
+                <GestureHandlerRootView>
+                  <DraggableFlatList
+                    data={draggableSlotItems}
+                    keyExtractor={(item) => item.slotId}
+                    renderItem={renderDraggableSlot}
+                    onDragEnd={handleDragEnd}
+                    containerStyle={styles.draggableListContainer}
+                    scrollEnabled={false}
+                    accessibilityRole="list"
+                    accessibilityLabel="Meal slots for selected day, drag to reorder"
+                  />
+                </GestureHandlerRootView>
+              </GlassCard>
+            )}
+          </>
         )}
 
         <GlassCard style={styles.statsCard}>
@@ -577,5 +649,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+  },
+  tabletDaysContainer: {
+    gap: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  tabletDayColumn: {
+    width: 200,
+    gap: Spacing.sm,
+  },
+  tabletDayHeader: {
+    alignItems: "center",
+    paddingBottom: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    gap: 2,
+  },
+  tabletDayTitle: {
+    fontWeight: "700",
+  },
+  tabletDaySlots: {
+    gap: Spacing.md,
   },
 });

@@ -19,6 +19,7 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { InventorySkeleton } from "@/components/inventory/InventorySkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { Spacing, AppColors } from "@/constants/theme";
 import {
   storage,
@@ -62,6 +63,7 @@ export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { isTablet } = useDeviceType();
   const navigation =
     useNavigation<NativeStackNavigationProp<InventoryStackParamList>>();
   const queryClient = useQueryClient();
@@ -396,16 +398,18 @@ export default function InventoryScreen() {
     index: number;
   }) => {
     return (
-      <InventoryGroupSection
-        section={item}
-        isCollapsed={!!collapsedSections[item.key]}
-        onToggle={toggleSection}
-        onConsumed={handleMarkAsConsumed}
-        onWasted={handleMarkAsWasted}
-        onItemPress={handleItemPress}
-        theme={theme}
-        showSwipeHintOnFirst={showSwipeHint && index === 0}
-      />
+      <View style={{ flex: 1 }}>
+        <InventoryGroupSection
+          section={item}
+          isCollapsed={!!collapsedSections[item.key]}
+          onToggle={toggleSection}
+          onConsumed={handleMarkAsConsumed}
+          onWasted={handleMarkAsWasted}
+          onItemPress={handleItemPress}
+          theme={theme}
+          showSwipeHintOnFirst={showSwipeHint && index === 0}
+        />
+      </View>
     );
   };
 
@@ -451,6 +455,7 @@ export default function InventoryScreen() {
       </View>
 
       <FlatList
+        key={isTablet ? "tablet" : "phone"}
         style={styles.list}
         accessibilityRole="list"
         accessibilityLabel="Inventory items"
@@ -463,6 +468,8 @@ export default function InventoryScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         data={groupedSections}
+        numColumns={isTablet ? 2 : 1}
+        {...(isTablet && { columnWrapperStyle: { gap: Spacing.md } })}
         keyExtractor={(item) => item.key}
         renderItem={renderGroupedSection}
         ListHeaderComponent={renderListHeader}

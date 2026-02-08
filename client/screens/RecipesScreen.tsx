@@ -38,7 +38,6 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
-  Dimensions,
   Modal,
   Platform,
   TextInput,
@@ -76,9 +75,7 @@ import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
@@ -86,6 +83,7 @@ export default function RecipesScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+  const { isTablet, isLargeTablet } = useDeviceType();
 
   const isOnline = useOnlineStatus();
   const { getSearchQuery, collapseSearch } = useSearch();
@@ -490,7 +488,9 @@ export default function RecipesScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         data={filteredRecipes}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        key={isLargeTablet ? "large-tablet" : isTablet ? "tablet" : "phone"}
+        numColumns={isLargeTablet ? 4 : isTablet ? 3 : 2}
+        columnWrapperStyle={{ gap: Spacing.md }}
         initialNumToRender={10}
         maxToRenderPerBatch={5}
         renderItem={renderRecipeCard}
@@ -770,9 +770,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   cardWrapper: {
-    width: CARD_WIDTH,
-    marginRight: Spacing.lg,
-    marginBottom: Spacing.lg,
+    flex: 1,
+    marginBottom: Spacing.md,
   },
   recipeCard: {
     padding: 0,
