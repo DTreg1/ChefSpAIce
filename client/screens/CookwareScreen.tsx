@@ -291,7 +291,7 @@ export default function CookwareScreen() {
   const queryClient = useQueryClient();
   const navigation = useNavigation();
   const { entitlements } = useSubscription();
-  const { getSearchQuery } = useSearch();
+  const { getSearchQuery, clearSearch } = useSearch();
   const searchQuery = getSearchQuery("cookware");
 
   const menuItems: MenuItemConfig[] = [];
@@ -617,9 +617,11 @@ export default function CookwareScreen() {
 
   const renderEmptyState = () => (
     <EmptyState
-      icon="search"
-      title="No Cookware Found"
-      description="Try adjusting your search or filters."
+      icon="tool"
+      title="No matching cookware"
+      description="No cookware matches your current search. Clear the search to see all available items."
+      actionLabel="Clear Search"
+      onAction={() => clearSearch("cookware")}
     />
   );
 

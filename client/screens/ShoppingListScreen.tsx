@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, CommonActions } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 import { ShoppingListSkeleton } from "@/components/shopping/ShoppingListSkeleton";
@@ -40,6 +40,7 @@ export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const {
     isConfigured: instacartConfigured,
     isLoading: instacartLoading,
@@ -193,8 +194,14 @@ export default function ShoppingListScreen() {
   const renderEmptyState = () => (
     <EmptyState
       icon="shopping-cart"
-      title="Your list is clear"
-      description="Add items or generate a list from a recipe!"
+      title="No shopping items yet"
+      description="Plan your meals and generate a shopping list from your recipes."
+      actionLabel="Browse Recipes"
+      onAction={() => {
+        navigation.getParent()?.dispatch(
+          CommonActions.navigate({ name: "RecipesTab" })
+        );
+      }}
     />
   );
 
