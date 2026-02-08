@@ -13,6 +13,15 @@ The backend uses Express.js and Node.js, with Drizzle ORM and PostgreSQL. Key fe
 
 The system supports a root stack navigator with five-tab bottom navigation, trial and subscription management with guest accounts and data migration, and a guided onboarding flow. All authenticated user data syncs to PostgreSQL with retry logic and conflict resolution. Additional features include Instacart integration, Siri Shortcuts, biometric authentication, deep linking, and comprehensive accessibility. Atomic database transactions ensure data integrity.
 
+## Admin Analytics Dashboard
+The admin dashboard is served at `/admin` (requires auth + admin role). It includes:
+- **Base analytics** (`GET /api/admin/analytics`): User metrics, subscription breakdown, revenue overview, AI usage, user growth, top food items
+- **Subscription metrics** (`GET /api/admin/analytics/subscription-metrics`): Per-tier counts (FREE/BASIC/PRO), active counts, MRR breakdown by tier and plan type
+- **Trial conversion** (`GET /api/admin/analytics/trial-conversion`): Trials started/converted, conversion rate, average trial duration
+- **Churn rate** (`GET /api/admin/analytics/churn-rate`): Monthly cancellation history (12 months), per-month churn rates, current month churn
+- **Conversion funnel** (`GET /api/admin/analytics/conversion-funnel`): FREE→Trial→Basic→Pro conversion rates
+- Pricing used in MRR calculations: BASIC $4.99/mo, $39.99/yr; PRO $9.99/mo, $79.99/yr
+
 ## External Dependencies
 - **OpenAI API**: AI-powered recipe generation, conversational assistance, and vision-based scanning.
 - **USDA FoodData Central API**: Comprehensive nutrition data lookup.
