@@ -23,6 +23,8 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
+import { CookPotLoader } from "@/components/CookPotLoader";
+import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, AppColors } from "@/constants/theme";
@@ -48,7 +50,7 @@ export default function RecipeScannerScreen() {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanResult, setScanResult] = useState<ScannedRecipe | null>(null);
@@ -223,74 +225,17 @@ export default function RecipeScannerScreen() {
     setScanResult(null);
   };
 
-  if (!permission) {
-    return (
-      <View
-        style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      >
-        <ThemedText>Loading camera permissions...</ThemedText>
-      </View>
-    );
-  }
+  if (!permission) return <CookPotLoader />;
 
   if (!permission.granted) {
-    if (permission.status === "denied" && !permission.canAskAgain) {
-      return (
-        <View
-          style={[
-            styles.container,
-            styles.centered,
-            { backgroundColor: theme.backgroundRoot },
-          ]}
-        >
-          <Feather name="camera-off" size={64} color={theme.textSecondary} />
-          <ThemedText type="h3" style={styles.permissionTitle}>
-            Camera Access Required
-          </ThemedText>
-          <ThemedText type="body" style={styles.permissionText}>
-            Please enable camera access in your device settings to scan recipes.
-          </ThemedText>
-          {Platform.OS !== "web" ? (
-            <GlassButton
-              onPress={async () => {
-                try {
-                  await Linking.openSettings();
-                } catch (error) {
-                  logger.log("Could not open settings");
-                }
-              }}
-              style={styles.permissionButton}
-            >
-              Open Settings
-            </GlassButton>
-          ) : null}
-        </View>
-      );
-    }
-
     return (
-      <View
-        style={[
-          styles.container,
-          styles.centered,
-          { backgroundColor: theme.backgroundRoot },
-        ]}
-      >
-        <Feather name="camera" size={64} color={theme.textSecondary} />
-        <ThemedText type="h3" style={styles.permissionTitle}>
-          Camera Permission Needed
-        </ThemedText>
-        <ThemedText type="body" style={styles.permissionText}>
-          We need access to your camera to scan recipes from cookbooks and
-          printed pages.
-        </ThemedText>
-        <GlassButton
-          onPress={requestPermission}
-          style={styles.permissionButton}
-        >
-          Continue
-        </GlassButton>
-      </View>
+      <EmptyState
+        icon="camera-off"
+        title="Camera Access Needed"
+        description="ChefSpAIce needs camera access to scan items. You can enable this in your device settings."
+        actionLabel="Open Settings"
+        onAction={() => Linking.openSettings()}
+      />
     );
   }
 

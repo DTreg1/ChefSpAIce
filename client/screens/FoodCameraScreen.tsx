@@ -33,6 +33,8 @@ import * as FileSystem from "expo-file-system/legacy";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
+import { CookPotLoader } from "@/components/CookPotLoader";
+import { EmptyState } from "@/components/EmptyState";
 import {
   ImageAnalysisResult,
   IdentifiedFood,
@@ -153,7 +155,7 @@ export default function FoodCameraScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission] = useCameraPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [screenState, setScreenState] = useState<ScreenState>("idle");
   const [isCameraActive, setIsCameraActive] = useState(true);
@@ -392,61 +394,17 @@ export default function FoodCameraScreen() {
     }
   };
 
-  if (!permission) {
-    return (
-      <ThemedView style={[styles.container, styles.centered]}>
-        <ThemedText>Loading camera permissions...</ThemedText>
-      </ThemedView>
-    );
-  }
+  if (!permission) return <CookPotLoader />;
 
   if (!permission.granted) {
-    if (permission.status === "denied" && !permission.canAskAgain) {
-      return (
-        <ThemedView style={[styles.container, styles.centered]}>
-          <Feather name="camera-off" size={64} color={theme.textSecondary} />
-          <ThemedText type="h3" style={styles.permissionTitle}>
-            Camera Access Required
-          </ThemedText>
-          <ThemedText type="body" style={styles.permissionText}>
-            Please enable camera access in your device settings to scan food
-            items.
-          </ThemedText>
-          {Platform.OS !== "web" ? (
-            <GlassButton
-              onPress={async () => {
-                try {
-                  await Linking.openSettings();
-                } catch (error) {
-                  logger.log("Could not open settings");
-                }
-              }}
-              style={styles.permissionButton}
-            >
-              Open Settings
-            </GlassButton>
-          ) : null}
-        </ThemedView>
-      );
-    }
-
     return (
-      <ThemedView style={[styles.container, styles.centered]}>
-        <Feather name="camera" size={64} color={theme.textSecondary} />
-        <ThemedText type="h3" style={styles.permissionTitle}>
-          Camera Permission Needed
-        </ThemedText>
-        <ThemedText type="body" style={styles.permissionText}>
-          We need access to your camera to identify food items and add them to
-          your inventory.
-        </ThemedText>
-        <GlassButton
-          onPress={requestPermission}
-          style={styles.permissionButton}
-        >
-          Continue
-        </GlassButton>
-      </ThemedView>
+      <EmptyState
+        icon="camera-off"
+        title="Camera Access Needed"
+        description="ChefSpAIce needs camera access to scan items. You can enable this in your device settings."
+        actionLabel="Open Settings"
+        onAction={() => Linking.openSettings()}
+      />
     );
   }
 
