@@ -6,6 +6,7 @@ import fileUpload from "express-fileupload";
 import cookieParser from "cookie-parser";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import { Client } from "pg";
@@ -161,13 +162,15 @@ function serveLandingPage({
   const host = forwardedHost || req.get("host");
   const baseUrl = `${protocol}://${host}`;
   const expsUrl = `${host}`;
+  const nonce = res.locals.cspNonce as string;
 
   logger.debug("Landing page URL resolution", { baseUrl, expsUrl });
 
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
     .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+    .replace(/APP_NAME_PLACEHOLDER/g, appName)
+    .replace(/<script>/g, `<script nonce="${nonce}">`);
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(html);
@@ -422,13 +425,19 @@ async function initStripe(retries = 3, delay = 2000) {
   app.use(requestIdMiddleware);
   setupCors(app);
 
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    next();
+  });
+
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", (_req, res) => `'nonce-${(res as any).locals.cspNonce}'`, "https://js.stripe.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://api.stripe.com", "https://api.openai.com"],
         frameSrc: ["'self'", "https://js.stripe.com"],
       },
