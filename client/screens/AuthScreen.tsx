@@ -629,6 +629,7 @@ export default function AuthScreen() {
                     <Image
                       source={{ uri: "https://www.google.com/favicon.ico" }}
                       style={styles.authGoogleIcon}
+                      accessibilityLabel="Google logo"
                     />
                     <ThemedText style={styles.authSocialButtonText}>
                       Google

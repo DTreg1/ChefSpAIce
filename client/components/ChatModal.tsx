@@ -572,6 +572,8 @@ export function ChatModal() {
         source={chefHatDark}
         style={{ width: 32, height: 32, opacity: 0.7 }}
         resizeMode="contain"
+        accessibilityElementsHidden={true}
+        importantForAccessibility="no-hide-descendants"
       />
       <ThemedText type="caption" style={styles.emptyTitle}>
         Ask me anything!
@@ -879,6 +881,8 @@ export function ChatModal() {
             source={chefHatDark}
             style={{ width: 18, height: 18 }}
             resizeMode="contain"
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no-hide-descendants"
           />
           <ThemedText type="caption" style={styles.headerTitle}>
             Kitchen Chef

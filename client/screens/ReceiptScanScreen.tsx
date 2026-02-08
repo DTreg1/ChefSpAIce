@@ -721,6 +721,7 @@ export default function ReceiptScanScreen() {
             source={{ uri: capturedImage }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            accessibilityLabel="Captured receipt photo"
           />
           <View style={styles.previewOverlay}>
             <View

@@ -267,6 +267,7 @@ export function NutritionCorrectionModal({
                       source={{ uri: imageUri }}
                       style={styles.imagePreview}
                       contentFit="cover"
+                      accessibilityLabel="Food image for nutrition analysis"
                     />
                     <Pressable
                       style={styles.removeImageButton}

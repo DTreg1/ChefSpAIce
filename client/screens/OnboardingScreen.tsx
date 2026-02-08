@@ -668,6 +668,7 @@ function FoodItemRow({
                 source={STARTER_FOOD_IMAGES[food.id]}
                 style={styles.foodImage}
                 resizeMode="cover"
+                accessibilityLabel={`Image of ${food.name}`}
               />
             ) : (
               <Feather

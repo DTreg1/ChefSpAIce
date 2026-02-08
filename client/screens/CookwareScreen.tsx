@@ -260,6 +260,7 @@ const CookwareItem = React.memo(function CookwareItem({
               style={styles.applianceImage}
               contentFit="cover"
               transition={200}
+              accessibilityLabel={`Image of ${appliance.name}`}
             />
           ) : (
             <Feather

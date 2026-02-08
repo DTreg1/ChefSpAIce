@@ -262,6 +262,7 @@ export default function ProfileScreen() {
                     source={{ uri: userProfile.avatarUri }}
                     style={styles.avatarImage}
                     contentFit="cover"
+                    accessibilityLabel="Profile photo"
                   />
                 ) : (
                   <View
@@ -292,6 +293,7 @@ export default function ProfileScreen() {
                     source={{ uri: userProfile.avatarUri }}
                     style={styles.avatarImage}
                     contentFit="cover"
+                    accessibilityLabel="Profile photo"
                   />
                 ) : (
                   <View

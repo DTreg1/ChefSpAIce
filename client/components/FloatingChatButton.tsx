@@ -88,6 +88,8 @@ export function FloatingChatButton() {
       source={chefHatLight}
       style={{ width: 28, height: 28 }}
       resizeMode="contain"
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
     />
   );
 

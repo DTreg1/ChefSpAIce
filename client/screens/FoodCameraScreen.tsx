@@ -479,6 +479,7 @@ export default function FoodCameraScreen() {
             source={{ uri: capturedImage }}
             style={styles.preview}
             contentFit="cover"
+            accessibilityLabel="Captured food photo"
           />
           {screenState === "analyzing" ? <AnalyzingOverlay /> : null}
         </View>

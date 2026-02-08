@@ -104,6 +104,7 @@ export default function SelectRecipeScreen() {
                 source={{ uri: imageUrl }}
                 style={styles.recipeImage}
                 contentFit="cover"
+                accessibilityLabel={`Photo of ${item.title}`}
               />
             ) : (
               <View

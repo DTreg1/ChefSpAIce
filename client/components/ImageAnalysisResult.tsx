@@ -137,6 +137,7 @@ export function ImageAnalysisResult({
             source={{ uri: imageUri }}
             style={styles.emptyStateThumbnail}
             contentFit="cover"
+            accessibilityLabel="Analyzed food image"
           />
 
           <View style={styles.emptyStateContent}>
@@ -222,6 +223,7 @@ export function ImageAnalysisResult({
           source={{ uri: imageUri }}
           style={styles.thumbnail}
           contentFit="cover"
+          accessibilityLabel="Analyzed food image"
         />
 
         <View style={styles.headerRow}>

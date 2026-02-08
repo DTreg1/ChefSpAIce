@@ -288,6 +288,8 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 source={require("../../assets/images/icon.png")}
                 style={styles.logo}
                 resizeMode="contain"
+                accessibilityElementsHidden={true}
+                importantForAccessibility="no-hide-descendants"
               />
               <ThemedText style={styles.appName}>ChefSpAIce</ThemedText>
             </View>

@@ -363,6 +363,7 @@ export default function RecipesScreen() {
                 style={styles.recipeImage}
                 contentFit="cover"
                 cachePolicy="memory-disk"
+                accessibilityLabel={`Photo of ${recipe.title}`}
                 data-testid={`img-recipe-${recipe.id}`}
               />
               {hasCookwareData && !hasCookware ? (

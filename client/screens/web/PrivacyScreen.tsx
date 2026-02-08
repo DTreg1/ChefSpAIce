@@ -49,6 +49,8 @@ export default function PrivacyScreen() {
               source={chefHatLight}
               style={{ width: 32, height: 32 }}
               resizeMode="contain"
+              accessibilityElementsHidden={true}
+              importantForAccessibility="no-hide-descendants"
             />
             <Text style={[styles.logoText, { color: colors.textPrimary }]}>
               ChefSpAIce

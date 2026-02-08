@@ -20,7 +20,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
     <>
       <View style={styles.header} data-testid="header">
         <View style={styles.logoContainer}>
-          <Image source={logoImage} style={{ width: 28, height: 28 }} />
+          <Image source={logoImage} style={{ width: 28, height: 28 }} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants" />
           <Text style={styles.logoText} data-testid="text-logo">
             ChefSpAIce
           </Text>
