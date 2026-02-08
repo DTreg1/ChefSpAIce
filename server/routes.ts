@@ -223,7 +223,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Development-only endpoint to set user subscription tier for testing
   if (process.env.NODE_ENV !== 'production') {
     logger.info("Registering test endpoints for development mode");
-    
+
+    const requireTestSecret = (req: Request, res: Response, next: NextFunction) => {
+      const secret = process.env.TEST_ENDPOINTS_SECRET;
+      if (secret && req.header("X-Test-Secret") !== secret) {
+        return res.status(403).json({ error: "Invalid or missing X-Test-Secret header" });
+      }
+      next();
+    };
+
+    app.use("/api/test", requireTestSecret);
+
     // Create a test user and establish session for e2e testing
     app.post("/api/test/create-test-user", async (req: Request, res: Response, next: NextFunction) => {
       logger.info("create-test-user endpoint hit");
