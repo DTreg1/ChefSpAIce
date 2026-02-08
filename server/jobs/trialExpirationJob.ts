@@ -47,7 +47,7 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
   return { expired: expiredCount, errors };
 }
 
-let jobInterval: NodeJS.Timeout | null = null;
+let jobInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startTrialExpirationJob(intervalMs: number = 60 * 60 * 1000): void {
   if (jobInterval) {

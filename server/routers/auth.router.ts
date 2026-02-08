@@ -13,7 +13,7 @@ import { getUncachableStripeClient } from "../stripe/stripeClient";
 import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
 import { AppError } from "../middleware/errorHandler";
-import { successResponse, errorResponse } from "../lib/apiResponse";
+import { successResponse } from "../lib/apiResponse";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),

@@ -7,7 +7,7 @@ import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
 import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
-import { successResponse, errorResponse } from "../lib/apiResponse";
+import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 
 const router = Router();

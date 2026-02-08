@@ -54,6 +54,13 @@ export interface ProductConfig {
 }
 
 export const PRODUCTS: Record<SubscriptionTier, ProductConfig> = {
+  [SubscriptionTier.FREE]: {
+    name: "ChefSpAIce Free",
+    description: "Free tier with limited features",
+    tier: SubscriptionTier.FREE,
+    monthlyPrice: 0,
+    annualPrice: 0,
+  },
   [SubscriptionTier.BASIC]: {
     name: "ChefSpAIce Basic",
     description: "Essential kitchen management with 25 pantry items, 5 AI recipes/month, and 5 cookware items",

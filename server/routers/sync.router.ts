@@ -9,7 +9,7 @@ import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscripti
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import {
-  getAuthToken, getSessionFromToken, updateSectionTimestamp,
+  getAuthToken, getSessionFromToken,
   extractExtraData, recipeKnownKeys, mealPlanKnownKeys, shoppingListKnownKeys, cookwareKnownKeys,
   syncFailures,
 } from "./sync/sync-helpers";

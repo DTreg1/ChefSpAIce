@@ -7,7 +7,7 @@ import { feedback, feedbackBuckets, userSessions, users } from "../../shared/sch
 import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
-import { successResponse, errorResponse } from "../lib/apiResponse";
+import { successResponse } from "../lib/apiResponse";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
