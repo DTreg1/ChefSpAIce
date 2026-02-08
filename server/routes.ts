@@ -71,6 +71,7 @@ import shelfLifeRouter from "./routers/shelf-life.router";
 import dataExportRouter from "./routers/user/data-export.router";
 import foodRouter, { barcodeRawRouter } from "./routers/food.router";
 import referralRouter from "./routers/referral.router";
+import notificationsRouter from "./routers/notifications.router";
 import { db } from "./db";
 import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
@@ -196,6 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 2. User has active subscription or free trial (requireSubscription)
   // =========================================================================
   app.use("/api/user/export-data", requireAuth, dataExportRouter);
+  app.use("/api/notifications", requireAuth, notificationsRouter);
 
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
   app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);

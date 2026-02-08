@@ -6,6 +6,7 @@ import { getPlanTypeFromPriceId, getTierFromPriceId } from "./subscriptionConfig
 import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
 import { logger } from "../lib/logger";
+import { queueNotification } from "../services/notificationService";
 
 export class WebhookHandlers {
   static async processWebhook(
@@ -562,6 +563,18 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
       updatedAt: now,
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+
+  const userId = await findUserByStripeCustomerId(stripeCustomerId);
+  if (userId) {
+    await queueNotification({
+      userId,
+      type: "payment_failed",
+      title: "Payment Failed",
+      body: "Your subscription payment couldn't be processed. Please update your payment method to avoid losing access to your premium features.",
+      data: { stripeCustomerId, invoiceId: invoice.id },
+      deepLink: "chefspaice://subscription/manage",
+    });
+  }
 
   logger.info("Subscription marked as past_due", { stripeCustomerId });
 }

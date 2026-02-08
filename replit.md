@@ -42,6 +42,17 @@ Multi-step cancellation retention flow with targeted offers:
   - Step 3: Final confirmation showing what they'll lose
 - Cancel button shows for both BASIC and PRO active subscribers (non-StoreKit only)
 
+## Notification System
+- **Table**: `notifications` — queues notification records for the mobile app
+- **Service**: `server/services/notificationService.ts` — `queueNotification()`, `getUnreadNotifications()`, `markNotificationRead()`, `markAllNotificationsRead()`
+- **API endpoints** (authenticated, at `/api/notifications`):
+  - `GET /` — fetch unread notifications
+  - `GET /all?limit=50` — fetch all notifications (max 100)
+  - `POST /:id/read` — mark single notification as read
+  - `POST /read-all` — mark all as read
+- **Payment failure**: When Stripe sends `invoice.payment_failed`, a notification is queued with deep link `chefspaice://subscription/manage`
+- Notification types: `payment_failed` (more can be added)
+
 ## Database Migrations
 
 ### Configuration

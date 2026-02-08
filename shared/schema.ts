@@ -1091,6 +1091,34 @@ export type InsertReferral = z.infer<typeof insertReferralSchema>;
 export type Referral = typeof referrals.$inferSelect;
 
 // =============================================================================
+// NOTIFICATIONS TABLE
+// =============================================================================
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  data: jsonb("data"),
+  deepLink: text("deep_link"),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_notifications_user").on(table.userId),
+  index("idx_notifications_user_unread").on(table.userId, table.isRead),
+  index("idx_notifications_created").on(table.createdAt),
+]);
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// =============================================================================
 // NUTRITION UTILITY FUNCTIONS
 // =============================================================================
 
