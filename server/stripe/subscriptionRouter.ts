@@ -640,8 +640,8 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
           stripePriceId: priceId,
           planType: newPlanType,
           status: updatedSubscription.status === "active" ? "active" : updatedSubscription.status === "trialing" ? "trialing" : existingSubscription.status,
-          currentPeriodStart: new Date(updatedSubscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+          currentPeriodStart: new Date(updatedSubscription.items.data[0].current_period_start * 1000),
+          currentPeriodEnd: new Date(updatedSubscription.items.data[0].current_period_end * 1000),
           updatedAt: new Date(),
         })
         .where(eq(subscriptions.userId, user.id));
@@ -995,7 +995,7 @@ router.post("/apply-retention-offer", async (req: Request, res: Response, next: 
     });
 
     await stripe.subscriptions.update(existingSubscription.stripeSubscriptionId, {
-      coupon: coupon.id,
+      discounts: [{ coupon: coupon.id }],
     });
 
     logger.info("Retention offer applied", {
