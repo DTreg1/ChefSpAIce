@@ -299,7 +299,22 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
         updatedAt: now,
       },
     });
-  
+
+  if (subscription.status === "trialing") {
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const previousTier = user?.subscriptionTier || SubscriptionTier.FREE;
+
+    await db.insert(conversionEvents).values({
+      userId,
+      fromTier: previousTier,
+      toTier: tier,
+      source: "trial_started",
+      stripeSessionId: `sub_created_trial_${subscription.id}`,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+    logger.info("Trial started conversion event recorded", { userId, fromTier: previousTier, toTier: tier });
+  }
+
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, subscription.id, trialEnd);
 
@@ -364,9 +379,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   const previousTier = user?.subscriptionTier || SubscriptionTier.FREE;
+  const previousStatus = user?.subscriptionStatus || "none";
 
   if (previousTier !== tier) {
-    logger.info("Subscription conversion via update", {
+    logger.info("Subscription tier conversion via update", {
       userId,
       previousTier,
       newTier: tier,
@@ -380,6 +396,30 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
       source: "subscription_update",
       stripeSessionId: `sub_update_${subscription.id}_${Date.now()}`,
     }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+  }
+
+  if (previousStatus === "trialing" && subscription.status === "active") {
+    await db.insert(conversionEvents).values({
+      userId,
+      fromTier: tier,
+      toTier: tier,
+      source: "trial_converted",
+      stripeSessionId: `sub_trial_convert_${subscription.id}_${Date.now()}`,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+    logger.info("Trial converted to active", { userId, tier });
+  }
+
+  if ((previousStatus === "canceled" || previousStatus === "past_due") && subscription.status === "active") {
+    await db.insert(conversionEvents).values({
+      userId,
+      fromTier: previousTier,
+      toTier: tier,
+      source: "reactivation",
+      stripeSessionId: `sub_reactivate_${subscription.id}_${Date.now()}`,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+    logger.info("Subscription reactivated", { userId, fromTier: previousTier, toTier: tier });
   }
 
   const statusStr = subscription.status === "trialing" ? "trialing" : 
@@ -419,7 +459,33 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 
   const userId = await findUserByStripeCustomerId(stripeCustomerId);
   if (userId) {
-    await updateUserSubscriptionTier(userId, SubscriptionTier.BASIC, finalStatus);
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const previousTier = user?.subscriptionTier || SubscriptionTier.FREE;
+    const previousStatus = user?.subscriptionStatus || "active";
+
+    if (finalStatus === "expired" && previousStatus === "canceled") {
+      await db.insert(conversionEvents).values({
+        userId,
+        fromTier: previousTier,
+        toTier: SubscriptionTier.FREE,
+        source: "expiration",
+        stripeSessionId: `sub_expired_${subscription.id}_${Date.now()}`,
+      }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+      logger.info("Subscription expiration event recorded", { userId, fromTier: previousTier });
+    } else if (finalStatus === "canceled") {
+      await db.insert(conversionEvents).values({
+        userId,
+        fromTier: previousTier,
+        toTier: SubscriptionTier.FREE,
+        source: "cancellation",
+        stripeSessionId: `sub_canceled_${subscription.id}_${Date.now()}`,
+      }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+      logger.info("Subscription cancellation event recorded", { userId, fromTier: previousTier });
+    }
+
+    await updateUserSubscriptionTier(userId, SubscriptionTier.FREE, finalStatus);
   }
 
   logger.info("Subscription deleted", { status: finalStatus, stripeCustomerId });

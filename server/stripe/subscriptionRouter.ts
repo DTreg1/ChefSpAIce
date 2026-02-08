@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, subscriptions, cancellationReasons } from "@shared/schema";
+import { users, subscriptions, cancellationReasons, conversionEvents } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getUserByToken } from "../lib/auth-utils";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -629,6 +629,9 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
         })
         .where(eq(subscriptions.userId, user.id));
 
+      const [currentUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+      const previousTier = currentUser?.subscriptionTier || SubscriptionTier.FREE;
+
       await db
         .update(users)
         .set({
@@ -637,8 +640,19 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
         })
         .where(eq(users.id, user.id));
 
+      if (previousTier !== newTier) {
+        await db.insert(conversionEvents).values({
+          userId: user.id,
+          fromTier: previousTier,
+          toTier: newTier,
+          source: "upgrade_proration",
+          stripeSessionId: `upgrade_inplace_${existingSubscription.stripeSubscriptionId}_${Date.now()}`,
+        }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+      }
+
       logger.info("Subscription upgraded in-place with proration", {
         userId: user.id,
+        previousTier,
         newTier,
         newPlanType,
         subscriptionId: existingSubscription.stripeSubscriptionId,
@@ -837,9 +851,21 @@ router.post("/cancel", async (req: Request, res: Response, next: NextFunction) =
       offerAccepted: offerAccepted || false,
     });
 
+    const [currentUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+    const currentTier = currentUser?.subscriptionTier || SubscriptionTier.FREE;
+
+    await db.insert(conversionEvents).values({
+      userId: user.id,
+      fromTier: currentTier,
+      toTier: SubscriptionTier.FREE,
+      source: "cancellation_scheduled",
+      stripeSessionId: `cancel_scheduled_${existingSubscription.stripeSubscriptionId}_${Date.now()}`,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
     logger.info("Subscription cancellation scheduled", {
       userId: user.id,
       reason,
+      fromTier: currentTier,
       offerShown,
       offerAccepted,
     });
