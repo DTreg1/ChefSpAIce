@@ -41,6 +41,7 @@ import { getCookwareImage } from "@/assets/cookware";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
+import { syncManager } from "@/lib/sync-manager";
 
 
 interface Appliance {
@@ -310,6 +311,7 @@ export default function CookwareScreen() {
     Record<string, boolean>
   >({});
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const isPro = entitlements.maxCookware === "unlimited";
   const cookwareLimit = typeof entitlements.maxCookware === "number" ? entitlements.maxCookware : Infinity;
@@ -431,7 +433,8 @@ export default function CookwareScreen() {
   }, [commonAppliances, ownedApplianceIds, ownedCookwareIds, savingCommon]);
 
   const handleRefresh = useCallback(async () => {
-    setLoadingLocal(true);
+    setRefreshing(true);
+    try { await syncManager.fullSync(); } catch {}
     try {
       const ids = await storage.getCookware();
       setOwnedCookwareIds(ids);
@@ -442,7 +445,7 @@ export default function CookwareScreen() {
     } catch (error) {
       logger.error("Error refreshing:", error);
     } finally {
-      setLoadingLocal(false);
+      setRefreshing(false);
     }
   }, [queryClient]);
 
@@ -678,7 +681,7 @@ export default function CookwareScreen() {
             maxToRenderPerBatch={5}
             refreshControl={
               <RefreshControl
-                refreshing={false}
+                refreshing={refreshing}
                 onRefresh={handleRefresh}
                 tintColor={AppColors.primary}
               />

@@ -76,6 +76,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { syncManager } from "@/lib/sync-manager";
 
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
@@ -229,6 +230,7 @@ export default function RecipesScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    try { await syncManager.fullSync(); } catch {}
     await loadData();
     setRefreshing(false);
   };

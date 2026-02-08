@@ -14,6 +14,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation, CommonActions } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
+import { syncManager } from "@/lib/sync-manager";
 import { ShoppingListSkeleton } from "@/components/shopping/ShoppingListSkeleton";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
@@ -68,6 +69,7 @@ export default function ShoppingListScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    try { await syncManager.fullSync(); } catch {}
     await loadItems();
     setRefreshing(false);
   };

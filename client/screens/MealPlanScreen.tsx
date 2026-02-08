@@ -17,6 +17,7 @@ import DraggableFlatList, {
   ScaleDecorator,
 } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { syncManager } from "@/lib/sync-manager";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -102,6 +103,7 @@ export default function MealPlanScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    try { await syncManager.fullSync(); } catch {}
     await loadData();
     setRefreshing(false);
   };
