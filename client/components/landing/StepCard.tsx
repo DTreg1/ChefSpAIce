@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
 import { AppColors } from "@/constants/theme";
 
@@ -19,7 +19,7 @@ export function StepCard({
 }: StepCardProps) {
   return (
     <GlassCard
-      style={[styles.stepCard, isWide && styles.stepCardWide]}
+      style={[styles.stepCard, isWide && styles.stepCardWide] as ViewStyle[]}
       testId={`card-step-${number}`}
     >
       <View style={styles.stepNumber}>

@@ -202,7 +202,6 @@ export function RecipeIngredientsList({
                 color={AppColors.primary}
               />
             }
-            accessibilityRole="button"
             accessibilityLabel="Add missing ingredients to shopping list"
           >
             Add Missing to List
@@ -216,7 +215,6 @@ export function RecipeIngredientsList({
                 <Feather name="shopping-bag" size={18} color="#FFFFFF" />
               }
               testID="button-order-instacart-recipe"
-              accessibilityRole="button"
               accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order missing ingredients on Instacart"}
             >
               {instacartLoading ? "Loading..." : "Order on Instacart"}

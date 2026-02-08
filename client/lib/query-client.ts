@@ -202,11 +202,10 @@ export async function apiRequestJson<T = unknown>(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
-const getQueryFn: <T>(options: {
+function getQueryFn<T>(options: {
   on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
+}): QueryFunction<T> {
+  return async ({ queryKey }) => {
     const baseUrl = getApiUrl();
     const url = new URL(queryKey.join("/") as string, baseUrl);
 
@@ -224,8 +223,8 @@ const getQueryFn: <T>(options: {
 
     if (res.status === 401) {
       handleAuthError();
-      if (unauthorizedBehavior === "returnNull") {
-        return null;
+      if (options.on401 === "returnNull") {
+        return null as T;
       }
     }
 
@@ -233,6 +232,7 @@ const getQueryFn: <T>(options: {
     const body = await res.json();
     return unwrapApiBody(body) as T;
   };
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {

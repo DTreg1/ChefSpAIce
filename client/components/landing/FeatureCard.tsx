@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import { GlassCard } from "./GlassCard";
 
 interface FeatureCardProps {
@@ -20,7 +20,7 @@ export function FeatureCard({
 }: FeatureCardProps) {
   return (
     <GlassCard
-      style={[styles.featureCard, isWide && styles.featureCardWide]}
+      style={[styles.featureCard, isWide && styles.featureCardWide] as ViewStyle[]}
       testId={`card-feature-${testId}`}
     >
       <View style={styles.featureIconContainer}>{icon}</View>

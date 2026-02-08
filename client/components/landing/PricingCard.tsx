@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Pressable } from "react-native";
+import { StyleSheet, View, Text, Pressable, ViewStyle } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -42,7 +42,7 @@ export function PricingCard({
         styles.pricingCard,
         isWide && styles.pricingCardWide,
         isPopular && styles.pricingCardPopular,
-      ]}
+      ] as ViewStyle[]}
       testId={`card-pricing-${testId}`}
     >
       {isPopular && (

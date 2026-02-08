@@ -51,8 +51,6 @@ export const logger = {
   },
 };
 
-const _LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
-
 export const clientLogger = {
   error: (message: string, context?: Record<string, unknown>) => {
     if (isDev) {

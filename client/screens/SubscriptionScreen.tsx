@@ -29,7 +29,6 @@ import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import {
   MONTHLY_PRICES,
-  ANNUAL_PRICES,
   SubscriptionTier,
 } from "@shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -100,8 +99,8 @@ export default function SubscriptionScreen() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [prorationPreview, setProrationPreview] = useState<{ proratedAmount: number; creditAmount: number; newAmount: number; currency: string } | null>(null);
-  const [isPreviewingProration, setIsPreviewingProration] = useState(false);
+  const [_prorationPreview, setProrationPreview] = useState<{ proratedAmount: number; creditAmount: number; newAmount: number; currency: string } | null>(null);
+  const [_isPreviewingProration, setIsPreviewingProration] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );

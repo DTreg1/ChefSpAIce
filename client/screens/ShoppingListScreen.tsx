@@ -307,9 +307,7 @@ export default function ShoppingListScreen() {
             disabled={instacartLoading}
             style={styles.instacartButton}
             testID="button-order-instacart"
-            accessibilityRole="button"
             accessibilityLabel={instacartLoading ? "Creating Instacart link" : "Order unchecked items on Instacart"}
-            accessibilityState={{ disabled: instacartLoading }}
           >
             <View style={styles.instacartButtonContent}>
               {instacartLoading ? (

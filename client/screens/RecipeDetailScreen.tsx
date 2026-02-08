@@ -211,7 +211,7 @@ export default function RecipeDetailScreen() {
     }
 
     let isCancelled = false;
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const generateAndSaveImage = async () => {
       if (imageGenerationInProgress.current.has(recipe.id)) {
