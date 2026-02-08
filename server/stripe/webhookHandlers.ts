@@ -199,6 +199,27 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
       },
     });
 
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const previousTier = user?.subscriptionTier || SubscriptionTier.FREE;
+  const selectedTier = tier;
+
+  logger.info("Subscription conversion", {
+    userId,
+    previousTier,
+    newTier: selectedTier,
+    source: session.metadata?.source || "unknown",
+  });
+
+  if (previousTier !== selectedTier) {
+    await db.insert(conversionEvents).values({
+      userId,
+      fromTier: previousTier,
+      toTier: selectedTier,
+      source: session.metadata?.source || "unknown",
+      stripeSessionId: session.id,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+  }
+
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
 
@@ -340,6 +361,26 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const previousTier = user?.subscriptionTier || SubscriptionTier.FREE;
+
+  if (previousTier !== tier) {
+    logger.info("Subscription conversion via update", {
+      userId,
+      previousTier,
+      newTier: tier,
+      source: "subscription_update",
+    });
+
+    await db.insert(conversionEvents).values({
+      userId,
+      fromTier: previousTier,
+      toTier: tier,
+      source: "subscription_update",
+      stripeSessionId: `sub_update_${subscription.id}_${Date.now()}`,
+    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+  }
 
   const statusStr = subscription.status === "trialing" ? "trialing" : 
                     subscription.status === "active" ? "active" : subscription.status;

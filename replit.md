@@ -19,7 +19,7 @@ The admin dashboard is served at `/admin` (requires auth + admin role). It inclu
 - **Subscription metrics** (`GET /api/admin/analytics/subscription-metrics`): Per-tier counts (FREE/BASIC/PRO), active counts, MRR breakdown by tier and plan type
 - **Trial conversion** (`GET /api/admin/analytics/trial-conversion`): Trials started/converted, conversion rate, average trial duration
 - **Churn rate** (`GET /api/admin/analytics/churn-rate`): Monthly cancellation history (12 months), per-month churn rates, current month churn
-- **Conversion funnel** (`GET /api/admin/analytics/conversion-funnel`): FREE→Trial→Basic→Pro conversion rates
+- **Conversion funnel** (`GET /api/admin/analytics/conversion-funnel`): FREE→Trial→Basic→Pro conversion rates, plus `conversionEvents` table data (all-time and 30-day breakdowns by tier path, total conversions)
 - Pricing used in MRR calculations: BASIC $4.99/mo, $39.99/yr; PRO $9.99/mo, $79.99/yr
 
 ## Subscription Proration

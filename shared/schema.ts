@@ -1011,10 +1011,12 @@ export const conversionEvents = pgTable("conversion_events", {
   fromTier: varchar("from_tier").notNull(),
   toTier: varchar("to_tier").notNull(),
   source: varchar("source"),
+  stripeSessionId: varchar("stripe_session_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_conversion_events_user").on(table.userId),
   index("idx_conversion_events_created").on(table.createdAt),
+  uniqueIndex("idx_conversion_events_session").on(table.stripeSessionId),
 ]);
 
 export const insertConversionEventSchema = createInsertSchema(conversionEvents).omit({
