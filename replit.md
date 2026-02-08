@@ -34,6 +34,13 @@ Key features include a root stack navigator with five-tab bottom navigation, cus
 - **Deletion handling**: Inventory uses soft delete (sets `deletedAt`, syncs as "update"); after 30 days, a permanent purge sends "delete". All other data types use immediate hard delete.
 - **Known edge case**: If a user edits the same item on two devices while both are offline, the device that syncs last wins. The earlier device's changes are silently overwritten. The losing device sees a conflict alert but the server version is not rolled back.
 
+## Backup Strategy
+- Database: Neon PostgreSQL with automatic daily backups and point-in-time recovery
+- User data: AsyncStorage on-device serves as a local backup
+- Exported data: GDPR export endpoint allows users to download their data
+
+For additional safety, consider adding a weekly database dump job or using Neon's branching feature for pre-migration snapshots.
+
 ## Recent Changes
 - **Soft Delete for Inventory (2026-02-07)**: Inventory items now use soft delete instead of permanent deletion. When a user deletes an item, `deletedAt` is set to the current timestamp. Items remain recoverable for 30 days via the "Recently Deleted" section in Settings. The `getInventory()` method filters out soft-deleted items automatically. A cleanup function runs on app startup to permanently purge items older than 30 days. Soft deletes sync to the server as "update" operations (setting `deleted_at` column on `user_inventory_items` table). The server GET sync endpoint filters out soft-deleted items with `isNull(deletedAt)`.
 - **Database Normalization (2026-02-07)**: Migrated inventory, recipes, meal plans, shopping lists, and cookware from JSONB blobs in `user_sync_data` to separate relational tables (`user_inventory_items`, `user_saved_recipes`, `user_meal_plans`, `user_shopping_items`, `user_cookware_items`) with proper foreign keys and indexes. Timestamp-based conflict resolution on all sync operations.
