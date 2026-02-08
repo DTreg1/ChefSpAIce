@@ -23,12 +23,12 @@ import { GlassCard } from "@/components/GlassCard";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { MealPlanWeekNav } from "@/components/meal-plan/MealPlanWeekNav";
 import { MealPlanDaySelector } from "@/components/meal-plan/MealPlanDaySelector";
 import { MealPlanSlotCard } from "@/components/meal-plan/MealPlanSlotCard";
 import { MealPlanActionSheet } from "@/components/meal-plan/MealPlanActionSheet";
+import { MealPlanSkeleton } from "@/components/meal-plan/MealPlanSkeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -332,7 +332,7 @@ export default function MealPlanScreen() {
         }
       >
         {loading ? (
-          <LoadingState variant="detail" />
+          <MealPlanSkeleton />
         ) : (
         <>
         <MealPlanWeekNav
