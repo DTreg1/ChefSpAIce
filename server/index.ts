@@ -453,6 +453,9 @@ async function initStripe(retries = 3, delay = 2000) {
       if (req.headers["x-no-compression"]) {
         return false;
       }
+      if (req.path.startsWith("/api/stripe/webhook")) {
+        return false;
+      }
       return compression.filter(req, res);
     },
   }));
