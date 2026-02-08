@@ -3,7 +3,10 @@ import { createHash } from "crypto";
 import { eq, and, count, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
-import { userSessions, userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "../../shared/schema";
+import {
+  userSessions, userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems,
+  insertUserInventoryItemSchema, insertUserSavedRecipeSchema, insertUserMealPlanSchema, insertUserShoppingItemSchema, insertUserCookwareItemSchema,
+} from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { ERROR_CODES, ERROR_MESSAGES } from "@shared/subscription";
 import { AppError } from "../middleware/errorHandler";
@@ -33,87 +36,71 @@ const router = Router();
 
 const syncOperationSchema = z.enum(["create", "update", "delete"]);
 
-const inventoryItemSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  name: z.string(),
-  barcode: z.string().optional(),
-  quantity: z.number(),
-  unit: z.string(),
-  storageLocation: z.string(),
-  purchaseDate: z.string(),
-  expirationDate: z.string(),
-  category: z.string(),
-  usdaCategory: z.string().optional(),
-  nutrition: z.object({
-    calories: z.number(),
-    protein: z.number(),
-    carbs: z.number(),
-    fat: z.number(),
-    fiber: z.number().optional(),
-    sugar: z.number().optional(),
-  }).optional(),
-  notes: z.string().optional(),
-  imageUri: z.string().optional(),
-  fdcId: z.number().optional(),
-  updatedAt: z.string().optional(),
-  deletedAt: z.string().optional().nullable(),
-});
+const inventoryItemSchema = insertUserInventoryItemSchema
+  .omit({ userId: true, itemId: true })
+  .extend({
+    id: z.union([z.string(), z.number()]),
+    nutrition: z.object({
+      calories: z.number(),
+      protein: z.number(),
+      carbs: z.number(),
+      fat: z.number(),
+      fiber: z.number().optional(),
+      sugar: z.number().optional(),
+    }).optional().nullable(),
+    updatedAt: z.string().optional(),
+    deletedAt: z.string().optional().nullable(),
+  });
 
-const recipeSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  title: z.string(),
-  description: z.string().optional(),
-  ingredients: z.array(z.object({
-    name: z.string(),
-    quantity: z.union([z.number(), z.string()]),
-    unit: z.string(),
-    fromInventory: z.boolean().optional(),
-  })),
-  instructions: z.array(z.string()),
-  prepTime: z.number().optional(),
-  cookTime: z.number().optional(),
-  servings: z.number().optional(),
-  imageUri: z.string().optional(),
-  cloudImageUri: z.string().optional(),
-  nutrition: z.object({
-    calories: z.number(),
-    protein: z.number(),
-    carbs: z.number(),
-    fat: z.number(),
-  }).optional(),
-  isFavorite: z.boolean().optional(),
-  updatedAt: z.string().optional(),
-}).passthrough();
+const recipeSchema = insertUserSavedRecipeSchema
+  .omit({ userId: true, itemId: true, extraData: true })
+  .extend({
+    id: z.union([z.string(), z.number()]),
+    ingredients: z.array(z.object({
+      name: z.string(),
+      quantity: z.union([z.number(), z.string()]),
+      unit: z.string(),
+      fromInventory: z.boolean().optional(),
+    })),
+    instructions: z.array(z.string()),
+    nutrition: z.object({
+      calories: z.number(),
+      protein: z.number(),
+      carbs: z.number(),
+      fat: z.number(),
+    }).optional().nullable(),
+    updatedAt: z.string().optional(),
+  })
+  .passthrough();
 
-const mealPlanSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  date: z.string(),
-  meals: z.array(z.object({
-    type: z.string(),
-    recipeId: z.string().optional(),
-    customMeal: z.string().optional(),
-  })).optional(),
-  updatedAt: z.string().optional(),
-}).passthrough();
+const mealPlanSchema = insertUserMealPlanSchema
+  .omit({ userId: true, itemId: true, extraData: true })
+  .extend({
+    id: z.union([z.string(), z.number()]),
+    meals: z.array(z.object({
+      type: z.string(),
+      recipeId: z.string().optional(),
+      customMeal: z.string().optional(),
+    })).optional().nullable(),
+    updatedAt: z.string().optional(),
+  })
+  .passthrough();
 
-const cookwareSchema = z.object({
-  id: z.union([z.number(), z.string()]),
-  name: z.string().optional(),
-  category: z.string().optional(),
-  alternatives: z.array(z.string()).optional(),
-  updatedAt: z.string().optional(),
-}).passthrough();
+const cookwareSchema = insertUserCookwareItemSchema
+  .omit({ userId: true, itemId: true, extraData: true })
+  .extend({
+    id: z.union([z.number(), z.string()]),
+    updatedAt: z.string().optional(),
+  })
+  .passthrough();
 
-const shoppingListItemSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  name: z.string(),
-  quantity: z.number(),
-  unit: z.string(),
-  isChecked: z.boolean(),
-  category: z.string().optional(),
-  recipeId: z.string().optional(),
-  updatedAt: z.string().optional(),
-}).passthrough();
+const shoppingListItemSchema = insertUserShoppingItemSchema
+  .omit({ userId: true, itemId: true, extraData: true })
+  .extend({
+    id: z.union([z.string(), z.number()]),
+    updatedAt: z.string().optional(),
+  })
+  .passthrough();
 
 const inventorySyncRequestSchema = z.object({
   operation: syncOperationSchema,
