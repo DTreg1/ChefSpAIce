@@ -107,6 +107,10 @@ export interface SyncState {
   pendingChanges: number;
   isOnline: boolean;
   failedItems: number;
+  queueSize: number;
+  maxQueueSize: number;
+  queueUsagePercent: number;
+  isQueueNearCapacity: boolean;
 }
 
 type SyncListener = (state: SyncState) => void;
@@ -129,6 +133,7 @@ class SyncManager {
   private userProfileSyncTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingUserProfile: unknown = null;
   private consecutiveItemFailures = new Map<string, number>();
+  private hasShownQueueWarning = false;
 
   constructor() {
     this.initNetworkListener();
@@ -299,6 +304,8 @@ class SyncManager {
 
     const fatalItems = queue.filter((item) => item.isFatal);
     const pendingItems = queue.filter((item) => !item.isFatal);
+    const totalQueueSize = queue.length;
+    const queueUsagePercent = Math.round((totalQueueSize / MAX_SYNC_QUEUE_SIZE) * 100);
 
     let status: SyncStatus = "idle";
     if (!this.isOnline) {
@@ -317,6 +324,10 @@ class SyncManager {
       pendingChanges: pendingItems.length,
       isOnline: this.isOnline,
       failedItems: fatalItems.length,
+      queueSize: totalQueueSize,
+      maxQueueSize: MAX_SYNC_QUEUE_SIZE,
+      queueUsagePercent,
+      isQueueNearCapacity: totalQueueSize >= MAX_SYNC_QUEUE_SIZE * 0.8,
     };
   }
 
@@ -331,6 +342,9 @@ class SyncManager {
 
   private async setQueue(queue: SyncQueueItem[]): Promise<void> {
     await AsyncStorage.setItem(SYNC_KEYS.SYNC_QUEUE, JSON.stringify(queue));
+    if (queue.length < MAX_SYNC_QUEUE_SIZE * 0.8) {
+      this.hasShownQueueWarning = false;
+    }
     this.notifyListeners();
   }
 
@@ -385,7 +399,7 @@ class SyncManager {
       queue.push(newItem);
     }
 
-    if (queue.length > MAX_SYNC_QUEUE_SIZE * 0.8) {
+    if (queue.length >= MAX_SYNC_QUEUE_SIZE * 0.8) {
       this.showQueueCapacityWarning();
     }
 
@@ -926,10 +940,20 @@ class SyncManager {
   }
 
   private showQueueCapacityWarning() {
+    logger.warn("[Sync] Queue at 80%+ capacity — sync soon to avoid data loss", {
+      threshold: Math.floor(MAX_SYNC_QUEUE_SIZE * 0.8),
+      max: MAX_SYNC_QUEUE_SIZE,
+    });
+
+    if (this.hasShownQueueWarning) return;
+    this.hasShownQueueWarning = true;
+
     try {
       Alert.alert(
-        "Many Unsynced Changes",
-        "You have many unsynced changes. Connect to the internet to sync your data.",
+        "Pending Changes Piling Up",
+        "You have a lot of unsynced changes saved on this device. "
+          + "Please connect to the internet so your data can sync to the cloud. "
+          + "If the queue fills up, the oldest changes may be dropped.",
         [{ text: "OK", style: "default" }],
       );
     } catch {

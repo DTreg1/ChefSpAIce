@@ -9,6 +9,10 @@ export function useSyncStatus() {
     pendingChanges: 0,
     isOnline: true,
     failedItems: 0,
+    queueSize: 0,
+    maxQueueSize: 500,
+    queueUsagePercent: 0,
+    isQueueNearCapacity: false,
   });
   const [pendingMutations, setPendingMutations] = useState(0);
 
