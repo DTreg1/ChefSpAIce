@@ -78,7 +78,7 @@ import { requireSubscription } from "./middleware/requireSubscription";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter";
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
-import { successResponse } from "./lib/apiResponse";
+import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
 
 
@@ -142,8 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Allows users to sign up from the landing page with just their email.
   // Creates a user account that they can activate later.
   // =========================================================================
-  app.post("/api/pre-register", async (req: Request, res: Response, next: NextFunction) => {
-    try {
+  app.post("/api/pre-register", asyncHandler(async (req: Request, res: Response) => {
       const { email } = req.body;
 
       if (!email || typeof email !== "string") {
@@ -181,10 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
-    } catch (error) {
-      next(error);
-    }
-  });
+  }));
 
   // =========================================================================
   // ADMIN ROUTES - Require admin authentication
@@ -235,9 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use("/api/test", requireTestSecret);
 
     // Create a test user and establish session for e2e testing
-    app.post("/api/test/create-test-user", async (req: Request, res: Response, next: NextFunction) => {
+    app.post("/api/test/create-test-user", asyncHandler(async (req: Request, res: Response) => {
       logger.info("create-test-user endpoint hit");
-      try {
         const crypto = await import("crypto");
         const bcrypt = await import("bcrypt");
         const testId = crypto.randomBytes(4).toString("hex");
@@ -294,15 +289,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sessionToken: rawSessionToken,
           tier: "PRO",
         }, "Test user created with PRO trial. Session cookie set."));
-      } catch (error) {
-        next(error);
-      }
-    });
+    }));
     
     // Version with auth
-    app.post("/api/test/set-subscription-tier", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+    app.post("/api/test/set-subscription-tier", requireAuth, asyncHandler(async (req: Request, res: Response) => {
       logger.info("set-subscription-tier endpoint hit");
-      try {
         const userId = req.userId;
         if (!userId) {
           throw AppError.unauthorized("Not authenticated", "NOT_AUTHENTICATED");
@@ -340,14 +331,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logger.info("Set user subscription tier", { userId, tier, status: newStatus });
         
         res.json(successResponse({ tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));
-      } catch (error) {
-        next(error);
-      }
-    });
+    }));
 
-    app.post("/api/test/set-tier-by-email", async (req: Request, res: Response, next: NextFunction) => {
+    app.post("/api/test/set-tier-by-email", asyncHandler(async (req: Request, res: Response) => {
       logger.info("set-tier-by-email endpoint hit");
-      try {
         const { email, tier, status } = req.body;
         
         if (!email) {
@@ -395,14 +382,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logger.info("Set user subscription tier by email", { userId: user.id, tier, status: newStatus });
         
         res.json(successResponse({ userId: user.id, email, tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));
-      } catch (error) {
-        next(error);
-      }
-    });
+    }));
   }
 
   // Serve privacy policy HTML for app store submission
-  app.get("/privacy-policy", (_req: Request, res: Response) => {
+  app.get("/privacy-policy", asyncHandler(async (_req: Request, res: Response) => {
     const privacyPath = require("path").resolve(
       process.cwd(),
       "server",
@@ -410,10 +394,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "privacy-policy.html"
     );
     res.sendFile(privacyPath);
-  });
+  }));
 
   // Serve support page HTML for app store submission
-  app.get("/support", (_req: Request, res: Response) => {
+  app.get("/support", asyncHandler(async (_req: Request, res: Response) => {
     const supportPath = require("path").resolve(
       process.cwd(),
       "server",
@@ -421,10 +405,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "support.html"
     );
     res.sendFile(supportPath);
-  });
+  }));
 
   // Serve marketing landing page for app store submission
-  app.get("/marketing", (_req: Request, res: Response) => {
+  app.get("/marketing", asyncHandler(async (_req: Request, res: Response) => {
     const marketingPath = require("path").resolve(
       process.cwd(),
       "server",
@@ -432,10 +416,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "marketing.html"
     );
     res.sendFile(marketingPath);
-  });
+  }));
 
   // Serve feature graphic template for Google Play
-  app.get("/feature-graphic", (_req: Request, res: Response) => {
+  app.get("/feature-graphic", asyncHandler(async (_req: Request, res: Response) => {
     const featurePath = require("path").resolve(
       process.cwd(),
       "server",
@@ -443,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "feature-graphic.html"
     );
     res.sendFile(featurePath);
-  });
+  }));
 
   // =========================================================================
   // GLOBAL ERROR HANDLER - Must be registered last
