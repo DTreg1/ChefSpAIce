@@ -56,8 +56,8 @@ export const MONTHLY_PRICES = {
 
 export const ANNUAL_PRICES = {
   FREE: 0,
-  BASIC: 49.9,
-  PRO: 99.9,
+  BASIC: 39.99,
+  PRO: 79.99,
 } as const;
 
 export const TRIAL_CONFIG = {

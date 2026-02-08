@@ -28,8 +28,17 @@ interface PriceInfo {
   productName: string;
 }
 
+interface TieredPrices {
+  basicMonthly: PriceInfo | null;
+  basicAnnual: PriceInfo | null;
+  proMonthly: PriceInfo | null;
+  proAnnual: PriceInfo | null;
+  monthly: PriceInfo | null;
+  annual: PriceInfo | null;
+}
+
 interface PricesCache {
-  data: { monthly: PriceInfo | null; annual: PriceInfo | null } | null;
+  data: TieredPrices | null;
   timestamp: number;
 }
 
@@ -87,12 +96,20 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
       logger.info("Stripe price details", { priceId: p.id, interval: p.recurring?.interval, intervalCount: p.recurring?.interval_count, amount: p.unit_amount });
     }
 
-    let monthlyPrice: PriceInfo | null = null;
-    let annualPrice: PriceInfo | null = null;
+    const result: TieredPrices = {
+      basicMonthly: null,
+      basicAnnual: null,
+      proMonthly: null,
+      proAnnual: null,
+      monthly: null,
+      annual: null,
+    };
 
     for (const price of prices.data) {
       const product = price.product as { name?: string; metadata?: Record<string, string> } | null;
       const productName = typeof product === "object" && product?.name ? product.name : "Subscription";
+      const productMeta = typeof product === "object" && product?.metadata ? product.metadata : {};
+      const priceMeta = price.metadata || {};
 
       const priceInfo: PriceInfo = {
         id: price.id,
@@ -104,20 +121,31 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
         productName,
       };
 
-      if (price.recurring?.interval === "month" && price.recurring.interval_count === 1) {
-        if (!monthlyPrice || priceInfo.amount > 0) {
-          monthlyPrice = priceInfo;
-        }
-      } else if (price.recurring?.interval === "year" && price.recurring.interval_count === 1) {
-        if (!annualPrice || priceInfo.amount > 0) {
-          annualPrice = priceInfo;
-        }
+      const nameLower = productName.toLowerCase();
+      const tier = productMeta.tier?.toLowerCase() || priceMeta.tier?.toLowerCase() || "";
+      const isBasic = tier === "basic" || nameLower.includes("basic");
+      const isPro = tier === "pro" || nameLower.includes("pro");
+      const isMonthly = price.recurring?.interval === "month" && price.recurring.interval_count === 1;
+      const isAnnual = price.recurring?.interval === "year" && price.recurring.interval_count === 1;
+
+      if (isBasic && isMonthly) {
+        result.basicMonthly = priceInfo;
+      } else if (isBasic && isAnnual) {
+        result.basicAnnual = priceInfo;
+      } else if (isPro && isMonthly) {
+        result.proMonthly = priceInfo;
+      } else if (isPro && isAnnual) {
+        result.proAnnual = priceInfo;
+      }
+
+      if (isMonthly && (!result.monthly || priceInfo.amount > 0)) {
+        result.monthly = priceInfo;
+      } else if (isAnnual && (!result.annual || priceInfo.amount > 0)) {
+        result.annual = priceInfo;
       }
     }
 
-    const result = { monthly: monthlyPrice, annual: annualPrice };
-
-    if (monthlyPrice || annualPrice) {
+    if (result.basicMonthly || result.proMonthly || result.monthly || result.annual) {
       pricesCache.data = result;
       pricesCache.timestamp = Date.now();
     }

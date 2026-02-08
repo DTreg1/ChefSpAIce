@@ -399,7 +399,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
               : plan === "monthly"
                 ? "basicMonthly"
                 : "basicAnnual";
-          const priceId = prices[priceKey]?.id;
+          const fallbackKey = plan === "monthly" ? "monthly" : "annual";
+          const priceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
 
           if (!priceId) {
             Alert.alert(
