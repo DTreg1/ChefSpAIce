@@ -525,6 +525,7 @@ const springConfig: WithSpringConfig = {
 };
 
 type OnboardingStep =
+  | "welcome"
   | "preferences"
   | "storage"
   | "foods"
@@ -736,7 +737,7 @@ export default function OnboardingScreen() {
   const isPro = entitlements.maxCookware === "unlimited";
   const cookwareLimit = typeof entitlements.maxCookware === "number" ? entitlements.maxCookware : Infinity;
 
-  const [step, setStep] = useState<OnboardingStep>("preferences");
+  const [step, setStep] = useState<OnboardingStep>("welcome");
   const [stepLoaded, setStepLoaded] = useState(false);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<number>>(
@@ -755,7 +756,7 @@ export default function OnboardingScreen() {
         const savedStep = await storage.getOnboardingStep();
         if (
           savedStep &&
-          ["preferences", "storage", "foods", "cookware", "complete"].includes(
+          ["welcome", "preferences", "storage", "foods", "cookware", "complete"].includes(
             savedStep,
           )
         ) {
@@ -934,6 +935,13 @@ export default function OnboardingScreen() {
     setSelectedFoodIds(new Set(STARTER_FOODS.map((f) => f.id)));
   }, []);
 
+  const handleWelcomeToPreferences = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setStep("preferences");
+  };
+
   const handlePreferencesToStorage = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -975,6 +983,13 @@ export default function OnboardingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setStep("preferences");
+  };
+
+  const handleBackToWelcome = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setStep("welcome");
   };
 
   const handleBackToFoods = () => {
@@ -1100,6 +1115,66 @@ export default function OnboardingScreen() {
       </View>
     );
   }
+
+  const renderWelcomeStep = () => (
+    <Animated.View
+      entering={SlideInRight.duration(300)}
+      exiting={SlideOutLeft.duration(200)}
+      style={styles.stepContainer}
+      data-testid="onboarding-welcome-step"
+    >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: Spacing.xl }}>
+        <View
+          style={{
+            width: 96,
+            height: 96,
+            borderRadius: 48,
+            backgroundColor: `${AppColors.primary}26`,
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: Spacing.lg,
+          }}
+        >
+          <Feather name="home" size={48} color={AppColors.primary} />
+        </View>
+
+        <ThemedText style={{ fontSize: 28, fontWeight: "700", textAlign: "center", marginBottom: Spacing.sm }}>
+          Welcome to ChefSpAIce
+        </ThemedText>
+        <ThemedText style={{ fontSize: 16, textAlign: "center", color: theme.textSecondary, marginBottom: Spacing.xl, lineHeight: 22 }}>
+          Your smart kitchen companion for reducing food waste and discovering delicious recipes
+        </ThemedText>
+
+        <View style={{ width: "100%", gap: Spacing.sm, marginBottom: Spacing.xl }}>
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.border, borderRadius: BorderRadius.md, padding: Spacing.md }}>
+            <Feather name="package" size={22} color={AppColors.primary} style={{ marginRight: Spacing.md }} />
+            <ThemedText style={{ flex: 1, fontSize: 14, color: theme.text }}>Track your pantry and never waste food again</ThemedText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.border, borderRadius: BorderRadius.md, padding: Spacing.md }}>
+            <Feather name="book-open" size={22} color={AppColors.primary} style={{ marginRight: Spacing.md }} />
+            <ThemedText style={{ flex: 1, fontSize: 14, color: theme.text }}>Get AI-powered recipe ideas from what you have</ThemedText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.border, borderRadius: BorderRadius.md, padding: Spacing.md }}>
+            <Feather name="calendar" size={22} color={AppColors.primary} style={{ marginRight: Spacing.md }} />
+            <ThemedText style={{ flex: 1, fontSize: 14, color: theme.text }}>Plan meals and generate smart shopping lists</ThemedText>
+          </View>
+        </View>
+
+        <ThemedText style={{ fontSize: 13, color: theme.textSecondary, textAlign: "center", marginBottom: Spacing.lg }}>
+          No account needed — start your free 7-day trial instantly
+        </ThemedText>
+
+        <GlassButton
+          onPress={handleWelcomeToPreferences}
+          variant="primary"
+          style={{ width: "100%" }}
+          data-testid="button-get-started"
+        >
+          Get Started
+        </GlassButton>
+      </View>
+    </Animated.View>
+  );
 
   const renderPreferencesStep = () => (
     <Animated.View
@@ -1345,7 +1420,7 @@ export default function OnboardingScreen() {
       <View style={styles.fixedFooter}>
         <View style={styles.navigationButtons}>
           <GlassButton
-            onPress={() => navigation.goBack()}
+            onPress={handleBackToWelcome}
             variant="secondary"
             style={styles.navButton}
           >
@@ -2079,6 +2154,7 @@ export default function OnboardingScreen() {
         },
       ]}
     >
+      {step === "welcome" && renderWelcomeStep()}
       {step === "preferences" && renderPreferencesStep()}
       {step === "storage" && renderStorageStep()}
       {step === "foods" && renderFoodsStep()}

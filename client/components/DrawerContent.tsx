@@ -169,7 +169,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
 
 export function DrawerContent(props: DrawerContentComponentProps) {
   const { theme, isDark } = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, isAuthenticated, isGuestUser } = useAuth();
   const insets = useSafeAreaInsets();
   const { navigation, state } = props;
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
@@ -298,6 +298,50 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             </ThemedText>
             <TrialBadge />
           </View>
+
+          {!isAuthenticated && (
+            <Pressable
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Auth" as any);
+              }}
+              style={({ pressed }) => [
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: theme.backgroundSecondary,
+                  borderRadius: BorderRadius.md,
+                  padding: Spacing.md,
+                  marginBottom: Spacing.md,
+                },
+                pressed ? { opacity: 0.7 } : null,
+              ]}
+              data-testid="drawer-create-account"
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: `${AppColors.primary}20`,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: Spacing.md,
+                }}
+              >
+                <Feather name="user-plus" size={20} color={AppColors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={{ fontSize: 15, fontWeight: "600" }}>
+                  Create Account
+                </ThemedText>
+                <ThemedText style={{ fontSize: 12, color: theme.textSecondary }}>
+                  Save your data and unlock all features
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
+            </Pressable>
+          )}
 
           <View
             style={[styles.divider, { backgroundColor: theme.glass.border }]}
