@@ -37,14 +37,20 @@ We reserve the right to suspend or terminate accounts that violate these terms.`
   },
   {
     title: "4. Subscriptions & Payments",
-    content: `ChefSpAIce offers premium subscriptions with enhanced features. By subscribing:
+    content: `ChefSpAIce offers the following auto-renewable subscription options:
 
-• You authorize recurring charges according to your plan
-• Subscriptions auto-renew unless cancelled
-• Refunds are handled according to Apple App Store or Google Play Store policies
-• You can manage subscriptions through your device settings
+• Basic Monthly: $4.99/month
+• Basic Annual: $39.99/year
+• Pro Monthly: $9.99/month
+• Pro Annual: $79.99/year
 
-Prices may change with notice provided in advance.`,
+Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the same price.
+
+You can manage and cancel your subscriptions by going to your Account Settings on the App Store after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.
+
+Prices may change with notice provided in advance. Refunds are handled by Apple in accordance with their refund policies.
+
+For full subscription terms, please refer to Apple's Standard End User License Agreement (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`,
   },
   {
     title: "5. Acceptable Use",

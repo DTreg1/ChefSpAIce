@@ -682,10 +682,14 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              Subscription automatically renews unless auto-renew is turned off
-              at least 24 hours before the end of the current period. Payment
-              will be charged to your Apple ID account at confirmation of
-              purchase. Manage subscriptions in Account Settings after purchase.
+              Payment will be charged to your Apple ID account at confirmation
+              of purchase. Subscriptions automatically renew unless auto-renew
+              is turned off at least 24 hours before the end of the current
+              period. Your account will be charged for renewal within 24 hours
+              prior to the end of the current period. You can manage and cancel
+              your subscriptions by going to your Account Settings on the App
+              Store after purchase. Any unused portion of a free trial period,
+              if offered, will be forfeited when you purchase a subscription.
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -713,6 +717,22 @@ export default function SubscriptionScreen() {
                   style={[styles.legalLink, { color: AppColors.primary }]}
                 >
                   Terms of Use
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+                data-testid="link-apple-eula"
+                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  EULA
                 </ThemedText>
               </Pressable>
             </View>
@@ -859,10 +879,14 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              Subscription automatically renews unless auto-renew is turned off
-              at least 24 hours before the end of the current period. Payment
-              will be charged to your Apple ID account at confirmation of
-              purchase. Manage subscriptions in Account Settings after purchase.
+              Payment will be charged to your Apple ID account at confirmation
+              of purchase. Subscriptions automatically renew unless auto-renew
+              is turned off at least 24 hours before the end of the current
+              period. Your account will be charged for renewal within 24 hours
+              prior to the end of the current period. You can manage and cancel
+              your subscriptions by going to your Account Settings on the App
+              Store after purchase. Any unused portion of a free trial period,
+              if offered, will be forfeited when you purchase a subscription.
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -890,6 +914,22 @@ export default function SubscriptionScreen() {
                   style={[styles.legalLink, { color: AppColors.primary }]}
                 >
                   Terms of Use
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+                data-testid="link-trial-apple-eula"
+                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  EULA
                 </ThemedText>
               </Pressable>
             </View>

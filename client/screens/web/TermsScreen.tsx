@@ -167,9 +167,20 @@ export default function TermsScreen() {
             Subscriptions and Payments
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            ChefSpAIce offers auto-renewable subscription options to access
-            premium features. By purchasing a subscription, you agree to the
-            following terms:
+            ChefSpAIce offers the following auto-renewable subscription options
+            to access premium features:
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>Subscription Plans:</Text>
+            {"\n"}{"\u2022"} Basic Monthly: $4.99/month
+            {"\n"}{"\u2022"} Basic Annual: $39.99/year
+            {"\n"}{"\u2022"} Pro Monthly: $9.99/month
+            {"\n"}{"\u2022"} Pro Annual: $79.99/year
           </Text>
           <Text
             style={[
@@ -214,6 +225,26 @@ export default function TermsScreen() {
             handled by Apple in accordance with their refund policies. To
             request a refund, please visit Apple's Report a Problem page or
             contact Apple Support directly.
+          </Text>
+          <Text
+            style={[
+              styles.paragraph,
+              { color: colors.textSecondary, marginTop: 12 },
+            ]}
+          >
+            <Text style={{ fontWeight: "600" }}>EULA:</Text> This app is
+            licensed under Apple's Standard End User License Agreement (EULA).
+            You can review the full terms at:{" "}
+            <Text
+              style={{ color: colors.brandGreen, textDecorationLine: "underline" }}
+              onPress={() => {
+                if (isWeb && typeof window !== "undefined") {
+                  window.open("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/", "_blank");
+                }
+              }}
+            >
+              https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+            </Text>
           </Text>
         </View>
 
