@@ -50,7 +50,7 @@ You can manage and cancel your subscriptions by going to your Account Settings o
 
 Prices may change with notice provided in advance. Refunds are handled by Apple in accordance with their refund policies.
 
-This Terms of Service serves as the End User License Agreement (EULA) for ChefSpAIce.`,
+For full subscription terms, please refer to Apple's Standard End User License Agreement (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`,
   },
   {
     title: "5. Acceptable Use",
