@@ -83,6 +83,8 @@ interface TrialEndedModalProps {
   isLoading?: boolean;
   onOpenPrivacyPolicy?: () => void;
   onOpenTermsOfUse?: () => void;
+  onRestorePurchases?: () => void;
+  isRestoring?: boolean;
 }
 
 export function TrialEndedModal({
@@ -91,6 +93,8 @@ export function TrialEndedModal({
   isLoading = false,
   onOpenPrivacyPolicy,
   onOpenTermsOfUse,
+  onRestorePurchases,
+  isRestoring = false,
 }: TrialEndedModalProps) {
   const { theme, isDark } = useTheme();
   const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
@@ -452,10 +456,44 @@ export function TrialEndedModal({
                   type="caption"
                   style={[styles.legalLink, { color: AppColors.primary }]}
                 >
-                  Terms of Use (EULA)
+                  Terms of Use
+                </ThemedText>
+              </Pressable>
+              <ThemedText
+                type="caption"
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                |
+              </ThemedText>
+              <Pressable
+                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+                data-testid="link-modal-apple-eula"
+                accessibilityRole="link"
+                accessibilityLabel="EULA"
+              >
+                <ThemedText
+                  type="caption"
+                  style={[styles.legalLink, { color: AppColors.primary }]}
+                >
+                  EULA
                 </ThemedText>
               </Pressable>
             </View>
+            {onRestorePurchases && (
+              <Pressable
+                onPress={onRestorePurchases}
+                style={styles.restoreButton}
+                data-testid="button-modal-restore-purchases"
+              >
+                <Ionicons name="refresh" size={14} color={theme.textSecondary} />
+                <ThemedText
+                  type="caption"
+                  style={[styles.restoreText, { color: theme.textSecondary }]}
+                >
+                  {isRestoring ? "Restoring..." : "Restore Purchases"}
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
         </BlurView>
       </View>
@@ -590,5 +628,15 @@ const styles = StyleSheet.create({
   },
   legalSeparator: {
     fontSize: 11,
+  },
+  restoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: Spacing.sm,
+  },
+  restoreText: {
+    fontSize: 12,
   },
 });

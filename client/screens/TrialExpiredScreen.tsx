@@ -8,6 +8,7 @@ import {
   BackHandler,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -380,6 +381,63 @@ export default function TrialExpiredScreen() {
             </ThemedText>
           </Pressable>
         )}
+
+        <View style={styles.legalSection}>
+          <ThemedText
+            type="caption"
+            style={[styles.legalText, { color: theme.textSecondary }]}
+            data-testid="text-auto-renewal-terms"
+          >
+            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase.
+          </ThemedText>
+          <View style={styles.legalLinksContainer}>
+            <Pressable
+              onPress={() => Linking.openURL("https://chefspice.app/privacy")}
+              data-testid="link-privacy-policy"
+            >
+              <ThemedText
+                type="caption"
+                style={[styles.legalLink, { color: AppColors.primary }]}
+              >
+                Privacy Policy
+              </ThemedText>
+            </Pressable>
+            <ThemedText
+              type="caption"
+              style={[styles.legalSeparator, { color: theme.textSecondary }]}
+            >
+              |
+            </ThemedText>
+            <Pressable
+              onPress={() => Linking.openURL("https://chefspice.app/terms")}
+              data-testid="link-terms-of-use"
+            >
+              <ThemedText
+                type="caption"
+                style={[styles.legalLink, { color: AppColors.primary }]}
+              >
+                Terms of Use
+              </ThemedText>
+            </Pressable>
+            <ThemedText
+              type="caption"
+              style={[styles.legalSeparator, { color: theme.textSecondary }]}
+            >
+              |
+            </ThemedText>
+            <Pressable
+              onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
+              data-testid="link-apple-eula"
+            >
+              <ThemedText
+                type="caption"
+                style={[styles.legalLink, { color: AppColors.primary }]}
+              >
+                EULA
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -535,5 +593,29 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     fontSize: 14,
+  },
+  legalSection: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  legalText: {
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+  },
+  legalLinksContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  legalLink: {
+    fontSize: 11,
+    fontWeight: "500",
+    textDecorationLine: "underline",
+  },
+  legalSeparator: {
+    fontSize: 11,
   },
 });

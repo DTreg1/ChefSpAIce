@@ -162,12 +162,14 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isLoading, setIsLoading] = useState(!hasFetched);
   const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
 
   const {
     isAvailable: isStoreKitAvailable,
     offerings,
     purchasePackage,
     presentPaywall,
+    restorePurchases,
   } = useStoreKit();
 
   const lastFetchRef = useRef<number>(0);
@@ -539,6 +541,24 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         visible={showTrialEndedModal}
         onSelectPlan={handleSelectPlan}
         isLoading={isPurchasing}
+        onRestorePurchases={isStoreKitAvailable ? async () => {
+          setIsRestoringPurchases(true);
+          try {
+            const success = await restorePurchases();
+            if (success) {
+              Alert.alert("Success", "Purchases restored successfully!");
+              setShowTrialEndedModal(false);
+              await forceRefetch();
+            } else {
+              Alert.alert("No Purchases Found", "No previous purchases were found to restore.");
+            }
+          } catch (error) {
+            Alert.alert("Error", "Failed to restore purchases. Please try again.");
+          } finally {
+            setIsRestoringPurchases(false);
+          }
+        } : undefined}
+        isRestoring={isRestoringPurchases}
       />
     </SubscriptionContext.Provider>
   );
