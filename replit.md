@@ -119,9 +119,10 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - Replit Object Storage
 
 ## Recent Changes
-- Centralized color definitions across the app
+- Updated pricing displays to use StoreKit data on mobile platforms
+- Aligned subscription management and donations with platform guidelines
+- Updated subscription pricing to reflect new annual discount
+- Centralized and updated color definitions throughout the app
 - Added legal disclosures and restore purchases to subscription screens
-- Improved subscription screen clarity and pricing display
-- Added welcome step and account creation to onboarding flow
-- In-app purchase flow improvements
-- Guest vs logged-in drawer navigation adjustments
+- Improved trial plan info display; removed redundant trial info from inventory
+- Fixed duplicated plan selection sections on subscription screen
