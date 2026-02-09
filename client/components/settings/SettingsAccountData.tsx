@@ -21,6 +21,7 @@ interface SettingsAccountDataProps {
   showDeleteModal: boolean;
   deleteConfirmText: string;
   isDeleting: boolean;
+  showDeletionLevelsModal: boolean;
   onExportData: () => void;
   onImportFilePick: () => void;
   onDownloadMyData: () => void;
@@ -30,6 +31,8 @@ interface SettingsAccountDataProps {
   onDeleteConfirmTextChange: (text: string) => void;
   onClearData: () => void;
   onResetForTesting: () => void;
+  onDeletionLevelsPress: () => void;
+  onDeletionLevelsClose: () => void;
   theme: any;
 }
 
@@ -41,6 +44,7 @@ export function SettingsAccountData({
   showDeleteModal,
   deleteConfirmText,
   isDeleting,
+  showDeletionLevelsModal,
   onExportData,
   onImportFilePick,
   onDownloadMyData,
@@ -50,8 +54,14 @@ export function SettingsAccountData({
   onDeleteConfirmTextChange,
   onClearData,
   onResetForTesting,
+  onDeletionLevelsPress,
+  onDeletionLevelsClose,
   theme,
 }: SettingsAccountDataProps) {
+  const handleDeletionOption = (callback: () => void) => {
+    onDeletionLevelsClose();
+    setTimeout(() => callback(), 300);
+  };
   return (
     <GlassCard style={styles.section}>
       <ThemedText type="h4" style={styles.sectionTitle}>
@@ -151,69 +161,118 @@ export function SettingsAccountData({
           styles.dangerMenuItem,
           { borderColor: theme.glass.border },
         ]}
-        onPress={onClearData}
-      >
-        <View style={styles.dangerMenuIcon}>
-          <Feather name="trash-2" size={18} color={AppColors.warning} />
-        </View>
-        <View style={styles.dangerMenuText}>
-          <ThemedText type="body">Clear All Data</ThemedText>
-          <ThemedText type="caption">
-            Remove inventory, recipes, meal plans, and chat history
-          </ThemedText>
-        </View>
-      </Pressable>
-
-      <Pressable
-        style={[
-          styles.dangerMenuItem,
-          { borderColor: AppColors.error, borderWidth: 1 },
-        ]}
-        onPress={onDeleteAccountPress}
+        onPress={onDeletionLevelsPress}
+        data-testid="button-manage-account-data"
         accessibilityRole="button"
-        accessibilityLabel="Delete my account permanently"
-        data-testid="button-delete-account"
+        accessibilityLabel="Manage account data"
       >
         <View style={styles.dangerMenuIcon}>
-          <Feather name="user-x" size={18} color={AppColors.error} />
+          <Feather name="trash-2" size={18} color={AppColors.error} />
         </View>
         <View style={styles.dangerMenuText}>
-          <ThemedText type="body" style={{ color: AppColors.error }}>
-            Delete My Account
-          </ThemedText>
+          <ThemedText type="body">Manage Account Data</ThemedText>
           <ThemedText type="caption">
-            Permanently remove your account and all data
+            Clear data, delete account, or reset app
           </ThemedText>
         </View>
+        <Feather name="chevron-right" size={16} color={theme.textSecondary} />
       </Pressable>
 
-      {__DEV__ ? (
-        <Pressable
-          style={[
-            styles.dangerMenuItem,
-            { borderColor: theme.glass.border },
-          ]}
-          onPress={onResetForTesting}
-          testID="button-reset-for-testing"
-          accessibilityRole="button"
-          accessibilityLabel="Reset app for testing"
-          accessibilityHint="Signs out and resets the app to experience it as a new user"
-        >
-          <View style={styles.dangerMenuIcon}>
-            <Feather
-              name="refresh-cw"
-              size={18}
-              color={theme.textSecondary}
-            />
+      <Modal
+        visible={showDeletionLevelsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={onDeletionLevelsClose}
+      >
+        <View style={styles.deleteModalOverlay} data-testid="modal-deletion-levels">
+          <View style={[styles.deleteModalContent, { backgroundColor: theme.glass.background }]}>
+            <View style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
+              <Feather name="sliders" size={24} color={theme.text} />
+              <ThemedText type="body" style={{ fontWeight: "600" }}>
+                Manage Account Data
+              </ThemedText>
+            </View>
+
+            <Pressable
+              style={[
+                styles.dangerMenuItem,
+                { borderColor: theme.glass.border, marginBottom: Spacing.sm },
+              ]}
+              onPress={() => handleDeletionOption(onClearData)}
+              data-testid="button-clear-app-data"
+              accessibilityRole="button"
+              accessibilityLabel="Clear app data"
+            >
+              <View style={styles.dangerMenuIcon}>
+                <Feather name="trash" size={18} color={AppColors.warning} />
+              </View>
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body">Clear App Data</ThemedText>
+                <ThemedText type="caption">
+                  Remove all local data including inventory, recipes, meal plans, and chat history. Your account stays active.
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.dangerMenuItem,
+                { borderColor: AppColors.error, borderWidth: 1, marginBottom: Spacing.sm },
+              ]}
+              onPress={() => handleDeletionOption(onDeleteAccountPress)}
+              data-testid="button-delete-account-level"
+              accessibilityRole="button"
+              accessibilityLabel="Delete my account permanently"
+            >
+              <View style={styles.dangerMenuIcon}>
+                <Feather name="user-x" size={18} color={AppColors.error} />
+              </View>
+              <View style={styles.dangerMenuText}>
+                <ThemedText type="body" style={{ color: AppColors.error }}>
+                  Delete My Account
+                </ThemedText>
+                <ThemedText type="caption">
+                  Permanently delete your account and all associated data from our servers. This cannot be undone.
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+            </Pressable>
+
+            {__DEV__ ? (
+              <Pressable
+                style={[
+                  styles.dangerMenuItem,
+                  { borderColor: theme.glass.border, marginBottom: Spacing.sm },
+                ]}
+                onPress={() => handleDeletionOption(onResetForTesting)}
+                data-testid="button-reset-app-level"
+                accessibilityRole="button"
+                accessibilityLabel="Reset app for testing"
+              >
+                <View style={styles.dangerMenuIcon}>
+                  <Feather name="refresh-cw" size={18} color={theme.textSecondary} />
+                </View>
+                <View style={styles.dangerMenuText}>
+                  <ThemedText type="body">Reset App</ThemedText>
+                  <ThemedText type="caption">
+                    Sign out and reset to experience the app as a brand new user.
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+
+            <GlassButton
+              variant="outline"
+              onPress={onDeletionLevelsClose}
+              style={{ marginTop: Spacing.sm }}
+            >
+              <ThemedText>Cancel</ThemedText>
+            </GlassButton>
           </View>
-          <View style={styles.dangerMenuText}>
-            <ThemedText type="body">Reset App (For Testing)</ThemedText>
-            <ThemedText type="caption">
-              Sign out and reset to test as a new user
-            </ThemedText>
-          </View>
-        </Pressable>
-      ) : null}
+        </View>
+      </Modal>
 
       <Modal
         visible={showDeleteModal}

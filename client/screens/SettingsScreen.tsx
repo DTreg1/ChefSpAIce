@@ -119,6 +119,7 @@ export default function SettingsScreen() {
   });
   const [learnedPrefsCount, setLearnedPrefsCount] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeletionLevelsModal, setShowDeletionLevelsModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -375,7 +376,11 @@ export default function SettingsScreen() {
     await storage.setPreferences(newPrefs);
   };
 
+  const handleDeletionLevelsPress = () => setShowDeletionLevelsModal(true);
+  const handleDeletionLevelsClose = () => setShowDeletionLevelsModal(false);
+
   const handleClearData = async () => {
+    setShowDeletionLevelsModal(false);
     const message =
       "This will permanently delete all your inventory items, recipes, meal plans, and chat history. This action cannot be undone.";
 
@@ -447,6 +452,7 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccountPress = () => {
+    setShowDeletionLevelsModal(false);
     setShowDeleteModal(true);
     setDeleteConfirmText("");
   };
@@ -742,6 +748,7 @@ export default function SettingsScreen() {
   };
 
   const handleResetForTesting = async () => {
+    setShowDeletionLevelsModal(false);
     const message =
       "This will sign you out and reset the app to its initial state, as if you were a new user. Use this to test the landing page and onboarding flow.\n\nAll local data will be cleared.";
 
@@ -959,6 +966,7 @@ export default function SettingsScreen() {
           showDeleteModal={showDeleteModal}
           deleteConfirmText={deleteConfirmText}
           isDeleting={isDeleting}
+          showDeletionLevelsModal={showDeletionLevelsModal}
           onExportData={handleExportData}
           onImportFilePick={handleImportFilePick}
           onDownloadMyData={handleDownloadMyData}
@@ -968,6 +976,8 @@ export default function SettingsScreen() {
           onDeleteConfirmTextChange={setDeleteConfirmText}
           onClearData={handleClearData}
           onResetForTesting={handleResetForTesting}
+          onDeletionLevelsPress={handleDeletionLevelsPress}
+          onDeletionLevelsClose={handleDeletionLevelsClose}
           theme={theme}
         />
 
