@@ -41,7 +41,7 @@ export function TierSelector({
 
   const proPrice = selectedPlan === "monthly"
     ? (storeKitPrices?.proMonthly || (isNative ? "Pro" : `$${MONTHLY_PRICES.PRO.toFixed(2)}`))
-    : (storeKitPrices?.proAnnual || (isNative ? "Pro" : `$${ANNUAL_PRICES.PRO.toFixed(2)}}`));
+    : (storeKitPrices?.proAnnual || (isNative ? "Pro" : `$${ANNUAL_PRICES.PRO.toFixed(2)}`));
 
   const freeTestId = testIdPrefix
     ? `button-${testIdPrefix}-select-free`
