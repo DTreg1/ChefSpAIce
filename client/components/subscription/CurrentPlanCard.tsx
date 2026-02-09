@@ -64,24 +64,26 @@ export function CurrentPlanCard({
             </ThemedText>
           </View>
         </View>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${statusInfo.color}20` },
-          ]}
-        >
+        {!isTrialing && (
           <View
             style={[
-              styles.statusDot,
-              { backgroundColor: statusInfo.color },
+              styles.statusBadge,
+              { backgroundColor: `${statusInfo.color}20` },
             ]}
-          />
-          <ThemedText
-            style={[styles.statusText, { color: statusInfo.color }]}
           >
-            {statusInfo.label}
-          </ThemedText>
-        </View>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: statusInfo.color },
+              ]}
+            />
+            <ThemedText
+              style={[styles.statusText, { color: statusInfo.color }]}
+            >
+              {statusInfo.label}
+            </ThemedText>
+          </View>
+        )}
       </View>
 
       {isTrialing && trialDaysRemaining !== null && (
