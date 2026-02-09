@@ -43,7 +43,6 @@ import { InventoryNutritionSummary } from "@/components/inventory/InventoryNutri
 import { InventoryGroupSection } from "@/components/inventory/InventoryGroupSection";
 import { useFunFact } from "@/components/inventory/useFunFact";
 import { TrialStatusBadge } from "@/components/TrialStatusBadge";
-import { TrialMilestoneBanner } from "@/components/TrialMilestoneBanner";
 import { TrialExpiringModal } from "@/components/TrialExpiringModal";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Feather } from "@expo/vector-icons";
@@ -127,7 +126,6 @@ export default function InventoryScreen() {
     await AsyncStorage.setItem("@trial_expiring_modal_dismissed", "true");
   };
 
-  const showMilestoneBanner = showTrialing && !hasActiveSubscription && effectiveDaysRemaining <= 3 && effectiveDaysRemaining > 1;
 
   const loadItems = useCallback(async (isInitialLoad = false) => {
     try {
@@ -333,9 +331,7 @@ export default function InventoryScreen() {
 
   const renderListHeader = () => (
     <>
-      {showMilestoneBanner && (
-        <TrialMilestoneBanner daysRemaining={effectiveDaysRemaining} />
-      )}
+      
       <InventoryFunFact
         funFact={funFact}
         funFactLoading={funFactLoading}
