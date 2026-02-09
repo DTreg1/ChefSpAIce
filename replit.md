@@ -10,7 +10,7 @@ Kitchen inventory management app with AI-powered recipe generation, meal plannin
 - **Frontend**: React Native + Expo (mobile), React web (landing/admin). Wouter routing (web). TanStack React Query v5.
 - **Backend**: Express.js, Drizzle ORM, PostgreSQL (Neon-backed)
 - **AI**: OpenAI API via Replit AI Integrations (recipes, chat, vision scanning)
-- **Payments**: Stripe via Replit integration (subscriptions, proration, retention), RevenueCat webhooks (StoreKit/Apple IAP)
+- **Payments**: Stripe (subscriptions, proration, retention), RevenueCat webhooks (StoreKit/Apple IAP)
 - **Storage**: Replit Object Storage (`@replit/object-storage`)
 - **Auth**: Custom session tokens, social login (Google/Apple), multi-session, biometric
 
@@ -25,7 +25,7 @@ Kitchen inventory management app with AI-powered recipe generation, meal plannin
 client/                              # NOTE: No src/ subdirectory — files live directly under client/
   App.tsx                            # Mobile entry (Expo Router/Drawer)
   App.web.tsx                        # Web entry (Wouter routing)
-  screens/                           # 33 mobile screens
+  screens/                           # 33 mobile screens + web/ subdirectory
     web/                             # Web-only: About, Privacy, Terms, Support, Attributions
   components/
     landing/                         # Web landing page (~20 components)
@@ -36,12 +36,12 @@ client/                              # NOTE: No src/ subdirectory — files live
     recipes/                         # Recipe skeleton loaders
     (root)                           # Shared: ChatModal, GlassCard, GlassButton, FloatingChatButton,
                                      #   ErrorBoundary, EmptyState, LoadingState, AddMenu, DrawerContent, etc.
-  contexts/                          # AuthContext, ThemeContext, SubscriptionContext, FloatingChatContext,
-                                     #   GlassContext, OnboardingContext, SearchContext
-  hooks/                             # ~22 hooks (subscription, biometric, trial, instacart, storeKit,
-                                     #   voice, sync, expiration, export, debounce, device, theme, etc.)
+  contexts/                          # Auth, Theme, Subscription, FloatingChat, Glass, Onboarding, Search
+  hooks/                             # 24 hooks (subscription, biometric, trial, storeKit, instacart,
+                                     #   voice, sync, expiration, export, debounce, device, theme,
+                                     #   payment-notifications, quick-recipe, shelf-life, storage-suggestion, etc.)
   navigation/                        # Drawer, Tab, and Stack navigators (8 files)
-  lib/                               # Utilities: analytics, deep-linking, notifications, offline queue,
+  lib/                               # analytics, deep-linking, notifications, offline queue,
                                      #   sync-manager, query-client, storage, voice-commands, etc.
   constants/                         # food-sources, meal-plan, theme
   data/                              # landing-data.ts
@@ -49,21 +49,9 @@ server/
   routes.ts                          # Main route registration (~441 lines)
   storage.ts                         # DB storage interface (IStorage, ~30 lines)
   routers/
-    auth.router.ts                   # Auth (login, register, sessions, password)
-    sync.router.ts                   # Cloud sync orchestrator
-    chat.router.ts                   # AI chat
-    feedback.router.ts               # User feedback/bug reports
-    food.router.ts                   # Food/nutrition lookup
-    shelf-life.router.ts             # Shelf life data
-    social-auth.router.ts            # Google/Apple OAuth
-    referral.router.ts               # Referral system
-    recipeImages.router.ts           # Recipe image generation
-    revenuecat-webhook.router.ts     # RevenueCat webhook handler
-    donations.router.ts              # Donation handling
-    external-api.router.ts           # External API proxy
-    instacart.router.ts              # Instacart integration
-    logo-export.router.ts            # Logo export utility
-    notifications.router.ts          # Notification endpoints
+    auth, sync, chat, feedback, food, shelf-life, social-auth, referral,
+    recipeImages, revenuecat-webhook, donations, external-api, instacart,
+    logo-export, notifications
     admin/                           # analytics, data-export, subscriptions
     sync/                            # inventory, recipes, cookware, shopping, meal-plans, helpers
     user/                            # appliances, cooking-terms, data-export, ingredients,
@@ -71,9 +59,7 @@ server/
     platform/
       food-search.router.ts          # USDA + OpenFoodFacts search
       voice.router.ts                # Voice processing
-      ai/
-        image-analysis.router.ts     # Food/receipt image scanning (OpenAI Vision)
-        receipt-analysis.router.ts   # Receipt scanning
+      ai/                            # image-analysis, receipt-analysis (OpenAI Vision)
   stripe/                            # stripeClient, subscriptionConfig/Router/Service, webhookHandlers
   services/                          # notification, objectStorage, recipeGeneration, subscription
   seeds/                             # seed-appliances, seed-cooking-terms, seed-demo-account, seed-starter-foods
@@ -119,10 +105,6 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - Replit Object Storage
 
 ## Recent Changes
-- Updated pricing displays to use StoreKit data on mobile platforms
-- Aligned subscription management and donations with platform guidelines
-- Updated subscription pricing to reflect new annual discount
-- Centralized and updated color definitions throughout the app
-- Added legal disclosures and restore purchases to subscription screens
-- Improved trial plan info display; removed redundant trial info from inventory
-- Fixed duplicated plan selection sections on subscription screen
+- Subscription/pricing: StoreKit data on mobile, annual discount, legal disclosures, restore purchases, trial info cleanup, duplicate plan fix
+- UI: Centralized color definitions app-wide
+- Platform: Aligned subscription management and donations with platform guidelines
