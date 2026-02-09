@@ -518,7 +518,7 @@ export default function SettingsScreen() {
       const authToken = await storage.getAuthToken();
       if (authToken && user?.email) {
         const baseUrl = getApiUrl();
-        const response = await fetch(`${baseUrl}/api/auth/account`, {
+        const response = await fetch(`${baseUrl}/api/auth/delete-account`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -534,22 +534,10 @@ export default function SettingsScreen() {
       }
 
       await storage.deleteAccount();
+      await signOut();
 
       setShowDeleteModal(false);
       setIsDeleting(false);
-
-      if (Platform.OS === "web") {
-        window.alert(
-          "Your account has been permanently deleted. The app will now restart.",
-        );
-        window.location.reload();
-      } else {
-        Alert.alert(
-          "Account Deleted",
-          "Your account has been permanently deleted. The app will now restart.",
-          [{ text: "OK", onPress: () => reloadAppAsync() }],
-        );
-      }
     } catch (error) {
       setIsDeleting(false);
       const msg = error instanceof Error ? error.message : "Unknown error";

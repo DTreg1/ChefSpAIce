@@ -655,6 +655,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // This is important when account is deleted and 401 forces sign out
       await storage.resetOnboarding();
 
+      // Clear all user-specific data so the new guest starts fresh
+      await Promise.all([
+        AsyncStorage.removeItem("@chefspaice/inventory"),
+        AsyncStorage.removeItem("@chefspaice/recipes"),
+        AsyncStorage.removeItem("@chefspaice/preferences"),
+        AsyncStorage.removeItem("@chefspaice/meal_plans"),
+        AsyncStorage.removeItem("@chefspaice/shopping_list"),
+        AsyncStorage.removeItem("@chefspaice/chat_history"),
+        AsyncStorage.removeItem("@chefspaice/user_profile"),
+        AsyncStorage.removeItem("@chefspaice/cookware"),
+        AsyncStorage.removeItem("@chefspaice/custom_storage_locations"),
+        AsyncStorage.removeItem("@chefspaice/waste_log"),
+        AsyncStorage.removeItem("@chefspaice/consumed_log"),
+        AsyncStorage.removeItem("@chefspaice/analytics"),
+      ]);
+
       // Clear all cached query data for security
       queryClient.clear();
 

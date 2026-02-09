@@ -337,6 +337,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 closeDrawer();
                 navigation.navigate("Tabs", {
                   screen: "ProfileTab",
+                  params: { screen: "Profile" },
                 });
               }}
             />
