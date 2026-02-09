@@ -74,7 +74,13 @@ export default function ProfileScreen() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
 
-  const menuItems: MenuItemConfig[] = [];
+  const menuItems: MenuItemConfig[] = [
+    {
+      label: "Settings",
+      icon: "settings",
+      onPress: () => navigation.navigate("Settings"),
+    },
+  ];
 
   const loadData = useCallback(async () => {
     const [items, loadedRecipes, status, profile, prefs] = await Promise.all([

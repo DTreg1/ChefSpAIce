@@ -341,6 +341,18 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               }}
             />
             <DrawerItem
+              label="Settings"
+              icon="settings"
+              isActive={activeScreen === "Settings"}
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Tabs", {
+                  screen: "ProfileTab",
+                  params: { screen: "Settings" },
+                });
+              }}
+            />
+            <DrawerItem
               label="Analytics"
               icon="bar-chart-2"
               isActive={activeScreen === "Analytics"}
