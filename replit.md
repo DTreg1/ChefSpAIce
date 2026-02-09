@@ -84,9 +84,10 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - **Other**: notifications, referrals, shelf-life, instacart, donations, RevenueCat webhook
 
 ## Subscription Tiers
-- FREE: 10 pantry items, 2 AI recipes/mo, 3 cookware
+- TRIAL (7-day free trial, default for new users): 10 pantry items, 2 AI recipes/mo, 3 cookware
 - BASIC ($4.99/mo, $39.99/yr): 25 pantry items, 5 AI recipes/mo, 5 cookware
 - PRO ($9.99/mo, $79.99/yr): Unlimited everything, all features
+- No separate "Free" tier — the 7-day trial is the free experience
 - Stripe proration, cancellation retention flow, RevenueCat for StoreKit, payment failure notifications
 
 ## Dev Workflow
@@ -105,7 +106,8 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - Replit Object Storage
 
 ## Recent Changes
-- **Apple compliance audit (Feb 2026)**: Created shared `useManageSubscription` hook (CustomerCenter-first on iOS), shared `subscription-terms.ts` constants, fixed hardcoded USD price fallbacks on iOS/Android (shows plan names instead), platform-aware Terms of Service pricing, verified donation gating is web-only
+- **FREE→TRIAL rename (Feb 2026)**: Renamed `SubscriptionTier.FREE` to `SubscriptionTier.TRIAL` across entire codebase (enum, DB default, server, client, admin). `isFreeUser` → `isTrialUser`. Feature comparison column "Free" → "Trial". No separate free tier exists — 7-day trial is the free experience.
+- **Apple compliance audit (Feb 2026)**: Created shared `useManageSubscription` hook (CustomerCenter-first on iOS), shared `subscription-terms.ts` constants, shared `SubscriptionLegalLinks` component, fixed hardcoded USD price fallbacks on iOS/Android (shows plan names instead), platform-aware Terms of Service pricing, removed Free tier from purchase flow (TierSelector only shows Basic/Pro), "Save 17%" → "Best Value" on native, verified donation gating is web-only
 - Subscription/pricing: StoreKit data on mobile, annual discount, legal disclosures, restore purchases, trial info cleanup, duplicate plan fix
 - UI: Centralized color definitions app-wide
 - Platform: Aligned subscription management and donations with platform guidelines
