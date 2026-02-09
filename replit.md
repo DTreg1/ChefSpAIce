@@ -1,94 +1,105 @@
 # ChefSpAIce
 
 ## Overview
-ChefSpAIce is a mobile application designed to manage kitchen inventory, reduce food waste, and promote sustainable eating habits. It offers AI-powered recipe generation, meal planning, and shopping list management. The project aims to provide a comprehensive solution for efficient food management through intelligent features and a focus on sustainability, with a business vision to offer a freemium model (Free, Basic, Pro tiers) to maximize user acquisition and retention.
+Kitchen inventory management app with AI-powered recipe generation, meal planning, and shopping lists. Freemium model (Free/Basic/Pro). iOS 26 Liquid Glass Design aesthetic.
 
 ## User Preferences
-Preferred communication style: Simple, everyday language.
+- Communication: Simple, everyday language
 
-## System Architecture
-The application features an iOS 26 Liquid Glass Design aesthetic with light/dark mode, a centralized design system, and responsive layouts for phones and tablets. The frontend is built with React Native and Expo, utilizing React Navigation, React Native Reanimated, and TanStack React Query. It adopts a local-first data approach with AsyncStorage for offline persistence.
+## Tech Stack
+- **Frontend**: React Native + Expo (mobile), React web landing/admin. Wouter routing (web). TanStack React Query.
+- **Backend**: Express.js, Drizzle ORM, PostgreSQL
+- **AI**: OpenAI API (recipes, chat, vision scanning)
+- **Payments**: Stripe (subscriptions, proration, retention)
+- **Storage**: Replit Object Storage (cloud assets)
+- **Auth**: Custom session tokens, social login (Google/Apple), multi-session, biometric
 
-The backend uses Express.js and Node.js, with Drizzle ORM and PostgreSQL. Key features include a custom authentication system with social login, session tokens, and multi-session management. A Real-Time Sync Manager handles data synchronization with optimistic updates, delta sync, and interactive conflict resolution. AI integration via OpenAI API provides equipment-aware and inventory-specific recipe generation, fuzzy matching, smart shelf-life suggestions, and AI food identification through barcode, nutrition label, recipe, and grocery receipt scanning (using OpenAI Vision).
-
-The system supports a root stack navigator with five-tab bottom navigation, trial and subscription management with guest accounts and data migration, and a guided onboarding flow. All authenticated user data syncs to PostgreSQL with retry logic and conflict resolution. Additional features include Instacart integration, Siri Shortcuts, biometric authentication, deep linking, and comprehensive accessibility. Atomic database transactions ensure data integrity.
-
-## Admin Analytics Dashboard
-The admin dashboard is served at `/admin` (requires auth + admin role). It includes:
-- **Base analytics** (`GET /api/admin/analytics`): User metrics, subscription breakdown, revenue overview, AI usage, user growth, top food items
-- **Subscription metrics** (`GET /api/admin/analytics/subscription-metrics`): Per-tier counts (FREE/BASIC/PRO), active counts, MRR breakdown by tier and plan type
-- **Trial conversion** (`GET /api/admin/analytics/trial-conversion`): Trials started/converted, conversion rate, average trial duration
-- **Churn rate** (`GET /api/admin/analytics/churn-rate`): Monthly cancellation history (12 months), per-month churn rates, current month churn
-- **Conversion funnel** (`GET /api/admin/analytics/conversion-funnel`): FREE→Trial→Basic→Pro conversion rates, plus `conversionEvents` table data (all-time and 30-day breakdowns by tier path, total conversions)
-- Pricing used in MRR calculations: BASIC $4.99/mo, $39.99/yr; PRO $9.99/mo, $79.99/yr
-
-## Subscription Proration
-Stripe proration is enabled for subscription upgrades/downgrades:
-- `POST /api/subscriptions/preview-proration`: Preview prorated amount before confirming plan change (requires `newPriceId`)
-- `POST /api/subscriptions/upgrade`: For existing active/trialing subscribers, uses `stripe.subscriptions.update()` with `proration_behavior: "create_prorations"` for in-place upgrades; for new subscribers, falls back to checkout session
-- `POST /api/subscriptions/create-checkout-session`: Also includes `proration_behavior: "create_prorations"` in subscription_data
-- Server validates price IDs against active Stripe prices before applying
-- Client shows confirmation dialog with prorated amount before confirming upgrade
-
-## Cancellation Flow
-Multi-step cancellation retention flow with targeted offers:
-- **Database**: `cancellation_reasons` table stores userId, reason, details, offerShown, offerAccepted, createdAt
-- `POST /api/subscriptions/cancel`: Cancel subscription at period end with reason tracking (allowed reasons: too_expensive, not_using, missing_features, other)
-- `POST /api/subscriptions/pause`: Pause subscription for 1-3 months via Stripe `pause_collection` (behavior: void, resumes_at timestamp)
-- `POST /api/subscriptions/apply-retention-offer`: Create and apply 50% off coupon for 3 months via Stripe
-- **CancellationFlowModal**: 3-step UI (reason selection → targeted retention offer → confirm cancellation)
-  - Step 1: Select reason with optional details
-  - Step 2: Targeted offer based on reason (discount for "too_expensive"/"other", pause for "not_using", roadmap for "missing_features")
-  - Step 3: Final confirmation showing what they'll lose
-- Cancel button shows for both BASIC and PRO active subscribers (non-StoreKit only)
-
-## Notification System
-- **Table**: `notifications` — queues notification records for the mobile app
-- **Service**: `server/services/notificationService.ts` — `queueNotification()`, `getUnreadNotifications()`, `markNotificationRead()`, `markAllNotificationsRead()`
-- **API endpoints** (authenticated, at `/api/notifications`):
-  - `GET /` — fetch unread notifications
-  - `GET /all?limit=50` — fetch all notifications (max 100)
-  - `POST /:id/read` — mark single notification as read
-  - `POST /read-all` — mark all as read
-- **Payment failure**: When Stripe sends `invoice.payment_failed`, a notification is queued with deep link `chefspaice://subscription/manage`
-- Notification types: `payment_failed` (more can be added)
-
-## Database Migrations
-
-### Configuration
-- **Config file**: `drizzle.config.ts` — schema source: `./shared/schema.ts`, output: `./migrations/`, dialect: `postgresql`
-- **Migrations directory**: `./migrations/` — contains SQL migration files and a `meta/` folder used by Drizzle Kit
-
-### How to Generate a Migration
-After making changes to `shared/schema.ts`, run:
+## Project Structure
 ```
-npx drizzle-kit generate
+client/
+  App.tsx / App.web.tsx       # Mobile / web entry points
+  screens/                    # All app screens (30+)
+  components/                 # Reusable components
+    landing/                  # Web landing page components
+    inventory/                # Inventory-specific components
+    recipe-detail/            # Recipe detail components
+    meal-plan/                # Meal plan components
+    settings/                 # Settings components
+  contexts/                   # AuthContext, ThemeContext, etc.
+  hooks/                      # Custom hooks (subscription, biometric, etc.)
+  services/                   # API service layer
+server/
+  routes.ts                   # Main route registration
+  storage.ts                  # DB storage interface
+  routers/                    # Route modules
+    auth.router.ts            # Auth (login, register, sessions)
+    sync.router.ts            # Cloud sync with delta sync
+    chat.router.ts            # AI chat
+    feedback.router.ts        # User feedback/bug reports
+    food.router.ts            # Food/nutrition lookup
+    admin/                    # Admin analytics dashboard
+    sync/                     # Per-section sync handlers
+    user/                     # User data endpoints
+    platform/                 # Food search, voice
+  stripe/                     # Stripe subscription management
+  services/                   # Notification, recipe gen, object storage
+  seeds/                      # Seed data scripts
+shared/
+  schema.ts                   # Drizzle DB schema (all tables)
+  subscription.ts             # Subscription tier definitions
+migrations/                   # Drizzle Kit SQL migrations (3 files)
 ```
-This compares your current schema against the last migration snapshot and produces a new `.sql` file in `./migrations/`.
 
-### How to Apply Migrations
-```
-npx drizzle-kit migrate
-```
-This runs any pending migration files against the database specified by `DATABASE_URL`.
+## Database Tables (shared/schema.ts)
+| Table | Purpose |
+|-------|---------|
+| users | Accounts, preferences, dietary info |
+| auth_providers | Social login providers per user |
+| user_sessions | Active session tokens |
+| user_sync_data | Cloud sync blob (JSONB per section, delta sync) |
+| user_inventory_items | Individual food inventory items |
+| user_saved_recipes | Saved/generated recipes |
+| user_meal_plans | Daily meal plans |
+| user_shopping_items | Shopping list items |
+| user_cookware_items | Owned cookware |
+| cooking_terms | Educational cooking glossary (seeded) |
+| appliances | Master appliance list (seeded) |
+| user_appliances | User-owned appliances |
+| nutrition_corrections | User-submitted nutrition fixes |
+| feedback_buckets | Grouped feedback categories |
+| feedback | Individual feedback/bug reports |
+| subscriptions | Stripe subscription state |
+| conversion_events | Tier change tracking |
+| cancellation_reasons | Cancellation retention data |
+| referrals | Referral tracking |
+| notifications | In-app notification queue |
 
-### Pre-Migration Checklist
-1. Back up the database before applying migrations to production
-2. Test the migration on the dev database first — verify it applies cleanly and the app works afterward
-3. Review the generated `.sql` file to confirm the changes match your intent (watch for destructive operations like column drops)
-4. Ensure no other processes are writing to the database during migration
+## Key API Routes
+- **Auth**: `/api/auth/*` (register, login, logout, sessions, social)
+- **Sync**: `/api/sync/*` (full sync, delta sync per section)
+- **Subscriptions**: `/api/subscriptions/*` (checkout, upgrade, cancel, pause, proration, retention offers)
+- **Admin**: `/api/admin/analytics/*` (metrics, churn, conversion funnel, MRR)
+- **Notifications**: `/api/notifications/*` (fetch, mark read)
+- **AI**: `/api/chat`, recipe generation, food/recipe/receipt scanning (OpenAI Vision)
+- **Food**: `/api/food/*` (USDA, OpenFoodFacts lookup)
+- **User Data**: `/api/user/*` (appliances, cookware, nutrition, recipes, ingredients)
 
-### Rollback Strategy
-- Keep the previous schema version in source control so you can revert if needed
-- If a migration has not yet been applied, use `npx drizzle-kit drop` to remove the last generated migration file
-- If a migration has already been applied and needs reversal, write a corrective migration that undoes the changes (Drizzle Kit does not auto-generate rollback scripts)
+## Subscription & Payments
+- Tiers: FREE / BASIC ($4.99/mo, $39.99/yr) / PRO ($9.99/mo, $79.99/yr)
+- Stripe proration on upgrades/downgrades
+- Cancellation flow: reason selection, targeted retention offer (discount/pause/roadmap), confirmation
+- RevenueCat webhook support for StoreKit purchases
+- Payment failure notifications with deep links
 
-## External Dependencies
-- **OpenAI API**: AI-powered recipe generation, conversational assistance, and vision-based scanning.
-- **USDA FoodData Central API**: Comprehensive nutrition data lookup.
-- **OpenFoodFacts API**: Open-source product information.
-- **PostgreSQL**: Primary relational database.
-- **Replit Object Storage**: Cloud file storage for assets.
-- **Instacart Connect API**: Grocery shopping integration.
-- **expo-camera**: Barcode scanning functionality.
-- **@react-native-async-storage/async-storage**: Persistent local storage for offline data.
+## Migrations
+- Config: `drizzle.config.ts` (schema: `./shared/schema.ts`, output: `./migrations/`)
+- Generate: `npx drizzle-kit generate`
+- Apply: `npx drizzle-kit migrate`
+- Current: 3 migration files (initial, text-to-jsonb, delta sync)
+
+## External APIs
+- OpenAI (recipes, chat, vision scanning)
+- USDA FoodData Central (nutrition)
+- OpenFoodFacts (product info)
+- Instacart Connect (grocery ordering)
+- Replit Object Storage (file assets)
