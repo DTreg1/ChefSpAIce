@@ -130,6 +130,9 @@ export function TrialEndedModal({
         return tier === "pro" ? "Pro" : "Basic";
       }
     }
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      return tier === "pro" ? "Pro" : "Basic";
+    }
     if (tier === "basic") {
       return `$${plan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}`;
     }
@@ -145,6 +148,9 @@ export function TrialEndedModal({
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         return `${selectedTier === "pro" ? "Pro" : "Basic"} ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}`;
       }
+    }
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      return `${selectedTier === "pro" ? "Pro" : "Basic"} ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}`;
     }
     return selectedPlan === "monthly"
       ? `$${getPrice(selectedTier, "monthly").toFixed(2)}/mo`
@@ -269,7 +275,7 @@ export function TrialEndedModal({
                     type="caption"
                     style={{ color: "#fff", fontSize: 10 }}
                   >
-                    Save 17%
+                    {Platform.OS === 'web' ? 'Save 17%' : 'Best Value'}
                   </ThemedText>
                 </View>
               </Pressable>

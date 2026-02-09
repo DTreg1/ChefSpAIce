@@ -169,11 +169,17 @@ export default function SubscriptionScreen() {
       if (shouldUseStoreKit) {
         return storeKitPrices?.proMonthly ? `${storeKitPrices.proMonthly}/month` : "Pro Plan";
       }
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        return "Pro Plan";
+      }
       return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
     }
     if (currentTier === SubscriptionTier.BASIC) {
       if (shouldUseStoreKit) {
         return storeKitPrices?.basicMonthly ? `${storeKitPrices.basicMonthly}/month` : "Basic Plan";
+      }
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        return "Basic Plan";
       }
       return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
     }
@@ -200,6 +206,10 @@ export default function SubscriptionScreen() {
       if (storeKitPrices[key]) {
         return `${storeKitPrices[key]}/${plan === 'monthly' ? 'mo' : 'yr'}`;
       }
+    }
+
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      return `${tier === "pro" ? "Pro" : "Basic"} ${plan === "monthly" ? "Monthly" : "Annual"}`;
     }
 
     const price = plan === "monthly"

@@ -84,58 +84,60 @@ export function DonationSection({ isWide }: DonationSectionProps) {
         </GlassCard>
       </View>
 
-      <View style={sharedStyles.section} data-testid="section-donate">
-        <Text style={sharedStyles.sectionTitle} data-testid="text-donate-title">
-          Support ChefSpAIce
-        </Text>
-        <Text
-          style={sharedStyles.sectionSubtitle}
-          data-testid="text-donate-subtitle"
-        >
-          Help us fight food waste and keep the app free for everyone
-        </Text>
+      {isWeb && (
+        <View style={sharedStyles.section} data-testid="section-donate">
+          <Text style={sharedStyles.sectionTitle} data-testid="text-donate-title">
+            Support ChefSpAIce
+          </Text>
+          <Text
+            style={sharedStyles.sectionSubtitle}
+            data-testid="text-donate-subtitle"
+          >
+            Help us fight food waste and keep the app free for everyone
+          </Text>
 
-        <GlassCard style={styles.donationCard}>
-          <View style={styles.donationContent}>
-            <MaterialCommunityIcons
-              name="heart"
-              size={32}
-              color={AppColors.primary}
-            />
-            <Text style={styles.donationText}>
-              Your donation helps us maintain and improve ChefSpAIce, keeping
-              it accessible to everyone while we work to reduce global food
-              waste.
-            </Text>
-            <View
-              style={[
-                styles.donationAmounts,
-                isWide && styles.donationAmountsWide,
-              ]}
-            >
-              {donationAmounts.map((item) => (
-                <Pressable
-                  key={item.amount}
-                  style={({ pressed }) => [
-                    styles.donationButton,
-                    pressed && styles.donationButtonPressed,
-                    isDonating && styles.donationButtonDisabled,
-                  ]}
-                  onPress={() => handleDonate(item.amount)}
-                  {...webAccessibilityProps(() => handleDonate(item.amount))}
-                  disabled={isDonating}
-                  data-testid={`button-donate-${item.label}`}
-                >
-                  <Text style={styles.donationButtonText}>{item.label}</Text>
-                </Pressable>
-              ))}
+          <GlassCard style={styles.donationCard}>
+            <View style={styles.donationContent}>
+              <MaterialCommunityIcons
+                name="heart"
+                size={32}
+                color={AppColors.primary}
+              />
+              <Text style={styles.donationText}>
+                Your donation helps us maintain and improve ChefSpAIce, keeping
+                it accessible to everyone while we work to reduce global food
+                waste.
+              </Text>
+              <View
+                style={[
+                  styles.donationAmounts,
+                  isWide && styles.donationAmountsWide,
+                ]}
+              >
+                {donationAmounts.map((item) => (
+                  <Pressable
+                    key={item.amount}
+                    style={({ pressed }) => [
+                      styles.donationButton,
+                      pressed && styles.donationButtonPressed,
+                      isDonating && styles.donationButtonDisabled,
+                    ]}
+                    onPress={() => handleDonate(item.amount)}
+                    {...webAccessibilityProps(() => handleDonate(item.amount))}
+                    disabled={isDonating}
+                    data-testid={`button-donate-${item.label}`}
+                  >
+                    <Text style={styles.donationButtonText}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.donationNote}>
+                Secure payment powered by Stripe
+              </Text>
             </View>
-            <Text style={styles.donationNote}>
-              Secure payment powered by Stripe
-            </Text>
-          </View>
-        </GlassCard>
-      </View>
+          </GlassCard>
+        </View>
+      )}
     </>
   );
 }
