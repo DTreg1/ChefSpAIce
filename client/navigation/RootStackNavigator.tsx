@@ -161,13 +161,13 @@ function AuthGuardedNavigator() {
     checkOnboardingAndGuestStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Landing (web) or Onboarding (mobile)
+  // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
   useEffect(() => {
     setSignOutCallback(() => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     });
@@ -181,7 +181,7 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Landing (web) or Onboarding (mobile)
+    // If user was authenticated but now is not, redirect to Landing (web) or Auth (mobile)
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
@@ -189,7 +189,7 @@ function AuthGuardedNavigator() {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Onboarding" }],
+          routes: [{ name: isWeb ? "Landing" : "Auth" }],
         }),
       );
     }

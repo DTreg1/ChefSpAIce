@@ -299,7 +299,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <TrialBadge />
           </View>
 
-          {!isAuthenticated && (
+          {!isAuthenticated && isGuestUser && (
             <Pressable
               onPress={() => {
                 closeDrawer();
