@@ -94,7 +94,7 @@ export function UpgradePrompt({
   featureName,
   remaining,
   max,
-  currentTier = "FREE",
+  currentTier = "TRIAL",
   onUpgrade,
   onDismiss,
 }: UpgradePromptProps) {
@@ -109,7 +109,7 @@ export function UpgradePrompt({
   const benefits = PRO_BENEFITS[benefitKey] || PRO_BENEFITS.default;
 
   const getUpgradeMessage = () => {
-    if (currentTier === "FREE") return "Upgrade to Basic or Pro for more access.";
+    if (currentTier === "TRIAL") return "Upgrade to Basic or Pro for more access.";
     if (currentTier === "BASIC") return "Upgrade to Pro for unlimited access.";
     return "Upgrade for more access.";
   };

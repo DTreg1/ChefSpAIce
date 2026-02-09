@@ -54,10 +54,10 @@ export interface ProductConfig {
 }
 
 export const PRODUCTS: Record<SubscriptionTier, ProductConfig> = {
-  [SubscriptionTier.FREE]: {
-    name: "ChefSpAIce Free",
-    description: "Free tier with limited features",
-    tier: SubscriptionTier.FREE,
+  [SubscriptionTier.TRIAL]: {
+    name: "ChefSpAIce Trial",
+    description: "Trial tier with limited features",
+    tier: SubscriptionTier.TRIAL,
     monthlyPrice: 0,
     annualPrice: 0,
   },

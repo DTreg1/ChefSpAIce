@@ -351,11 +351,11 @@ router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFu
       throw AppError.badRequest("tier and status are required", "MISSING_REQUIRED_FIELDS");
     }
 
-    const validTiers = ['FREE', 'BASIC', 'PRO'];
+    const validTiers = ['TRIAL', 'BASIC', 'PRO'];
     const validStatuses = ['active', 'trialing', 'canceled', 'expired', 'past_due'];
 
     if (!validTiers.includes(tier)) {
-      throw AppError.badRequest("Invalid tier. Must be FREE, BASIC, or PRO", "INVALID_TIER");
+      throw AppError.badRequest("Invalid tier. Must be TRIAL, BASIC, or PRO", "INVALID_TIER");
     }
 
     if (!validStatuses.includes(status)) {
@@ -630,7 +630,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
         .where(eq(subscriptions.userId, user.id));
 
       const [currentUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
-      const previousTier = currentUser?.subscriptionTier || SubscriptionTier.FREE;
+      const previousTier = currentUser?.subscriptionTier || SubscriptionTier.TRIAL;
 
       await db
         .update(users)
@@ -852,12 +852,12 @@ router.post("/cancel", async (req: Request, res: Response, next: NextFunction) =
     });
 
     const [currentUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
-    const currentTier = currentUser?.subscriptionTier || SubscriptionTier.FREE;
+    const currentTier = currentUser?.subscriptionTier || SubscriptionTier.TRIAL;
 
     await db.insert(conversionEvents).values({
       userId: user.id,
       fromTier: currentTier,
-      toTier: SubscriptionTier.FREE,
+      toTier: SubscriptionTier.TRIAL,
       source: "cancellation_scheduled",
       stripeSessionId: `cancel_scheduled_${existingSubscription.stripeSubscriptionId}_${Date.now()}`,
     }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });

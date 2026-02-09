@@ -160,7 +160,7 @@ export default function SubscriptionScreen() {
   const getPlanName = (): string => {
     if (currentTier === SubscriptionTier.PRO) return "Pro";
     if (currentTier === SubscriptionTier.BASIC) return "Basic";
-    return "Free";
+    return isTrialing ? "Trial" : "No Plan";
   };
 
   const getMonthlyPrice = (): string => {
@@ -182,7 +182,7 @@ export default function SubscriptionScreen() {
       }
       return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
     }
-    return "Free";
+    return isTrialing ? "7-Day Trial" : "—";
   };
 
   const getSubscribeButtonPrice = () => {

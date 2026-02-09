@@ -1,5 +1,5 @@
 export enum SubscriptionTier {
-  FREE = "FREE",
+  TRIAL = "TRIAL",
   BASIC = "BASIC",
   PRO = "PRO",
 }
@@ -16,7 +16,7 @@ export interface TierLimits {
 }
 
 export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
-  [SubscriptionTier.FREE]: {
+  [SubscriptionTier.TRIAL]: {
     maxPantryItems: 10,
     maxAiRecipesPerMonth: 2,
     maxCookwareItems: 3,
@@ -49,13 +49,13 @@ export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
 };
 
 export const MONTHLY_PRICES = {
-  FREE: 0,
+  TRIAL: 0,
   BASIC: 4.99,
   PRO: 9.99,
 } as const;
 
 export const ANNUAL_PRICES = {
-  FREE: 0,
+  TRIAL: 0,
   BASIC: 49.90,
   PRO: 99.90,
 } as const;

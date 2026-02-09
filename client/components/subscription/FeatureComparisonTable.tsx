@@ -8,14 +8,14 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
 export const PRO_FEATURES = [
-  { key: "pantryItems", name: "Pantry Items", free: "10" as string | boolean, basic: "25" as string | boolean, pro: "Unlimited" as string | boolean },
-  { key: "aiRecipes", name: "AI Recipes/Month", free: "2" as string | boolean, basic: "5" as string | boolean, pro: "Unlimited" as string | boolean },
-  { key: "cookware", name: "Cookware Items", free: "3" as string | boolean, basic: "5" as string | boolean, pro: "Unlimited" as string | boolean },
-  { key: "recipeScanning", name: "Recipe Scanning", free: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
-  { key: "bulkScanning", name: "Bulk Scanning", free: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
-  { key: "aiAssistant", name: "Live AI Kitchen Assistant", free: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
-  { key: "customStorage", name: "Custom Storage Areas", free: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
-  { key: "weeklyMealPrep", name: "Weekly Meal Prepping", free: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
+  { key: "pantryItems", name: "Pantry Items", trial: "10" as string | boolean, basic: "25" as string | boolean, pro: "Unlimited" as string | boolean },
+  { key: "aiRecipes", name: "AI Recipes/Month", trial: "2" as string | boolean, basic: "5" as string | boolean, pro: "Unlimited" as string | boolean },
+  { key: "cookware", name: "Cookware Items", trial: "3" as string | boolean, basic: "5" as string | boolean, pro: "Unlimited" as string | boolean },
+  { key: "recipeScanning", name: "Recipe Scanning", trial: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
+  { key: "bulkScanning", name: "Bulk Scanning", trial: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
+  { key: "aiAssistant", name: "Live AI Kitchen Assistant", trial: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
+  { key: "customStorage", name: "Custom Storage Areas", trial: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
+  { key: "weeklyMealPrep", name: "Weekly Meal Prepping", trial: false as string | boolean, basic: false as string | boolean, pro: true as string | boolean },
 ];
 
 export type ProFeature = (typeof PRO_FEATURES)[number];
@@ -55,7 +55,7 @@ export function FeatureComparisonTable({
         <ThemedText
           style={[styles.tierLabel, { color: theme.textSecondary }]}
         >
-          Free
+          Trial
         </ThemedText>
         <ThemedText
           style={[styles.tierLabel, { color: theme.textSecondary }]}
@@ -92,12 +92,12 @@ export function FeatureComparisonTable({
               {feature.name}
             </ThemedText>
             <View style={styles.tierValue}>
-              {typeof feature.free === "boolean" ? (
+              {typeof feature.trial === "boolean" ? (
                 <Feather
-                  name={feature.free ? "check" : "x"}
+                  name={feature.trial ? "check" : "x"}
                   size={16}
                   color={
-                    feature.free ? AppColors.success : theme.textSecondary
+                    feature.trial ? AppColors.success : theme.textSecondary
                   }
                 />
               ) : (
@@ -108,7 +108,7 @@ export function FeatureComparisonTable({
                   ]}
                   numberOfLines={1}
                 >
-                  {feature.free}
+                  {feature.trial}
                 </ThemedText>
               )}
             </View>
