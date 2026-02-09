@@ -178,9 +178,9 @@ export default function TermsScreen() {
           >
             <Text style={{ fontWeight: "600" }}>Subscription Plans:</Text>
             {"\n"}{"\u2022"} Basic Monthly: $4.99/month
-            {"\n"}{"\u2022"} Basic Annual: $39.99/year
+            {"\n"}{"\u2022"} Basic Annual: $49.90/year
             {"\n"}{"\u2022"} Pro Monthly: $9.99/month
-            {"\n"}{"\u2022"} Pro Annual: $79.99/year
+            {"\n"}{"\u2022"} Pro Annual: $99.90/year
           </Text>
           <Text
             style={[

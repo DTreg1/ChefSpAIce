@@ -40,9 +40,9 @@ We reserve the right to suspend or terminate accounts that violate these terms.`
     content: `ChefSpAIce offers the following auto-renewable subscription options:
 
 • Basic Monthly: $4.99/month
-• Basic Annual: $39.99/year
+• Basic Annual: $49.90/year
 • Pro Monthly: $9.99/month
-• Pro Annual: $79.99/year
+• Pro Annual: $99.90/year
 
 Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period at the same price.
 

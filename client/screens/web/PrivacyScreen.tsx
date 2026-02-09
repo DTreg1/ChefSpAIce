@@ -161,7 +161,8 @@ export default function PrivacyScreen() {
             We integrate with the following third-party services:{"\n\n"}-
             OpenAI: Powers our AI recipe generation. When you request a recipe,
             relevant inventory information is processed by OpenAI's API.{"\n"}-
-            Stripe: Handles secure payment processing for donations.{"\n"}-
+            RevenueCat: Manages in-app subscriptions and purchase verification.{"\n"}-
+            Stripe: Handles secure payment processing for subscriptions.{"\n"}-
             Barcode databases: Used to identify scanned products.{"\n\n"}
             Each third-party service has its own privacy policy governing the
             use of your information.
@@ -194,7 +195,27 @@ export default function PrivacyScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            6. Children's Privacy
+            6. Nutrition Information Disclaimer
+          </Text>
+          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+            Nutrition data provided in ChefSpAIce is sourced from third-party
+            databases (USDA, OpenFoodFacts) and AI-generated estimates. This
+            information is for general informational purposes only and should
+            not be considered a substitute for professional medical or dietary
+            advice. Always consult with a qualified healthcare professional
+            before making dietary decisions based on nutrition information
+            provided in this app.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            7. Children's Privacy
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
             ChefSpAIce is not intended for children under 13 years of age. We do
@@ -211,7 +232,7 @@ export default function PrivacyScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            7. Changes to This Policy
+            8. Changes to This Policy
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
             We may update this Privacy Policy from time to time. We will notify
@@ -228,7 +249,7 @@ export default function PrivacyScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            8. Contact Us
+            9. Contact Us
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
             If you have questions about this Privacy Policy or our data

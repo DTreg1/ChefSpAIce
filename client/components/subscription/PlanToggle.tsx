@@ -61,7 +61,7 @@ export function PlanToggle({
           Annual
         </ThemedText>
         <View style={styles.saveBadge}>
-          <ThemedText style={styles.saveBadgeText}>Save 33%</ThemedText>
+          <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
         </View>
       </Pressable>
     </View>

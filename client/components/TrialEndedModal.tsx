@@ -254,7 +254,7 @@ export function TrialEndedModal({
               data-testid="button-select-basic-tier"
               accessibilityRole="radio"
               accessibilityState={{ selected: selectedTier === "basic" }}
-              accessibilityLabel={`Basic plan, $${getPrice("basic", selectedPlan).toFixed(2)} per month`}
+              accessibilityLabel={`Basic plan, $${selectedPlan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) + " per month" : ANNUAL_PRICES.BASIC.toFixed(2) + " per year"}`}
             >
               <View style={styles.tierHeader}>
                 <View>
@@ -262,12 +262,12 @@ export function TrialEndedModal({
                     Basic
                   </ThemedText>
                   <ThemedText type="h2" style={{ color: AppColors.primary }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    ${getPrice("basic", selectedPlan).toFixed(2)}
+                    ${selectedPlan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}
                     <ThemedText
                       type="body"
                       style={{ color: theme.textSecondary }}
                     >
-                      /mo
+                      {selectedPlan === "monthly" ? "/mo" : "/yr"}
                     </ThemedText>
                   </ThemedText>
                 </View>
@@ -316,7 +316,7 @@ export function TrialEndedModal({
               data-testid="button-select-pro-tier"
               accessibilityRole="radio"
               accessibilityState={{ selected: selectedTier === "pro" }}
-              accessibilityLabel={`Pro plan, $${getPrice("pro", selectedPlan).toFixed(2)} per month, most popular`}
+              accessibilityLabel={`Pro plan, $${selectedPlan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) + " per month" : ANNUAL_PRICES.PRO.toFixed(2) + " per year"}, most popular`}
             >
               <View
                 style={[
@@ -337,12 +337,12 @@ export function TrialEndedModal({
                     Pro
                   </ThemedText>
                   <ThemedText type="h2" style={{ color: AppColors.warning }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    ${getPrice("pro", selectedPlan).toFixed(2)}
+                    ${selectedPlan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.PRO.toFixed(2)}
                     <ThemedText
                       type="body"
                       style={{ color: theme.textSecondary }}
                     >
-                      /mo
+                      {selectedPlan === "monthly" ? "/mo" : "/yr"}
                     </ThemedText>
                   </ThemedText>
                 </View>
@@ -412,7 +412,7 @@ export function TrialEndedModal({
                     color="#fff"
                   />
                   <ThemedText type="button" style={styles.subscribeButtonText}>
-                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — ${getPrice(selectedTier, selectedPlan).toFixed(2)}/mo
+                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — ${selectedPlan === "monthly" ? getPrice(selectedTier, "monthly").toFixed(2) + "/mo" : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)) + "/yr"}
                   </ThemedText>
                 </>
               )}
