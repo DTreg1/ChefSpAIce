@@ -744,7 +744,7 @@ export default function RecipesScreen() {
             }
             onUpgrade={() => {
               dismissUpgradePrompt();
-              navigation.navigate("Pricing" as any);
+              navigation.navigate("Subscription" as any);
             }}
             onDismiss={dismissUpgradePrompt}
           />

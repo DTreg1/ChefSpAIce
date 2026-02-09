@@ -13,7 +13,7 @@
  * ├── Main (DrawerNavigator)
  * │   ├── TabNavigator
  * │   │   ├── InventoryStack (Inventory, ItemDetail)
- * │   │   ├── RecipesStack (Recipes, RecipeDetail, GenerateRecipe, Chat)
+ * │   │   ├── RecipesStack (Recipes, RecipeDetail, GenerateRecipe)
  * │   │   ├── MealPlanStack (MealPlan, SelectRecipe)
  * │   │   ├── ShoppingListStack (ShoppingList)
  * │   │   └── ProfileStack (Settings, Analytics, Cookware, etc.)

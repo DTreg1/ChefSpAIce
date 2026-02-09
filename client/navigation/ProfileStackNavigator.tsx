@@ -19,7 +19,6 @@ export type ProfileStackParamList = {
   Analytics: undefined;
   CookingTerms: undefined;
   Cookware: undefined;
-  DevComponents: undefined;
   BarcodeTest: undefined;
   StorageLocations: undefined;
   Subscription: undefined;

@@ -757,7 +757,7 @@ export default function ProfileScreen() {
               />
               <Pressable
                 style={styles.menuItem}
-                onPress={() => navigation.navigate("DevComponents")}
+                onPress={() => navigation.navigate("GlassLeaf")}
                 accessibilityLabel="Dev components"
               >
                 <View

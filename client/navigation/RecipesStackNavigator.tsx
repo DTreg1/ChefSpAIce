@@ -24,7 +24,6 @@ export type RecipesStackParamList = {
         customSettings?: RecipeSettings;
       }
     | undefined;
-  Chat: undefined;
 };
 
 const Stack = createNativeStackNavigator<RecipesStackParamList>();
