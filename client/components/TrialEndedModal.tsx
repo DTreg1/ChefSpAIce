@@ -257,7 +257,7 @@ export function TrialEndedModal({
                   <ThemedText type="h3" style={{ color: theme.text }}>
                     Basic
                   </ThemedText>
-                  <ThemedText type="h2" style={{ color: AppColors.primary }}>
+                  <ThemedText type="h2" style={{ color: AppColors.primary }} numberOfLines={1} adjustsFontSizeToFit={true}>
                     ${getPrice("basic", selectedPlan).toFixed(2)}
                     <ThemedText
                       type="body"
@@ -332,7 +332,7 @@ export function TrialEndedModal({
                   <ThemedText type="h3" style={{ color: theme.text }}>
                     Pro
                   </ThemedText>
-                  <ThemedText type="h2" style={{ color: AppColors.warning }}>
+                  <ThemedText type="h2" style={{ color: AppColors.warning }} numberOfLines={1} adjustsFontSizeToFit={true}>
                     ${getPrice("pro", selectedPlan).toFixed(2)}
                     <ThemedText
                       type="body"
@@ -408,7 +408,7 @@ export function TrialEndedModal({
                     color="#fff"
                   />
                   <ThemedText type="button" style={styles.subscribeButtonText}>
-                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"}
+                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — ${getPrice(selectedTier, selectedPlan).toFixed(2)}/mo
                   </ThemedText>
                 </>
               )}

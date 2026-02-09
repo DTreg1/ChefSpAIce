@@ -68,6 +68,8 @@ export function TierSelector({
         </View>
         <ThemedText
           style={[styles.tierCardPrice, { color: AppColors.success }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
         >
           $0
           <ThemedText
@@ -119,6 +121,8 @@ export function TierSelector({
         </View>
         <ThemedText
           style={[styles.tierCardPrice, { color: AppColors.primary }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
         >
           $
           {selectedPlan === "monthly"
@@ -193,6 +197,8 @@ export function TierSelector({
         </View>
         <ThemedText
           style={[styles.tierCardPrice, { color: AppColors.warning }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
         >
           $
           {selectedPlan === "monthly"
@@ -261,9 +267,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tierCardPrice: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   tierCardInterval: {
     fontSize: 12,

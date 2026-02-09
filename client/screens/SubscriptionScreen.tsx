@@ -29,6 +29,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import {
   MONTHLY_PRICES,
+  ANNUAL_PRICES,
   SubscriptionTier,
 } from "@shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -490,6 +491,9 @@ export default function SubscriptionScreen() {
           {
             paddingTop: 56 + insets.top + Spacing.lg,
             paddingBottom: insets.bottom + Spacing.xl,
+            maxWidth: 600,
+            width: "100%",
+            alignSelf: "center" as const,
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -681,7 +685,7 @@ export default function SubscriptionScreen() {
                 ? "Loading..."
                 : selectedTier === "free"
                   ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — $${selectedPlan === "monthly" ? (selectedTier === "pro" ? MONTHLY_PRICES.PRO.toFixed(2) : MONTHLY_PRICES.BASIC.toFixed(2)) : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2))}/${selectedPlan === "monthly" ? "mo" : "yr"}`}
             </GlassButton>
 
             <ThemedText
@@ -878,7 +882,7 @@ export default function SubscriptionScreen() {
                 ? "Loading..."
                 : selectedTier === "free"
                   ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"}`}
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — $${selectedPlan === "monthly" ? (selectedTier === "pro" ? MONTHLY_PRICES.PRO.toFixed(2) : MONTHLY_PRICES.BASIC.toFixed(2)) : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2))}/${selectedPlan === "monthly" ? "mo" : "yr"}`}
             </GlassButton>
 
             <ThemedText
