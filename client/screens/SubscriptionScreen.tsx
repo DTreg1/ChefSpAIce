@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -97,6 +97,29 @@ export default function SubscriptionScreen() {
   const shouldUseStoreKit =
     (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
 
+  const storeKitPrices = useMemo(() => {
+    if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
+
+    const prices: { basicMonthly?: string; basicAnnual?: string; proMonthly?: string; proAnnual?: string } = {};
+
+    for (const pkg of offerings.availablePackages) {
+      const id = pkg.identifier.toLowerCase();
+      const priceStr = pkg.product.priceString;
+
+      if (id.includes('basic') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+        prices.basicMonthly = priceStr;
+      } else if (id.includes('basic') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+        prices.basicAnnual = priceStr;
+      } else if (id.includes('pro') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+        prices.proMonthly = priceStr;
+      } else if (id.includes('pro') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+        prices.proAnnual = priceStr;
+      }
+    }
+
+    return Object.keys(prices).length > 0 ? prices : null;
+  }, [shouldUseStoreKit, offerings]);
+
   const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -145,6 +168,34 @@ export default function SubscriptionScreen() {
     if (currentTier === SubscriptionTier.PRO) return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
     if (currentTier === SubscriptionTier.BASIC) return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
     return "Free";
+  };
+
+  const getSubscriptionTermsText = () => {
+    if (Platform.OS === 'ios') {
+      return 'Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your Account Settings on the App Store after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+    }
+    if (Platform.OS === 'android') {
+      return 'Payment will be charged to your Google Play account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions in the Google Play app after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+    }
+    return 'Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions from your account settings. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+  };
+
+  const getSubscribeButtonPrice = () => {
+    if (selectedTier === "free") return "";
+    const tier = selectedTier;
+    const plan = selectedPlan;
+
+    if (storeKitPrices) {
+      const key = `${tier}${plan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof typeof storeKitPrices;
+      if (storeKitPrices[key]) {
+        return `${storeKitPrices[key]}/${plan === 'monthly' ? 'mo' : 'yr'}`;
+      }
+    }
+
+    const price = plan === "monthly"
+      ? (tier === "pro" ? MONTHLY_PRICES.PRO : MONTHLY_PRICES.BASIC)
+      : (tier === "pro" ? ANNUAL_PRICES.PRO : ANNUAL_PRICES.BASIC);
+    return `$${price.toFixed(2)}/${plan === "monthly" ? "mo" : "yr"}`;
   };
 
   const handleManageSubscription = async () => {
@@ -661,6 +712,7 @@ export default function SubscriptionScreen() {
               selectedTier={selectedTier}
               onSelectTier={setSelectedTier}
               selectedPlan={selectedPlan}
+              storeKitPrices={storeKitPrices}
             />
 
             <GlassButton
@@ -690,20 +742,13 @@ export default function SubscriptionScreen() {
                 ? "Loading..."
                 : selectedTier === "free"
                   ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — $${selectedPlan === "monthly" ? (selectedTier === "pro" ? MONTHLY_PRICES.PRO.toFixed(2) : MONTHLY_PRICES.BASIC.toFixed(2)) : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2))}/${selectedPlan === "monthly" ? "mo" : "yr"}`}
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              Payment will be charged to your Apple ID account at confirmation
-              of purchase. Subscriptions automatically renew unless auto-renew
-              is turned off at least 24 hours before the end of the current
-              period. Your account will be charged for renewal within 24 hours
-              prior to the end of the current period. You can manage and cancel
-              your subscriptions by going to your Account Settings on the App
-              Store after purchase. Any unused portion of a free trial period,
-              if offered, will be forfeited when you purchase a subscription.
+              {getSubscriptionTermsText()}
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -733,22 +778,38 @@ export default function SubscriptionScreen() {
                   Terms of Use
                 </ThemedText>
               </Pressable>
-              <ThemedText
-                style={[styles.legalSeparator, { color: theme.textSecondary }]}
-              >
-                |
-              </ThemedText>
-              <Pressable
-                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-                data-testid="link-apple-eula"
-                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  EULA
-                </ThemedText>
-              </Pressable>
+              {Platform.OS !== 'web' && (
+                <>
+                  <ThemedText
+                    style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                  >
+                    |
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                      } else {
+                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                      }
+                    }}
+                    data-testid="link-apple-eula"
+                    {...webAccessibilityProps(() => {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                      } else {
+                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                      }
+                    })}
+                  >
+                    <ThemedText
+                      style={[styles.legalLink, { color: AppColors.primary }]}
+                    >
+                      {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
+                    </ThemedText>
+                  </Pressable>
+                </>
+              )}
             </View>
           </GlassCard>
         )}
@@ -858,6 +919,7 @@ export default function SubscriptionScreen() {
               onSelectTier={setSelectedTier}
               selectedPlan={selectedPlan}
               testIdPrefix="trial"
+              storeKitPrices={storeKitPrices}
             />
 
             <GlassButton
@@ -887,20 +949,13 @@ export default function SubscriptionScreen() {
                 ? "Loading..."
                 : selectedTier === "free"
                   ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — $${selectedPlan === "monthly" ? (selectedTier === "pro" ? MONTHLY_PRICES.PRO.toFixed(2) : MONTHLY_PRICES.BASIC.toFixed(2)) : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2))}/${selectedPlan === "monthly" ? "mo" : "yr"}`}
+                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              Payment will be charged to your Apple ID account at confirmation
-              of purchase. Subscriptions automatically renew unless auto-renew
-              is turned off at least 24 hours before the end of the current
-              period. Your account will be charged for renewal within 24 hours
-              prior to the end of the current period. You can manage and cancel
-              your subscriptions by going to your Account Settings on the App
-              Store after purchase. Any unused portion of a free trial period,
-              if offered, will be forfeited when you purchase a subscription.
+              {getSubscriptionTermsText()}
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -930,22 +985,38 @@ export default function SubscriptionScreen() {
                   Terms of Use
                 </ThemedText>
               </Pressable>
-              <ThemedText
-                style={[styles.legalSeparator, { color: theme.textSecondary }]}
-              >
-                |
-              </ThemedText>
-              <Pressable
-                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-                data-testid="link-trial-apple-eula"
-                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  EULA
-                </ThemedText>
-              </Pressable>
+              {Platform.OS !== 'web' && (
+                <>
+                  <ThemedText
+                    style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                  >
+                    |
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                      } else {
+                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                      }
+                    }}
+                    data-testid="link-trial-apple-eula"
+                    {...webAccessibilityProps(() => {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                      } else {
+                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                      }
+                    })}
+                  >
+                    <ThemedText
+                      style={[styles.legalLink, { color: AppColors.primary }]}
+                    >
+                      {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
+                    </ThemedText>
+                  </Pressable>
+                </>
+              )}
             </View>
           </GlassCard>
         )}

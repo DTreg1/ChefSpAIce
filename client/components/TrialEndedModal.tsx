@@ -85,6 +85,12 @@ interface TrialEndedModalProps {
   onOpenTermsOfUse?: () => void;
   onRestorePurchases?: () => void;
   isRestoring?: boolean;
+  storeKitPrices?: {
+    basicMonthly?: string;
+    basicAnnual?: string;
+    proMonthly?: string;
+    proAnnual?: string;
+  } | null;
 }
 
 export function TrialEndedModal({
@@ -95,6 +101,7 @@ export function TrialEndedModal({
   onOpenTermsOfUse,
   onRestorePurchases,
   isRestoring = false,
+  storeKitPrices,
 }: TrialEndedModalProps) {
   const { theme, isDark } = useTheme();
   const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
@@ -113,6 +120,29 @@ export function TrialEndedModal({
         : ANNUAL_PRICES.BASIC / 12;
     }
     return plan === "monthly" ? MONTHLY_PRICES.PRO : ANNUAL_PRICES.PRO / 12;
+  };
+
+  const getDisplayPrice = (tier: "basic" | "pro", plan: "monthly" | "annual") => {
+    if (storeKitPrices) {
+      const key = `${tier}${plan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
+      if (storeKitPrices[key]) return storeKitPrices[key];
+    }
+    if (tier === "basic") {
+      return `$${plan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}`;
+    }
+    return `$${plan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.PRO.toFixed(2)}`;
+  };
+
+  const getButtonPriceText = () => {
+    if (storeKitPrices) {
+      const key = `${selectedTier}${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
+      if (storeKitPrices[key]) {
+        return `${storeKitPrices[key]}/${selectedPlan === 'monthly' ? 'mo' : 'yr'}`;
+      }
+    }
+    return selectedPlan === "monthly"
+      ? `$${getPrice(selectedTier, "monthly").toFixed(2)}/mo`
+      : `$${(selectedTier === "pro" ? ANNUAL_PRICES.PRO : ANNUAL_PRICES.BASIC).toFixed(2)}/yr`;
   };
 
   const handleOpenPrivacyPolicy = () => {
@@ -254,7 +284,7 @@ export function TrialEndedModal({
               data-testid="button-select-basic-tier"
               accessibilityRole="radio"
               accessibilityState={{ selected: selectedTier === "basic" }}
-              accessibilityLabel={`Basic plan, $${selectedPlan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) + " per month" : ANNUAL_PRICES.BASIC.toFixed(2) + " per year"}`}
+              accessibilityLabel={`Basic plan, ${getDisplayPrice("basic", selectedPlan)} per ${selectedPlan === "monthly" ? "month" : "year"}`}
             >
               <View style={styles.tierHeader}>
                 <View>
@@ -262,7 +292,7 @@ export function TrialEndedModal({
                     Basic
                   </ThemedText>
                   <ThemedText type="h2" style={{ color: AppColors.primary }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    ${selectedPlan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}
+                    {getDisplayPrice("basic", selectedPlan)}
                     <ThemedText
                       type="body"
                       style={{ color: theme.textSecondary }}
@@ -316,7 +346,7 @@ export function TrialEndedModal({
               data-testid="button-select-pro-tier"
               accessibilityRole="radio"
               accessibilityState={{ selected: selectedTier === "pro" }}
-              accessibilityLabel={`Pro plan, $${selectedPlan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) + " per month" : ANNUAL_PRICES.PRO.toFixed(2) + " per year"}, most popular`}
+              accessibilityLabel={`Pro plan, ${getDisplayPrice("pro", selectedPlan)} per ${selectedPlan === "monthly" ? "month" : "year"}, most popular`}
             >
               <View
                 style={[
@@ -337,7 +367,7 @@ export function TrialEndedModal({
                     Pro
                   </ThemedText>
                   <ThemedText type="h2" style={{ color: AppColors.warning }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    ${selectedPlan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.PRO.toFixed(2)}
+                    {getDisplayPrice("pro", selectedPlan)}
                     <ThemedText
                       type="body"
                       style={{ color: theme.textSecondary }}
@@ -412,7 +442,7 @@ export function TrialEndedModal({
                     color="#fff"
                   />
                   <ThemedText type="button" style={styles.subscribeButtonText}>
-                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — ${selectedPlan === "monthly" ? getPrice(selectedTier, "monthly").toFixed(2) + "/mo" : (selectedTier === "pro" ? ANNUAL_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)) + "/yr"}
+                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — {getButtonPriceText()}
                   </ThemedText>
                 </>
               )}
@@ -421,10 +451,15 @@ export function TrialEndedModal({
               type="caption"
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              Subscription automatically renews unless auto-renew is turned off
-              at least 24 hours before the end of the current period. Payment
-              will be charged to your Apple ID account at confirmation of
-              purchase.
+              {(() => {
+                if (Platform.OS === 'ios') {
+                  return 'Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your Account Settings on the App Store after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+                }
+                if (Platform.OS === 'android') {
+                  return 'Payment will be charged to your Google Play account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions in the Google Play app after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+                }
+                return 'Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions from your account settings. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+              })()}
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -459,25 +494,35 @@ export function TrialEndedModal({
                   Terms of Use
                 </ThemedText>
               </Pressable>
-              <ThemedText
-                type="caption"
-                style={[styles.legalSeparator, { color: theme.textSecondary }]}
-              >
-                |
-              </ThemedText>
-              <Pressable
-                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-                data-testid="link-modal-apple-eula"
-                accessibilityRole="link"
-                accessibilityLabel="EULA"
-              >
-                <ThemedText
-                  type="caption"
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  EULA
-                </ThemedText>
-              </Pressable>
+              {Platform.OS !== 'web' && (
+                <>
+                  <ThemedText
+                    type="caption"
+                    style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                  >
+                    |
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                      } else {
+                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                      }
+                    }}
+                    data-testid="link-modal-apple-eula"
+                    accessibilityRole="link"
+                    accessibilityLabel={Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
+                  >
+                    <ThemedText
+                      type="caption"
+                      style={[styles.legalLink, { color: AppColors.primary }]}
+                    >
+                      {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
+                    </ThemedText>
+                  </Pressable>
+                </>
+              )}
             </View>
             {onRestorePurchases && (
               <Pressable

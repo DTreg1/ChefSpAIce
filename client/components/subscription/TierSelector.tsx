@@ -16,6 +16,12 @@ interface TierSelectorProps {
   onSelectTier: (tier: "free" | "basic" | "pro") => void;
   selectedPlan: "monthly" | "annual";
   testIdPrefix?: string;
+  storeKitPrices?: {
+    basicMonthly?: string;
+    basicAnnual?: string;
+    proMonthly?: string;
+    proAnnual?: string;
+  } | null;
 }
 
 export function TierSelector({
@@ -23,8 +29,17 @@ export function TierSelector({
   onSelectTier,
   selectedPlan,
   testIdPrefix = "",
+  storeKitPrices,
 }: TierSelectorProps) {
   const { theme } = useTheme();
+
+  const basicPrice = selectedPlan === "monthly"
+    ? (storeKitPrices?.basicMonthly || `$${MONTHLY_PRICES.BASIC.toFixed(2)}`)
+    : (storeKitPrices?.basicAnnual || `$${ANNUAL_PRICES.BASIC.toFixed(2)}`);
+
+  const proPrice = selectedPlan === "monthly"
+    ? (storeKitPrices?.proMonthly || `$${MONTHLY_PRICES.PRO.toFixed(2)}`)
+    : (storeKitPrices?.proAnnual || `$${ANNUAL_PRICES.PRO.toFixed(2)}`);
 
   const freeTestId = testIdPrefix
     ? `button-${testIdPrefix}-select-free`
@@ -124,10 +139,7 @@ export function TierSelector({
           numberOfLines={1}
           adjustsFontSizeToFit={true}
         >
-          $
-          {selectedPlan === "monthly"
-            ? MONTHLY_PRICES.BASIC.toFixed(2)
-            : ANNUAL_PRICES.BASIC.toFixed(2)}
+          {basicPrice}
           <ThemedText
             style={[
               styles.tierCardInterval,
@@ -137,7 +149,7 @@ export function TierSelector({
             {selectedPlan === "monthly" ? "/month" : "/year"}
           </ThemedText>
         </ThemedText>
-        {selectedPlan === "annual" && (
+        {selectedPlan === "annual" && !storeKitPrices && (
           <ThemedText
             style={[
               styles.tierCardMonthlyCalc,
@@ -200,10 +212,7 @@ export function TierSelector({
           numberOfLines={1}
           adjustsFontSizeToFit={true}
         >
-          $
-          {selectedPlan === "monthly"
-            ? MONTHLY_PRICES.PRO.toFixed(2)
-            : ANNUAL_PRICES.PRO.toFixed(2)}
+          {proPrice}
           <ThemedText
             style={[
               styles.tierCardInterval,
@@ -213,7 +222,7 @@ export function TierSelector({
             {selectedPlan === "monthly" ? "/month" : "/year"}
           </ThemedText>
         </ThemedText>
-        {selectedPlan === "annual" && (
+        {selectedPlan === "annual" && !storeKitPrices && (
           <ThemedText
             style={[
               styles.tierCardMonthlyCalc,

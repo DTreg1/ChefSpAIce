@@ -172,6 +172,27 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     restorePurchases,
   } = useStoreKit();
 
+  const storeKitPrices = useMemo(() => {
+    const shouldUseStoreKit = (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
+    if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
+
+    const prices: { basicMonthly?: string; basicAnnual?: string; proMonthly?: string; proAnnual?: string } = {};
+    for (const pkg of offerings.availablePackages) {
+      const id = pkg.identifier.toLowerCase();
+      const priceStr = pkg.product.priceString;
+      if (id.includes('basic') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+        prices.basicMonthly = priceStr;
+      } else if (id.includes('basic') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+        prices.basicAnnual = priceStr;
+      } else if (id.includes('pro') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+        prices.proMonthly = priceStr;
+      } else if (id.includes('pro') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+        prices.proAnnual = priceStr;
+      }
+    }
+    return Object.keys(prices).length > 0 ? prices : null;
+  }, [isStoreKitAvailable, offerings]);
+
   const lastFetchRef = useRef<number>(0);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const backgroundTimestampRef = useRef<number>(0);
@@ -559,6 +580,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           }
         } : undefined}
         isRestoring={isRestoringPurchases}
+        storeKitPrices={storeKitPrices}
       />
     </SubscriptionContext.Provider>
   );

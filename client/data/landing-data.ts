@@ -52,7 +52,7 @@ export const faqs = [
   {
     question: "Is there a free trial available?",
     answer:
-      "Yes! We offer a 7-day free trial with full access to all Pro features. No credit card required to start.",
+      "Yes! We offer a 7-day free trial with full access to all Pro features. No payment is required upfront.",
   },
   {
     question: "Can I use the app on multiple devices?",

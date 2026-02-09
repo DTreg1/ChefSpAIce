@@ -388,7 +388,15 @@ export default function TrialExpiredScreen() {
             style={[styles.legalText, { color: theme.textSecondary }]}
             data-testid="text-auto-renewal-terms"
           >
-            Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase.
+            {(() => {
+              if (Platform.OS === 'ios') {
+                return 'Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your Account Settings on the App Store after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+              }
+              if (Platform.OS === 'android') {
+                return 'Payment will be charged to your Google Play account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions in the Google Play app after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+              }
+              return 'Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions from your account settings. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
+            })()}
           </ThemedText>
           <View style={styles.legalLinksContainer}>
             <Pressable
@@ -419,23 +427,33 @@ export default function TrialExpiredScreen() {
                 Terms of Use
               </ThemedText>
             </Pressable>
-            <ThemedText
-              type="caption"
-              style={[styles.legalSeparator, { color: theme.textSecondary }]}
-            >
-              |
-            </ThemedText>
-            <Pressable
-              onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-              data-testid="link-apple-eula"
-            >
-              <ThemedText
-                type="caption"
-                style={[styles.legalLink, { color: AppColors.primary }]}
-              >
-                EULA
-              </ThemedText>
-            </Pressable>
+            {Platform.OS !== 'web' && (
+              <>
+                <ThemedText
+                  type="caption"
+                  style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                >
+                  |
+                </ThemedText>
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                    } else {
+                      Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                    }
+                  }}
+                  data-testid="link-apple-eula"
+                >
+                  <ThemedText
+                    type="caption"
+                    style={[styles.legalLink, { color: AppColors.primary }]}
+                  >
+                    {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
+                  </ThemedText>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
