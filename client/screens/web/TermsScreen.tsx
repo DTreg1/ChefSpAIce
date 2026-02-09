@@ -232,19 +232,9 @@ export default function TermsScreen() {
               { color: colors.textSecondary, marginTop: 12 },
             ]}
           >
-            <Text style={{ fontWeight: "600" }}>EULA:</Text> This app is
-            licensed under Apple's Standard End User License Agreement (EULA).
-            You can review the full terms at:{" "}
-            <Text
-              style={{ color: colors.brandGreen, textDecorationLine: "underline" }}
-              onPress={() => {
-                if (isWeb && typeof window !== "undefined") {
-                  window.open("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/", "_blank");
-                }
-              }}
-            >
-              https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-            </Text>
+            <Text style={{ fontWeight: "600" }}>EULA:</Text> These Terms of
+            Service serve as the End User License Agreement (EULA) for
+            ChefSpAIce.
           </Text>
         </View>
 

@@ -725,9 +725,9 @@ export default function SubscriptionScreen() {
                 |
               </ThemedText>
               <Pressable
-                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-                data-testid="link-apple-eula"
-                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-eula"
+                {...webAccessibilityProps(handleOpenTermsOfUse)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -922,9 +922,9 @@ export default function SubscriptionScreen() {
                 |
               </ThemedText>
               <Pressable
-                onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}
-                data-testid="link-trial-apple-eula"
-                {...webAccessibilityProps(() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"))}
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-trial-eula"
+                {...webAccessibilityProps(handleOpenTermsOfUse)}
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
