@@ -17,6 +17,7 @@ interface SettingsChipSelectorProps {
   options: ChipOption[];
   selected: string[];
   onToggle: (value: string) => void;
+  onAdd?: () => void;
   selectedColor?: string;
   theme: any;
 }
@@ -27,6 +28,7 @@ export function SettingsChipSelector({
   options,
   selected,
   onToggle,
+  onAdd,
   selectedColor = AppColors.primary,
   theme,
 }: SettingsChipSelectorProps) {
@@ -61,7 +63,6 @@ export function SettingsChipSelector({
                   name={option.icon as any}
                   size={14}
                   color={isSelected ? "#FFFFFF" : theme.text}
-                  style={{ marginRight: 4 }}
                 />
               ) : null}
               <ThemedText
@@ -73,6 +74,29 @@ export function SettingsChipSelector({
             </Pressable>
           );
         })}
+        {onAdd ? (
+          <Pressable
+            onPress={onAdd}
+            style={[
+              styles.chip,
+              styles.addChip,
+              {
+                backgroundColor: "transparent",
+                borderColor: theme.border,
+                borderStyle: "dashed" as any,
+              },
+            ]}
+            data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-add-new`}
+          >
+            <Feather name="plus" size={14} color={theme.textSecondary} />
+            <ThemedText
+              type="small"
+              style={{ color: theme.textSecondary }}
+            >
+              Add New
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </View>
     </GlassCard>
   );
@@ -94,9 +118,15 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
+  },
+  addChip: {
+    borderWidth: 1.5,
   },
 });

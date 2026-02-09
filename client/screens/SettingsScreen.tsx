@@ -33,7 +33,17 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, Alert, Platform, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Platform,
+  ScrollView,
+  Modal,
+  TextInput,
+  Pressable,
+} from "react-native";
+import { ThemedText } from "@/components/ThemedText";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -54,7 +64,7 @@ import { RegisterPrompt } from "@/components/RegisterPrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
-import { Spacing, AppColors } from "@/constants/theme";
+import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import {
   storage,
   UserPreferences,
@@ -137,6 +147,11 @@ export default function SettingsScreen() {
   } | null>(null);
   const [isLoadingReferral, setIsLoadingReferral] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [customStorageLocations, setCustomStorageLocations] = useState<
+    Array<{ key: string; label: string; icon: string }>
+  >([]);
+  const [showAddStorageModal, setShowAddStorageModal] = useState(false);
+  const [newStorageAreaName, setNewStorageAreaName] = useState("");
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -147,6 +162,8 @@ export default function SettingsScreen() {
     ]);
     setPreferences(prefs);
     setLearnedPrefsCount(prefsCount);
+    const customLocs = await storage.getCustomStorageLocations();
+    setCustomStorageLocations(customLocs);
   }, []);
 
   const fetchReferralData = useCallback(async () => {
@@ -285,6 +302,42 @@ export default function SettingsScreen() {
     const newPrefs = { ...preferences, storageAreas: updated };
     setPreferences(newPrefs);
     await storage.setPreferences(newPrefs);
+  };
+
+  const handleAddStorageArea = () => {
+    setNewStorageAreaName("");
+    setShowAddStorageModal(true);
+  };
+
+  const handleConfirmAddStorageArea = async () => {
+    const trimmed = newStorageAreaName.trim();
+    if (!trimmed) return;
+    const key = trimmed.toLowerCase().replace(/\s+/g, "_");
+    const allOptions = [
+      ...STORAGE_AREA_OPTIONS.map((o) => o.id),
+      ...customStorageLocations.map((l) => l.key),
+    ];
+    if (allOptions.includes(key)) {
+      Alert.alert("Already Exists", "A storage area with that name already exists.");
+      return;
+    }
+    const newLocation = { key, label: trimmed, icon: "box" };
+    await storage.addCustomStorageLocation(newLocation);
+    setCustomStorageLocations((prev) => [...prev, newLocation]);
+    const current = preferences.storageAreas || [
+      "fridge",
+      "freezer",
+      "pantry",
+      "counter",
+    ];
+    const newPrefs = {
+      ...preferences,
+      storageAreas: [...current, key],
+    };
+    setPreferences(newPrefs);
+    await storage.setPreferences(newPrefs);
+    setShowAddStorageModal(false);
+    setNewStorageAreaName("");
   };
 
   const handleMacroChange = async (
@@ -820,11 +873,18 @@ export default function SettingsScreen() {
     label: o.label,
   }));
 
-  const storageAreaChipOptions = STORAGE_AREA_OPTIONS.map((o) => ({
-    value: o.id,
-    label: o.label,
-    icon: o.icon,
-  }));
+  const storageAreaChipOptions = [
+    ...STORAGE_AREA_OPTIONS.map((o) => ({
+      value: o.id,
+      label: o.label,
+      icon: o.icon,
+    })),
+    ...customStorageLocations.map((l) => ({
+      value: l.key,
+      label: l.label,
+      icon: l.icon,
+    })),
+  ];
 
   const cuisineChipOptions = CUISINE_OPTIONS.map((c) => ({
     value: c,
@@ -920,6 +980,7 @@ export default function SettingsScreen() {
             ]
           }
           onToggle={handleToggleStorageArea}
+          onAdd={handleAddStorageArea}
           selectedColor={AppColors.accent}
           theme={theme}
         />
@@ -1014,6 +1075,81 @@ export default function SettingsScreen() {
         onClose={handleImportDialogClose}
         theme={theme}
       />
+
+      <Modal
+        visible={showAddStorageModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddStorageModal(false)}
+      >
+        <Pressable
+          style={addStorageStyles.overlay}
+          onPress={() => setShowAddStorageModal(false)}
+        >
+          <Pressable
+            style={[
+              addStorageStyles.modal,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <ThemedText type="h4" style={addStorageStyles.title}>
+              Add Storage Area
+            </ThemedText>
+            <ThemedText
+              type="caption"
+              style={[addStorageStyles.description, { color: theme.textSecondary }]}
+            >
+              Enter a name for your new storage area (e.g., Garage, Cellar, Spice Rack)
+            </ThemedText>
+            <TextInput
+              style={[
+                addStorageStyles.input,
+                {
+                  backgroundColor: theme.backgroundSecondary,
+                  color: theme.text,
+                  borderColor: theme.border,
+                },
+              ]}
+              placeholder="Storage area name"
+              placeholderTextColor={theme.textSecondary}
+              value={newStorageAreaName}
+              onChangeText={setNewStorageAreaName}
+              autoFocus
+              onSubmitEditing={handleConfirmAddStorageArea}
+              data-testid="input-new-storage-area"
+            />
+            <View style={addStorageStyles.buttons}>
+              <Pressable
+                onPress={() => setShowAddStorageModal(false)}
+                style={[
+                  addStorageStyles.button,
+                  { backgroundColor: theme.backgroundSecondary },
+                ]}
+                data-testid="button-cancel-add-storage"
+              >
+                <ThemedText style={addStorageStyles.buttonText}>Cancel</ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmAddStorageArea}
+                style={[
+                  addStorageStyles.button,
+                  {
+                    backgroundColor: AppColors.primary,
+                    opacity: newStorageAreaName.trim() ? 1 : 0.5,
+                  },
+                ]}
+                disabled={!newStorageAreaName.trim()}
+                data-testid="button-confirm-add-storage"
+              >
+                <ThemedText style={[addStorageStyles.buttonText, { color: "#FFFFFF" }]}>
+                  Add
+                </ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -1028,5 +1164,50 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
+  },
+});
+
+const addStorageStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+  },
+  modal: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  title: {
+    marginBottom: 0,
+  },
+  description: {
+    marginBottom: Spacing.xs,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: 16,
+  },
+  buttons: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    justifyContent: "flex-end",
+    marginTop: Spacing.xs,
+  },
+  button: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
