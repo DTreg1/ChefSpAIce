@@ -105,6 +105,7 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - Replit Object Storage
 
 ## Recent Changes
+- **Apple compliance audit (Feb 2026)**: Created shared `useManageSubscription` hook (CustomerCenter-first on iOS), shared `subscription-terms.ts` constants, fixed hardcoded USD price fallbacks on iOS/Android (shows plan names instead), platform-aware Terms of Service pricing, verified donation gating is web-only
 - Subscription/pricing: StoreKit data on mobile, annual discount, legal disclosures, restore purchases, trial info cleanup, duplicate plan fix
 - UI: Centralized color definitions app-wide
 - Platform: Aligned subscription management and donations with platform guidelines
