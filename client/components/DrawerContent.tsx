@@ -169,7 +169,7 @@ function DrawerItem({ label, icon, onPress, isActive }: DrawerItemProps) {
 
 export function DrawerContent(props: DrawerContentComponentProps) {
   const { theme, isDark } = useTheme();
-  const { signOut, isAuthenticated, isGuestUser } = useAuth();
+  const { signOut, isAuthenticated } = useAuth();
   const insets = useSafeAreaInsets();
   const { navigation, state } = props;
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
@@ -299,50 +299,6 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <TrialBadge />
           </View>
 
-          {!isAuthenticated && isGuestUser && (
-            <Pressable
-              onPress={() => {
-                closeDrawer();
-                navigation.navigate("Auth" as any);
-              }}
-              style={({ pressed }) => [
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: theme.backgroundSecondary,
-                  borderRadius: BorderRadius.md,
-                  padding: Spacing.md,
-                  marginBottom: Spacing.md,
-                },
-                pressed ? { opacity: 0.7 } : null,
-              ]}
-              data-testid="drawer-create-account"
-            >
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: `${AppColors.primary}20`,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: Spacing.md,
-                }}
-              >
-                <Feather name="user-plus" size={20} color={AppColors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <ThemedText style={{ fontSize: 15, fontWeight: "600" }}>
-                  Create Account
-                </ThemedText>
-                <ThemedText style={{ fontSize: 12, color: theme.textSecondary }}>
-                  Save your data and unlock all features
-                </ThemedText>
-              </View>
-              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
-            </Pressable>
-          )}
-
           <View
             style={[styles.divider, { backgroundColor: theme.glass.border }]}
           />
@@ -442,31 +398,61 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           <View
             style={[styles.divider, { backgroundColor: theme.glass.border }]}
           />
-          <Pressable
-            style={({ pressed }) => [
-              styles.addItemButton,
-              {
-                backgroundColor: theme.glass.backgroundStrong,
-                borderWidth: 1,
-                borderColor: theme.glass.border,
-              },
-              pressed ? { opacity: 0.8 } : null,
-            ]}
-            onPress={() => {
-              closeDrawer();
-              signOut();
-            }}
-            testID="button-drawer-sign-out"
-            accessibilityLabel="Sign Out"
-          >
-            <Feather
-              name="log-out"
-              size={20}
-              color={theme.textSecondaryOnGlass}
-              style={{ marginRight: Spacing.sm }}
-            />
-            <ThemedText type="caption">Sign Out</ThemedText>
-          </Pressable>
+          {isAuthenticated ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.addItemButton,
+                {
+                  backgroundColor: theme.glass.backgroundStrong,
+                  borderWidth: 1,
+                  borderColor: theme.glass.border,
+                },
+                pressed ? { opacity: 0.8 } : null,
+              ]}
+              onPress={() => {
+                closeDrawer();
+                signOut();
+              }}
+              testID="button-drawer-sign-out"
+              accessibilityLabel="Sign Out"
+            >
+              <Feather
+                name="log-out"
+                size={20}
+                color={theme.textSecondaryOnGlass}
+                style={{ marginRight: Spacing.sm }}
+              />
+              <ThemedText type="caption">Sign Out</ThemedText>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.addItemButton,
+                {
+                  backgroundColor: `${AppColors.primary}15`,
+                  borderWidth: 1,
+                  borderColor: `${AppColors.primary}40`,
+                },
+                pressed ? { opacity: 0.8 } : null,
+              ]}
+              onPress={() => {
+                closeDrawer();
+                navigation.navigate("Auth" as any);
+              }}
+              testID="button-drawer-create-account"
+              accessibilityLabel="Create Account"
+            >
+              <Feather
+                name="user-plus"
+                size={20}
+                color={AppColors.primary}
+                style={{ marginRight: Spacing.sm }}
+              />
+              <ThemedText type="caption" style={{ color: AppColors.primary }}>
+                Sign Up / Sign In
+              </ThemedText>
+            </Pressable>
+          )}
         </View>
       </GlassProvider>
     </View>
