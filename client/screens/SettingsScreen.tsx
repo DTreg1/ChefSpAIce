@@ -94,7 +94,7 @@ import { SettingsCloudSync } from "@/components/settings/SettingsCloudSync";
 import { SettingsBiometric } from "@/components/settings/SettingsBiometric";
 import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
 import { SettingsRecipeDisplay } from "@/components/settings/SettingsRecipeDisplay";
-import { SettingsMealPlanning } from "@/components/settings/SettingsMealPlanning";
+import { getPresetIdForDailyMeals } from "@/constants/meal-plan";
 import { SettingsChipSelector } from "@/components/settings/SettingsChipSelector";
 import { SettingsNutritionTargets } from "@/components/settings/SettingsNutritionTargets";
 import { SettingsAbout } from "@/components/settings/SettingsAbout";
@@ -248,12 +248,6 @@ export default function SettingsScreen() {
     await storage.setPreferences(newPrefs);
   };
 
-  const handleSelectMealPlanPreset = async (presetId: string) => {
-    const newPrefs = { ...preferences, mealPlanPresetId: presetId };
-    setPreferences(newPrefs);
-    await storage.setPreferences(newPrefs);
-  };
-
   const handleToggleCuisine = async (cuisine: string) => {
     const current = preferences.cuisinePreferences || [];
     const updated = current.includes(cuisine)
@@ -283,7 +277,8 @@ export default function SettingsScreen() {
 
   const handleDailyMealsChange = async (mealsStr: string) => {
     const meals = Number(mealsStr);
-    const newPrefs = { ...preferences, dailyMeals: meals };
+    const presetId = getPresetIdForDailyMeals(meals);
+    const newPrefs = { ...preferences, dailyMeals: meals, mealPlanPresetId: presetId };
     setPreferences(newPrefs);
     await storage.setPreferences(newPrefs);
   };
@@ -943,12 +938,6 @@ export default function SettingsScreen() {
           theme={theme}
         />
 
-        <SettingsMealPlanning
-          preferences={preferences}
-          onSelectPreset={handleSelectMealPlanPreset}
-          theme={theme}
-        />
-
         <SettingsChipSelector
           title="Household Size"
           description="Set your household size for personalized portion suggestions"
@@ -959,8 +948,8 @@ export default function SettingsScreen() {
         />
 
         <SettingsChipSelector
-          title="Daily Meals"
-          description="How many meals do you typically eat per day?"
+          title="Meal Planning"
+          description="How many meals do you plan each day? This controls the meal slots shown in your meal planner."
           options={dailyMealsChipOptions}
           selected={[String(preferences.dailyMeals || 3)]}
           onToggle={handleDailyMealsChange}

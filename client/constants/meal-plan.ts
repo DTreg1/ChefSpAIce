@@ -14,6 +14,15 @@ interface MealPlanPreset {
 
 export const MEAL_PLAN_PRESETS: MealPlanPreset[] = [
   {
+    id: "two_meals",
+    name: "2 Meals",
+    description: "Lunch and Dinner",
+    slots: [
+      { id: "lunch", name: "Lunch", icon: "sun", order: 1 },
+      { id: "dinner", name: "Dinner", icon: "moon", order: 2 },
+    ],
+  },
+  {
     id: "classic",
     name: "Classic (3 meals)",
     description: "Breakfast, Lunch, Dinner",
@@ -69,5 +78,16 @@ export const MEAL_PLAN_PRESETS: MealPlanPreset[] = [
 export const DEFAULT_PRESET_ID = "classic";
 
 export function getPresetById(id: string): MealPlanPreset {
-  return MEAL_PLAN_PRESETS.find((p) => p.id === id) || MEAL_PLAN_PRESETS[0];
+  return MEAL_PLAN_PRESETS.find((p) => p.id === id) || MEAL_PLAN_PRESETS[1];
+}
+
+const DAILY_MEALS_TO_PRESET: Record<number, string> = {
+  2: "two_meals",
+  3: "classic",
+  4: "four_meals",
+  5: "with_snacks",
+};
+
+export function getPresetIdForDailyMeals(dailyMeals: number): string {
+  return DAILY_MEALS_TO_PRESET[dailyMeals] || DEFAULT_PRESET_ID;
 }
