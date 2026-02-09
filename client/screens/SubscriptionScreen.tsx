@@ -165,8 +165,18 @@ export default function SubscriptionScreen() {
   };
 
   const getMonthlyPrice = (): string => {
-    if (currentTier === SubscriptionTier.PRO) return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
-    if (currentTier === SubscriptionTier.BASIC) return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+    if (currentTier === SubscriptionTier.PRO) {
+      if (shouldUseStoreKit) {
+        return storeKitPrices?.proMonthly ? `${storeKitPrices.proMonthly}/month` : "Pro Plan";
+      }
+      return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
+    }
+    if (currentTier === SubscriptionTier.BASIC) {
+      if (shouldUseStoreKit) {
+        return storeKitPrices?.basicMonthly ? `${storeKitPrices.basicMonthly}/month` : "Basic Plan";
+      }
+      return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+    }
     return "Free";
   };
 

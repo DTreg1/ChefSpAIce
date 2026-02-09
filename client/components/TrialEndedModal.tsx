@@ -126,6 +126,9 @@ export function TrialEndedModal({
     if (storeKitPrices) {
       const key = `${tier}${plan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
       if (storeKitPrices[key]) return storeKitPrices[key];
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        return tier === "pro" ? "Pro" : "Basic";
+      }
     }
     if (tier === "basic") {
       return `$${plan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}`;
@@ -138,6 +141,9 @@ export function TrialEndedModal({
       const key = `${selectedTier}${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
       if (storeKitPrices[key]) {
         return `${storeKitPrices[key]}/${selectedPlan === 'monthly' ? 'mo' : 'yr'}`;
+      }
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        return `${selectedTier === "pro" ? "Pro" : "Basic"} ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}`;
       }
     }
     return selectedPlan === "monthly"

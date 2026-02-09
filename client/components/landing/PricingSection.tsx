@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Pressable } from "react-native";
+import { StyleSheet, View, Text, Pressable, Platform } from "react-native";
 import { useState } from "react";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { AppColors } from "@/constants/theme";
@@ -13,6 +13,10 @@ interface PricingSectionProps {
 
 export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
   const [isAnnual, setIsAnnual] = useState(false);
+
+  if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    return null;
+  }
 
   return (
     <View style={sharedStyles.section} data-testid="section-pricing">
