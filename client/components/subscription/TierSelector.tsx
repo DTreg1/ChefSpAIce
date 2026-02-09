@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -33,13 +33,15 @@ export function TierSelector({
 }: TierSelectorProps) {
   const { theme } = useTheme();
 
+  const isNative = Platform.OS === "ios" || Platform.OS === "android";
+
   const basicPrice = selectedPlan === "monthly"
-    ? (storeKitPrices?.basicMonthly || `$${MONTHLY_PRICES.BASIC.toFixed(2)}`)
-    : (storeKitPrices?.basicAnnual || `$${ANNUAL_PRICES.BASIC.toFixed(2)}`);
+    ? (storeKitPrices?.basicMonthly || (isNative ? "Basic" : `$${MONTHLY_PRICES.BASIC.toFixed(2)}`))
+    : (storeKitPrices?.basicAnnual || (isNative ? "Basic" : `$${ANNUAL_PRICES.BASIC.toFixed(2)}`));
 
   const proPrice = selectedPlan === "monthly"
-    ? (storeKitPrices?.proMonthly || `$${MONTHLY_PRICES.PRO.toFixed(2)}`)
-    : (storeKitPrices?.proAnnual || `$${ANNUAL_PRICES.PRO.toFixed(2)}`);
+    ? (storeKitPrices?.proMonthly || (isNative ? "Pro" : `$${MONTHLY_PRICES.PRO.toFixed(2)}`))
+    : (storeKitPrices?.proAnnual || (isNative ? "Pro" : `$${ANNUAL_PRICES.PRO.toFixed(2)}}`));
 
   const freeTestId = testIdPrefix
     ? `button-${testIdPrefix}-select-free`
@@ -149,7 +151,7 @@ export function TierSelector({
             {selectedPlan === "monthly" ? "/month" : "/year"}
           </ThemedText>
         </ThemedText>
-        {selectedPlan === "annual" && !storeKitPrices && (
+        {selectedPlan === "annual" && !storeKitPrices && !isNative && (
           <ThemedText
             style={[
               styles.tierCardMonthlyCalc,
@@ -222,7 +224,7 @@ export function TierSelector({
             {selectedPlan === "monthly" ? "/month" : "/year"}
           </ThemedText>
         </ThemedText>
-        {selectedPlan === "annual" && !storeKitPrices && (
+        {selectedPlan === "annual" && !storeKitPrices && !isNative && (
           <ThemedText
             style={[
               styles.tierCardMonthlyCalc,

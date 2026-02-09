@@ -5,7 +5,6 @@ import {
   Platform,
   Image,
   Pressable,
-  Linking,
 } from "react-native";
 import {
   DrawerContentScrollView,
@@ -25,52 +24,18 @@ import { GlassProvider } from "@/contexts/GlassContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { getApiUrl } from "@/lib/query-client";
-import { logger } from "@/lib/logger";
+import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 function TrialBadge() {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isTrialing, isPastDue, trialDaysRemaining, graceDaysRemaining, isLoading, subscription } =
     useSubscription();
+  const { handleManageSubscription } = useManageSubscription();
 
   if (isLoading || !isAuthenticated) {
     return null;
   }
-
-  const handleManageSubscription = async () => {
-    if (Platform.OS === "ios") {
-      Linking.openURL("https://apps.apple.com/account/subscriptions");
-      return;
-    }
-    if (Platform.OS === "android") {
-      Linking.openURL("https://play.google.com/store/account/subscriptions");
-      return;
-    }
-
-    try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data;
-        if (data.url) {
-          window.location.href = data.url;
-        }
-      }
-    } catch (error) {
-      logger.error("Error opening subscription portal:", error);
-    }
-  };
 
   if (isTrialing && trialDaysRemaining !== null) {
     const trialText =

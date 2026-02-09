@@ -24,9 +24,11 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
+import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
+import { getSubscriptionTermsText, APPLE_EULA_URL, GOOGLE_PLAY_TERMS_URL } from "@/constants/subscription-terms";
 import {
   MONTHLY_PRICES,
   ANNUAL_PRICES,
@@ -90,9 +92,8 @@ export default function SubscriptionScreen() {
     purchasePackage,
     restorePurchases,
     presentPaywall,
-    presentCustomerCenter,
-    isCustomerCenterAvailable,
   } = useStoreKit();
+  const { handleManageSubscription, isManaging } = useManageSubscription();
 
   const shouldUseStoreKit =
     (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
@@ -120,7 +121,6 @@ export default function SubscriptionScreen() {
     return Object.keys(prices).length > 0 ? prices : null;
   }, [shouldUseStoreKit, offerings]);
 
-  const [isManaging, setIsManaging] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -186,16 +186,6 @@ export default function SubscriptionScreen() {
     return "Free";
   };
 
-  const getSubscriptionTermsText = () => {
-    if (Platform.OS === 'ios') {
-      return 'Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your Account Settings on the App Store after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
-    }
-    if (Platform.OS === 'android') {
-      return 'Payment will be charged to your Google Play account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions in the Google Play app after purchase. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
-    }
-    return 'Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions from your account settings. Any unused portion of a free trial period, if offered, will be forfeited when you purchase a subscription.';
-  };
-
   const getSubscribeButtonPrice = () => {
     if (selectedTier === "free") return "";
     const tier = selectedTier;
@@ -216,45 +206,6 @@ export default function SubscriptionScreen() {
       ? (tier === "pro" ? MONTHLY_PRICES.PRO : MONTHLY_PRICES.BASIC)
       : (tier === "pro" ? ANNUAL_PRICES.PRO : ANNUAL_PRICES.BASIC);
     return `$${price.toFixed(2)}/${plan === "monthly" ? "mo" : "yr"}`;
-  };
-
-  const handleManageSubscription = async () => {
-    setIsManaging(true);
-    try {
-      if (Platform.OS === "ios") {
-        await Linking.openURL("https://apps.apple.com/account/subscriptions");
-        return;
-      }
-      if (Platform.OS === "android") {
-        await Linking.openURL("https://play.google.com/store/account/subscriptions");
-        return;
-      }
-
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data as any;
-        if (data.url) {
-          window.open(data.url, "_blank");
-        }
-      } else {
-        logger.error("Failed to create portal session");
-      }
-    } catch (error) {
-      logger.error("Error opening billing portal:", error);
-    } finally {
-      setIsManaging(false);
-    }
   };
 
   const handleNavigateToAuth = () => {
@@ -521,21 +472,6 @@ export default function SubscriptionScreen() {
     }
   };
 
-  const handleOpenCustomerCenter = async () => {
-    if (!isCustomerCenterAvailable) {
-      handleManageSubscription();
-      return;
-    }
-
-    try {
-      await presentCustomerCenter();
-      refetch();
-    } catch (error) {
-      logger.error("Error opening customer center:", error);
-      handleManageSubscription();
-    }
-  };
-
   const statusInfo = getStatusDisplay();
 
   if (isLoading) {
@@ -768,7 +704,7 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              {getSubscriptionTermsText()}
+              {getSubscriptionTermsText(Platform.OS)}
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -808,17 +744,17 @@ export default function SubscriptionScreen() {
                   <Pressable
                     onPress={() => {
                       if (Platform.OS === 'ios') {
-                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                        Linking.openURL(APPLE_EULA_URL);
                       } else {
-                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                       }
                     }}
                     data-testid="link-apple-eula"
                     {...webAccessibilityProps(() => {
                       if (Platform.OS === 'ios') {
-                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                        Linking.openURL(APPLE_EULA_URL);
                       } else {
-                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                       }
                     })}
                   >
@@ -859,11 +795,7 @@ export default function SubscriptionScreen() {
             </ThemedText>
 
             <GlassButton
-              onPress={
-                shouldUseStoreKit
-                  ? handleOpenCustomerCenter
-                  : handleManageSubscription
-              }
+              onPress={handleManageSubscription}
               disabled={isManaging}
               style={styles.manageButton}
               icon={
@@ -975,7 +907,7 @@ export default function SubscriptionScreen() {
             <ThemedText
               style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
             >
-              {getSubscriptionTermsText()}
+              {getSubscriptionTermsText(Platform.OS)}
             </ThemedText>
             <View style={styles.legalLinksContainer}>
               <Pressable
@@ -1015,17 +947,17 @@ export default function SubscriptionScreen() {
                   <Pressable
                     onPress={() => {
                       if (Platform.OS === 'ios') {
-                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                        Linking.openURL(APPLE_EULA_URL);
                       } else {
-                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                       }
                     }}
                     data-testid="link-trial-apple-eula"
                     {...webAccessibilityProps(() => {
                       if (Platform.OS === 'ios') {
-                        Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
+                        Linking.openURL(APPLE_EULA_URL);
                       } else {
-                        Linking.openURL("https://play.google.com/intl/en_us/about/play-terms/");
+                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                       }
                     })}
                   >

@@ -1,54 +1,20 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform, Linking } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { getApiUrl } from "@/lib/query-client";
-import { logger } from "@/lib/logger";
+import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 export function PaymentFailedBanner() {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isPastDue, graceDaysRemaining, isLoading } = useSubscription();
+  const { handleManageSubscription } = useManageSubscription();
 
   if (isLoading || !isAuthenticated || !isPastDue || graceDaysRemaining === null) {
     return null;
   }
-
-  const handleUpdatePayment = async () => {
-    if (Platform.OS === "ios") {
-      Linking.openURL("https://apps.apple.com/account/subscriptions");
-      return;
-    }
-    if (Platform.OS === "android") {
-      Linking.openURL("https://play.google.com/store/account/subscriptions");
-      return;
-    }
-
-    try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data;
-        if (data.url) {
-          window.location.href = data.url;
-        }
-      }
-    } catch (error) {
-      logger.error("Error opening subscription portal:", error);
-    }
-  };
 
   const daysText =
     graceDaysRemaining === 0
@@ -75,7 +41,7 @@ export function PaymentFailedBanner() {
         </View>
       </View>
       <Pressable
-        onPress={handleUpdatePayment}
+        onPress={handleManageSubscription}
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,

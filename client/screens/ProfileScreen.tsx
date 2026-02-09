@@ -8,7 +8,6 @@ import {
   Switch,
   TextInput,
   Alert,
-  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -28,7 +27,7 @@ import { useTheme } from "@/hooks/useTheme";
 import type { ThemePreference } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useStoreKit } from "@/hooks/useStoreKit";
+import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
@@ -41,8 +40,6 @@ import {
   UserPreferences,
 } from "@/lib/storage";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
-import { getApiUrl } from "@/lib/query-client";
-import { logger } from "@/lib/logger";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -51,10 +48,10 @@ export default function ProfileScreen() {
     useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { user, isAuthenticated, signOut, token } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
   const { tier, planType, isActive, isTrialing, trialDaysRemaining } =
     useSubscription();
-  const { presentCustomerCenter, isCustomerCenterAvailable } = useStoreKit();
+  const { handleManageSubscription } = useManageSubscription();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);
@@ -175,49 +172,6 @@ export default function ProfileScreen() {
     await signOut();
     await storage.logout();
     resetOnboarding();
-  };
-
-  const handleManageSubscription = async () => {
-    if (isCustomerCenterAvailable) {
-      try {
-        await presentCustomerCenter();
-        return;
-      } catch (error) {
-        logger.error("Error opening customer center:", error);
-      }
-    }
-
-    if (Platform.OS === "ios") {
-      Linking.openURL("https://apps.apple.com/account/subscriptions");
-      return;
-    }
-    if (Platform.OS === "android") {
-      Linking.openURL("https://play.google.com/store/account/subscriptions");
-      return;
-    }
-
-    try {
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()).data as any;
-        if (data.url) {
-          (window as Window).location.href = data.url;
-        }
-      }
-    } catch (error) {
-      logger.error("Error opening subscription portal:", error);
-    }
   };
 
   const handleUpgradeSubscription = () => {
