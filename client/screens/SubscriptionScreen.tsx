@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  Linking,
   Alert,
   BackHandler,
   ActivityIndicator,
@@ -28,7 +27,6 @@ import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
-import { getSubscriptionTermsText, APPLE_EULA_URL, GOOGLE_PLAY_TERMS_URL } from "@/constants/subscription-terms";
 import {
   MONTHLY_PRICES,
   ANNUAL_PRICES,
@@ -43,6 +41,7 @@ import { FeatureComparisonTable, PRO_FEATURES } from "@/components/subscription/
 import { PlanToggle } from "@/components/subscription/PlanToggle";
 import { TierSelector } from "@/components/subscription/TierSelector";
 import { CancellationFlowModal } from "@/components/subscription/CancellationFlowModal";
+import { SubscriptionLegalLinks } from "@/components/subscription/SubscriptionLegalLinks";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SubscriptionRouteProp = RouteProp<RootStackParamList, "Subscription">;
@@ -129,7 +128,7 @@ export default function SubscriptionScreen() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );
-  const [selectedTier, setSelectedTier] = useState<"free" | "basic" | "pro">("pro");
+  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -187,7 +186,6 @@ export default function SubscriptionScreen() {
   };
 
   const getSubscribeButtonPrice = () => {
-    if (selectedTier === "free") return "";
     const tier = selectedTier;
     const plan = selectedPlan;
 
@@ -672,13 +670,7 @@ export default function SubscriptionScreen() {
             />
 
             <GlassButton
-              onPress={() => {
-                if (selectedTier === "free") {
-                  navigation.goBack();
-                  return;
-                }
-                handleUpgrade(selectedTier, selectedPlan);
-              }}
+              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -686,7 +678,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : selectedTier === "basic" ? "check-circle" : "gift"}
+                    name={selectedTier === "pro" ? "star" : "check-circle"}
                     size={18}
                     color="#FFFFFF"
                   />
@@ -696,77 +688,13 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : selectedTier === "free"
-                  ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
+                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
-            <ThemedText
-              style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
-            >
-              {getSubscriptionTermsText(Platform.OS)}
-            </ThemedText>
-            <View style={styles.legalLinksContainer}>
-              <Pressable
-                onPress={handleOpenPrivacyPolicy}
-                data-testid="link-privacy-policy"
-                {...webAccessibilityProps(handleOpenPrivacyPolicy)}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  Privacy Policy
-                </ThemedText>
-              </Pressable>
-              <ThemedText
-                style={[styles.legalSeparator, { color: theme.textSecondary }]}
-              >
-                |
-              </ThemedText>
-              <Pressable
-                onPress={handleOpenTermsOfUse}
-                data-testid="link-terms-of-use"
-                {...webAccessibilityProps(handleOpenTermsOfUse)}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  Terms of Use
-                </ThemedText>
-              </Pressable>
-              {Platform.OS !== 'web' && (
-                <>
-                  <ThemedText
-                    style={[styles.legalSeparator, { color: theme.textSecondary }]}
-                  >
-                    |
-                  </ThemedText>
-                  <Pressable
-                    onPress={() => {
-                      if (Platform.OS === 'ios') {
-                        Linking.openURL(APPLE_EULA_URL);
-                      } else {
-                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
-                      }
-                    }}
-                    data-testid="link-apple-eula"
-                    {...webAccessibilityProps(() => {
-                      if (Platform.OS === 'ios') {
-                        Linking.openURL(APPLE_EULA_URL);
-                      } else {
-                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
-                      }
-                    })}
-                  >
-                    <ThemedText
-                      style={[styles.legalLink, { color: AppColors.primary }]}
-                    >
-                      {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
-                    </ThemedText>
-                  </Pressable>
-                </>
-              )}
-            </View>
+            <SubscriptionLegalLinks
+              onOpenPrivacyPolicy={handleOpenPrivacyPolicy}
+              onOpenTermsOfUse={handleOpenTermsOfUse}
+            />
           </GlassCard>
         )}
 
@@ -875,13 +803,7 @@ export default function SubscriptionScreen() {
             />
 
             <GlassButton
-              onPress={() => {
-                if (selectedTier === "free") {
-                  navigation.goBack();
-                  return;
-                }
-                handleUpgrade(selectedTier, selectedPlan);
-              }}
+              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -889,7 +811,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : selectedTier === "basic" ? "check-circle" : "gift"}
+                    name={selectedTier === "pro" ? "star" : "check-circle"}
                     size={18}
                     color="#FFFFFF"
                   />
@@ -899,77 +821,14 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : selectedTier === "free"
-                  ? "Continue with Free"
-                  : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
+                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
-            <ThemedText
-              style={[styles.subscriptionTerms, { color: theme.textSecondary }]}
-            >
-              {getSubscriptionTermsText(Platform.OS)}
-            </ThemedText>
-            <View style={styles.legalLinksContainer}>
-              <Pressable
-                onPress={handleOpenPrivacyPolicy}
-                data-testid="link-trial-privacy-policy"
-                {...webAccessibilityProps(handleOpenPrivacyPolicy)}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  Privacy Policy
-                </ThemedText>
-              </Pressable>
-              <ThemedText
-                style={[styles.legalSeparator, { color: theme.textSecondary }]}
-              >
-                |
-              </ThemedText>
-              <Pressable
-                onPress={handleOpenTermsOfUse}
-                data-testid="link-trial-terms-of-use"
-                {...webAccessibilityProps(handleOpenTermsOfUse)}
-              >
-                <ThemedText
-                  style={[styles.legalLink, { color: AppColors.primary }]}
-                >
-                  Terms of Use
-                </ThemedText>
-              </Pressable>
-              {Platform.OS !== 'web' && (
-                <>
-                  <ThemedText
-                    style={[styles.legalSeparator, { color: theme.textSecondary }]}
-                  >
-                    |
-                  </ThemedText>
-                  <Pressable
-                    onPress={() => {
-                      if (Platform.OS === 'ios') {
-                        Linking.openURL(APPLE_EULA_URL);
-                      } else {
-                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
-                      }
-                    }}
-                    data-testid="link-trial-apple-eula"
-                    {...webAccessibilityProps(() => {
-                      if (Platform.OS === 'ios') {
-                        Linking.openURL(APPLE_EULA_URL);
-                      } else {
-                        Linking.openURL(GOOGLE_PLAY_TERMS_URL);
-                      }
-                    })}
-                  >
-                    <ThemedText
-                      style={[styles.legalLink, { color: AppColors.primary }]}
-                    >
-                      {Platform.OS === 'ios' ? 'EULA' : 'Google Play Terms'}
-                    </ThemedText>
-                  </Pressable>
-                </>
-              )}
-            </View>
+            <SubscriptionLegalLinks
+              onOpenPrivacyPolicy={handleOpenPrivacyPolicy}
+              onOpenTermsOfUse={handleOpenTermsOfUse}
+              testIdPrefix="trial"
+            />
           </GlassCard>
         )}
 
@@ -1194,12 +1053,6 @@ const styles = StyleSheet.create({
   upgradeButton: {
     marginTop: Spacing.sm,
   },
-  subscriptionTerms: {
-    fontSize: 11,
-    lineHeight: 16,
-    textAlign: "center",
-    marginTop: Spacing.md,
-  },
   manageCard: {
     padding: Spacing.lg,
   },
@@ -1250,20 +1103,5 @@ const styles = StyleSheet.create({
   },
   signInButton: {
     marginTop: Spacing.sm,
-  },
-  legalLinksContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
-  legalLink: {
-    fontSize: 14,
-    fontWeight: "600",
-    textDecorationLine: "underline",
-  },
-  legalSeparator: {
-    fontSize: 14,
   },
 });

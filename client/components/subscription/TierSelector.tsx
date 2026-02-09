@@ -12,8 +12,8 @@ import {
 } from "@shared/subscription";
 
 interface TierSelectorProps {
-  selectedTier: "free" | "basic" | "pro";
-  onSelectTier: (tier: "free" | "basic" | "pro") => void;
+  selectedTier: "basic" | "pro";
+  onSelectTier: (tier: "basic" | "pro") => void;
   selectedPlan: "monthly" | "annual";
   testIdPrefix?: string;
   storeKitPrices?: {
@@ -43,9 +43,6 @@ export function TierSelector({
     ? (storeKitPrices?.proMonthly || (isNative ? "Pro" : `$${MONTHLY_PRICES.PRO.toFixed(2)}`))
     : (storeKitPrices?.proAnnual || (isNative ? "Pro" : `$${ANNUAL_PRICES.PRO.toFixed(2)}`));
 
-  const freeTestId = testIdPrefix
-    ? `button-${testIdPrefix}-select-free`
-    : "button-select-free";
   const basicTestId = testIdPrefix
     ? `button-${testIdPrefix}-select-basic`
     : "button-select-basic";
@@ -55,59 +52,6 @@ export function TierSelector({
 
   return (
     <View style={styles.tierSelectionContainer}>
-      <Pressable
-        style={[
-          styles.tierCard,
-          {
-            backgroundColor: theme.glass.background,
-            borderColor:
-              selectedTier === "free"
-                ? AppColors.success
-                : theme.glass.border,
-          },
-        ]}
-        onPress={() => onSelectTier("free")}
-        data-testid={freeTestId}
-        {...webAccessibilityProps(() => onSelectTier("free"))}
-      >
-        <View style={styles.tierCardHeader}>
-          <ThemedText style={styles.tierCardName}>Free</ThemedText>
-          {selectedTier === "free" && (
-            <View
-              style={[
-                styles.tierSelectedBadge,
-                { backgroundColor: AppColors.success },
-              ]}
-            >
-              <Feather name="check" size={12} color="#FFFFFF" />
-            </View>
-          )}
-        </View>
-        <ThemedText
-          style={[styles.tierCardPrice, { color: AppColors.success }]}
-          numberOfLines={1}
-          adjustsFontSizeToFit={true}
-        >
-          $0
-          <ThemedText
-            style={[
-              styles.tierCardInterval,
-              { color: theme.textSecondary },
-            ]}
-          >
-            {" "}forever
-          </ThemedText>
-        </ThemedText>
-        <ThemedText
-          style={[
-            styles.tierCardFeature,
-            { color: theme.textSecondary },
-          ]}
-        >
-          10 pantry items, 2 AI recipes/mo
-        </ThemedText>
-      </Pressable>
-
       <Pressable
         style={[
           styles.tierCard,

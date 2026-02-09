@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet, Platform } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, AppColors } from "@/constants/theme";
@@ -61,7 +61,9 @@ export function PlanToggle({
           Annual
         </ThemedText>
         <View style={styles.saveBadge}>
-          <ThemedText style={styles.saveBadgeText}>Save 17%</ThemedText>
+          <ThemedText style={styles.saveBadgeText}>
+            {Platform.OS === "web" ? "Save 17%" : "Best Value"}
+          </ThemedText>
         </View>
       </Pressable>
     </View>

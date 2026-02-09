@@ -253,7 +253,7 @@ export function TrialEndedModal({
                 data-testid="button-annual-toggle"
                 accessibilityRole="button"
                 accessibilityState={{ selected: selectedPlan === "annual" }}
-                accessibilityLabel="Annual billing, save 17 percent"
+                accessibilityLabel={Platform.OS === 'web' ? "Annual billing, save 17 percent" : "Annual billing, best value"}
               >
                 <ThemedText
                   type="body"
