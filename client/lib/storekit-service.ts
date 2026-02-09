@@ -341,7 +341,11 @@ class StoreKitService {
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
 
-      await this.syncPurchaseWithServer(customerInfo);
+      try {
+        await this.syncPurchaseWithServer(customerInfo);
+      } catch (syncError) {
+        logger.error("StoreKit: Server sync failed after purchase (non-blocking)", syncError);
+      }
 
       return { success: true, customerInfo };
     } catch (error: unknown) {

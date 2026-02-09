@@ -88,6 +88,7 @@ export default function SubscriptionScreen() {
     offerings,
     purchasePackage,
     restorePurchases,
+    presentPaywall,
     presentCustomerCenter,
     isCustomerCenterAvailable,
   } = useStoreKit();
@@ -208,56 +209,60 @@ export default function SubscriptionScreen() {
 
     try {
       if (Platform.OS === "ios" || Platform.OS === "android") {
-        if (!shouldUseStoreKit || !offerings) {
+        if (!isStoreKitAvailable) {
           Alert.alert(
             "Not Available",
-            "In-app purchases are not available. Please try again later or contact support.",
+            "In-app purchases are not available on this device. Please try again later.",
             [{ text: "OK" }],
           );
           return;
         }
 
-        const expectedPackageId = `${tier}_${plan}`;
-
-        const pkg = offerings.availablePackages.find((p) => {
-          const id = p.identifier.toLowerCase();
-          return (
-            id === expectedPackageId ||
-            (id.includes(tier) && id.includes(plan)) ||
-            (id.includes(tier) &&
-              p.packageType === (plan === "monthly" ? "MONTHLY" : "ANNUAL"))
-          );
-        });
-
-        if (!pkg) {
-          Alert.alert(
-            "Package Not Available",
-            `The ${tierName} ${plan} subscription is not yet configured. Please contact support or try a different option.`,
-            [{ text: "OK" }],
-          );
-          return;
-        }
-
-        const success = await purchasePackage(pkg);
-        if (success) {
-          refetch();
-          if (!isAuthenticated) {
-            Alert.alert(
-              "Subscription Active!",
-              `Thank you for subscribing to ${tierName}! You can now use ChefSpAIce. Creating an account is optional but lets you sync across devices.`,
-              [
-                {
-                  text: "Continue to App",
-                  onPress: () => navigation.navigate("Onboarding"),
-                },
-                {
-                  text: "Create Account",
-                  onPress: () => navigation.navigate("Auth"),
-                },
-              ],
+        let pkg = null;
+        if (offerings?.availablePackages) {
+          const expectedPackageId = `${tier}_${plan}`;
+          pkg = offerings.availablePackages.find((p) => {
+            const id = p.identifier.toLowerCase();
+            const matchesType = plan === "monthly"
+              ? p.packageType === "MONTHLY"
+              : p.packageType === "ANNUAL";
+            return (
+              id === expectedPackageId ||
+              (id.includes(tier) && id.includes(plan)) ||
+              (id.includes(tier) && matchesType) ||
+              (matchesType && !id.includes(tier === "pro" ? "basic" : "pro"))
             );
-          } else {
-            Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
+          });
+        }
+
+        if (pkg) {
+          const success = await purchasePackage(pkg);
+          if (success) {
+            refetch();
+            if (!isAuthenticated) {
+              Alert.alert(
+                "Subscription Active!",
+                `Thank you for subscribing to ${tierName}! You can now use ChefSpAIce. Creating an account is optional but lets you sync across devices.`,
+                [
+                  {
+                    text: "Continue to App",
+                    onPress: () => navigation.navigate("Onboarding"),
+                  },
+                  {
+                    text: "Create Account",
+                    onPress: () => navigation.navigate("Auth"),
+                  },
+                ],
+              );
+            } else {
+              Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
+            }
+          }
+        } else {
+          const result = await presentPaywall();
+          if (result === "purchased" || result === "restored") {
+            refetch();
+            Alert.alert("Success", `Thank you for subscribing!`);
           }
         }
         return;

@@ -167,6 +167,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isAvailable: isStoreKitAvailable,
     offerings,
     purchasePackage,
+    presentPaywall,
   } = useStoreKit();
 
   const lastFetchRef = useRef<number>(0);
@@ -343,42 +344,46 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
       try {
         if (Platform.OS === "ios" || Platform.OS === "android") {
-          const shouldUseStoreKit = isStoreKitAvailable && offerings;
-
-          if (!shouldUseStoreKit) {
+          if (!isStoreKitAvailable) {
             Alert.alert(
               "Not Available",
-              "In-app purchases are not available. Please try again later or contact support.",
+              "In-app purchases are not available on this device. Please try again later.",
               [{ text: "OK" }],
             );
             return;
           }
 
-          const expectedPackageId = `${tier}_${plan}`;
-          const pkg = offerings.availablePackages.find((p) => {
-            const id = p.identifier.toLowerCase();
-            return (
-              id === expectedPackageId ||
-              (id.includes(tier) && id.includes(plan)) ||
-              (id.includes(tier) &&
-                p.packageType === (plan === "monthly" ? "MONTHLY" : "ANNUAL"))
-            );
-          });
-
-          if (!pkg) {
-            Alert.alert(
-              "Package Not Available",
-              `The ${tierName} ${plan} subscription is not yet configured. Please contact support or try a different option.`,
-              [{ text: "OK" }],
-            );
-            return;
+          let pkg = null;
+          if (offerings?.availablePackages) {
+            const expectedPackageId = `${tier}_${plan}`;
+            pkg = offerings.availablePackages.find((p) => {
+              const id = p.identifier.toLowerCase();
+              const matchesType = plan === "monthly"
+                ? p.packageType === "MONTHLY"
+                : p.packageType === "ANNUAL";
+              return (
+                id === expectedPackageId ||
+                (id.includes(tier) && id.includes(plan)) ||
+                (id.includes(tier) && matchesType) ||
+                (matchesType && !id.includes(tier === "pro" ? "basic" : "pro"))
+              );
+            });
           }
 
-          const success = await purchasePackage(pkg);
-          if (success) {
-            Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
-            setShowTrialEndedModal(false);
-            await forceRefetch();
+          if (pkg) {
+            const success = await purchasePackage(pkg);
+            if (success) {
+              Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
+              setShowTrialEndedModal(false);
+              await forceRefetch();
+            }
+          } else {
+            const result = await presentPaywall();
+            if (result === "purchased" || result === "restored") {
+              setShowTrialEndedModal(false);
+              await forceRefetch();
+              Alert.alert("Success", `Thank you for subscribing!`);
+            }
           }
           return;
         }
