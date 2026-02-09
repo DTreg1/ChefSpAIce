@@ -621,7 +621,7 @@ export default function SubscriptionScreen() {
           isProUser={isProUser}
         />
 
-        {(!isAuthenticated || (!isProUser && !isTrialing)) && (
+        {!isTrialing && (!isAuthenticated || !isProUser) && (
           <GlassCard style={styles.upgradeCard}>
             <View style={styles.upgradeHeader}>
               <Feather
