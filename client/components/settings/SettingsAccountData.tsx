@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  useColorScheme,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -58,6 +59,9 @@ export function SettingsAccountData({
   onDeletionLevelsClose,
   theme,
 }: SettingsAccountDataProps) {
+  const colorScheme = useColorScheme();
+  const modalBg = colorScheme === 'dark' ? '#1a1a1a' : '#FFFFFF';
+
   const handleDeletionOption = (callback: () => void) => {
     onDeletionLevelsClose();
     setTimeout(() => callback(), 300);
@@ -185,7 +189,7 @@ export function SettingsAccountData({
         onRequestClose={onDeletionLevelsClose}
       >
         <View style={styles.deleteModalOverlay} data-testid="modal-deletion-levels">
-          <View style={[styles.deleteModalContent, { backgroundColor: theme.glass.background }]}>
+          <View style={[styles.deleteModalContent, { backgroundColor: modalBg }]}>
             <View style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
               <Feather name="sliders" size={24} color={theme.text} />
               <ThemedText type="body" style={{ fontWeight: "600" }}>
@@ -281,7 +285,7 @@ export function SettingsAccountData({
         onRequestClose={onCancelDelete}
       >
         <View style={styles.deleteModalOverlay}>
-          <View style={[styles.deleteModalContent, { backgroundColor: theme.glass.background }]}>
+          <View style={[styles.deleteModalContent, { backgroundColor: modalBg }]}>
             <View style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
               <Feather name="alert-triangle" size={24} color={AppColors.error} />
               <ThemedText type="body" style={{ color: AppColors.error, fontWeight: "600" }}>

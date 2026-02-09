@@ -33,17 +33,16 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Alert,
-  Platform,
-  ScrollView,
-} from "react-native";
+import { View, StyleSheet, Alert, Platform, ScrollView } from "react-native";
 import { reloadAppAsync } from "expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  RouteProp,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 
@@ -179,9 +178,15 @@ export default function SettingsScreen() {
   );
 
   useEffect(() => {
-    if (route.params?.scrollTo === "recentlyDeleted" && recentlyDeletedY.current > 0) {
+    if (
+      route.params?.scrollTo === "recentlyDeleted" &&
+      recentlyDeletedY.current > 0
+    ) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: recentlyDeletedY.current, animated: true });
+        scrollViewRef.current?.scrollTo({
+          y: recentlyDeletedY.current,
+          animated: true,
+        });
       }, 300);
     }
   }, [route.params?.scrollTo]);
@@ -486,13 +491,15 @@ export default function SettingsScreen() {
       setIsDeleting(false);
 
       if (Platform.OS === "web") {
-        window.alert("Your account has been permanently deleted. The app will now restart.");
+        window.alert(
+          "Your account has been permanently deleted. The app will now restart.",
+        );
         window.location.reload();
       } else {
         Alert.alert(
           "Account Deleted",
           "Your account has been permanently deleted. The app will now restart.",
-          [{ text: "OK", onPress: () => reloadAppAsync() }]
+          [{ text: "OK", onPress: () => reloadAppAsync() }],
         );
       }
     } catch (error) {
@@ -556,14 +563,19 @@ export default function SettingsScreen() {
 
   const handleExportData = async () => {
     if (Platform.OS !== "web") {
-      Alert.alert("Export Data", "Data export is available on the web version of ChefSpAIce.");
+      Alert.alert(
+        "Export Data",
+        "Data export is available on the web version of ChefSpAIce.",
+      );
       return;
     }
     setIsExporting(true);
     try {
       const baseUrl = getApiUrl();
       const token = await (async () => {
-        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
         const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
         return stored ? JSON.parse(stored) : null;
       })();
@@ -606,14 +618,19 @@ export default function SettingsScreen() {
 
   const handleDownloadMyData = async () => {
     if (Platform.OS !== "web") {
-      Alert.alert("Download My Data", "Data download is available on the web version of ChefSpAIce.");
+      Alert.alert(
+        "Download My Data",
+        "Data download is available on the web version of ChefSpAIce.",
+      );
       return;
     }
     setIsDownloadingData(true);
     try {
       const baseUrl = getApiUrl();
       const token = await (async () => {
-        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
         const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
         return stored ? JSON.parse(stored) : null;
       })();
@@ -672,13 +689,17 @@ export default function SettingsScreen() {
           try {
             const parsed = JSON.parse(ev.target?.result as string);
             if (!parsed.version || !parsed.data) {
-              window.alert("Invalid backup file. The file does not appear to be a valid ChefSpAIce backup.");
+              window.alert(
+                "Invalid backup file. The file does not appear to be a valid ChefSpAIce backup.",
+              );
               return;
             }
             setPendingImportFile(parsed);
             setShowImportDialog(true);
           } catch {
-            window.alert("Invalid file. Could not parse the selected file as JSON.");
+            window.alert(
+              "Invalid file. Could not parse the selected file as JSON.",
+            );
           }
         };
         reader.readAsText(file);
@@ -686,7 +707,10 @@ export default function SettingsScreen() {
       };
       fileInputRef.current.click();
     } else {
-      Alert.alert("Import Data", "Data import from backup files is available on the web version of ChefSpAIce.");
+      Alert.alert(
+        "Import Data",
+        "Data import from backup files is available on the web version of ChefSpAIce.",
+      );
     }
   };
 
@@ -697,7 +721,9 @@ export default function SettingsScreen() {
     try {
       const baseUrl = getApiUrl();
       const token = await (async () => {
-        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
         const stored = await AsyncStorage.getItem("@chefspaice/auth_token");
         return stored ? JSON.parse(stored) : null;
       })();
@@ -842,9 +868,7 @@ export default function SettingsScreen() {
           <SettingsBiometric biometric={biometric} theme={theme} />
         ) : null}
 
-        {isAuthenticated ? (
-          <SettingsActiveSessions theme={theme} />
-        ) : null}
+        {isAuthenticated ? <SettingsActiveSessions theme={theme} /> : null}
 
         <SettingsNotifications
           preferences={preferences}
