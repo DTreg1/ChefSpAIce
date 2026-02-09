@@ -148,58 +148,60 @@ export default function SupportScreen() {
           our mission to reduce food waste worldwide.
         </Text>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.cardBorder },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Make a Donation
-          </Text>
-          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-            Your donation helps us maintain the app, add new features, and keep
-            ChefSpAIce free for everyone.
-          </Text>
+        {isWeb && (
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Make a Donation
+            </Text>
+            <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+              Your donation helps us maintain the app, add new features, and keep
+              ChefSpAIce free for everyone.
+            </Text>
 
-          <View style={styles.donationGrid}>
-            {DONATION_AMOUNTS.map(({ label, value }) => (
-              <Pressable
-                key={value}
-                style={({ pressed }) => [
-                  styles.donationButton,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.brandGreen,
-                  },
-                  pressed && styles.donationButtonPressed,
-                  loading === value && styles.donationButtonLoading,
-                ]}
-                onPress={() => handleDonate(value)}
-                disabled={loading !== null}
-              >
-                {loading === value ? (
-                  <ActivityIndicator size="small" color={colors.brandGreen} />
-                ) : (
-                  <Text
-                    style={[
-                      styles.donationButtonText,
-                      { color: colors.textPrimary },
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                )}
-              </Pressable>
-            ))}
+            <View style={styles.donationGrid}>
+              {DONATION_AMOUNTS.map(({ label, value }) => (
+                <Pressable
+                  key={value}
+                  style={({ pressed }) => [
+                    styles.donationButton,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.brandGreen,
+                    },
+                    pressed && styles.donationButtonPressed,
+                    loading === value && styles.donationButtonLoading,
+                  ]}
+                  onPress={() => handleDonate(value)}
+                  disabled={loading !== null}
+                >
+                  {loading === value ? (
+                    <ActivityIndicator size="small" color={colors.brandGreen} />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.donationButtonText,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <Text style={[styles.stripeNote, { color: colors.textMuted }]}>
+              Secure payments powered by Stripe
+            </Text>
           </View>
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <Text style={[styles.stripeNote, { color: colors.textMuted }]}>
-            Secure payments powered by Stripe
-          </Text>
-        </View>
+        )}
 
         <View
           style={[

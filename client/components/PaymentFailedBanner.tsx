@@ -17,6 +17,15 @@ export function PaymentFailedBanner() {
   }
 
   const handleUpdatePayment = async () => {
+    if (Platform.OS === "ios") {
+      Linking.openURL("https://apps.apple.com/account/subscriptions");
+      return;
+    }
+    if (Platform.OS === "android") {
+      Linking.openURL("https://play.google.com/store/account/subscriptions");
+      return;
+    }
+
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
@@ -33,11 +42,7 @@ export function PaymentFailedBanner() {
       if (response.ok) {
         const data = (await response.json()).data;
         if (data.url) {
-          if (Platform.OS === "web") {
-            window.location.href = data.url;
-          } else {
-            Linking.openURL(data.url);
-          }
+          window.location.href = data.url;
         }
       }
     } catch (error) {

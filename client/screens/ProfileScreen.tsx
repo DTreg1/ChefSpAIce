@@ -8,6 +8,7 @@ import {
   Switch,
   TextInput,
   Alert,
+  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -186,6 +187,15 @@ export default function ProfileScreen() {
       }
     }
 
+    if (Platform.OS === "ios") {
+      Linking.openURL("https://apps.apple.com/account/subscriptions");
+      return;
+    }
+    if (Platform.OS === "android") {
+      Linking.openURL("https://play.google.com/store/account/subscriptions");
+      return;
+    }
+
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
@@ -202,12 +212,7 @@ export default function ProfileScreen() {
       if (response.ok) {
         const data = (await response.json()).data as any;
         if (data.url) {
-          if (Platform.OS === "web") {
-            (window as Window).location.href = data.url;
-          } else {
-            const { Linking } = require("react-native");
-            Linking.openURL(data.url);
-          }
+          (window as Window).location.href = data.url;
         }
       }
     } catch (error) {

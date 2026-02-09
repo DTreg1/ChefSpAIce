@@ -1,4 +1,4 @@
-import { StyleSheet, View, ScrollView, useWindowDimensions, Linking } from "react-native";
+import { StyleSheet, View, ScrollView, useWindowDimensions, Linking, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import { logger } from "@/lib/logger";
@@ -63,7 +63,7 @@ export default function LandingScreen({
         <FeatureGridSection isWide={isWide} isDark={isDark} />
         <PricingSection isWide={isWide} onDownloadApp={handleDownloadApp} />
         <FAQSection />
-        <DonationSection isWide={isWide} />
+        {Platform.OS === "web" && <DonationSection isWide={isWide} />}
         <FooterSection
           isWide={isWide}
           onAbout={onAbout}

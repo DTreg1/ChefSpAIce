@@ -150,6 +150,15 @@ export default function SubscriptionScreen() {
   const handleManageSubscription = async () => {
     setIsManaging(true);
     try {
+      if (Platform.OS === "ios") {
+        await Linking.openURL("https://apps.apple.com/account/subscriptions");
+        return;
+      }
+      if (Platform.OS === "android") {
+        await Linking.openURL("https://play.google.com/store/account/subscriptions");
+        return;
+      }
+
       const baseUrl = getApiUrl();
       const url = new URL("/api/subscriptions/create-portal-session", baseUrl);
 
@@ -165,11 +174,7 @@ export default function SubscriptionScreen() {
       if (response.ok) {
         const data = (await response.json()).data as any;
         if (data.url) {
-          if (Platform.OS === "web") {
-            window.open(data.url, "_blank");
-          } else {
-            await Linking.openURL(data.url);
-          }
+          window.open(data.url, "_blank");
         }
       } else {
         logger.error("Failed to create portal session");
