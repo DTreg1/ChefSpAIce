@@ -57,6 +57,12 @@ export function RegisterPrompt({
       return;
     }
 
+    if (showInSettings) {
+      setIsVisible(true);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const shouldShow = await storage.shouldShowRegisterPrompt(dismissHours);
       setIsVisible(shouldShow);
@@ -66,7 +72,7 @@ export function RegisterPrompt({
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, dismissHours]);
+  }, [isAuthenticated, dismissHours, showInSettings]);
 
   useEffect(() => {
     checkShouldShow();
@@ -74,12 +80,14 @@ export function RegisterPrompt({
 
   const handleDismiss = useCallback(async () => {
     setIsVisible(false);
-    try {
-      await storage.setRegisterPromptDismissedAt(new Date().toISOString());
-    } catch (error) {
-      logger.error("[RegisterPrompt] Error saving dismissal:", error);
+    if (!showInSettings) {
+      try {
+        await storage.setRegisterPromptDismissedAt(new Date().toISOString());
+      } catch (error) {
+        logger.error("[RegisterPrompt] Error saving dismissal:", error);
+      }
     }
-  }, []);
+  }, [showInSettings]);
 
   const handleRegister = useCallback(() => {
     navigation.navigate("Auth");
