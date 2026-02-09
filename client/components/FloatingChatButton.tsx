@@ -28,7 +28,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AppColors, Spacing } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
+const chefHatLight = require("../assets/images/transparent/chef-hat-light-128.png");
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

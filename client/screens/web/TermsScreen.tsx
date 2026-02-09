@@ -11,7 +11,7 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 
 const isWeb = Platform.OS === "web";
-const chefHatLight = require("../../../assets/images/transparent/chef-hat-light-128.png");
+const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },

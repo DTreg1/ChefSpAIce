@@ -2,7 +2,7 @@ import { StyleSheet, View, Text, Pressable, Image } from "react-native";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import QRCode from "react-native-qrcode-svg";
 
-const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
+const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
 
 interface FooterSectionProps {
   isWide: boolean;

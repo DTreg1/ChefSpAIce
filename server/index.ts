@@ -494,7 +494,7 @@ async function initStripe(retries = 3, delay = 2000) {
   setupRequestLogging(app);
 
   // Serve showcase images from local assets directory
-  app.use("/public/showcase", express.static(path.join(process.cwd(), "assets/showcase"), {
+  app.use("/public/showcase", express.static(path.join(process.cwd(), "client/assets/showcase"), {
     maxAge: "1y",
     immutable: true,
   }));

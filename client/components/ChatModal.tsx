@@ -44,7 +44,7 @@ import { getApiUrl, apiRequestJson } from "@/lib/query-client";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useAIVoice } from "@/hooks/useAIVoice";
 
-const chefHatDark = require("../../assets/images/transparent/chef-hat-dark-64.png");
+const chefHatDark = require("../assets/images/transparent/chef-hat-dark-64.png");
 
 const TAB_BAR_HEIGHT = 54;
 const FAB_SIZE = 56;

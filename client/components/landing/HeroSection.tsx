@@ -7,7 +7,7 @@ import { ScreenshotShowcase } from "./ScreenshotShowcase";
 import { ReplitLogo } from "./ReplitLogo";
 import { trustLogos } from "@/data/landing-data";
 
-const logoImage = require("assets/images/transparent/chef-hat-light-256.png");
+const logoImage = require("../../assets/images/transparent/chef-hat-light-256.png");
 
 interface HeroSectionProps {
   isWide: boolean;
