@@ -195,7 +195,7 @@ export function RecipeVoiceControls({
 
   const getVoiceButtonColor = () => {
     if (isProcessing) return theme.textSecondary;
-    if (isListening) return "#E53935";
+    if (isListening) return AppColors.errorDark;
     return AppColors.primary;
   };
 
@@ -254,8 +254,8 @@ export function RecipeVoiceControls({
               { backgroundColor: "rgba(229, 57, 53, 0.15)" },
             ]}
           >
-            <Feather name="mic" size={12} color="#E53935" />
-            <ThemedText type="caption" style={{ color: "#E53935" }}>
+            <Feather name="mic" size={12} color={AppColors.errorDark} />
+            <ThemedText type="caption" style={{ color: AppColors.errorDark }}>
               Listening
             </ThemedText>
           </View>

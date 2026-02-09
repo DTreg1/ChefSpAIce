@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 export function PaymentFailedBanner() {
   const { isAuthenticated, token } = useAuth();
@@ -61,7 +61,7 @@ export function PaymentFailedBanner() {
       accessibilityLabel={`Payment failed. Please update your payment method ${daysText} to keep your subscription active.`}
     >
       <View style={styles.content}>
-        <Feather name="alert-circle" size={18} color="#fff" style={styles.icon} />
+        <Feather name="alert-circle" size={18} color="#FFFFFF" style={styles.icon} />
         <View style={styles.textContainer}>
           <ThemedText style={styles.title}>Payment failed</ThemedText>
           <ThemedText style={styles.message}>
@@ -79,7 +79,7 @@ export function PaymentFailedBanner() {
         accessibilityLabel="Update payment method"
       >
         <ThemedText style={styles.buttonText}>Update payment</ThemedText>
-        <Feather name="external-link" size={14} color="#b45309" />
+        <Feather name="external-link" size={14} color={AppColors.paymentWarning} />
       </Pressable>
     </View>
   );
@@ -87,7 +87,7 @@ export function PaymentFailedBanner() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#b45309",
+    backgroundColor: AppColors.paymentWarning,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
@@ -132,6 +132,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#b45309",
+    color: AppColors.paymentWarning,
   },
 });

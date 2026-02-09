@@ -658,12 +658,8 @@ export function ChatModal() {
               size={10}
               color={
                 suggestion === "Report Bug"
-                  ? isDark
-                    ? "#ff8888"
-                    : "#cc4444"
-                  : isDark
-                    ? "#88ccff"
-                    : "#4488cc"
+                  ? theme.linkHighlightActive
+                  : theme.linkHighlight
               }
               style={{ marginRight: 4 }}
             />
@@ -673,12 +669,8 @@ export function ChatModal() {
                 fontSize: 10,
                 color:
                   suggestion === "Report Bug"
-                    ? isDark
-                      ? "#ff8888"
-                      : "#cc4444"
-                    : isDark
-                      ? "#88ccff"
-                      : "#4488cc",
+                    ? theme.linkHighlightActive
+                    : theme.linkHighlight,
               }}
             >
               {suggestion}

@@ -10,7 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { AppColors, BorderRadius, Spacing } from "@/constants/theme";
 
 type BadgeSize = "small" | "medium" | "large";
 
@@ -20,19 +20,19 @@ interface ExpiryBadgeProps {
 }
 
 const COLORS = {
-  urgent: "#ef4444",
-  warning: "#f97316",
-  caution: "#eab308",
-  soon: "#fef3c7",
-  neutral: "#9ca3af",
+  urgent: AppColors.expiryUrgent,
+  warning: AppColors.expiryWarning,
+  caution: AppColors.expiryCaution,
+  soon: AppColors.expirySoon,
+  neutral: AppColors.expiryNeutral,
 };
 
 const TEXT_COLORS = {
-  urgent: "#ffffff",
-  warning: "#ffffff",
-  caution: "#ffffff",
-  soon: "#92400e",
-  neutral: "#374151",
+  urgent: AppColors.expiryTextLight,
+  warning: AppColors.expiryTextLight,
+  caution: AppColors.expiryTextLight,
+  soon: AppColors.expiryTextSoon,
+  neutral: AppColors.expiryTextNeutral,
 };
 
 function getColorKey(days: number): keyof typeof COLORS {

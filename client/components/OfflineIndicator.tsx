@@ -14,7 +14,7 @@ import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { syncManager, SyncState } from "@/lib/sync-manager";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, AppColors } from "@/constants/theme";
 
 const DISMISS_REAPPEAR_MS = 60_000;
 
@@ -105,12 +105,12 @@ export function OfflineIndicator() {
       <Feather
         name="wifi-off"
         size={14}
-        color="#f59e0b"
+        color={AppColors.offline}
         testID="icon-offline-warning"
       />
       <ThemedText
         type="caption"
-        style={[styles.text, { color: "#f59e0b" }]}
+        style={[styles.text, { color: AppColors.offline }]}
         testID="text-offline-message"
       >
         {getMessage()}
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   dismissText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#f59e0b",
+    color: AppColors.offline,
     opacity: 0.85,
   },
 });

@@ -12,9 +12,25 @@ export const AppColors = {
   border: "#E9ECEF",
   textSecondary: "#495057",
   error: "#E74C3C",
+  errorDark: "#E53935",
   confidenceHigh: "#22c55e",
   confidenceMedium: "#eab308",
   confidenceLow: "#f97316",
+  paymentWarning: "#b45309",
+  offline: "#f59e0b",
+  backgroundBase: "#1a2e05",
+  backgroundHighlight: "#3d6b1c",
+  backgroundHighlightLight: "#4a7a25",
+  expiryUrgent: "#ef4444",
+  expiryWarning: "#f97316",
+  expiryCaution: "#eab308",
+  expirySoon: "#fef3c7",
+  expiryNeutral: "#9ca3af",
+  expiryTextLight: "#ffffff",
+  expiryTextSoon: "#92400e",
+  expiryTextNeutral: "#374151",
+  sourceOpenFoodFacts: "#27AE60",
+  sourceLocal: "#6C757D",
 };
 
 export const GlassColors = {
@@ -83,6 +99,8 @@ export const Colors = {
     border: AppColors.border,
     surface: "rgba(255, 255, 255, 0.9)",
     glass: GlassColors.light,
+    linkHighlight: "#4488cc",
+    linkHighlightActive: "#cc4444",
   },
   dark: {
     text: "#ECEDEE",
@@ -106,6 +124,8 @@ export const Colors = {
     border: AppColors.border,
     surface: "rgba(26, 26, 26, 0.9)",
     glass: GlassColors.dark,
+    linkHighlight: "#88ccff",
+    linkHighlightActive: "#ff8888",
   },
 };
 

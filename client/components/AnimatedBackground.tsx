@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Dimensions, View, PixelRatio } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { AppColors } from "@/constants/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,9 +19,6 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAX_ANIMATED_VALUES = 16;
 const isLowEnd = PixelRatio.get() < 2;
 const defaultBubbleCount = isLowEnd ? 4 : 8;
-
-const LIME_950 = "#1a2e05";
-const LIME_900 = "#3d6b1c";
 
 interface BubbleConfig {
   id: number;
@@ -114,8 +112,8 @@ function Bubble({ config }: BubbleProps) {
 }
 
 function GradientBackground({ isDark }: { isDark: boolean }) {
-  const baseColor = isDark ? LIME_950 : LIME_900;
-  const highlightColor = isDark ? LIME_900 : "#4a7a25";
+  const baseColor = isDark ? AppColors.backgroundBase : AppColors.backgroundHighlight;
+  const highlightColor = isDark ? AppColors.backgroundHighlight : AppColors.backgroundHighlightLight;
 
   return (
     <View style={[styles.gradient, { backgroundColor: baseColor }]}>

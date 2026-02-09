@@ -51,6 +51,7 @@ import {
   AppColors,
   GlassEffect,
 } from "@/constants/theme";
+import { FoodSource, SOURCE_BADGE_COLORS } from "@/constants/food-sources";
 import {
   storage,
   FoodItem,
@@ -62,18 +63,10 @@ import {
 import { StorageLocation } from "@/lib/shelf-life-data";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type FoodSource = "usda" | "openfoodfacts" | "local";
-
 const SOURCE_LABELS: Record<FoodSource, string> = {
   usda: "USDA FoodData Central",
   openfoodfacts: "OpenFoodFacts",
   local: "Custom Entry",
-};
-
-const SOURCE_BADGE_COLORS: Record<FoodSource, { bg: string; text: string }> = {
-  usda: { bg: "rgba(52, 152, 219, 0.15)", text: "#3498DB" },
-  openfoodfacts: { bg: "rgba(39, 174, 96, 0.15)", text: "#27AE60" },
-  local: { bg: "rgba(108, 117, 125, 0.15)", text: "#6C757D" },
 };
 
 const RECENT_FOODS_KEY = "@recent_foods";

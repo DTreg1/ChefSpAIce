@@ -1,12 +1,10 @@
 import { useMemo } from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { AppColors } from "@/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-const LIME_950 = "#1a2e05";
-const LIME_900 = "#3d6b1c";
 
 interface BubbleConfig {
   id: number;
@@ -27,8 +25,8 @@ export function AnimatedBackground({
 }: AnimatedBackgroundProps) {
   const { isDark } = useTheme();
 
-  const baseColor = isDark ? LIME_950 : LIME_900;
-  const highlightColor = isDark ? LIME_900 : "#4a7a25";
+  const baseColor = isDark ? AppColors.backgroundBase : AppColors.backgroundHighlight;
+  const highlightColor = isDark ? AppColors.backgroundHighlight : AppColors.backgroundHighlightLight;
 
   const bubbles = useMemo(() => {
     const configs: BubbleConfig[] = [];

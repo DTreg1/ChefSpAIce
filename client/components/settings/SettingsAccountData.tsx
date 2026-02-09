@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  useColorScheme,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -59,8 +58,7 @@ export function SettingsAccountData({
   onDeletionLevelsClose,
   theme,
 }: SettingsAccountDataProps) {
-  const colorScheme = useColorScheme();
-  const modalBg = colorScheme === 'dark' ? '#1a1a1a' : '#FFFFFF';
+  const modalBg = theme.surface;
 
   const handleDeletionOption = (callback: () => void) => {
     onDeletionLevelsClose();

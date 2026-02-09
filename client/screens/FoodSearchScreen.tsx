@@ -23,9 +23,8 @@ import {
   AppColors,
   GlassEffect,
 } from "@/constants/theme";
+import { FoodSource, SOURCE_BADGE_COLORS, SOURCE_LABELS } from "@/constants/food-sources";
 import { getApiUrl } from "@/lib/query-client";
-
-type FoodSource = "usda" | "openfoodfacts" | "local";
 
 interface FoodNutrition {
   calories: number;
@@ -69,18 +68,6 @@ export interface USDAFoodItem {
   };
   category: string;
 }
-
-const SOURCE_BADGE_COLORS: Record<FoodSource, { bg: string; text: string }> = {
-  usda: { bg: "rgba(52, 152, 219, 0.15)", text: "#3498DB" },
-  openfoodfacts: { bg: "rgba(39, 174, 96, 0.15)", text: "#27AE60" },
-  local: { bg: "rgba(108, 117, 125, 0.15)", text: "#6C757D" },
-};
-
-const SOURCE_LABELS: Record<FoodSource, string> = {
-  usda: "USDA",
-  openfoodfacts: "Open Food Facts",
-  local: "Local",
-};
 
 function convertToUSDAFormat(item: UnifiedFoodItem): USDAFoodItem {
   return {

@@ -22,8 +22,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Spacing, BorderRadius, Shadows, AppColors } from "@/constants/theme";
-
-type FoodSource = "usda" | "openfoodfacts" | "local";
+import { FoodSource, SOURCE_BADGE_COLORS, SOURCE_LABELS } from "@/constants/food-sources";
 
 interface FoodNutrition {
   calories: number;
@@ -56,18 +55,6 @@ interface FoodSearchAutocompleteProps {
   placeholder?: string;
   initialValue?: string;
 }
-
-const SOURCE_BADGE_COLORS: Record<FoodSource, { bg: string; text: string }> = {
-  usda: { bg: "rgba(52, 152, 219, 0.15)", text: "#3498DB" },
-  openfoodfacts: { bg: "rgba(39, 174, 96, 0.15)", text: "#27AE60" },
-  local: { bg: "rgba(108, 117, 125, 0.15)", text: "#6C757D" },
-};
-
-const SOURCE_LABELS: Record<FoodSource, string> = {
-  usda: "USDA",
-  openfoodfacts: "OFF",
-  local: "Local",
-};
 
 function HighlightedText({
   text,
