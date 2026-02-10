@@ -72,6 +72,7 @@ import dataExportRouter from "./routers/user/data-export.router";
 import foodRouter, { barcodeRawRouter } from "./routers/food.router";
 import referralRouter from "./routers/referral.router";
 import notificationsRouter from "./routers/notifications.router";
+import nutritionLookupRouter from "./routers/nutrition-lookup.router";
 import { db } from "./db";
 import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
@@ -207,6 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use("/api/suggestions", requireAuth, requireSubscription, suggestionsRouter);
   app.use("/api/recipes", requireAuth, requireSubscription, recipesRouter);
+  app.use("/api/nutrition/lookup", requireAuth, nutritionLookupRouter);
   app.use("/api/nutrition", requireAuth, requireSubscription, nutritionRouter);
   app.use("/api/user/appliances", requireAuth, requireSubscription, userAppliancesRouter);
   app.use("/api/voice", requireAuth, requireSubscription, voiceRouter);

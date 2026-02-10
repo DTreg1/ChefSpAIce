@@ -5,11 +5,9 @@ import {
   formatInventoryForPrompt,
   UNIT_CONVERSION_PROMPT_ADDITION,
   normalizeUnit,
-} from "../../lib/unit-conversion";
-import {
   compareQuantities,
   AvailabilityStatus,
-} from "../../integrations/usda";
+} from "../../lib/unit-conversion";
 import {
   checkAiRecipeLimit,
   incrementAiRecipeCount,

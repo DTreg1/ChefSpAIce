@@ -99,17 +99,26 @@ const ALL_UNITS: Record<string, UnitInfo> = {
   ...COUNT_UNITS,
 };
 
+/**
+ * Parses a unit string and returns its type information, or null if unknown.
+ */
 export function parseUnit(unit: string | undefined | null): UnitInfo | null {
   if (!unit) return null;
   const normalized = unit.toLowerCase().trim();
   return ALL_UNITS[normalized] || null;
 }
 
+/**
+ * Returns the unit type for a given unit string.
+ */
 export function getUnitType(unit: string | undefined | null): UnitType {
   const info = parseUnit(unit);
   return info?.type || "unknown";
 }
 
+/**
+ * Converts a quantity to its base unit (g for weight, ml for volume, piece for count).
+ */
 export function convertToBase(
   quantity: number,
   unit: string | undefined | null,
@@ -123,6 +132,10 @@ export function convertToBase(
   };
 }
 
+/**
+ * Converts a quantity from one unit to another within the same unit type.
+ * Returns null if units are incompatible or unknown.
+ */
 export function convert(
   quantity: number,
   fromUnit: string,
@@ -138,6 +151,9 @@ export function convert(
   return baseValue / toInfo.toBase;
 }
 
+/**
+ * Checks if two units are compatible (same type) for conversion.
+ */
 export function areUnitsCompatible(
   unit1: string | undefined | null,
   unit2: string | undefined | null,
@@ -152,6 +168,9 @@ export function areUnitsCompatible(
   return type1 === type2;
 }
 
+/**
+ * Formats a quantity with its unit, rounding to 2 decimal places.
+ */
 export function formatQuantityWithUnit(quantity: number, unit: string): string {
   const rounded = Math.round(quantity * 100) / 100;
   if (rounded === Math.floor(rounded)) {
@@ -167,6 +186,10 @@ export interface InventoryMatchResult {
   conversionNote?: string;
 }
 
+/**
+ * Matches an inventory item's quantity/unit against a recipe requirement.
+ * Returns whether they match and conversion details.
+ */
 export function matchInventoryToRecipe(
   inventoryQuantity: number | undefined,
   inventoryUnit: string | undefined | null,
@@ -218,6 +241,9 @@ export function matchInventoryToRecipe(
   };
 }
 
+/**
+ * Returns the preferred unit for a given unit type.
+ */
 export function getPreferredUnit(
   unitType: UnitType,
   preferMetric: boolean = true,
@@ -234,6 +260,9 @@ export function getPreferredUnit(
   }
 }
 
+/**
+ * Normalizes a unit string to its canonical short form (e.g., "tablespoon" -> "tbsp").
+ */
 export function normalizeUnit(unit: string | undefined | null): string {
   if (!unit) return "";
   const info = parseUnit(unit);
@@ -274,6 +303,9 @@ export function normalizeUnit(unit: string | undefined | null): string {
   return canonicalForms[unitLower] || unit;
 }
 
+/**
+ * Formats inventory items with quantities and unit equivalents for AI prompts.
+ */
 export function formatInventoryForPrompt(
   items: Array<{ name: string; quantity?: number; unit?: string | null }>,
 ): string[] {
@@ -324,3 +356,425 @@ UNIT HANDLING INSTRUCTIONS:
 - Use practical, common units in your recipe output (cups, tbsp, g, oz - whatever fits the ingredient best)
 - When the user has enough quantity in a compatible unit, mark the ingredient as "fromInventory": true
 `;
+
+// ============================================================================
+// UNIT ALIASES & NORMALIZATION (extracted from USDA integration)
+// ============================================================================
+
+/**
+ * Common unit aliases for matching unit names across different formats.
+ */
+export const UNIT_ALIASES: Record<string, string[]> = {
+  slice: ["slice", "slices", "sl"],
+  loaf: ["loaf", "loaves"],
+  cup: ["cup", "cups", "c"],
+  tablespoon: ["tablespoon", "tablespoons", "tbsp", "tbs", "tb"],
+  teaspoon: ["teaspoon", "teaspoons", "tsp", "ts"],
+  ounce: ["ounce", "ounces", "oz"],
+  pound: ["pound", "pounds", "lb", "lbs"],
+  gram: ["gram", "grams", "g"],
+  kilogram: ["kilogram", "kilograms", "kg"],
+  piece: ["piece", "pieces", "pc", "pcs", "each", "ea", "whole"],
+  serving: ["serving", "servings", "srv"],
+  can: ["can", "cans"],
+  bottle: ["bottle", "bottles"],
+  package: ["package", "packages", "pkg", "pkgs"],
+  head: ["head", "heads"],
+  clove: ["clove", "cloves"],
+  bunch: ["bunch", "bunches"],
+  stalk: ["stalk", "stalks"],
+  sprig: ["sprig", "sprigs"],
+  large: ["large", "lg"],
+  medium: ["medium", "med", "md"],
+  small: ["small", "sm"],
+};
+
+/**
+ * Normalizes a unit name to its canonical form using the UNIT_ALIASES map.
+ * @param unit - The unit string to normalize
+ * @returns The canonical unit name
+ */
+export function normalizeUnitName(unit: string): string {
+  const lower = unit.toLowerCase().trim();
+
+  for (const [canonical, aliases] of Object.entries(UNIT_ALIASES)) {
+    if (aliases.includes(lower)) {
+      return canonical;
+    }
+  }
+
+  return lower;
+}
+
+/**
+ * Checks if two unit strings match, including partial containment matching.
+ * For example, "large slice" contains "slice" so they match.
+ * @param portionUnit - The first unit to compare
+ * @param searchUnit - The second unit to compare
+ * @returns True if the units match
+ */
+export function unitMatches(portionUnit: string, searchUnit: string): boolean {
+  const normPortion = normalizeUnitName(portionUnit);
+  const normSearch = normalizeUnitName(searchUnit);
+
+  if (normPortion === normSearch) return true;
+
+  if (normPortion.includes(normSearch) || normSearch.includes(normPortion)) {
+    return true;
+  }
+
+  return false;
+}
+
+// ============================================================================
+// STANDARD CONVERSIONS TO GRAMS
+// ============================================================================
+
+/**
+ * Standard weight unit to grams conversion factors.
+ */
+export const STANDARD_WEIGHT_TO_GRAMS: Record<string, number> = {
+  g: 1,
+  gram: 1,
+  grams: 1,
+  kg: 1000,
+  kilogram: 1000,
+  kilograms: 1000,
+  oz: 28.3495,
+  ounce: 28.3495,
+  ounces: 28.3495,
+  lb: 453.592,
+  lbs: 453.592,
+  pound: 453.592,
+  pounds: 453.592,
+  mg: 0.001,
+  milligram: 0.001,
+  milligrams: 0.001,
+};
+
+/**
+ * Standard volume unit to grams conversion factors (approximate, assumes water density).
+ */
+export const STANDARD_VOLUME_TO_GRAMS: Record<string, number> = {
+  ml: 1,
+  milliliter: 1,
+  milliliters: 1,
+  l: 1000,
+  liter: 1000,
+  liters: 1000,
+  litre: 1000,
+  litres: 1000,
+  cup: 240,
+  cups: 240,
+  tbsp: 15,
+  tablespoon: 15,
+  tablespoons: 15,
+  tsp: 5,
+  teaspoon: 5,
+  teaspoons: 5,
+  "fl oz": 30,
+  "fluid ounce": 30,
+  "fluid ounces": 30,
+};
+
+/**
+ * Result of converting a quantity to grams.
+ */
+export interface QuantityInGrams {
+  grams: number;
+  conversionUsed: string;
+  isApproximate: boolean;
+}
+
+/**
+ * Converts a quantity with a given unit to grams using standard weight/volume conversions.
+ * @param quantity - The numeric quantity to convert
+ * @param unit - The unit of the quantity
+ * @returns The quantity in grams, or null if the unit cannot be converted
+ */
+export function convertToGrams(
+  quantity: number,
+  unit: string,
+): QuantityInGrams | null {
+  const normalizedUnit = unit.toLowerCase().trim();
+
+  if (STANDARD_WEIGHT_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_WEIGHT_TO_GRAMS[normalizedUnit],
+      conversionUsed: `standard weight conversion`,
+      isApproximate: false,
+    };
+  }
+
+  if (STANDARD_VOLUME_TO_GRAMS[normalizedUnit]) {
+    return {
+      grams: quantity * STANDARD_VOLUME_TO_GRAMS[normalizedUnit],
+      conversionUsed: `volume approximation (density varies)`,
+      isApproximate: true,
+    };
+  }
+
+  return null;
+}
+
+// ============================================================================
+// QUANTITY COMPARISON
+// ============================================================================
+
+/**
+ * Availability status for an ingredient comparison.
+ */
+export type AvailabilityStatus = "available" | "partial" | "unavailable";
+
+/**
+ * Result of comparing inventory quantity against a required quantity.
+ */
+export interface QuantityComparisonResult {
+  status: AvailabilityStatus;
+  inventoryGrams: number | null;
+  requiredGrams: number | null;
+  percentAvailable: number | null;
+  conversionNote?: string;
+}
+
+/**
+ * Compares an inventory quantity against a required quantity, attempting gram conversion.
+ * Falls back to direct comparison for same units, or assumes available if conversion is not possible.
+ * @param inventoryQty - The quantity available in inventory
+ * @param inventoryUnit - The unit of the inventory quantity
+ * @param requiredQty - The required quantity
+ * @param requiredUnit - The unit of the required quantity
+ * @returns Comparison result with availability status and gram conversions
+ */
+export function compareQuantities(
+  inventoryQty: number,
+  inventoryUnit: string | null | undefined,
+  requiredQty: number,
+  requiredUnit: string,
+): QuantityComparisonResult {
+  if (!inventoryUnit) {
+    if (inventoryQty >= requiredQty) {
+      return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+    }
+    const pct = Math.round((inventoryQty / requiredQty) * 100);
+    return {
+      status: pct >= 50 ? "partial" : "unavailable",
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: pct,
+    };
+  }
+
+  const inventoryInGrams = convertToGrams(inventoryQty, inventoryUnit);
+  const requiredInGrams = convertToGrams(requiredQty, requiredUnit);
+
+  if (!inventoryInGrams || !requiredInGrams) {
+    const normInv = normalizeUnitName(inventoryUnit);
+    const normReq = normalizeUnitName(requiredUnit);
+
+    if (normInv === normReq || unitMatches(inventoryUnit, requiredUnit)) {
+      if (inventoryQty >= requiredQty) {
+        return { status: "available", inventoryGrams: null, requiredGrams: null, percentAvailable: 100 };
+      }
+      const pct = Math.round((inventoryQty / requiredQty) * 100);
+      return {
+        status: pct >= 50 ? "partial" : "unavailable",
+        inventoryGrams: null,
+        requiredGrams: null,
+        percentAvailable: pct,
+        conversionNote: `Same unit comparison: ${inventoryQty}/${requiredQty} ${inventoryUnit}`,
+      };
+    }
+
+    return {
+      status: "available",
+      inventoryGrams: null,
+      requiredGrams: null,
+      percentAvailable: null,
+      conversionNote: `Cannot convert between ${inventoryUnit} and ${requiredUnit}`,
+    };
+  }
+
+  const pct = Math.round((inventoryInGrams.grams / requiredInGrams.grams) * 100);
+
+  let status: AvailabilityStatus;
+  if (pct >= 100) {
+    status = "available";
+  } else if (pct >= 50) {
+    status = "partial";
+  } else {
+    status = "unavailable";
+  }
+
+  return {
+    status,
+    inventoryGrams: inventoryInGrams.grams,
+    requiredGrams: requiredInGrams.grams,
+    percentAvailable: Math.min(pct, 100),
+    conversionNote: `${inventoryQty} ${inventoryUnit} = ${Math.round(inventoryInGrams.grams)}g, need ${Math.round(requiredInGrams.grams)}g`,
+  };
+}
+
+// ============================================================================
+// INSTACART UNIT MAPPING
+// ============================================================================
+
+/**
+ * All units supported by Instacart's API.
+ */
+export const INSTACART_UNITS: readonly string[] = [
+  "cups",
+  "fl oz",
+  "tablespoon",
+  "teaspoon",
+  "gallon",
+  "ml",
+  "liter",
+  "gram",
+  "kg",
+  "lb",
+  "oz",
+  "bunch",
+  "each",
+  "head",
+  "large",
+  "medium",
+  "small",
+  "package",
+  "bag",
+  "bottle",
+  "box",
+  "can",
+  "carton",
+  "case",
+  "container",
+  "dozen",
+  "jar",
+  "loaf",
+  "pack",
+  "pair",
+  "pallet",
+  "piece",
+  "pint",
+  "quart",
+  "roll",
+  "set",
+  "stick",
+  "tray",
+  "tub",
+  "tube",
+  "unit",
+] as const;
+
+const INSTACART_UNIT_SET = new Set(INSTACART_UNITS);
+
+const INSTACART_ALIAS_MAP: Record<string, string> = {
+  cup: "cups",
+  c: "cups",
+  "fluid ounce": "fl oz",
+  "fluid ounces": "fl oz",
+  tbsp: "tablespoon",
+  tbs: "tablespoon",
+  tb: "tablespoon",
+  tablespoons: "tablespoon",
+  tsp: "teaspoon",
+  ts: "teaspoon",
+  teaspoons: "teaspoon",
+  gal: "gallon",
+  gallons: "gallon",
+  milliliter: "ml",
+  milliliters: "ml",
+  l: "liter",
+  liters: "liter",
+  litre: "liter",
+  litres: "liter",
+  g: "gram",
+  grams: "gram",
+  kilogram: "kg",
+  kilograms: "kg",
+  lbs: "lb",
+  pound: "lb",
+  pounds: "lb",
+  ounce: "oz",
+  ounces: "oz",
+  bunches: "bunch",
+  ea: "each",
+  pc: "each",
+  pcs: "each",
+  whole: "each",
+  item: "each",
+  items: "each",
+  heads: "head",
+  lg: "large",
+  med: "medium",
+  md: "medium",
+  sm: "small",
+  packages: "package",
+  pkg: "package",
+  pkgs: "package",
+  bags: "bag",
+  bottles: "bottle",
+  boxes: "box",
+  cans: "can",
+  cartons: "carton",
+  cases: "case",
+  containers: "container",
+  dozens: "dozen",
+  jars: "jar",
+  loaves: "loaf",
+  packs: "pack",
+  pairs: "pair",
+  pallets: "pallet",
+  pieces: "piece",
+  pints: "pint",
+  pt: "pint",
+  quarts: "quart",
+  qt: "quart",
+  rolls: "roll",
+  sets: "set",
+  sticks: "stick",
+  trays: "tray",
+  tubs: "tub",
+  tubes: "tube",
+  units: "unit",
+  slice: "piece",
+  slices: "piece",
+  sl: "piece",
+  serving: "each",
+  servings: "each",
+  srv: "each",
+  clove: "each",
+  cloves: "each",
+  stalk: "each",
+  stalks: "each",
+  sprig: "each",
+  sprigs: "each",
+  mg: "gram",
+  milligram: "gram",
+  milligrams: "gram",
+};
+
+/**
+ * Normalizes any unit alias to the corresponding Instacart-supported unit string.
+ * @param unit - The unit string to normalize
+ * @returns The Instacart-compatible unit string
+ */
+export function toInstacartUnit(unit: string): string {
+  const lower = unit.toLowerCase().trim();
+
+  if (INSTACART_UNIT_SET.has(lower)) {
+    return lower;
+  }
+
+  return INSTACART_ALIAS_MAP[lower] || lower;
+}
+
+/**
+ * Checks if a unit string (after normalization) is in Instacart's supported unit list.
+ * @param unit - The unit string to check
+ * @returns True if the unit is supported by Instacart
+ */
+export function isInstacartUnit(unit: string): boolean {
+  const lower = unit.toLowerCase().trim();
+  return INSTACART_UNIT_SET.has(lower);
+}
