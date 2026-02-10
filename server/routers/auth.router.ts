@@ -653,36 +653,20 @@ router.post("/reset-password", passwordResetLimiter, async (req: Request, res: R
   }
 });
 
-router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
-    }
-
-    const rawToken = authHeader.substring(7);
-    const hashedToken = hashToken(rawToken);
-
-    const [session] = await db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.token, hashedToken))
-      .limit(1);
-
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
-    }
+    const userId = req.userId!;
 
     const [syncData] = await db
       .select()
       .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId))
+      .where(eq(userSyncData.userId, userId))
       .limit(1);
 
     const userCookware = await db
       .select({ applianceId: userAppliances.applianceId })
       .from(userAppliances)
-      .where(eq(userAppliances.userId, session.userId));
+      .where(eq(userAppliances.userId, userId));
     
     const cookwareIds = userCookware.map(ua => ua.applianceId);
     const serverTimestamp = new Date().toISOString();
@@ -700,7 +684,7 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
     if (clientLastSyncedAt) {
       const clientTime = new Date(clientLastSyncedAt);
       if (isNaN(clientTime.getTime())) {
-        logger.warn("Invalid lastSyncedAt value, falling through to full sync", { lastSyncedAt: clientLastSyncedAt, userId: session.userId });
+        logger.warn("Invalid lastSyncedAt value, falling through to full sync", { lastSyncedAt: clientLastSyncedAt, userId });
       } else {
       const rowUpdatedAt = syncData.updatedAt ? new Date(syncData.updatedAt) : null;
       
@@ -763,30 +747,13 @@ router.get("/sync", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.post("/sync", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/sync", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
-    }
-
-    const rawToken = authHeader.substring(7);
-    const hashedToken = hashToken(rawToken);
-
-    const [session] = await db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.token, hashedToken))
-      .limit(1);
-
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
-    }
-
+    const userId = req.userId!;
     const { data } = req.body;
 
     if (data.cookware && Array.isArray(data.cookware)) {
-      const limitCheck = await checkCookwareLimit(session.userId);
+      const limitCheck = await checkCookwareLimit(userId);
       const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
       const incomingCount = data.cookware.length;
       
@@ -800,7 +767,7 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
-      const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
+      const hasAccess = await checkFeatureAccess(userId, "customStorageAreas");
       if (!hasAccess) {
         throw AppError.forbidden("Custom storage areas are a Pro feature. Upgrade to Pro to create custom storage locations.", "FEATURE_NOT_AVAILABLE").withDetails({
           code: "FEATURE_NOT_AVAILABLE",
@@ -851,19 +818,19 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
           await db
             .update(users)
             .set(userUpdate)
-            .where(eq(users.id, session.userId));
+            .where(eq(users.id, userId));
         }
       } else {
         prefsSynced = false;
         prefsError = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
-        logger.warn("Invalid sync preferences", { userId: session.userId, prefsError });
+        logger.warn("Invalid sync preferences", { userId, prefsError });
       }
     }
 
     const [existingSyncForTimestamps] = await db
       .select({ sectionUpdatedAt: userSyncData.sectionUpdatedAt })
       .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId))
+      .where(eq(userSyncData.userId, userId))
       .limit(1);
     
     const currentSectionTimestamps = (existingSyncForTimestamps?.sectionUpdatedAt as Record<string, string>) || {};
@@ -897,7 +864,7 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
       const currentCookware = await db
         .select({ applianceId: userAppliances.applianceId })
         .from(userAppliances)
-        .where(eq(userAppliances.userId, session.userId));
+        .where(eq(userAppliances.userId, userId));
       
       const currentIds = new Set(currentCookware.map(c => c.applianceId));
       const newIds = new Set(newCookwareIds);
@@ -909,7 +876,7 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
         await db
           .delete(userAppliances)
           .where(and(
-            eq(userAppliances.userId, session.userId),
+            eq(userAppliances.userId, userId),
             inArray(userAppliances.applianceId, toRemove)
           ));
       }
@@ -918,7 +885,7 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
         await db
           .insert(userAppliances)
           .values(toAdd.map(applianceId => ({
-            userId: session.userId,
+            userId: userId,
             applianceId,
           })))
           .onConflictDoNothing();
@@ -961,13 +928,13 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
     await db
       .update(userSyncData)
       .set(syncUpdate)
-      .where(eq(userSyncData.userId, session.userId));
+      .where(eq(userSyncData.userId, userId));
 
     if (data.onboarding && data.onboarding.completedAt) {
       await db
         .update(users)
         .set({ hasCompletedOnboarding: true, updatedAt: new Date() })
-        .where(eq(users.id, session.userId));
+        .where(eq(users.id, userId));
     }
 
     res.json(successResponse({ 
@@ -985,25 +952,9 @@ router.post("/sync", async (req: Request, res: Response, next: NextFunction) => 
 // Transfers local guest data to new registered account
 // =============================================================================
 
-router.post("/migrate-guest-data", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw AppError.unauthorized("Not authenticated", "AUTH_REQUIRED");
-    }
-
-    const rawToken = authHeader.substring(7);
-    const hashedToken = hashToken(rawToken);
-
-    const [session] = await db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.token, hashedToken))
-      .limit(1);
-
-    if (!session || new Date(session.expiresAt) < new Date()) {
-      throw AppError.unauthorized("Session expired", "SESSION_EXPIRED");
-    }
+    const userId = req.userId!;
 
     const { guestId, data } = req.body;
 
@@ -1011,12 +962,12 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
       throw AppError.badRequest("No data provided for migration", "MISSING_DATA");
     }
 
-    logger.info("Starting guest data migration", { userId: session.userId, guestId });
+    logger.info("Starting guest data migration", { userId, guestId });
 
     const [existingSyncData] = await db
       .select()
       .from(userSyncData)
-      .where(eq(userSyncData.userId, session.userId))
+      .where(eq(userSyncData.userId, userId))
       .limit(1);
 
     const hasExistingData = existingSyncData && (
@@ -1027,7 +978,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
     );
 
     if (hasExistingData) {
-      logger.info("User has existing data, merging", { userId: session.userId });
+      logger.info("User has existing data, merging", { userId });
     }
 
     const syncUpdate: Record<string, unknown> = {
@@ -1060,14 +1011,14 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
     };
 
     if (data.cookware && Array.isArray(data.cookware) && data.cookware.length > 0) {
-      const limitCheck = await checkCookwareLimit(session.userId);
+      const limitCheck = await checkCookwareLimit(userId);
       const maxLimit = typeof limitCheck.limit === 'number' ? limitCheck.limit : Infinity;
       const incomingCount = data.cookware.length;
       
       const currentCookware = await db
         .select({ applianceId: userAppliances.applianceId })
         .from(userAppliances)
-        .where(eq(userAppliances.userId, session.userId));
+        .where(eq(userAppliances.userId, userId));
       
       const totalCount = currentCookware.length + incomingCount;
       
@@ -1079,7 +1030,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
     }
 
     if (data.customLocations && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
-      const hasAccess = await checkFeatureAccess(session.userId, "customStorageAreas");
+      const hasAccess = await checkFeatureAccess(userId, "customStorageAreas");
       if (!hasAccess) {
         logger.info("Skipping custom locations - user doesn't have Pro access");
         delete data.customLocations;
@@ -1148,7 +1099,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
         if (prefs.expirationAlertDays !== undefined) userUpdate.expirationAlertDays = prefs.expirationAlertDays;
         
         if (Object.keys(userUpdate).length > 1) {
-          await db.update(users).set(userUpdate).where(eq(users.id, session.userId));
+          await db.update(users).set(userUpdate).where(eq(users.id, userId));
         }
       }
     }
@@ -1166,7 +1117,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
         const currentCookware = await db
           .select({ applianceId: userAppliances.applianceId })
           .from(userAppliances)
-          .where(eq(userAppliances.userId, session.userId));
+          .where(eq(userAppliances.userId, userId));
         
         const currentIds = new Set(currentCookware.map(c => c.applianceId));
         const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
@@ -1175,7 +1126,7 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
           await db
             .insert(userAppliances)
             .values(toAdd.map(applianceId => ({
-              userId: session.userId,
+              userId: userId,
               applianceId,
             })))
             .onConflictDoNothing();
@@ -1187,10 +1138,10 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
       await db
         .update(userSyncData)
         .set(syncUpdate)
-        .where(eq(userSyncData.userId, session.userId));
+        .where(eq(userSyncData.userId, userId));
     } else {
       await db.insert(userSyncData).values({
-        userId: session.userId,
+        userId: userId,
         ...syncUpdate,
       });
     }
@@ -1199,10 +1150,10 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
       await db
         .update(users)
         .set({ hasCompletedOnboarding: true, updatedAt: new Date() })
-        .where(eq(users.id, session.userId));
+        .where(eq(users.id, userId));
     }
 
-    logger.info("Successfully migrated guest data", { userId: session.userId });
+    logger.info("Successfully migrated guest data", { userId });
 
     res.json(successResponse({ 
       migratedAt: new Date().toISOString(),
