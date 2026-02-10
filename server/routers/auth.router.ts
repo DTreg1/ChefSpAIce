@@ -25,6 +25,22 @@ const syncPreferencesSchema = z.object({
   expirationAlertDays: z.coerce.number().int().min(1).max(30).optional(),
 });
 
+function maskIpAddress(ip: string | null | undefined): string {
+  if (!ip) return "Unknown";
+  if (ip.includes(":")) {
+    const parts = ip.split(":");
+    if (parts.length >= 4) {
+      return parts.slice(0, 4).join(":") + ":****:****:****:****";
+    }
+    return ip;
+  }
+  const parts = ip.split(".");
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.***.***`;
+  }
+  return ip;
+}
+
 const router = Router();
 
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | 'none';
@@ -462,7 +478,7 @@ router.get("/sessions", requireAuth, async (req: Request, res: Response, next: N
       .map((s) => ({
         id: s.id,
         userAgent: s.userAgent || "Unknown device",
-        ipAddress: s.ipAddress || "Unknown",
+        ipAddress: maskIpAddress(s.ipAddress),
         createdAt: s.createdAt,
         expiresAt: s.expiresAt,
         isCurrent: s.token === currentHashedToken,
