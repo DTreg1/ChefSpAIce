@@ -5,6 +5,10 @@ import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
 import { logger } from "../lib/logger";
 import { hashToken, getSessionByToken } from "../lib/auth-utils";
+import { queueNotification } from "../services/notificationService";
+
+const recentUaMismatchAlerts = new Set<string>();
+const UA_MISMATCH_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 1 notification per session per day
 
 declare global {
   namespace Express {
@@ -61,6 +65,20 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         currentAgent: currentUserAgent.substring(0, 80),
         ip: req.ip,
       });
+
+      const cacheKey = `ua_mismatch:${session.id}`;
+      if (!recentUaMismatchAlerts.has(cacheKey)) {
+        recentUaMismatchAlerts.add(cacheKey);
+        setTimeout(() => recentUaMismatchAlerts.delete(cacheKey), UA_MISMATCH_COOLDOWN_MS);
+        queueNotification({
+          userId: session.userId,
+          type: "security",
+          title: "Unusual session activity detected",
+          body: "One of your sessions was accessed from a different device or browser. If this wasn't you, please review your active sessions in Settings and revoke any you don't recognize.",
+          data: { sessionId: session.id },
+          deepLink: "/settings/security",
+        }).catch(() => {});
+      }
     }
 
     req.userId = session.userId;
