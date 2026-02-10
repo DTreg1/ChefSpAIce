@@ -1,7 +1,7 @@
 # ChefSpAIce
 
 ## Overview
-Kitchen inventory management app with AI-powered recipe generation, meal planning, and shopping lists. Freemium model (Free/Basic/Pro). iOS Liquid Glass Design aesthetic. React Native + Expo for mobile, React web for landing/admin pages.
+Kitchen inventory management app with AI-powered recipe generation, meal planning, and shopping lists. Single subscription model ($9.99/mo or $99.90/yr) with 7-day free trial. iOS Liquid Glass Design aesthetic. React Native + Expo for mobile, React web for landing/admin pages.
 
 ## User Preferences
 - Communication: Simple, everyday language
@@ -83,12 +83,13 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
 - **User Data**: `/api/user/*` — appliances, cookware, nutrition, recipes, ingredients, cooking-terms, export, suggestions
 - **Other**: notifications, referrals, shelf-life, instacart, donations, RevenueCat webhook
 
-## Subscription Tiers
-- TRIAL (7-day free trial, default for new users): 10 pantry items, 2 AI recipes/mo, 3 cookware
-- BASIC ($4.99/mo, $49.90/yr): 25 pantry items, 5 AI recipes/mo, 5 cookware
-- PRO ($9.99/mo, $99.90/yr): Unlimited everything, all features
-- No separate "Free" tier — the 7-day trial is the free experience
-- Stripe proration, cancellation retention flow, RevenueCat for StoreKit, payment failure notifications
+## Subscription Model
+- Single plan: $9.99/mo or $99.90/yr — unlimited everything, all features
+- 7-day free trial for new users with full access
+- After trial expires without subscribing → access fully locked (must subscribe to continue)
+- Internal tiers: TRIAL (expired/locked out, all limits = 0) and PRO (active subscriber or trialing, unlimited)
+- Stripe payments, RevenueCat for StoreKit/Apple IAP, payment failure notifications
+- No tier selection UI — one plan, monthly/annual billing toggle only
 
 ## Dev Workflow
 - Run: `npm run dev` → Express backend + Vite frontend on port 5000
@@ -114,6 +115,7 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
 - **Router pattern**: Routers handle HTTP concerns (request parsing, response formatting, middleware, cookies); services handle business logic and return domain events as values
 
 ## Recent Changes
+- **Single-plan subscription simplification (Feb 2026)**: Removed BASIC tier entirely. App now has one subscription plan ($9.99/mo, $99.90/yr) with 7-day free trial. After trial expires without subscribing, access is fully locked (all limits = 0). Removed TierSelector component, simplified FeatureComparisonTable to single features list, updated TrialEndedModal/UpgradePrompt messaging to "subscribe" instead of "upgrade to tier". Removed BASIC from Stripe config, webhook handlers, subscription router, StoreKit service. Updated landing page PricingSection to single plan card. Updated subscription-terms.ts with explicit single-plan pricing language. Internal enum: TRIAL (locked out) and PRO (active/trialing).
 - **Domain-driven design refactor (Feb 2026)**: Extracted auth business logic into domain services layer. auth.router.ts reduced from 1312→1069 lines. social-auth.router.ts consolidated session creation via shared createSession service. Domain types in shared/domain/ provide clean abstractions for value objects, entities, aggregates, and events. Email validation wrapped in AppError.badRequest for consistent 400 responses.
 - **Auth architecture cleanup (Feb 2026)**: Centralized shared session utilities (generateToken, getExpiryDate, setAuthCookie, clearAuthCookie) into `server/lib/session-utils.ts`, eliminating duplication between auth.router.ts and social-auth.router.ts. Refactored social-auth.router.ts from raw pg Pool queries to Drizzle ORM for consistency. Fixed logout data-clearing: added 4 missing AsyncStorage keys (onboarding_step, pending_purchase, register_prompt_dismissed_at, onboarding) to signOut(). Audited auth token storage — dual-key pattern (@chefspaice/auth + @chefspaice/auth_token) confirmed consistent across all auth flows.
 - **Password reset tokens to DB (Feb 2026)**: Moved password reset tokens from in-memory `Map` to a `password_reset_tokens` database table. Tokens now survive server restarts and work across multiple instances. Old tokens for a user are deleted when a new reset is requested. Table uses `ON DELETE CASCADE` from users.

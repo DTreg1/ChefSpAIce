@@ -1,6 +1,5 @@
 export enum SubscriptionTier {
   TRIAL = "TRIAL",
-  BASIC = "BASIC",
   PRO = "PRO",
 }
 
@@ -17,19 +16,9 @@ export interface TierLimits {
 
 export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.TRIAL]: {
-    maxPantryItems: 10,
-    maxAiRecipesPerMonth: 2,
-    maxCookwareItems: 3,
-    canCustomizeStorageAreas: false,
-    canUseRecipeScanning: false,
-    canUseBulkScanning: false,
-    canUseAiKitchenAssistant: false,
-    canUseWeeklyMealPrepping: false,
-  },
-  [SubscriptionTier.BASIC]: {
-    maxPantryItems: 25,
-    maxAiRecipesPerMonth: 5,
-    maxCookwareItems: 5,
+    maxPantryItems: 0,
+    maxAiRecipesPerMonth: 0,
+    maxCookwareItems: 0,
     canCustomizeStorageAreas: false,
     canUseRecipeScanning: false,
     canUseBulkScanning: false,
@@ -48,20 +37,19 @@ export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
   },
 };
 
+export const MONTHLY_PRICE = 9.99;
+export const ANNUAL_PRICE = 99.90;
+
 export const MONTHLY_PRICES = {
   TRIAL: 0,
-  BASIC: 4.99,
-  PRO: 9.99,
+  PRO: MONTHLY_PRICE,
 } as const;
 
 export const ANNUAL_PRICES = {
   TRIAL: 0,
-  BASIC: 49.90,
-  PRO: 99.90,
+  PRO: ANNUAL_PRICE,
 } as const;
 
-// During the 7-day trial, users get full PRO access (TRIAL_TIER = PRO).
-// After expiration, they downgrade to SubscriptionTier.TRIAL and its limits apply.
 export const TRIAL_CONFIG = {
   TRIAL_DAYS: 7,
   TRIAL_TIER: SubscriptionTier.PRO,
@@ -106,11 +94,11 @@ export const ERROR_CODES = {
 
 export const ERROR_MESSAGES: Record<string, string> = {
   [ERROR_CODES.PANTRY_LIMIT_REACHED]:
-    "You have reached your pantry item limit. Upgrade to Basic or Pro for more items.",
+    "Subscribe to ChefSpAIce to add pantry items.",
   [ERROR_CODES.COOKWARE_LIMIT_REACHED]:
-    "You have reached your cookware limit. Upgrade to Basic or Pro for more cookware.",
+    "Subscribe to ChefSpAIce to add cookware.",
   [ERROR_CODES.AI_RECIPE_LIMIT_REACHED]:
-    "You have reached your monthly AI recipe generation limit. Upgrade to Basic or Pro for more recipes.",
+    "Subscribe to ChefSpAIce to generate AI recipes.",
   [ERROR_CODES.FEATURE_NOT_AVAILABLE]:
-    "This feature is not available on your current plan. Upgrade to Basic or Pro to unlock it.",
+    "Subscribe to ChefSpAIce to unlock this feature.",
 };

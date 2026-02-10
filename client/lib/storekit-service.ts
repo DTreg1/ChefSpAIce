@@ -16,7 +16,6 @@ const REVENUECAT_ANDROID_KEY =
 const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || "";
 
 export const ENTITLEMENTS = {
-  BASIC: "basic",
   PRO: "pro",
 } as const;
 
@@ -51,19 +50,11 @@ class StoreKitService {
     }
 
     try {
-      let tier: "BASIC" | "PRO" = "BASIC";
+      let tier: "PRO" = "PRO";
       let status: string = "active";
 
       if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
-        tier = "PRO";
         const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO];
-        if (entitlement.periodType === "TRIAL") {
-          status = "trialing";
-        }
-      } else if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
-        tier = "BASIC";
-        const entitlement =
-          customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
         if (entitlement.periodType === "TRIAL") {
           status = "trialing";
         }
@@ -72,8 +63,7 @@ class StoreKitService {
       }
 
       const activeEntitlement =
-        customerInfo.entitlements.active[ENTITLEMENTS.PRO] ||
-        customerInfo.entitlements.active[ENTITLEMENTS.BASIC];
+        customerInfo.entitlements.active[ENTITLEMENTS.PRO];
       const expirationDate = activeEntitlement?.expirationDate || null;
 
       const baseUrl = getApiUrl();
@@ -305,7 +295,7 @@ class StoreKitService {
 
   async hasActiveSubscription(): Promise<{
     isActive: boolean;
-    tier: "basic" | "pro" | null;
+    tier: "pro" | null;
   }> {
     if (!this.initialized || Platform.OS === "web") {
       return { isActive: false, tier: null };
@@ -316,10 +306,6 @@ class StoreKitService {
 
       if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
         return { isActive: true, tier: "pro" };
-      }
-
-      if (customerInfo.entitlements.active[ENTITLEMENTS.BASIC]) {
-        return { isActive: true, tier: "basic" };
       }
 
       return { isActive: false, tier: null };

@@ -176,17 +176,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     const shouldUseStoreKit = (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
     if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
 
-    const prices: { basicMonthly?: string; basicAnnual?: string; proMonthly?: string; proAnnual?: string } = {};
+    const prices: { proMonthly?: string; proAnnual?: string } = {};
     for (const pkg of offerings.availablePackages) {
       const id = pkg.identifier.toLowerCase();
       const priceStr = pkg.product.priceString;
-      if (id.includes('basic') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
-        prices.basicMonthly = priceStr;
-      } else if (id.includes('basic') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
-        prices.basicAnnual = priceStr;
-      } else if (id.includes('pro') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+      if (pkg.packageType === 'MONTHLY' || id.includes('monthly')) {
         prices.proMonthly = priceStr;
-      } else if (id.includes('pro') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+      } else if (pkg.packageType === 'ANNUAL' || id.includes('annual')) {
         prices.proAnnual = priceStr;
       }
     }
@@ -361,9 +357,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
   // Handle plan selection from trial ended modal
   const handleSelectPlan = useCallback(
-    async (tier: "basic" | "pro", plan: "monthly" | "annual") => {
+    async (_tier: "pro", plan: "monthly" | "annual") => {
       setIsPurchasing(true);
-      const tierName = tier === "pro" ? "Pro" : "Basic";
 
       try {
         if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -378,7 +373,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
           let pkg = null;
           if (offerings?.availablePackages) {
-            const expectedPackageId = `${tier}_${plan}`;
+            const expectedPackageId = `pro_${plan}`;
             pkg = offerings.availablePackages.find((p) => {
               const id = p.identifier.toLowerCase();
               const matchesType = plan === "monthly"
@@ -386,9 +381,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
                 : p.packageType === "ANNUAL";
               return (
                 id === expectedPackageId ||
-                (id.includes(tier) && id.includes(plan)) ||
-                (id.includes(tier) && matchesType) ||
-                (matchesType && !id.includes(tier === "pro" ? "basic" : "pro"))
+                (id.includes("pro") && id.includes(plan)) ||
+                (id.includes("pro") && matchesType) ||
+                matchesType
               );
             });
           }
@@ -396,7 +391,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           if (pkg) {
             const success = await purchasePackage(pkg);
             if (success) {
-              Alert.alert("Success", `Thank you for subscribing to ${tierName}!`);
+              Alert.alert("Success", "Thank you for subscribing to ChefSpAIce!");
               setShowTrialEndedModal(false);
               await forceRefetch();
             }
@@ -405,7 +400,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             if (result === "purchased" || result === "restored") {
               setShowTrialEndedModal(false);
               await forceRefetch();
-              Alert.alert("Success", `Thank you for subscribing!`);
+              Alert.alert("Success", "Thank you for subscribing!");
             }
           }
           return;
@@ -419,21 +414,14 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           );
           const prices = (await pricesResponse.json()).data as any;
 
-          const priceKey =
-            tier === "pro"
-              ? plan === "monthly"
-                ? "proMonthly"
-                : "proAnnual"
-              : plan === "monthly"
-                ? "basicMonthly"
-                : "basicAnnual";
+          const priceKey = plan === "monthly" ? "proMonthly" : "proAnnual";
           const fallbackKey = plan === "monthly" ? "monthly" : "annual";
           const priceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
 
           if (!priceId) {
             Alert.alert(
               "Price Not Available",
-              `The ${tierName} ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
+              `The ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
               [{ text: "OK" }],
             );
             return;
@@ -450,7 +438,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
               credentials: "include",
               body: JSON.stringify({
                 priceId,
-                tier,
+                tier: "pro",
                 successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
                 cancelUrl: `${window.location.origin}/subscription-canceled`,
               }),

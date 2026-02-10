@@ -73,7 +73,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const colors = isDark ? COLORS.dark : COLORS.light;
   const useLiquidGlass = isLiquidGlassAvailable();
 
-  // Calculate remaining AI recipes for Basic users
   const maxAiRecipes =
     typeof entitlements.maxAiRecipes === "number"
       ? entitlements.maxAiRecipes

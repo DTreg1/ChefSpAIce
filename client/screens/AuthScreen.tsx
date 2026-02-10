@@ -29,7 +29,7 @@ import { syncManager } from "@/lib/sync-manager";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
 import { useStoreKit } from "@/hooks/useStoreKit";
-import { MONTHLY_PRICES } from "@shared/subscription";
+import { MONTHLY_PRICE } from "@shared/subscription";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -75,20 +75,20 @@ export default function AuthScreen() {
   const shouldUseStoreKit =
     (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
 
-  const getPreviewPrice = (tier: "basic" | "pro"): string => {
+  const getPreviewPrice = (): string => {
     if (shouldUseStoreKit && offerings?.availablePackages) {
       for (const pkg of offerings.availablePackages) {
         const id = pkg.identifier.toLowerCase();
         const isMonthly = pkg.packageType === "MONTHLY" || id.includes("monthly");
-        if (id.includes(tier) && isMonthly) {
+        if (isMonthly) {
           return `${pkg.product.priceString}/mo`;
         }
       }
     }
     if (Platform.OS === "ios" || Platform.OS === "android") {
-      return tier === "basic" ? "Basic Plan" : "Pro Plan";
+      return "ChefSpAIce";
     }
-    return `$${tier === "basic" ? MONTHLY_PRICES.BASIC.toFixed(2) : MONTHLY_PRICES.PRO.toFixed(2)}/mo`;
+    return `$${MONTHLY_PRICE.toFixed(2)}/mo`;
   };
 
   const handleOpenPrivacyPolicy = () => {
@@ -391,39 +391,21 @@ export default function AuthScreen() {
                     { color: theme.textSecondary },
                   ]}
                 >
-                  After your trial, choose a plan:
+                  After your trial, subscribe to continue:
                 </ThemedText>
                 <View style={styles.planPreviewRow}>
                   <View style={styles.planPreviewItem}>
                     <ThemedText style={styles.planPreviewName}>
-                      Basic
+                      ChefSpAIce
                     </ThemedText>
                     <ThemedText
                       style={[
                         styles.planPreviewPrice,
                         { color: AppColors.primary },
                       ]}
-                      data-testid="text-basic-price"
+                      data-testid="text-subscription-price"
                     >
-                      {getPreviewPrice("basic")}
-                    </ThemedText>
-                  </View>
-                  <View
-                    style={[
-                      styles.planPreviewDivider,
-                      { backgroundColor: theme.glass.border },
-                    ]}
-                  />
-                  <View style={styles.planPreviewItem}>
-                    <ThemedText style={styles.planPreviewName}>Pro</ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.planPreviewPrice,
-                        { color: AppColors.primary },
-                      ]}
-                      data-testid="text-pro-price"
-                    >
-                      {getPreviewPrice("pro")}
+                      {getPreviewPrice()}
                     </ThemedText>
                   </View>
                 </View>

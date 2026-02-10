@@ -109,9 +109,7 @@ export function UpgradePrompt({
   const benefits = PRO_BENEFITS[benefitKey] || PRO_BENEFITS.default;
 
   const getUpgradeMessage = () => {
-    if (currentTier === "TRIAL") return "Upgrade to Basic or Pro for more access.";
-    if (currentTier === "BASIC") return "Upgrade to Pro for unlimited access.";
-    return "Upgrade for more access.";
+    return "Subscribe to ChefSpAIce for full access.";
   };
 
   const getMessage = () => {
@@ -135,7 +133,7 @@ export function UpgradePrompt({
     if (type === "limit") {
       return remaining === 0 ? "Limit Reached" : "Running Low";
     }
-    return "Pro Feature";
+    return "Subscription Required";
   };
 
   const getIcon = () => {
@@ -189,7 +187,7 @@ export function UpgradePrompt({
           type="caption"
           style={[styles.benefitsLabel, { color: theme.textSecondaryOnGlass }]}
         >
-          Pro includes:
+          ChefSpAIce includes:
         </ThemedText>
         {benefits.map((benefit, index) => (
           <View key={index} style={styles.benefitRow}>
@@ -216,7 +214,7 @@ export function UpgradePrompt({
           testID="button-upgrade-to-pro"
           icon={<Ionicons name="rocket" size={18} color="#FFFFFF" />}
         >
-          {currentTier === "BASIC" ? "Upgrade to Pro" : "Upgrade Plan"}
+          Subscribe Now
         </GlassButton>
         <GlassButton
           variant="ghost"

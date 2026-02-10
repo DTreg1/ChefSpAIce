@@ -14,10 +14,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
-import { MONTHLY_PRICES, ANNUAL_PRICES } from "@shared/subscription";
+import { MONTHLY_PRICE, ANNUAL_PRICE } from "@shared/subscription";
 import { getSubscriptionTermsText, APPLE_EULA_URL, GOOGLE_PLAY_TERMS_URL } from "@/constants/subscription-terms";
 
-const PRO_FEATURES = [
+const FEATURES = [
   {
     icon: "infinite" as const,
     name: "Unlimited Pantry Items",
@@ -60,35 +60,15 @@ const PRO_FEATURES = [
   },
 ];
 
-const BASIC_FEATURES = [
-  {
-    icon: "cube" as const,
-    name: "25 Pantry Items",
-    description: "Track your essentials",
-  },
-  {
-    icon: "restaurant" as const,
-    name: "5 AI Recipes/Month",
-    description: "Get recipe inspiration",
-  },
-  {
-    icon: "construct" as const,
-    name: "5 Cookware Items",
-    description: "Basic equipment tracking",
-  },
-];
-
 interface TrialEndedModalProps {
   visible: boolean;
-  onSelectPlan: (tier: "basic" | "pro", plan: "monthly" | "annual") => void;
+  onSelectPlan: (tier: "pro", plan: "monthly" | "annual") => void;
   isLoading?: boolean;
   onOpenPrivacyPolicy?: () => void;
   onOpenTermsOfUse?: () => void;
   onRestorePurchases?: () => void;
   isRestoring?: boolean;
   storeKitPrices?: {
-    basicMonthly?: string;
-    basicAnnual?: string;
     proMonthly?: string;
     proAnnual?: string;
   } | null;
@@ -105,57 +85,44 @@ export function TrialEndedModal({
   storeKitPrices,
 }: TrialEndedModalProps) {
   const { theme, isDark } = useTheme();
-  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );
 
   const handleSubscribe = () => {
-    onSelectPlan(selectedTier, selectedPlan);
+    onSelectPlan("pro", selectedPlan);
   };
 
-  const getPrice = (tier: "basic" | "pro", plan: "monthly" | "annual") => {
-    if (tier === "basic") {
-      return plan === "monthly"
-        ? MONTHLY_PRICES.BASIC
-        : ANNUAL_PRICES.BASIC / 12;
-    }
-    return plan === "monthly" ? MONTHLY_PRICES.PRO : ANNUAL_PRICES.PRO / 12;
-  };
-
-  const getDisplayPrice = (tier: "basic" | "pro", plan: "monthly" | "annual") => {
+  const getDisplayPrice = (plan: "monthly" | "annual") => {
     if (storeKitPrices) {
-      const key = `${tier}${plan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
+      const key = plan === 'monthly' ? 'proMonthly' : 'proAnnual';
       if (storeKitPrices[key]) return storeKitPrices[key];
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        return tier === "pro" ? "Pro" : "Basic";
+        return plan === 'monthly' ? 'Monthly' : 'Annual';
       }
     }
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      return tier === "pro" ? "Pro" : "Basic";
+      return plan === 'monthly' ? 'Monthly' : 'Annual';
     }
-    if (tier === "basic") {
-      return `$${plan === "monthly" ? MONTHLY_PRICES.BASIC.toFixed(2) : ANNUAL_PRICES.BASIC.toFixed(2)}`;
-    }
-    return `$${plan === "monthly" ? MONTHLY_PRICES.PRO.toFixed(2) : ANNUAL_PRICES.PRO.toFixed(2)}`;
+    return `$${plan === "monthly" ? MONTHLY_PRICE.toFixed(2) : ANNUAL_PRICE.toFixed(2)}`;
   };
 
   const getButtonPriceText = () => {
     if (storeKitPrices) {
-      const key = `${selectedTier}${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof NonNullable<typeof storeKitPrices>;
+      const key = selectedPlan === 'monthly' ? 'proMonthly' : 'proAnnual';
       if (storeKitPrices[key]) {
         return `${storeKitPrices[key]}/${selectedPlan === 'monthly' ? 'mo' : 'yr'}`;
       }
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        return `${selectedTier === "pro" ? "Pro" : "Basic"} ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}`;
+        return selectedPlan === 'monthly' ? 'Monthly' : 'Annual';
       }
     }
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      return `${selectedTier === "pro" ? "Pro" : "Basic"} ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'}`;
+      return selectedPlan === 'monthly' ? 'Monthly' : 'Annual';
     }
     return selectedPlan === "monthly"
-      ? `$${getPrice(selectedTier, "monthly").toFixed(2)}/mo`
-      : `$${(selectedTier === "pro" ? ANNUAL_PRICES.PRO : ANNUAL_PRICES.BASIC).toFixed(2)}/yr`;
+      ? `$${MONTHLY_PRICE.toFixed(2)}/mo`
+      : `$${ANNUAL_PRICE.toFixed(2)}/yr`;
   };
 
   const handleOpenPrivacyPolicy = () => {
@@ -210,7 +177,7 @@ export function TrialEndedModal({
                 type="body"
                 style={[styles.subtitle, { color: theme.textSecondary }]}
               >
-                Choose a plan to continue using ChefSpAIce
+                Subscribe to continue using ChefSpAIce
               </ThemedText>
             </View>
 
@@ -282,30 +249,22 @@ export function TrialEndedModal({
               </Pressable>
             </View>
 
-            <Pressable
+            <View
               style={[
-                styles.tierCard,
+                styles.planCard,
                 {
-                  borderColor:
-                    selectedTier === "basic" ? AppColors.primary : theme.border,
-                },
-                selectedTier === "basic" && {
+                  borderColor: AppColors.primary,
                   backgroundColor: AppColors.primary + "10",
                 },
               ]}
-              onPress={() => setSelectedTier("basic")}
-              data-testid="button-select-basic-tier"
-              accessibilityRole="radio"
-              accessibilityState={{ selected: selectedTier === "basic" }}
-              accessibilityLabel={`Basic plan, ${getDisplayPrice("basic", selectedPlan)} per ${selectedPlan === "monthly" ? "month" : "year"}`}
             >
-              <View style={styles.tierHeader}>
+              <View style={styles.planHeader}>
                 <View>
                   <ThemedText type="h3" style={{ color: theme.text }}>
-                    Basic
+                    ChefSpAIce
                   </ThemedText>
                   <ThemedText type="h2" style={{ color: AppColors.primary }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    {getDisplayPrice("basic", selectedPlan)}
+                    {getDisplayPrice(selectedPlan)}
                     <ThemedText
                       type="body"
                       style={{ color: theme.textSecondary }}
@@ -314,20 +273,18 @@ export function TrialEndedModal({
                     </ThemedText>
                   </ThemedText>
                 </View>
-                {selectedTier === "basic" && (
-                  <View
-                    style={[
-                      styles.checkCircle,
-                      { backgroundColor: AppColors.primary },
-                    ]}
-                  >
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  </View>
-                )}
+                <View
+                  style={[
+                    styles.checkCircle,
+                    { backgroundColor: AppColors.primary },
+                  ]}
+                >
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                </View>
               </View>
-              <View style={styles.tierFeatures}>
-                {BASIC_FEATURES.map((feature, index) => (
-                  <View key={index} style={styles.tierFeatureRow}>
+              <View style={styles.planFeatures}>
+                {FEATURES.slice(0, 4).map((feature, index) => (
+                  <View key={index} style={styles.planFeatureRow}>
                     <Ionicons
                       name={feature.icon}
                       size={14}
@@ -341,89 +298,14 @@ export function TrialEndedModal({
                     </ThemedText>
                   </View>
                 ))}
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.tierCard,
-                {
-                  borderColor:
-                    selectedTier === "pro" ? AppColors.warning : theme.border,
-                },
-                selectedTier === "pro" && {
-                  backgroundColor: AppColors.warning + "10",
-                },
-              ]}
-              onPress={() => setSelectedTier("pro")}
-              data-testid="button-select-pro-tier"
-              accessibilityRole="radio"
-              accessibilityState={{ selected: selectedTier === "pro" }}
-              accessibilityLabel={`Pro plan, ${getDisplayPrice("pro", selectedPlan)} per ${selectedPlan === "monthly" ? "month" : "year"}, most popular`}
-            >
-              <View
-                style={[
-                  styles.popularBadge,
-                  { backgroundColor: AppColors.warning },
-                ]}
-              >
                 <ThemedText
                   type="caption"
-                  style={{ color: "#fff", fontSize: 10 }}
+                  style={{ color: AppColors.primary, marginTop: 4 }}
                 >
-                  MOST POPULAR
+                  + {FEATURES.length - 4} more features included
                 </ThemedText>
               </View>
-              <View style={styles.tierHeader}>
-                <View>
-                  <ThemedText type="h3" style={{ color: theme.text }}>
-                    Pro
-                  </ThemedText>
-                  <ThemedText type="h2" style={{ color: AppColors.warning }} numberOfLines={1} adjustsFontSizeToFit={true}>
-                    {getDisplayPrice("pro", selectedPlan)}
-                    <ThemedText
-                      type="body"
-                      style={{ color: theme.textSecondary }}
-                    >
-                      {selectedPlan === "monthly" ? "/mo" : "/yr"}
-                    </ThemedText>
-                  </ThemedText>
-                </View>
-                {selectedTier === "pro" && (
-                  <View
-                    style={[
-                      styles.checkCircle,
-                      { backgroundColor: AppColors.warning },
-                    ]}
-                  >
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  </View>
-                )}
-              </View>
-              <View style={styles.tierFeatures}>
-                {PRO_FEATURES.slice(0, 4).map((feature, index) => (
-                  <View key={index} style={styles.tierFeatureRow}>
-                    <Ionicons
-                      name={feature.icon}
-                      size={14}
-                      color={AppColors.warning}
-                    />
-                    <ThemedText
-                      type="caption"
-                      style={{ color: theme.textSecondary, flex: 1 }}
-                    >
-                      {feature.name}
-                    </ThemedText>
-                  </View>
-                ))}
-                <ThemedText
-                  type="caption"
-                  style={{ color: AppColors.warning, marginTop: 4 }}
-                >
-                  + 4 more premium features
-                </ThemedText>
-              </View>
-            </Pressable>
+            </View>
           </ScrollView>
 
           <View style={styles.actions}>
@@ -431,10 +313,7 @@ export function TrialEndedModal({
               style={[
                 styles.subscribeButton,
                 {
-                  backgroundColor:
-                    selectedTier === "pro"
-                      ? AppColors.warning
-                      : AppColors.primary,
+                  backgroundColor: AppColors.primary,
                 },
                 isLoading && { opacity: 0.7 },
               ]}
@@ -442,7 +321,7 @@ export function TrialEndedModal({
               disabled={isLoading}
               data-testid="button-subscribe-trial-ended"
               accessibilityRole="button"
-              accessibilityLabel={`Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} plan`}
+              accessibilityLabel="Subscribe to ChefSpAIce"
               accessibilityState={{ disabled: isLoading }}
             >
               {isLoading ? (
@@ -450,12 +329,12 @@ export function TrialEndedModal({
               ) : (
                 <>
                   <Ionicons
-                    name={selectedTier === "pro" ? "star" : "checkmark-circle"}
+                    name="checkmark-circle"
                     size={20}
                     color="#fff"
                   />
                   <ThemedText type="button" style={styles.subscribeButtonText}>
-                    Subscribe to {selectedTier === "pro" ? "Pro" : "Basic"} — {getButtonPriceText()}
+                    Subscribe Now — {getButtonPriceText()}
                   </ThemedText>
                 </>
               )}
@@ -608,14 +487,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  tierCard: {
+  planCard: {
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 2,
     marginBottom: Spacing.sm,
     position: "relative",
   },
-  tierHeader: {
+  planHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -628,18 +507,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  popularBadge: {
-    position: "absolute",
-    top: -10,
-    right: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  tierFeatures: {
+  planFeatures: {
     gap: 4,
   },
-  tierFeatureRow: {
+  planFeatureRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,

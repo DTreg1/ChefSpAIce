@@ -40,8 +40,6 @@ interface PriceInfo {
 }
 
 interface TieredPrices {
-  basicMonthly: PriceInfo | null;
-  basicAnnual: PriceInfo | null;
   proMonthly: PriceInfo | null;
   proAnnual: PriceInfo | null;
   monthly: PriceInfo | null;
@@ -91,8 +89,6 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
     }
 
     const result: TieredPrices = {
-      basicMonthly: null,
-      basicAnnual: null,
       proMonthly: null,
       proAnnual: null,
       monthly: null,
@@ -102,8 +98,6 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
     for (const price of prices.data) {
       const product = price.product as { name?: string; metadata?: Record<string, string> } | null;
       const productName = typeof product === "object" && product?.name ? product.name : "Subscription";
-      const productMeta = typeof product === "object" && product?.metadata ? product.metadata : {};
-      const priceMeta = price.metadata || {};
 
       const priceInfo: PriceInfo = {
         id: price.id,
@@ -115,31 +109,23 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
         productName,
       };
 
-      const nameLower = productName.toLowerCase();
-      const tier = productMeta.tier?.toLowerCase() || priceMeta.tier?.toLowerCase() || "";
-      const isBasic = tier === "basic" || nameLower.includes("basic");
-      const isPro = tier === "pro" || nameLower.includes("pro");
       const isMonthly = price.recurring?.interval === "month" && price.recurring.interval_count === 1;
       const isAnnual = price.recurring?.interval === "year" && price.recurring.interval_count === 1;
 
-      if (isBasic && isMonthly) {
-        result.basicMonthly = priceInfo;
-      } else if (isBasic && isAnnual) {
-        result.basicAnnual = priceInfo;
-      } else if (isPro && isMonthly) {
+      if (isMonthly) {
         result.proMonthly = priceInfo;
-      } else if (isPro && isAnnual) {
+        if (!result.monthly || priceInfo.amount > 0) {
+          result.monthly = priceInfo;
+        }
+      } else if (isAnnual) {
         result.proAnnual = priceInfo;
-      }
-
-      if (isMonthly && (!result.monthly || priceInfo.amount > 0)) {
-        result.monthly = priceInfo;
-      } else if (isAnnual && (!result.annual || priceInfo.amount > 0)) {
-        result.annual = priceInfo;
+        if (!result.annual || priceInfo.amount > 0) {
+          result.annual = priceInfo;
+        }
       }
     }
 
-    if (result.basicMonthly || result.proMonthly || result.monthly || result.annual) {
+    if (result.proMonthly || result.monthly || result.annual) {
       pricesCache.data = result;
       pricesCache.timestamp = Date.now();
     }
@@ -369,11 +355,11 @@ router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFu
       throw AppError.badRequest("tier and status are required", "MISSING_REQUIRED_FIELDS");
     }
 
-    const validTiers = ['TRIAL', 'BASIC', 'PRO'];
+    const validTiers = ['TRIAL', 'PRO'];
     const validStatuses = ['active', 'trialing', 'canceled', 'expired', 'past_due'];
 
     if (!validTiers.includes(tier)) {
-      throw AppError.badRequest("Invalid tier. Must be TRIAL, BASIC, or PRO", "INVALID_TIER");
+      throw AppError.badRequest("Invalid tier. Must be TRIAL or PRO", "INVALID_TIER");
     }
 
     if (!validStatuses.includes(status)) {
@@ -586,23 +572,6 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
 
     if (!priceId) {
       for (const price of prices.data) {
-        const product = price.product as { name?: string } | null;
-        const productName = (typeof product === "object" && product?.name) || "";
-
-        if (productName.toLowerCase().includes("pro")) {
-          if (billingPeriod === "annual" && price.recurring?.interval === "year") {
-            priceId = price.id;
-            break;
-          } else if (billingPeriod === "monthly" && price.recurring?.interval === "month") {
-            priceId = price.id;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!priceId) {
-      for (const price of prices.data) {
         if (billingPeriod === "annual" && price.recurring?.interval === "year") {
           priceId = price.id;
           break;
@@ -614,7 +583,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
     }
 
     if (!priceId) {
-      throw AppError.badRequest("No suitable price found for Pro upgrade", "NO_PRICE_FOUND");
+      throw AppError.badRequest("No suitable price found for subscription", "NO_PRICE_FOUND");
     }
 
     const hasActiveStripeSubscription =
@@ -635,11 +604,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
       });
 
       const newPrice = updatedSubscription.items.data[0]?.price;
-      const product = newPrice?.product;
-      const productObj = typeof product === "string" ? await stripe.products.retrieve(product) : product;
-      const productName = (productObj && typeof productObj === "object" && "name" in productObj) ? productObj.name : "";
-      const nameLower = (productName || "").toLowerCase();
-      const newTier = nameLower.includes("pro") ? "PRO" : nameLower.includes("basic") ? "BASIC" : "PRO";
+      const newTier = "PRO";
       const newPlanType = newPrice?.recurring?.interval === "year" ? "annual" : "monthly";
 
       await db
@@ -675,7 +640,7 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
         }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
       }
 
-      logger.info("Subscription upgraded in-place with proration", {
+      logger.info("Subscription upgraded in-place", {
         userId: user.id,
         previousTier,
         newTier,

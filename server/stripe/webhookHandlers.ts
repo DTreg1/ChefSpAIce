@@ -152,7 +152,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
   const priceId = subscription.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
+  let tier: SubscriptionTier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
   
   if (priceId) {
     const tierInfo = await getTierFromPriceId(priceId, stripe);
@@ -252,7 +252,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
   
   if (priceId) {
     const stripe = await getUncachableStripeClient();
@@ -345,7 +345,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.BASIC;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
   
   if (priceId) {
     const stripe = await getUncachableStripeClient();

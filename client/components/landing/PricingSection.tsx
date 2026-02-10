@@ -3,7 +3,7 @@ import { useState } from "react";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { AppColors } from "@/constants/theme";
 import { PricingCard } from "./PricingCard";
-import { BASIC_FEATURES, PRO_FEATURES } from "@/data/landing-data";
+import { SUBSCRIPTION_FEATURES } from "@/data/landing-data";
 import { sharedStyles } from "./shared-styles";
 
 interface PricingSectionProps {
@@ -27,7 +27,7 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
         style={sharedStyles.sectionSubtitle}
         data-testid="text-pricing-subtitle"
       >
-        Choose the plan that works best for you
+        One plan, everything included. Start with a 7-day free trial.
       </Text>
 
       <View style={styles.billingToggleContainer}>
@@ -75,35 +75,24 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
 
       <View style={[styles.pricingGrid, isWide && styles.pricingGridWide]}>
         <PricingCard
-          tier="Basic"
-          price={isAnnual ? "$49.90" : "$4.99"}
-          period={isAnnual ? "year" : "month"}
-          description="Perfect for getting started"
-          features={BASIC_FEATURES}
-          buttonText="Download App"
-          onPress={() => {}}
-          testId="basic"
-          isWide={isWide}
-          showDownloadButtons={true}
-          onDownloadiOS={() => onDownloadApp("ios")}
-          onDownloadAndroid={() => onDownloadApp("android")}
-        />
-        <PricingCard
-          tier="Pro"
+          tier="ChefSpAIce"
           price={isAnnual ? "$99.90" : "$9.99"}
           period={isAnnual ? "year" : "month"}
-          description="Best for home cooks"
-          features={PRO_FEATURES}
-          isPopular={true}
+          description="Full access to all features"
+          features={SUBSCRIPTION_FEATURES}
           buttonText="Download App"
           onPress={() => {}}
-          testId="pro"
+          testId="subscription"
           isWide={isWide}
           showDownloadButtons={true}
           onDownloadiOS={() => onDownloadApp("ios")}
           onDownloadAndroid={() => onDownloadApp("android")}
         />
       </View>
+
+      <Text style={styles.trialText} data-testid="text-trial-info">
+        7-day free trial included
+      </Text>
     </View>
   );
 }
@@ -151,16 +140,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "rgba(255, 255, 255, 0.5)",
   },
+  trialText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
+    marginTop: 16,
+    textAlign: "center" as const,
+  },
   pricingGrid: {
     flexDirection: "column",
     gap: 20,
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 420,
+    alignSelf: "center",
   },
   pricingGridWide: {
-    flexDirection: "row",
-    justifyContent: "center",
-    maxWidth: 1000,
-    gap: 24,
+    maxWidth: 420,
   },
 });

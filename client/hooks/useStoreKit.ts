@@ -19,7 +19,7 @@ interface UseStoreKitReturn {
   offerings: PurchasesOffering | null;
   customerInfo: CustomerInfo | null;
   isSubscribed: boolean;
-  currentTier: "basic" | "pro" | null;
+  currentTier: "pro" | null;
   purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
   refreshCustomerInfo: () => Promise<void>;
@@ -58,12 +58,10 @@ export function useStoreKit(): UseStoreKitReturn {
     ? Object.keys(customerInfo.entitlements.active).length > 0
     : false;
 
-  const currentTier: "basic" | "pro" | null = customerInfo?.entitlements?.active
+  const currentTier: "pro" | null = customerInfo?.entitlements?.active
     ? customerInfo.entitlements.active[ENTITLEMENTS.PRO]
       ? "pro"
-      : customerInfo.entitlements.active[ENTITLEMENTS.BASIC]
-        ? "basic"
-        : null
+      : null
     : null;
 
   useEffect(() => {

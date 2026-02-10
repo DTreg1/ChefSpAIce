@@ -6,12 +6,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { SubscriptionTier } from "@shared/subscription";
 
 interface CurrentPlanCardProps {
   planName: string;
   monthlyPrice: string;
-  isProUser: boolean;
   tier: string;
   statusInfo: { label: string; color: string };
   isTrialing: boolean;
@@ -21,13 +19,14 @@ interface CurrentPlanCardProps {
 export function CurrentPlanCard({
   planName,
   monthlyPrice,
-  isProUser,
   tier,
   statusInfo,
   isTrialing,
   trialDaysRemaining,
 }: CurrentPlanCardProps) {
   const { theme } = useTheme();
+
+  const isActiveSubscriber = tier === "PRO";
 
   return (
     <GlassCard style={styles.planCard}>
@@ -50,9 +49,9 @@ export function CurrentPlanCard({
         <View style={styles.planInfo}>
           <View style={styles.planBadge}>
             <Feather
-              name={isProUser ? "star" : tier === SubscriptionTier.BASIC ? "user" : "gift"}
+              name={isActiveSubscriber ? "star" : "gift"}
               size={20}
-              color={isProUser ? AppColors.warning : AppColors.primary}
+              color={isActiveSubscriber ? AppColors.warning : AppColors.primary}
             />
           </View>
           <View>
@@ -104,8 +103,7 @@ export function CurrentPlanCard({
             <ThemedText
               style={[styles.trialSubtitle, { color: theme.textSecondary }]}
             >
-              Choose a plan below to continue using ChefSpAIce after your
-              trial.
+              Subscribe to continue using ChefSpAIce after your trial.
             </ThemedText>
           </View>
         </View>

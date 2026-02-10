@@ -265,13 +265,11 @@ Also verify that drizzle.config.ts is correctly configured and that the migratio
 
 ```
 Review the webhook handlers in server/stripe/webhookHandlers.ts and the subscription router in server/stripe/subscriptionRouter.ts. Ensure conversionEvents are recorded for ALL subscription lifecycle events:
-1. Trial started (FREE → trialing)
+1. Trial started (TRIAL → trialing)
 2. Trial converted to paid (trialing → active)
-3. Upgrade (BASIC → PRO)
-4. Downgrade (PRO → BASIC)
-5. Cancellation (active → canceled)
-6. Reactivation (canceled → active)
-7. Expiration (canceled → expired)
+3. Cancellation (active → canceled)
+4. Reactivation (canceled → active)
+5. Expiration (canceled → expired)
 Check the existing conversionEvents inserts and add any missing event types. Each event should include userId, fromTier, toTier, and timestamp.
 ```
 

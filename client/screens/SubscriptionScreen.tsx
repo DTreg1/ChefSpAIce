@@ -28,8 +28,8 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import {
-  MONTHLY_PRICES,
-  ANNUAL_PRICES,
+  MONTHLY_PRICE,
+  ANNUAL_PRICE,
   SubscriptionTier,
 } from "@shared/subscription";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -39,7 +39,6 @@ import { logger } from "@/lib/logger";
 import { CurrentPlanCard } from "@/components/subscription/CurrentPlanCard";
 import { FeatureComparisonTable, PRO_FEATURES } from "@/components/subscription/FeatureComparisonTable";
 import { PlanToggle } from "@/components/subscription/PlanToggle";
-import { TierSelector } from "@/components/subscription/TierSelector";
 import { CancellationFlowModal } from "@/components/subscription/CancellationFlowModal";
 import { SubscriptionLegalLinks } from "@/components/subscription/SubscriptionLegalLinks";
 
@@ -100,19 +99,15 @@ export default function SubscriptionScreen() {
   const storeKitPrices = useMemo(() => {
     if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
 
-    const prices: { basicMonthly?: string; basicAnnual?: string; proMonthly?: string; proAnnual?: string } = {};
+    const prices: { proMonthly?: string; proAnnual?: string } = {};
 
     for (const pkg of offerings.availablePackages) {
       const id = pkg.identifier.toLowerCase();
       const priceStr = pkg.product.priceString;
 
-      if (id.includes('basic') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
-        prices.basicMonthly = priceStr;
-      } else if (id.includes('basic') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
-        prices.basicAnnual = priceStr;
-      } else if (id.includes('pro') && (pkg.packageType === 'MONTHLY' || id.includes('monthly'))) {
+      if (pkg.packageType === 'MONTHLY' || id.includes('monthly')) {
         prices.proMonthly = priceStr;
-      } else if (id.includes('pro') && (pkg.packageType === 'ANNUAL' || id.includes('annual'))) {
+      } else if (pkg.packageType === 'ANNUAL' || id.includes('annual')) {
         prices.proAnnual = priceStr;
       }
     }
@@ -128,7 +123,6 @@ export default function SubscriptionScreen() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">(
     "annual",
   );
-  const [selectedTier, setSelectedTier] = useState<"basic" | "pro">("pro");
 
   const formatLimit = (value: number | "unlimited", used: number): string => {
     if (value === "unlimited") {
@@ -158,51 +152,38 @@ export default function SubscriptionScreen() {
   };
 
   const getPlanName = (): string => {
-    if (currentTier === SubscriptionTier.PRO) return "Pro";
-    if (currentTier === SubscriptionTier.BASIC) return "Basic";
+    if (currentTier === SubscriptionTier.PRO) return "ChefSpAIce";
     return isTrialing ? "Trial" : "No Plan";
   };
 
   const getMonthlyPrice = (): string => {
     if (currentTier === SubscriptionTier.PRO) {
       if (shouldUseStoreKit) {
-        return storeKitPrices?.proMonthly ? `${storeKitPrices.proMonthly}/month` : "Pro Plan";
+        return storeKitPrices?.proMonthly ? `${storeKitPrices.proMonthly}/month` : "Active Plan";
       }
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        return "Pro Plan";
+        return "Active Plan";
       }
-      return `$${MONTHLY_PRICES.PRO.toFixed(2)}/month`;
-    }
-    if (currentTier === SubscriptionTier.BASIC) {
-      if (shouldUseStoreKit) {
-        return storeKitPrices?.basicMonthly ? `${storeKitPrices.basicMonthly}/month` : "Basic Plan";
-      }
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        return "Basic Plan";
-      }
-      return `$${MONTHLY_PRICES.BASIC.toFixed(2)}/month`;
+      return `$${MONTHLY_PRICE.toFixed(2)}/month`;
     }
     return isTrialing ? "7-Day Trial" : "—";
   };
 
   const getSubscribeButtonPrice = () => {
-    const tier = selectedTier;
     const plan = selectedPlan;
 
     if (storeKitPrices) {
-      const key = `${tier}${plan === 'monthly' ? 'Monthly' : 'Annual'}` as keyof typeof storeKitPrices;
+      const key = plan === 'monthly' ? 'proMonthly' : 'proAnnual';
       if (storeKitPrices[key]) {
         return `${storeKitPrices[key]}/${plan === 'monthly' ? 'mo' : 'yr'}`;
       }
     }
 
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      return `${tier === "pro" ? "Pro" : "Basic"} ${plan === "monthly" ? "Monthly" : "Annual"}`;
+      return plan === "monthly" ? "Monthly" : "Annual";
     }
 
-    const price = plan === "monthly"
-      ? (tier === "pro" ? MONTHLY_PRICES.PRO : MONTHLY_PRICES.BASIC)
-      : (tier === "pro" ? ANNUAL_PRICES.PRO : ANNUAL_PRICES.BASIC);
+    const price = plan === "monthly" ? MONTHLY_PRICE : ANNUAL_PRICE;
     return `$${price.toFixed(2)}/${plan === "monthly" ? "mo" : "yr"}`;
   };
 
@@ -227,11 +208,11 @@ export default function SubscriptionScreen() {
   };
 
   const handleUpgrade = async (
-    tier: "basic" | "pro" = "pro",
+    tier: "pro" = "pro",
     plan: "monthly" | "annual" = "annual",
   ) => {
     setIsCheckingOut(true);
-    const tierName = tier === "pro" ? "Pro" : "Basic";
+    const tierName = "ChefSpAIce";
 
     try {
       if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -246,7 +227,7 @@ export default function SubscriptionScreen() {
 
         let pkg = null;
         if (offerings?.availablePackages) {
-          const expectedPackageId = `${tier}_${plan}`;
+          const expectedPackageId = `pro_${plan}`;
           pkg = offerings.availablePackages.find((p) => {
             const id = p.identifier.toLowerCase();
             const matchesType = plan === "monthly"
@@ -254,9 +235,9 @@ export default function SubscriptionScreen() {
               : p.packageType === "ANNUAL";
             return (
               id === expectedPackageId ||
-              (id.includes(tier) && id.includes(plan)) ||
-              (id.includes(tier) && matchesType) ||
-              (matchesType && !id.includes(tier === "pro" ? "basic" : "pro"))
+              (id.includes("pro") && id.includes(plan)) ||
+              (id.includes("pro") && matchesType) ||
+              matchesType
             );
           });
         }
@@ -302,14 +283,7 @@ export default function SubscriptionScreen() {
         );
         const prices = (await pricesResponse.json()).data as any;
 
-        const priceKey =
-          tier === "pro"
-            ? plan === "monthly"
-              ? "proMonthly"
-              : "proAnnual"
-            : plan === "monthly"
-              ? "basicMonthly"
-              : "basicAnnual";
+        const priceKey = plan === "monthly" ? "proMonthly" : "proAnnual";
         const fallbackKey = plan === "monthly" ? "monthly" : "annual";
         const selectedPriceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
 
@@ -324,7 +298,7 @@ export default function SubscriptionScreen() {
 
         const isExistingPaidSubscriber =
           (currentStatus === "active" || currentStatus === "trialing") &&
-          (currentTier === SubscriptionTier.BASIC || currentTier === SubscriptionTier.PRO);
+          currentTier === SubscriptionTier.PRO;
 
         if (isExistingPaidSubscriber) {
           setIsPreviewingProration(true);
@@ -531,7 +505,6 @@ export default function SubscriptionScreen() {
         <CurrentPlanCard
           planName={getPlanName()}
           monthlyPrice={getMonthlyPrice()}
-          isProUser={isProUser}
           tier={currentTier}
           statusInfo={statusInfo}
           isTrialing={isTrialing}
@@ -628,7 +601,6 @@ export default function SubscriptionScreen() {
 
         <FeatureComparisonTable
           features={PRO_FEATURES}
-          isProUser={isProUser}
         />
 
         {!isTrialing && (!isAuthenticated || !isProUser) && (
@@ -645,7 +617,7 @@ export default function SubscriptionScreen() {
                   { color: theme.textSecondaryOnGlass },
                 ]}
               >
-                Choose Your Plan
+                Subscribe to ChefSpAIce
               </ThemedText>
             </View>
             <ThemedText
@@ -654,7 +626,7 @@ export default function SubscriptionScreen() {
                 { color: theme.textSecondaryOnGlass },
               ]}
             >
-              Select the plan that works best for you.
+              Get full access to all features.
             </ThemedText>
 
             <PlanToggle
@@ -662,15 +634,8 @@ export default function SubscriptionScreen() {
               onSelectPlan={setSelectedPlan}
             />
 
-            <TierSelector
-              selectedTier={selectedTier}
-              onSelectTier={setSelectedTier}
-              selectedPlan={selectedPlan}
-              storeKitPrices={storeKitPrices}
-            />
-
             <GlassButton
-              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              onPress={() => handleUpgrade("pro", selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -678,7 +643,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    name="check-circle"
                     size={18}
                     color="#FFFFFF"
                   />
@@ -688,7 +653,7 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
+                : `Subscribe Now — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
             <SubscriptionLegalLinks
@@ -698,7 +663,7 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        {(isProUser || currentTier === SubscriptionTier.BASIC) && isActive && !isTrialing && (
+        {isProUser && isActive && !isTrialing && (
           <GlassCard style={styles.manageCard}>
             <View style={styles.sectionHeader}>
               <Feather
@@ -776,7 +741,7 @@ export default function SubscriptionScreen() {
                   { color: theme.textSecondaryOnGlass },
                 ]}
               >
-                Choose Your Plan
+                Subscribe to ChefSpAIce
               </ThemedText>
             </View>
             <ThemedText
@@ -785,7 +750,7 @@ export default function SubscriptionScreen() {
                 { color: theme.textSecondaryOnGlass },
               ]}
             >
-              Your trial ends soon. Choose a plan to continue using ChefSpAIce.
+              Your trial ends soon. Subscribe to continue using ChefSpAIce.
             </ThemedText>
 
             <PlanToggle
@@ -794,16 +759,8 @@ export default function SubscriptionScreen() {
               testIdPrefix="trial"
             />
 
-            <TierSelector
-              selectedTier={selectedTier}
-              onSelectTier={setSelectedTier}
-              selectedPlan={selectedPlan}
-              testIdPrefix="trial"
-              storeKitPrices={storeKitPrices}
-            />
-
             <GlassButton
-              onPress={() => handleUpgrade(selectedTier, selectedPlan)}
+              onPress={() => handleUpgrade("pro", selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -811,7 +768,7 @@ export default function SubscriptionScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Feather
-                    name={selectedTier === "pro" ? "star" : "check-circle"}
+                    name="check-circle"
                     size={18}
                     color="#FFFFFF"
                   />
@@ -821,7 +778,7 @@ export default function SubscriptionScreen() {
             >
               {isCheckingOut
                 ? "Loading..."
-                : `Subscribe to ${selectedTier === "pro" ? "Pro" : "Basic"} — ${getSubscribeButtonPrice()}`}
+                : `Subscribe Now — ${getSubscribeButtonPrice()}`}
             </GlassButton>
 
             <SubscriptionLegalLinks

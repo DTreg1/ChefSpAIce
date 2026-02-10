@@ -81,7 +81,7 @@ import { z } from "zod";
  * - primaryProviderId: Provider's unique ID for this user
  *
  * Subscription fields:
- * - subscriptionTier: "TRIAL", "BASIC", or "PRO" (default: TRIAL)
+ * - subscriptionTier: "TRIAL" or "PRO" (default: TRIAL)
  * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
  * - stripeCustomerId: Stripe customer ID for payment processing
  * - stripeSubscriptionId: Stripe subscription ID for managing subscription

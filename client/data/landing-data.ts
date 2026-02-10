@@ -52,7 +52,7 @@ export const faqs = [
   {
     question: "Is there a free trial available?",
     answer:
-      "Yes! We offer a 7-day free trial with full access to all Pro features. No payment is required upfront.",
+      "Yes! We offer a 7-day free trial with full access to all features. No payment is required upfront.",
   },
   {
     question: "Can I use the app on multiple devices?",
@@ -85,16 +85,7 @@ export const donationAmounts = [
   { amount: 5000, label: "$50" },
 ];
 
-export const BASIC_FEATURES = [
-  "25 pantry items",
-  "5 AI generated recipes per month",
-  "Basic storage areas",
-  "5 cookware items",
-  "Item scanning",
-  "Daily meal planning",
-];
-
-export const PRO_FEATURES = [
+export const SUBSCRIPTION_FEATURES = [
   "Unlimited pantry items",
   "Unlimited AI generated recipes",
   "Recipe & Bulk Scanning",
