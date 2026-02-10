@@ -11,7 +11,7 @@ Reference links to all architecture and flow diagrams for the project.
 | Food Item Lifecycle | [View in FigJam](https://www.figma.com/board/9qBLqQPMWaFuZe9CAo9CQC/Food-Item-Lifecycle?node-id=0-1&p=f&t=AiAzC2Dfju14zKhc-0) |
 | AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/board/CfXo2Ke0gKW97SanS8Vj7t/AI-Recipe-Generation-Flow?node-id=0-1&p=f&t=jvGpRUMBA8O8pcmM-0) |
 | Barcode and Receipt Scanning Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/16c544a0-1a39-40a2-b088-1c7875a45ec1?utm_source=other&utm_content=edit_in_figjam) |
-| Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/d9ede092-f2f4-4b3c-8af8-a35d6e4bedd2?utm_source=other&utm_content=edit_in_figjam) |
+| Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/7de3a2e0-ef1d-4dc7-9960-0661841a47aa?utm_source=other&utm_content=edit_in_figjam) |
 
 ## Sequence Diagrams
 
@@ -25,9 +25,9 @@ Reference links to all architecture and flow diagrams for the project.
 
 | Diagram | Link |
 |---------|------|
-| Stripe Subscription Lifecycle | [View in FigJam](https://www.figma.com/board/nTbFx6UdauVacbBr6b1Fdl/Stripe-Subscription-Lifecycle?node-id=1-2&t=9ZkEzHO7sG3nnwUj-0) |
+| Stripe Subscription Lifecycle | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/1d16de21-15c3-48a7-9111-28cc5e6f4209?utm_source=other&utm_content=edit_in_figjam) |
 | Food Item States | [View in FigJam](https://www.figma.com/board/b2k3CTtPY4CtLYhbrJ3Ikb/Food-Item-States?node-id=0-1&p=f&t=BHzfiZYAVKyJ911m-0) |
-| Subscription States | [View in FigJam](https://www.figma.com/board/qIjci9dwXjVqeRJxr6gWu8/Subscription-States?node-id=0-1&p=f&t=0lyZ4QfGyCmK7OAo-0) |
+| Subscription States | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/4cbae2dd-cbe9-4e39-8bdf-29c40fc9274c?utm_source=other&utm_content=edit_in_figjam) |
 | Sync Status States | [View in FigJam](https://www.figma.com/board/RA82xK3RucMiJPvmFYVUk3/Sync-Status-States?node-id=0-1&p=f&t=cfna9gUpRFx9pE6U-0) |
 
 ## Decision Trees
