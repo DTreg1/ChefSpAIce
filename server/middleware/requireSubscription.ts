@@ -39,7 +39,7 @@ export async function requireSubscription(
     const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, userTier } = result;
 
     if (!subscriptionStatus) {
-      if (userTier && [SubscriptionTier.TRIAL, SubscriptionTier.PRO].includes(userTier as SubscriptionTier)) {
+      if (userTier === SubscriptionTier.PRO) {
         req.subscriptionTier = userTier;
         return next();
       }
@@ -64,7 +64,7 @@ export async function requireSubscription(
       }
     }
 
-    req.subscriptionTier = userTier || 'TRIAL';
+    req.subscriptionTier = userTier || SubscriptionTier.PRO;
     next();
   } catch (error) {
     next(error);
