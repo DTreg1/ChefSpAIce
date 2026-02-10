@@ -37,7 +37,7 @@ function setCachedSearch(key: string, data: SearchResponse): void {
   searchCache.set(key, { data, timestamp: Date.now() });
 }
 
-type FoodSource = "usda" | "openfoodfacts" | "local";
+type FoodSource = "usda" | "openfoodfacts";
 
 interface SearchResult {
   id: string;
@@ -111,7 +111,6 @@ function calculateRelevanceScore(
   const sourcePriority: Record<FoodSource, number> = {
     usda: 10,
     openfoodfacts: 5,
-    local: 3,
   };
 
   score += sourcePriority[source];
@@ -212,13 +211,13 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
     const parsedQuery = parseAdvancedQuery(query);
     const searchTerm = parsedQuery.product;
 
-    let sources: FoodSource[] = ["usda", "openfoodfacts", "local"];
+    let sources: FoodSource[] = ["usda", "openfoodfacts"];
     if (sourcesParam) {
       const parsed = Array.isArray(sourcesParam)
         ? sourcesParam
         : sourcesParam.split(",");
       sources = parsed.filter((s): s is FoodSource =>
-        ["usda", "openfoodfacts", "local"].includes(s),
+        ["usda", "openfoodfacts"].includes(s),
       );
     }
 
@@ -235,87 +234,74 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
 
     const fetchLimit = (parsedQuery.brand || parsedQuery.store) ? limit * 3 : Math.ceil(limit / 2);
 
-    const searchPromises: Promise<SearchResult[]>[] = [];
     const usedSources: FoodSource[] = [];
 
+    let usdaResults: SearchResult[] = [];
     if (sources.includes("usda")) {
       usedSources.push("usda");
-      searchPromises.push(
-        searchUSDA(searchTerm, fetchLimit)
-          .then((results) =>
-            results.map((item) => {
-              const mapped = mapUSDAToFoodItem(item);
-              const result: SearchResult = {
-                id: `usda-${item.fdcId}`,
-                name: mapped.name,
-                normalizedName: normalizeName(mapped.name),
-                category: mapped.category,
-                usdaCategory:
-                  mapped.category !== "Other" ? mapped.category : undefined,
-                brand: mapped.brandOwner,
-                nutrition: mapped.nutrition,
-                source: "usda",
-                sourceId: String(item.fdcId),
-                relevanceScore: calculateRelevanceScore(
-                  mapped.name,
-                  searchTerm,
-                  "usda",
-                ),
-                dataCompleteness: calculateDataCompleteness(mapped.nutrition),
-              };
-              return result;
-            }),
-          )
-          .catch((err) => {
-            logger.error("USDA search error", { error: err instanceof Error ? err.message : String(err) });
-            return [];
-          }),
-      );
+      try {
+        const rawResults = await searchUSDA(searchTerm, fetchLimit);
+        usdaResults = rawResults.map((item) => {
+          const mapped = mapUSDAToFoodItem(item);
+          const result: SearchResult = {
+            id: `usda-${item.fdcId}`,
+            name: mapped.name,
+            normalizedName: normalizeName(mapped.name),
+            category: mapped.category,
+            usdaCategory:
+              mapped.category !== "Other" ? mapped.category : undefined,
+            brand: mapped.brandOwner,
+            nutrition: mapped.nutrition,
+            source: "usda",
+            sourceId: String(item.fdcId),
+            relevanceScore: calculateRelevanceScore(
+              mapped.name,
+              searchTerm,
+              "usda",
+            ),
+            dataCompleteness: calculateDataCompleteness(mapped.nutrition),
+          };
+          return result;
+        });
+      } catch (err) {
+        logger.error("USDA search error", { error: err instanceof Error ? err.message : String(err) });
+      }
     }
 
-    if (sources.includes("openfoodfacts")) {
+    let offResults: SearchResult[] = [];
+    if (sources.includes("openfoodfacts") && usdaResults.length === 0) {
       usedSources.push("openfoodfacts");
-      searchPromises.push(
-        searchOpenFoodFacts(searchTerm, fetchLimit)
-          .then((results) =>
-            results
-              .filter((p) => p.product_name || p.product_name_en)
-              .map((item) => {
-                const mapped = mapOFFToFoodItem(item);
-                const result: SearchResult = {
-                  id: `off-${item.code}`,
-                  name: mapped.name,
-                  normalizedName: normalizeName(mapped.name),
-                  category: mapped.category,
-                  brand: mapped.brand,
-                  imageUrl: mapped.imageUrl,
-                  nutrition: mapped.nutrition,
-                  source: "openfoodfacts",
-                  sourceId: item.code,
-                  relevanceScore: calculateRelevanceScore(
-                    mapped.name,
-                    searchTerm,
-                    "openfoodfacts",
-                  ),
-                  dataCompleteness: calculateDataCompleteness(mapped.nutrition),
-                };
-                return result;
-              }),
-          )
-          .catch((err) => {
-            logger.error("OpenFoodFacts search error", { error: err instanceof Error ? err.message : String(err) });
-            return [];
-          }),
-      );
+      try {
+        const rawResults = await searchOpenFoodFacts(searchTerm, fetchLimit);
+        offResults = rawResults
+          .filter((p) => p.product_name || p.product_name_en)
+          .map((item) => {
+            const mapped = mapOFFToFoodItem(item);
+            const result: SearchResult = {
+              id: `off-${item.code}`,
+              name: mapped.name,
+              normalizedName: normalizeName(mapped.name),
+              category: mapped.category,
+              brand: mapped.brand,
+              imageUrl: mapped.imageUrl,
+              nutrition: mapped.nutrition,
+              source: "openfoodfacts",
+              sourceId: item.code,
+              relevanceScore: calculateRelevanceScore(
+                mapped.name,
+                searchTerm,
+                "openfoodfacts",
+              ),
+              dataCompleteness: calculateDataCompleteness(mapped.nutrition),
+            };
+            return result;
+          });
+      } catch (err) {
+        logger.error("OpenFoodFacts search error", { error: err instanceof Error ? err.message : String(err) });
+      }
     }
 
-    if (sources.includes("local")) {
-      usedSources.push("local");
-      searchPromises.push(Promise.resolve([]));
-    }
-
-    const allResults = await Promise.all(searchPromises);
-    let flatResults = allResults.flat();
+    let flatResults = [...usdaResults, ...offResults];
 
     if (parsedQuery.brand || parsedQuery.store) {
       flatResults = flatResults.filter((item) =>

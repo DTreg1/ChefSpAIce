@@ -66,7 +66,6 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 const SOURCE_LABELS: Record<FoodSource, string> = {
   usda: "USDA FoodData Central",
   openfoodfacts: "OpenFoodFacts",
-  local: "Custom Entry",
 };
 
 const RECENT_FOODS_KEY = "@recent_foods";
@@ -244,7 +243,7 @@ export default function AddItemScreen() {
   const [saving, setSaving] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
-  const [foodSource, setFoodSource] = useState<FoodSource>("local");
+  const [foodSource, setFoodSource] = useState<FoodSource>("usda");
   const [sourceId, setSourceId] = useState<string>("");
   const [_isManualEntry, setIsManualEntry] = useState(false);
 
@@ -343,7 +342,7 @@ export default function AddItemScreen() {
 
   const handleFoodSelect = useCallback(
     (item: SearchFoodItem) => {
-      const isCustom = item.source === "local" && item.dataCompleteness === 0;
+      const isCustom = item.dataCompleteness === 0;
 
       setSelectedFood({
         fdcId: Number(item.sourceId) || 0,
@@ -386,7 +385,7 @@ export default function AddItemScreen() {
     setCategory("Produce");
     setQuantity("1");
     setUnit("pcs");
-    setFoodSource("local");
+    setFoodSource("usda");
     setSourceId("");
     setIsManualEntry(false);
   }, []);

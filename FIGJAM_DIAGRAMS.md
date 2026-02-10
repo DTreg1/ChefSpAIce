@@ -12,7 +12,7 @@ Reference links to all architecture and flow diagrams for the project.
 | AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/8a7091ac-b67d-41b4-9742-e9cb34a3fdd9?utm_source=other&utm_content=edit_in_figjam) |
 | Barcode and Receipt Scanning Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/16c544a0-1a39-40a2-b088-1c7875a45ec1?utm_source=other&utm_content=edit_in_figjam) |
 | Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/7de3a2e0-ef1d-4dc7-9960-0661841a47aa?utm_source=other&utm_content=edit_in_figjam) |
-| USDA Food Search Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/a2d92f8e-054d-4249-8258-f3b7da069165?utm_source=other&utm_content=edit_in_figjam) |
+| USDA Food Search Flow (Sequential) | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/805ed432-3956-48ff-b37b-7a360c2743fc?utm_source=other&utm_content=edit_in_figjam) |
 | USDA Barcode Lookup Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/c1edbe4b-d2c3-4d0b-a36f-71748cb3bbc0?utm_source=other&utm_content=edit_in_figjam) |
 | USDA Portion Conversion System | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/97e40102-8480-4f0f-ac6d-02ead14a4589?utm_source=other&utm_content=edit_in_figjam) |
 | Food Item Data Flow: Search to Inventory | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/2efdc9c0-6d48-4ec0-93c7-85ac64a69220?utm_source=other&utm_content=edit_in_figjam) |

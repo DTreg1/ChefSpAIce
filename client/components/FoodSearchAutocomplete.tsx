@@ -312,33 +312,6 @@ export function FoodSearchAutocomplete({
     [onSelect],
   );
 
-  const handleAddCustom = useCallback(() => {
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) return;
-
-    const customItem: FoodSearchResult = {
-      id: `custom-${Date.now()}`,
-      name: trimmedQuery,
-      normalizedName: trimmedQuery.toLowerCase(),
-      category: "Other",
-      nutrition: {
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-      },
-      source: "local" as FoodSource,
-      sourceId: `custom-${Date.now()}`,
-      relevanceScore: 100,
-      dataCompleteness: 0,
-    };
-
-    setQuery(trimmedQuery);
-    setIsOpen(false);
-    setSelectedIndex(-1);
-    Keyboard.dismiss();
-    onSelect(customItem);
-  }, [query, onSelect]);
 
   const handleClear = useCallback(() => {
     setQuery("");
@@ -373,7 +346,7 @@ export function FoodSearchAutocomplete({
       if (Platform.OS !== "web") return;
 
       const key = e.nativeEvent?.key;
-      const totalItems = results.length + (query.trim().length > 0 ? 1 : 0);
+      const totalItems = results.length;
 
       switch (key) {
         case "ArrowDown":
@@ -388,11 +361,6 @@ export function FoodSearchAutocomplete({
           e.preventDefault?.();
           if (selectedIndex >= 0 && selectedIndex < results.length) {
             handleSelect(results[selectedIndex]);
-          } else if (
-            selectedIndex === results.length &&
-            query.trim().length > 0
-          ) {
-            handleAddCustom();
           }
           break;
         case "Escape":
@@ -401,7 +369,7 @@ export function FoodSearchAutocomplete({
           break;
       }
     },
-    [results, selectedIndex, query, handleSelect, handleAddCustom],
+    [results, selectedIndex, handleSelect],
   );
 
   const dropdownStyle = useAnimatedStyle(() => ({
