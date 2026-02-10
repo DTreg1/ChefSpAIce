@@ -5,7 +5,6 @@ import {
   lookupUSDABarcode,
 } from "../../integrations/usda";
 import {
-  searchOpenFoodFacts,
   lookupBarcode,
   mapOFFToFoodItem,
 } from "../../integrations/openFoodFacts";
@@ -46,7 +45,15 @@ interface SearchResult {
   category: string;
   usdaCategory?: string;
   brand?: string;
+  brandName?: string;
+  gtinUpc?: string;
+  householdServingFullText?: string;
+  dataType?: string;
+  ingredients?: string;
+  packageWeight?: string;
   imageUrl?: string;
+  nutriscoreGrade?: string;
+  novaGroup?: number;
   nutrition: {
     calories: number;
     protein: number;
@@ -55,6 +62,15 @@ interface SearchResult {
     fiber?: number;
     sugar?: number;
     sodium?: number;
+    saturatedFat?: number;
+    transFat?: number;
+    cholesterol?: number;
+    calcium?: number;
+    iron?: number;
+    potassium?: number;
+    vitaminA?: number;
+    vitaminC?: number;
+    vitaminD?: number;
     servingSize?: string;
   };
   source: FoodSource;
@@ -129,6 +145,13 @@ function calculateDataCompleteness(
     nutrition.fiber !== undefined && nutrition.fiber > 0,
     nutrition.sugar !== undefined && nutrition.sugar > 0,
     nutrition.sodium !== undefined && nutrition.sodium > 0,
+    nutrition.saturatedFat !== undefined && nutrition.saturatedFat > 0,
+    nutrition.cholesterol !== undefined && nutrition.cholesterol > 0,
+    nutrition.calcium !== undefined && nutrition.calcium > 0,
+    nutrition.iron !== undefined && nutrition.iron > 0,
+    nutrition.potassium !== undefined && nutrition.potassium > 0,
+    nutrition.vitaminA !== undefined && nutrition.vitaminA > 0,
+    nutrition.vitaminC !== undefined && nutrition.vitaminC > 0,
   ];
 
   return Math.round((fields.filter(Boolean).length / fields.length) * 100);
@@ -201,7 +224,6 @@ function matchesBrandFilter(itemBrand: string | undefined, filterBrand: string |
 router.get("/search", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query = req.query.query as string;
-    const sourcesParam = req.query.sources as string | string[] | undefined;
     const limitParam = req.query.limit as string | undefined;
 
     if (!query || query.trim().length === 0) {
@@ -211,22 +233,12 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
     const parsedQuery = parseAdvancedQuery(query);
     const searchTerm = parsedQuery.product;
 
-    let sources: FoodSource[] = ["usda", "openfoodfacts"];
-    if (sourcesParam) {
-      const parsed = Array.isArray(sourcesParam)
-        ? sourcesParam
-        : sourcesParam.split(",");
-      sources = parsed.filter((s): s is FoodSource =>
-        ["usda", "openfoodfacts"].includes(s),
-      );
-    }
-
     const limit = Math.min(
       Math.max(parseInt(limitParam || "20", 10) || 20, 1),
       100,
     );
 
-    const cacheKey = `${query.toLowerCase().trim()}:${sources.sort().join(",")}:${limit}`;
+    const cacheKey = `${query.toLowerCase().trim()}:usda:${limit}`;
     const cached = getCachedSearch(cacheKey);
     if (cached) {
       return res.json(successResponse(cached));
@@ -234,74 +246,81 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
 
     const fetchLimit = (parsedQuery.brand || parsedQuery.store) ? limit * 3 : Math.ceil(limit / 2);
 
-    const usedSources: FoodSource[] = [];
-
     let usdaResults: SearchResult[] = [];
-    if (sources.includes("usda")) {
-      usedSources.push("usda");
-      try {
-        const rawResults = await searchUSDA(searchTerm, fetchLimit);
-        usdaResults = rawResults.map((item) => {
-          const mapped = mapUSDAToFoodItem(item);
-          const result: SearchResult = {
-            id: `usda-${item.fdcId}`,
-            name: mapped.name,
-            normalizedName: normalizeName(mapped.name),
-            category: mapped.category,
-            usdaCategory:
-              mapped.category !== "Other" ? mapped.category : undefined,
-            brand: mapped.brandOwner,
-            nutrition: mapped.nutrition,
-            source: "usda",
-            sourceId: String(item.fdcId),
-            relevanceScore: calculateRelevanceScore(
-              mapped.name,
-              searchTerm,
-              "usda",
-            ),
-            dataCompleteness: calculateDataCompleteness(mapped.nutrition),
-          };
-          return result;
-        });
-      } catch (err) {
-        logger.error("USDA search error", { error: err instanceof Error ? err.message : String(err) });
-      }
+    try {
+      const rawResults = await searchUSDA(searchTerm, fetchLimit);
+      usdaResults = rawResults.map((item) => {
+        const mapped = mapUSDAToFoodItem(item);
+        const result: SearchResult = {
+          id: `usda-${item.fdcId}`,
+          name: mapped.name,
+          normalizedName: normalizeName(mapped.name),
+          category: mapped.category,
+          usdaCategory:
+            mapped.category !== "Other" ? mapped.category : undefined,
+          brand: mapped.brandOwner,
+          brandName: mapped.brandName,
+          gtinUpc: mapped.gtinUpc,
+          householdServingFullText: mapped.householdServingFullText,
+          dataType: mapped.dataType,
+          ingredients: mapped.ingredients,
+          packageWeight: mapped.packageWeight,
+          nutrition: {
+            ...mapped.nutrition,
+          },
+          source: "usda",
+          sourceId: String(item.fdcId),
+          relevanceScore: calculateRelevanceScore(
+            mapped.name,
+            searchTerm,
+            "usda",
+          ),
+          dataCompleteness: 0,
+        };
+        result.dataCompleteness = calculateDataCompleteness(result.nutrition);
+        return result;
+      });
+    } catch (err) {
+      logger.error("USDA search error", { error: err instanceof Error ? err.message : String(err) });
     }
 
-    let offResults: SearchResult[] = [];
-    if (sources.includes("openfoodfacts") && usdaResults.length === 0) {
-      usedSources.push("openfoodfacts");
-      try {
-        const rawResults = await searchOpenFoodFacts(searchTerm, fetchLimit);
-        offResults = rawResults
-          .filter((p) => p.product_name || p.product_name_en)
-          .map((item) => {
-            const mapped = mapOFFToFoodItem(item);
-            const result: SearchResult = {
-              id: `off-${item.code}`,
-              name: mapped.name,
-              normalizedName: normalizeName(mapped.name),
-              category: mapped.category,
-              brand: mapped.brand,
-              imageUrl: mapped.imageUrl,
-              nutrition: mapped.nutrition,
-              source: "openfoodfacts",
-              sourceId: item.code,
-              relevanceScore: calculateRelevanceScore(
-                mapped.name,
-                searchTerm,
-                "openfoodfacts",
-              ),
-              dataCompleteness: calculateDataCompleteness(mapped.nutrition),
-            };
-            return result;
-          });
-      } catch (err) {
-        logger.error("OpenFoodFacts search error", { error: err instanceof Error ? err.message : String(err) });
+    try {
+      const barcodesToEnrich: { barcode: string; index: number }[] = [];
+      const seenBarcodes = new Set<string>();
+      for (let i = 0; i < usdaResults.length && barcodesToEnrich.length < 5; i++) {
+        const upc = usdaResults[i].gtinUpc;
+        if (upc && !seenBarcodes.has(upc)) {
+          seenBarcodes.add(upc);
+          barcodesToEnrich.push({ barcode: upc, index: i });
+        }
       }
+
+      if (barcodesToEnrich.length > 0) {
+        const enrichmentResults = await Promise.all(
+          barcodesToEnrich.map(async ({ barcode, index }) => {
+            try {
+              const offProduct = await lookupBarcode(barcode);
+              return { index, offProduct };
+            } catch {
+              return { index, offProduct: null };
+            }
+          })
+        );
+
+        for (const { index, offProduct } of enrichmentResults) {
+          if (offProduct) {
+            const offMapped = mapOFFToFoodItem(offProduct);
+            usdaResults[index].imageUrl = offMapped.imageUrl;
+            usdaResults[index].nutriscoreGrade = offMapped.nutriscoreGrade;
+            usdaResults[index].novaGroup = offMapped.novaGroup;
+          }
+        }
+      }
+    } catch (err) {
+      logger.error("OFF enrichment error (non-blocking)", { error: err instanceof Error ? err.message : String(err) });
     }
 
-    let flatResults = [...usdaResults, ...offResults];
+    let flatResults = [...usdaResults];
 
     if (parsedQuery.brand || parsedQuery.store) {
       flatResults = flatResults.filter((item) =>
@@ -329,7 +348,7 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
 
     const response: SearchResponse = {
       results: limited,
-      sources: usedSources,
+      sources: ["usda"],
       totalCount: flatResults.length,
     };
 
@@ -361,43 +380,34 @@ router.get("/barcode/:code", async (req: Request, res: Response, next: NextFunct
         category: mapped.category,
         usdaCategory: mapped.category !== "Other" ? mapped.category : undefined,
         brand: mapped.brandOwner,
-        nutrition: mapped.nutrition,
+        brandName: mapped.brandName,
+        gtinUpc: mapped.gtinUpc,
+        householdServingFullText: mapped.householdServingFullText,
+        dataType: mapped.dataType,
+        ingredients: mapped.ingredients,
+        packageWeight: mapped.packageWeight,
+        nutrition: { ...mapped.nutrition },
         source: "usda",
         sourceId: String(usdaProduct.fdcId),
         relevanceScore: 100,
         dataCompleteness: calculateDataCompleteness(mapped.nutrition),
       };
 
+      try {
+        const offProduct = await lookupBarcode(cleanCode);
+        if (offProduct) {
+          const offMapped = mapOFFToFoodItem(offProduct);
+          result.imageUrl = offMapped.imageUrl;
+          result.nutriscoreGrade = offMapped.nutriscoreGrade;
+          result.novaGroup = offMapped.novaGroup;
+        }
+      } catch (err) {
+        logger.error("OFF barcode enrichment error (non-blocking)", { error: err instanceof Error ? err.message : String(err) });
+      }
+
       const response: BarcodeResponse = {
         found: true,
         source: "usda",
-        item: result,
-      };
-
-      return res.json(successResponse(response));
-    }
-
-    const offProduct = await lookupBarcode(cleanCode);
-
-    if (offProduct) {
-      const mapped = mapOFFToFoodItem(offProduct);
-      const result: SearchResult = {
-        id: `off-${offProduct.code}`,
-        name: mapped.name,
-        normalizedName: normalizeName(mapped.name),
-        category: mapped.category,
-        brand: mapped.brand,
-        imageUrl: mapped.imageUrl,
-        nutrition: mapped.nutrition,
-        source: "openfoodfacts",
-        sourceId: offProduct.code,
-        relevanceScore: 100,
-        dataCompleteness: calculateDataCompleteness(mapped.nutrition),
-      };
-
-      const response: BarcodeResponse = {
-        found: true,
-        source: "openfoodfacts",
         item: result,
       };
 

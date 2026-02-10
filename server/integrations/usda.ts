@@ -13,6 +13,11 @@ export interface USDASearchResult {
   servingSize?: number;
   servingSizeUnit?: string;
   foodNutrients: USDANutrient[];
+  foodCategory?: string;
+  gtinUpc?: string;
+  householdServingFullText?: string;
+  score?: number;
+  packageWeight?: string;
 }
 
 export interface USDANutrient {
@@ -64,12 +69,27 @@ export interface MappedFoodItem {
     fiber?: number;
     sugar?: number;
     sodium?: number;
+    saturatedFat?: number;
+    transFat?: number;
+    cholesterol?: number;
+    calcium?: number;
+    iron?: number;
+    potassium?: number;
+    vitaminA?: number;
+    vitaminC?: number;
+    vitaminD?: number;
     servingSize?: string;
   };
   source: "usda";
   sourceId: number;
   brandOwner?: string;
+  brandName?: string;
   ingredients?: string;
+  gtinUpc?: string;
+  householdServingFullText?: string;
+  dataType?: string;
+  usdaScore?: number;
+  packageWeight?: string;
 }
 
 const searchCache = new Map<
@@ -202,6 +222,15 @@ const NUTRIENT_IDS = {
   FIBER: 1079,
   SUGARS: 2000,
   SODIUM: 1093,
+  SATURATED_FAT: 1258,
+  TRANS_FAT: 1257,
+  CHOLESTEROL: 1253,
+  CALCIUM: 1087,
+  IRON: 1089,
+  POTASSIUM: 1092,
+  VITAMIN_A: 1106,
+  VITAMIN_C: 1162,
+  VITAMIN_D: 1114,
 };
 
 function findNutrientValue(
@@ -224,14 +253,31 @@ export function mapUSDAToFoodItem(
   const fiber = findNutrientValue(nutrients, NUTRIENT_IDS.FIBER);
   const sugar = findNutrientValue(nutrients, NUTRIENT_IDS.SUGARS);
   const sodium = findNutrientValue(nutrients, NUTRIENT_IDS.SODIUM);
+  const saturatedFat = findNutrientValue(nutrients, NUTRIENT_IDS.SATURATED_FAT);
+  const transFat = findNutrientValue(nutrients, NUTRIENT_IDS.TRANS_FAT);
+  const cholesterol = findNutrientValue(nutrients, NUTRIENT_IDS.CHOLESTEROL);
+  const calcium = findNutrientValue(nutrients, NUTRIENT_IDS.CALCIUM);
+  const iron = findNutrientValue(nutrients, NUTRIENT_IDS.IRON);
+  const potassium = findNutrientValue(nutrients, NUTRIENT_IDS.POTASSIUM);
+  const vitaminA = findNutrientValue(nutrients, NUTRIENT_IDS.VITAMIN_A);
+  const vitaminC = findNutrientValue(nutrients, NUTRIENT_IDS.VITAMIN_C);
+  const vitaminD = findNutrientValue(nutrients, NUTRIENT_IDS.VITAMIN_D);
 
   let category = "Other";
-  if ("foodCategory" in usdaFood && usdaFood.foodCategory?.description) {
-    category = usdaFood.foodCategory.description;
+  const foodCat = (usdaFood as any).foodCategory;
+  if (foodCat) {
+    if (typeof foodCat === "string") {
+      category = foodCat;
+    } else if (typeof foodCat === "object" && foodCat.description) {
+      category = foodCat.description;
+    }
   }
 
+  const householdServing = (usdaFood as any).householdServingFullText as string | undefined;
   let servingSize: string | undefined;
-  if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
+  if (householdServing) {
+    servingSize = householdServing;
+  } else if (usdaFood.servingSize && usdaFood.servingSizeUnit) {
     servingSize = `${usdaFood.servingSize} ${usdaFood.servingSizeUnit}`;
   }
 
@@ -246,17 +292,31 @@ export function mapUSDAToFoodItem(
       fiber: fiber !== undefined ? Math.round(fiber * 10) / 10 : undefined,
       sugar: sugar !== undefined ? Math.round(sugar * 10) / 10 : undefined,
       sodium: sodium !== undefined ? Math.round(sodium) : undefined,
+      saturatedFat: saturatedFat !== undefined ? Math.round(saturatedFat * 10) / 10 : undefined,
+      transFat: transFat !== undefined ? Math.round(transFat * 10) / 10 : undefined,
+      cholesterol: cholesterol !== undefined ? Math.round(cholesterol) : undefined,
+      calcium: calcium !== undefined ? Math.round(calcium) : undefined,
+      iron: iron !== undefined ? Math.round(iron) : undefined,
+      potassium: potassium !== undefined ? Math.round(potassium) : undefined,
+      vitaminA: vitaminA !== undefined ? Math.round(vitaminA) : undefined,
+      vitaminC: vitaminC !== undefined ? Math.round(vitaminC * 10) / 10 : undefined,
+      vitaminD: vitaminD !== undefined ? Math.round(vitaminD * 10) / 10 : undefined,
       servingSize,
     },
     source: "usda",
     sourceId: usdaFood.fdcId,
     brandOwner: "brandOwner" in usdaFood ? usdaFood.brandOwner : undefined,
+    brandName: (usdaFood as any).brandName,
     ingredients: usdaFood.ingredients,
+    gtinUpc: (usdaFood as any).gtinUpc,
+    householdServingFullText: householdServing,
+    dataType: usdaFood.dataType,
+    usdaScore: (usdaFood as any).score,
+    packageWeight: (usdaFood as any).packageWeight,
   };
 }
 
 export interface USDABrandedFood extends USDASearchResult {
-  gtinUpc?: string;
 }
 
 const barcodeCache = new Map<

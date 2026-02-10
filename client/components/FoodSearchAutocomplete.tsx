@@ -32,6 +32,15 @@ interface FoodNutrition {
   fiber?: number;
   sugar?: number;
   sodium?: number;
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+  calcium?: number;
+  iron?: number;
+  potassium?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
   servingSize?: string;
 }
 
@@ -42,7 +51,15 @@ export interface FoodSearchResult {
   category: string;
   usdaCategory?: string;
   brand?: string;
+  brandName?: string;
+  gtinUpc?: string;
+  householdServingFullText?: string;
+  dataType?: string;
+  ingredients?: string;
+  packageWeight?: string;
   imageUrl?: string;
+  nutriscoreGrade?: string;
+  novaGroup?: number;
   nutrition: FoodNutrition;
   source: FoodSource;
   sourceId: string;
@@ -265,28 +282,46 @@ export function FoodSearchAutocomplete({
     staleTime: 60000,
   });
 
-  const rawFoods = data?.foods || data?.results || [];
-  const results: FoodSearchResult[] = rawFoods.map((food: any) => ({
-    id: `usda-${food.fdcId}`,
-    name: food.description,
-    normalizedName: food.description?.toLowerCase() || "",
-    category: food.category || "Other",
-    brand: food.brandOwner || undefined,
+  const rawResults = data?.results || [];
+  const results: FoodSearchResult[] = rawResults.map((item: any) => ({
+    id: item.id,
+    name: item.name,
+    normalizedName: item.normalizedName || item.name?.toLowerCase() || "",
+    category: item.category || "Other",
+    usdaCategory: item.usdaCategory,
+    brand: item.brand,
+    brandName: item.brandName,
+    gtinUpc: item.gtinUpc,
+    householdServingFullText: item.householdServingFullText,
+    dataType: item.dataType,
+    ingredients: item.ingredients,
+    packageWeight: item.packageWeight,
+    imageUrl: item.imageUrl,
+    nutriscoreGrade: item.nutriscoreGrade,
+    novaGroup: item.novaGroup,
     nutrition: {
-      calories: food.nutrition?.calories || 0,
-      protein: food.nutrition?.protein || 0,
-      carbs: food.nutrition?.carbs || 0,
-      fat: food.nutrition?.fat || 0,
-      fiber: food.nutrition?.fiber,
-      sugar: food.nutrition?.sugar,
-      servingSize: food.servingSize
-        ? `${food.servingSize}${food.servingSizeUnit || "g"}`
-        : undefined,
+      calories: item.nutrition?.calories || 0,
+      protein: item.nutrition?.protein || 0,
+      carbs: item.nutrition?.carbs || 0,
+      fat: item.nutrition?.fat || 0,
+      fiber: item.nutrition?.fiber,
+      sugar: item.nutrition?.sugar,
+      sodium: item.nutrition?.sodium,
+      saturatedFat: item.nutrition?.saturatedFat,
+      transFat: item.nutrition?.transFat,
+      cholesterol: item.nutrition?.cholesterol,
+      calcium: item.nutrition?.calcium,
+      iron: item.nutrition?.iron,
+      potassium: item.nutrition?.potassium,
+      vitaminA: item.nutrition?.vitaminA,
+      vitaminC: item.nutrition?.vitaminC,
+      vitaminD: item.nutrition?.vitaminD,
+      servingSize: item.nutrition?.servingSize,
     },
-    source: "usda" as FoodSource,
-    sourceId: String(food.fdcId),
-    relevanceScore: 100,
-    dataCompleteness: 100,
+    source: (item.source || "usda") as FoodSource,
+    sourceId: item.sourceId || "",
+    relevanceScore: item.relevanceScore || 0,
+    dataCompleteness: item.dataCompleteness || 0,
   }));
 
   useEffect(() => {
