@@ -371,6 +371,117 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
         required: ["type", "message"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "lookup_nutrition",
+      description: "Look up detailed nutrition information for a food item. Use this when the user asks about calories, macros, nutrition facts, or nutritional content of any food. Can look up by food name or by a specific item in their inventory.",
+      parameters: {
+        type: "object",
+        properties: {
+          foodName: {
+            type: "string",
+            description: "The name of the food to look up (e.g., 'chicken breast', 'brown rice', 'avocado'). Required unless inventoryItemName is provided."
+          },
+          brand: {
+            type: "string",
+            description: "Optional brand name for more specific results (e.g., 'Chobani', 'Barilla')"
+          },
+          inventoryItemName: {
+            type: "string",
+            description: "Look up nutrition for an item already in the user's inventory by matching this name. When provided, foodName is optional — the matched inventory item's name will be used."
+          }
+        },
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_inventory_levels",
+      description: "Check inventory levels for specific items, find items that are running low, or check what's expiring soon. More targeted than the general inventory summary. Use when the user asks 'do I have enough X?', 'what's about to expire?', 'am I running low on anything?', or 'how much X do I have?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          itemNames: {
+            type: "array",
+            items: { type: "string" },
+            description: "Specific item names to check (e.g., ['milk', 'eggs', 'butter'])"
+          },
+          checkExpiring: {
+            type: "boolean",
+            description: "If true, find all items expiring within the specified days"
+          },
+          expiringWithinDays: {
+            type: "number",
+            description: "Number of days to check for expiring items. Defaults to 3."
+          },
+          checkLowStock: {
+            type: "boolean",
+            description: "If true, identify items with quantity of 1 or less"
+          }
+        },
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "remove_shopping_items",
+      description: "Mark items as purchased or remove items from the shopping list. Use when the user says they bought items, picked something up, or wants to clear items from their list.",
+      parameters: {
+        type: "object",
+        properties: {
+          itemNames: {
+            type: "array",
+            items: { type: "string" },
+            description: "Names of items to mark as purchased or remove"
+          },
+          markAsPurchased: {
+            type: "boolean",
+            description: "If true, mark items as checked/purchased. If false, remove them entirely. Defaults to true."
+          },
+          clearAll: {
+            type: "boolean",
+            description: "If true, clear all checked/purchased items from the list"
+          }
+        },
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_meal_plan",
+      description: "Update or swap a meal in an existing meal plan. Use when the user wants to change a specific meal, swap dinner for something else, or modify their plan for a particular day.",
+      parameters: {
+        type: "object",
+        properties: {
+          date: {
+            type: "string",
+            description: "The date to modify (YYYY-MM-DD format)"
+          },
+          mealSlot: {
+            type: "string",
+            enum: ["breakfast", "lunch", "dinner", "snack"],
+            description: "Which meal slot to update"
+          },
+          newMeal: {
+            type: "string",
+            description: "The new meal name and description"
+          },
+          clearDay: {
+            type: "boolean",
+            description: "If true, clear all meals for the specified date"
+          }
+        },
+        required: ["date"]
+      }
+    }
   }
 ];
 
@@ -1018,6 +1129,378 @@ export async function executeSaveFeedback(
   }
 }
 
+export async function executeLookupNutrition(
+  userId: string | null,
+  args: {
+    foodName?: string;
+    brand?: string;
+    inventoryItemName?: string;
+  }
+): Promise<ActionResult> {
+  try {
+    const { lookupNutritionByName } = await import("../services/nutritionLookupService");
+    
+    let lookupName = args.foodName;
+    let lookupBrand = args.brand;
+
+    if (args.inventoryItemName && userId) {
+      const userData = await getUserSyncData(userId);
+      const searchLower = args.inventoryItemName.toLowerCase();
+      const match = (userData.inventory as FoodItem[]).find(
+        (item) => item.name.toLowerCase().includes(searchLower) ||
+          searchLower.includes(item.name.toLowerCase())
+      );
+      if (match) {
+        lookupName = match.name;
+      } else if (!lookupName) {
+        lookupName = args.inventoryItemName;
+      }
+    }
+
+    if (!lookupName) {
+      return {
+        success: false,
+        message: "Please specify a food name or an inventory item to look up nutrition for.",
+        actionType: "lookup_nutrition"
+      };
+    }
+
+    const nutrition = await lookupNutritionByName(lookupName, lookupBrand);
+    
+    if (!nutrition) {
+      return {
+        success: false,
+        message: `Could not find nutrition data for "${lookupName}"${lookupBrand ? ` (${lookupBrand})` : ""}. Try a more general food name.`,
+        actionType: "lookup_nutrition"
+      };
+    }
+
+    const summary = [
+      `Nutrition for ${nutrition.foodName}${nutrition.brand ? ` (${nutrition.brand})` : ""}:`,
+      `Serving size: ${nutrition.servingSize}`,
+      `Calories: ${nutrition.calories}`,
+      `Total Fat: ${nutrition.totalFat}g${nutrition.saturatedFat != null ? ` (Saturated: ${nutrition.saturatedFat}g)` : ""}`,
+      `Total Carbs: ${nutrition.totalCarbohydrates}g${nutrition.dietaryFiber != null ? ` (Fiber: ${nutrition.dietaryFiber}g)` : ""}`,
+      `Protein: ${nutrition.protein}g`,
+      nutrition.sodium != null ? `Sodium: ${nutrition.sodium}mg` : null,
+      nutrition.cholesterol != null ? `Cholesterol: ${nutrition.cholesterol}mg` : null,
+    ].filter(Boolean).join("\n");
+
+    return {
+      success: true,
+      message: summary,
+      data: nutrition,
+      actionType: "lookup_nutrition"
+    };
+  } catch (error) {
+    logger.error("Error looking up nutrition", { error: error instanceof Error ? error.message : String(error) });
+    return {
+      success: false,
+      message: `Failed to look up nutrition for "${args.foodName || args.inventoryItemName}".`,
+      actionType: "lookup_nutrition"
+    };
+  }
+}
+
+export async function executeCheckInventoryLevels(
+  userId: string,
+  args: {
+    itemNames?: string[];
+    checkExpiring?: boolean;
+    expiringWithinDays?: number;
+    checkLowStock?: boolean;
+  }
+): Promise<ActionResult> {
+  try {
+    const userData = await getUserSyncData(userId);
+    const inventory = userData.inventory as FoodItem[];
+
+    if (inventory.length === 0) {
+      return {
+        success: true,
+        message: "Your inventory is empty. Add some items to start tracking!",
+        data: { items: [], expiring: [], lowStock: [] },
+        actionType: "check_inventory_levels"
+      };
+    }
+
+    const results: string[] = [];
+    const responseData: Record<string, unknown> = {};
+
+    if (args.itemNames && args.itemNames.length > 0) {
+      const found: FoodItem[] = [];
+      const notFound: string[] = [];
+
+      for (const searchName of args.itemNames) {
+        const searchLower = searchName.toLowerCase();
+        const match = inventory.find(
+          (item) => item.name.toLowerCase().includes(searchLower) ||
+            searchLower.includes(item.name.toLowerCase())
+        );
+        if (match) {
+          found.push(match);
+        } else {
+          notFound.push(searchName);
+        }
+      }
+
+      if (found.length > 0) {
+        results.push("Found items:");
+        for (const item of found) {
+          const daysUntilExpiry = item.expirationDate
+            ? Math.ceil((new Date(item.expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            : null;
+          let status = `${item.quantity} ${item.unit} of ${item.name} (${item.storageLocation})`;
+          if (daysUntilExpiry !== null) {
+            if (daysUntilExpiry < 0) status += " - EXPIRED";
+            else if (daysUntilExpiry <= 2) status += ` - expires in ${daysUntilExpiry} day(s)!`;
+            else if (daysUntilExpiry <= 5) status += ` - expires in ${daysUntilExpiry} days`;
+          }
+          results.push(`  - ${status}`);
+        }
+      }
+
+      if (notFound.length > 0) {
+        results.push(`Not in inventory: ${notFound.join(", ")}`);
+      }
+
+      responseData.found = found;
+      responseData.notFound = notFound;
+    }
+
+    if (args.checkExpiring) {
+      const days = args.expiringWithinDays || 3;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() + days);
+
+      const expiring = inventory.filter((item) => {
+        if (!item.expirationDate) return false;
+        const expDate = new Date(item.expirationDate);
+        return expDate <= cutoff;
+      }).sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+
+      if (expiring.length > 0) {
+        results.push(`Items expiring within ${days} days:`);
+        for (const item of expiring) {
+          const daysLeft = Math.ceil((new Date(item.expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          const urgency = daysLeft < 0 ? "EXPIRED" : daysLeft === 0 ? "expires today" : `${daysLeft} day(s) left`;
+          results.push(`  - ${item.quantity} ${item.unit} ${item.name} (${urgency})`);
+        }
+      } else {
+        results.push(`No items expiring within ${days} days.`);
+      }
+
+      responseData.expiring = expiring;
+    }
+
+    if (args.checkLowStock) {
+      const lowStock = inventory.filter((item) => item.quantity <= 1);
+
+      if (lowStock.length > 0) {
+        results.push("Low stock items:");
+        for (const item of lowStock) {
+          results.push(`  - ${item.quantity} ${item.unit} ${item.name}`);
+        }
+      } else {
+        results.push("No items are running low.");
+      }
+
+      responseData.lowStock = lowStock;
+    }
+
+    if (results.length === 0) {
+      results.push(`You have ${inventory.length} items in your inventory.`);
+    }
+
+    return {
+      success: true,
+      message: results.join("\n"),
+      data: responseData,
+      actionType: "check_inventory_levels"
+    };
+  } catch (error) {
+    logger.error("Error checking inventory levels", { error: error instanceof Error ? error.message : String(error) });
+    return {
+      success: false,
+      message: "Failed to check inventory levels.",
+      actionType: "check_inventory_levels"
+    };
+  }
+}
+
+export async function executeRemoveShoppingItems(
+  userId: string,
+  args: {
+    itemNames?: string[];
+    markAsPurchased?: boolean;
+    clearAll?: boolean;
+  }
+): Promise<ActionResult> {
+  try {
+    const userData = await getUserSyncData(userId);
+    let shoppingList = userData.shoppingList as ShoppingListItem[];
+
+    if (shoppingList.length === 0) {
+      return {
+        success: true,
+        message: "Your shopping list is already empty.",
+        actionType: "remove_shopping_items"
+      };
+    }
+
+    if (args.clearAll) {
+      const checkedCount = shoppingList.filter((i) => i.isChecked).length;
+      shoppingList = shoppingList.filter((i) => !i.isChecked);
+      await updateUserSyncData(userId, { shoppingList });
+      return {
+        success: true,
+        message: checkedCount > 0
+          ? `Cleared ${checkedCount} purchased item(s) from your shopping list. ${shoppingList.length} item(s) remaining.`
+          : "No purchased items to clear.",
+        data: { cleared: checkedCount, remaining: shoppingList.length },
+        actionType: "remove_shopping_items"
+      };
+    }
+
+    if (!args.itemNames || args.itemNames.length === 0) {
+      return {
+        success: false,
+        message: "Please specify which items to update on your shopping list.",
+        actionType: "remove_shopping_items"
+      };
+    }
+
+    const updated: string[] = [];
+    const notFound: string[] = [];
+    const markPurchased = args.markAsPurchased !== false;
+
+    for (const searchName of args.itemNames) {
+      const searchLower = searchName.toLowerCase();
+      const idx = shoppingList.findIndex(
+        (item) => item.name.toLowerCase().includes(searchLower) ||
+          searchLower.includes(item.name.toLowerCase())
+      );
+
+      if (idx !== -1) {
+        if (markPurchased) {
+          shoppingList[idx].isChecked = true;
+          updated.push(shoppingList[idx].name);
+        } else {
+          updated.push(shoppingList[idx].name);
+          shoppingList.splice(idx, 1);
+        }
+      } else {
+        notFound.push(searchName);
+      }
+    }
+
+    await updateUserSyncData(userId, { shoppingList });
+
+    const parts: string[] = [];
+    if (updated.length > 0) {
+      parts.push(markPurchased
+        ? `Marked as purchased: ${updated.join(", ")}`
+        : `Removed from list: ${updated.join(", ")}`
+      );
+    }
+    if (notFound.length > 0) {
+      parts.push(`Not found on list: ${notFound.join(", ")}`);
+    }
+
+    return {
+      success: true,
+      message: parts.join(". "),
+      data: { updated, notFound },
+      actionType: "remove_shopping_items"
+    };
+  } catch (error) {
+    logger.error("Error updating shopping list", { error: error instanceof Error ? error.message : String(error) });
+    return {
+      success: false,
+      message: "Failed to update shopping list.",
+      actionType: "remove_shopping_items"
+    };
+  }
+}
+
+export async function executeUpdateMealPlan(
+  userId: string,
+  args: {
+    date: string;
+    mealSlot?: string;
+    newMeal?: string;
+    clearDay?: boolean;
+  }
+): Promise<ActionResult> {
+  try {
+    const userData = await getUserSyncData(userId);
+    const mealPlans = userData.mealPlans as MealPlan[];
+
+    const planIdx = mealPlans.findIndex((p) => p.date === args.date);
+
+    if (args.clearDay) {
+      if (planIdx === -1) {
+        return {
+          success: false,
+          message: `No meal plan found for ${args.date}.`,
+          actionType: "update_meal_plan"
+        };
+      }
+      mealPlans.splice(planIdx, 1);
+      await updateUserSyncData(userId, { mealPlans });
+      return {
+        success: true,
+        message: `Cleared meal plan for ${args.date}.`,
+        actionType: "update_meal_plan"
+      };
+    }
+
+    if (!args.mealSlot || !args.newMeal) {
+      return {
+        success: false,
+        message: "Please specify which meal slot to update and the new meal.",
+        actionType: "update_meal_plan"
+      };
+    }
+
+    if (planIdx === -1) {
+      const newPlan: MealPlan = {
+        id: generateId(),
+        date: args.date,
+        meals: { [args.mealSlot]: args.newMeal }
+      };
+      mealPlans.push(newPlan);
+      await updateUserSyncData(userId, { mealPlans });
+      return {
+        success: true,
+        message: `Added ${args.mealSlot} for ${args.date}: ${args.newMeal}`,
+        data: newPlan,
+        actionType: "update_meal_plan"
+      };
+    }
+
+    const oldMeal = mealPlans[planIdx].meals[args.mealSlot];
+    mealPlans[planIdx].meals[args.mealSlot] = args.newMeal;
+    await updateUserSyncData(userId, { mealPlans });
+
+    return {
+      success: true,
+      message: oldMeal
+        ? `Updated ${args.mealSlot} for ${args.date}: "${oldMeal}" → "${args.newMeal}"`
+        : `Set ${args.mealSlot} for ${args.date}: ${args.newMeal}`,
+      data: mealPlans[planIdx],
+      actionType: "update_meal_plan"
+    };
+  } catch (error) {
+    logger.error("Error updating meal plan", { error: error instanceof Error ? error.message : String(error) });
+    return {
+      success: false,
+      message: "Failed to update meal plan.",
+      actionType: "update_meal_plan"
+    };
+  }
+}
+
 export async function executeChatAction(
   userId: string,
   functionName: string,
@@ -1042,6 +1525,14 @@ export async function executeChatAction(
       return executeGetInventorySummary(userId, args as Parameters<typeof executeGetInventorySummary>[1]);
     case "save_feedback":
       return executeSaveFeedback(userId, args as Parameters<typeof executeSaveFeedback>[1]);
+    case "lookup_nutrition":
+      return executeLookupNutrition(userId, args as Parameters<typeof executeLookupNutrition>[1]);
+    case "check_inventory_levels":
+      return executeCheckInventoryLevels(userId, args as Parameters<typeof executeCheckInventoryLevels>[1]);
+    case "remove_shopping_items":
+      return executeRemoveShoppingItems(userId, args as Parameters<typeof executeRemoveShoppingItems>[1]);
+    case "update_meal_plan":
+      return executeUpdateMealPlan(userId, args as Parameters<typeof executeUpdateMealPlan>[1]);
     default:
       return {
         success: false,
