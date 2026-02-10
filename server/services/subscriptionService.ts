@@ -423,6 +423,14 @@ export async function checkTrialExpiration(userId: string): Promise<boolean> {
   return false;
 }
 
+/**
+ * DESIGN DECISION: Trial users receive full PRO-tier access for the duration of
+ * their 7-day trial. This is intentional — it lets new users experience every
+ * premium feature before deciding to subscribe. When the trial expires,
+ * `expireTrialSubscription()` downgrades them to the restricted TRIAL tier
+ * (10 pantry items, 2 AI recipes/mo). The TRIAL tier limits in
+ * shared/subscription.ts are only enforced *after* trial expiration.
+ */
 export async function ensureTrialSubscription(
   userId: string,
   selectedPlan: 'monthly' | 'annual' = 'monthly',

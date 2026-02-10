@@ -60,6 +60,8 @@ export const ANNUAL_PRICES = {
   PRO: 99.90,
 } as const;
 
+// During the 7-day trial, users get full PRO access (TRIAL_TIER = PRO).
+// After expiration, they downgrade to SubscriptionTier.TRIAL and its limits apply.
 export const TRIAL_CONFIG = {
   TRIAL_DAYS: 7,
   TRIAL_TIER: SubscriptionTier.PRO,
