@@ -88,7 +88,7 @@ export default function PrivacyScreen() {
           Privacy Policy
         </Text>
         <Text style={[styles.lastUpdated, { color: colors.textMuted }]}>
-          Last updated: January 2026
+          Last updated: February 2026
         </Text>
 
         <View
@@ -232,7 +232,34 @@ export default function PrivacyScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            8. Changes to This Policy
+            8. Data Retention & Account Deletion
+          </Text>
+          <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+            We retain your personal data only for as long as your account is
+            active and as needed to provide you with our services. When you
+            delete your account through the app settings, all associated data
+            is permanently and immediately removed from our systems, including:
+            {"\n\n"}- Account information (email, name, profile){"\n"}- All
+            pantry items and food inventory data{"\n"}- Recipe preferences,
+            dietary restrictions, and saved recipes{"\n"}- Subscription
+            records and payment metadata{"\n"}- Any images stored in our
+            cloud storage{"\n\n"}
+            This deletion is irreversible. We do not retain backups of deleted
+            account data. If you have an active subscription, it will be
+            canceled automatically upon account deletion. We recommend
+            exporting your data before deleting your account using the data
+            export feature in your account settings.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            9. Changes to This Policy
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
             We may update this Privacy Policy from time to time. We will notify
@@ -249,7 +276,7 @@ export default function PrivacyScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            9. Contact Us
+            10. Contact Us
           </Text>
           <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
             If you have questions about this Privacy Policy or our data

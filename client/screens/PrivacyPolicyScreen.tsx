@@ -79,13 +79,25 @@ Always verify nutrition information and consult a healthcare provider for dietar
 If you believe we have collected information from a child under 13, please contact us immediately so we can delete the information.`,
   },
   {
-    title: "8. Changes to This Policy",
+    title: "8. Data Retention & Account Deletion",
+    content: `We retain your personal data only for as long as your account is active and as needed to provide you with our services. When you delete your account through the app settings, all associated data is permanently and immediately removed from our systems, including:
+
+• Account information (email, name, profile)
+• All pantry items and food inventory data
+• Recipe preferences, dietary restrictions, and saved recipes
+• Subscription records and payment metadata
+• Any images stored in our cloud storage
+
+This deletion is irreversible. We do not retain backups of deleted account data. If you have an active subscription, it will be canceled automatically upon account deletion. We recommend exporting your data before deleting your account using the data export feature in your account settings.`,
+  },
+  {
+    title: "9. Changes to This Policy",
     content: `We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last updated" date.
 
 Your continued use of the app after any changes constitutes acceptance of the new policy.`,
   },
   {
-    title: "9. Contact Us",
+    title: "10. Contact Us",
     content: `If you have any questions about this Privacy Policy, please contact us:
 
 Email: privacy@chefspaice.com
@@ -125,7 +137,7 @@ export default function PrivacyPolicyScreen() {
             Your Privacy Matters
           </ThemedText>
           <ThemedText type="caption" style={styles.lastUpdated}>
-            Last updated: January 2026
+            Last updated: February 2026
           </ThemedText>
         </GlassCard>
 

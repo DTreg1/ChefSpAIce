@@ -18,6 +18,17 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
+function isNativeMobileApp(req: Request): boolean {
+  const clientPlatform = (req.headers["x-platform"] as string || "").toLowerCase();
+  if (clientPlatform === "ios" || clientPlatform === "android") {
+    return true;
+  }
+  if (/chefsp[a]ice\/(ios|android)/i.test(req.headers["user-agent"] || "")) {
+    return true;
+  }
+  return false;
+}
+
 interface PriceInfo {
   id: string;
   amount: number;
@@ -141,6 +152,13 @@ router.get("/prices", async (_req: Request, res: Response, next: NextFunction) =
 
 router.post("/create-checkout-session", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (isNativeMobileApp(req)) {
+      throw AppError.badRequest(
+        "Stripe checkout is not available on mobile apps. Please use in-app purchases.",
+        "PLATFORM_NOT_SUPPORTED"
+      );
+    }
+
     const user = await getAuthenticatedUser(req);
     if (!user) {
       throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
@@ -507,6 +525,13 @@ router.get("/check-feature/:feature", async (req: Request, res: Response, next: 
 
 router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (isNativeMobileApp(req)) {
+      throw AppError.badRequest(
+        "Stripe upgrades are not available on mobile apps. Please use in-app purchases.",
+        "PLATFORM_NOT_SUPPORTED"
+      );
+    }
+
     const user = await getAuthenticatedUser(req);
     if (!user) {
       throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
@@ -707,6 +732,13 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
 
 router.post("/preview-proration", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (isNativeMobileApp(req)) {
+      throw AppError.badRequest(
+        "Stripe proration preview is not available on mobile apps. Please use in-app purchases.",
+        "PLATFORM_NOT_SUPPORTED"
+      );
+    }
+
     const user = await getAuthenticatedUser(req);
     if (!user) {
       throw AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED");
