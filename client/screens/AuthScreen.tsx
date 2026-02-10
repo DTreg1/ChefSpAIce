@@ -732,7 +732,7 @@ export default function AuthScreen() {
                       accessibilityLabel="Google logo"
                     />
                     <ThemedText style={styles.authSocialButtonText}>
-                      Google
+                      Sign in with Google
                     </ThemedText>
                   </Pressable>
                 )}

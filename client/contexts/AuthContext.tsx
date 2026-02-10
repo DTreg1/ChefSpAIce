@@ -8,8 +8,8 @@
  *
  * AUTHENTICATION METHODS:
  * - Email/Password: Traditional credentials-based auth
- * - Apple Sign-In: Native iOS authentication (iOS only)
- * - Google Sign-In: OAuth-based auth (Android only)
+ * - Apple Sign-In: Native on iOS, Web OAuth on Android
+ * - Google Sign-In: OAuth-based auth (iOS and Android)
  *
  * STATE MANAGEMENT:
  * - Stores auth token and user info in AsyncStorage
@@ -23,8 +23,8 @@
  * - Secure token storage
  *
  * PLATFORM HANDLING:
- * - iOS: Apple Sign-In available
- * - Android: Google Sign-In available
+ * - iOS: Apple Sign-In (native) + Google Sign-In available
+ * - Android: Apple Sign-In (web OAuth) + Google Sign-In available
  * - Web: Email/password only
  *
  * INTEGRATION:
@@ -69,17 +69,17 @@ let AppleAuthentication: typeof import("expo-apple-authentication") | null =
   null;
 let Google: typeof import("expo-auth-session/providers/google") | null = null;
 let WebBrowser: typeof import("expo-web-browser") | null = null;
+let AuthSession: typeof import("expo-auth-session") | null = null;
 
-// Load Apple auth on iOS only (native)
 if (isIOS) {
   AppleAuthentication = require("expo-apple-authentication");
 }
 
-// Load Google auth on Android only (not web - requires OAuth console configuration)
-if (isAndroid) {
+if (!isWeb) {
   Google = require("expo-auth-session/providers/google");
   WebBrowser = require("expo-web-browser");
   WebBrowser?.maybeCompleteAuthSession();
+  AuthSession = require("expo-auth-session");
 }
 
 const AUTH_STORAGE_KEY = "@chefspaice/auth";
@@ -166,17 +166,44 @@ interface StoredAuthData {
 
 const GOOGLE_ANDROID_CLIENT_ID =
   process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+const APPLE_CLIENT_ID = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+
+const appleDiscovery = {
+  authorizationEndpoint: 'https://appleid.apple.com/auth/authorize',
+  tokenEndpoint: 'https://appleid.apple.com/auth/token',
+};
 
 function useGoogleAuth() {
-  // Use Google auth on Android only (not web - requires OAuth console configuration)
-  if (!isAndroid || !Google || !GOOGLE_ANDROID_CLIENT_ID) {
+  if (isWeb || !Google || (!GOOGLE_ANDROID_CLIENT_ID && !GOOGLE_IOS_CLIENT_ID)) {
     return [null, null, null] as const;
   }
 
-  // Use useIdTokenAuthRequest to get an ID token directly (needed for server verification)
   return Google.useIdTokenAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
   });
+}
+
+function useAppleWebAuth() {
+  if (isWeb || !AuthSession || !APPLE_CLIENT_ID) {
+    return [null, null, null] as const;
+  }
+
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'com.chefspaice.chefspaice',
+  });
+
+  return AuthSession.useAuthRequest(
+    {
+      clientId: APPLE_CLIENT_ID,
+      scopes: ['name', 'email'],
+      responseType: 'code' as any,
+      redirectUri,
+    },
+    appleDiscovery
+  );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -213,18 +240,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [_googleRequest, _googleResponse, promptGoogleAsync] = useGoogleAuth();
   void _googleRequest;
-  void _googleResponse; // reserved for future use
+  void _googleResponse;
+
+  const [_appleWebRequest, _appleWebResponse, promptAppleWebAsync] = useAppleWebAuth();
+  void _appleWebRequest;
+  void _appleWebResponse;
 
   useEffect(() => {
     const checkAppleAuth = async () => {
-      // Apple auth only available on iOS (native)
       if (isIOS && AppleAuthentication) {
         const available = await AppleAuthentication.isAvailableAsync();
         setIsAppleAuthAvailable(available);
+      } else if (isAndroid && !!promptAppleWebAsync) {
+        setIsAppleAuthAvailable(true);
       }
     };
     checkAppleAuth();
-  }, []);
+  }, [promptAppleWebAsync]);
 
   useEffect(() => {
     const loadStoredAuth = async () => {
@@ -721,38 +753,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithApple = useCallback(
     async (selectedTier?: "basic" | "pro") => {
       try {
-        let authPayload: AppleAuthPayload | null = null;
-
-        // iOS native Apple authentication only
-        if (!isIOS || !AppleAuthentication) {
+        if (isWeb) {
           return {
             success: false,
-            error: "Apple Sign-In is only available on iOS",
+            error: "Apple Sign-In is not available on web",
           };
         }
-
-        const credential = await AppleAuthentication.signInAsync({
-          requestedScopes: [
-            AppleAuthentication.AppleAuthenticationScope.EMAIL,
-            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          ],
-        });
-
-        authPayload = {
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-          selectedTier,
-          user: {
-            email: credential.email,
-          },
-        };
-
-        const baseUrl = getApiUrl();
-        const url = new URL("/api/auth/social/apple", baseUrl);
-
-        // Add timeout to prevent hanging requests during Apple review
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
         let response: Response;
         let data: {
@@ -769,47 +775,130 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           token?: string;
         };
 
-        try {
-          response = await fetch(url.toString(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(authPayload),
-            signal: controller.signal,
+        if (isIOS && AppleAuthentication) {
+          const credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            ],
           });
-          clearTimeout(timeoutId);
 
-          const _body: any = await response.json();
-          data = response.ok ? _body.data : _body;
-        } catch (fetchError: unknown) {
-          clearTimeout(timeoutId);
-          const fetchErr = fetchError as { name?: string; message?: string };
-          if (fetchErr.name === "AbortError") {
-            logger.error("Apple auth request timed out");
+          const authPayload: AppleAuthPayload = {
+            identityToken: credential.identityToken,
+            authorizationCode: credential.authorizationCode,
+            selectedTier,
+            user: {
+              email: credential.email,
+            },
+          };
+
+          const baseUrl = getApiUrl();
+          const url = new URL("/api/auth/social/apple", baseUrl);
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          try {
+            response = await fetch(url.toString(), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(authPayload),
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            const _body: any = await response.json();
+            data = response.ok ? _body.data : _body;
+          } catch (fetchError: unknown) {
+            clearTimeout(timeoutId);
+            const fetchErr = fetchError as { name?: string; message?: string };
+            if (fetchErr.name === "AbortError") {
+              logger.error("Apple auth request timed out");
+              return {
+                success: false,
+                error:
+                  "Request timed out. Please check your connection and try again.",
+              };
+            }
+            logger.error("Apple auth fetch error:", fetchError);
             return {
               success: false,
               error:
-                "Request timed out. Please check your connection and try again.",
+                "Unable to connect to server. Please check your internet connection.",
             };
           }
-          logger.error("Apple auth fetch error:", fetchError);
+        } else if (isAndroid) {
+          if (!promptAppleWebAsync) {
+            return { success: false, error: "Apple Sign-In not available" };
+          }
+          const result = await promptAppleWebAsync();
+          if (result.type !== 'success') {
+            return { success: false, error: "Apple sign in cancelled" };
+          }
+          const authorizationCode = result.params?.code;
+          if (!authorizationCode) {
+            return { success: false, error: "No authorization code received from Apple" };
+          }
+
+          const baseUrl = getApiUrl();
+          const url = new URL("/api/auth/social/apple", baseUrl);
+          const redirectUri = AuthSession?.makeRedirectUri({ scheme: 'com.chefspaice.chefspaice' }) || '';
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          try {
+            response = await fetch(url.toString(), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                authorizationCode,
+                isWebAuth: true,
+                redirectUri,
+                selectedTier,
+              }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            const _body: any = await response.json();
+            data = response.ok ? _body.data : _body;
+          } catch (fetchError: unknown) {
+            clearTimeout(timeoutId);
+            const fetchErr = fetchError as { name?: string; message?: string };
+            if (fetchErr.name === "AbortError") {
+              logger.error("Apple auth request timed out");
+              return {
+                success: false,
+                error:
+                  "Request timed out. Please check your connection and try again.",
+              };
+            }
+            logger.error("Apple auth fetch error:", fetchError);
+            return {
+              success: false,
+              error:
+                "Unable to connect to server. Please check your internet connection.",
+            };
+          }
+        } else {
           return {
             success: false,
-            error:
-              "Unable to connect to server. Please check your internet connection.",
+            error: "Apple Sign-In is not available on this platform",
           };
         }
 
-        if (!response.ok) {
-          logger.error("Apple auth server error:", response.status, data);
+        if (!response!.ok) {
+          logger.error("Apple auth server error:", response!.status, data!);
           return {
             success: false,
-            error: data.error || "Apple sign in failed. Please try again.",
+            error: data!.error || "Apple sign in failed. Please try again.",
           };
         }
 
-        // Validate required fields from server response
-        if (!data.user || !data.user.id || !data.token) {
+        if (!data!.user || !data!.user.id || !data!.token) {
           logger.error(
             "Apple auth: Invalid server response - missing user or token",
           );
@@ -819,8 +908,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
-        const userData = data.user;
-        const authToken = data.token;
+        const userData = data!.user;
+        const authToken = data!.token;
 
         const authData: StoredAuthData = {
           user: {
@@ -837,7 +926,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
         await storage.setAuthToken(authToken);
 
-        // Set StoreKit auth token, user ID, and sync any pending purchases
         storeKitService.setAuthToken(authToken);
         storeKitService
           .setUserId(String(userData.id))
@@ -848,7 +936,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logger.warn("Failed to sync pending purchases:", err),
           );
 
-        // Check if user was a guest and migrate their data FIRST
         const isGuest = await storage.getIsGuestUser();
         if (isGuest) {
           logger.log("[AppleAuth] Migrating guest data to account...");
@@ -865,10 +952,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Reset all local data for new users to ensure they see onboarding
-        // This clears any leftover data from previous accounts
-        // Note: isNewUser is returned inside data.user from the server
-        // But if they were a guest, don't reset - use their migrated data
         const isNewUser = userData.isNewUser === true && !isGuest;
         logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
 
@@ -876,7 +959,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await storage.resetForNewUser();
         }
 
-        // Clear guest status since user is now authenticated
         await storage.clearGuestUser();
 
         setState({
@@ -889,7 +971,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (isNewUser) {
-          // Sync fresh state to cloud (with onboarding reset)
           await storage.syncToCloud();
         } else {
           await storage.syncFromCloud();
@@ -900,7 +981,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const errorWithCode = error as { code?: string; message?: string };
         logger.error("Apple sign in error:", error);
 
-        // Handle specific Apple Sign-In error codes
         switch (errorWithCode.code) {
           case "ERR_CANCELED":
           case "ERR_REQUEST_CANCELED":
@@ -931,7 +1011,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
           case "ERR_UNKNOWN":
           default:
-            // Provide more context for iPad-specific issues
             const errorMessage =
               errorWithCode.message || "Apple sign in failed";
             return {
@@ -941,7 +1020,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [],
+    [promptAppleWebAsync],
   );
 
   const signInWithGoogle = useCallback(
@@ -1088,8 +1167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [promptGoogleAsync],
   );
 
-  // Google auth is available on Android and Web when the auth request is ready
-  const isGoogleAuthAvailable = isAndroid && !!promptGoogleAsync;
+  const isGoogleAuthAvailable = !isWeb && !!promptGoogleAsync;
 
   const initializeAsGuest = useCallback(async () => {
     try {
