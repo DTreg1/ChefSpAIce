@@ -202,61 +202,62 @@ export default function AuthScreen() {
         return;
       }
 
-      await syncManager.clearQueue();
-
-      if (Platform.OS !== "web") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      // Check onboarding and subscription status to determine navigation
-      await recheckOnboarding();
-      const needsOnboarding = await storage.needsOnboarding();
-
-      if (needsOnboarding) {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Onboarding" }],
-          }),
-        );
-        return;
-      }
-
-      // Onboarding complete - check subscription status via API
-      const baseUrl = getApiUrl();
-      const subscriptionResponse = await fetch(
-        `${baseUrl}/api/subscriptions/me`,
-        {
-          credentials: "include",
-        },
-      );
-      const subscriptionData = (await subscriptionResponse.json()).data as any;
-      const isSubscriptionActive =
-        subscriptionData?.status === "active" ||
-        subscriptionData?.status === "trialing";
-
-      if (isSubscriptionActive) {
-        markOnboardingComplete();
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          }),
-        );
-      } else {
-        // Expired subscription - go to Subscription screen to resubscribe
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Subscription", params: { reason: "expired" } }],
-          }),
-        );
-      }
+      await handlePostAuthNavigation();
     } catch (err) {
       logger.error("Auth error:", err);
       setAuthError("An unexpected error occurred");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handlePostAuthNavigation = async () => {
+    await syncManager.clearQueue();
+
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    await recheckOnboarding();
+    const needsOnboarding = await storage.needsOnboarding();
+
+    if (needsOnboarding) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Onboarding" }],
+        }),
+      );
+      return;
+    }
+
+    const baseUrl = getApiUrl();
+    const subscriptionResponse = await fetch(
+      `${baseUrl}/api/subscriptions/me`,
+      {
+        credentials: "include",
+      },
+    );
+    const subscriptionData = (await subscriptionResponse.json()).data as any;
+    const isSubscriptionActive =
+      subscriptionData?.status === "active" ||
+      subscriptionData?.status === "trialing";
+
+    if (isSubscriptionActive) {
+      markOnboardingComplete();
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        }),
+      );
+    } else {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Subscription", params: { reason: "expired" } }],
+        }),
+      );
     }
   };
 
@@ -279,56 +280,7 @@ export default function AuthScreen() {
         return;
       }
 
-      await syncManager.clearQueue();
-
-      if (Platform.OS !== "web") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      // Check onboarding and subscription status to determine navigation
-      await recheckOnboarding();
-      const needsOnboarding = await storage.needsOnboarding();
-
-      if (needsOnboarding) {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Onboarding" }],
-          }),
-        );
-        return;
-      }
-
-      // Onboarding complete - check subscription status via API
-      const baseUrl = getApiUrl();
-      const subscriptionResponse = await fetch(
-        `${baseUrl}/api/subscriptions/me`,
-        {
-          credentials: "include",
-        },
-      );
-      const subscriptionData = (await subscriptionResponse.json()).data as any;
-      const isSubscriptionActive =
-        subscriptionData?.status === "active" ||
-        subscriptionData?.status === "trialing";
-
-      if (isSubscriptionActive) {
-        markOnboardingComplete();
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          }),
-        );
-      } else {
-        // Expired subscription - go to Subscription screen to resubscribe
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Subscription", params: { reason: "expired" } }],
-          }),
-        );
-      }
+      await handlePostAuthNavigation();
     } catch (err) {
       logger.error("Social auth error:", err);
       setAuthError("An unexpected error occurred");

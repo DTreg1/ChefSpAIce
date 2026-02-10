@@ -577,7 +577,7 @@ router.post("/forgot-password", passwordResetLimiter, async (req: Request, res: 
       expiresAt: Date.now() + PASSWORD_RESET_EXPIRY_MS,
     });
 
-    logger.info("Password reset token generated", { userId: user.id, token: resetToken });
+    logger.info("Password reset token generated", { userId: user.id });
 
     res.json(successResponse({ message: PASSWORD_RESET_SUCCESS_MESSAGE }));
   } catch (error) {
@@ -1194,6 +1194,90 @@ router.post("/migrate-guest-data", async (req: Request, res: Response, next: Nex
 
 const DEMO_EMAIL = "demo@chefspaice.com";
 
+async function performAccountDeletion(userId: string, res: Response): Promise<void> {
+  logger.info("Starting account deletion", { userId });
+
+  try {
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(1);
+
+    if (subscription?.stripeSubscriptionId) {
+      const stripe = await getUncachableStripeClient();
+      await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+      logger.info("Cancelled Stripe subscription", { stripeSubscriptionId: subscription.stripeSubscriptionId });
+    }
+  } catch (e) {
+    logger.warn("Error cancelling Stripe subscription", { userId, error: e instanceof Error ? e.message : String(e) });
+  }
+
+  try {
+    const [syncData] = await db
+      .select()
+      .from(userSyncData)
+      .where(eq(userSyncData.userId, userId))
+      .limit(1);
+
+    if (syncData?.recipes) {
+      const recipes = Array.isArray(syncData.recipes) ? syncData.recipes : JSON.parse(String(syncData.recipes));
+      if (Array.isArray(recipes)) {
+        for (const recipe of recipes) {
+          if (recipe && typeof recipe === "object" && "id" in recipe) {
+            try {
+              await deleteRecipeImage(String(recipe.id));
+            } catch (imgErr) {
+              logger.warn("Error deleting recipe image", { recipeId: String(recipe.id), error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
+            }
+          }
+        }
+      }
+    }
+
+    const savedRecipes = await db
+      .select({ itemId: userSavedRecipes.itemId, cloudImageUri: userSavedRecipes.cloudImageUri })
+      .from(userSavedRecipes)
+      .where(eq(userSavedRecipes.userId, userId));
+
+    for (const recipe of savedRecipes) {
+      if (recipe.cloudImageUri) {
+        try {
+          await deleteRecipeImage(recipe.itemId);
+        } catch (imgErr) {
+          logger.warn("Error deleting saved recipe image", { recipeId: recipe.itemId, error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
+        }
+      }
+    }
+  } catch (e) {
+    logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.delete(notifications).where(eq(notifications.userId, userId));
+    await tx.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
+    await tx.delete(cancellationReasons).where(eq(cancellationReasons.userId, userId));
+    await tx.delete(referrals).where(or(eq(referrals.referrerId, userId), eq(referrals.referredUserId, userId)));
+    await tx.delete(nutritionCorrections).where(eq(nutritionCorrections.userId, userId));
+    await tx.delete(feedback).where(eq(feedback.userId, userId));
+    await tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId));
+    await tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
+    await tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
+    await tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId));
+    await tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId));
+    await tx.delete(authProviders).where(eq(authProviders.userId, userId));
+    await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
+    await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
+    await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
+    await tx.delete(userSessions).where(eq(userSessions.userId, userId));
+    await tx.delete(users).where(eq(users.id, userId));
+  });
+
+  clearAuthCookie(res);
+
+  logger.info("Account deleted successfully", { userId });
+}
+
 router.delete("/delete-account", csrfProtection, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -1232,86 +1316,7 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
       throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
-    logger.info("Starting account deletion", { userId });
-
-    try {
-      const [subscription] = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1);
-
-      if (subscription?.stripeSubscriptionId) {
-        const stripe = await getUncachableStripeClient();
-        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-      }
-    } catch (e) {
-      logger.warn("Error cancelling Stripe subscription", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-
-    try {
-      const [syncData] = await db
-        .select()
-        .from(userSyncData)
-        .where(eq(userSyncData.userId, userId))
-        .limit(1);
-
-      if (syncData?.recipes) {
-        const recipes = Array.isArray(syncData.recipes) ? syncData.recipes : JSON.parse(String(syncData.recipes));
-        if (Array.isArray(recipes)) {
-          for (const recipe of recipes) {
-            if (recipe && typeof recipe === "object" && "id" in recipe) {
-              try {
-                await deleteRecipeImage(String(recipe.id));
-              } catch (imgErr) {
-                logger.warn("Error deleting recipe image", { recipeId: String(recipe.id), error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-              }
-            }
-          }
-        }
-      }
-
-      const savedRecipes = await db
-        .select({ itemId: userSavedRecipes.itemId, cloudImageUri: userSavedRecipes.cloudImageUri })
-        .from(userSavedRecipes)
-        .where(eq(userSavedRecipes.userId, userId));
-
-      for (const recipe of savedRecipes) {
-        if (recipe.cloudImageUri) {
-          try {
-            await deleteRecipeImage(recipe.itemId);
-          } catch (imgErr) {
-            logger.warn("Error deleting saved recipe image", { recipeId: recipe.itemId, error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-          }
-        }
-      }
-    } catch (e) {
-      logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-
-    await db.transaction(async (tx) => {
-      await tx.delete(notifications).where(eq(notifications.userId, userId));
-      await tx.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
-      await tx.delete(cancellationReasons).where(eq(cancellationReasons.userId, userId));
-      await tx.delete(referrals).where(or(eq(referrals.referrerId, userId), eq(referrals.referredUserId, userId)));
-      await tx.delete(nutritionCorrections).where(eq(nutritionCorrections.userId, userId));
-      await tx.delete(feedback).where(eq(feedback.userId, userId));
-      await tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId));
-      await tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
-      await tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
-      await tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId));
-      await tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId));
-      await tx.delete(authProviders).where(eq(authProviders.userId, userId));
-      await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
-      await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
-      await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
-      await tx.delete(userSessions).where(eq(userSessions.userId, userId));
-      await tx.delete(users).where(eq(users.id, userId));
-    });
-
-    clearAuthCookie(res);
-
-    logger.info("Account deleted successfully", { userId });
+    await performAccountDeletion(userId, res);
 
     res.json(successResponse(null, "Account and all associated data have been permanently deleted"));
 
@@ -1347,87 +1352,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response, next:
       throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
-    logger.info("Starting account deletion", { userId });
-
-    try {
-      const [subscription] = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1);
-
-      if (subscription?.stripeSubscriptionId) {
-        const stripe = await getUncachableStripeClient();
-        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-        logger.info("Cancelled Stripe subscription", { stripeSubscriptionId: subscription.stripeSubscriptionId });
-      }
-    } catch (e) {
-      logger.warn("Error cancelling Stripe subscription", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-
-    try {
-      const [syncData] = await db
-        .select()
-        .from(userSyncData)
-        .where(eq(userSyncData.userId, userId))
-        .limit(1);
-
-      if (syncData?.recipes) {
-        const recipes = Array.isArray(syncData.recipes) ? syncData.recipes : JSON.parse(String(syncData.recipes));
-        if (Array.isArray(recipes)) {
-          for (const recipe of recipes) {
-            if (recipe && typeof recipe === "object" && "id" in recipe) {
-              try {
-                await deleteRecipeImage(String(recipe.id));
-              } catch (imgErr) {
-                logger.warn("Error deleting recipe image", { recipeId: String(recipe.id), error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-              }
-            }
-          }
-        }
-      }
-
-      const savedRecipes = await db
-        .select({ itemId: userSavedRecipes.itemId, cloudImageUri: userSavedRecipes.cloudImageUri })
-        .from(userSavedRecipes)
-        .where(eq(userSavedRecipes.userId, userId));
-
-      for (const recipe of savedRecipes) {
-        if (recipe.cloudImageUri) {
-          try {
-            await deleteRecipeImage(recipe.itemId);
-          } catch (imgErr) {
-            logger.warn("Error deleting saved recipe image", { recipeId: recipe.itemId, error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-          }
-        }
-      }
-    } catch (e) {
-      logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-
-    await db.transaction(async (tx) => {
-      await tx.delete(notifications).where(eq(notifications.userId, userId));
-      await tx.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
-      await tx.delete(cancellationReasons).where(eq(cancellationReasons.userId, userId));
-      await tx.delete(referrals).where(or(eq(referrals.referrerId, userId), eq(referrals.referredUserId, userId)));
-      await tx.delete(nutritionCorrections).where(eq(nutritionCorrections.userId, userId));
-      await tx.delete(feedback).where(eq(feedback.userId, userId));
-      await tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId));
-      await tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
-      await tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
-      await tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId));
-      await tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId));
-      await tx.delete(authProviders).where(eq(authProviders.userId, userId));
-      await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
-      await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
-      await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
-      await tx.delete(userSessions).where(eq(userSessions.userId, userId));
-      await tx.delete(users).where(eq(users.id, userId));
-    });
-
-    clearAuthCookie(res);
-
-    logger.info("Account deleted successfully", { userId });
+    await performAccountDeletion(userId, res);
 
     res.json(successResponse(null, "Your account and all associated data have been permanently deleted."));
 
