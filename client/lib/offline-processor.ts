@@ -6,7 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
 
 const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 10;
 
 async function getStoredAuthToken(): Promise<string | null> {
   try {
@@ -114,8 +114,12 @@ async function processQueue(): Promise<void> {
   }
 
   const remaining = await offlineMutationQueue.getAll();
-  if (remaining.length > 0 && remaining.some((i) => i.retryCount < MAX_RETRIES)) {
-    setTimeout(() => processQueue(), 5000);
+  const retriable = remaining.filter((i) => i.retryCount < MAX_RETRIES);
+  if (retriable.length > 0) {
+    const lowestRetryCount = Math.min(...retriable.map((i) => i.retryCount));
+    const retryDelay = Math.min(1000 * Math.pow(2, lowestRetryCount), 60000);
+    logger.log("[OfflineProcessor] Scheduling retry", { retryDelay, lowestRetryCount, retriableCount: retriable.length });
+    setTimeout(() => processQueue(), retryDelay);
   }
 }
 

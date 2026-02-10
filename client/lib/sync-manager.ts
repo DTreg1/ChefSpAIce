@@ -43,7 +43,7 @@
  * - While offline, `processSyncQueue()` is a no-op. When connectivity returns
  *   (detected by the 60-second health check or an unrelated successful API call),
  *   the queue is automatically drained.
- * - Failed items are retried with exponential back-off (2^n seconds, max 30 s).
+ * - Failed items are retried with exponential back-off (1s, 2s, 4s, 8s…, max 60s).
  *   After 5 retries or a 4xx status, the item is marked `isFatal` and surfaced
  *   to the user via an alert.
  *
@@ -540,7 +540,7 @@ class SyncManager {
     if (hasRetryableErrors && this.isOnline) {
       const firstRetryableItem = failedItems.find((item) => !item.isFatal);
       const retryCount = firstRetryableItem?.retryCount || 1;
-      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 60000);
       setTimeout(() => {
         this.processSyncQueue();
       }, retryDelay);

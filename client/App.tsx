@@ -69,6 +69,7 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { PaymentFailedBanner } from "@/components/PaymentFailedBanner";
 import { FloatingChatProvider } from "@/contexts/FloatingChatContext";
 import { SearchProvider } from "@/contexts/SearchContext";
@@ -257,6 +258,9 @@ function MobileAppContent() {
 
         {/* Shows when device is offline */}
         <OfflineIndicator />
+
+        {/* Shows when changes are pending sync */}
+        <PendingSyncBanner />
 
         {/* Shows when payment has failed during grace period */}
         <PaymentFailedBanner />
