@@ -23,7 +23,7 @@
 
 import { db } from "../db";
 import { users, subscriptions, userInventoryItems, userCookwareItems, referrals } from "@shared/schema";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count, sql, isNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import {
   SubscriptionTier,
@@ -92,7 +92,7 @@ async function getInventoryCount(userId: string): Promise<number> {
   const [result] = await db
     .select({ value: count() })
     .from(userInventoryItems)
-    .where(eq(userInventoryItems.userId, userId));
+    .where(and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt)));
   return result?.value ?? 0;
 }
 
