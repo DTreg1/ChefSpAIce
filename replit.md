@@ -13,6 +13,8 @@ Kitchen inventory management app with AI-powered recipe generation, meal plannin
 - **Payments**: Stripe (subscriptions, proration, retention), RevenueCat webhooks (StoreKit/Apple IAP)
 - **Storage**: Replit Object Storage (`@replit/object-storage`)
 - **Auth**: Custom session tokens, social login (Google/Apple), multi-session, biometric
+- **Shopping**: Instacart Connect (product matching, shopping lists, delivery). UPCs and brand filters for precise matching.
+- **Nutrition**: USDA FoodData Central (nutrition label display only, on-demand lookup)
 
 ## Installed Integrations
 - `javascript_openai_ai_integrations` — OpenAI API key management
@@ -43,25 +45,27 @@ client/                              # NOTE: No src/ subdirectory — files live
   navigation/                        # Drawer, Tab, and Stack navigators (8 files)
   lib/                               # analytics, deep-linking, notifications, offline queue,
                                      #   sync-manager, query-client, storage, voice-commands, etc.
-  constants/                         # food-sources, meal-plan, theme
+  constants/                         # meal-plan, theme
   data/                              # landing-data.ts
 server/
   routes.ts                          # Main route registration (~441 lines)
   storage.ts                         # DB storage interface (IStorage, ~30 lines)
+  lib/
+    unit-conversion.ts               # Standalone weight/volume conversion + Instacart unit mapping
   routers/
-    auth, sync, chat, feedback, food, shelf-life, social-auth, referral,
+    auth, sync, chat, feedback, shelf-life, social-auth, referral,
     recipeImages, revenuecat-webhook, donations, external-api, instacart,
-    logo-export, notifications
+    logo-export, notifications, nutrition-lookup
     admin/                           # analytics, data-export, subscriptions
     sync/                            # inventory, recipes, cookware, shopping, meal-plans, helpers
     user/                            # appliances, cooking-terms, data-export, ingredients,
                                      #   nutrition, recipes, suggestions
     platform/
-      food-search.router.ts          # USDA + OpenFoodFacts search
       voice.router.ts                # Voice processing
       ai/                            # image-analysis, receipt-analysis (OpenAI Vision)
   stripe/                            # stripeClient, subscriptionConfig/Router/Service, webhookHandlers
-  services/                          # notification, objectStorage, recipeGeneration, subscription
+  services/                          # notification, objectStorage, recipeGeneration, subscription,
+                                     #   nutritionLookupService (USDA nutrition-only wrapper)
   seeds/                             # seed-appliances, seed-cooking-terms, seed-demo-account, seed-starter-foods
   __tests__/                         # 10 test files
 shared/
@@ -79,9 +83,10 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
 - **Subscriptions**: `/api/subscriptions/*` — checkout, upgrade, cancel, pause, proration, retention
 - **Admin**: `/api/admin/analytics/*` — metrics, churn, conversion, MRR
 - **AI**: `/api/chat`, recipe generation, food/receipt image scanning
-- **Food**: `/api/food/*` — USDA, OpenFoodFacts lookup
+- **Nutrition**: `/api/nutrition/lookup` — on-demand USDA nutrition label data (by name/brand or fdcId)
 - **User Data**: `/api/user/*` — appliances, cookware, nutrition, recipes, ingredients, cooking-terms, export, suggestions
-- **Other**: notifications, referrals, shelf-life, instacart, donations, RevenueCat webhook
+- **Instacart**: `/api/instacart/*` — status, retailers, products-link, recipe shopping links (UPCs, brand_filters, measurements)
+- **Other**: notifications, referrals, shelf-life, donations, RevenueCat webhook
 
 ## Subscription Model
 - Single plan: $9.99/mo or $99.90/yr — unlimited everything, all features
@@ -102,8 +107,8 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
 ## External APIs
 - OpenAI (recipes, chat, vision) — Replit AI integration
 - Stripe (payments) — Replit Stripe integration
-- USDA FoodData Central, OpenFoodFacts
-- Instacart Connect
+- USDA FoodData Central (nutrition labels only — not for food search)
+- Instacart Connect (shopping lists, product matching, delivery)
 - Replit Object Storage
 
 ## Domain Architecture (shared/domain/ + server/domain/)
@@ -114,7 +119,16 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
   - `AccountDeletionService` — extracted account deletion logic (Stripe cancellation, image cleanup, data purge)
 - **Router pattern**: Routers handle HTTP concerns (request parsing, response formatting, middleware, cookies); services handle business logic and return domain events as values
 
+## Food Entry & Shopping Architecture
+- **Food entry**: Simple text inputs (name, brand, UPC) — no autocomplete or database search
+- **Barcode scanning**: Captures UPC only (prefills UPC field on AddItemScreen) for Instacart product matching
+- **Shopping**: Instacart handles the complete grocery cycle (shopping list → delivery). Line items support UPCs, brand_filters, health_filters, measurements, and enable_pantry_items.
+- **Nutrition**: USDA FoodData Central for on-demand nutrition label display. Cached lookup service (5min TTL) accessed via `/api/nutrition/lookup`. Not used for food search.
+- **Unit conversion**: Standalone library (`server/lib/unit-conversion.ts`) with `toInstacartUnit()` normalization, decoupled from USDA.
+- **Removed**: OpenFoodFacts integration, FoodSearchAutocomplete, FoodSearchScreen, food.router.ts (search/barcode endpoints), food-sources.ts constants
+
 ## Recent Changes
+- **Instacart-centric migration (Feb 2026)**: Migrated to Instacart-centric architecture. Created standalone unit conversion library. Enhanced Instacart router with full API support (UPCs, brand_filters, line_item_measurements, health_filters). Created nutrition-only USDA lookup service and endpoint. Replaced FoodSearchAutocomplete with simple text inputs (name, brand, UPC). Added on-demand nutrition label lookup to ItemDetailScreen. Removed OpenFoodFacts, food search router, barcode lookup endpoints, FoodSearchScreen, BarcodeTestScreen, and food-sources constants.
 - **Single-plan subscription simplification (Feb 2026)**: Removed BASIC tier entirely. App now has one subscription plan ($9.99/mo, $99.90/yr) with 7-day free trial. After trial expires without subscribing, access is fully locked (all limits = 0). Removed TierSelector component, simplified FeatureComparisonTable to single features list, updated TrialEndedModal/UpgradePrompt messaging to "subscribe" instead of "upgrade to tier". Removed BASIC from Stripe config, webhook handlers, subscription router, StoreKit service. Updated landing page PricingSection to single plan card. Updated subscription-terms.ts with explicit single-plan pricing language. Internal enum: TRIAL (locked out) and PRO (active/trialing).
 - **Domain-driven design refactor (Feb 2026)**: Extracted auth business logic into domain services layer. auth.router.ts reduced from 1312→1069 lines. social-auth.router.ts consolidated session creation via shared createSession service. Domain types in shared/domain/ provide clean abstractions for value objects, entities, aggregates, and events. Email validation wrapped in AppError.badRequest for consistent 400 responses.
 - **Auth architecture cleanup (Feb 2026)**: Centralized shared session utilities (generateToken, getExpiryDate, setAuthCookie, clearAuthCookie) into `server/lib/session-utils.ts`, eliminating duplication between auth.router.ts and social-auth.router.ts. Refactored social-auth.router.ts from raw pg Pool queries to Drizzle ORM for consistency. Fixed logout data-clearing: added 4 missing AsyncStorage keys (onboarding_step, pending_purchase, register_prompt_dismissed_at, onboarding) to signOut(). Audited auth token storage — dual-key pattern (@chefspaice/auth + @chefspaice/auth_token) confirmed consistent across all auth flows.

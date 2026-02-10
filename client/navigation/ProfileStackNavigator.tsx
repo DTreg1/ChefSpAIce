@@ -5,7 +5,6 @@ import SettingsScreen from "@/screens/SettingsScreen";
 import AnalyticsScreen from "@/screens/AnalyticsScreen";
 import CookingTermsScreen from "@/screens/CookingTermsScreen";
 import CookwareScreen from "@/screens/CookwareScreen";
-import BarcodeTestScreen from "@/screens/BarcodeTestScreen";
 import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import GlassLeafScreen from "@/screens/GlassLeafScreen";
@@ -19,7 +18,6 @@ export type ProfileStackParamList = {
   Analytics: undefined;
   CookingTerms: undefined;
   Cookware: undefined;
-  BarcodeTest: undefined;
   StorageLocations: undefined;
   Subscription: undefined;
   GlassLeaf: undefined;
@@ -42,7 +40,6 @@ export default function ProfileStackNavigator() {
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       <Stack.Screen name="CookingTerms" component={CookingTermsScreen} />
       <Stack.Screen name="Cookware" component={CookwareScreen} />
-      <Stack.Screen name="BarcodeTest" component={BarcodeTestScreen} />
       <Stack.Screen
         name="StorageLocations"
         component={StorageLocationsScreen}

@@ -57,7 +57,6 @@ import BarcodeScannerScreen from "@/screens/BarcodeScannerScreen";
 import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen from "@/screens/FoodCameraScreen";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
-import FoodSearchScreen from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
 import AuthScreen from "@/screens/AuthScreen";
@@ -126,7 +125,6 @@ export type RootStackParamList = {
     | undefined;
   RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
-  FoodSearch: undefined;
   ReceiptScan: undefined;
 };
 
@@ -499,14 +497,6 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="IngredientScanner"
         component={IngredientScannerScreen}
-        options={{
-          presentation: "fullScreenModal",
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="FoodSearch"
-        component={FoodSearchScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,

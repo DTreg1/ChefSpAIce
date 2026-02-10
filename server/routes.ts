@@ -69,7 +69,6 @@ import externalApiRouter from "./routers/external-api.router";
 import chatRouter from "./routers/chat.router";
 import shelfLifeRouter from "./routers/shelf-life.router";
 import dataExportRouter from "./routers/user/data-export.router";
-import foodRouter, { barcodeRawRouter } from "./routers/food.router";
 import referralRouter from "./routers/referral.router";
 import notificationsRouter from "./routers/notifications.router";
 import nutritionLookupRouter from "./routers/nutrition-lookup.router";
@@ -222,8 +221,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FEATURE ROUTERS - Extracted to dedicated modules
   // =========================================================================
   app.use("/api/chat", requireAuth, requireSubscription, chatRouter);
-  app.use("/api/food", requireAuth, foodRouter);
-  app.use("/api/barcode/raw", barcodeRawRouter);
   app.use("/api/suggestions/shelf-life", requireAuth, requireSubscription, shelfLifeRouter);
 
   // Development-only endpoint to set user subscription tier for testing

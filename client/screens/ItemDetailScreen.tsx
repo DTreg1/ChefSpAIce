@@ -7,7 +7,9 @@ import {
   Alert,
   Platform,
   Modal,
+  ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
@@ -20,9 +22,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { NutritionSection } from "@/components/NutritionSection";
 import { ExpoGlassHeader, MenuItemConfig } from "@/components/ExpoGlassHeader";
+import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, FoodItem, formatDate } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
 import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
 
 type StorageLocation = "fridge" | "freezer" | "pantry" | "counter";
@@ -47,6 +51,7 @@ export default function ItemDetailScreen() {
   const [datePickerField, setDatePickerField] = useState<
     "purchase" | "expiration"
   >("expiration");
+  const [nutritionLoading, setNutritionLoading] = useState(false);
 
   useEffect(() => {
     const loadItem = async () => {
@@ -133,6 +138,44 @@ export default function ItemDetailScreen() {
   const openDatePicker = (field: "purchase" | "expiration") => {
     setDatePickerField(field);
     setShowDatePicker(true);
+  };
+
+  const handleLookupNutrition = async () => {
+    if (!item) return;
+    setNutritionLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("@chefspaice/auth_token");
+      const params = new URLSearchParams({ name: item.name });
+      if (item.brand) params.append("brand", item.brand);
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/nutrition/lookup?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.data?.found && data.data.nutrition) {
+        const n = data.data.nutrition;
+        const mapped = {
+          calories: n.calories || 0,
+          protein: n.protein || 0,
+          carbs: n.totalCarbohydrates || 0,
+          fat: n.totalFat || 0,
+          fiber: n.dietaryFiber,
+          sugar: n.totalSugars,
+          sodium: n.sodium,
+          servingSize: n.servingSize,
+        };
+        setItem(prev => prev ? { ...prev, nutrition: mapped } : prev);
+      } else {
+        Alert.alert("No Data", "No nutrition data found for this item in the USDA database.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Could not look up nutrition data. Please try again.");
+    } finally {
+      setNutritionLoading(false);
+    }
   };
 
   const headerPadding = 56 + insets.top + Spacing.lg;
@@ -239,6 +282,63 @@ export default function ItemDetailScreen() {
             />
           </View>
 
+          {item.brand ? (
+            <View style={styles.inputGroup}>
+              <ThemedText type="small" style={styles.label}>
+                Brand
+              </ThemedText>
+              <View
+                style={[
+                  styles.readOnlyField,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <ThemedText
+                  type="body"
+                  style={{ color: theme.text }}
+                  numberOfLines={1}
+                  data-testid="text-item-brand"
+                >
+                  {item.brand}
+                </ThemedText>
+              </View>
+            </View>
+          ) : null}
+
+          {item.barcode ? (
+            <View style={styles.inputGroup}>
+              <ThemedText type="small" style={styles.label}>
+                Barcode
+              </ThemedText>
+              <View
+                style={[
+                  styles.readOnlyField,
+                  {
+                    backgroundColor: theme.glass.backgroundSubtle,
+                    borderColor: theme.glass.border,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+                  <Feather name="tag" size={14} color={theme.textSecondary} />
+                  <ThemedText
+                    type="body"
+                    style={{ color: theme.text }}
+                    numberOfLines={1}
+                    data-testid="text-item-barcode"
+                  >
+                    {item.barcode}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <ThemedText type="small" style={styles.label}>
@@ -311,12 +411,40 @@ export default function ItemDetailScreen() {
           </View>
         </GlassCard>
 
-        <NutritionSection
-          foodId={item.id}
-          foodName={item.name}
-          defaultQuantity={item.quantity}
-          nutrition={item.nutrition}
-        />
+        {item.nutrition ? (
+          <NutritionSection
+            foodId={item.id}
+            foodName={item.name}
+            defaultQuantity={item.quantity}
+            nutrition={item.nutrition}
+          />
+        ) : (
+          <GlassCard style={styles.section}>
+            <View style={{ alignItems: "center", gap: Spacing.md, paddingVertical: Spacing.md }}>
+              <Feather name="activity" size={32} color={theme.textSecondary} />
+              <ThemedText type="body" style={{ color: theme.textSecondary, textAlign: "center" }}>
+                No nutrition data available
+              </ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center", opacity: 0.7 }}>
+                Look up nutrition info from the USDA database
+              </ThemedText>
+              {nutritionLoading ? (
+                <ActivityIndicator size="small" color={AppColors.primary} />
+              ) : (
+                <GlassButton
+                  variant="outline"
+                  onPress={handleLookupNutrition}
+                  testID="button-lookup-nutrition"
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+                    <Feather name="search" size={16} color={AppColors.primary} />
+                    <ThemedText style={{ color: AppColors.primary }}>Look Up Nutrition</ThemedText>
+                  </View>
+                </GlassButton>
+              )}
+            </View>
+          </GlassCard>
+        )}
 
         <GlassCard style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
