@@ -701,6 +701,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.removeItem("@chefspaice/waste_log"),
         AsyncStorage.removeItem("@chefspaice/consumed_log"),
         AsyncStorage.removeItem("@chefspaice/analytics"),
+        AsyncStorage.removeItem("@chefspaice/onboarding_step"),
+        AsyncStorage.removeItem("@chefspaice/pending_purchase"),
+        AsyncStorage.removeItem("@chefspaice/register_prompt_dismissed_at"),
+        AsyncStorage.removeItem("@chefspaice/onboarding"),
       ]);
 
       // Clear all cached query data for security

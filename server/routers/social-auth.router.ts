@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
-import { randomBytes } from "crypto";
+import { generateToken, getExpiryDate, setAuthCookie } from "../lib/session-utils";
 import pg from "pg";
 import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
@@ -16,31 +16,6 @@ const router = Router();
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
 });
-
-function generateToken(): string {
-  return randomBytes(32).toString("hex");
-}
-
-function getExpiryDate(): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date;
-}
-
-const AUTH_COOKIE_NAME = "chefspaice_auth";
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-
-function setAuthCookie(res: Response, token: string, req?: Request): void {
-  // Always use secure cookies when served over HTTPS (Replit always uses HTTPS)
-  const isSecure = req ? req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' : true;
-  res.cookie(AUTH_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
-    path: "/",
-  });
-}
 
 async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {
   const rawToken = generateToken();

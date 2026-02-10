@@ -3,6 +3,7 @@ import { db } from "../db";
 import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, notifications, conversionEvents, cancellationReasons, referrals, nutritionCorrections, passwordResetTokens } from "@shared/schema";
 import { eq, and, inArray, or, lt } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { generateToken, getExpiryDate, AUTH_COOKIE_NAME, setAuthCookie, clearAuthCookie } from "../lib/session-utils";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
@@ -113,40 +114,12 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   return bcrypt.compare(password, hash);
 }
 
-function generateToken(): string {
-  return randomBytes(32).toString("hex");
-}
-
-function getExpiryDate(): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date;
-}
-
 function validatePassword(password: string): string | null {
   if (password.length < 8) return "Password must be at least 8 characters";
   if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
   if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
   if (!/[0-9]/.test(password)) return "Password must contain a number";
   return null;
-}
-
-const AUTH_COOKIE_NAME = "chefspaice_auth";
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-
-function setAuthCookie(res: Response, token: string, req?: Request): void {
-  const isSecure = req ? req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' : true;
-  res.cookie(AUTH_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
-    path: "/",
-  });
-}
-
-function clearAuthCookie(res: Response): void {
-  res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
 }
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
