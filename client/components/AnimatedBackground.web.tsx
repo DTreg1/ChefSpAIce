@@ -18,6 +18,7 @@ interface BubbleConfig {
 
 interface AnimatedBackgroundProps {
   bubbleCount?: number;
+  enabled?: boolean;
 }
 
 export function AnimatedBackground({

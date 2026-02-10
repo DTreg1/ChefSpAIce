@@ -10,7 +10,6 @@ import {
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
-import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
@@ -27,12 +26,6 @@ export default function PrivacyScreen() {
   const colors = WebInfoColors;
   const currentPath = "/privacy";
   const navigate = useNavigate();
-
-  usePageMeta({
-    title: "Privacy Policy - ChefSpAIce",
-    description: "Read ChefSpAIce's privacy policy to understand how we protect your data and respect your privacy.",
-    ogType: "website",
-  });
 
   return (
     <ScrollView

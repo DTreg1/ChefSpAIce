@@ -12,7 +12,6 @@ import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
-import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 
@@ -38,12 +37,6 @@ export default function SupportScreen() {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  usePageMeta({
-    title: "Support - ChefSpAIce",
-    description: "Get help with ChefSpAIce. Contact our support team, report issues, or make a donation.",
-    ogType: "website",
-  });
 
   const handleDonate = async (amount: number) => {
     if (!isWeb || typeof window === "undefined") {

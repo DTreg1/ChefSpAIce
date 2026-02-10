@@ -10,7 +10,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
-import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 
@@ -26,12 +25,6 @@ export default function AboutScreen() {
   const colors = WebInfoColors;
   const currentPath = "/about";
   const navigate = useNavigate();
-
-  usePageMeta({
-    title: "About - ChefSpAIce",
-    description: "Learn about ChefSpAIce, the AI-powered kitchen assistant that helps you manage inventory, generate recipes, and plan meals.",
-    ogType: "website",
-  });
 
   return (
     <ScrollView
