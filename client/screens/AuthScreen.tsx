@@ -453,6 +453,81 @@ export default function AuthScreen() {
             </View>
           )}
 
+          {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
+            <>
+              <View style={styles.authSocialButtons}>
+                {isAppleAuthAvailable && (
+                  <Pressable
+                    style={[
+                      styles.authSocialButton,
+                      {
+                        backgroundColor: theme.glass.background,
+                        borderColor: theme.glass.border,
+                      },
+                    ]}
+                    onPress={() => handleSocialAuth("apple")}
+                    disabled={authLoading}
+                    data-testid="button-signin-apple"
+                    {...webAccessibilityProps(() => handleSocialAuth("apple"))}
+                  >
+                    <Ionicons name="logo-apple" size={24} color={theme.text} />
+                    <ThemedText style={styles.authSocialButtonText}>
+                      Sign in with Apple
+                    </ThemedText>
+                  </Pressable>
+                )}
+
+                {isGoogleAuthAvailable && (
+                  <Pressable
+                    style={[
+                      styles.authSocialButton,
+                      {
+                        backgroundColor: theme.glass.background,
+                        borderColor: theme.glass.border,
+                      },
+                    ]}
+                    onPress={() => handleSocialAuth("google")}
+                    disabled={authLoading}
+                    data-testid="button-signin-google"
+                    {...webAccessibilityProps(() => handleSocialAuth("google"))}
+                  >
+                    <Image
+                      source={{ uri: "https://www.google.com/favicon.ico" }}
+                      style={styles.authGoogleIcon}
+                      accessibilityLabel="Google logo"
+                    />
+                    <ThemedText style={styles.authSocialButtonText}>
+                      Sign in with Google
+                    </ThemedText>
+                  </Pressable>
+                )}
+              </View>
+
+              <View style={styles.authDividerContainer}>
+                <View
+                  style={[
+                    styles.authDivider,
+                    { backgroundColor: theme.glass.border },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.authDividerText,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  or continue with email
+                </ThemedText>
+                <View
+                  style={[
+                    styles.authDivider,
+                    { backgroundColor: theme.glass.border },
+                  ]}
+                />
+              </View>
+            </>
+          )}
+
           <View style={styles.authInputContainer}>
             <View
               style={[
@@ -617,81 +692,6 @@ export default function AuthScreen() {
             </ThemedText>
           </Pressable>
 
-          {(isAppleAuthAvailable || isGoogleAuthAvailable) && (
-            <>
-              <View style={styles.authDividerContainer}>
-                <View
-                  style={[
-                    styles.authDivider,
-                    { backgroundColor: theme.glass.border },
-                  ]}
-                />
-                <ThemedText
-                  style={[
-                    styles.authDividerText,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  or continue with
-                </ThemedText>
-                <View
-                  style={[
-                    styles.authDivider,
-                    { backgroundColor: theme.glass.border },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.authSocialButtons}>
-                {isAppleAuthAvailable && (
-                  <Pressable
-                    style={[
-                      styles.authSocialButton,
-                      {
-                        backgroundColor: theme.glass.background,
-                        borderColor: theme.glass.border,
-                      },
-                    ]}
-                    onPress={() => handleSocialAuth("apple")}
-                    disabled={authLoading}
-                    data-testid="button-signin-apple"
-                    {...webAccessibilityProps(() => handleSocialAuth("apple"))}
-                  >
-                    <Ionicons name="logo-apple" size={24} color={theme.text} />
-                    <ThemedText style={styles.authSocialButtonText}>
-                      Sign in with Apple
-                    </ThemedText>
-                  </Pressable>
-                )}
-
-                {isGoogleAuthAvailable && (
-                  <Pressable
-                    style={[
-                      styles.authSocialButton,
-                      {
-                        backgroundColor: theme.glass.background,
-                        borderColor: theme.glass.border,
-                      },
-                    ]}
-                    onPress={() => handleSocialAuth("google")}
-                    disabled={authLoading}
-                    data-testid="button-signin-google"
-                    {...webAccessibilityProps(() => handleSocialAuth("google"))}
-                  >
-                    <Image
-                      source={{ uri: "https://www.google.com/favicon.ico" }}
-                      style={styles.authGoogleIcon}
-                      accessibilityLabel="Google logo"
-                    />
-                    <ThemedText style={styles.authSocialButtonText}>
-                      Sign in with Google
-                    </ThemedText>
-                  </Pressable>
-                )}
-              </View>
-            </>
-          )}
-
           {!isSignUp && (
             <Pressable
               onPress={handleForgotPassword}
@@ -707,44 +707,44 @@ export default function AuthScreen() {
             </Pressable>
           )}
 
-          {isSignUp && (
-            <View style={styles.legalLinksContainer}>
+          <View style={styles.legalLinksContainer}>
+            {isSignUp && (
               <ThemedText
                 style={[styles.legalText, { color: theme.textSecondary }]}
               >
                 By creating an account, you agree to our
               </ThemedText>
-              <View style={styles.legalLinksRow}>
-                <Pressable
-                  onPress={handleOpenPrivacyPolicy}
-                  data-testid="link-auth-privacy-policy"
-                  {...webAccessibilityProps(handleOpenPrivacyPolicy)}
-                >
-                  <ThemedText
-                    style={[styles.legalLink, { color: AppColors.primary }]}
-                  >
-                    Privacy Policy
-                  </ThemedText>
-                </Pressable>
+            )}
+            <View style={styles.legalLinksRow}>
+              <Pressable
+                onPress={handleOpenPrivacyPolicy}
+                data-testid="link-auth-privacy-policy"
+                {...webAccessibilityProps(handleOpenPrivacyPolicy)}
+              >
                 <ThemedText
-                  style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                  style={[styles.legalLink, { color: AppColors.primary }]}
                 >
-                  {" and "}
+                  Privacy Policy
                 </ThemedText>
-                <Pressable
-                  onPress={handleOpenTermsOfUse}
-                  data-testid="link-auth-terms-of-use"
-                  {...webAccessibilityProps(handleOpenTermsOfUse)}
+              </Pressable>
+              <ThemedText
+                style={[styles.legalSeparator, { color: theme.textSecondary }]}
+              >
+                {" and "}
+              </ThemedText>
+              <Pressable
+                onPress={handleOpenTermsOfUse}
+                data-testid="link-auth-terms-of-use"
+                {...webAccessibilityProps(handleOpenTermsOfUse)}
+              >
+                <ThemedText
+                  style={[styles.legalLink, { color: AppColors.primary }]}
                 >
-                  <ThemedText
-                    style={[styles.legalLink, { color: AppColors.primary }]}
-                  >
-                    Terms of Service
-                  </ThemedText>
-                </Pressable>
-              </View>
+                  Terms of Service
+                </ThemedText>
+              </Pressable>
             </View>
-          )}
+          </View>
 
           {isSignUp && Platform.OS !== "web" && (
             <Pressable
@@ -1009,11 +1009,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   authSocialButtons: {
-    flexDirection: "row",
     gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   authSocialButton: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
