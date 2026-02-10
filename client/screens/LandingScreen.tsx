@@ -4,7 +4,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { logger } from "@/lib/logger";
 
 import {
-  DownloadBanner,
   HeroSection,
   BenefitsSection,
   HowItWorksSection,
@@ -56,7 +55,6 @@ export default function LandingScreen({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <DownloadBanner />
         <HeroSection isWide={isWide} isDark={isDark} onSupport={onSupport} />
         <BenefitsSection isWide={isWide} />
         <HowItWorksSection isWide={isWide} isDark={isDark} />
