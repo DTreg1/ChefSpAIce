@@ -81,6 +81,7 @@ import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
 import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
+import { hashToken } from "./lib/auth-utils";
 
 
 /**
@@ -244,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bcrypt = await import("bcrypt");
         const testId = crypto.randomBytes(4).toString("hex");
         const email = `test_${testId}@test.chefspaice.com`;
-        const plainPassword = "TestPassword123!";
+        const plainPassword = crypto.randomBytes(16).toString("base64url");
         const passwordHash = await bcrypt.hash(plainPassword, 12);
         
         // Create the test user
@@ -268,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create a session token
         const rawSessionToken = crypto.randomBytes(32).toString("hex");
-        const hashedSessionToken = crypto.createHash("sha256").update(rawSessionToken).digest("hex");
+        const hashedSessionToken = hashToken(rawSessionToken);
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
         
         await db.insert(userSessions).values({

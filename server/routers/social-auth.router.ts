@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import pg from "pg";
 import { db } from "../db";
 import { userSessions, userSyncData } from "@shared/schema";
@@ -9,6 +9,7 @@ import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
+import { hashToken } from "../lib/auth-utils";
 
 const router = Router();
 
@@ -39,10 +40,6 @@ function setAuthCookie(res: Response, token: string, req?: Request): void {
     maxAge: COOKIE_MAX_AGE,
     path: "/",
   });
-}
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
 }
 
 async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {

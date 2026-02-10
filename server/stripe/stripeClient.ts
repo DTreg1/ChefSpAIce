@@ -71,6 +71,7 @@ let stripeSync: any = null;
 export async function getStripeSync() {
   if (!stripeSync) {
     const { StripeSync } = await import("stripe-replit-sync");
+    const { logger } = await import("../lib/logger");
     const secretKey = await getStripeSecretKey();
 
     stripeSync = new StripeSync({
@@ -79,6 +80,11 @@ export async function getStripeSync() {
         max: 2,
       },
       stripeSecretKey: secretKey,
+      logger: {
+        info: (obj: any, msg?: string) => logger.info(msg || "StripeSync", typeof obj === "object" ? obj : {}),
+        error: (obj: any, msg?: string) => logger.error(msg || "StripeSync error", typeof obj === "object" ? obj : {}),
+        warn: (obj: any, msg?: string) => logger.warn(msg || "StripeSync warning", typeof obj === "object" ? obj : {}),
+      } as any,
     });
   }
   return stripeSync;

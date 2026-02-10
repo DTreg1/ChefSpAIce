@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { createHash } from "crypto";
 import { z } from "zod";
 import { AppError } from "../middleware/errorHandler";
 import { db } from "../db";
@@ -8,10 +7,7 @@ import { eq, desc, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
 import { successResponse } from "../lib/apiResponse";
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
+import { hashToken } from "../lib/auth-utils";
 
 const router = Router();
 

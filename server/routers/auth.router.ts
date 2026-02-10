@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, notifications, conversionEvents, cancellationReasons, referrals, nutritionCorrections, passwordResetTokens } from "@shared/schema";
 import { eq, and, inArray, or, lt } from "drizzle-orm";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
@@ -14,6 +14,7 @@ import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
+import { hashToken } from "../lib/auth-utils";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -114,10 +115,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
-}
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
 }
 
 function getExpiryDate(): Date {
@@ -586,7 +583,7 @@ router.post("/forgot-password", passwordResetLimiter, async (req: Request, res: 
       .where(eq(passwordResetTokens.userId, user.id));
 
     const resetToken = randomBytes(32).toString("hex");
-    const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
+    const hashedResetToken = hashToken(resetToken);
 
     await db.insert(passwordResetTokens).values({
       userId: user.id,
@@ -617,7 +614,7 @@ router.post("/reset-password", passwordResetLimiter, async (req: Request, res: R
 
     await cleanupExpiredResetTokens();
 
-    const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
+    const hashedResetToken = hashToken(resetToken);
 
     const [entry] = await db
       .select({ userId: passwordResetTokens.userId, expiresAt: passwordResetTokens.expiresAt })
