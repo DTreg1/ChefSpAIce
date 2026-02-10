@@ -71,7 +71,7 @@ migrations/                          # 3 Drizzle Kit SQL migrations
 ```
 
 ## Database Tables (shared/schema.ts)
-users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user_saved_recipes, user_meal_plans, user_shopping_items, user_cookware_items, cooking_terms, appliances, user_appliances, nutrition_corrections, feedback_buckets, feedback, subscriptions, conversion_events, cancellation_reasons, referrals, notifications
+users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, user_inventory_items, user_saved_recipes, user_meal_plans, user_shopping_items, user_cookware_items, cooking_terms, appliances, user_appliances, nutrition_corrections, feedback_buckets, feedback, subscriptions, conversion_events, cancellation_reasons, referrals, notifications
 
 ## Key API Routes
 - **Auth**: `/api/auth/*` — register, login, logout, sessions, social, password
@@ -106,6 +106,7 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 - Replit Object Storage
 
 ## Recent Changes
+- **Password reset tokens to DB (Feb 2026)**: Moved password reset tokens from in-memory `Map` to a `password_reset_tokens` database table. Tokens now survive server restarts and work across multiple instances. Old tokens for a user are deleted when a new reset is requested. Table uses `ON DELETE CASCADE` from users.
 - **FREE→TRIAL rename (Feb 2026)**: Renamed `SubscriptionTier.FREE` to `SubscriptionTier.TRIAL` across entire codebase (enum, DB default, server, client, admin). `isFreeUser` → `isTrialUser`. Feature comparison column "Free" → "Trial". No separate free tier exists — 7-day trial is the free experience.
 - **Apple compliance audit (Feb 2026)**: Created shared `useManageSubscription` hook (CustomerCenter-first on iOS), shared `subscription-terms.ts` constants, shared `SubscriptionLegalLinks` component, fixed hardcoded USD price fallbacks on iOS/Android (shows plan names instead), platform-aware Terms of Service pricing, removed Free tier from purchase flow (TierSelector only shows Basic/Pro), "Save 17%" → "Best Value" on native, verified donation gating is web-only
 - Subscription/pricing: StoreKit data on mobile, annual discount, legal disclosures, restore purchases, trial info cleanup, duplicate plan fix
