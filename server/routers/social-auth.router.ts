@@ -1,31 +1,17 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
-import { generateToken, getExpiryDate, setAuthCookie } from "../lib/session-utils";
+import { setAuthCookie } from "../lib/session-utils";
 import { db } from "../db";
-import { users, authProviders, userSessions, userSyncData } from "@shared/schema";
+import { users, authProviders, userSyncData } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
-import { hashToken } from "../lib/auth-utils";
+import { createSession } from "../domain/services";
 
 const router = Router();
-
-async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {
-  const rawToken = generateToken();
-  const hashedToken = hashToken(rawToken);
-  const expiresAt = getExpiryDate();
-  
-  await db.insert(userSessions).values({
-    userId,
-    token: hashedToken,
-    expiresAt,
-  });
-  
-  return { token: rawToken, expiresAt };
-}
 
 async function createSyncDataIfNeeded(userId: string): Promise<void> {
   try {
@@ -212,10 +198,10 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
       await ensureTrialSubscription(userId, plan);
     }
 
-    const { token, expiresAt } = await createSessionWithDrizzle(userId);
+    const { rawToken, expiresAt } = await createSession(userId);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token, req);
+    setAuthCookie(res, rawToken, req);
 
     res.json(successResponse({
       user: {
@@ -227,7 +213,7 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
         isNewUser,
         createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
       },
-      token,
+      token: rawToken,
       expiresAt: expiresAt.toISOString(),
     }));
   } catch (error) {
@@ -393,10 +379,10 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
       await ensureTrialSubscription(userId, plan);
     }
 
-    const { token, expiresAt } = await createSessionWithDrizzle(userId);
+    const { rawToken, expiresAt } = await createSession(userId);
 
     // Set persistent auth cookie for web auto sign-in
-    setAuthCookie(res, token, req);
+    setAuthCookie(res, rawToken, req);
 
     res.json(successResponse({
       user: {
@@ -408,7 +394,7 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
         isNewUser,
         createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
       },
-      token,
+      token: rawToken,
       expiresAt: expiresAt.toISOString(),
     }));
   } catch (error) {

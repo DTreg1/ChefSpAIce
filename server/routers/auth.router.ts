@@ -1,21 +1,20 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, notifications, conversionEvents, cancellationReasons, referrals, nutritionCorrections, passwordResetTokens } from "@shared/schema";
-import { eq, and, inArray, or, lt } from "drizzle-orm";
+import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens } from "@shared/schema";
+import { eq, and, inArray, lt } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import { generateToken, getExpiryDate, AUTH_COOKIE_NAME, setAuthCookie, clearAuthCookie } from "../lib/session-utils";
-import bcrypt from "bcrypt";
+import { AUTH_COOKIE_NAME, setAuthCookie, clearAuthCookie } from "../lib/session-utils";
 import { z } from "zod";
-import { checkCookwareLimit, checkFeatureAccess, ensureTrialSubscription } from "../services/subscriptionService";
+import { checkCookwareLimit, checkFeatureAccess } from "../services/subscriptionService";
 import { csrfProtection, generateCsrfToken } from "../middleware/csrf";
 import { requireAuth } from "../middleware/auth";
 import { passwordResetLimiter } from "../middleware/rateLimiter";
-import { getUncachableStripeClient } from "../stripe/stripeClient";
-import { deleteRecipeImage } from "../services/objectStorageService";
 import { logger } from "../lib/logger";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { hashToken } from "../lib/auth-utils";
+import { registerWithEmail, loginWithEmail, logoutSession, revokeSession, revokeAllOtherSessions, validatePassword, hashPassword } from "../domain/services";
+import { deleteAccount } from "../domain/services";
 
 const syncPreferencesSchema = z.object({
   servingSize: z.coerce.number().int().min(1).max(10).optional(),
@@ -104,137 +103,33 @@ async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
     subscriptionEndsAt: subscription.currentPeriodEnd?.toISOString() || null,
   };
 }
-const BCRYPT_ROUNDS = 12;
-
-async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-function validatePassword(password: string): string | null {
-  if (password.length < 8) return "Password must be at least 8 characters";
-  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
-  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
-  if (!/[0-9]/.test(password)) return "Password must contain a number";
-  return null;
-}
-
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password, displayName, selectedPlan, referralCode } = req.body;
 
-    if (!email || !password) {
-      throw AppError.badRequest("Email and password are required", "MISSING_CREDENTIALS");
-    }
+    const result = await registerWithEmail(
+      email,
+      password,
+      displayName,
+      selectedPlan,
+      referralCode,
+      { userAgent: req.headers["user-agent"], ipAddress: req.ip }
+    );
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw AppError.badRequest("Please enter a valid email address", "INVALID_EMAIL");
-    }
+    const subscriptionInfo = await getSubscriptionInfo(result.user.id);
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      throw AppError.badRequest(passwordError, "WEAK_PASSWORD");
-    }
-
-    const validPlans = ['monthly', 'annual'];
-    const plan = validPlans.includes(selectedPlan) ? selectedPlan : 'monthly';
-
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
-
-    if (existingUser.length > 0) {
-      throw AppError.conflict("An account with this email already exists", "EMAIL_EXISTS");
-    }
-
-    const hashedPassword = await hashPassword(password);
-
-    const { newUser, referralTrialDays, rawToken } = await db.transaction(async (tx) => {
-      const [createdUser] = await tx
-        .insert(users)
-        .values({
-          email: email.toLowerCase(),
-          password: hashedPassword,
-          displayName: displayName || email.split("@")[0],
-        })
-        .returning();
-
-      const rawTokenInner = generateToken();
-      const hashedTokenInner = hashToken(rawTokenInner);
-      const expiresAtInner = getExpiryDate();
-
-      await tx.insert(userSessions).values({
-        userId: createdUser.id,
-        token: hashedTokenInner,
-        userAgent: req.headers["user-agent"] || "unknown",
-        ipAddress: req.ip || "unknown",
-        expiresAt: expiresAtInner,
-      });
-
-      await tx.insert(userSyncData).values({
-        userId: createdUser.id,
-      });
-
-      let trialDays: number | undefined;
-      if (referralCode && typeof referralCode === 'string') {
-        try {
-          const [referrer] = await tx
-            .select({ id: users.id, referralCode: users.referralCode })
-            .from(users)
-            .where(eq(users.referralCode, referralCode.toUpperCase()))
-            .limit(1);
-
-          if (referrer && referrer.id !== createdUser.id) {
-            const { referrals } = await import("@shared/schema");
-            await tx.insert(referrals).values({
-              referrerId: referrer.id,
-              referredUserId: createdUser.id,
-              codeUsed: referralCode.toUpperCase(),
-              status: "completed",
-              bonusGranted: false,
-            });
-
-            await tx
-              .update(users)
-              .set({ referredBy: referrer.id, updatedAt: new Date() })
-              .where(eq(users.id, createdUser.id));
-
-            const { checkAndRedeemReferralCredits } = await import("../services/subscriptionService");
-            await checkAndRedeemReferralCredits(referrer.id);
-
-            trialDays = 14;
-          }
-        } catch (refError) {
-          logger.error("Referral processing error (non-fatal)", { error: refError instanceof Error ? refError.message : String(refError) });
-        }
-      }
-
-      return { newUser: createdUser, referralTrialDays: trialDays, rawToken: rawTokenInner };
-    });
-
-    await ensureTrialSubscription(newUser.id, plan, referralTrialDays);
-
-    const subscriptionInfo = await getSubscriptionInfo(newUser.id);
-
-    setAuthCookie(res, rawToken, req);
-
+    setAuthCookie(res, result.rawToken, req);
     const csrfToken = generateCsrfToken(req, res);
 
     res.status(201).json(successResponse({
       user: {
-        id: newUser.id,
-        email: newUser.email,
-        displayName: newUser.displayName,
-        createdAt: newUser.createdAt?.toISOString() || new Date().toISOString(),
+        id: result.user.id,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        createdAt: result.user.createdAt?.toISOString() || new Date().toISOString(),
         ...subscriptionInfo,
       },
-      token: rawToken,
+      token: result.rawToken,
       csrfToken,
     }));
   } catch (error) {
@@ -246,52 +141,27 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      throw AppError.badRequest("Email and password are required", "MISSING_CREDENTIALS");
-    }
+    const result = await loginWithEmail(
+      email,
+      password,
+      { userAgent: req.headers["user-agent"], ipAddress: req.ip }
+    );
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const subscriptionInfo = await getSubscriptionInfo(result.user.id);
 
-    if (!user || !user.password) {
-      throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
-    }
-
-    const isValidPassword = await verifyPassword(password, user.password);
-    if (!isValidPassword) {
-      throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
-    }
-
-    const rawToken = generateToken();
-    const hashedToken = hashToken(rawToken);
-    const expiresAt = getExpiryDate();
-
-    await db.insert(userSessions).values({
-      userId: user.id,
-      token: hashedToken,
-      userAgent: req.headers["user-agent"] || "unknown",
-      ipAddress: req.ip || "unknown",
-      expiresAt,
-    });
-
-    const subscriptionInfo = await getSubscriptionInfo(user.id);
-
-    setAuthCookie(res, rawToken, req);
-
+    setAuthCookie(res, result.rawToken, req);
     const csrfToken = generateCsrfToken(req, res);
 
     res.json(successResponse({
       user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        id: result.user.id,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        avatarUrl: result.user.profileImageUrl,
+        createdAt: result.user.createdAt?.toISOString() || new Date().toISOString(),
         ...subscriptionInfo,
       },
-      token: rawToken,
+      token: result.rawToken,
       csrfToken,
     }));
   } catch (error) {
@@ -303,17 +173,16 @@ router.post("/logout", csrfProtection, async (req: Request, res: Response, next:
   try {
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
-    
-    let token: string | null = null;
+
+    let rawToken: string | null = null;
     if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.substring(7);
+      rawToken = authHeader.substring(7);
     } else if (cookieToken) {
-      token = cookieToken;
+      rawToken = cookieToken;
     }
-    
-    if (token) {
-      const hashed = hashToken(token);
-      await db.delete(userSessions).where(eq(userSessions.token, hashed));
+
+    if (rawToken) {
+      await logoutSession(rawToken);
     }
 
     clearAuthCookie(res);
@@ -464,27 +333,9 @@ router.delete("/sessions/:sessionId", requireAuth, async (req: Request, res: Res
   try {
     const userId = req.userId!;
     const { sessionId } = req.params;
-
-    const [session] = await db
-      .select({ id: userSessions.id, userId: userSessions.userId, token: userSessions.token })
-      .from(userSessions)
-      .where(and(
-        eq(userSessions.id, sessionId),
-        eq(userSessions.userId, userId),
-      ))
-      .limit(1);
-
-    if (!session) {
-      throw AppError.notFound("Session not found", "SESSION_NOT_FOUND");
-    }
-
     const currentToken = req.headers.authorization?.substring(7);
-    const currentHashedToken = currentToken ? hashToken(currentToken) : null;
-    if (session.token === currentHashedToken) {
-      throw AppError.badRequest("Cannot revoke your current session", "CANNOT_REVOKE_CURRENT");
-    }
 
-    await db.delete(userSessions).where(eq(userSessions.id, sessionId));
+    await revokeSession(sessionId, userId, currentToken);
 
     res.json(successResponse({ message: "Session revoked successfully" }));
   } catch (error) {
@@ -502,20 +353,9 @@ router.delete("/sessions", requireAuth, async (req: Request, res: Response, next
       throw AppError.badRequest("Unable to identify current session", "NO_CURRENT_SESSION");
     }
 
-    const allSessions = await db
-      .select({ id: userSessions.id, token: userSessions.token })
-      .from(userSessions)
-      .where(eq(userSessions.userId, userId));
+    const revokedCount = await revokeAllOtherSessions(userId, currentHashedToken);
 
-    const otherSessionIds = allSessions
-      .filter((s) => s.token !== currentHashedToken)
-      .map((s) => s.id);
-
-    if (otherSessionIds.length > 0) {
-      await db.delete(userSessions).where(inArray(userSessions.id, otherSessionIds));
-    }
-
-    res.json(successResponse({ message: `Revoked ${otherSessionIds.length} other session(s)` }));
+    res.json(successResponse({ message: `Revoked ${revokedCount} other session(s)` }));
   } catch (error) {
     next(error);
   }
@@ -1139,92 +979,6 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
 // Apple App Store Guideline 5.1.1(v) and 5.1.1(vi) Compliance
 // =============================================================================
 
-const DEMO_EMAIL = "demo@chefspaice.com";
-
-async function performAccountDeletion(userId: string, res: Response): Promise<void> {
-  logger.info("Starting account deletion", { userId });
-
-  try {
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, userId))
-      .limit(1);
-
-    if (subscription?.stripeSubscriptionId) {
-      const stripe = await getUncachableStripeClient();
-      await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-      logger.info("Cancelled Stripe subscription", { stripeSubscriptionId: subscription.stripeSubscriptionId });
-    }
-  } catch (e) {
-    logger.warn("Error cancelling Stripe subscription", { userId, error: e instanceof Error ? e.message : String(e) });
-  }
-
-  try {
-    const [syncData] = await db
-      .select()
-      .from(userSyncData)
-      .where(eq(userSyncData.userId, userId))
-      .limit(1);
-
-    if (syncData?.recipes) {
-      const recipes = Array.isArray(syncData.recipes) ? syncData.recipes : JSON.parse(String(syncData.recipes));
-      if (Array.isArray(recipes)) {
-        for (const recipe of recipes) {
-          if (recipe && typeof recipe === "object" && "id" in recipe) {
-            try {
-              await deleteRecipeImage(String(recipe.id));
-            } catch (imgErr) {
-              logger.warn("Error deleting recipe image", { recipeId: String(recipe.id), error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-            }
-          }
-        }
-      }
-    }
-
-    const savedRecipes = await db
-      .select({ itemId: userSavedRecipes.itemId, cloudImageUri: userSavedRecipes.cloudImageUri })
-      .from(userSavedRecipes)
-      .where(eq(userSavedRecipes.userId, userId));
-
-    for (const recipe of savedRecipes) {
-      if (recipe.cloudImageUri) {
-        try {
-          await deleteRecipeImage(recipe.itemId);
-        } catch (imgErr) {
-          logger.warn("Error deleting saved recipe image", { recipeId: recipe.itemId, error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
-        }
-      }
-    }
-  } catch (e) {
-    logger.warn("Error deleting recipe images", { userId, error: e instanceof Error ? e.message : String(e) });
-  }
-
-  await db.transaction(async (tx) => {
-    await tx.delete(notifications).where(eq(notifications.userId, userId));
-    await tx.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
-    await tx.delete(cancellationReasons).where(eq(cancellationReasons.userId, userId));
-    await tx.delete(referrals).where(or(eq(referrals.referrerId, userId), eq(referrals.referredUserId, userId)));
-    await tx.delete(nutritionCorrections).where(eq(nutritionCorrections.userId, userId));
-    await tx.delete(feedback).where(eq(feedback.userId, userId));
-    await tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId));
-    await tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
-    await tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
-    await tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId));
-    await tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId));
-    await tx.delete(authProviders).where(eq(authProviders.userId, userId));
-    await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
-    await tx.delete(subscriptions).where(eq(subscriptions.userId, userId));
-    await tx.delete(userSyncData).where(eq(userSyncData.userId, userId));
-    await tx.delete(userSessions).where(eq(userSessions.userId, userId));
-    await tx.delete(users).where(eq(users.id, userId));
-  });
-
-  clearAuthCookie(res);
-
-  logger.info("Account deleted successfully", { userId });
-}
-
 router.delete("/delete-account", csrfProtection, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -1259,11 +1013,11 @@ router.delete("/delete-account", csrfProtection, async (req: Request, res: Respo
       throw AppError.notFound("User not found", "USER_NOT_FOUND");
     }
 
-    if (user.email === DEMO_EMAIL) {
+    if (user.email === "demo@chefspaice.com") {
       throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
-    await performAccountDeletion(userId, res);
+    await deleteAccount(userId, res);
 
     res.json(successResponse(null, "Account and all associated data have been permanently deleted"));
 
@@ -1295,11 +1049,11 @@ router.delete("/account", requireAuth, async (req: Request, res: Response, next:
       throw AppError.badRequest("Email does not match your account email. Please confirm with the correct email address.", "EMAIL_MISMATCH");
     }
 
-    if (user.email === DEMO_EMAIL) {
+    if (user.email === "demo@chefspaice.com") {
       throw AppError.forbidden("Demo account cannot be deleted. This account is used for App Store review purposes.", "DEMO_PROTECTED");
     }
 
-    await performAccountDeletion(userId, res);
+    await deleteAccount(userId, res);
 
     res.json(successResponse(null, "Your account and all associated data have been permanently deleted."));
 

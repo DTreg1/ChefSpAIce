@@ -105,7 +105,16 @@ users, auth_providers, user_sessions, password_reset_tokens, user_sync_data, use
 - Instacart Connect
 - Replit Object Storage
 
+## Domain Architecture (shared/domain/ + server/domain/)
+- **Domain types** (`shared/domain/`): Value objects (Email, Username, AuthToken), entities (User, AuthProvider, Session, Permission), aggregates (UserAccount, UserProfile), domain events (UserSignedUp, UserLoggedIn, PermissionGranted, AccountDeleted)
+- **Domain services** (`server/domain/services/`):
+  - `AuthenticationService` — register, login, session creation/revocation, password hashing/validation
+  - `PermissionService` — wraps subscription entitlements into Permission entities
+  - `AccountDeletionService` — extracted account deletion logic (Stripe cancellation, image cleanup, data purge)
+- **Router pattern**: Routers handle HTTP concerns (request parsing, response formatting, middleware, cookies); services handle business logic and return domain events as values
+
 ## Recent Changes
+- **Domain-driven design refactor (Feb 2026)**: Extracted auth business logic into domain services layer. auth.router.ts reduced from 1312→1069 lines. social-auth.router.ts consolidated session creation via shared createSession service. Domain types in shared/domain/ provide clean abstractions for value objects, entities, aggregates, and events. Email validation wrapped in AppError.badRequest for consistent 400 responses.
 - **Auth architecture cleanup (Feb 2026)**: Centralized shared session utilities (generateToken, getExpiryDate, setAuthCookie, clearAuthCookie) into `server/lib/session-utils.ts`, eliminating duplication between auth.router.ts and social-auth.router.ts. Refactored social-auth.router.ts from raw pg Pool queries to Drizzle ORM for consistency. Fixed logout data-clearing: added 4 missing AsyncStorage keys (onboarding_step, pending_purchase, register_prompt_dismissed_at, onboarding) to signOut(). Audited auth token storage — dual-key pattern (@chefspaice/auth + @chefspaice/auth_token) confirmed consistent across all auth flows.
 - **Password reset tokens to DB (Feb 2026)**: Moved password reset tokens from in-memory `Map` to a `password_reset_tokens` database table. Tokens now survive server restarts and work across multiple instances. Old tokens for a user are deleted when a new reset is requested. Table uses `ON DELETE CASCADE` from users.
 - **FREE→TRIAL rename (Feb 2026)**: Renamed `SubscriptionTier.FREE` to `SubscriptionTier.TRIAL` across entire codebase (enum, DB default, server, client, admin). `isFreeUser` → `isTrialUser`. Feature comparison column "Free" → "Trial". No separate free tier exists — 7-day trial is the free experience.
