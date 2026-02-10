@@ -1,16 +1,18 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import ProfileScreen from "@/screens/ProfileScreen";
-import SettingsScreen from "@/screens/SettingsScreen";
-import AnalyticsScreen from "@/screens/AnalyticsScreen";
-import CookingTermsScreen from "@/screens/CookingTermsScreen";
-import CookwareScreen from "@/screens/CookwareScreen";
-import StorageLocationsScreen from "@/screens/StorageLocationsScreen";
-import SubscriptionScreen from "@/screens/SubscriptionScreen";
-import GlassLeafScreen from "@/screens/GlassLeafScreen";
-import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
-import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
-import SiriShortcutsGuideScreen from "@/screens/SiriShortcutsGuideScreen";
+import { withSuspense } from "@/lib/lazy-screen";
+
+const LazyProfileScreen = withSuspense(React.lazy(() => import("@/screens/ProfileScreen")));
+const LazySettingsScreen = withSuspense(React.lazy(() => import("@/screens/SettingsScreen")));
+const LazyAnalyticsScreen = withSuspense(React.lazy(() => import("@/screens/AnalyticsScreen")));
+const LazyCookingTermsScreen = withSuspense(React.lazy(() => import("@/screens/CookingTermsScreen")));
+const LazyCookwareScreen = withSuspense(React.lazy(() => import("@/screens/CookwareScreen")));
+const LazyStorageLocationsScreen = withSuspense(React.lazy(() => import("@/screens/StorageLocationsScreen")));
+const LazySubscriptionScreen = withSuspense(React.lazy(() => import("@/screens/SubscriptionScreen")));
+const LazyGlassLeafScreen = withSuspense(React.lazy(() => import("@/screens/GlassLeafScreen")));
+const LazyPrivacyPolicyScreen = withSuspense(React.lazy(() => import("@/screens/PrivacyPolicyScreen")));
+const LazyTermsOfServiceScreen = withSuspense(React.lazy(() => import("@/screens/TermsOfServiceScreen")));
+const LazySiriShortcutsGuideScreen = withSuspense(React.lazy(() => import("@/screens/SiriShortcutsGuideScreen")));
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -35,20 +37,20 @@ export default function ProfileStackNavigator() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="Analytics" component={AnalyticsScreen} />
-      <Stack.Screen name="CookingTerms" component={CookingTermsScreen} />
-      <Stack.Screen name="Cookware" component={CookwareScreen} />
+      <Stack.Screen name="Profile" component={LazyProfileScreen} />
+      <Stack.Screen name="Settings" component={LazySettingsScreen} />
+      <Stack.Screen name="Analytics" component={LazyAnalyticsScreen} />
+      <Stack.Screen name="CookingTerms" component={LazyCookingTermsScreen} />
+      <Stack.Screen name="Cookware" component={LazyCookwareScreen} />
       <Stack.Screen
         name="StorageLocations"
-        component={StorageLocationsScreen}
+        component={LazyStorageLocationsScreen}
       />
-      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
-      <Stack.Screen name="GlassLeaf" component={GlassLeafScreen} />
-      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
-      <Stack.Screen name="SiriShortcutsGuide" component={SiriShortcutsGuideScreen} />
+      <Stack.Screen name="Subscription" component={LazySubscriptionScreen} />
+      <Stack.Screen name="GlassLeaf" component={LazyGlassLeafScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={LazyPrivacyPolicyScreen} />
+      <Stack.Screen name="TermsOfService" component={LazyTermsOfServiceScreen} />
+      <Stack.Screen name="SiriShortcutsGuide" component={LazySiriShortcutsGuideScreen} />
     </Stack.Navigator>
   );
 }

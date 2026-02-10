@@ -1,10 +1,12 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import RecipesScreen from "@/screens/RecipesScreen";
-import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
-import GenerateRecipeScreen from "@/screens/GenerateRecipeScreen";
+import { withSuspense } from "@/lib/lazy-screen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import type { Recipe } from "@/lib/storage";
+
+const LazyRecipesScreen = withSuspense(React.lazy(() => import("@/screens/RecipesScreen")));
+const LazyRecipeDetailScreen = withSuspense(React.lazy(() => import("@/screens/RecipeDetailScreen")));
+const LazyGenerateRecipeScreen = withSuspense(React.lazy(() => import("@/screens/GenerateRecipeScreen")));
 
 export type RecipeSettings = {
   servings: number;
@@ -35,21 +37,21 @@ export default function RecipesStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Recipes"
-        component={RecipesScreen}
+        component={LazyRecipesScreen}
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
         name="RecipeDetail"
-        component={RecipeDetailScreen}
+        component={LazyRecipeDetailScreen}
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
         name="GenerateRecipe"
-        component={GenerateRecipeScreen}
+        component={LazyGenerateRecipeScreen}
         options={{
           presentation: "modal",
           headerTitle: "Generate Recipe",

@@ -1,7 +1,9 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import CookwareScreen from "@/screens/CookwareScreen";
+import { withSuspense } from "@/lib/lazy-screen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+
+const LazyCookwareScreen = withSuspense(React.lazy(() => import("@/screens/CookwareScreen")));
 
 type CookwareStackParamList = {
   Cookware: undefined;
@@ -16,7 +18,7 @@ export default function CookwareStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Cookware"
-        component={CookwareScreen}
+        component={LazyCookwareScreen}
         options={{
           headerShown: false,
         }}

@@ -1,10 +1,12 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import MealPlanScreen from "@/screens/MealPlanScreen";
-import ShoppingListScreen from "@/screens/ShoppingListScreen";
-import SelectRecipeScreen from "@/screens/SelectRecipeScreen";
+import { withSuspense } from "@/lib/lazy-screen";
 import { HamburgerButton } from "@/components/HamburgerButton";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+
+const LazyMealPlanScreen = withSuspense(React.lazy(() => import("@/screens/MealPlanScreen")));
+const LazyShoppingListScreen = withSuspense(React.lazy(() => import("@/screens/ShoppingListScreen")));
+const LazySelectRecipeScreen = withSuspense(React.lazy(() => import("@/screens/SelectRecipeScreen")));
 
 export type MealPlanStackParamList = {
   MealPlan: undefined;
@@ -24,14 +26,14 @@ export default function MealPlanStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="MealPlan"
-        component={MealPlanScreen}
+        component={LazyMealPlanScreen}
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
         name="ShoppingList"
-        component={ShoppingListScreen}
+        component={LazyShoppingListScreen}
         options={({ navigation }) => ({
           headerTitle: "Shopping List",
           headerLeft: navigation.canGoBack()
@@ -41,7 +43,7 @@ export default function MealPlanStackNavigator() {
       />
       <Stack.Screen
         name="SelectRecipe"
-        component={SelectRecipeScreen}
+        component={LazySelectRecipeScreen}
         options={{
           headerTitle: "Select Recipe",
         }}

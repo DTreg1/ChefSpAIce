@@ -50,31 +50,33 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import { logger } from "@/lib/logger";
 import { consumePendingDeepLink } from '@/lib/deep-linking';
-import DrawerNavigator from "@/navigation/DrawerNavigator";
-import AddItemScreen from "@/screens/AddItemScreen";
-import AddFoodBatchScreen from "@/screens/AddFoodBatchScreen";
-import BarcodeScannerScreen from "@/screens/BarcodeScannerScreen";
-import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
-import FoodCameraScreen from "@/screens/FoodCameraScreen";
+import { withSuspense } from "@/lib/lazy-screen";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
-import OnboardingScreen from "@/screens/OnboardingScreen";
-import LandingScreen from "@/screens/LandingScreen";
-import AuthScreen from "@/screens/AuthScreen";
-import ScanHubScreen from "@/screens/ScanHubScreen";
-import RecipeScannerScreen from "@/screens/RecipeScannerScreen";
-import ReceiptScanScreen from "@/screens/ReceiptScanScreen";
-import AboutScreen from "@/screens/web/AboutScreen";
-import PrivacyScreen from "@/screens/web/PrivacyScreen";
-import TermsScreen from "@/screens/web/TermsScreen";
-import SupportScreen from "@/screens/web/SupportScreen";
-import AttributionsScreen from "@/screens/web/AttributionsScreen";
-import SubscriptionScreen from "@/screens/SubscriptionScreen";
-import TrialExpiredScreen from "@/screens/TrialExpiredScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { storage } from "@/lib/storage";
 import { CookPotLoader } from "@/components/CookPotLoader";
+
+const LazyDrawerNavigator = withSuspense(React.lazy(() => import("@/navigation/DrawerNavigator")));
+const LazyAddItemScreen = withSuspense(React.lazy(() => import("@/screens/AddItemScreen")));
+const LazyAddFoodBatchScreen = withSuspense(React.lazy(() => import("@/screens/AddFoodBatchScreen")));
+const LazyBarcodeScannerScreen = withSuspense(React.lazy(() => import("@/screens/BarcodeScannerScreen")));
+const LazyIngredientScannerScreen = withSuspense(React.lazy(() => import("@/screens/IngredientScannerScreen")));
+const LazyFoodCameraScreen = withSuspense(React.lazy(() => import("@/screens/FoodCameraScreen")));
+const LazyOnboardingScreen = withSuspense(React.lazy(() => import("@/screens/OnboardingScreen")));
+const LazyLandingScreen = withSuspense(React.lazy(() => import("@/screens/LandingScreen")));
+const LazyAuthScreen = withSuspense(React.lazy(() => import("@/screens/AuthScreen")));
+const LazyScanHubScreen = withSuspense(React.lazy(() => import("@/screens/ScanHubScreen")));
+const LazyRecipeScannerScreen = withSuspense(React.lazy(() => import("@/screens/RecipeScannerScreen")));
+const LazyReceiptScanScreen = withSuspense(React.lazy(() => import("@/screens/ReceiptScanScreen")));
+const LazyAboutScreen = withSuspense(React.lazy(() => import("@/screens/web/AboutScreen")));
+const LazyPrivacyScreen = withSuspense(React.lazy(() => import("@/screens/web/PrivacyScreen")));
+const LazyTermsScreen = withSuspense(React.lazy(() => import("@/screens/web/TermsScreen")));
+const LazySupportScreen = withSuspense(React.lazy(() => import("@/screens/web/SupportScreen")));
+const LazyAttributionsScreen = withSuspense(React.lazy(() => import("@/screens/web/AttributionsScreen")));
+const LazySubscriptionScreen = withSuspense(React.lazy(() => import("@/screens/SubscriptionScreen")));
+const LazyTrialExpiredScreen = withSuspense(React.lazy(() => import("@/screens/TrialExpiredScreen")));
 
 const isWeb = Platform.OS === "web";
 const TRIAL_DURATION_DAYS = 7;
@@ -437,7 +439,7 @@ function AuthGuardedNavigator() {
     >
       <Stack.Screen name="Landing" options={{ headerShown: false }}>
         {(props) => (
-          <LandingScreen
+          <LazyLandingScreen
             onAbout={() => props.navigation.navigate("About")}
             onPrivacy={() => props.navigation.navigate("Privacy")}
             onTerms={() => props.navigation.navigate("Terms")}
@@ -447,32 +449,32 @@ function AuthGuardedNavigator() {
       </Stack.Screen>
       <Stack.Screen
         name="Auth"
-        component={AuthScreen}
+        component={LazyAuthScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Onboarding"
-        component={OnboardingScreen}
+        component={LazyOnboardingScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Main"
-        component={DrawerNavigator}
+        component={LazyDrawerNavigator}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Subscription"
-        component={SubscriptionScreen}
+        component={LazySubscriptionScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TrialExpired"
-        component={TrialExpiredScreen}
+        component={LazyTrialExpiredScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="AddItem"
-        component={AddItemScreen}
+        component={LazyAddItemScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -480,7 +482,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="BarcodeScanner"
-        component={BarcodeScannerScreen}
+        component={LazyBarcodeScannerScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -488,7 +490,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="FoodCamera"
-        component={FoodCameraScreen}
+        component={LazyFoodCameraScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -496,7 +498,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="IngredientScanner"
-        component={IngredientScannerScreen}
+        component={LazyIngredientScannerScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -504,7 +506,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="AddFoodBatch"
-        component={AddFoodBatchScreen}
+        component={LazyAddFoodBatchScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -512,7 +514,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="ScanHub"
-        component={ScanHubScreen}
+        component={LazyScanHubScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -520,7 +522,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="RecipeScanner"
-        component={RecipeScannerScreen}
+        component={LazyRecipeScannerScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -528,7 +530,7 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="ReceiptScan"
-        component={ReceiptScanScreen}
+        component={LazyReceiptScanScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
@@ -536,27 +538,27 @@ function AuthGuardedNavigator() {
       />
       <Stack.Screen
         name="About"
-        component={AboutScreen}
+        component={LazyAboutScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Privacy"
-        component={PrivacyScreen}
+        component={LazyPrivacyScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Terms"
-        component={TermsScreen}
+        component={LazyTermsScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Support"
-        component={SupportScreen}
+        component={LazySupportScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Attributions"
-        component={AttributionsScreen}
+        component={LazyAttributionsScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

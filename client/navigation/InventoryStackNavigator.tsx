@@ -1,8 +1,10 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import InventoryScreen from "@/screens/InventoryScreen";
-import ItemDetailScreen from "@/screens/ItemDetailScreen";
+import { withSuspense } from "@/lib/lazy-screen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+
+const LazyInventoryScreen = withSuspense(React.lazy(() => import("@/screens/InventoryScreen")));
+const LazyItemDetailScreen = withSuspense(React.lazy(() => import("@/screens/ItemDetailScreen")));
 
 export type InventoryStackParamList = {
   Inventory: undefined;
@@ -18,14 +20,14 @@ export default function InventoryStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Inventory"
-        component={InventoryScreen}
+        component={LazyInventoryScreen}
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
         name="ItemDetail"
-        component={ItemDetailScreen}
+        component={LazyItemDetailScreen}
         options={{
           headerShown: false,
         }}
