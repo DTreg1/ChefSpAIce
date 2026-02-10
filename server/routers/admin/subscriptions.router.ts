@@ -37,36 +37,46 @@ interface SubscriptionWithUser {
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query;
-    
-    let query = db
-      .select({
-        id: subscriptions.id,
-        userId: subscriptions.userId,
-        stripeCustomerId: subscriptions.stripeCustomerId,
-        stripeSubscriptionId: subscriptions.stripeSubscriptionId,
-        stripePriceId: subscriptions.stripePriceId,
-        status: subscriptions.status,
-        planType: subscriptions.planType,
-        currentPeriodStart: subscriptions.currentPeriodStart,
-        currentPeriodEnd: subscriptions.currentPeriodEnd,
-        trialStart: subscriptions.trialStart,
-        trialEnd: subscriptions.trialEnd,
-        cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
-        canceledAt: subscriptions.canceledAt,
-        createdAt: subscriptions.createdAt,
-        updatedAt: subscriptions.updatedAt,
-        userEmail: users.email,
-        userDisplayName: users.displayName,
-        userCreatedAt: users.createdAt,
-      })
-      .from(subscriptions)
-      .leftJoin(users, eq(subscriptions.userId, users.id));
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const offset = (page - 1) * limit;
 
-    if (status && typeof status === "string" && status !== "all") {
-      query = query.where(eq(subscriptions.status, status)) as typeof query;
-    }
+    const statusFilter = status && typeof status === "string" && status !== "all"
+      ? eq(subscriptions.status, status)
+      : undefined;
 
-    const results = await query.orderBy(sql`${subscriptions.createdAt} DESC`);
+    const [totalResult, results] = await Promise.all([
+      db.select({ count: count() }).from(subscriptions).where(statusFilter),
+      db
+        .select({
+          id: subscriptions.id,
+          userId: subscriptions.userId,
+          stripeCustomerId: subscriptions.stripeCustomerId,
+          stripeSubscriptionId: subscriptions.stripeSubscriptionId,
+          stripePriceId: subscriptions.stripePriceId,
+          status: subscriptions.status,
+          planType: subscriptions.planType,
+          currentPeriodStart: subscriptions.currentPeriodStart,
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+          trialStart: subscriptions.trialStart,
+          trialEnd: subscriptions.trialEnd,
+          cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
+          canceledAt: subscriptions.canceledAt,
+          createdAt: subscriptions.createdAt,
+          updatedAt: subscriptions.updatedAt,
+          userEmail: users.email,
+          userDisplayName: users.displayName,
+          userCreatedAt: users.createdAt,
+        })
+        .from(subscriptions)
+        .leftJoin(users, eq(subscriptions.userId, users.id))
+        .where(statusFilter)
+        .orderBy(sql`${subscriptions.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset),
+    ]);
+
+    const total = Number(totalResult[0]?.count || 0);
 
     const subscriptionsWithUsers: SubscriptionWithUser[] = results.map((row) => ({
       id: row.id,
@@ -92,7 +102,10 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       },
     }));
 
-    res.json(successResponse(subscriptionsWithUsers));
+    res.json(successResponse({
+      subscriptions: subscriptionsWithUsers,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    }));
   } catch (error) {
     next(error);
   }
