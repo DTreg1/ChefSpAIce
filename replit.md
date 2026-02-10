@@ -85,8 +85,8 @@ users, auth_providers, user_sessions, user_sync_data, user_inventory_items, user
 
 ## Subscription Tiers
 - TRIAL (7-day free trial, default for new users): 10 pantry items, 2 AI recipes/mo, 3 cookware
-- BASIC ($4.99/mo, $39.99/yr): 25 pantry items, 5 AI recipes/mo, 5 cookware
-- PRO ($9.99/mo, $79.99/yr): Unlimited everything, all features
+- BASIC ($4.99/mo, $49.90/yr): 25 pantry items, 5 AI recipes/mo, 5 cookware
+- PRO ($9.99/mo, $99.90/yr): Unlimited everything, all features
 - No separate "Free" tier — the 7-day trial is the free experience
 - Stripe proration, cancellation retention flow, RevenueCat for StoreKit, payment failure notifications
 

@@ -233,6 +233,25 @@ export const userSessions = pgTable(
   ],
 );
 
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_password_reset_user").on(table.userId),
+    index("idx_password_reset_expires").on(table.expiresAt),
+  ],
+);
+
 /**
  * USER SYNC DATA TABLE
  *
