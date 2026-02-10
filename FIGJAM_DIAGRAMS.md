@@ -28,3 +28,10 @@ Reference links to all architecture and flow diagrams for the project.
 | Stripe Subscription Lifecycle | [View in FigJam](https://www.figma.com/board/nTbFx6UdauVacbBr6b1Fdl/Stripe-Subscription-Lifecycle?node-id=1-2&t=9ZkEzHO7sG3nnwUj-0) |
 | Food Item States | [View in FigJam](https://www.figma.com/board/b2k3CTtPY4CtLYhbrJ3Ikb/Food-Item-States?node-id=0-1&p=f&t=BHzfiZYAVKyJ911m-0) |
 | Subscription States | [View in FigJam](https://www.figma.com/board/qIjci9dwXjVqeRJxr6gWu8/Subscription-States?node-id=0-1&p=f&t=0lyZ4QfGyCmK7OAo-0) |
+| Sync Status States | [View in FigJam](https://www.figma.com/board/RA82xK3RucMiJPvmFYVUk3/Sync-Status-States?node-id=0-1&p=f&t=cfna9gUpRFx9pE6U-0) |
+
+## Decision Trees
+
+| Diagram | Link |
+|---------|------|
+| Recipe Suggestion Decision Tree | [View in FigJam](https://www.figma.com/board/v7Z9wBImmmGmZZCq1cQSV5/Recipe-Suggestion-Decision-Tree?node-id=0-1&p=f&t=2U2DZ9yMn6Wf6PmD-0) |
