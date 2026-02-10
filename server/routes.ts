@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preRegistrationSource: "landing",
         preRegisteredAt: now,
         subscriptionStatus: "none",
-        subscriptionTier: "BASIC",
+        subscriptionTier: "TRIAL",
       });
 
       return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
