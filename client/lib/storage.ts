@@ -129,6 +129,7 @@ export interface GuestUserInfo {
 export interface FoodItem {
   id: string;
   name: string;
+  brand?: string;
   barcode?: string;
   quantity: number;
   unit: string;

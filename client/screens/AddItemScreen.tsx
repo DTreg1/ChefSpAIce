@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -23,15 +23,9 @@ import DateTimePicker, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-import {
-  FoodSearchAutocomplete,
-  FoodSearchResult as SearchFoodItem,
-} from "@/components/FoodSearchAutocomplete";
-import { getApiUrl } from "@/lib/query-client";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { StorageSuggestionBadge } from "@/components/StorageSuggestionBadge";
 import { NutritionSection } from "@/components/NutritionSection";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -51,7 +45,6 @@ import {
   AppColors,
   GlassEffect,
 } from "@/constants/theme";
-import { FoodSource, SOURCE_BADGE_COLORS } from "@/constants/food-sources";
 import {
   storage,
   FoodItem,
@@ -62,13 +55,6 @@ import {
 } from "@/lib/storage";
 import { StorageLocation } from "@/lib/shelf-life-data";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-
-const SOURCE_LABELS: Record<FoodSource, string> = {
-  usda: "USDA FoodData Central",
-  openfoodfacts: "OpenFoodFacts",
-};
-
-const RECENT_FOODS_KEY = "@recent_foods";
 
 interface StorageLocationOption {
   key: string;
@@ -163,7 +149,6 @@ export default function AddItemScreen() {
     .toISOString()
     .split("T")[0];
 
-  const usdaFood = route.params?.usdaFood;
   const identifiedFood = route.params?.identifiedFoods?.[0];
   const scannedNutrition = route.params?.scannedNutrition;
 
@@ -183,7 +168,6 @@ export default function AddItemScreen() {
   };
 
   const getInitialCategory = () => {
-    if (usdaFood?.category) return usdaFood.category;
     if (identifiedFood?.category) {
       const cat =
         identifiedFood.category.charAt(0).toUpperCase() +
@@ -204,28 +188,20 @@ export default function AddItemScreen() {
     return defaultExpiration;
   };
 
-  const [selectedFood, setSelectedFood] = useState(
-    usdaFood ||
-      (identifiedFood
-        ? ({ description: identifiedFood.name } as any)
-        : undefined),
-  );
   const [name, setName] = useState(
-    usdaFood?.description ||
-      identifiedFood?.name ||
+    identifiedFood?.name ||
       route.params?.productName ||
       "",
   );
-  const [barcode, _setBarcode] = useState(route.params?.barcode || "");
+  const [brand, setBrand] = useState("");
+  const [barcode, setBarcode] = useState(route.params?.barcode || "");
   const [quantity, setQuantity] = useState(
-    usdaFood
-      ? String(usdaFood.servingSize)
-      : identifiedFood
-        ? String(identifiedFood.quantity)
-        : "1",
+    identifiedFood
+      ? String(identifiedFood.quantity)
+      : "1",
   );
   const [unit, setUnit] = useState(
-    usdaFood?.servingSizeUnit || identifiedFood?.quantityUnit || "pcs",
+    identifiedFood?.quantityUnit || "pcs",
   );
   const [category, setCategory] = useState(getInitialCategory());
   const [storageLocation, setStorageLocation] = useState<string>(
@@ -241,11 +217,6 @@ export default function AddItemScreen() {
     "purchase" | "expiration"
   >("expiration");
   const [saving, setSaving] = useState(false);
-  const [barcodeLoading, setBarcodeLoading] = useState(false);
-  const [barcodeError, setBarcodeError] = useState<string | null>(null);
-  const [foodSource, setFoodSource] = useState<FoodSource>("usda");
-  const [sourceId, setSourceId] = useState<string>("");
-  const [_isManualEntry, setIsManualEntry] = useState(false);
 
   const [userOverrodeDate, setUserOverrodeDate] = useState(false);
   const [showSuggestionNotes, setShowSuggestionNotes] = useState(false);
@@ -325,71 +296,6 @@ export default function AddItemScreen() {
     }
   };
 
-  const hasSelectedFood = !!selectedFood;
-
-  const saveToRecentFoods = useCallback(async (item: SearchFoodItem) => {
-    try {
-      const recentJson = await AsyncStorage.getItem(RECENT_FOODS_KEY);
-      let recent: SearchFoodItem[] = recentJson ? JSON.parse(recentJson) : [];
-      recent = recent.filter((r) => r.id !== item.id);
-      recent.unshift(item);
-      recent = recent.slice(0, 10);
-      await AsyncStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(recent));
-    } catch (e) {
-      logger.log("Error saving recent food:", e);
-    }
-  }, []);
-
-  const handleFoodSelect = useCallback(
-    (item: SearchFoodItem) => {
-      const isCustom = item.dataCompleteness === 0;
-
-      setSelectedFood({
-        fdcId: Number(item.sourceId) || 0,
-        description: item.name,
-        brandOwner: item.brand || null,
-        servingSize: parseInt(item.nutrition.servingSize || "100") || 100,
-        servingSizeUnit: "g",
-        dataType: item.source === "usda" ? "Foundation" : "Branded",
-        nutrition: {
-          calories: item.nutrition.calories,
-          protein: item.nutrition.protein,
-          carbs: item.nutrition.carbs,
-          fat: item.nutrition.fat,
-          fiber: item.nutrition.fiber ?? 0,
-          sugar: item.nutrition.sugar ?? 0,
-        },
-        category: item.category,
-        usdaCategory: item.usdaCategory,
-      });
-      setName(item.name);
-      setCategory(item.usdaCategory || item.category || "Pantry Staples");
-      setQuantity("1");
-      setUnit(item.nutrition.servingSize || "pcs");
-      setFoodSource(item.source);
-      setSourceId(item.sourceId);
-      setIsManualEntry(isCustom);
-      setUserOverrodeDate(false);
-      setUserOverrodeStorage(false);
-
-      if (!isCustom) {
-        saveToRecentFoods(item);
-      }
-    },
-    [saveToRecentFoods],
-  );
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedFood(undefined);
-    setName("");
-    setCategory("Produce");
-    setQuantity("1");
-    setUnit("pcs");
-    setFoodSource("usda");
-    setSourceId("");
-    setIsManualEntry(false);
-  }, []);
-
   useEffect(() => {
     if (suggestion && !userOverrodeDate) {
       RNAnimated.sequence([
@@ -416,81 +322,6 @@ export default function AddItemScreen() {
     category,
   ]);
 
-  useEffect(() => {
-    if (usdaFood && usdaFood.fdcId !== selectedFood?.fdcId) {
-      setSelectedFood(usdaFood);
-      setName(usdaFood.description || "");
-      setQuantity(String(usdaFood.servingSize || 1));
-      setUnit(usdaFood.servingSizeUnit || "pcs");
-      setCategory(usdaFood.category || "Produce");
-      setUserOverrodeDate(false);
-    }
-  }, [usdaFood]);
-
-  useEffect(() => {
-    const lookupBarcode = async () => {
-      if (!barcode || selectedFood) return;
-
-      setBarcodeLoading(true);
-      setBarcodeError(null);
-
-      try {
-        const apiUrl = getApiUrl();
-        const url = new URL(
-          `/api/food/barcode/${encodeURIComponent(barcode)}`,
-          apiUrl,
-        );
-        const response = await fetch(url.toString());
-
-        if (!response.ok) {
-          throw new Error("Failed to lookup barcode");
-        }
-
-        const data = (await response.json()).data as any;
-
-        if (data.product) {
-          const product = data.product;
-          const item: SearchFoodItem = {
-            id: `barcode-${product.barcode}`,
-            name: product.name,
-            normalizedName: product.name.toLowerCase(),
-            category: product.category || "Other",
-            usdaCategory: product.usdaCategory || undefined,
-            brand: product.brand || undefined,
-            imageUrl: product.imageUrl || undefined,
-            nutrition: {
-              calories: product.nutrition?.calories || 0,
-              protein: product.nutrition?.protein || 0,
-              carbs: product.nutrition?.carbs || 0,
-              fat: product.nutrition?.fat || 0,
-              fiber: product.nutrition?.fiber,
-              sugar: product.nutrition?.sugar,
-              servingSize: product.servingSize
-                ? `${product.servingSize}`
-                : undefined,
-            },
-            source: product.source || "openfoodfacts",
-            sourceId: product.barcode,
-            relevanceScore: 100,
-            dataCompleteness: 100,
-          };
-          handleFoodSelect(item);
-        } else {
-          setBarcodeError("Product not found. Try searching by name instead.");
-        }
-      } catch (error) {
-        logger.error("Barcode lookup error:", error);
-        setBarcodeError(
-          "Could not look up product. Try searching by name instead.",
-        );
-      } finally {
-        setBarcodeLoading(false);
-      }
-    };
-
-    lookupBarcode();
-  }, [barcode, handleFoodSelect]);
-
   const nutrition: NutritionInfo | undefined = scannedNutrition
     ? {
         calories: scannedNutrition.calories || 0,
@@ -501,16 +332,7 @@ export default function AddItemScreen() {
         sugar: scannedNutrition.sugar,
         servingSize: scannedNutrition.servingSize,
       }
-    : selectedFood?.nutrition
-      ? {
-          calories: selectedFood.nutrition.calories,
-          protein: selectedFood.nutrition.protein,
-          carbs: selectedFood.nutrition.carbs,
-          fat: selectedFood.nutrition.fat,
-          fiber: selectedFood.nutrition.fiber,
-          sugar: selectedFood.nutrition.sugar,
-        }
-      : undefined;
+    : undefined;
 
   const hasNutrition =
     nutrition && (nutrition.calories > 0 || nutrition.protein > 0);
@@ -531,8 +353,8 @@ export default function AddItemScreen() {
       return;
     }
 
-    if (!hasSelectedFood || !name.trim()) {
-      Alert.alert("Error", "Please complete the item details first");
+    if (!name.trim()) {
+      Alert.alert("Error", "Please enter an item name");
       return;
     }
 
@@ -541,6 +363,7 @@ export default function AddItemScreen() {
       const newItem: FoodItem = {
         id: generateId(),
         name: name.trim(),
+        brand: brand.trim() || undefined,
         barcode: barcode || undefined,
         quantity: parseInt(quantity) || 1,
         unit: unit || "pcs",
@@ -548,15 +371,12 @@ export default function AddItemScreen() {
         purchaseDate,
         expirationDate: expirationDate || defaultExpiration,
         category,
-        usdaCategory: selectedFood?.usdaCategory,
         notes: notes || undefined,
         nutrition,
-        fdcId: selectedFood?.fdcId,
       };
 
       await storage.addInventoryItem(newItem);
 
-      // Navigate to barcode scanner to scan next item
       navigation.replace("IngredientScanner", { mode: "barcode" });
     } catch (error) {
       logger.error("Error saving item:", error);
@@ -567,14 +387,6 @@ export default function AddItemScreen() {
   };
 
   const handleSave = async () => {
-    if (!hasSelectedFood) {
-      Alert.alert(
-        "Select a Food",
-        "Please search and select a food item from the USDA database.",
-      );
-      return;
-    }
-
     if (!name.trim()) {
       Alert.alert("Error", "Please enter an item name");
       return;
@@ -608,6 +420,7 @@ export default function AddItemScreen() {
       const newItem: FoodItem = {
         id: generateId(),
         name: name.trim(),
+        brand: brand.trim() || undefined,
         barcode: barcode || undefined,
         quantity: parseInt(quantity) || 1,
         unit: unit || "pcs",
@@ -615,10 +428,8 @@ export default function AddItemScreen() {
         purchaseDate,
         expirationDate: expirationDate || defaultExpiration,
         category,
-        usdaCategory: selectedFood?.usdaCategory,
         notes: notes || undefined,
         nutrition,
-        fdcId: selectedFood?.fdcId,
       };
 
       const suggestedLoc =
@@ -913,134 +724,6 @@ export default function AddItemScreen() {
     );
   };
 
-  if (!hasSelectedFood) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
-        <ExpoGlassHeader
-          title="Add Item"
-          screenKey="addItem"
-          showSearch={false}
-          menuItems={menuItems}
-          showBackButton
-        />
-        <View
-          style={[
-            styles.addItemContainer,
-            {
-              paddingTop: 56 + insets.top + Spacing.lg,
-              paddingBottom: insets.bottom + Spacing.xl,
-            },
-          ]}
-        >
-          {barcodeLoading ? (
-            <View style={styles.selectFoodContent}>
-              <CookPotLoader
-                size="lg"
-                text={`Looking up barcode ${barcode}...`}
-              />
-            </View>
-          ) : (
-            <>
-              <View style={styles.scanButtonRow}>
-                <GlassButton
-                  variant="outline"
-                  onPress={handleScanBarcode}
-                  icon={
-                    <Feather
-                      name="maximize"
-                      size={20}
-                      color={AppColors.primary}
-                    />
-                  }
-                  style={styles.scanButton}
-                  data-testid="button-scan-barcode"
-                >
-                  Scan Barcode
-                </GlassButton>
-                <GlassButton
-                  variant="outline"
-                  onPress={handleScanWithAI}
-                  icon={
-                    <Feather
-                      name="camera"
-                      size={20}
-                      color={AppColors.secondary}
-                    />
-                  }
-                  style={[
-                    styles.scanButton,
-                    { borderColor: AppColors.secondary },
-                  ]}
-                  data-testid="button-ai-scan"
-                >
-                  AI Photo Scan
-                </GlassButton>
-              </View>
-
-              <View style={styles.orDivider}>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: theme.border },
-                  ]}
-                />
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: theme.textSecondary,
-                    paddingHorizontal: Spacing.md,
-                  }}
-                >
-                  or search
-                </ThemedText>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: theme.border },
-                  ]}
-                />
-              </View>
-
-              {barcodeError ? (
-                <View style={styles.barcodeErrorContainer}>
-                  <Feather
-                    name="alert-circle"
-                    size={16}
-                    color={AppColors.warning}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={{ color: AppColors.warning, marginLeft: Spacing.xs }}
-                  >
-                    {barcodeError}
-                  </ThemedText>
-                </View>
-              ) : null}
-
-              <View style={styles.searchSection}>
-                <FoodSearchAutocomplete
-                  onSelect={handleFoodSelect}
-                  placeholder="Search food, or brand:product"
-                />
-                <ThemedText
-                  type="caption"
-                  style={{
-                    color: theme.textSecondary,
-                    opacity: 0.7,
-                    marginTop: Spacing.xs,
-                    textAlign: "center",
-                  }}
-                >
-                  Tip: Use "brand:product" (e.g., h-e-b:cheese)
-                </ThemedText>
-              </View>
-            </>
-          )}
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundRoot }}>
       <ExpoGlassHeader
@@ -1061,35 +744,50 @@ export default function AddItemScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <GlassCard style={styles.section}>
-          <View style={styles.sectionHeaderWithAction}>
-            <ThemedText type="h4" style={styles.sectionTitle}>
-              Basic Info
-            </ThemedText>
-            <Pressable onPress={handleClearSelection} style={styles.changePill}>
-              <ThemedText type="caption" style={{ color: AppColors.primary }}>
-                Change
-              </ThemedText>
-            </Pressable>
-          </View>
-
-          <View
-            style={[
-              styles.sourceBadge,
-              { backgroundColor: SOURCE_BADGE_COLORS[foodSource].bg },
-            ]}
+        <View style={styles.scanButtonRow}>
+          <GlassButton
+            variant="outline"
+            onPress={handleScanBarcode}
+            icon={
+              <Feather
+                name="maximize"
+                size={20}
+                color={AppColors.primary}
+              />
+            }
+            style={styles.scanButton}
+            data-testid="button-scan-barcode"
           >
-            <ThemedText
-              type="caption"
-              style={{ color: SOURCE_BADGE_COLORS[foodSource].text }}
-            >
-              Data from {SOURCE_LABELS[foodSource]}
-            </ThemedText>
-          </View>
+            Scan Barcode
+          </GlassButton>
+          <GlassButton
+            variant="outline"
+            onPress={handleScanWithAI}
+            icon={
+              <Feather
+                name="camera"
+                size={20}
+                color={AppColors.secondary}
+              />
+            }
+            style={[
+              styles.scanButton,
+              { borderColor: AppColors.secondary },
+            ]}
+            data-testid="button-ai-scan"
+          >
+            AI Photo Scan
+          </GlassButton>
+        </View>
+
+        <GlassCard style={styles.section}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Basic Info
+          </ThemedText>
 
           <View style={styles.inputGroup}>
             <ThemedText type="small" style={styles.label}>
-              Name
+              Name *
             </ThemedText>
             <TextInput
               style={[
@@ -1104,17 +802,52 @@ export default function AddItemScreen() {
               onChangeText={setName}
               placeholder="Item name"
               placeholderTextColor={theme.textSecondary}
+              data-testid="input-item-name"
             />
           </View>
 
-          {barcode ? (
-            <View style={styles.barcodeContainer}>
-              <Feather name="tag" size={16} color={theme.textSecondary} />
-              <ThemedText type="caption" style={styles.barcodeText}>
-                Barcode: {barcode}
-              </ThemedText>
-            </View>
-          ) : null}
+          <View style={styles.inputGroup}>
+            <ThemedText type="small" style={styles.label}>
+              Brand
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  color: theme.text,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+              value={brand}
+              onChangeText={setBrand}
+              placeholder="Brand name (optional)"
+              placeholderTextColor={theme.textSecondary}
+              data-testid="input-item-brand"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText type="small" style={styles.label}>
+              UPC / Barcode
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.glass.backgroundSubtle,
+                  color: theme.text,
+                  borderColor: theme.glass.border,
+                },
+              ]}
+              value={barcode}
+              onChangeText={setBarcode}
+              placeholder="UPC barcode (optional)"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="numeric"
+              data-testid="input-item-barcode"
+            />
+          </View>
 
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
@@ -1135,6 +868,7 @@ export default function AddItemScreen() {
                 keyboardType="numeric"
                 placeholder="1"
                 placeholderTextColor={theme.textSecondary}
+                data-testid="input-item-quantity"
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
@@ -1154,43 +888,58 @@ export default function AddItemScreen() {
                 onChangeText={setUnit}
                 placeholder="pcs"
                 placeholderTextColor={theme.textSecondary}
+                data-testid="input-item-unit"
               />
             </View>
-            <View style={[styles.inputGroup, { flex: 2 }]}>
-              <ThemedText type="small" style={styles.label}>
-                Category
-              </ThemedText>
-              <View
-                style={[
-                  styles.readOnlyField,
-                  {
-                    backgroundColor: theme.glass.backgroundSubtle,
-                    borderColor: theme.glass.border,
-                  },
-                ]}
-              >
-                <ThemedText
-                  type="body"
-                  style={{ color: theme.text }}
-                  numberOfLines={1}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText type="small" style={styles.label}>
+              Category
+            </ThemedText>
+            <View style={styles.chipContainer}>
+              {CATEGORIES.map((cat) => (
+                <Pressable
+                  key={cat}
+                  onPress={() => setCategory(cat)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor:
+                        category === cat
+                          ? AppColors.primary + "20"
+                          : theme.glass.backgroundSubtle,
+                      borderColor:
+                        category === cat
+                          ? AppColors.primary
+                          : theme.glass.border,
+                    },
+                  ]}
+                  data-testid={`chip-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  {selectedFood?.usdaCategory || category || "Not specified"}
-                </ThemedText>
-              </View>
+                  <ThemedText
+                    type="caption"
+                    style={{
+                      color:
+                        category === cat ? AppColors.primary : theme.text,
+                    }}
+                  >
+                    {cat}
+                  </ThemedText>
+                </Pressable>
+              ))}
             </View>
           </View>
         </GlassCard>
 
         {hasNutrition ? (
           <NutritionSection
-            foodId={sourceId || generateId()}
+            foodId={generateId()}
             foodName={name}
             defaultQuantity={parseInt(quantity) || 1}
             nutrition={nutrition}
           />
-        ) : hasSelectedFood && barcode ? (
-          /* Only show scan nutrition option for barcode-scanned items
-           to avoid mismatch with keyword search + wrong physical product */
+        ) : barcode ? (
           <GlassCard style={styles.section}>
             <View style={styles.noNutritionContainer}>
               <Feather name="file-text" size={32} color={theme.textSecondary} />
@@ -1482,68 +1231,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.lg,
   },
-  addItemContainer: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
-  },
-  selectFoodContainer: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
-    justifyContent: "center",
-  },
-  selectFoodContent: {
-    alignItems: "center",
-    gap: Spacing.md,
-    marginBottom: Spacing["3xl"],
-  },
-  selectFoodTitle: {
-    marginTop: Spacing.lg,
-  },
-  barcodeErrorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: "rgba(255, 152, 0, 0.1)",
-  },
-  selectFoodButtons: {
-    gap: Spacing.md,
-  },
-  actionButton: {
-    width: "100%",
-  },
-  selectedFoodCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  selectedFoodHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  changeButton: {
-    padding: Spacing.sm,
-  },
   section: {
     gap: Spacing.md,
   },
-  sectionHeaderWithAction: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   sectionTitle: {
     marginBottom: Spacing.xs,
-  },
-  changePill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: AppColors.primary,
   },
   inputGroup: {
     gap: Spacing.xs,
@@ -1567,15 +1259,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Spacing.md,
   },
-  barcodeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-  },
-  barcodeText: {
-    fontFamily: "monospace",
-  },
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1587,25 +1270,12 @@ const styles = StyleSheet.create({
     borderRadius: GlassEffect.borderRadius.pill,
     borderWidth: 1,
   },
-  locationGrid: {
+  scanButtonRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
-  locationCard: {
-    width: "48%",
-    alignItems: "center",
-    paddingVertical: Spacing.lg,
-    borderRadius: GlassEffect.borderRadius.md,
-    borderWidth: 1,
-  },
-  dateButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: GlassEffect.borderRadius.md,
-    borderWidth: 1,
+  scanButton: {
+    flex: 1,
   },
   dateButtonCompact: {
     padding: Spacing.sm,
@@ -1618,31 +1288,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  dateContent: {
-    flex: 1,
-  },
   dateLabelRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
   },
-  suggestionBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
   suggestionBadgeSmall: {
     padding: 2,
     borderRadius: BorderRadius.full,
-  },
-  nutritionGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  nutritionItem: {
-    alignItems: "center",
   },
   suggestionContainer: {
     marginTop: Spacing.sm,
@@ -1712,55 +1365,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     paddingHorizontal: Spacing.sm,
   },
-  storageSuggestionContainer: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
-  },
-  confidenceNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Spacing.sm,
-  },
-  suggestedIndicator: {
-    marginTop: Spacing.xs,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  searchHeader: {
-    alignItems: "center",
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  searchSection: {
-    flex: 1,
-    zIndex: 100,
-  },
-  orDivider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: Spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  sourceBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
-    marginTop: 4,
-  },
-  scanButtonRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  scanButton: {
-    flex: 1,
-  },
   datePickerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1782,13 +1386,6 @@ const styles = StyleSheet.create({
   },
   datePicker: {
     height: 200,
-  },
-  readOnlyField: {
-    height: 48,
-    borderRadius: GlassEffect.borderRadius.md,
-    paddingHorizontal: Spacing.md,
-    justifyContent: "center",
-    borderWidth: 1,
   },
   actionButtonsContainer: {
     flexDirection: "row",
@@ -1812,9 +1409,6 @@ const styles = StyleSheet.create({
   noNutritionHint: {
     textAlign: "center",
     opacity: 0.7,
-  },
-  scanNutritionButton: {
-    marginTop: Spacing.md,
   },
   scanButtonContent: {
     flexDirection: "row",

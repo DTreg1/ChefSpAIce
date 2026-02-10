@@ -57,7 +57,7 @@ import BarcodeScannerScreen from "@/screens/BarcodeScannerScreen";
 import IngredientScannerScreen from "@/screens/IngredientScannerScreen";
 import FoodCameraScreen from "@/screens/FoodCameraScreen";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
-import FoodSearchScreen, { USDAFoodItem } from "@/screens/FoodSearchScreen";
+import FoodSearchScreen from "@/screens/FoodSearchScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LandingScreen from "@/screens/LandingScreen";
 import AuthScreen from "@/screens/AuthScreen";
@@ -100,7 +100,6 @@ export type RootStackParamList = {
     | {
         barcode?: string;
         productName?: string;
-        usdaFood?: USDAFoodItem;
         identifiedFoods?: IdentifiedFood[];
         scannedNutrition?: {
           calories?: number;
