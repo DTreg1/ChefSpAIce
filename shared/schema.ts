@@ -140,6 +140,7 @@ export const users = pgTable("users", {
   trialEndsAt: timestamp("trial_ends_at"),
   preRegistrationSource: varchar("pre_registration_source"),
   preRegisteredAt: timestamp("pre_registered_at"),
+  privacyConsentedAt: timestamp("privacy_consented_at"),
   isActivated: boolean("is_activated").notNull().default(true),
   apiKeyHash: varchar("api_key_hash"),
   referralCode: varchar("referral_code", { length: 8 }).unique(),

@@ -144,10 +144,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Creates a user account that they can activate later.
   // =========================================================================
   app.post("/api/pre-register", asyncHandler(async (req: Request, res: Response) => {
-      const { email } = req.body;
+      const { email, privacyConsent } = req.body;
 
       if (!email || typeof email !== "string") {
         throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
+      }
+
+      if (privacyConsent !== true) {
+        throw AppError.badRequest("You must agree to the privacy policy before signing up", "PRIVACY_CONSENT_REQUIRED");
       }
 
       const normalizedEmail = email.toLowerCase().trim();
@@ -176,6 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActivated: false,
         preRegistrationSource: "landing",
         preRegisteredAt: now,
+        privacyConsentedAt: now,
         subscriptionStatus: "none",
         subscriptionTier: "TRIAL",
       });
