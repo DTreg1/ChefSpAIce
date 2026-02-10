@@ -247,25 +247,24 @@ export async function incrementAiRecipeCount(userId: string): Promise<void> {
     throw new Error("User not found");
   }
 
-  const currentCount = user.aiRecipesGeneratedThisMonth || 0;
+  const oneMonthFromNow = new Date();
+  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  const resetDate = user.aiRecipesResetDate || oneMonthFromNow;
 
-  let resetDate = user.aiRecipesResetDate;
-  if (!resetDate) {
-    const oneMonthFromNow = new Date();
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-    resetDate = oneMonthFromNow;
-  }
-
-  await db
+  const [updated] = await db
     .update(users)
     .set({
-      aiRecipesGeneratedThisMonth: currentCount + 1,
+      aiRecipesGeneratedThisMonth: sql`COALESCE(${users.aiRecipesGeneratedThisMonth}, 0) + 1`,
       aiRecipesResetDate: resetDate,
       updatedAt: new Date(),
     })
-    .where(eq(users.id, userId));
+    .where(eq(users.id, userId))
+    .returning({ newCount: users.aiRecipesGeneratedThisMonth });
 
-  // Invalidate the cache so the next limit check reflects the new count
+  if (!updated) {
+    throw new Error("Failed to increment AI recipe count");
+  }
+
   await invalidateAiLimitCache(userId);
 }
 
