@@ -9,7 +9,7 @@ Reference links to all architecture and flow diagrams for the project.
 | Diagram | Link |
 |---------|------|
 | Food Item Lifecycle | [View in FigJam](https://www.figma.com/board/9qBLqQPMWaFuZe9CAo9CQC/Food-Item-Lifecycle?node-id=0-1&p=f&t=AiAzC2Dfju14zKhc-0) |
-| AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/086ffc7d-b409-4297-bf2c-3bbcf2173992?utm_source=other&utm_content=edit_in_figjam) |
+| AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/8a7091ac-b67d-41b4-9742-e9cb34a3fdd9?utm_source=other&utm_content=edit_in_figjam) |
 | Barcode and Receipt Scanning Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/16c544a0-1a39-40a2-b088-1c7875a45ec1?utm_source=other&utm_content=edit_in_figjam) |
 | Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/7de3a2e0-ef1d-4dc7-9960-0661841a47aa?utm_source=other&utm_content=edit_in_figjam) |
 
