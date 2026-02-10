@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, notifications, conversionEvents, cancellationReasons, referrals, nutritionCorrections } from "@shared/schema";
-import { eq, and, inArray, or } from "drizzle-orm";
+import { users, userSessions, userSyncData, subscriptions, userAppliances, authProviders, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, notifications, conversionEvents, cancellationReasons, referrals, nutritionCorrections, passwordResetTokens } from "@shared/schema";
+import { eq, and, inArray, or, lt } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -536,15 +536,11 @@ router.delete("/sessions", requireAuth, async (req: Request, res: Response, next
 });
 
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
-const passwordResetTokens = new Map<string, { userId: string; expiresAt: number }>();
 
-function cleanupExpiredResetTokens() {
-  const now = Date.now();
-  for (const [hash, entry] of passwordResetTokens) {
-    if (entry.expiresAt < now) {
-      passwordResetTokens.delete(hash);
-    }
-  }
+async function cleanupExpiredResetTokens() {
+  await db
+    .delete(passwordResetTokens)
+    .where(lt(passwordResetTokens.expiresAt, new Date()));
 }
 
 const PASSWORD_RESET_SUCCESS_MESSAGE = "If an account with that email exists, a password reset link has been sent.";
@@ -557,7 +553,7 @@ router.post("/forgot-password", passwordResetLimiter, async (req: Request, res: 
       throw AppError.badRequest("Email is required", "MISSING_EMAIL");
     }
 
-    cleanupExpiredResetTokens();
+    await cleanupExpiredResetTokens();
 
     const [user] = await db
       .select({ id: users.id })
@@ -569,12 +565,17 @@ router.post("/forgot-password", passwordResetLimiter, async (req: Request, res: 
       return res.json(successResponse({ message: PASSWORD_RESET_SUCCESS_MESSAGE }));
     }
 
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.userId, user.id));
+
     const resetToken = randomBytes(32).toString("hex");
     const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
 
-    passwordResetTokens.set(hashedResetToken, {
+    await db.insert(passwordResetTokens).values({
       userId: user.id,
-      expiresAt: Date.now() + PASSWORD_RESET_EXPIRY_MS,
+      tokenHash: hashedResetToken,
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS),
     });
 
     logger.info("Password reset token generated", { userId: user.id });
@@ -598,13 +599,20 @@ router.post("/reset-password", passwordResetLimiter, async (req: Request, res: R
       throw AppError.badRequest(passwordError, "WEAK_PASSWORD");
     }
 
-    cleanupExpiredResetTokens();
+    await cleanupExpiredResetTokens();
 
     const hashedResetToken = createHash("sha256").update(resetToken).digest("hex");
-    const entry = passwordResetTokens.get(hashedResetToken);
 
-    if (!entry || entry.expiresAt < Date.now()) {
-      passwordResetTokens.delete(hashedResetToken);
+    const [entry] = await db
+      .select({ userId: passwordResetTokens.userId, expiresAt: passwordResetTokens.expiresAt })
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.tokenHash, hashedResetToken))
+      .limit(1);
+
+    if (!entry || entry.expiresAt < new Date()) {
+      if (entry) {
+        await db.delete(passwordResetTokens).where(eq(passwordResetTokens.tokenHash, hashedResetToken));
+      }
       throw AppError.badRequest("Invalid or expired reset token", "INVALID_RESET_TOKEN");
     }
 
@@ -615,7 +623,9 @@ router.post("/reset-password", passwordResetLimiter, async (req: Request, res: R
       .set({ password: hashedPassword, updatedAt: new Date() })
       .where(eq(users.id, entry.userId));
 
-    passwordResetTokens.delete(hashedResetToken);
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.userId, entry.userId));
 
     await db
       .delete(userSessions)
