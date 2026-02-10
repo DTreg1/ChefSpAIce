@@ -39,7 +39,7 @@ export async function requireSubscription(
     const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, userTier } = result;
 
     if (!subscriptionStatus) {
-      if (userTier && [SubscriptionTier.TRIAL, SubscriptionTier.BASIC, SubscriptionTier.PRO].includes(userTier as SubscriptionTier)) {
+      if (userTier && [SubscriptionTier.TRIAL, SubscriptionTier.PRO].includes(userTier as SubscriptionTier)) {
         req.subscriptionTier = userTier;
         return next();
       }

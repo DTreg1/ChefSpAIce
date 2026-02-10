@@ -51,26 +51,16 @@ function verifyWebhookSecret(req: Request): boolean {
   return providedSecret === REVENUECAT_WEBHOOK_SECRET;
 }
 
-function mapProductIdToTier(productId: string): 'BASIC' | 'PRO' {
-  const lowerProductId = productId.toLowerCase();
-  if (lowerProductId.includes('pro')) {
-    return 'PRO';
-  }
-  if (lowerProductId.includes('basic')) {
-    return 'BASIC';
-  }
-  return 'BASIC';
+function mapProductIdToTier(productId: string): 'PRO' {
+  return 'PRO';
 }
 
-function mapEntitlementToTier(entitlementId: string | undefined): 'BASIC' | 'PRO' | null {
+function mapEntitlementToTier(entitlementId: string | undefined): 'PRO' | null {
   if (!entitlementId) return null;
   
   const lowerEntitlement = entitlementId.toLowerCase();
-  if (lowerEntitlement === 'pro') {
+  if (lowerEntitlement === 'pro' || lowerEntitlement === 'basic') {
     return 'PRO';
-  }
-  if (lowerEntitlement === 'basic') {
-    return 'BASIC';
   }
   return null;
 }
@@ -102,13 +92,13 @@ async function handleSubscriptionUpdate(
   await db
     .update(users)
     .set({
-      subscriptionTier: keepTier ? tier : 'BASIC',
+      subscriptionTier: keepTier ? tier : 'TRIAL',
       subscriptionStatus: status,
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
 
-  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'BASIC', status });
+  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'TRIAL', status });
 }
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {

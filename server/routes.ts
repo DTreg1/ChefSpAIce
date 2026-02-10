@@ -29,10 +29,8 @@
  * 
  * STANDALONE ENDPOINTS:
  * - POST /api/chat - AI kitchen assistant with function calling
- * - GET /api/food/search - USDA food database search
- * - GET /api/food/:fdcId - USDA food details
  * - POST /api/shelf-life - Shelf life estimation
- * - GET /api/barcode/:barcode - Barcode lookup
+ * - GET /api/nutrition/lookup - USDA nutrition data lookup
  * 
  * @module server/routes
  */
@@ -308,8 +306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { tier, status } = req.body;
         
-        if (!tier || !['BASIC', 'PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'BASIC' or 'PRO'", "INVALID_TIER");
+        if (!tier || !['TRIAL', 'PRO'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'TRIAL' or 'PRO'", "INVALID_TIER");
         }
 
         const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
@@ -348,8 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
         }
         
-        if (!tier || !['BASIC', 'PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'BASIC' or 'PRO'", "INVALID_TIER");
+        if (!tier || !['TRIAL', 'PRO'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'TRIAL' or 'PRO'", "INVALID_TIER");
         }
 
         // Find user by email
