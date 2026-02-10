@@ -27,3 +27,4 @@ Reference links to all architecture and flow diagrams for the project.
 |---------|------|
 | Stripe Subscription Lifecycle | [View in FigJam](https://www.figma.com/board/nTbFx6UdauVacbBr6b1Fdl/Stripe-Subscription-Lifecycle?node-id=1-2&t=9ZkEzHO7sG3nnwUj-0) |
 | Food Item States | [View in FigJam](https://www.figma.com/board/b2k3CTtPY4CtLYhbrJ3Ikb/Food-Item-States?node-id=0-1&p=f&t=BHzfiZYAVKyJ911m-0) |
+| Subscription States | [View in FigJam](https://www.figma.com/board/qIjci9dwXjVqeRJxr6gWu8/Subscription-States?node-id=0-1&p=f&t=0lyZ4QfGyCmK7OAo-0) |
