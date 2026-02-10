@@ -2,9 +2,9 @@ import { Router, Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import appleSignin from "apple-signin-auth";
 import { generateToken, getExpiryDate, setAuthCookie } from "../lib/session-utils";
-import pg from "pg";
 import { db } from "../db";
-import { userSessions, userSyncData } from "@shared/schema";
+import { users, authProviders, userSessions, userSyncData } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
@@ -12,10 +12,6 @@ import { logger } from "../lib/logger";
 import { hashToken } from "../lib/auth-utils";
 
 const router = Router();
-
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 async function createSessionWithDrizzle(userId: string): Promise<{ token: string; expiresAt: Date }> {
   const rawToken = generateToken();
@@ -69,7 +65,6 @@ interface GoogleTokenPayload {
 
 router.post("/apple", async (req: Request, res: Response, next: NextFunction) => {
   logger.info("Apple sign-in request received");
-  const client = await pool.connect();
   try {
     const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
 
@@ -116,81 +111,101 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
         ? 'monthly'  // Default to monthly billing when tier is selected
         : 'monthly';
 
-    await client.query("BEGIN");
+    const { userId, isNewUser, dbUser } = await db.transaction(async (tx) => {
+      const existingProvider = await tx
+        .select({ userId: authProviders.userId })
+        .from(authProviders)
+        .where(and(eq(authProviders.provider, 'apple'), eq(authProviders.providerId, appleUserId)))
+        .limit(1);
 
-    const existingProviderResult = await client.query(
-      `SELECT user_id FROM auth_providers WHERE provider = 'apple' AND provider_id = $1 LIMIT 1`,
-      [appleUserId]
-    );
+      let resolvedUserId: string;
+      let newUser = false;
 
-    let userId: string;
-    let isNewUser = false;
-
-    if (existingProviderResult.rows.length > 0) {
-      userId = existingProviderResult.rows[0].user_id;
-    } else {
-      if (email) {
-        const existingUserByEmail = await client.query(
-          `SELECT id FROM users WHERE email = $1 LIMIT 1`,
-          [email]
-        );
-        
-        if (existingUserByEmail.rows.length > 0) {
-          userId = existingUserByEmail.rows[0].id;
-          
-          await client.query(
-            `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
-             VALUES ($1, 'apple', $2, $3, false, $4)
-             ON CONFLICT (provider, provider_id) DO NOTHING`,
-            [userId, appleUserId, email, JSON.stringify({})]
-          );
-        } else {
-          isNewUser = true;
-          const userResult = await client.query(
-            `INSERT INTO users (email, primary_provider, primary_provider_id)
-             VALUES ($1, 'apple', $2)
-             RETURNING id`,
-            [email, appleUserId]
-          );
-          userId = userResult.rows[0].id;
-
-          await client.query(
-            `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, is_primary, metadata)
-             VALUES ($1, 'apple', $2, $3, true, $4)`,
-            [userId, appleUserId, email, JSON.stringify({})]
-          );
-        }
+      if (existingProvider.length > 0) {
+        resolvedUserId = existingProvider[0].userId;
       } else {
-        isNewUser = true;
-        const userResult = await client.query(
-          `INSERT INTO users (email, primary_provider, primary_provider_id)
-           VALUES ($1, 'apple', $2)
-           RETURNING id`,
-          [appleUserId + '@apple.privaterelay', appleUserId]
-        );
-        userId = userResult.rows[0].id;
+        if (email) {
+          const existingUserByEmail = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+          
+          if (existingUserByEmail.length > 0) {
+            resolvedUserId = existingUserByEmail[0].id;
+            
+            await tx
+              .insert(authProviders)
+              .values({
+                userId: resolvedUserId,
+                provider: 'apple',
+                providerId: appleUserId,
+                providerEmail: email,
+                isPrimary: false,
+                metadata: {},
+              })
+              .onConflictDoNothing();
+          } else {
+            newUser = true;
+            const [userResult] = await tx
+              .insert(users)
+              .values({
+                email,
+                primaryProvider: 'apple',
+                primaryProviderId: appleUserId,
+              })
+              .returning({ id: users.id });
+            resolvedUserId = userResult.id;
 
-        await client.query(
-          `INSERT INTO auth_providers (user_id, provider, provider_id, is_primary, metadata)
-           VALUES ($1, 'apple', $2, true, $3)`,
-          [userId, appleUserId, JSON.stringify({})]
-        );
+            await tx.insert(authProviders).values({
+              userId: resolvedUserId,
+              provider: 'apple',
+              providerId: appleUserId,
+              providerEmail: email,
+              isPrimary: true,
+              metadata: {},
+            });
+          }
+        } else {
+          newUser = true;
+          const [userResult] = await tx
+            .insert(users)
+            .values({
+              email: appleUserId + '@apple.privaterelay',
+              primaryProvider: 'apple',
+              primaryProviderId: appleUserId,
+            })
+            .returning({ id: users.id });
+          resolvedUserId = userResult.id;
+
+          await tx.insert(authProviders).values({
+            userId: resolvedUserId,
+            provider: 'apple',
+            providerId: appleUserId,
+            isPrimary: true,
+            metadata: {},
+          });
+        }
       }
-    }
 
-    const userResult = await client.query(
-      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
-      [userId]
-    );
+      const [fetchedUser] = await tx
+        .select({
+          id: users.id,
+          email: users.email,
+          displayName: users.displayName,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.id, resolvedUserId))
+        .limit(1);
 
-    if (userResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
-    }
+      if (!fetchedUser) {
+        throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
+      }
 
-    const dbUser = userResult.rows[0];
-
-    await client.query("COMMIT");
+      return { userId: resolvedUserId, isNewUser: newUser, dbUser: fetchedUser };
+    });
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
@@ -206,25 +221,21 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: dbUser.display_name || undefined,
-        avatarUrl: dbUser.profile_image_url,
+        displayName: dbUser.displayName || undefined,
+        avatarUrl: dbUser.profileImageUrl,
         provider: "apple",
         isNewUser,
-        createdAt: dbUser.created_at?.toISOString() || new Date().toISOString(),
+        createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
       },
       token,
       expiresAt: expiresAt.toISOString(),
     }));
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
     next(error);
-  } finally {
-    client.release();
   }
 });
 
 router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
-  const dbClient = await pool.connect();
   try {
     const { idToken, accessToken, selectedPlan } = req.body as GoogleTokenPayload;
 
@@ -261,93 +272,121 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
     const email = payload.email || null;
     const picture = payload.picture || null;
 
-    await dbClient.query("BEGIN");
+    const { userId, isNewUser, dbUser } = await db.transaction(async (tx) => {
+      const existingProvider = await tx
+        .select({ userId: authProviders.userId })
+        .from(authProviders)
+        .where(and(eq(authProviders.provider, 'google'), eq(authProviders.providerId, googleUserId)))
+        .limit(1);
 
-    const existingProviderResult = await dbClient.query(
-      `SELECT user_id FROM auth_providers WHERE provider = 'google' AND provider_id = $1 LIMIT 1`,
-      [googleUserId]
-    );
+      let resolvedUserId: string;
+      let newUser = false;
 
-    let userId: string;
-    let isNewUser = false;
+      if (existingProvider.length > 0) {
+        resolvedUserId = existingProvider[0].userId;
 
-    if (existingProviderResult.rows.length > 0) {
-      userId = existingProviderResult.rows[0].user_id;
+        await tx
+          .update(authProviders)
+          .set({ accessToken, updatedAt: new Date() })
+          .where(and(eq(authProviders.provider, 'google'), eq(authProviders.providerId, googleUserId)));
+      } else {
+        if (email) {
+          const existingUserByEmail = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
 
-      await dbClient.query(
-        `UPDATE auth_providers SET access_token = $1, updated_at = NOW() WHERE provider = 'google' AND provider_id = $2`,
-        [accessToken, googleUserId]
-      );
-    } else {
-      if (email) {
-        const existingUserByEmail = await dbClient.query(
-          `SELECT id FROM users WHERE email = $1 LIMIT 1`,
-          [email]
-        );
+          if (existingUserByEmail.length > 0) {
+            resolvedUserId = existingUserByEmail[0].id;
 
-        if (existingUserByEmail.rows.length > 0) {
-          userId = existingUserByEmail.rows[0].id;
+            await tx
+              .insert(authProviders)
+              .values({
+                userId: resolvedUserId,
+                provider: 'google',
+                providerId: googleUserId,
+                providerEmail: email,
+                accessToken,
+                isPrimary: false,
+                metadata: { name: payload.name, picture },
+              })
+              .onConflictDoUpdate({
+                target: [authProviders.provider, authProviders.providerId],
+                set: { accessToken, updatedAt: new Date() },
+              });
 
-          await dbClient.query(
-            `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, access_token, is_primary, metadata)
-             VALUES ($1, 'google', $2, $3, $4, false, $5)
-             ON CONFLICT (provider, provider_id) DO UPDATE SET access_token = $4, updated_at = NOW()`,
-            [userId, googleUserId, email, accessToken, JSON.stringify({ name: payload.name, picture })]
-          );
+            if (picture) {
+              await tx
+                .update(users)
+                .set({ profileImageUrl: sql`COALESCE(${users.profileImageUrl}, ${picture})` })
+                .where(eq(users.id, resolvedUserId));
+            }
+          } else {
+            newUser = true;
+            const [userResult] = await tx
+              .insert(users)
+              .values({
+                email,
+                profileImageUrl: picture,
+                primaryProvider: 'google',
+                primaryProviderId: googleUserId,
+              })
+              .returning({ id: users.id });
+            resolvedUserId = userResult.id;
 
-          if (picture) {
-            await dbClient.query(
-              `UPDATE users SET profile_image_url = COALESCE(profile_image_url, $1) WHERE id = $2`,
-              [picture, userId]
-            );
+            await tx.insert(authProviders).values({
+              userId: resolvedUserId,
+              provider: 'google',
+              providerId: googleUserId,
+              providerEmail: email,
+              accessToken,
+              isPrimary: true,
+              metadata: { name: payload.name, picture },
+            });
           }
         } else {
-          isNewUser = true;
-          const userResult = await dbClient.query(
-            `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
-             VALUES ($1, $2, 'google', $3)
-             RETURNING id`,
-            [email, picture, googleUserId]
-          );
-          userId = userResult.rows[0].id;
+          newUser = true;
+          const [userResult] = await tx
+            .insert(users)
+            .values({
+              email: googleUserId + '@google.privaterelay',
+              profileImageUrl: picture,
+              primaryProvider: 'google',
+              primaryProviderId: googleUserId,
+            })
+            .returning({ id: users.id });
+          resolvedUserId = userResult.id;
 
-          await dbClient.query(
-            `INSERT INTO auth_providers (user_id, provider, provider_id, provider_email, access_token, is_primary, metadata)
-             VALUES ($1, 'google', $2, $3, $4, true, $5)`,
-            [userId, googleUserId, email, accessToken, JSON.stringify({ name: payload.name, picture })]
-          );
+          await tx.insert(authProviders).values({
+            userId: resolvedUserId,
+            provider: 'google',
+            providerId: googleUserId,
+            accessToken,
+            isPrimary: true,
+            metadata: { name: payload.name, picture },
+          });
         }
-      } else {
-        isNewUser = true;
-        const userResult = await dbClient.query(
-          `INSERT INTO users (email, profile_image_url, primary_provider, primary_provider_id)
-           VALUES ($1, $2, 'google', $3)
-           RETURNING id`,
-          [googleUserId + '@google.privaterelay', picture, googleUserId]
-        );
-        userId = userResult.rows[0].id;
-
-        await dbClient.query(
-          `INSERT INTO auth_providers (user_id, provider, provider_id, access_token, is_primary, metadata)
-           VALUES ($1, 'google', $2, $3, true, $4)`,
-          [userId, googleUserId, accessToken, JSON.stringify({ name: payload.name, picture })]
-        );
       }
-    }
 
-    const userResult = await dbClient.query(
-      `SELECT id, email, display_name, profile_image_url, created_at FROM users WHERE id = $1`,
-      [userId]
-    );
+      const [fetchedUser] = await tx
+        .select({
+          id: users.id,
+          email: users.email,
+          displayName: users.displayName,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.id, resolvedUserId))
+        .limit(1);
 
-    if (userResult.rows.length === 0) {
-      await dbClient.query("ROLLBACK");
-      throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
-    }
+      if (!fetchedUser) {
+        throw AppError.internal("Failed to retrieve user data", "USER_DATA_RETRIEVAL_FAILED");
+      }
 
-    const dbUser = userResult.rows[0];
-
-    await dbClient.query("COMMIT");
+      return { userId: resolvedUserId, isNewUser: newUser, dbUser: fetchedUser };
+    });
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
@@ -363,20 +402,17 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
       user: {
         id: dbUser.id,
         email: dbUser.email,
-        displayName: dbUser.display_name || payload.name || undefined,
-        avatarUrl: dbUser.profile_image_url,
+        displayName: dbUser.displayName || payload.name || undefined,
+        avatarUrl: dbUser.profileImageUrl,
         provider: "google",
         isNewUser,
-        createdAt: dbUser.created_at?.toISOString() || new Date().toISOString(),
+        createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
       },
       token,
       expiresAt: expiresAt.toISOString(),
     }));
   } catch (error) {
-    await dbClient.query("ROLLBACK").catch(() => {});
     next(error);
-  } finally {
-    dbClient.release();
   }
 });
 
