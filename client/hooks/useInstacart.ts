@@ -18,6 +18,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Linking, Alert } from "react-native";
 import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
+import { storage, UserPreferences } from "@/lib/storage";
 
 interface InstacartProduct {
   name: string;
@@ -87,13 +88,19 @@ export function useInstacart() {
       try {
         setIsLoading(true);
 
+        const prefs = await storage.getPreferences();
+        const body: Record<string, unknown> = {
+          products,
+          title: title || "ChefSpAIce Shopping List",
+        };
+        if (prefs.preferredRetailerKey) {
+          body.retailer_key = prefs.preferredRetailerKey;
+        }
+
         const data: InstacartLinkResponse = await apiRequestJson(
           "POST",
           "/api/instacart/products-link",
-          {
-            products,
-            title: title || "ChefSpAIce Shopping List",
-          },
+          body,
         );
 
         if (data.products_link_url) {
@@ -137,11 +144,21 @@ export function useInstacart() {
       try {
         setIsLoading(true);
 
-        const data: InstacartLinkResponse = await apiRequestJson("POST", "/api/instacart/recipe", {
+        const prefs = await storage.getPreferences();
+        const body: Record<string, unknown> = {
           title,
           ingredients,
           imageUrl,
-        });
+        };
+        if (prefs.preferredRetailerKey) {
+          body.retailer_key = prefs.preferredRetailerKey;
+        }
+
+        const data: InstacartLinkResponse = await apiRequestJson(
+          "POST",
+          "/api/instacart/recipe",
+          body,
+        );
 
         if (data.products_link_url) {
           return data.products_link_url;

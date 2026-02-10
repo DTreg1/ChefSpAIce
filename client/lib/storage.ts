@@ -237,6 +237,11 @@ export interface UserPreferences {
   llmCreativity?: "basic" | "special" | "spicy" | "wild";
   ingredientCountMin?: number;
   ingredientCountMax?: number;
+  preferredRetailerKey?: string;
+  preferredRetailerName?: string;
+  preferredRetailerLogo?: string;
+  instacartPostalCode?: string;
+  instacartCountryCode?: string;
 }
 
 export const DEFAULT_MACRO_TARGETS: MacroTargets = {

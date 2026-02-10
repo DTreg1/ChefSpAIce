@@ -99,6 +99,7 @@ import { SettingsChipSelector } from "@/components/settings/SettingsChipSelector
 import { SettingsNutritionTargets } from "@/components/settings/SettingsNutritionTargets";
 import { SettingsAbout } from "@/components/settings/SettingsAbout";
 import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
+import { SettingsInstacart } from "@/components/settings/SettingsInstacart";
 import { SettingsLegalSupport } from "@/components/settings/SettingsLegalSupport";
 import { SettingsStoragePrefs } from "@/components/settings/SettingsStoragePrefs";
 import { SettingsReferral } from "@/components/settings/SettingsReferral";
@@ -254,6 +255,11 @@ export default function SettingsScreen() {
       ? current.filter((c) => c !== cuisine)
       : [...current, cuisine];
     const newPrefs = { ...preferences, cuisinePreferences: updated };
+    setPreferences(newPrefs);
+    await storage.setPreferences(newPrefs);
+  };
+
+  const handleInstacartPreferencesChange = async (newPrefs: UserPreferences) => {
     setPreferences(newPrefs);
     await storage.setPreferences(newPrefs);
   };
@@ -991,6 +997,12 @@ export default function SettingsScreen() {
         <SettingsAbout />
 
         <SettingsIntegrations navigation={navigation} theme={theme} />
+
+        <SettingsInstacart
+          preferences={preferences}
+          onPreferencesChange={handleInstacartPreferencesChange}
+          theme={theme}
+        />
 
         <SettingsLegalSupport navigation={navigation} theme={theme} />
 
