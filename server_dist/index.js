@@ -7748,7 +7748,7 @@ router9.post("/sync", async (req, res) => {
   }
 });
 var DEMO_EMAIL = "demo@chefspaice.com";
-router9.delete("/delete-account", async (req, res) => {
+router9.delete("/account", async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];

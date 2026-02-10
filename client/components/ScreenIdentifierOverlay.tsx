@@ -54,7 +54,7 @@ export function ScreenIdentifierOverlay({
         if (authToken) {
           try {
             const deleteResponse = await fetch(
-              `${baseUrl}/api/auth/delete-account`,
+              `${baseUrl}/api/auth/account`,
               {
                 method: "DELETE",
                 headers: {
