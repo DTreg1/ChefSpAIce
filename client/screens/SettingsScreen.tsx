@@ -518,7 +518,7 @@ export default function SettingsScreen() {
       const authToken = await storage.getAuthToken();
       if (authToken && user?.email) {
         const baseUrl = getApiUrl();
-        const response = await fetch(`${baseUrl}/api/auth/delete-account`, {
+        const response = await fetch(`${baseUrl}/api/auth/account`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${authToken}`,

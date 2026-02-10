@@ -7,6 +7,7 @@ import {
   Platform,
   Image,
   TextInput,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
+import { useStoreKit } from "@/hooks/useStoreKit";
+import { MONTHLY_PRICES } from "@shared/subscription";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -64,9 +67,104 @@ export default function AuthScreen() {
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
-  const prices = {
-    basic: { monthly: 4.99, annual: 49.9 },
-    pro: { monthly: 9.99, annual: 99.9 },
+  const {
+    isAvailable: isStoreKitAvailable,
+    offerings,
+  } = useStoreKit();
+
+  const shouldUseStoreKit =
+    (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
+
+  const getPreviewPrice = (tier: "basic" | "pro"): string => {
+    if (shouldUseStoreKit && offerings?.availablePackages) {
+      for (const pkg of offerings.availablePackages) {
+        const id = pkg.identifier.toLowerCase();
+        const isMonthly = pkg.packageType === "MONTHLY" || id.includes("monthly");
+        if (id.includes(tier) && isMonthly) {
+          return `${pkg.product.priceString}/mo`;
+        }
+      }
+    }
+    if (Platform.OS === "ios" || Platform.OS === "android") {
+      return tier === "basic" ? "Basic Plan" : "Pro Plan";
+    }
+    return `$${tier === "basic" ? MONTHLY_PRICES.BASIC.toFixed(2) : MONTHLY_PRICES.PRO.toFixed(2)}/mo`;
+  };
+
+  const handleOpenPrivacyPolicy = () => {
+    if (Platform.OS === "web") {
+      window.open("/privacy", "_blank");
+    } else {
+      navigation.navigate("Privacy" as any);
+    }
+  };
+
+  const handleOpenTermsOfUse = () => {
+    if (Platform.OS === "web") {
+      window.open("/terms", "_blank");
+    } else {
+      navigation.navigate("Terms" as any);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    Alert.prompt
+      ? Alert.prompt(
+          "Forgot Password",
+          "Enter your email address and we'll send you a reset link.",
+          async (inputEmail: string) => {
+            if (!inputEmail?.trim()) return;
+            try {
+              const baseUrl = getApiUrl();
+              await fetch(`${baseUrl}/api/auth/forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: inputEmail.trim() }),
+              });
+              Alert.alert("Check Your Email", "If an account exists with that email, we've sent password reset instructions.");
+            } catch {
+              Alert.alert("Error", "Failed to send reset email. Please try again.");
+            }
+          },
+          "plain-text",
+          email || "",
+        )
+      : Alert.alert(
+          "Forgot Password",
+          "Enter your email address in the email field above, then tap OK.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "OK",
+              onPress: async () => {
+                if (!email?.trim()) {
+                  Alert.alert("Error", "Please enter your email address in the email field first.");
+                  return;
+                }
+                try {
+                  const baseUrl = getApiUrl();
+                  await fetch(`${baseUrl}/api/auth/forgot-password`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email.trim() }),
+                  });
+                  Alert.alert("Check Your Email", "If an account exists with that email, we've sent password reset instructions.");
+                } catch {
+                  Alert.alert("Error", "Failed to send reset email. Please try again.");
+                }
+              },
+            },
+          ],
+        );
+  };
+
+  const handleContinueAsGuest = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Onboarding" }],
+      }),
+    );
   };
 
   const handleAuth = async () => {
@@ -353,8 +451,9 @@ export default function AuthScreen() {
                         styles.planPreviewPrice,
                         { color: AppColors.primary },
                       ]}
+                      data-testid="text-basic-price"
                     >
-                      ${prices.basic.monthly.toFixed(2)}/mo
+                      {getPreviewPrice("basic")}
                     </ThemedText>
                   </View>
                   <View
@@ -370,8 +469,9 @@ export default function AuthScreen() {
                         styles.planPreviewPrice,
                         { color: AppColors.primary },
                       ]}
+                      data-testid="text-pro-price"
                     >
-                      ${prices.pro.monthly.toFixed(2)}/mo
+                      {getPreviewPrice("pro")}
                     </ThemedText>
                   </View>
                 </View>
@@ -607,7 +707,7 @@ export default function AuthScreen() {
                   >
                     <Ionicons name="logo-apple" size={24} color={theme.text} />
                     <ThemedText style={styles.authSocialButtonText}>
-                      Apple
+                      Sign in with Apple
                     </ThemedText>
                   </Pressable>
                 )}
@@ -638,6 +738,75 @@ export default function AuthScreen() {
                 )}
               </View>
             </>
+          )}
+
+          {!isSignUp && (
+            <Pressable
+              onPress={handleForgotPassword}
+              style={styles.forgotPasswordButton}
+              data-testid="button-forgot-password"
+              {...webAccessibilityProps(handleForgotPassword)}
+            >
+              <ThemedText
+                style={[styles.forgotPasswordText, { color: AppColors.primary }]}
+              >
+                Forgot Password?
+              </ThemedText>
+            </Pressable>
+          )}
+
+          {isSignUp && (
+            <View style={styles.legalLinksContainer}>
+              <ThemedText
+                style={[styles.legalText, { color: theme.textSecondary }]}
+              >
+                By creating an account, you agree to our
+              </ThemedText>
+              <View style={styles.legalLinksRow}>
+                <Pressable
+                  onPress={handleOpenPrivacyPolicy}
+                  data-testid="link-auth-privacy-policy"
+                  {...webAccessibilityProps(handleOpenPrivacyPolicy)}
+                >
+                  <ThemedText
+                    style={[styles.legalLink, { color: AppColors.primary }]}
+                  >
+                    Privacy Policy
+                  </ThemedText>
+                </Pressable>
+                <ThemedText
+                  style={[styles.legalSeparator, { color: theme.textSecondary }]}
+                >
+                  {" and "}
+                </ThemedText>
+                <Pressable
+                  onPress={handleOpenTermsOfUse}
+                  data-testid="link-auth-terms-of-use"
+                  {...webAccessibilityProps(handleOpenTermsOfUse)}
+                >
+                  <ThemedText
+                    style={[styles.legalLink, { color: AppColors.primary }]}
+                  >
+                    Terms of Service
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          {isSignUp && Platform.OS !== "web" && (
+            <Pressable
+              onPress={handleContinueAsGuest}
+              style={styles.guestButton}
+              data-testid="button-continue-as-guest"
+              {...webAccessibilityProps(handleContinueAsGuest)}
+            >
+              <ThemedText
+                style={[styles.guestButtonText, { color: theme.textSecondary }]}
+              >
+                Skip for now - Start your free trial
+              </ThemedText>
+            </Pressable>
           )}
         </Animated.View>
       </KeyboardAwareScrollViewCompat>
@@ -908,5 +1077,48 @@ const styles = StyleSheet.create({
   authGoogleIcon: {
     width: 20,
     height: 20,
+  },
+  forgotPasswordButton: {
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  legalLinksContainer: {
+    alignItems: "center",
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+  },
+  legalText: {
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  legalLinksRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  legalLink: {
+    fontSize: 12,
+    fontWeight: "500",
+    textDecorationLine: "underline" as const,
+  },
+  legalSeparator: {
+    fontSize: 12,
+  },
+  guestButton: {
+    alignItems: "center",
+    paddingVertical: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  guestButtonText: {
+    fontSize: 14,
+    fontWeight: "400",
+    textDecorationLine: "underline" as const,
   },
 });
