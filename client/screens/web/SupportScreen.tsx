@@ -11,6 +11,8 @@ import {
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
+import { useNavigate } from "@/lib/web-router";
+import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 
@@ -35,13 +37,13 @@ export default function SupportScreen() {
   const currentPath = "/support";
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const navigateTo = (path: string) => {
-    if (isWeb && typeof window !== "undefined") {
-      window.history.pushState({}, "", path);
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  };
+  usePageMeta({
+    title: "Support - ChefSpAIce",
+    description: "Get help with ChefSpAIce. Contact our support team, report issues, or make a donation.",
+    ogType: "website",
+  });
 
   const handleDonate = async (amount: number) => {
     if (!isWeb || typeof window === "undefined") {
@@ -98,7 +100,7 @@ export default function SupportScreen() {
         <View style={styles.header}>
           <Pressable
             style={styles.logoContainer}
-            onPress={() => navigateTo("/")}
+            onPress={() => navigate("/")}
           >
             <MaterialCommunityIcons
               name="chef-hat"
@@ -113,7 +115,7 @@ export default function SupportScreen() {
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
-                onPress={() => navigateTo(link.path)}
+                onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
               >

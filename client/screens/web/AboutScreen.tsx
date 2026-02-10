@@ -9,6 +9,8 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
+import { useNavigate } from "@/lib/web-router";
+import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 
@@ -23,13 +25,13 @@ const NAV_LINKS = [
 export default function AboutScreen() {
   const colors = WebInfoColors;
   const currentPath = "/about";
+  const navigate = useNavigate();
 
-  const navigateTo = (path: string) => {
-    if (isWeb && typeof window !== "undefined") {
-      window.history.pushState({}, "", path);
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  };
+  usePageMeta({
+    title: "About - ChefSpAIce",
+    description: "Learn about ChefSpAIce, the AI-powered kitchen assistant that helps you manage inventory, generate recipes, and plan meals.",
+    ogType: "website",
+  });
 
   return (
     <ScrollView
@@ -42,7 +44,7 @@ export default function AboutScreen() {
         <View style={styles.header}>
           <Pressable
             style={styles.logoContainer}
-            onPress={() => navigateTo("/")}
+            onPress={() => navigate("/")}
           >
             <MaterialCommunityIcons
               name="chef-hat"
@@ -57,7 +59,7 @@ export default function AboutScreen() {
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
-                onPress={() => navigateTo(link.path)}
+                onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
               >

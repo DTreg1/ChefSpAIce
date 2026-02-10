@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { WebInfoColors } from "@/constants/theme";
+import { useNavigate } from "@/lib/web-router";
+import { usePageMeta } from "@/lib/web-meta";
 
 const isWeb = Platform.OS === "web";
 const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
@@ -24,13 +26,13 @@ const NAV_LINKS = [
 export default function TermsScreen() {
   const colors = WebInfoColors;
   const currentPath = "/terms";
+  const navigate = useNavigate();
 
-  const navigateTo = (path: string) => {
-    if (isWeb && typeof window !== "undefined") {
-      window.history.pushState({}, "", path);
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  };
+  usePageMeta({
+    title: "Terms of Service - ChefSpAIce",
+    description: "Review ChefSpAIce's terms of service for using our AI-powered kitchen management platform.",
+    ogType: "website",
+  });
 
   return (
     <ScrollView
@@ -43,7 +45,7 @@ export default function TermsScreen() {
         <View style={styles.header}>
           <Pressable
             style={styles.logoContainer}
-            onPress={() => navigateTo("/")}
+            onPress={() => navigate("/")}
           >
             <Image
               source={chefHatLight}
@@ -60,7 +62,7 @@ export default function TermsScreen() {
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
-                onPress={() => navigateTo(link.path)}
+                onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
               >
