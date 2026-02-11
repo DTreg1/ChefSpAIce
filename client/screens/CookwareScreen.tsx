@@ -241,7 +241,7 @@ const CookwareItem = React.memo(function CookwareItem({
           },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`Toggle ${item.name}`}
+        accessibilityLabel={`Toggle ${appliance.name}`}
         accessibilityState={{ disabled: isToggling || isDisabled }}
       >
         {isOwned ? (
