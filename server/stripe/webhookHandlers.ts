@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
 import { logger } from "../lib/logger";
 import { queueNotification } from "../services/notificationService";
+import { invalidateSubscriptionCache } from "../lib/subscription-cache";
 
 export class WebhookHandlers {
   static async processWebhook(
@@ -223,6 +224,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
 
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
+  await invalidateSubscriptionCache(userId);
 
   logger.info("Subscription record created/updated", { userId, tier });
 }
@@ -318,6 +320,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
 
   const status = subscription.status === "trialing" ? "trialing" : "active";
   await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, subscription.id, trialEnd);
+  await invalidateSubscriptionCache(userId);
 
   logger.info("Subscription created", { userId, tier });
 }
@@ -426,6 +429,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
   const statusStr = subscription.status === "trialing" ? "trialing" : 
                     subscription.status === "active" ? "active" : subscription.status;
   await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, undefined, trialEnd);
+  await invalidateSubscriptionCache(userId);
 
   logger.info("Subscription updated", { userId, tier, status: subscription.status });
 }
@@ -487,6 +491,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
     }
 
     await updateUserSubscriptionTier(userId, SubscriptionTier.TRIAL, finalStatus);
+    await invalidateSubscriptionCache(userId);
   }
 
   logger.info("Subscription deleted", { status: finalStatus, stripeCustomerId });
@@ -533,6 +538,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
+  const invoicePaidUserId = await findUserByStripeCustomerId(stripeCustomerId);
+  if (invoicePaidUserId) {
+    await invalidateSubscriptionCache(invoicePaidUserId);
+  }
+
   logger.info("Subscription confirmed active", { stripeCustomerId });
 }
 
@@ -564,10 +574,11 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
     })
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
-  const userId = await findUserByStripeCustomerId(stripeCustomerId);
-  if (userId) {
+  const paymentFailedUserId = await findUserByStripeCustomerId(stripeCustomerId);
+  if (paymentFailedUserId) {
+    await invalidateSubscriptionCache(paymentFailedUserId);
     await queueNotification({
-      userId,
+      userId: paymentFailedUserId,
       type: "payment_failed",
       title: "Payment Failed",
       body: "Your subscription payment couldn't be processed. Please update your payment method to avoid losing access to your premium features.",

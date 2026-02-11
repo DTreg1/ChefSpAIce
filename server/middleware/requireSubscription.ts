@@ -4,6 +4,7 @@ import { subscriptions, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
 import { SubscriptionTier } from "@shared/subscription";
+import { subscriptionCache, type CachedSubscriptionStatus } from "../lib/subscription-cache";
 
 const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
 const GRACE_PERIOD_DAYS = 7;
@@ -20,17 +21,26 @@ export async function requireSubscription(
       return next(AppError.unauthorized("Authentication required", "AUTHENTICATION_REQUIRED"));
     }
 
-    const [result] = await db
-      .select({
-        subscriptionStatus: subscriptions.status,
-        subscriptionPaymentFailedAt: subscriptions.paymentFailedAt,
-        subscriptionUpdatedAt: subscriptions.updatedAt,
-        userTier: users.subscriptionTier,
-      })
-      .from(users)
-      .leftJoin(subscriptions, eq(subscriptions.userId, users.id))
-      .where(eq(users.id, userId))
-      .limit(1);
+    let result: CachedSubscriptionStatus | undefined = await subscriptionCache.get(userId);
+
+    if (!result) {
+      const [dbResult] = await db
+        .select({
+          subscriptionStatus: subscriptions.status,
+          subscriptionPaymentFailedAt: subscriptions.paymentFailedAt,
+          subscriptionUpdatedAt: subscriptions.updatedAt,
+          userTier: users.subscriptionTier,
+        })
+        .from(users)
+        .leftJoin(subscriptions, eq(subscriptions.userId, users.id))
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (dbResult) {
+        await subscriptionCache.set(userId, dbResult);
+        result = dbResult;
+      }
+    }
 
     if (!result) {
       return next(AppError.forbidden("Active subscription required", "SUBSCRIPTION_REQUIRED"));

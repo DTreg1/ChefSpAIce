@@ -80,6 +80,7 @@ import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/
 import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
 import { hashToken } from "./lib/auth-utils";
+import { invalidateSubscriptionCache } from "./lib/subscription-cache";
 
 
 /**
@@ -333,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .where(eq(subscriptions.userId, userId));
 
+        await invalidateSubscriptionCache(userId);
         logger.info("Set user subscription tier", { userId, tier, status: newStatus });
         
         res.json(successResponse({ tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));
@@ -384,6 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .where(eq(subscriptions.userId, user.id));
 
+        await invalidateSubscriptionCache(user.id);
         logger.info("Set user subscription tier by email", { userId: user.id, tier, status: newStatus });
         
         res.json(successResponse({ userId: user.id, email, tier, status: newStatus }, `Subscription updated to ${tier} (${newStatus})`));

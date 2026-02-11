@@ -15,6 +15,7 @@ import { SubscriptionTier } from "@shared/subscription";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
+import { invalidateSubscriptionCache } from "../lib/subscription-cache";
 
 const router = Router();
 
@@ -381,6 +382,8 @@ router.post("/sync-revenuecat", async (req: Request, res: Response, next: NextFu
       .set(updateData)
       .where(eq(users.id, user.id));
 
+    await invalidateSubscriptionCache(user.id);
+
     logger.info("RevenueCat purchase synced", { userId: user.id, tier, status });
 
     res.json(successResponse({ tier, status }));
@@ -639,6 +642,8 @@ router.post("/upgrade", async (req: Request, res: Response, next: NextFunction) 
           stripeSessionId: `upgrade_inplace_${existingSubscription.stripeSubscriptionId}_${Date.now()}`,
         }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
       }
+
+      await invalidateSubscriptionCache(user.id);
 
       logger.info("Subscription upgraded in-place", {
         userId: user.id,

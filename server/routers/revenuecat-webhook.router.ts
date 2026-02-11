@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { logger } from '../lib/logger';
 import { AppError } from '../middleware/errorHandler';
 import { successResponse } from '../lib/apiResponse';
+import { invalidateSubscriptionCache } from '../lib/subscription-cache';
 
 const router = express.Router();
 
@@ -97,6 +98,8 @@ async function handleSubscriptionUpdate(
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
+
+  await invalidateSubscriptionCache(userId);
 
   logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'TRIAL', status });
 }

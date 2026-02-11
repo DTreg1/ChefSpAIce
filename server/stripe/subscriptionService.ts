@@ -23,6 +23,7 @@
 import { db } from "../db";
 import { subscriptions, users, Subscription, InsertSubscription, User } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { invalidateSubscriptionCache } from "../lib/subscription-cache";
 
 /**
  * Retrieves a subscription by user ID.
@@ -67,6 +68,7 @@ export async function createOrUpdateSubscription(data: Partial<InsertSubscriptio
       .where(eq(subscriptions.userId, data.userId))
       .returning();
 
+    await invalidateSubscriptionCache(data.userId);
     return updated;
   } else {
     const [created] = await db
@@ -80,6 +82,7 @@ export async function createOrUpdateSubscription(data: Partial<InsertSubscriptio
       } as InsertSubscription)
       .returning();
 
+    await invalidateSubscriptionCache(data.userId);
     return created;
   }
 }

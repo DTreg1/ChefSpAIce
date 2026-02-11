@@ -34,6 +34,7 @@ import {
   getRemainingQuota,
 } from "@shared/subscription";
 import { CacheService } from "../lib/cache";
+import { invalidateSubscriptionCache } from "../lib/subscription-cache";
 
 const { TRIAL_DAYS } = TRIAL_CONFIG;
 
@@ -348,6 +349,7 @@ export async function upgradeUserTier(
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
+  await invalidateSubscriptionCache(userId);
 }
 
 export async function downgradeUserTier(userId: string): Promise<void> {
@@ -369,6 +371,7 @@ export async function downgradeUserTier(userId: string): Promise<void> {
       })
       .where(eq(users.id, userId));
   });
+  await invalidateSubscriptionCache(userId);
 }
 
 export async function setTrialExpiration(
@@ -398,6 +401,7 @@ export async function setTrialExpiration(
       })
       .where(eq(users.id, userId));
   });
+  await invalidateSubscriptionCache(userId);
 }
 
 export async function checkTrialExpiration(userId: string): Promise<boolean> {
@@ -487,6 +491,7 @@ export async function ensureTrialSubscription(
         .where(eq(users.id, userId));
     });
 
+    await invalidateSubscriptionCache(userId);
     return { created: true, trialEnd };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -599,4 +604,5 @@ export async function expireTrialSubscription(userId: string): Promise<void> {
       })
       .where(eq(users.id, userId));
   });
+  await invalidateSubscriptionCache(userId);
 }
