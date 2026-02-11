@@ -337,6 +337,7 @@ export const userInventoryItems = pgTable(
     index("idx_user_inventory_user_category").on(table.userId, table.category),
     index("idx_user_inventory_user_expiration").on(table.userId, table.expirationDate),
     index("idx_user_inventory_user_deleted").on(table.userId, table.deletedAt),
+    index("idx_user_inventory_cursor").on(table.userId, table.updatedAt, table.id),
   ],
 );
 
@@ -375,6 +376,7 @@ export const userSavedRecipes = pgTable(
     uniqueIndex("idx_user_recipes_user_item").on(table.userId, table.itemId),
     index("idx_user_recipes_user").on(table.userId),
     index("idx_user_recipes_user_favorite").on(table.userId, table.isFavorite),
+    index("idx_user_recipes_cursor").on(table.userId, table.updatedAt, table.id),
   ],
 );
 
@@ -435,6 +437,7 @@ export const userShoppingItems = pgTable(
     uniqueIndex("idx_user_shopping_user_item").on(table.userId, table.itemId),
     index("idx_user_shopping_user").on(table.userId),
     index("idx_user_shopping_user_checked").on(table.userId, table.isChecked),
+    index("idx_user_shopping_cursor").on(table.userId, table.updatedAt, table.id),
   ],
 );
 

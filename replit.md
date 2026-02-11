@@ -17,3 +17,10 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - **Instacart Connect**: Integrates shopping list functionality, product matching, and delivery services.
 - **USDA FoodData Central**: Provides on-demand nutritional data for food items.
 - **Replit Object Storage (`@replit/object-storage`)**: Used for storing various application assets.
+
+## Sync Architecture
+- Sync endpoints at `/api/sync/{inventory,recipes,shoppingList,mealPlans,cookware}` handle POST/PUT/DELETE for mutations and GET for paginated reads.
+- GET endpoints support cursor-based pagination using `?limit=50&cursor=...` query parameters. Cursor encodes `(updatedAt, id)` as base64url JSON.
+- Client hooks in `client/hooks/usePaginatedSync.ts` provide `useInventorySync`, `useRecipesSync`, `useShoppingSync` using TanStack Query's `useInfiniteQuery`.
+- Composite DB indexes on `(userId, updatedAt, id)` optimize cursor pagination queries.
+- The sync-manager (`client/lib/sync-manager.ts`) handles local-first sync with conflict resolution, queue coalescing, and offline support.
