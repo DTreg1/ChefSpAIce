@@ -9,13 +9,13 @@ export const sharedStyles = StyleSheet.create({
   sectionTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 12,
   },
   sectionSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 40,
   },

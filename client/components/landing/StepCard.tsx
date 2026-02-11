@@ -27,13 +27,13 @@ export function StepCard({
       </View>
       <View style={styles.stepContent}>
         <Text
-          style={[styles.stepTitle, { color: "rgba(255, 255, 255, 0.5)" }]}
+          style={[styles.stepTitle, { color: "rgba(255, 255, 255, 0.95)" }]}
           data-testid={`text-step-title-${number}`}
         >
           {title}
         </Text>
         <Text
-          style={[styles.stepDescription, { color: "rgba(255,255,255,0.8)" }]}
+          style={[styles.stepDescription, { color: "rgba(255, 255, 255, 0.9)" }]}
           data-testid={`text-step-desc-${number}`}
         >
           {description}
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   stepContent: {
     flex: 1,

@@ -126,10 +126,10 @@ const styles = StyleSheet.create({
   billingOptionText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
   },
   billingOptionTextActive: {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   saveBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -140,12 +140,12 @@ const styles = StyleSheet.create({
   saveBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   trialText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     marginTop: 16,
     textAlign: "center" as const,
   },

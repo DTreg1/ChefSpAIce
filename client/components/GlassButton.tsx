@@ -83,9 +83,9 @@ export const GlassButton = memo(function GlassButton({
       case "secondary":
         return `${AppColors.secondary}CC`;
       case "outline":
-        return isDark ? "rgba(0, 0, 0, 0.45)" : "rgba(255, 255, 255, 0.8)";
+        return isDark ? "rgba(0, 0, 0, 0.55)" : "rgba(255, 255, 255, 0.85)";
       case "ghost":
-        return isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.75)";
+        return isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)";
       default:
         return `${AppColors.primary}CC`;
     }

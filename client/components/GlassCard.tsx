@@ -190,7 +190,7 @@ export function GlassCard({
     borderWidth: useLiquidGlass ? 0 : GlassEffect.borderWidth,
   };
 
-  const textBackingColor = isDark ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.7)";
+  const textBackingColor = isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)";
 
   const content = (
     <GlassProvider>

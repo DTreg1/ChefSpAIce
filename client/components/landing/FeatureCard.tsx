@@ -25,13 +25,13 @@ export function FeatureCard({
     >
       <View style={styles.featureIconContainer}>{icon}</View>
       <Text
-        style={[styles.featureTitle, { color: "rgba(255, 255, 255, 0.5)" }]}
+        style={[styles.featureTitle, { color: "rgba(255, 255, 255, 0.95)" }]}
         data-testid={`text-feature-title-${testId}`}
       >
         {title}
       </Text>
       <Text
-        style={[styles.featureDescription, { color: "rgba(255,255,255,0.8)" }]}
+        style={[styles.featureDescription, { color: "rgba(255, 255, 255, 0.9)" }]}
         data-testid={`text-feature-desc-${testId}`}
       >
         {description}

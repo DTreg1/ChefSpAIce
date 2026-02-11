@@ -58,13 +58,13 @@ const styles = StyleSheet.create({
   benefitTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     marginBottom: 8,
     textAlign: "center",
   },
   benefitDescription: {
     fontSize: 15,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     lineHeight: 24,
   },

@@ -172,14 +172,14 @@ const styles = StyleSheet.create({
     borderRadius: GlassEffect.borderRadius.pill,
   },
   popularBadgeText: {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     fontSize: 12,
     fontWeight: "700",
   },
   pricingTier: {
     fontSize: 20,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     marginBottom: 8,
     marginTop: 8,
   },
@@ -191,15 +191,15 @@ const styles = StyleSheet.create({
   pricingPrice: {
     fontSize: 48,
     fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   pricingPeriod: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
   },
   pricingDescription: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 24,
   },
   pricingFeatures: {
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   pricingFeatureText: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "rgba(255, 255, 255, 0.9)",
   },
   pricingButtonPrimary: {
     width: "100%",
@@ -237,12 +237,12 @@ const styles = StyleSheet.create({
   pricingButtonTextPrimary: {
     fontSize: 16,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   pricingButtonTextSecondary: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   downloadButtonsContainer: {
     width: "100%",
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   downloadLabel: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 4,
   },
   downloadButtons: {

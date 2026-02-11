@@ -46,9 +46,9 @@ export const GlassColors = {
     insetHighlight: "rgba(255, 255, 255, 0.5)",
   },
   dark: {
-    background: "rgba(0, 0, 0, 0.2)",
-    backgroundStrong: "rgba(0, 0, 0, 0.35)",
-    backgroundSubtle: "rgba(0, 0, 0, 0.1)",
+    background: "rgba(0, 0, 0, 0.45)",
+    backgroundStrong: "rgba(0, 0, 0, 0.55)",
+    backgroundSubtle: "rgba(0, 0, 0, 0.3)",
     border: "rgba(255, 255, 255, 0.15)",
     borderStrong: "rgba(255, 255, 255, 0.25)",
     borderSubtle: "rgba(255, 255, 255, 0.08)",
@@ -259,11 +259,11 @@ export const Shadows = {
 export const WebInfoColors = {
   card: "rgba(255, 255, 255, 0.08)",
   cardBorder: "rgba(255, 255, 255, 0.15)",
-  textPrimary: "rgba(255, 255, 255, 0.5)",
-  textSecondary: "rgba(255, 255, 255, 0.5)",
-  textMuted: "rgba(255, 255, 255, 0.5)",
+  textPrimary: "rgba(255, 255, 255, 0.95)",
+  textSecondary: "rgba(255, 255, 255, 0.85)",
+  textMuted: "rgba(255, 255, 255, 0.7)",
   footerBg: "rgba(0, 0, 0, 0.3)",
-  iconLight: "rgba(255, 255, 255, 0.5)",
+  iconLight: "rgba(255, 255, 255, 0.8)",
   brandGreen: "#27AE60",
 };
 

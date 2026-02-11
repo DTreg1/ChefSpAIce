@@ -89,11 +89,11 @@ const styles = StyleSheet.create({
   footerLogoText: {
     fontSize: 20,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   footerText: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
     marginBottom: 24,
   },
   qrCodeSection: {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   qrCodeLabel: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
   },
   footerLinks: {
@@ -128,13 +128,13 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
   },
   footerDivider: {
     color: "rgba(255, 255, 255, 0.2)",
   },
   copyright: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.4)",
+    color: "rgba(255, 255, 255, 0.7)",
   },
 });

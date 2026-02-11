@@ -119,13 +119,13 @@ const styles = StyleSheet.create({
   showcaseTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 12,
   },
   showcaseSubtitle: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     marginBottom: 32,
     maxWidth: 500,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   hoverHint: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.4)",
+    color: "rgba(255, 255, 255, 0.7)",
     textAlign: "center",
     marginTop: 16,
     fontStyle: "italic",

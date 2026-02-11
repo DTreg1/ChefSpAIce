@@ -118,7 +118,7 @@ export function DownloadBanner() {
           accessibilityRole="button"
           accessibilityLabel="Dismiss download banner"
         >
-          <Feather name="x" size={16} color="rgba(255, 255, 255, 0.6)" />
+          <Feather name="x" size={16} color="rgba(255, 255, 255, 0.8)" />
         </Pressable>
       </View>
     </View>
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
     marginTop: 2,
   },
   right: {
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   badgeLabel: {
     fontSize: 9,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
     lineHeight: 11,
   },
   badgeStore: {

@@ -124,13 +124,13 @@ const styles = StyleSheet.create({
   mockupLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginTop: 4,
   },
   mockupDescription: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
   },
 });

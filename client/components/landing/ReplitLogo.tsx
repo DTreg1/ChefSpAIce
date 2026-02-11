@@ -2,7 +2,7 @@ import Svg, { Path } from "react-native-svg";
 
 export function ReplitLogo({
   size = 24,
-  color = "rgba(255,255,255,0.5)",
+  color = "rgba(255,255,255,0.8)",
 }: {
   size?: number;
   color?: string;

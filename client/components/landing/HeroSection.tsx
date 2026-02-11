@@ -94,15 +94,15 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
                   <MaterialCommunityIcons
                     name={logo.icon as any}
                     size={24}
-                    color="rgba(255,255,255,0.5)"
+                    color="rgba(255, 255, 255, 0.8)"
                   />
                 ) : logo.iconType === "custom" && logo.icon === "replit" ? (
-                  <ReplitLogo size={24} color="rgba(255,255,255,0.5)" />
+                  <ReplitLogo size={24} color="rgba(255, 255, 255, 0.8)" />
                 ) : (
                   <Feather
                     name={logo.icon as any}
                     size={24}
-                    color="rgba(255,255,255,0.5)"
+                    color="rgba(255, 255, 255, 0.8)"
                   />
                 )}
               </View>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 22,
     fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   signInButton: {
     paddingHorizontal: 20,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   signInButtonText: {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -199,19 +199,19 @@ const styles = StyleSheet.create({
   taglineText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
   heroTitle: {
     fontSize: 40,
     fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
     marginBottom: 16,
     lineHeight: 48,
   },
   heroSubtitle: {
     fontSize: 18,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 28,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   trustTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     textTransform: "uppercase",
     letterSpacing: 2,
     marginBottom: 24,
@@ -254,6 +254,6 @@ const styles = StyleSheet.create({
   },
   trustLogoText: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
   },
 });

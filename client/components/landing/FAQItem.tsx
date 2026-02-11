@@ -25,7 +25,7 @@ export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemP
           <Feather
             name={isOpen ? "chevron-up" : "chevron-down"}
             size={20}
-            color="rgba(255,255,255,0.7)"
+            color="rgba(255, 255, 255, 0.85)"
           />
         </View>
         {isOpen && (
@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 16,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(255, 255, 255, 0.95)",
     flex: 1,
     paddingRight: 16,
   },
   faqAnswer: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.85)",
     lineHeight: 22,
     marginTop: 16,
   },
