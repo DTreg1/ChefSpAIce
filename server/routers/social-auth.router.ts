@@ -10,6 +10,7 @@ import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
 import { createSession } from "../domain/services";
+import { encryptTokenOrNull } from "../lib/token-encryption";
 
 const router = Router();
 
@@ -223,7 +224,8 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
 
 router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { idToken, accessToken, selectedPlan } = req.body as GoogleTokenPayload;
+    const { idToken, accessToken: rawAccessToken, selectedPlan } = req.body as GoogleTokenPayload;
+    const accessToken = encryptTokenOrNull(rawAccessToken);
 
     if (!idToken) {
       throw AppError.badRequest("ID token is required", "MISSING_ID_TOKEN");
