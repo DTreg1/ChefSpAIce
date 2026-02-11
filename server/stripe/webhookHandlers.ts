@@ -29,7 +29,22 @@ export class WebhookHandlers {
     const sync = await getStripeSync();
     await sync.processWebhook(payload, signature, uuid);
 
-    const event = JSON.parse(payload.toString()) as Stripe.Event;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    let event: Stripe.Event;
+
+    if (webhookSecret) {
+      const stripe = await getUncachableStripeClient();
+      event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      logger.info("Webhook signature verified via constructEvent", { eventId: event.id, eventType: event.type });
+    } else {
+      event = JSON.parse(payload.toString()) as Stripe.Event;
+      logger.warn(
+        "STRIPE_WEBHOOK_SECRET not set: signature was verified by stripe-replit-sync managed webhook, " +
+        "but explicit constructEvent verification is skipped. Set STRIPE_WEBHOOK_SECRET for full auditability.",
+        { eventId: event.id, eventType: event.type },
+      );
+    }
+
     await processSubscriptionEvent(event);
   }
 }
