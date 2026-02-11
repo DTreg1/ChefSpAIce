@@ -17,7 +17,7 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - **Instacart Connect**: Integrates shopping list functionality, product matching, and delivery services.
 - **USDA FoodData Central**: Provides on-demand nutritional data for food items.
 - **Replit Object Storage (`@replit/object-storage`)**: Used for storing various application assets.
-- **Sentry (`@sentry/react-native`)**: Crash reporting and event tracking. Configured via `EXPO_PUBLIC_SENTRY_DSN` env var. Tracks screen views, recipe generation, inventory actions, subscription changes, and errors. Initialization in `client/lib/crash-reporter.ts`, integrated into App.tsx with `Sentry.wrap()` and `Sentry.ErrorBoundary`.
+- **Sentry (`@sentry/react-native` + `@sentry/node`)**: Crash reporting and event tracking. Configured via `EXPO_PUBLIC_SENTRY_DSN` env var (used by both client and server SDKs; server also checks `SENTRY_DSN`). Client: Tracks screen views, recipe generation, inventory actions, subscription changes, and errors. Initialization in `client/lib/crash-reporter.ts`, integrated into App.tsx with `Sentry.wrap()` and `Sentry.ErrorBoundary`. Server: Captures `unhandledRejection`, `uncaughtException`, and Express 500 errors via `server/lib/sentry.ts`. The `uncaughtException` handler flushes Sentry before exiting. Sensitive headers (Authorization, Cookie) are stripped from events before sending.
 
 ## Sync Architecture
 - Sync endpoints at `/api/sync/{inventory,recipes,shoppingList,mealPlans,cookware}` handle POST/PUT/DELETE for mutations and GET for paginated reads.

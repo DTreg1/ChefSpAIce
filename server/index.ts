@@ -22,6 +22,9 @@ import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/requireAdmin";
 import { runDrizzleMigrations } from "./migrate";
+import { initSentry, captureException, flush as flushSentry } from "./lib/sentry";
+
+initSentry();
 
 const app = express();
 
@@ -554,6 +557,9 @@ process.on("unhandledRejection", (reason, promise) => {
     reason: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
   });
+  captureException(reason instanceof Error ? reason : new Error(String(reason)), {
+    trigger: "unhandledRejection",
+  });
 });
 
 process.on("uncaughtException", (error) => {
@@ -561,5 +567,8 @@ process.on("uncaughtException", (error) => {
     error: error.message,
     stack: error.stack,
   });
-  process.exit(1);
+  captureException(error, { trigger: "uncaughtException" });
+  flushSentry(2000).finally(() => {
+    process.exit(1);
+  });
 });
