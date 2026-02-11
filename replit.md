@@ -85,7 +85,9 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - Icon-only containers, decorative elements (progress bars, dividers), and image containers retain fixed dimensions since they contain no text.
 
 ## Background Jobs
-- All background jobs use `setInterval` with `start`/`stop` export functions, started in `server/index.ts`.
+- Background jobs use a PostgreSQL-backed scheduler (`server/jobs/jobScheduler.ts`) with advisory locks for exactly-once execution across multiple instances.
+- The `cron_jobs` table tracks each job's schedule, last run time, duration, and errors. Jobs are registered at startup via `registerJob()` and the scheduler polls every 30 seconds, acquiring a `pg_try_advisory_lock` before checking if a job is due.
+- Each job file exports a `register*Job()` function (instead of the old `start*Job()` pattern) which registers the job handler with the central scheduler.
 - **trialExpirationJob** (`server/jobs/trialExpirationJob.ts`): Runs hourly, expires trial subscriptions past their end date.
 - **sessionCleanupJob** (`server/jobs/sessionCleanupJob.ts`): Runs daily, cleans up expired user sessions.
 - **winbackJob** (`server/jobs/winbackJob.ts`): Runs weekly, finds canceled subscriptions 30+ days old, sends one-time winback notification offering $4.99 first month. Deduplicates by checking for any existing campaign per user (regardless of status). Acceptance tracked in `webhookHandlers.ts` when canceled users reactivate.

@@ -1327,6 +1327,23 @@ export type InsertWinbackCampaign = z.infer<typeof insertWinbackCampaignSchema>;
 export type WinbackCampaign = typeof winbackCampaigns.$inferSelect;
 
 // =============================================================================
+// CRON JOBS TABLE (PostgreSQL-backed job scheduling)
+// =============================================================================
+
+export const cronJobs = pgTable("cron_jobs", {
+  name: varchar("name", { length: 100 }).primaryKey(),
+  intervalMs: integer("interval_ms").notNull(),
+  lastRunAt: timestamp("last_run_at"),
+  lastRunDurationMs: integer("last_run_duration_ms"),
+  lastError: text("last_error"),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CronJob = typeof cronJobs.$inferSelect;
+
+// =============================================================================
 // REFERRALS TABLE
 // =============================================================================
 

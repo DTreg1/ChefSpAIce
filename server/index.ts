@@ -13,9 +13,10 @@ import { Client } from "pg";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
-import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
-import { startSessionCleanupJob } from "./jobs/sessionCleanupJob";
-import { startWinbackJob } from "./jobs/winbackJob";
+import { registerTrialExpirationJob } from "./jobs/trialExpirationJob";
+import { registerSessionCleanupJob } from "./jobs/sessionCleanupJob";
+import { registerWinbackJob } from "./jobs/winbackJob";
+import { startJobScheduler } from "./jobs/jobScheduler";
 import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
 import { requireAuth } from "./middleware/auth";
@@ -538,14 +539,12 @@ async function initStripe(retries = 3, delay = 2000) {
         logger.error("Background Stripe init failed", { error: err instanceof Error ? err.message : String(err) });
       });
 
-      // Start trial expiration background job (runs every hour)
-      startTrialExpirationJob(60 * 60 * 1000);
-
-      // Start session cleanup background job (runs daily)
-      startSessionCleanupJob(24 * 60 * 60 * 1000);
-
-      // Start winback campaign job (runs weekly)
-      startWinbackJob(7 * 24 * 60 * 60 * 1000);
+      registerTrialExpirationJob(60 * 60 * 1000);
+      registerSessionCleanupJob(24 * 60 * 60 * 1000);
+      registerWinbackJob(7 * 24 * 60 * 60 * 1000);
+      startJobScheduler().catch((err) => {
+        logger.error("Job scheduler startup failed", { error: err instanceof Error ? err.message : String(err) });
+      });
     },
   );
 })();

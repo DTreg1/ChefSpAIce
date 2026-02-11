@@ -3,6 +3,7 @@ import { subscriptions } from "@shared/schema";
 import { eq, and, lt } from "drizzle-orm";
 import { expireTrialSubscription } from "../services/subscriptionService";
 import { logger } from "../lib/logger";
+import { registerJob } from "./jobScheduler";
 
 export async function checkExpiredTrials(): Promise<{ expired: number; errors: string[] }> {
   const now = new Date();
@@ -47,28 +48,8 @@ export async function checkExpiredTrials(): Promise<{ expired: number; errors: s
   return { expired: expiredCount, errors };
 }
 
-let jobInterval: ReturnType<typeof setInterval> | null = null;
-
-export function startTrialExpirationJob(intervalMs: number = 60 * 60 * 1000): void {
-  if (jobInterval) {
-    logger.info("Trial expiration job already running");
-    return;
-  }
-
-  const intervalHours = Math.round(intervalMs / (60 * 60 * 1000));
-  logger.info("Trial expiration job started", { intervalHours });
-
-  checkExpiredTrials();
-
-  jobInterval = setInterval(async () => {
+export function registerTrialExpirationJob(intervalMs: number = 60 * 60 * 1000): void {
+  registerJob("trial-expiration", intervalMs, async () => {
     await checkExpiredTrials();
-  }, intervalMs);
-}
-
-export function stopTrialExpirationJob(): void {
-  if (jobInterval) {
-    clearInterval(jobInterval);
-    jobInterval = null;
-    logger.info("Stopped trial expiration job");
-  }
+  });
 }
