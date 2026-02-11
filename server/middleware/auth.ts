@@ -4,7 +4,7 @@ import { users, userSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { AppError } from "./errorHandler";
 import { logger } from "../lib/logger";
-import { hashToken, getSessionByToken } from "../lib/auth-utils";
+import { hashToken, getSessionByToken, anonymizeIpAddress } from "../lib/auth-utils";
 import { queueNotification } from "../services/notificationService";
 import { sessionCache } from "../lib/session-cache";
 
@@ -73,7 +73,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         userId: session.userId,
         storedAgent: session.userAgent?.substring(0, 80),
         currentAgent: currentUserAgent.substring(0, 80),
-        ip: req.ip,
+        ip: anonymizeIpAddress(req.ip),
       });
 
       const cacheKey = `ua_mismatch:${session.id}`;
