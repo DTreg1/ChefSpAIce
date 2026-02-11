@@ -13,7 +13,6 @@ import { Client } from "pg";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
-import { registerTrialExpirationJob } from "./jobs/trialExpirationJob";
 import { registerSessionCleanupJob } from "./jobs/sessionCleanupJob";
 import { registerWinbackJob } from "./jobs/winbackJob";
 import { startJobScheduler } from "./jobs/jobScheduler";
@@ -542,7 +541,6 @@ async function initStripe(retries = 3, delay = 2000) {
         logger.error("Background Stripe init failed", { error: err instanceof Error ? err.message : String(err) });
       });
 
-      registerTrialExpirationJob(60 * 60 * 1000);
       registerSessionCleanupJob(24 * 60 * 60 * 1000);
       registerWinbackJob(7 * 24 * 60 * 60 * 1000);
       startJobScheduler().catch((err) => {

@@ -5,7 +5,6 @@ import { setAuthCookie } from "../lib/session-utils";
 import { db } from "../db";
 import { users, authProviders, userSyncData } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { ensureTrialSubscription } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
 import { successResponse } from "../lib/apiResponse";
 import { logger } from "../lib/logger";
@@ -196,7 +195,6 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
-      await ensureTrialSubscription(userId, plan);
     }
 
     const { rawToken, expiresAt } = await createSession(userId, {
@@ -381,7 +379,6 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
 
     if (isNewUser) {
       await createSyncDataIfNeeded(userId);
-      await ensureTrialSubscription(userId, plan);
     }
 
     const { rawToken, expiresAt } = await createSession(userId, {

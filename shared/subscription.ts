@@ -37,11 +37,6 @@ export const ANNUAL_PRICES = {
   PRO: ANNUAL_PRICE,
 } as const;
 
-export const TRIAL_CONFIG = {
-  TRIAL_DAYS: 7,
-  TRIAL_TIER: SubscriptionTier.PRO,
-} as const;
-
 export function getTierLimits(tier: SubscriptionTier): TierLimits {
   return TIER_CONFIG[tier];
 }

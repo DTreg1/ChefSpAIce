@@ -1,8 +1,7 @@
-import { SubscriptionTier, MONTHLY_PRICE, ANNUAL_PRICE, TRIAL_CONFIG } from "@shared/subscription";
+import { SubscriptionTier, MONTHLY_PRICE, ANNUAL_PRICE } from "@shared/subscription";
 import { logger } from "../lib/logger";
 
 export const SUBSCRIPTION_CONFIG = {
-  TRIAL_DAYS: TRIAL_CONFIG.TRIAL_DAYS,
   PRO_MONTHLY: {
     priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
     amount: MONTHLY_PRICE * 100,

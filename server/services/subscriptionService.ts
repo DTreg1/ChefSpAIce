@@ -10,7 +10,6 @@
  * - User entitlements calculation (tier, limits, remaining quota)
  * - Usage limit checks (pantry items, AI recipes, cookware)
  * - Feature access control (recipe scanning, AI assistant, etc.)
- * - Trial management (creation, expiration, checking)
  * - Monthly usage counter resets
  * 
  * RELATED FILES:
@@ -28,15 +27,12 @@ import { logger } from "../lib/logger";
 import {
   SubscriptionTier,
   TierLimits,
-  TRIAL_CONFIG,
   getTierLimits,
   isWithinLimit,
   getRemainingQuota,
 } from "@shared/subscription";
 import { CacheService } from "../lib/cache";
 import { invalidateSubscriptionCache } from "../lib/subscription-cache";
-
-const { TRIAL_DAYS } = TRIAL_CONFIG;
 
 const AI_LIMIT_CACHE_TTL_MS = 30_000; // 30 seconds
 
@@ -374,149 +370,6 @@ export async function downgradeUserTier(userId: string): Promise<void> {
   await invalidateSubscriptionCache(userId);
 }
 
-export async function setTrialExpiration(
-  userId: string,
-  trialDays: number = 7
-): Promise<void> {
-  const trialEndsAt = new Date();
-  trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(subscriptions)
-      .set({
-        status: 'trialing',
-        trialEnd: trialEndsAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptions.userId, userId));
-
-    await tx
-      .update(users)
-      .set({
-        subscriptionTier: SubscriptionTier.PRO,
-        subscriptionStatus: "trialing",
-        trialEndsAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
-  });
-  await invalidateSubscriptionCache(userId);
-}
-
-export async function checkTrialExpiration(userId: string): Promise<boolean> {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  if (user.subscriptionStatus !== "trialing") {
-    return false;
-  }
-
-  if (!user.trialEndsAt) {
-    return false;
-  }
-
-  const now = new Date();
-  if (now >= new Date(user.trialEndsAt)) {
-    await expireTrialSubscription(userId);
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * DESIGN DECISION: Trial is a 7-day free period of the PRO subscription, not a
- * separate tier. New users start on PRO with "trialing" status and get full access.
- * When the trial expires, `expireTrialSubscription()` changes the status to "expired"
- * but the tier stays PRO. Access is controlled by subscription status, not tier.
- */
-export async function ensureTrialSubscription(
-  userId: string,
-  selectedPlan: 'monthly' | 'annual' = 'monthly',
-  trialDaysOverride?: number
-): Promise<{ created: boolean; trialEnd: Date }> {
-  const now = new Date();
-  const trialEnd = new Date(now);
-  const effectiveTrialDays = trialDaysOverride ?? TRIAL_DAYS;
-  trialEnd.setDate(trialEnd.getDate() + effectiveTrialDays);
-
-  const [existing] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
-
-  if (existing) {
-    if (existing.status === 'trialing') {
-      await db
-        .update(users)
-        .set({
-          subscriptionTier: SubscriptionTier.PRO,
-          subscriptionStatus: 'trialing',
-          trialEndsAt: existing.trialEnd || trialEnd,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, userId));
-      return { created: false, trialEnd: existing.trialEnd || trialEnd };
-    }
-    return { created: false, trialEnd: existing.trialEnd || trialEnd };
-  }
-
-  try {
-    await db.transaction(async (tx) => {
-      await tx.insert(subscriptions).values({
-        userId,
-        status: 'trialing',
-        planType: selectedPlan,
-        currentPeriodStart: now,
-        currentPeriodEnd: trialEnd,
-        trialStart: now,
-        trialEnd: trialEnd,
-        cancelAtPeriodEnd: false,
-      });
-
-      await tx
-        .update(users)
-        .set({
-          subscriptionTier: SubscriptionTier.PRO,
-          subscriptionStatus: 'trialing',
-          trialEndsAt: trialEnd,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, userId));
-    });
-
-    await invalidateSubscriptionCache(userId);
-    return { created: true, trialEnd };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
-      const [sub] = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1);
-
-      if (sub?.status === 'trialing') {
-        await db
-          .update(users)
-          .set({
-            subscriptionTier: SubscriptionTier.PRO,
-            subscriptionStatus: 'trialing',
-            trialEndsAt: sub.trialEnd || trialEnd,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, userId));
-      }
-      return { created: false, trialEnd: sub?.trialEnd || trialEnd };
-    }
-    throw error;
-  }
-}
-
 export async function checkAndRedeemReferralCredits(userId: string): Promise<void> {
   const [result] = await db
     .select({ value: count() })
@@ -582,25 +435,4 @@ export async function checkAndRedeemReferralCredits(userId: string): Promise<voi
 
     logger.info("Referral reward granted: 1 month free", { userId, creditsRedeemed: 3 });
   }
-}
-
-export async function expireTrialSubscription(userId: string): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx
-      .update(subscriptions)
-      .set({
-        status: 'expired',
-      })
-      .where(eq(subscriptions.userId, userId));
-
-    await tx
-      .update(users)
-      .set({
-        subscriptionTier: SubscriptionTier.PRO,
-        subscriptionStatus: 'expired',
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
-  });
-  await invalidateSubscriptionCache(userId);
 }
