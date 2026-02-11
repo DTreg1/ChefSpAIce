@@ -70,6 +70,7 @@ import dataExportRouter from "./routers/user/data-export.router";
 import referralRouter from "./routers/referral.router";
 import notificationsRouter from "./routers/notifications.router";
 import nutritionLookupRouter from "./routers/nutrition-lookup.router";
+import errorReportRouter from "./routers/error-report.router";
 import { db } from "./db";
 import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
@@ -137,6 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/donations", donationsRouter); // Support donations via Stripe
   app.use("/api/external", externalApiRouter); // External API for Siri Shortcuts integration
   app.use("/api/referral", referralRouter); // Referral system
+  app.use("/api/error-report", errorReportRouter); // Client-side crash reports
 
   // =========================================================================
   // PRE-REGISTRATION ENDPOINT

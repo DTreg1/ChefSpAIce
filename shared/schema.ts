@@ -1142,6 +1142,34 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
 // =============================================================================
+// ERROR REPORTS
+// =============================================================================
+
+export const errorReports = pgTable("error_reports", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 }),
+  errorMessage: text("error_message").notNull(),
+  stackTrace: text("stack_trace"),
+  componentStack: text("component_stack"),
+  screenName: varchar("screen_name", { length: 255 }),
+  platform: varchar("platform", { length: 50 }),
+  appVersion: varchar("app_version", { length: 50 }),
+  deviceInfo: text("device_info"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_error_reports_user").on(table.userId),
+  index("idx_error_reports_created").on(table.createdAt),
+]);
+
+export const insertErrorReportSchema = createInsertSchema(errorReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
+export type ErrorReport = typeof errorReports.$inferSelect;
+
+// =============================================================================
 // NUTRITION UTILITY FUNCTIONS
 // =============================================================================
 
