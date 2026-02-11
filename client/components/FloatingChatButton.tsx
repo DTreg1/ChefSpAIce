@@ -142,6 +142,8 @@ export function FloatingChatButton() {
           data-testid="button-floating-chat"
           accessibilityRole="button"
           accessibilityLabel={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
+          accessibilityHint={isChatOpen ? "Double-tap to close the AI chat" : "Double-tap to open the AI kitchen assistant"}
+          accessibilityState={{ expanded: isChatOpen }}
         >
           {innerContent}
           {!canUseAiAssistant && (

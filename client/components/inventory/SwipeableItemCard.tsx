@@ -201,6 +201,7 @@ export function SwipeableItemCard({
         testID={`button-consumed-${item.id}`}
         accessibilityRole="button"
         accessibilityLabel={`Mark ${item.name} as consumed`}
+        accessibilityHint="Double-tap to mark this item as consumed and remove it from inventory"
       >
         <LinearGradient
           colors={["rgba(46, 204, 113, 0.25)", "transparent"]}
@@ -225,6 +226,7 @@ export function SwipeableItemCard({
         testID={`button-wasted-${item.id}`}
         accessibilityRole="button"
         accessibilityLabel={`Mark ${item.name} as wasted`}
+        accessibilityHint="Double-tap to mark this item as wasted and remove it from inventory"
       >
         <LinearGradient
           colors={["transparent", "rgba(231, 76, 60, 0.25)"]}

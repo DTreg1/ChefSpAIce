@@ -388,8 +388,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     return (
       <AnimatedPressable
         testID="add-button"
-        accessibilityLabel="Add item"
+        accessibilityLabel={isMenuOpen ? "Close add menu" : "Add new item"}
+        accessibilityHint={isMenuOpen ? "Double-tap to close the menu" : "Double-tap to open menu for adding inventory, recipes, or meal plans"}
         accessibilityRole="button"
+        accessibilityState={{ expanded: isMenuOpen }}
         onPress={handleAddPress}
         onPressIn={handleAddPressIn}
         onPressOut={handleAddPressOut}

@@ -9,10 +9,14 @@ export function GlassCard({
   children,
   style,
   testId,
+  accessibilityLabel,
+  accessibilityRole,
 }: {
   children: React.ReactNode;
   style?: ViewStyle | ViewStyle[];
   testId?: string;
+  accessibilityLabel?: string;
+  accessibilityRole?: "button" | "summary" | "none";
 }) {
   const { isDark } = useTheme();
   const glassColors = isDark ? GlassColors.dark : GlassColors.light;
@@ -29,6 +33,8 @@ export function GlassCard({
           style,
         ]}
         data-testid={testId}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
       >
         {children}
       </View>
@@ -50,6 +56,8 @@ export function GlassCard({
           },
         ]}
         data-testid={testId}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
       >
         {children}
       </View>
