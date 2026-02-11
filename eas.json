@@ -14,7 +14,8 @@
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
         "EXPO_NO_DOCTOR": "1",
-        "EXPO_USE_REACT_COMPILER": "0"
+        "EXPO_USE_REACT_COMPILER": "0",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "preview": {
@@ -28,7 +29,8 @@
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
         "EXPO_NO_DOCTOR": "1",
-        "EXPO_USE_REACT_COMPILER": "0"
+        "EXPO_USE_REACT_COMPILER": "0",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
@@ -43,7 +45,8 @@
         "EXPO_NO_CAPABILITY_SYNC": "1",
         "EXPO_NO_DOCTOR": "1",
         "EXPO_USE_REACT_COMPILER": "0",
-        "EXPO_PUBLIC_DOMAIN": "chefspaice.com"
+        "EXPO_PUBLIC_DOMAIN": "chefspaice.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },
