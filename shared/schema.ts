@@ -476,6 +476,113 @@ export const insertUserCookwareItemSchema = createInsertSchema(userCookwareItems
 export type InsertUserCookwareItem = z.infer<typeof insertUserCookwareItemSchema>;
 export type UserCookwareItem = typeof userCookwareItems.$inferSelect;
 
+export const userWasteLogs = pgTable(
+  "user_waste_logs",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entryId: text("entry_id").notNull(),
+    itemName: text("item_name").notNull(),
+    quantity: doublePrecision("quantity"),
+    unit: text("unit"),
+    reason: text("reason"),
+    date: text("date"),
+    extraData: jsonb("extra_data"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_waste_logs_user_entry").on(table.userId, table.entryId),
+    index("idx_user_waste_logs_user").on(table.userId),
+    index("idx_user_waste_logs_user_date").on(table.userId, table.date),
+  ],
+);
+
+export const insertUserWasteLogSchema = createInsertSchema(userWasteLogs).omit({
+  createdAt: true,
+});
+export type InsertUserWasteLog = z.infer<typeof insertUserWasteLogSchema>;
+export type UserWasteLog = typeof userWasteLogs.$inferSelect;
+
+export const userConsumedLogs = pgTable(
+  "user_consumed_logs",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entryId: text("entry_id").notNull(),
+    itemName: text("item_name").notNull(),
+    quantity: doublePrecision("quantity"),
+    unit: text("unit"),
+    date: text("date"),
+    extraData: jsonb("extra_data"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_consumed_logs_user_entry").on(table.userId, table.entryId),
+    index("idx_user_consumed_logs_user").on(table.userId),
+    index("idx_user_consumed_logs_user_date").on(table.userId, table.date),
+  ],
+);
+
+export const insertUserConsumedLogSchema = createInsertSchema(userConsumedLogs).omit({
+  createdAt: true,
+});
+export type InsertUserConsumedLog = z.infer<typeof insertUserConsumedLogSchema>;
+export type UserConsumedLog = typeof userConsumedLogs.$inferSelect;
+
+export const userCustomLocations = pgTable(
+  "user_custom_locations",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    locationId: text("location_id").notNull(),
+    name: text("name").notNull(),
+    type: text("type"),
+    extraData: jsonb("extra_data"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_custom_locations_user_loc").on(table.userId, table.locationId),
+    index("idx_user_custom_locations_user").on(table.userId),
+  ],
+);
+
+export const insertUserCustomLocationSchema = createInsertSchema(userCustomLocations).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserCustomLocation = z.infer<typeof insertUserCustomLocationSchema>;
+export type UserCustomLocation = typeof userCustomLocations.$inferSelect;
+
+export const userSyncKV = pgTable(
+  "user_sync_kv",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    section: text("section").notNull(),
+    data: jsonb("data"),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_user_sync_kv_user_section").on(table.userId, table.section),
+    index("idx_user_sync_kv_user").on(table.userId),
+  ],
+);
+
+export const insertUserSyncKVSchema = createInsertSchema(userSyncKV).omit({
+  updatedAt: true,
+});
+export type InsertUserSyncKV = z.infer<typeof insertUserSyncKVSchema>;
+export type UserSyncKV = typeof userSyncKV.$inferSelect;
+
 // =============================================================================
 // SYNC DATA JSONB SCHEMAS
 // =============================================================================
