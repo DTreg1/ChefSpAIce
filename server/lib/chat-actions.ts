@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, and, isNull, ilike } from "drizzle-orm";
 import { db } from "../db";
-import { userSyncData, feedback } from "../../shared/schema";
+import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "../../shared/schema";
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 import { logger } from "./logger";
+import { updateSectionTimestamp } from "../routers/sync/sync-helpers";
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -486,43 +487,94 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
 ];
 
 export async function getUserSyncData(userId: string) {
-  const existingSyncData = await db
-    .select()
-    .from(userSyncData)
-    .where(eq(userSyncData.userId, userId));
+  const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, syncDataRows] = await Promise.all([
+    db.select().from(userInventoryItems).where(and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt))),
+    db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
+    db.select().from(userMealPlans).where(eq(userMealPlans.userId, userId)),
+    db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
+    db.select().from(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
+    db.select().from(userSyncData).where(eq(userSyncData.userId, userId)),
+  ]);
 
-  if (existingSyncData.length === 0) {
-    return {
-      inventory: [],
-      recipes: [],
-      mealPlans: [],
-      shoppingList: [],
-      wasteLog: [],
-      consumedLog: [],
-      preferences: null,
-      cookware: []
-    };
-  }
+  const syncData = syncDataRows.length > 0 ? syncDataRows[0] : null;
 
-  const data = existingSyncData[0];
+  const inventory = inventoryRows.map(item => ({
+    id: item.itemId,
+    name: item.name,
+    barcode: item.barcode,
+    quantity: item.quantity,
+    unit: item.unit,
+    storageLocation: item.storageLocation,
+    purchaseDate: item.purchaseDate,
+    expirationDate: item.expirationDate,
+    category: item.category,
+    usdaCategory: item.usdaCategory,
+    nutrition: item.nutrition,
+    notes: item.notes,
+    imageUri: item.imageUri,
+    fdcId: item.fdcId,
+    updatedAt: item.updatedAt?.toISOString(),
+  }));
+
+  const recipes = recipeRows.map(r => ({
+    id: r.itemId,
+    title: r.title,
+    description: r.description,
+    ingredients: r.ingredients,
+    instructions: r.instructions,
+    prepTime: r.prepTime,
+    cookTime: r.cookTime,
+    servings: r.servings,
+    imageUri: r.imageUri,
+    cloudImageUri: r.cloudImageUri,
+    nutrition: r.nutrition,
+    isFavorite: r.isFavorite,
+    ...(r.extraData as Record<string, unknown> || {}),
+    updatedAt: r.updatedAt?.toISOString(),
+  }));
+
+  const mealPlans = mealPlanRows.map(mp => ({
+    id: mp.itemId,
+    date: mp.date,
+    meals: mp.meals,
+    ...(mp.extraData as Record<string, unknown> || {}),
+    updatedAt: mp.updatedAt?.toISOString(),
+  }));
+
+  const shoppingList = shoppingRows.map(s => ({
+    id: s.itemId,
+    name: s.name,
+    quantity: s.quantity,
+    unit: s.unit,
+    isChecked: s.isChecked,
+    category: s.category,
+    recipeId: s.recipeId,
+    ...(s.extraData as Record<string, unknown> || {}),
+    updatedAt: s.updatedAt?.toISOString(),
+  }));
+
+  const cookware = cookwareRows.map(c => ({
+    id: c.itemId,
+    name: c.name,
+    category: c.category,
+    alternatives: c.alternatives,
+    ...(c.extraData as Record<string, unknown> || {}),
+    updatedAt: c.updatedAt?.toISOString(),
+  }));
+
   return {
-    inventory: (data.inventory as any[]) || [],
-    recipes: (data.recipes as any[]) || [],
-    mealPlans: (data.mealPlans as any[]) || [],
-    shoppingList: (data.shoppingList as any[]) || [],
-    wasteLog: (data.wasteLog as any[]) || [],
-    consumedLog: (data.consumedLog as any[]) || [],
-    preferences: data.preferences || null,
-    cookware: (data.cookware as any[]) || []
+    inventory,
+    recipes,
+    mealPlans,
+    shoppingList,
+    wasteLog: (syncData?.wasteLog as any[]) || [],
+    consumedLog: (syncData?.consumedLog as any[]) || [],
+    preferences: syncData?.preferences || null,
+    cookware,
   };
 }
 
 async function updateUserSyncData(userId: string, updates: Record<string, unknown>) {
-  const existingSyncData = await db
-    .select()
-    .from(userSyncData)
-    .where(eq(userSyncData.userId, userId));
-
   const updatePayload: Record<string, unknown> = {
     lastSyncedAt: new Date(),
     updatedAt: new Date()
@@ -532,17 +584,16 @@ async function updateUserSyncData(userId: string, updates: Record<string, unknow
     updatePayload[key] = value;
   }
 
-  if (existingSyncData.length === 0) {
-    await db.insert(userSyncData).values({
+  await db
+    .insert(userSyncData)
+    .values({
       userId,
-      ...updatePayload
+      ...updatePayload,
+    })
+    .onConflictDoUpdate({
+      target: userSyncData.userId,
+      set: updatePayload,
     });
-  } else {
-    await db
-      .update(userSyncData)
-      .set(updatePayload)
-      .where(eq(userSyncData.userId, userId));
-  }
 }
 
 export async function executeAddInventoryItem(
@@ -558,21 +609,37 @@ export async function executeAddInventoryItem(
   }
 ): Promise<ActionResult> {
   try {
-    const userData = await getUserSyncData(userId);
-    const newItem: FoodItem = {
-      id: generateId(),
+    const itemId = generateId();
+    const purchaseDate = getTodayDate();
+    const expirationDate = getDefaultExpirationDate(args.expirationDays || 7);
+
+    await db.insert(userInventoryItems).values({
+      userId,
+      itemId,
       name: args.name,
       quantity: args.quantity,
       unit: args.unit,
       storageLocation: args.storageLocation,
       category: args.category,
-      purchaseDate: getTodayDate(),
-      expirationDate: getDefaultExpirationDate(args.expirationDays || 7),
+      purchaseDate,
+      expirationDate,
+      notes: args.notes || null,
+      updatedAt: new Date(),
+    });
+
+    await updateSectionTimestamp(userId, "inventory");
+
+    const newItem: FoodItem = {
+      id: itemId,
+      name: args.name,
+      quantity: args.quantity,
+      unit: args.unit,
+      storageLocation: args.storageLocation,
+      category: args.category,
+      purchaseDate,
+      expirationDate,
       notes: args.notes
     };
-
-    userData.inventory.push(newItem);
-    await updateUserSyncData(userId, { inventory: userData.inventory });
 
     return {
       success: true,
@@ -600,15 +667,17 @@ export async function executeConsumeItem(
   }
 ): Promise<ActionResult> {
   try {
-    const userData = await getUserSyncData(userId);
+    const inventoryRows = await db.select().from(userInventoryItems).where(
+      and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt))
+    );
+
     const itemNameLower = args.itemName.toLowerCase();
-    
-    const itemIndex = userData.inventory.findIndex(
-      (item: FoodItem) => item.name.toLowerCase().includes(itemNameLower) ||
+    const matchedRow = inventoryRows.find(
+      (item) => item.name.toLowerCase().includes(itemNameLower) ||
         itemNameLower.includes(item.name.toLowerCase())
     );
 
-    if (itemIndex === -1) {
+    if (!matchedRow) {
       return {
         success: false,
         message: `Could not find "${args.itemName}" in your inventory.`,
@@ -616,32 +685,38 @@ export async function executeConsumeItem(
       };
     }
 
-    const item = userData.inventory[itemIndex] as FoodItem;
     const consumedEntry: ConsumedEntry = {
       id: generateId(),
-      itemName: item.name,
-      quantity: args.quantity || item.quantity,
-      unit: args.unit || item.unit,
+      itemName: matchedRow.name,
+      quantity: args.quantity || matchedRow.quantity,
+      unit: args.unit || matchedRow.unit,
       consumedAt: new Date().toISOString(),
-      originalItemId: item.id
+      originalItemId: matchedRow.itemId
     };
 
-    userData.consumedLog.push(consumedEntry);
-
-    if (args.removeCompletely || !args.quantity || args.quantity >= item.quantity) {
-      userData.inventory.splice(itemIndex, 1);
+    if (args.removeCompletely || !args.quantity || args.quantity >= matchedRow.quantity) {
+      await db.delete(userInventoryItems).where(
+        and(eq(userInventoryItems.userId, userId), eq(userInventoryItems.itemId, matchedRow.itemId))
+      );
     } else {
-      (userData.inventory[itemIndex] as FoodItem).quantity -= args.quantity;
+      await db.update(userInventoryItems).set({
+        quantity: matchedRow.quantity - args.quantity,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userInventoryItems.userId, userId), eq(userInventoryItems.itemId, matchedRow.itemId))
+      );
     }
 
-    await updateUserSyncData(userId, {
-      inventory: userData.inventory,
-      consumedLog: userData.consumedLog
-    });
+    const syncDataRows = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
+    const existingConsumedLog = syncDataRows.length > 0 ? (syncDataRows[0].consumedLog as any[] || []) : [];
+    existingConsumedLog.push(consumedEntry);
+    await updateUserSyncData(userId, { consumedLog: existingConsumedLog });
+
+    await updateSectionTimestamp(userId, "inventory");
 
     return {
       success: true,
-      message: `Marked ${args.quantity || item.quantity} ${args.unit || item.unit} of ${item.name} as consumed.`,
+      message: `Marked ${args.quantity || matchedRow.quantity} ${args.unit || matchedRow.unit} of ${matchedRow.name} as consumed.`,
       data: consumedEntry,
       actionType: "consume_inventory_item"
     };
@@ -666,15 +741,17 @@ export async function executeWasteItem(
   }
 ): Promise<ActionResult> {
   try {
-    const userData = await getUserSyncData(userId);
+    const inventoryRows = await db.select().from(userInventoryItems).where(
+      and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt))
+    );
+
     const itemNameLower = args.itemName.toLowerCase();
-    
-    const itemIndex = userData.inventory.findIndex(
-      (item: FoodItem) => item.name.toLowerCase().includes(itemNameLower) ||
+    const matchedRow = inventoryRows.find(
+      (item) => item.name.toLowerCase().includes(itemNameLower) ||
         itemNameLower.includes(item.name.toLowerCase())
     );
 
-    if (itemIndex === -1) {
+    if (!matchedRow) {
       return {
         success: false,
         message: `Could not find "${args.itemName}" in your inventory.`,
@@ -682,33 +759,39 @@ export async function executeWasteItem(
       };
     }
 
-    const item = userData.inventory[itemIndex] as FoodItem;
     const wasteEntry: WasteEntry = {
       id: generateId(),
-      itemName: item.name,
-      quantity: args.quantity || item.quantity,
-      unit: args.unit || item.unit,
+      itemName: matchedRow.name,
+      quantity: args.quantity || matchedRow.quantity,
+      unit: args.unit || matchedRow.unit,
       reason: args.reason,
       wastedAt: new Date().toISOString(),
-      originalItemId: item.id
+      originalItemId: matchedRow.itemId
     };
 
-    userData.wasteLog.push(wasteEntry);
-
-    if (args.removeCompletely || !args.quantity || args.quantity >= item.quantity) {
-      userData.inventory.splice(itemIndex, 1);
+    if (args.removeCompletely || !args.quantity || args.quantity >= matchedRow.quantity) {
+      await db.delete(userInventoryItems).where(
+        and(eq(userInventoryItems.userId, userId), eq(userInventoryItems.itemId, matchedRow.itemId))
+      );
     } else {
-      (userData.inventory[itemIndex] as FoodItem).quantity -= args.quantity;
+      await db.update(userInventoryItems).set({
+        quantity: matchedRow.quantity - args.quantity,
+        updatedAt: new Date(),
+      }).where(
+        and(eq(userInventoryItems.userId, userId), eq(userInventoryItems.itemId, matchedRow.itemId))
+      );
     }
 
-    await updateUserSyncData(userId, {
-      inventory: userData.inventory,
-      wasteLog: userData.wasteLog
-    });
+    const syncDataRows = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
+    const existingWasteLog = syncDataRows.length > 0 ? (syncDataRows[0].wasteLog as any[] || []) : [];
+    existingWasteLog.push(wasteEntry);
+    await updateUserSyncData(userId, { wasteLog: existingWasteLog });
+
+    await updateSectionTimestamp(userId, "inventory");
 
     return {
       success: true,
-      message: `Logged ${args.quantity || item.quantity} ${args.unit || item.unit} of ${item.name} as wasted (${args.reason}).`,
+      message: `Logged ${args.quantity || matchedRow.quantity} ${args.unit || matchedRow.unit} of ${matchedRow.name} as wasted (${args.reason}).`,
       data: wasteEntry,
       actionType: "waste_inventory_item"
     };
@@ -986,19 +1069,31 @@ export async function executeAddToShoppingList(
   }
 ): Promise<ActionResult> {
   try {
-    const userData = await getUserSyncData(userId);
-    
-    const newItems: ShoppingListItem[] = args.items.map(item => ({
-      id: generateId(),
-      name: item.name,
-      quantity: item.quantity || 1,
-      unit: item.unit || "item",
-      isChecked: false,
-      category: item.category
-    }));
+    const newItems: ShoppingListItem[] = [];
 
-    userData.shoppingList = [...userData.shoppingList, ...newItems];
-    await updateUserSyncData(userId, { shoppingList: userData.shoppingList });
+    for (const item of args.items) {
+      const itemId = generateId();
+      await db.insert(userShoppingItems).values({
+        userId,
+        itemId,
+        name: item.name,
+        quantity: item.quantity || 1,
+        unit: item.unit || "item",
+        isChecked: false,
+        category: item.category || null,
+        updatedAt: new Date(),
+      });
+      newItems.push({
+        id: itemId,
+        name: item.name,
+        quantity: item.quantity || 1,
+        unit: item.unit || "item",
+        isChecked: false,
+        category: item.category,
+      });
+    }
+
+    await updateSectionTimestamp(userId, "shoppingList");
 
     const itemNames = args.items.map(i => i.name).join(", ");
     return {
@@ -1337,10 +1432,9 @@ export async function executeRemoveShoppingItems(
   }
 ): Promise<ActionResult> {
   try {
-    const userData = await getUserSyncData(userId);
-    let shoppingList = userData.shoppingList as ShoppingListItem[];
+    const shoppingRows = await db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, userId));
 
-    if (shoppingList.length === 0) {
+    if (shoppingRows.length === 0) {
       return {
         success: true,
         message: "Your shopping list is already empty.",
@@ -1349,15 +1443,20 @@ export async function executeRemoveShoppingItems(
     }
 
     if (args.clearAll) {
-      const checkedCount = shoppingList.filter((i) => i.isChecked).length;
-      shoppingList = shoppingList.filter((i) => !i.isChecked);
-      await updateUserSyncData(userId, { shoppingList });
+      const checkedItems = shoppingRows.filter((i) => i.isChecked);
+      const checkedCount = checkedItems.length;
+      for (const item of checkedItems) {
+        await db.delete(userShoppingItems).where(
+          and(eq(userShoppingItems.userId, userId), eq(userShoppingItems.itemId, item.itemId))
+        );
+      }
+      await updateSectionTimestamp(userId, "shoppingList");
       return {
         success: true,
         message: checkedCount > 0
-          ? `Cleared ${checkedCount} purchased item(s) from your shopping list. ${shoppingList.length} item(s) remaining.`
+          ? `Cleared ${checkedCount} purchased item(s) from your shopping list. ${shoppingRows.length - checkedCount} item(s) remaining.`
           : "No purchased items to clear.",
-        data: { cleared: checkedCount, remaining: shoppingList.length },
+        data: { cleared: checkedCount, remaining: shoppingRows.length - checkedCount },
         actionType: "remove_shopping_items"
       };
     }
@@ -1376,25 +1475,32 @@ export async function executeRemoveShoppingItems(
 
     for (const searchName of args.itemNames) {
       const searchLower = searchName.toLowerCase();
-      const idx = shoppingList.findIndex(
+      const matchedRow = shoppingRows.find(
         (item) => item.name.toLowerCase().includes(searchLower) ||
           searchLower.includes(item.name.toLowerCase())
       );
 
-      if (idx !== -1) {
+      if (matchedRow) {
         if (markPurchased) {
-          shoppingList[idx].isChecked = true;
-          updated.push(shoppingList[idx].name);
+          await db.update(userShoppingItems).set({
+            isChecked: true,
+            updatedAt: new Date(),
+          }).where(
+            and(eq(userShoppingItems.userId, userId), eq(userShoppingItems.itemId, matchedRow.itemId))
+          );
+          updated.push(matchedRow.name);
         } else {
-          updated.push(shoppingList[idx].name);
-          shoppingList.splice(idx, 1);
+          await db.delete(userShoppingItems).where(
+            and(eq(userShoppingItems.userId, userId), eq(userShoppingItems.itemId, matchedRow.itemId))
+          );
+          updated.push(matchedRow.name);
         }
       } else {
         notFound.push(searchName);
       }
     }
 
-    await updateUserSyncData(userId, { shoppingList });
+    await updateSectionTimestamp(userId, "shoppingList");
 
     const parts: string[] = [];
     if (updated.length > 0) {

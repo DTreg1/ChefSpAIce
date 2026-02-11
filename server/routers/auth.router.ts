@@ -1,7 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens } from "@shared/schema";
-import { eq, and, inArray, lt } from "drizzle-orm";
+import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "@shared/schema";
+import { eq, and, inArray, lt, isNull } from "drizzle-orm";
+import { extractExtraData, recipeKnownKeys, mealPlanKnownKeys, shoppingListKnownKeys, cookwareKnownKeys } from "./sync/sync-helpers";
 import { randomBytes } from "crypto";
 import { AUTH_COOKIE_NAME, setAuthCookie, clearAuthCookie } from "../lib/session-utils";
 import { z } from "zod";
@@ -463,6 +464,26 @@ router.post("/reset-password", passwordResetLimiter, async (req: Request, res: R
   }
 });
 
+async function queryNormalizedInventory(userId: string) {
+  const rows = await db.select().from(userInventoryItems).where(and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt)));
+  return rows.map(row => ({ id: row.itemId, name: row.name, barcode: row.barcode, quantity: row.quantity, unit: row.unit, storageLocation: row.storageLocation, purchaseDate: row.purchaseDate, expirationDate: row.expirationDate, category: row.category, usdaCategory: row.usdaCategory, nutrition: row.nutrition, notes: row.notes, imageUri: row.imageUri, fdcId: row.fdcId }));
+}
+
+async function queryNormalizedRecipes(userId: string) {
+  const rows = await db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
+  return rows.map(row => ({ id: row.itemId, title: row.title, description: row.description, ingredients: row.ingredients, instructions: row.instructions, prepTime: row.prepTime, cookTime: row.cookTime, servings: row.servings, imageUri: row.imageUri, cloudImageUri: row.cloudImageUri, nutrition: row.nutrition, isFavorite: row.isFavorite, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
+async function queryNormalizedMealPlans(userId: string) {
+  const rows = await db.select().from(userMealPlans).where(eq(userMealPlans.userId, userId));
+  return rows.map(row => ({ id: row.itemId, date: row.date, meals: row.meals, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
+async function queryNormalizedShoppingList(userId: string) {
+  const rows = await db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, userId));
+  return rows.map(row => ({ id: row.itemId, name: row.name, quantity: row.quantity, unit: row.unit, isChecked: row.isChecked, category: row.category, recipeId: row.recipeId, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
 router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
@@ -473,19 +494,25 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
       .where(eq(userSyncData.userId, userId))
       .limit(1);
 
-    const userCookware = await db
-      .select({ applianceId: userAppliances.applianceId })
-      .from(userAppliances)
-      .where(eq(userAppliances.userId, userId));
+    const userCookwareRows = await db
+      .select()
+      .from(userCookwareItems)
+      .where(eq(userCookwareItems.userId, userId));
     
-    const cookwareIds = userCookware.map(ua => ua.applianceId);
+    const cookwareList = userCookwareRows.map(row => ({
+      id: row.itemId,
+      name: row.name,
+      category: row.category,
+      alternatives: row.alternatives,
+      ...((row.extraData as Record<string, unknown>) || {}),
+    }));
     const serverTimestamp = new Date().toISOString();
     
     const clientLastSyncedAt = req.query.lastSyncedAt as string | undefined;
 
     if (!syncData) {
       return res.json(successResponse({ 
-        data: { cookware: cookwareIds }, 
+        data: { inventory: [], recipes: [], mealPlans: [], shoppingList: [], cookware: cookwareList }, 
         lastSyncedAt: null,
         serverTimestamp,
       }));
@@ -510,20 +537,27 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
       const sectionTimestamps = (syncData.sectionUpdatedAt as Record<string, string>) || {};
       const deltaData: Record<string, unknown> = {};
       
-      const sections = [
-        "inventory", "recipes", "mealPlans", "shoppingList", 
-        "preferences", "wasteLog", "consumedLog", "analytics",
-        "onboarding", "customLocations", "userProfile"
-      ] as const;
+      const normalizedSections = ["inventory", "recipes", "mealPlans", "shoppingList"] as const;
+      const jsonbSections = ["preferences", "wasteLog", "consumedLog", "analytics", "onboarding", "customLocations", "userProfile"] as const;
       
-      for (const section of sections) {
+      for (const section of normalizedSections) {
+        const sectionTime = sectionTimestamps[section];
+        if (sectionTime && new Date(sectionTime) > clientTime) {
+          if (section === "inventory") deltaData.inventory = await queryNormalizedInventory(userId);
+          else if (section === "recipes") deltaData.recipes = await queryNormalizedRecipes(userId);
+          else if (section === "mealPlans") deltaData.mealPlans = await queryNormalizedMealPlans(userId);
+          else if (section === "shoppingList") deltaData.shoppingList = await queryNormalizedShoppingList(userId);
+        }
+      }
+      
+      for (const section of jsonbSections) {
         const sectionTime = sectionTimestamps[section];
         if (sectionTime && new Date(sectionTime) > clientTime) {
           deltaData[section] = syncData[section] ?? null;
         }
       }
       
-      deltaData.cookware = cookwareIds;
+      deltaData.cookware = cookwareList;
       
       return res.json(successResponse({
         data: deltaData,
@@ -534,14 +568,21 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
       }
     }
 
+    const [inventory, recipes, mealPlansData, shoppingList] = await Promise.all([
+      queryNormalizedInventory(userId),
+      queryNormalizedRecipes(userId),
+      queryNormalizedMealPlans(userId),
+      queryNormalizedShoppingList(userId),
+    ]);
+
     res.json(successResponse({
       data: {
-        inventory: syncData.inventory ?? null,
-        recipes: syncData.recipes ?? null,
-        mealPlans: syncData.mealPlans ?? null,
-        shoppingList: syncData.shoppingList ?? null,
+        inventory,
+        recipes,
+        mealPlans: mealPlansData,
+        shoppingList,
         preferences: syncData.preferences ?? null,
-        cookware: cookwareIds,
+        cookware: cookwareList,
         wasteLog: syncData.wasteLog ?? null,
         consumedLog: syncData.consumedLog ?? null,
         analytics: syncData.analytics ?? null,
@@ -653,53 +694,103 @@ router.post("/sync", requireAuth, async (req: Request, res: Response, next: Next
     };
 
     if (data.inventory !== undefined) {
-      syncUpdate.inventory = data.inventory ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userInventoryItems).where(eq(userInventoryItems.userId, userId));
+        if (Array.isArray(data.inventory) && data.inventory.length > 0) {
+          await tx.insert(userInventoryItems).values(data.inventory.map((item: Record<string, unknown>) => ({
+            userId,
+            itemId: String(item.id),
+            name: String(item.name || ""),
+            barcode: item.barcode as string | undefined,
+            quantity: typeof item.quantity === "number" ? item.quantity : 1,
+            unit: typeof item.unit === "string" ? item.unit : "unit",
+            storageLocation: typeof item.storageLocation === "string" ? item.storageLocation : "pantry",
+            purchaseDate: item.purchaseDate as string | undefined,
+            expirationDate: item.expirationDate as string | undefined,
+            category: typeof item.category === "string" ? item.category : "other",
+            usdaCategory: item.usdaCategory as string | undefined,
+            nutrition: item.nutrition ?? null,
+            notes: item.notes as string | undefined,
+            imageUri: item.imageUri as string | undefined,
+            fdcId: typeof item.fdcId === "number" ? item.fdcId : undefined,
+            deletedAt: item.deletedAt ? new Date(item.deletedAt as string) : null,
+          })));
+        }
+      });
       updatedSectionTimestamps.inventory = now;
     }
     if (data.recipes !== undefined) {
-      syncUpdate.recipes = data.recipes ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userSavedRecipes).where(eq(userSavedRecipes.userId, userId));
+        if (Array.isArray(data.recipes) && data.recipes.length > 0) {
+          await tx.insert(userSavedRecipes).values(data.recipes.map((item: Record<string, unknown>) => ({
+            userId,
+            itemId: String(item.id),
+            title: String(item.title || ""),
+            description: item.description as string | undefined,
+            ingredients: item.ingredients ?? null,
+            instructions: item.instructions ?? null,
+            prepTime: typeof item.prepTime === "number" ? item.prepTime : undefined,
+            cookTime: typeof item.cookTime === "number" ? item.cookTime : undefined,
+            servings: typeof item.servings === "number" ? item.servings : undefined,
+            imageUri: item.imageUri as string | undefined,
+            cloudImageUri: item.cloudImageUri as string | undefined,
+            nutrition: item.nutrition ?? null,
+            isFavorite: typeof item.isFavorite === "boolean" ? item.isFavorite : false,
+            extraData: extractExtraData(item, recipeKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.recipes = now;
     }
     if (data.mealPlans !== undefined) {
-      syncUpdate.mealPlans = data.mealPlans ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
+        if (Array.isArray(data.mealPlans) && data.mealPlans.length > 0) {
+          await tx.insert(userMealPlans).values(data.mealPlans.map((item: Record<string, unknown>) => ({
+            userId,
+            itemId: String(item.id),
+            date: String(item.date || ""),
+            meals: item.meals ?? null,
+            extraData: extractExtraData(item, mealPlanKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.mealPlans = now;
     }
     if (data.shoppingList !== undefined) {
-      syncUpdate.shoppingList = data.shoppingList ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userShoppingItems).where(eq(userShoppingItems.userId, userId));
+        if (Array.isArray(data.shoppingList) && data.shoppingList.length > 0) {
+          await tx.insert(userShoppingItems).values(data.shoppingList.map((item: Record<string, unknown>) => ({
+            userId,
+            itemId: String(item.id),
+            name: String(item.name || ""),
+            quantity: typeof item.quantity === "number" ? item.quantity : 1,
+            unit: typeof item.unit === "string" ? item.unit : "unit",
+            isChecked: typeof item.isChecked === "boolean" ? item.isChecked : false,
+            category: item.category as string | undefined,
+            recipeId: item.recipeId as string | undefined,
+            extraData: extractExtraData(item, shoppingListKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.shoppingList = now;
     }
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
-      const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
-      
-      const currentCookware = await db
-        .select({ applianceId: userAppliances.applianceId })
-        .from(userAppliances)
-        .where(eq(userAppliances.userId, userId));
-      
-      const currentIds = new Set(currentCookware.map(c => c.applianceId));
-      const newIds = new Set(newCookwareIds);
-      
-      const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
-      const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
-      
-      if (toRemove.length > 0) {
-        await db
-          .delete(userAppliances)
-          .where(and(
-            eq(userAppliances.userId, userId),
-            inArray(userAppliances.applianceId, toRemove)
-          ));
-      }
-      
-      if (toAdd.length > 0) {
-        await db
-          .insert(userAppliances)
-          .values(toAdd.map(applianceId => ({
-            userId: userId,
-            applianceId,
-          })))
-          .onConflictDoNothing();
-      }
+      await db.transaction(async (tx) => {
+        await tx.delete(userCookwareItems).where(eq(userCookwareItems.userId, userId));
+        if (data.cookware.length > 0) {
+          await tx.insert(userCookwareItems).values(data.cookware.map((item: Record<string, unknown>) => ({
+            userId,
+            itemId: String(item.id ?? item),
+            name: typeof item.name === "string" ? item.name : null,
+            category: typeof item.category === "string" ? item.category : null,
+            alternatives: Array.isArray(item.alternatives) ? item.alternatives : null,
+            extraData: extractExtraData(item, cookwareKnownKeys),
+          })));
+        }
+      });
     }
     if (data.cookware !== undefined) {
       updatedSectionTimestamps.cookware = now;
@@ -780,12 +871,7 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
       .where(eq(userSyncData.userId, userId))
       .limit(1);
 
-    const hasExistingData = existingSyncData && (
-      existingSyncData.inventory ||
-      existingSyncData.recipes ||
-      existingSyncData.mealPlans ||
-      existingSyncData.shoppingList
-    );
+    const hasExistingData = !!existingSyncData;
 
     if (hasExistingData) {
       logger.info("User has existing data, merging", { userId });
@@ -826,9 +912,9 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
       const incomingCount = data.cookware.length;
       
       const currentCookware = await db
-        .select({ applianceId: userAppliances.applianceId })
-        .from(userAppliances)
-        .where(eq(userAppliances.userId, userId));
+        .select({ itemId: userCookwareItems.itemId })
+        .from(userCookwareItems)
+        .where(eq(userCookwareItems.userId, userId));
       
       const totalCount = currentCookware.length + incomingCount;
       
@@ -847,29 +933,131 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
       }
     }
 
-    if (data.inventory !== undefined) {
-      syncUpdate.inventory = mergeOrReplace(
-        hasExistingData ? existingSyncData?.inventory || null : null,
-        data.inventory
-      );
+    if (data.inventory !== undefined && Array.isArray(data.inventory) && data.inventory.length > 0) {
+      for (const item of data.inventory) {
+        const rec = item as Record<string, unknown>;
+        await db.insert(userInventoryItems).values({
+          userId,
+          itemId: String(rec.id),
+          name: String(rec.name || ""),
+          barcode: rec.barcode as string | undefined,
+          quantity: typeof rec.quantity === "number" ? rec.quantity : 1,
+          unit: typeof rec.unit === "string" ? rec.unit : "unit",
+          storageLocation: typeof rec.storageLocation === "string" ? rec.storageLocation : "pantry",
+          purchaseDate: rec.purchaseDate as string | undefined,
+          expirationDate: rec.expirationDate as string | undefined,
+          category: typeof rec.category === "string" ? rec.category : "other",
+          usdaCategory: rec.usdaCategory as string | undefined,
+          nutrition: rec.nutrition ?? null,
+          notes: rec.notes as string | undefined,
+          imageUri: rec.imageUri as string | undefined,
+          fdcId: typeof rec.fdcId === "number" ? rec.fdcId : undefined,
+        }).onConflictDoUpdate({
+          target: [userInventoryItems.userId, userInventoryItems.itemId],
+          set: {
+            name: String(rec.name || ""),
+            barcode: rec.barcode as string | undefined,
+            quantity: typeof rec.quantity === "number" ? rec.quantity : 1,
+            unit: typeof rec.unit === "string" ? rec.unit : "unit",
+            storageLocation: typeof rec.storageLocation === "string" ? rec.storageLocation : "pantry",
+            purchaseDate: rec.purchaseDate as string | undefined,
+            expirationDate: rec.expirationDate as string | undefined,
+            category: typeof rec.category === "string" ? rec.category : "other",
+            usdaCategory: rec.usdaCategory as string | undefined,
+            nutrition: rec.nutrition ?? null,
+            notes: rec.notes as string | undefined,
+            imageUri: rec.imageUri as string | undefined,
+            fdcId: typeof rec.fdcId === "number" ? rec.fdcId : undefined,
+            updatedAt: new Date(),
+          },
+        });
+      }
     }
-    if (data.recipes !== undefined) {
-      syncUpdate.recipes = mergeOrReplace(
-        hasExistingData ? existingSyncData?.recipes || null : null,
-        data.recipes
-      );
+    if (data.recipes !== undefined && Array.isArray(data.recipes) && data.recipes.length > 0) {
+      for (const item of data.recipes) {
+        const rec = item as Record<string, unknown>;
+        await db.insert(userSavedRecipes).values({
+          userId,
+          itemId: String(rec.id),
+          title: String(rec.title || ""),
+          description: rec.description as string | undefined,
+          ingredients: rec.ingredients ?? null,
+          instructions: rec.instructions ?? null,
+          prepTime: typeof rec.prepTime === "number" ? rec.prepTime : undefined,
+          cookTime: typeof rec.cookTime === "number" ? rec.cookTime : undefined,
+          servings: typeof rec.servings === "number" ? rec.servings : undefined,
+          imageUri: rec.imageUri as string | undefined,
+          cloudImageUri: rec.cloudImageUri as string | undefined,
+          nutrition: rec.nutrition ?? null,
+          isFavorite: typeof rec.isFavorite === "boolean" ? rec.isFavorite : false,
+          extraData: extractExtraData(rec, recipeKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userSavedRecipes.userId, userSavedRecipes.itemId],
+          set: {
+            title: String(rec.title || ""),
+            description: rec.description as string | undefined,
+            ingredients: rec.ingredients ?? null,
+            instructions: rec.instructions ?? null,
+            prepTime: typeof rec.prepTime === "number" ? rec.prepTime : undefined,
+            cookTime: typeof rec.cookTime === "number" ? rec.cookTime : undefined,
+            servings: typeof rec.servings === "number" ? rec.servings : undefined,
+            imageUri: rec.imageUri as string | undefined,
+            cloudImageUri: rec.cloudImageUri as string | undefined,
+            nutrition: rec.nutrition ?? null,
+            isFavorite: typeof rec.isFavorite === "boolean" ? rec.isFavorite : false,
+            extraData: extractExtraData(rec, recipeKnownKeys),
+            updatedAt: new Date(),
+          },
+        });
+      }
     }
-    if (data.mealPlans !== undefined) {
-      syncUpdate.mealPlans = mergeOrReplace(
-        hasExistingData ? existingSyncData?.mealPlans || null : null,
-        data.mealPlans
-      );
+    if (data.mealPlans !== undefined && Array.isArray(data.mealPlans) && data.mealPlans.length > 0) {
+      for (const item of data.mealPlans) {
+        const rec = item as Record<string, unknown>;
+        await db.insert(userMealPlans).values({
+          userId,
+          itemId: String(rec.id),
+          date: String(rec.date || ""),
+          meals: rec.meals ?? null,
+          extraData: extractExtraData(rec, mealPlanKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userMealPlans.userId, userMealPlans.itemId],
+          set: {
+            date: String(rec.date || ""),
+            meals: rec.meals ?? null,
+            extraData: extractExtraData(rec, mealPlanKnownKeys),
+            updatedAt: new Date(),
+          },
+        });
+      }
     }
-    if (data.shoppingList !== undefined) {
-      syncUpdate.shoppingList = mergeOrReplace(
-        hasExistingData ? existingSyncData?.shoppingList || null : null,
-        data.shoppingList
-      );
+    if (data.shoppingList !== undefined && Array.isArray(data.shoppingList) && data.shoppingList.length > 0) {
+      for (const item of data.shoppingList) {
+        const rec = item as Record<string, unknown>;
+        await db.insert(userShoppingItems).values({
+          userId,
+          itemId: String(rec.id),
+          name: String(rec.name || ""),
+          quantity: typeof rec.quantity === "number" ? rec.quantity : 1,
+          unit: typeof rec.unit === "string" ? rec.unit : "unit",
+          isChecked: typeof rec.isChecked === "boolean" ? rec.isChecked : false,
+          category: rec.category as string | undefined,
+          recipeId: rec.recipeId as string | undefined,
+          extraData: extractExtraData(rec, shoppingListKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userShoppingItems.userId, userShoppingItems.itemId],
+          set: {
+            name: String(rec.name || ""),
+            quantity: typeof rec.quantity === "number" ? rec.quantity : 1,
+            unit: typeof rec.unit === "string" ? rec.unit : "unit",
+            isChecked: typeof rec.isChecked === "boolean" ? rec.isChecked : false,
+            category: rec.category as string | undefined,
+            recipeId: rec.recipeId as string | undefined,
+            extraData: extractExtraData(rec, shoppingListKnownKeys),
+            updatedAt: new Date(),
+          },
+        });
+      }
     }
     if (data.wasteLog !== undefined) {
       syncUpdate.wasteLog = mergeOrReplace(
@@ -921,26 +1109,25 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
     }
 
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
-      const newCookwareIds: number[] = data.cookware.filter((id: unknown): id is number => typeof id === 'number');
-      
-      if (newCookwareIds.length > 0) {
-        const currentCookware = await db
-          .select({ applianceId: userAppliances.applianceId })
-          .from(userAppliances)
-          .where(eq(userAppliances.userId, userId));
-        
-        const currentIds = new Set(currentCookware.map(c => c.applianceId));
-        const toAdd = newCookwareIds.filter(id => !currentIds.has(id));
-        
-        if (toAdd.length > 0) {
-          await db
-            .insert(userAppliances)
-            .values(toAdd.map(applianceId => ({
-              userId: userId,
-              applianceId,
-            })))
-            .onConflictDoNothing();
-        }
+      for (const item of data.cookware) {
+        const rec = typeof item === 'object' && item !== null ? item as Record<string, unknown> : { id: item };
+        await db.insert(userCookwareItems).values({
+          userId,
+          itemId: String(rec.id ?? rec),
+          name: typeof rec.name === "string" ? rec.name : null,
+          category: typeof rec.category === "string" ? rec.category : null,
+          alternatives: Array.isArray(rec.alternatives) ? rec.alternatives : null,
+          extraData: typeof rec === 'object' ? extractExtraData(rec, cookwareKnownKeys) : null,
+        }).onConflictDoUpdate({
+          target: [userCookwareItems.userId, userCookwareItems.itemId],
+          set: {
+            name: typeof rec.name === "string" ? rec.name : null,
+            category: typeof rec.category === "string" ? rec.category : null,
+            alternatives: Array.isArray(rec.alternatives) ? rec.alternatives : null,
+            extraData: typeof rec === 'object' ? extractExtraData(rec, cookwareKnownKeys) : null,
+            updatedAt: new Date(),
+          },
+        });
       }
     }
 
