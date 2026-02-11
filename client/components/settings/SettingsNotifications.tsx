@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   dayButton: {
     width: 32,
-    height: 32,
+    minHeight: 32,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",

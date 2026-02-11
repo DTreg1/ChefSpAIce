@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   headerContent: {
-    height: HEADER_HEIGHT,
+    minHeight: HEADER_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   searchContainer: {
-    height: 40,
+    minHeight: 40,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     flexDirection: "row",
@@ -334,14 +334,13 @@ const styles = StyleSheet.create({
   },
   searchCloseButton: {
     width: 40,
-    height: 40,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
   },
   searchInputWrapper: {
     flex: 1,
-    height: 40,
+    minHeight: 40,
     justifyContent: "center",
   },
   searchInput: {
@@ -352,7 +351,6 @@ const styles = StyleSheet.create({
   },
   searchClearButton: {
     width: 40,
-    height: 40,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",

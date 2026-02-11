@@ -44,8 +44,8 @@ export function NutritionScoreBadge({
         style={[
           styles.badge,
           {
-            width: badgeSize,
-            height: badgeSize,
+            minWidth: badgeSize,
+            minHeight: badgeSize,
             borderRadius: badgeSize / 2,
             backgroundColor: scoreResult.color,
           },
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   largeBadge: {
-    width: 48,
-    height: 48,
+    minWidth: 48,
+    minHeight: 48,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",

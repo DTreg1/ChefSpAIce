@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     width: 40,
-    height: 40,
+    minHeight: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
   },
   featureIconContainer: {
     width: 32,
-    height: 32,
+    minHeight: 32,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   },
   trialIconContainer: {
     width: 44,
-    height: 44,
+    minHeight: 44,
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
-    height: 50,
+    minHeight: 50,
   },
   authInputIcon: {
     marginRight: Spacing.sm,
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   authButton: {
-    height: 50,
+    minHeight: 50,
     borderRadius: BorderRadius.md,
     alignItems: "center",
     justifyContent: "center",
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.sm,
-    height: 50,
+    minHeight: 50,
     borderWidth: 1,
     borderRadius: BorderRadius.md,
   },

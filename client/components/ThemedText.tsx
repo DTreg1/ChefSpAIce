@@ -92,6 +92,8 @@ export function ThemedText({
 
   return (
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.5}
       style={[{ color: getColor() }, getTypeStyle(), style]}
       {...getAccessibilityProps()}
       {...rest}

@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   },
   retailerLogo: {
     width: 36,
-    height: 36,
+    minHeight: 36,
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",

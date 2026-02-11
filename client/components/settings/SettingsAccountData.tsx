@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   legalMenuIcon: {
     width: 36,
-    height: 36,
+    minHeight: 36,
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   dangerMenuIcon: {
     width: 36,
-    height: 36,
+    minHeight: 36,
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",

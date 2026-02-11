@@ -223,7 +223,7 @@ export const GlassButton = memo(function GlassButton({
 
 const styles = StyleSheet.create({
   button: {
-    height: Spacing.buttonHeight,
+    minHeight: Spacing.buttonHeight,
     borderRadius: GlassEffect.borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   glassButtonWrapper: {
-    height: Spacing.buttonHeight,
+    minHeight: Spacing.buttonHeight,
     borderRadius: GlassEffect.borderRadius.lg,
     overflow: "hidden",
   },

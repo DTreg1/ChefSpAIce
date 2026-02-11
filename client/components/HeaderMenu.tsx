@@ -153,7 +153,7 @@ export function HeaderMenu({
 const styles = StyleSheet.create({
   menuButton: {
     width: 44,
-    height: 44,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
   },

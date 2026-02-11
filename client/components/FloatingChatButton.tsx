@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     top: -2,
     right: -2,
     width: 20,
-    height: 20,
+    minHeight: 20,
     borderRadius: 10,
     backgroundColor: AppColors.warning,
     alignItems: "center",

@@ -266,11 +266,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             <View
               style={[styles.recipeBadge, { backgroundColor: getBadgeColor() }]}
             >
-              <Text style={styles.recipeBadgeText}>{remainingAiRecipes}</Text>
+              <Text allowFontScaling={false} style={styles.recipeBadgeText}>{remainingAiRecipes}</Text>
             </View>
           )}
         </View>
         <Text
+          maxFontSizeMultiplier={1.2}
           style={[
             styles.tabLabel,
             {
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pillContainer: {
-    height: TAB_BAR_HEIGHT,
+    minHeight: TAB_BAR_HEIGHT,
     borderRadius: TAB_BORDER_RADIUS,
     overflow: "hidden",
     width: "100%",
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 6,
     paddingHorizontal: 8,
-    height: TAB_BAR_HEIGHT,
+    minHeight: TAB_BAR_HEIGHT,
     position: "relative",
     zIndex: 1,
   },
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     top: -4,
     right: -8,
     minWidth: 16,
-    height: 16,
+    minHeight: 16,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -536,7 +537,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: TAB_BAR_HEIGHT,
+    minHeight: TAB_BAR_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
     pointerEvents: "box-none",
