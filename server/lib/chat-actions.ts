@@ -589,24 +589,33 @@ export async function getUserSyncData(userId: string) {
 }
 
 async function updateUserSyncData(userId: string, updates: Record<string, unknown>) {
-  const updatePayload: Record<string, unknown> = {
-    lastSyncedAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  for (const [key, value] of Object.entries(updates)) {
-    updatePayload[key] = value;
+  if (updates.mealPlans !== undefined) {
+    const mealPlans = updates.mealPlans as Array<Record<string, unknown>>;
+    await db.delete(userMealPlans).where(eq(userMealPlans.userId, userId));
+    if (Array.isArray(mealPlans) && mealPlans.length > 0) {
+      await db.insert(userMealPlans).values(mealPlans.map((mp) => ({
+        userId,
+        itemId: String(mp.id),
+        date: String(mp.date || ""),
+        meals: mp.meals ?? null,
+      })));
+    }
   }
+
+  const syncPayload: Record<string, unknown> = {
+    lastSyncedAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   await db
     .insert(userSyncData)
     .values({
       userId,
-      ...updatePayload,
+      ...syncPayload,
     })
     .onConflictDoUpdate({
       target: userSyncData.userId,
-      set: updatePayload,
+      set: syncPayload,
     });
 }
 

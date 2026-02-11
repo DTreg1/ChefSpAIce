@@ -3,7 +3,7 @@ import { z } from "zod";
 import { eq, and, count, isNull } from "drizzle-orm";
 import { db } from "../db";
 import {
-  userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems,
+  userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userCustomLocations, userSyncKV,
   syncInventoryItemSchema, syncRecipeSchema, syncMealPlanSchema,
   syncShoppingItemSchema, syncCookwareItemSchema,
   syncWasteLogEntrySchema, syncConsumedLogEntrySchema,
@@ -106,16 +106,22 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
       throw AppError.unauthorized("Invalid or expired session", "SESSION_EXPIRED");
     }
 
-    const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, syncDataRows] = await Promise.all([
+    const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, wasteLogRows, consumedLogRows, customLocationRows, kvRows] = await Promise.all([
       db.select().from(userInventoryItems).where(and(eq(userInventoryItems.userId, session.userId), isNull(userInventoryItems.deletedAt))),
       db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, session.userId)),
       db.select().from(userMealPlans).where(eq(userMealPlans.userId, session.userId)),
       db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, session.userId)),
       db.select().from(userCookwareItems).where(eq(userCookwareItems.userId, session.userId)),
-      db.select().from(userSyncData).where(eq(userSyncData.userId, session.userId)),
+      db.select().from(userWasteLogs).where(eq(userWasteLogs.userId, session.userId)),
+      db.select().from(userConsumedLogs).where(eq(userConsumedLogs.userId, session.userId)),
+      db.select().from(userCustomLocations).where(eq(userCustomLocations.userId, session.userId)),
+      db.select().from(userSyncKV).where(eq(userSyncKV.userId, session.userId)),
     ]);
 
-    const syncData = syncDataRows.length > 0 ? syncDataRows[0] : null;
+    const kvMap: Record<string, unknown> = {};
+    for (const kv of kvRows) {
+      kvMap[kv.section] = kv.data;
+    }
 
     const exportInventory = inventoryRows.map(item => ({
       id: item.itemId,
@@ -190,13 +196,33 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
         mealPlans: exportMealPlans,
         shoppingList: exportShoppingList,
         cookware: exportCookware,
-        preferences: syncData?.preferences || null,
-        wasteLog: syncData?.wasteLog || [],
-        consumedLog: syncData?.consumedLog || [],
-        analytics: syncData?.analytics || null,
-        onboarding: syncData?.onboarding || null,
-        customLocations: syncData?.customLocations || null,
-        userProfile: syncData?.userProfile || null,
+        preferences: kvMap["preferences"] || null,
+        wasteLog: wasteLogRows.map(w => ({
+          id: w.entryId,
+          itemName: w.itemName,
+          quantity: w.quantity,
+          unit: w.unit,
+          reason: w.reason,
+          date: w.date,
+          ...(w.extraData as Record<string, unknown> || {}),
+        })),
+        consumedLog: consumedLogRows.map(c => ({
+          id: c.entryId,
+          itemName: c.itemName,
+          quantity: c.quantity,
+          unit: c.unit,
+          date: c.date,
+          ...(c.extraData as Record<string, unknown> || {}),
+        })),
+        analytics: kvMap["analytics"] || null,
+        onboarding: kvMap["onboarding"] || null,
+        customLocations: customLocationRows.map(l => ({
+          id: l.locationId,
+          name: l.name,
+          type: l.type,
+          ...(l.extraData as Record<string, unknown> || {}),
+        })),
+        userProfile: kvMap["userProfile"] || null,
       },
     };
 
@@ -648,44 +674,97 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
     const existingSyncData = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
     const existing = existingSyncData.length > 0 ? existingSyncData[0] : null;
 
-    let finalWasteLog: unknown;
-    let finalConsumedLog: unknown;
-    let finalPreferences: unknown;
-    let finalAnalytics: unknown;
-    let finalOnboarding: unknown;
-    let finalCustomLocations: unknown;
-    let finalUserProfile: unknown;
-
     if (mode === "replace") {
-      finalWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog : [];
-      finalConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog : [];
-      finalPreferences = importData.preferences || null;
-      finalAnalytics = importData.analytics || null;
-      finalOnboarding = importData.onboarding || null;
-      finalCustomLocations = importData.customLocations || null;
-      finalUserProfile = importData.userProfile || null;
-    } else {
-      const existingWasteLog = Array.isArray(existing?.wasteLog) ? (existing.wasteLog as unknown[]) : [];
-      const existingConsumedLog = Array.isArray(existing?.consumedLog) ? (existing.consumedLog as unknown[]) : [];
+      await db.delete(userWasteLogs).where(eq(userWasteLogs.userId, userId));
+      await db.delete(userConsumedLogs).where(eq(userConsumedLogs.userId, userId));
+      await db.delete(userCustomLocations).where(eq(userCustomLocations.userId, userId));
+    }
 
-      finalWasteLog = [...existingWasteLog, ...(Array.isArray(importData.wasteLog) ? importData.wasteLog : [])];
-      finalConsumedLog = [...existingConsumedLog, ...(Array.isArray(importData.consumedLog) ? importData.consumedLog : [])];
+    const importedWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog : [];
+    for (const entry of importedWasteLog) {
+      const rec = entry as Record<string, unknown>;
+      const wasteLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "reason", "date"]);
+      await db.insert(userWasteLogs).values({
+        userId,
+        entryId: typeof rec.id === "string" && rec.id ? rec.id : require("crypto").randomBytes(12).toString("hex"),
+        itemName: String(rec.itemName || ""),
+        quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+        unit: typeof rec.unit === "string" ? rec.unit : null,
+        reason: typeof rec.reason === "string" ? rec.reason : null,
+        date: typeof rec.date === "string" ? rec.date : null,
+        extraData: extractExtraData(rec, wasteLogKnownKeys),
+      }).onConflictDoUpdate({
+        target: [userWasteLogs.userId, userWasteLogs.entryId],
+        set: {
+          itemName: String(rec.itemName || ""),
+          quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+          unit: typeof rec.unit === "string" ? rec.unit : null,
+          reason: typeof rec.reason === "string" ? rec.reason : null,
+          date: typeof rec.date === "string" ? rec.date : null,
+          extraData: extractExtraData(rec, wasteLogKnownKeys),
+        },
+      });
+    }
 
-      finalPreferences = importData.preferences && typeof importData.preferences === "object"
-        ? deepMerge((existing?.preferences as Record<string, unknown>) || {}, importData.preferences as Record<string, unknown>)
-        : existing?.preferences || null;
-      finalAnalytics = importData.analytics && typeof importData.analytics === "object"
-        ? deepMerge((existing?.analytics as Record<string, unknown>) || {}, importData.analytics as Record<string, unknown>)
-        : existing?.analytics || null;
-      finalOnboarding = importData.onboarding && typeof importData.onboarding === "object"
-        ? deepMerge((existing?.onboarding as Record<string, unknown>) || {}, importData.onboarding as Record<string, unknown>)
-        : existing?.onboarding || null;
-      finalCustomLocations = importData.customLocations && typeof importData.customLocations === "object"
-        ? deepMerge((existing?.customLocations as Record<string, unknown>) || {}, importData.customLocations as Record<string, unknown>)
-        : existing?.customLocations || null;
-      finalUserProfile = importData.userProfile && typeof importData.userProfile === "object"
-        ? deepMerge((existing?.userProfile as Record<string, unknown>) || {}, importData.userProfile as Record<string, unknown>)
-        : existing?.userProfile || null;
+    const importedConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog : [];
+    for (const entry of importedConsumedLog) {
+      const rec = entry as Record<string, unknown>;
+      const consumedLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "date"]);
+      await db.insert(userConsumedLogs).values({
+        userId,
+        entryId: typeof rec.id === "string" && rec.id ? rec.id : require("crypto").randomBytes(12).toString("hex"),
+        itemName: String(rec.itemName || ""),
+        quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+        unit: typeof rec.unit === "string" ? rec.unit : null,
+        date: typeof rec.date === "string" ? rec.date : null,
+        extraData: extractExtraData(rec, consumedLogKnownKeys),
+      }).onConflictDoUpdate({
+        target: [userConsumedLogs.userId, userConsumedLogs.entryId],
+        set: {
+          itemName: String(rec.itemName || ""),
+          quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+          unit: typeof rec.unit === "string" ? rec.unit : null,
+          date: typeof rec.date === "string" ? rec.date : null,
+          extraData: extractExtraData(rec, consumedLogKnownKeys),
+        },
+      });
+    }
+
+    const importedCustomLocations = Array.isArray(importData.customLocations) ? importData.customLocations : [];
+    for (const loc of importedCustomLocations) {
+      const rec = loc as Record<string, unknown>;
+      const locationKnownKeys = new Set(["id", "name", "type"]);
+      await db.insert(userCustomLocations).values({
+        userId,
+        locationId: String(rec.id || require("crypto").randomBytes(12).toString("hex")),
+        name: String(rec.name || ""),
+        type: typeof rec.type === "string" ? rec.type : null,
+        extraData: extractExtraData(rec, locationKnownKeys),
+      }).onConflictDoUpdate({
+        target: [userCustomLocations.userId, userCustomLocations.locationId],
+        set: {
+          name: String(rec.name || ""),
+          type: typeof rec.type === "string" ? rec.type : null,
+          extraData: extractExtraData(rec, locationKnownKeys),
+          updatedAt: new Date(),
+        },
+      });
+    }
+
+    const kvSections = ["preferences", "analytics", "onboarding", "userProfile"] as const;
+    for (const section of kvSections) {
+      const importValue = importData[section];
+      if (importValue !== undefined && importValue !== null) {
+        if (mode === "merge") {
+          const [existingKV] = await db.select().from(userSyncKV).where(and(eq(userSyncKV.userId, userId), eq(userSyncKV.section, section)));
+          const mergedData = existingKV && typeof existingKV.data === "object" && typeof importValue === "object"
+            ? deepMerge(existingKV.data as Record<string, unknown>, importValue as Record<string, unknown>)
+            : importValue;
+          await db.insert(userSyncKV).values({ userId, section, data: mergedData }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: mergedData, updatedAt: new Date() } });
+        } else {
+          await db.insert(userSyncKV).values({ userId, section, data: importValue }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: importValue, updatedAt: new Date() } });
+        }
+      }
     }
 
     const now = new Date();
@@ -707,13 +786,6 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
     };
 
     const syncUpdatePayload = {
-      preferences: finalPreferences,
-      wasteLog: finalWasteLog,
-      consumedLog: finalConsumedLog,
-      analytics: finalAnalytics,
-      onboarding: finalOnboarding,
-      customLocations: finalCustomLocations,
-      userProfile: finalUserProfile,
       sectionUpdatedAt: importSectionTimestamps,
       lastSyncedAt: now,
       updatedAt: now,
@@ -734,13 +806,25 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
       [{ value: finalMealPlansCount }],
       [{ value: finalShoppingListCount }],
       [{ value: finalCookwareCount }],
+      [{ value: finalWasteLogCount }],
+      [{ value: finalConsumedLogCount }],
+      [{ value: finalCustomLocationsCount }],
     ] = await Promise.all([
       db.select({ value: count() }).from(userInventoryItems).where(eq(userInventoryItems.userId, userId)),
       db.select({ value: count() }).from(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
       db.select({ value: count() }).from(userMealPlans).where(eq(userMealPlans.userId, userId)),
       db.select({ value: count() }).from(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
       db.select({ value: count() }).from(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
+      db.select({ value: count() }).from(userWasteLogs).where(eq(userWasteLogs.userId, userId)),
+      db.select({ value: count() }).from(userConsumedLogs).where(eq(userConsumedLogs.userId, userId)),
+      db.select({ value: count() }).from(userCustomLocations).where(eq(userCustomLocations.userId, userId)),
     ]);
+
+    const finalKVRows = await db.select().from(userSyncKV).where(eq(userSyncKV.userId, userId));
+    const finalKVMap: Record<string, boolean> = {};
+    for (const kv of finalKVRows) {
+      finalKVMap[kv.section] = kv.data !== null;
+    }
 
     const responseData: Record<string, unknown> = {
       mode,
@@ -751,13 +835,13 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
         mealPlans: finalMealPlansCount,
         shoppingList: finalShoppingListCount,
         cookware: finalCookwareCount,
-        wasteLog: Array.isArray(finalWasteLog) ? (finalWasteLog as unknown[]).length : 0,
-        consumedLog: Array.isArray(finalConsumedLog) ? (finalConsumedLog as unknown[]).length : 0,
-        preferences: finalPreferences ? true : false,
-        analytics: finalAnalytics ? true : false,
-        onboarding: finalOnboarding ? true : false,
-        customLocations: finalCustomLocations ? true : false,
-        userProfile: finalUserProfile ? true : false,
+        wasteLog: finalWasteLogCount,
+        consumedLog: finalConsumedLogCount,
+        preferences: finalKVMap["preferences"] || false,
+        analytics: finalKVMap["analytics"] || false,
+        onboarding: finalKVMap["onboarding"] || false,
+        customLocations: finalCustomLocationsCount > 0,
+        userProfile: finalKVMap["userProfile"] || false,
       },
     };
 

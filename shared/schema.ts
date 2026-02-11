@@ -283,18 +283,6 @@ export const userSyncData = pgTable("user_sync_data", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" })
     .unique(),
-  inventory: jsonb("inventory"),
-  recipes: jsonb("recipes"),
-  mealPlans: jsonb("meal_plans"),
-  shoppingList: jsonb("shopping_list"),
-  preferences: jsonb("preferences"),
-  cookware: jsonb("cookware"),
-  wasteLog: jsonb("waste_log"),
-  consumedLog: jsonb("consumed_log"),
-  analytics: jsonb("analytics"),
-  onboarding: jsonb("onboarding"),
-  customLocations: jsonb("custom_locations"),
-  userProfile: jsonb("user_profile"),
   sectionUpdatedAt: jsonb("section_updated_at"),
   lastSyncedAt: timestamp("last_synced_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

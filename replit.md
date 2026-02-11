@@ -25,8 +25,8 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - Composite DB indexes on `(userId, updatedAt, id)` optimize cursor pagination queries.
 - The sync-manager (`client/lib/sync-manager.ts`) handles local-first sync with conflict resolution, queue coalescing, and offline support.
 
-## Data Storage Migration (Complete)
-All 12 sync sections have been migrated from JSONB blob storage on `userSyncData` to normalized relational tables. The `userSyncData` table now only holds sync metadata (`sectionUpdatedAt`, `lastSyncedAt`, `updatedAt`); all 12 JSONB columns are obsolete and set to null.
+## Data Storage Migration (Complete — Phase 3 Done)
+All 12 JSONB columns have been dropped from `userSyncData`. The table now only holds sync metadata (`sectionUpdatedAt`, `lastSyncedAt`, `updatedAt`). All data lives in normalized relational tables.
 
 ### Normalized Tables
 - **Phase 1** (5 sections): `userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`
@@ -43,7 +43,7 @@ All 12 sync sections have been migrated from JSONB blob storage on `userSyncData
 - **Entry IDs**: Client-provided IDs are preserved (`entry.id` → `entryId`/`locationId`); fallback to server-generated `randomBytes(12)`.
 - **Data export**: Reads all sections from normalized tables; `userSyncData` only provides metadata.
 - **Account deletion**: Deletes from all normalized tables in transaction.
-- **Demo seed**: Seeds normalized tables directly; all JSONB columns set to null.
+- **Demo seed**: Seeds normalized tables directly.
 
 ## Token Encryption
 - OAuth tokens (accessToken, refreshToken) in the `auth_providers` table are encrypted at rest using AES-256-GCM via `server/lib/token-encryption.ts`.
