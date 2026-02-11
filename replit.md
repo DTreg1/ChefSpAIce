@@ -24,3 +24,10 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - Client hooks in `client/hooks/usePaginatedSync.ts` provide `useInventorySync`, `useRecipesSync`, `useShoppingSync` using TanStack Query's `useInfiniteQuery`.
 - Composite DB indexes on `(userId, updatedAt, id)` optimize cursor pagination queries.
 - The sync-manager (`client/lib/sync-manager.ts`) handles local-first sync with conflict resolution, queue coalescing, and offline support.
+
+## Token Encryption
+- OAuth tokens (accessToken, refreshToken) in the `auth_providers` table are encrypted at rest using AES-256-GCM via `server/lib/token-encryption.ts`.
+- Requires `TOKEN_ENCRYPTION_KEY` secret: exactly 64 hex characters (32 bytes). Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+- `encryptToken` / `decryptToken` handle individual values; `encryptTokenOrNull` / `decryptTokenOrNull` are null-safe wrappers.
+- `decryptTokenOrNull` gracefully handles legacy unencrypted tokens by returning the raw value on decryption failure.
+- Encrypted format: `base64(iv):base64(ciphertext):base64(authTag)` with 12-byte IV and 16-byte auth tag.
