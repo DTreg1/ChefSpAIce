@@ -25,14 +25,25 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - Composite DB indexes on `(userId, updatedAt, id)` optimize cursor pagination queries.
 - The sync-manager (`client/lib/sync-manager.ts`) handles local-first sync with conflict resolution, queue coalescing, and offline support.
 
-## Data Storage Migration (Phase 1 Complete)
-- **Migrated sections** (inventory, recipes, mealPlans, shoppingList, cookware): All reads/writes now use normalized tables (`userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`). JSONB columns on `userSyncData` are no longer read or written for these sections.
-- **Remaining JSONB sections** (Phase 2): preferences, wasteLog, consumedLog, analytics, onboarding, customLocations, userProfile still use `userSyncData` JSONB columns.
+## Data Storage Migration (Complete)
+All 12 sync sections have been migrated from JSONB blob storage on `userSyncData` to normalized relational tables. The `userSyncData` table now only holds sync metadata (`sectionUpdatedAt`, `lastSyncedAt`, `updatedAt`); all 12 JSONB columns are obsolete and set to null.
+
+### Normalized Tables
+- **Phase 1** (5 sections): `userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`
+- **Phase 2** (7 sections):
+  - `userWasteLogs`: waste log entries with `entryId`, `itemName`, `quantity`, `unit`, `reason`, `date`, `extraData`
+  - `userConsumedLogs`: consumed food log entries with `entryId`, `itemName`, `quantity`, `unit`, `date`, `extraData`
+  - `userCustomLocations`: user-defined storage locations with `locationId`, `name`, `type`, `extraData`
+  - `userSyncKV`: key-value store for free-form data (section column: `preferences`, `analytics`, `onboarding`, `userProfile`), stores data as JSONB in `data` column
+
+### Sync Patterns
 - **POST /api/auth/sync**: Uses transactional delete-then-insert for each normalized section to ensure atomicity.
 - **POST /api/auth/migrate-guest-data**: Uses upsert (ON CONFLICT DO UPDATE) for each normalized section.
-- **updateUserSyncData** in `chat-actions.ts`: Uses upsert pattern to handle missing `userSyncData` rows when appending wasteLog/consumedLog entries.
-- **Account deletion**: Recipe images are read exclusively from `userSavedRecipes` (not JSONB).
-- **Demo seed**: Seeds normalized tables directly; clears JSONB columns for migrated sections.
+- **chat-actions.ts**: `executeWasteItem`/`executeConsumeItem` INSERT directly into normalized tables; `getUserSyncData()` reads preferences from `userSyncKV` and logs from normalized tables.
+- **Entry IDs**: Client-provided IDs are preserved (`entry.id` → `entryId`/`locationId`); fallback to server-generated `randomBytes(12)`.
+- **Data export**: Reads all sections from normalized tables; `userSyncData` only provides metadata.
+- **Account deletion**: Deletes from all normalized tables in transaction.
+- **Demo seed**: Seeds normalized tables directly; all JSONB columns set to null.
 
 ## Token Encryption
 - OAuth tokens (accessToken, refreshToken) in the `auth_providers` table are encrypted at rest using AES-256-GCM via `server/lib/token-encryption.ts`.
