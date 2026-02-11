@@ -12,6 +12,7 @@ import { Platform, Alert, AppState, AppStateStatus } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
+import { trackSubscriptionChange } from "@/lib/crash-reporter";
 import { SubscriptionTier, TIER_CONFIG } from "@shared/subscription";
 import { TrialEndedModal } from "@/components/TrialEndedModal";
 import { useStoreKit } from "@/hooks/useStoreKit";
@@ -190,6 +191,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   }, [isStoreKitAvailable, offerings]);
 
   const lastFetchRef = useRef<number>(0);
+  const lastTrackedSubRef = useRef<string>("");
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const backgroundTimestampRef = useRef<number>(0);
 
@@ -265,6 +267,16 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         setSubscriptionData(sub);
         if (typeof window !== "undefined") {
           window.__subscriptionCache = sub;
+        }
+
+        const subKey = `${sub.tier}:${sub.status}:${sub.planType}`;
+        if (subKey !== lastTrackedSubRef.current) {
+          lastTrackedSubRef.current = subKey;
+          trackSubscriptionChange({
+            tier: sub.tier,
+            status: sub.status,
+            planType: sub.planType,
+          });
         }
       } else {
         setSubscriptionData(null);

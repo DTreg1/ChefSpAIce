@@ -40,6 +40,7 @@ import { Platform } from "react-native";
 import { getApiUrl } from "@/lib/query-client";
 import { syncManager } from "@/lib/sync-manager";
 import { logger } from "@/lib/logger";
+import { trackInventoryAction } from "@/lib/crash-reporter";
 
 /** Lazy-loaded notification scheduler to avoid circular dependencies */
 let scheduleNotifications: (() => Promise<number>) | null = null;
@@ -368,6 +369,8 @@ export const storage = {
     if (item.expirationDate) {
       triggerNotificationReschedule();
     }
+
+    trackInventoryAction("add", { itemId: item.id, name: item.name });
   },
 
   async addInventoryItems(
@@ -439,6 +442,8 @@ export const storage = {
       ) {
         triggerNotificationReschedule();
       }
+
+      trackInventoryAction("update", { itemId: item.id, name: item.name });
     }
   },
 
@@ -458,6 +463,8 @@ export const storage = {
       if (allItems[index].expirationDate) {
         triggerNotificationReschedule();
       }
+
+      trackInventoryAction("delete", { itemId: id });
     }
   },
 
@@ -476,6 +483,8 @@ export const storage = {
       if (allItems[index].expirationDate) {
         triggerNotificationReschedule();
       }
+
+      trackInventoryAction("restore", { itemId: id });
     }
   },
 

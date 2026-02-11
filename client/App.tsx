@@ -33,6 +33,12 @@ import React, {
 } from "react";
 import { StyleSheet, View, Platform } from "react-native";
 import { logger } from "@/lib/logger";
+import {
+  Sentry,
+  initCrashReporter,
+  trackScreenView,
+  setUser,
+} from "@/lib/crash-reporter";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import {
@@ -162,8 +168,11 @@ function MobileAppContent() {
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       storeKitService.setUserId(user.id);
+      setUser({ id: user.id, email: user.email });
+    } else {
+      setUser(null);
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, user?.email]);
 
   useEffect(() => {
     setSignOutCallback(() => {
@@ -190,6 +199,9 @@ function MobileAppContent() {
   const onStateChange = useCallback((state: NavigationState | undefined) => {
     const routeName = getActiveRouteName(state);
     setCurrentRoute(routeName);
+    if (routeName) {
+      trackScreenView(routeName);
+    }
   }, []);
 
   /**
@@ -345,8 +357,12 @@ function RootWrapper() {
  *
  * Also handles font loading to ensure icons render properly on Android.
  */
-export default function App() {
+function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    initCrashReporter();
+  }, []);
 
   useEffect(() => {
     async function loadFonts() {
@@ -380,15 +396,21 @@ export default function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <View style={styles.root} onLayout={onLayoutRootView}>
-            <RootWrapper />
-          </View>
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
+      <ErrorBoundary>
+        <View style={styles.root} />
+      </ErrorBoundary>
+    )}>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <View style={styles.root} onLayout={onLayoutRootView}>
+              <RootWrapper />
+            </View>
+          </SafeAreaProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </Sentry.ErrorBoundary>
   );
 }
 
@@ -420,3 +442,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+export default Sentry.wrap(App);

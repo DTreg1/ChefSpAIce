@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
+import { captureError } from "@/lib/crash-reporter";
 
 const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
 
@@ -46,6 +47,13 @@ export async function reportError({ error, componentStack, screenName }: ErrorRe
         isDevice: Constants.isDevice,
       }),
     };
+
+    captureError(error, {
+      componentStack: componentStack ?? undefined,
+      screenName: screenName ?? undefined,
+      platform: Platform.OS,
+      appVersion: Constants.expoConfig?.version ?? undefined,
+    });
 
     await fetch(`${baseUrl}/api/error-report`, {
       method: "POST",

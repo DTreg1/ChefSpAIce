@@ -1,6 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
 import {
+  trackRecipeGeneration,
+  trackEvent,
+} from "@/lib/crash-reporter";
+import {
   RecipeGenerationEvent,
   RecipeSaveEvent,
   WasteReductionStats,
@@ -279,6 +283,12 @@ export const analytics = {
 
     data.recipeGenerationEvents.push(newEvent);
 
+    trackRecipeGeneration({
+      recipeName: event.prioritizeExpiring ? "expiring-priority" : "standard",
+      expiringItemsUsed: event.expiringItemsUsed,
+      totalIngredients: event.expiringItemsAvailable,
+    });
+
     if (event.expiringItemsUsed > 0) {
       data.wasteReductionStats.totalItemsSavedFromWaste +=
         event.expiringItemsUsed;
@@ -310,6 +320,11 @@ export const analytics = {
     };
 
     data.recipeSaveEvents.push(newEvent);
+
+    trackEvent("recipe_saved", {
+      recipeId: event.recipeId,
+    });
+
     await saveAnalyticsData(data);
   },
 
