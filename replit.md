@@ -25,6 +25,15 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - Composite DB indexes on `(userId, updatedAt, id)` optimize cursor pagination queries.
 - The sync-manager (`client/lib/sync-manager.ts`) handles local-first sync with conflict resolution, queue coalescing, and offline support.
 
+## Data Storage Migration (Phase 1 Complete)
+- **Migrated sections** (inventory, recipes, mealPlans, shoppingList, cookware): All reads/writes now use normalized tables (`userInventoryItems`, `userSavedRecipes`, `userMealPlans`, `userShoppingItems`, `userCookwareItems`). JSONB columns on `userSyncData` are no longer read or written for these sections.
+- **Remaining JSONB sections** (Phase 2): preferences, wasteLog, consumedLog, analytics, onboarding, customLocations, userProfile still use `userSyncData` JSONB columns.
+- **POST /api/auth/sync**: Uses transactional delete-then-insert for each normalized section to ensure atomicity.
+- **POST /api/auth/migrate-guest-data**: Uses upsert (ON CONFLICT DO UPDATE) for each normalized section.
+- **updateUserSyncData** in `chat-actions.ts`: Uses upsert pattern to handle missing `userSyncData` rows when appending wasteLog/consumedLog entries.
+- **Account deletion**: Recipe images are read exclusively from `userSavedRecipes` (not JSONB).
+- **Demo seed**: Seeds normalized tables directly; clears JSONB columns for migrated sections.
+
 ## Token Encryption
 - OAuth tokens (accessToken, refreshToken) in the `auth_providers` table are encrypted at rest using AES-256-GCM via `server/lib/token-encryption.ts`.
 - Requires `TOKEN_ENCRYPTION_KEY` secret: exactly 64 hex characters (32 bytes). Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
