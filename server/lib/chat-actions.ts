@@ -1,6 +1,7 @@
 import { eq, and, isNull, ilike } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { db } from "../db";
-import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "../../shared/schema";
+import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userSyncKV } from "../../shared/schema";
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 import { logger } from "./logger";
@@ -487,16 +488,16 @@ export const chatFunctionDefinitions: OpenAI.Chat.ChatCompletionTool[] = [
 ];
 
 export async function getUserSyncData(userId: string) {
-  const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, syncDataRows] = await Promise.all([
+  const [inventoryRows, recipeRows, mealPlanRows, shoppingRows, cookwareRows, wasteLogRows, consumedLogRows, preferencesRow] = await Promise.all([
     db.select().from(userInventoryItems).where(and(eq(userInventoryItems.userId, userId), isNull(userInventoryItems.deletedAt))),
     db.select().from(userSavedRecipes).where(eq(userSavedRecipes.userId, userId)),
     db.select().from(userMealPlans).where(eq(userMealPlans.userId, userId)),
     db.select().from(userShoppingItems).where(eq(userShoppingItems.userId, userId)),
     db.select().from(userCookwareItems).where(eq(userCookwareItems.userId, userId)),
-    db.select().from(userSyncData).where(eq(userSyncData.userId, userId)),
+    db.select().from(userWasteLogs).where(eq(userWasteLogs.userId, userId)),
+    db.select().from(userConsumedLogs).where(eq(userConsumedLogs.userId, userId)),
+    db.select().from(userSyncKV).where(and(eq(userSyncKV.userId, userId), eq(userSyncKV.section, "preferences"))).limit(1),
   ]);
-
-  const syncData = syncDataRows.length > 0 ? syncDataRows[0] : null;
 
   const inventory = inventoryRows.map(item => ({
     id: item.itemId,
@@ -567,9 +568,22 @@ export async function getUserSyncData(userId: string) {
     recipes,
     mealPlans,
     shoppingList,
-    wasteLog: (syncData?.wasteLog as any[]) || [],
-    consumedLog: (syncData?.consumedLog as any[]) || [],
-    preferences: syncData?.preferences || null,
+    wasteLog: wasteLogRows.map(row => ({
+      itemName: row.itemName,
+      quantity: row.quantity,
+      unit: row.unit,
+      reason: row.reason,
+      date: row.date,
+      ...(row.extraData as Record<string, unknown> || {}),
+    })),
+    consumedLog: consumedLogRows.map(row => ({
+      itemName: row.itemName,
+      quantity: row.quantity,
+      unit: row.unit,
+      date: row.date,
+      ...(row.extraData as Record<string, unknown> || {}),
+    })),
+    preferences: preferencesRow.length > 0 ? preferencesRow[0].data : null,
     cookware,
   };
 }
@@ -707,11 +721,16 @@ export async function executeConsumeItem(
       );
     }
 
-    const syncDataRows = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
-    const existingConsumedLog = syncDataRows.length > 0 ? (syncDataRows[0].consumedLog as any[] || []) : [];
-    existingConsumedLog.push(consumedEntry);
-    await updateUserSyncData(userId, { consumedLog: existingConsumedLog });
+    await db.insert(userConsumedLogs).values({
+      userId,
+      entryId: randomUUID(),
+      itemName: consumedEntry.itemName,
+      quantity: consumedEntry.quantity,
+      unit: consumedEntry.unit,
+      date: consumedEntry.consumedAt,
+    });
 
+    await updateSectionTimestamp(userId, "consumedLog");
     await updateSectionTimestamp(userId, "inventory");
 
     return {
@@ -782,11 +801,17 @@ export async function executeWasteItem(
       );
     }
 
-    const syncDataRows = await db.select().from(userSyncData).where(eq(userSyncData.userId, userId));
-    const existingWasteLog = syncDataRows.length > 0 ? (syncDataRows[0].wasteLog as any[] || []) : [];
-    existingWasteLog.push(wasteEntry);
-    await updateUserSyncData(userId, { wasteLog: existingWasteLog });
+    await db.insert(userWasteLogs).values({
+      userId,
+      entryId: randomUUID(),
+      itemName: wasteEntry.itemName,
+      quantity: wasteEntry.quantity,
+      unit: wasteEntry.unit,
+      reason: wasteEntry.reason,
+      date: wasteEntry.wastedAt,
+    });
 
+    await updateSectionTimestamp(userId, "wasteLog");
     await updateSectionTimestamp(userId, "inventory");
 
     return {

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems } from "@shared/schema";
+import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userCustomLocations, userSyncKV } from "@shared/schema";
 import { eq, and, inArray, lt, isNull } from "drizzle-orm";
 import { extractExtraData, recipeKnownKeys, mealPlanKnownKeys, shoppingListKnownKeys, cookwareKnownKeys } from "./sync/sync-helpers";
 import { randomBytes } from "crypto";
@@ -484,6 +484,26 @@ async function queryNormalizedShoppingList(userId: string) {
   return rows.map(row => ({ id: row.itemId, name: row.name, quantity: row.quantity, unit: row.unit, isChecked: row.isChecked, category: row.category, recipeId: row.recipeId, ...((row.extraData as Record<string, unknown>) || {}) }));
 }
 
+async function queryNormalizedWasteLog(userId: string) {
+  const rows = await db.select().from(userWasteLogs).where(eq(userWasteLogs.userId, userId));
+  return rows.map(row => ({ id: row.entryId, itemName: row.itemName, quantity: row.quantity, unit: row.unit, reason: row.reason, date: row.date, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
+async function queryNormalizedConsumedLog(userId: string) {
+  const rows = await db.select().from(userConsumedLogs).where(eq(userConsumedLogs.userId, userId));
+  return rows.map(row => ({ id: row.entryId, itemName: row.itemName, quantity: row.quantity, unit: row.unit, date: row.date, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
+async function queryNormalizedCustomLocations(userId: string) {
+  const rows = await db.select().from(userCustomLocations).where(eq(userCustomLocations.userId, userId));
+  return rows.map(row => ({ id: row.locationId, name: row.name, type: row.type, ...((row.extraData as Record<string, unknown>) || {}) }));
+}
+
+async function queryNormalizedSyncKV(userId: string, section: string) {
+  const [row] = await db.select().from(userSyncKV).where(and(eq(userSyncKV.userId, userId), eq(userSyncKV.section, section))).limit(1);
+  return row?.data ?? null;
+}
+
 router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
@@ -538,7 +558,7 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
       const deltaData: Record<string, unknown> = {};
       
       const normalizedSections = ["inventory", "recipes", "mealPlans", "shoppingList"] as const;
-      const jsonbSections = ["preferences", "wasteLog", "consumedLog", "analytics", "onboarding", "customLocations", "userProfile"] as const;
+      const kvSections = ["preferences", "analytics", "onboarding", "userProfile"] as const;
       
       for (const section of normalizedSections) {
         const sectionTime = sectionTimestamps[section];
@@ -550,10 +570,19 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
         }
       }
       
-      for (const section of jsonbSections) {
+      if (sectionTimestamps.wasteLog && new Date(sectionTimestamps.wasteLog) > clientTime) {
+        deltaData.wasteLog = await queryNormalizedWasteLog(userId);
+      }
+      if (sectionTimestamps.consumedLog && new Date(sectionTimestamps.consumedLog) > clientTime) {
+        deltaData.consumedLog = await queryNormalizedConsumedLog(userId);
+      }
+      if (sectionTimestamps.customLocations && new Date(sectionTimestamps.customLocations) > clientTime) {
+        deltaData.customLocations = await queryNormalizedCustomLocations(userId);
+      }
+      for (const section of kvSections) {
         const sectionTime = sectionTimestamps[section];
         if (sectionTime && new Date(sectionTime) > clientTime) {
-          deltaData[section] = syncData[section] ?? null;
+          deltaData[section] = await queryNormalizedSyncKV(userId, section);
         }
       }
       
@@ -568,11 +597,18 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
       }
     }
 
-    const [inventory, recipes, mealPlansData, shoppingList] = await Promise.all([
+    const [inventory, recipes, mealPlansData, shoppingList, wasteLog, consumedLog, customLocationsList, preferences, analytics, onboarding, userProfile] = await Promise.all([
       queryNormalizedInventory(userId),
       queryNormalizedRecipes(userId),
       queryNormalizedMealPlans(userId),
       queryNormalizedShoppingList(userId),
+      queryNormalizedWasteLog(userId),
+      queryNormalizedConsumedLog(userId),
+      queryNormalizedCustomLocations(userId),
+      queryNormalizedSyncKV(userId, "preferences"),
+      queryNormalizedSyncKV(userId, "analytics"),
+      queryNormalizedSyncKV(userId, "onboarding"),
+      queryNormalizedSyncKV(userId, "userProfile"),
     ]);
 
     res.json(successResponse({
@@ -581,14 +617,14 @@ router.get("/sync", requireAuth, async (req: Request, res: Response, next: NextF
         recipes,
         mealPlans: mealPlansData,
         shoppingList,
-        preferences: syncData.preferences ?? null,
+        preferences,
         cookware: cookwareList,
-        wasteLog: syncData.wasteLog ?? null,
-        consumedLog: syncData.consumedLog ?? null,
-        analytics: syncData.analytics ?? null,
-        onboarding: syncData.onboarding ?? null,
-        customLocations: syncData.customLocations ?? null,
-        userProfile: syncData.userProfile ?? null,
+        wasteLog,
+        consumedLog,
+        analytics,
+        onboarding,
+        customLocations: customLocationsList,
+        userProfile,
       },
       lastSyncedAt: syncData.lastSyncedAt?.toISOString() || null,
       serverTimestamp,
@@ -796,31 +832,72 @@ router.post("/sync", requireAuth, async (req: Request, res: Response, next: Next
       updatedSectionTimestamps.cookware = now;
     }
     if (data.wasteLog !== undefined) {
-      syncUpdate.wasteLog = data.wasteLog ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userWasteLogs).where(eq(userWasteLogs.userId, userId));
+        if (Array.isArray(data.wasteLog) && data.wasteLog.length > 0) {
+          const wasteLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "reason", "date"]);
+          await tx.insert(userWasteLogs).values(data.wasteLog.map((entry: Record<string, unknown>) => ({
+            userId,
+            entryId: typeof entry.id === "string" && entry.id ? entry.id : randomBytes(12).toString("hex"),
+            itemName: String(entry.itemName || ""),
+            quantity: typeof entry.quantity === "number" ? entry.quantity : null,
+            unit: typeof entry.unit === "string" ? entry.unit : null,
+            reason: typeof entry.reason === "string" ? entry.reason : null,
+            date: typeof entry.date === "string" ? entry.date : null,
+            extraData: extractExtraData(entry, wasteLogKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.wasteLog = now;
     }
     if (data.consumedLog !== undefined) {
-      syncUpdate.consumedLog = data.consumedLog ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userConsumedLogs).where(eq(userConsumedLogs.userId, userId));
+        if (Array.isArray(data.consumedLog) && data.consumedLog.length > 0) {
+          const consumedLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "date"]);
+          await tx.insert(userConsumedLogs).values(data.consumedLog.map((entry: Record<string, unknown>) => ({
+            userId,
+            entryId: typeof entry.id === "string" && entry.id ? entry.id : randomBytes(12).toString("hex"),
+            itemName: String(entry.itemName || ""),
+            quantity: typeof entry.quantity === "number" ? entry.quantity : null,
+            unit: typeof entry.unit === "string" ? entry.unit : null,
+            date: typeof entry.date === "string" ? entry.date : null,
+            extraData: extractExtraData(entry, consumedLogKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.consumedLog = now;
     }
     if (data.analytics !== undefined) {
-      syncUpdate.analytics = data.analytics ?? null;
+      await db.insert(userSyncKV).values({ userId, section: "analytics", data: data.analytics ?? null }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: data.analytics ?? null, updatedAt: new Date() } });
       updatedSectionTimestamps.analytics = now;
     }
     if (data.onboarding !== undefined) {
-      syncUpdate.onboarding = data.onboarding ?? null;
+      await db.insert(userSyncKV).values({ userId, section: "onboarding", data: data.onboarding ?? null }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: data.onboarding ?? null, updatedAt: new Date() } });
       updatedSectionTimestamps.onboarding = now;
     }
     if (data.customLocations !== undefined) {
-      syncUpdate.customLocations = data.customLocations ?? null;
+      await db.transaction(async (tx) => {
+        await tx.delete(userCustomLocations).where(eq(userCustomLocations.userId, userId));
+        if (Array.isArray(data.customLocations) && data.customLocations.length > 0) {
+          const locationKnownKeys = new Set(["id", "name", "type"]);
+          await tx.insert(userCustomLocations).values(data.customLocations.map((loc: Record<string, unknown>) => ({
+            userId,
+            locationId: String(loc.id || randomBytes(12).toString("hex")),
+            name: String(loc.name || ""),
+            type: typeof loc.type === "string" ? loc.type : null,
+            extraData: extractExtraData(loc, locationKnownKeys),
+          })));
+        }
+      });
       updatedSectionTimestamps.customLocations = now;
     }
     if (data.userProfile !== undefined) {
-      syncUpdate.userProfile = data.userProfile ?? null;
+      await db.insert(userSyncKV).values({ userId, section: "userProfile", data: data.userProfile ?? null }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: data.userProfile ?? null, updatedAt: new Date() } });
       updatedSectionTimestamps.userProfile = now;
     }
     if (validatedPreferences !== undefined) {
-      syncUpdate.preferences = validatedPreferences;
+      await db.insert(userSyncKV).values({ userId, section: "preferences", data: validatedPreferences }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: validatedPreferences, updatedAt: new Date() } });
       updatedSectionTimestamps.preferences = now;
     }
 
@@ -880,30 +957,6 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
     const syncUpdate: Record<string, unknown> = {
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
-    };
-
-    const mergeOrReplace = (existing: unknown, incoming: unknown): unknown => {
-      if (!Array.isArray(incoming) || incoming.length === 0) return existing;
-      if (!existing) return incoming;
-      
-      try {
-        const existingArr = Array.isArray(existing) ? existing : null;
-        if (!existingArr) return incoming;
-        
-        const merged = [...existingArr];
-        for (const item of incoming) {
-          const itemId = (item as { id?: string })?.id;
-          if (itemId) {
-            const exists = merged.some((e: { id?: string }) => e.id === itemId);
-            if (!exists) merged.push(item);
-          } else {
-            merged.push(item);
-          }
-        }
-        return merged;
-      } catch {
-        return incoming;
-      }
     };
 
     if (data.cookware && Array.isArray(data.cookware) && data.cookware.length > 0) {
@@ -1059,53 +1112,117 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
         });
       }
     }
-    if (data.wasteLog !== undefined) {
-      syncUpdate.wasteLog = mergeOrReplace(
-        hasExistingData ? existingSyncData?.wasteLog || null : null,
-        data.wasteLog
-      );
+    if (data.wasteLog !== undefined && Array.isArray(data.wasteLog) && data.wasteLog.length > 0) {
+      const wasteLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "reason", "date"]);
+      for (const entry of data.wasteLog) {
+        const rec = entry as Record<string, unknown>;
+        const entryId = typeof rec.id === "string" && rec.id ? rec.id : randomBytes(12).toString("hex");
+        await db.insert(userWasteLogs).values({
+          userId,
+          entryId,
+          itemName: String(rec.itemName || ""),
+          quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+          unit: typeof rec.unit === "string" ? rec.unit : null,
+          reason: typeof rec.reason === "string" ? rec.reason : null,
+          date: typeof rec.date === "string" ? rec.date : null,
+          extraData: extractExtraData(rec, wasteLogKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userWasteLogs.userId, userWasteLogs.entryId],
+          set: {
+            itemName: String(rec.itemName || ""),
+            quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+            unit: typeof rec.unit === "string" ? rec.unit : null,
+            reason: typeof rec.reason === "string" ? rec.reason : null,
+            date: typeof rec.date === "string" ? rec.date : null,
+            extraData: extractExtraData(rec, wasteLogKnownKeys),
+          },
+        });
+      }
     }
-    if (data.consumedLog !== undefined) {
-      syncUpdate.consumedLog = mergeOrReplace(
-        hasExistingData ? existingSyncData?.consumedLog || null : null,
-        data.consumedLog
-      );
+    if (data.consumedLog !== undefined && Array.isArray(data.consumedLog) && data.consumedLog.length > 0) {
+      const consumedLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "date"]);
+      for (const entry of data.consumedLog) {
+        const rec = entry as Record<string, unknown>;
+        const entryId = typeof rec.id === "string" && rec.id ? rec.id : randomBytes(12).toString("hex");
+        await db.insert(userConsumedLogs).values({
+          userId,
+          entryId,
+          itemName: String(rec.itemName || ""),
+          quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+          unit: typeof rec.unit === "string" ? rec.unit : null,
+          date: typeof rec.date === "string" ? rec.date : null,
+          extraData: extractExtraData(rec, consumedLogKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userConsumedLogs.userId, userConsumedLogs.entryId],
+          set: {
+            itemName: String(rec.itemName || ""),
+            quantity: typeof rec.quantity === "number" ? rec.quantity : null,
+            unit: typeof rec.unit === "string" ? rec.unit : null,
+            date: typeof rec.date === "string" ? rec.date : null,
+            extraData: extractExtraData(rec, consumedLogKnownKeys),
+          },
+        });
+      }
     }
-    if (data.customLocations !== undefined) {
-      syncUpdate.customLocations = mergeOrReplace(
-        hasExistingData ? existingSyncData?.customLocations || null : null,
-        data.customLocations
-      );
+    if (data.customLocations !== undefined && Array.isArray(data.customLocations) && data.customLocations.length > 0) {
+      const locationKnownKeys = new Set(["id", "name", "type"]);
+      for (const loc of data.customLocations) {
+        const rec = loc as Record<string, unknown>;
+        await db.insert(userCustomLocations).values({
+          userId,
+          locationId: String(rec.id || randomBytes(12).toString("hex")),
+          name: String(rec.name || ""),
+          type: typeof rec.type === "string" ? rec.type : null,
+          extraData: extractExtraData(rec, locationKnownKeys),
+        }).onConflictDoUpdate({
+          target: [userCustomLocations.userId, userCustomLocations.locationId],
+          set: {
+            name: String(rec.name || ""),
+            type: typeof rec.type === "string" ? rec.type : null,
+            extraData: extractExtraData(rec, locationKnownKeys),
+            updatedAt: new Date(),
+          },
+        });
+      }
     }
     
-    if (data.preferences !== undefined && !existingSyncData?.preferences) {
-      const parseResult = syncPreferencesSchema.safeParse(data.preferences);
-      if (parseResult.success) {
-        syncUpdate.preferences = parseResult.data;
-        
-        const prefs = parseResult.data;
-        const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
-        if (prefs.servingSize !== undefined) userUpdate.householdSize = prefs.servingSize;
-        if (prefs.dailyMeals !== undefined) userUpdate.dailyMeals = prefs.dailyMeals;
-        if (prefs.dietaryRestrictions !== undefined) userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;
-        if (prefs.cuisinePreferences !== undefined) userUpdate.favoriteCategories = prefs.cuisinePreferences;
-        if (prefs.storageAreas !== undefined) userUpdate.storageAreasEnabled = prefs.storageAreas;
-        if (prefs.cookingLevel !== undefined) {
-          const levelMap: Record<string, string> = { basic: "beginner", intermediate: "intermediate", professional: "advanced" };
-          userUpdate.cookingSkillLevel = levelMap[prefs.cookingLevel] || "beginner";
-        }
-        if (prefs.expirationAlertDays !== undefined) userUpdate.expirationAlertDays = prefs.expirationAlertDays;
-        
-        if (Object.keys(userUpdate).length > 1) {
-          await db.update(users).set(userUpdate).where(eq(users.id, userId));
+    if (data.preferences !== undefined) {
+      const existingPrefs = await queryNormalizedSyncKV(userId, "preferences");
+      if (!existingPrefs) {
+        const parseResult = syncPreferencesSchema.safeParse(data.preferences);
+        if (parseResult.success) {
+          await db.insert(userSyncKV).values({ userId, section: "preferences", data: parseResult.data }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: parseResult.data, updatedAt: new Date() } });
+          
+          const prefs = parseResult.data;
+          const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
+          if (prefs.servingSize !== undefined) userUpdate.householdSize = prefs.servingSize;
+          if (prefs.dailyMeals !== undefined) userUpdate.dailyMeals = prefs.dailyMeals;
+          if (prefs.dietaryRestrictions !== undefined) userUpdate.dietaryRestrictions = prefs.dietaryRestrictions;
+          if (prefs.cuisinePreferences !== undefined) userUpdate.favoriteCategories = prefs.cuisinePreferences;
+          if (prefs.storageAreas !== undefined) userUpdate.storageAreasEnabled = prefs.storageAreas;
+          if (prefs.cookingLevel !== undefined) {
+            const levelMap: Record<string, string> = { basic: "beginner", intermediate: "intermediate", professional: "advanced" };
+            userUpdate.cookingSkillLevel = levelMap[prefs.cookingLevel] || "beginner";
+          }
+          if (prefs.expirationAlertDays !== undefined) userUpdate.expirationAlertDays = prefs.expirationAlertDays;
+          
+          if (Object.keys(userUpdate).length > 1) {
+            await db.update(users).set(userUpdate).where(eq(users.id, userId));
+          }
         }
       }
     }
-    if (data.onboarding !== undefined && !existingSyncData?.onboarding) {
-      syncUpdate.onboarding = data.onboarding;
+    if (data.onboarding !== undefined) {
+      const existingOnboarding = await queryNormalizedSyncKV(userId, "onboarding");
+      if (!existingOnboarding) {
+        await db.insert(userSyncKV).values({ userId, section: "onboarding", data: data.onboarding }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: data.onboarding, updatedAt: new Date() } });
+      }
     }
-    if (data.userProfile !== undefined && !existingSyncData?.userProfile) {
-      syncUpdate.userProfile = data.userProfile;
+    if (data.userProfile !== undefined) {
+      const existingProfile = await queryNormalizedSyncKV(userId, "userProfile");
+      if (!existingProfile) {
+        await db.insert(userSyncKV).values({ userId, section: "userProfile", data: data.userProfile }).onConflictDoUpdate({ target: [userSyncKV.userId, userSyncKV.section], set: { data: data.userProfile, updatedAt: new Date() } });
+      }
     }
 
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
