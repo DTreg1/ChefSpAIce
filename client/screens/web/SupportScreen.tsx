@@ -94,6 +94,8 @@ export default function SupportScreen() {
           <Pressable
             style={styles.logoContainer}
             onPress={() => navigate("/")}
+            accessibilityRole="link"
+            accessibilityLabel="Go to home page"
           >
             <MaterialCommunityIcons
               name="chef-hat"
@@ -111,6 +113,8 @@ export default function SupportScreen() {
                 onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
+                accessibilityRole="link"
+                accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[
@@ -173,6 +177,9 @@ export default function SupportScreen() {
                   ]}
                   onPress={() => handleDonate(value)}
                   disabled={loading !== null}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Donate ${label}`}
+                  accessibilityState={{ disabled: loading !== null }}
                 >
                   {loading === value ? (
                     <ActivityIndicator size="small" color={colors.brandGreen} />

@@ -129,6 +129,7 @@ export function NutritionSection({
               ]}
               onPress={() => adjustServing(-1)}
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              accessibilityRole="button"
               accessibilityLabel="Decrease serving"
             >
               <Feather name="minus" size={18} color={theme.text} />
@@ -143,6 +144,7 @@ export function NutritionSection({
               ]}
               onPress={() => adjustServing(1)}
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              accessibilityRole="button"
               accessibilityLabel="Increase serving"
             >
               <Feather name="plus" size={18} color={theme.text} />
@@ -168,6 +170,8 @@ export function NutritionSection({
         <Pressable
           style={styles.reportIssueButton}
           onPress={() => setShowCorrectionModal(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Report incorrect nutrition info"
         >
           <Feather name="flag" size={14} color={theme.textSecondary} />
           <ThemedText type="caption" style={styles.reportIssueText}>
@@ -180,7 +184,7 @@ export function NutritionSection({
 
   return (
     <GlassCard style={styles.container}>
-      <Pressable style={styles.header} onPress={toggleExpand}>
+      <Pressable style={styles.header} onPress={toggleExpand} accessibilityRole="button" accessibilityLabel={isExpanded ? "Collapse nutrition information" : "Expand nutrition information"}>
         <View style={styles.headerLeft}>
           <Feather name="activity" size={20} color={AppColors.primary} />
           <ThemedText type="h4" style={styles.headerTitle}>

@@ -232,7 +232,7 @@ export function ImageAnalysisResult({
             detected
           </ThemedText>
           <View style={styles.selectionActions}>
-            <Pressable onPress={selectAll} style={styles.selectionButton}>
+            <Pressable onPress={selectAll} style={styles.selectionButton} accessibilityRole="button" accessibilityLabel="Select all items">
               <ThemedText type="caption" style={{ color: AppColors.primary }}>
                 Select All
               </ThemedText>
@@ -240,7 +240,7 @@ export function ImageAnalysisResult({
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
               |
             </ThemedText>
-            <Pressable onPress={deselectAll} style={styles.selectionButton}>
+            <Pressable onPress={deselectAll} style={styles.selectionButton} accessibilityRole="button" accessibilityLabel="Clear selection">
               <ThemedText type="caption" style={{ color: AppColors.primary }}>
                 Clear
               </ThemedText>
@@ -270,11 +270,16 @@ export function ImageAnalysisResult({
               <Pressable
                 style={styles.itemMainRow}
                 onPress={() => toggleExpanded(index)}
+                accessibilityRole="button"
+                accessibilityLabel={`${isExpanded ? "Collapse" : "Expand"} details for ${item.name || "item"}`}
               >
                 <Pressable
                   style={styles.checkbox}
                   onPress={() => toggleItemSelection(index)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={`${isSelected ? "Deselect" : "Select"} ${item.name || "item"}`}
+                  accessibilityState={{ checked: isSelected }}
                 >
                   {isSelected ? (
                     <View
@@ -439,6 +444,9 @@ export function ImageAnalysisResult({
                             },
                           ]}
                           onPress={() => updateItem(index, { category: cat })}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Set category to ${formatCategoryDisplay(cat)}`}
+                          accessibilityState={{ selected: item.category.toLowerCase() === cat }}
                         >
                           <ThemedText
                             type="caption"
@@ -518,6 +526,9 @@ export function ImageAnalysisResult({
                             onPress={() =>
                               updateItem(index, { quantityUnit: unit })
                             }
+                            accessibilityRole="button"
+                            accessibilityLabel={`Set unit to ${unit}`}
+                            accessibilityState={{ selected: item.quantityUnit === unit }}
                           >
                             <ThemedText
                               type="caption"
@@ -556,6 +567,9 @@ export function ImageAnalysisResult({
                           onPress={() =>
                             updateItem(index, { storageLocation: loc })
                           }
+                          accessibilityRole="button"
+                          accessibilityLabel={`Set storage to ${formatStorageLocationDisplay(loc)}`}
+                          accessibilityState={{ selected: item.storageLocation.toLowerCase() === loc }}
                         >
                           <ThemedText
                             type="caption"
@@ -607,6 +621,7 @@ export function ImageAnalysisResult({
         <Pressable
           style={[styles.addMissingButton, { borderColor: theme.border }]}
           onPress={addMissingItem}
+          accessibilityRole="button"
           accessibilityLabel="Add missing item"
         >
           <View

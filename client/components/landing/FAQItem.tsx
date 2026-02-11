@@ -13,7 +13,7 @@ interface FAQItemProps {
 
 export function FAQItem({ question, answer, isOpen, onToggle, testId }: FAQItemProps) {
   return (
-    <Pressable onPress={onToggle} {...webAccessibilityProps(onToggle)} data-testid={`faq-item-${testId}`}>
+    <Pressable onPress={onToggle} {...webAccessibilityProps(onToggle)} data-testid={`faq-item-${testId}`} accessibilityRole="button" accessibilityLabel={`${question}, ${isOpen ? 'collapse' : 'expand'} answer`} accessibilityState={{ expanded: isOpen }}>
       <GlassCard style={styles.faqCard}>
         <View style={styles.faqHeader}>
           <Text

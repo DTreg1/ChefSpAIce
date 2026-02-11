@@ -651,6 +651,8 @@ function FoodItemRow({
             borderColor: isSelected ? AppColors.primary : theme.border,
           },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={`Toggle ${food.name}`}
       >
         <View style={styles.foodItemContent}>
           <View
@@ -1241,6 +1243,8 @@ export default function OnboardingScreen() {
                         : theme.border,
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Select serving size ${option.label}`}
               >
                 <ThemedText
                   style={[
@@ -1295,6 +1299,8 @@ export default function OnboardingScreen() {
                         : theme.border,
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${option.label} daily meals`}
               >
                 <ThemedText
                   style={[
@@ -1344,6 +1350,8 @@ export default function OnboardingScreen() {
                         : theme.border,
                     },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Toggle ${cuisine.label} cuisine`}
                 >
                   <Feather
                     name={cuisine.icon}
@@ -1395,6 +1403,8 @@ export default function OnboardingScreen() {
                         : theme.border,
                     },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Toggle ${pref.label} dietary preference`}
                 >
                   <Feather
                     name={pref.icon}
@@ -1498,6 +1508,8 @@ export default function OnboardingScreen() {
                         : theme.border,
                     },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Toggle ${area.label} storage area`}
                 >
                   <View
                     style={[
@@ -1713,7 +1725,7 @@ export default function OnboardingScreen() {
                       ({group.selectedCount}/{group.appliances.length})
                     </ThemedText>
                   </View>
-                  <Pressable onPress={() => toggleCategoryAll(group.id)}>
+                  <Pressable onPress={() => toggleCategoryAll(group.id)} accessibilityRole="button" accessibilityLabel={`${allInGroupSelected ? "Deselect" : "Select"} all in ${group.id}`}>
                     <ThemedText
                       style={[
                         styles.cookwareCategoryToggle,
@@ -1752,6 +1764,9 @@ export default function OnboardingScreen() {
                             opacity: isDisabled ? 0.4 : 1,
                           },
                         ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Toggle ${appliance.name}`}
+                        accessibilityState={{ disabled: isDisabled }}
                       >
                         <ThemedText
                           style={[
@@ -1847,6 +1862,8 @@ export default function OnboardingScreen() {
           <Pressable
             onPress={allFoodsSelected ? deselectAllFoods : selectAllFoods}
             style={styles.selectAllButton}
+            accessibilityRole="button"
+            accessibilityLabel={allFoodsSelected ? "Deselect all foods" : "Select all foods"}
           >
             <ThemedText
               style={[styles.selectAllText, { color: AppColors.primary }]}
@@ -2003,6 +2020,8 @@ export default function OnboardingScreen() {
                             : theme.border,
                         },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Toggle ${a.name}`}
                     >
                       <ThemedText
                         style={[
@@ -2084,6 +2103,8 @@ export default function OnboardingScreen() {
                             : theme.border,
                         },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Toggle ${f.name}`}
                     >
                       <ThemedText
                         style={[

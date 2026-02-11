@@ -42,6 +42,8 @@ export function SubscriptionLegalLinks({
           onPress={onOpenPrivacyPolicy}
           data-testid={privacyTestId}
           {...webAccessibilityProps(onOpenPrivacyPolicy)}
+          accessibilityRole="button"
+          accessibilityLabel="View privacy policy"
         >
           <ThemedText
             style={[styles.legalLink, { color: AppColors.primary }]}
@@ -58,6 +60,8 @@ export function SubscriptionLegalLinks({
           onPress={onOpenTermsOfUse}
           data-testid={termsTestId}
           {...webAccessibilityProps(onOpenTermsOfUse)}
+          accessibilityRole="button"
+          accessibilityLabel="View terms of use"
         >
           <ThemedText
             style={[styles.legalLink, { color: AppColors.primary }]}
@@ -88,6 +92,8 @@ export function SubscriptionLegalLinks({
                   Linking.openURL(GOOGLE_PLAY_TERMS_URL);
                 }
               })}
+              accessibilityRole="button"
+              accessibilityLabel={Platform.OS === "ios" ? "View Apple EULA" : "View Google Play terms"}
             >
               <ThemedText
                 style={[styles.legalLink, { color: AppColors.primary }]}

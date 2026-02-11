@@ -147,7 +147,7 @@ export default function BarcodeScannerScreen() {
 
       <View style={[styles.overlay, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Pressable style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close scanner">
+          <Pressable style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close scanner" accessibilityRole="button">
             <Feather name="x" size={28} color="#FFFFFF" />
           </Pressable>
           <ThemedText type="h4" style={styles.headerTitle}>

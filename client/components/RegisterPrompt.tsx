@@ -130,6 +130,7 @@ export function RegisterPrompt({
             style={styles.dismissButton}
             hitSlop={12}
             data-testid="button-dismiss-register-prompt"
+            accessibilityRole="button"
             accessibilityLabel="Dismiss prompt"
           >
             <Feather name="x" size={18} color={theme.textSecondary} />
@@ -226,6 +227,8 @@ export function RegisterPrompt({
             { backgroundColor: AppColors.primary },
           ]}
           data-testid="button-register-banner"
+          accessibilityRole="button"
+          accessibilityLabel="Register account"
         >
           <ThemedText style={styles.bannerButtonText}>Register</ThemedText>
         </Pressable>
@@ -234,6 +237,7 @@ export function RegisterPrompt({
           style={styles.bannerDismiss}
           hitSlop={8}
           data-testid="button-dismiss-banner"
+          accessibilityRole="button"
           accessibilityLabel="Dismiss prompt"
         >
           <Feather name="x" size={16} color={theme.textSecondary} />

@@ -113,7 +113,7 @@ function SwipeableItem({
     <Animated.View style={animatedContainerStyle}>
       <View style={styles.swipeContainer}>
         <View style={styles.deleteAction}>
-          <Pressable style={styles.deleteButton} onPress={handleRemove}>
+          <Pressable style={styles.deleteButton} onPress={handleRemove} accessibilityRole="button" accessibilityLabel="Remove item from batch">
             <Feather name="trash-2" size={20} color="#FFFFFF" />
             <ThemedText type="caption" style={styles.deleteText}>
               Remove
@@ -133,11 +133,13 @@ function SwipeableItem({
               animatedStyle,
             ]}
           >
-            <Pressable style={styles.itemMainRow} onPress={() => onEdit(index)}>
+            <Pressable style={styles.itemMainRow} onPress={() => onEdit(index)} accessibilityRole="button" accessibilityLabel={`Edit item ${item.name}`}>
               <Pressable
                 style={styles.checkbox}
                 onPress={() => onToggleSelect(index)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Toggle select ${item.name}`}
               >
                 {item.selected ? (
                   <View
@@ -465,7 +467,7 @@ export default function AddFoodBatchScreen() {
             {selectedCount} of {items.length} selected
           </ThemedText>
           <View style={styles.selectionActions}>
-            <Pressable onPress={selectAll} style={styles.selectionButton}>
+            <Pressable onPress={selectAll} style={styles.selectionButton} accessibilityRole="button" accessibilityLabel="Select all items">
               <ThemedText type="caption" style={{ color: AppColors.primary }}>
                 Select All
               </ThemedText>
@@ -473,7 +475,7 @@ export default function AddFoodBatchScreen() {
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
               |
             </ThemedText>
-            <Pressable onPress={deselectAll} style={styles.selectionButton}>
+            <Pressable onPress={deselectAll} style={styles.selectionButton} accessibilityRole="button" accessibilityLabel="Clear selection">
               <ThemedText type="caption" style={{ color: AppColors.primary }}>
                 Clear
               </ThemedText>
@@ -643,18 +645,21 @@ function EditModal({
   };
 
   return (
-    <Pressable style={styles.modalOverlay} onPress={onClose}>
+    <Pressable style={styles.modalOverlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close edit modal">
       <Pressable
         style={[
           styles.modalContent,
           { backgroundColor: theme.backgroundDefault },
         ]}
         onPress={(e) => e.stopPropagation()}
+        accessibilityRole="button"
+        accessibilityLabel="Edit item modal content"
       >
         <View style={styles.modalHeader}>
           <ThemedText type="h3">Edit Item</ThemedText>
           <Pressable
             accessibilityLabel="Close"
+            accessibilityRole="button"
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -756,6 +761,8 @@ function EditModal({
                     },
                   ]}
                   onPress={() => setQuantityUnit(unit)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select unit ${unit}`}
                 >
                   <ThemedText
                     type="caption"
@@ -787,6 +794,8 @@ function EditModal({
                     category === cat && { backgroundColor: AppColors.primary },
                   ]}
                   onPress={() => setCategory(cat)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select category ${cat}`}
                 >
                   <ThemedText
                     type="caption"
@@ -819,6 +828,8 @@ function EditModal({
                     },
                   ]}
                   onPress={() => setStorageLocation(loc.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select storage location ${loc.label}`}
                 >
                   <ThemedText
                     type="caption"

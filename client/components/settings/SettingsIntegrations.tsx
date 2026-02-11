@@ -24,6 +24,8 @@ export function SettingsIntegrations({
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("SiriShortcutsGuide")}
         data-testid="button-siri-shortcuts"
+        accessibilityRole="button"
+        accessibilityLabel="Set up Siri shortcuts"
       >
         <View style={styles.legalMenuIcon}>
           <Feather name="mic" size={18} color={theme.text} />

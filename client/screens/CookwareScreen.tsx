@@ -131,6 +131,8 @@ const GroupedSection = React.memo(function GroupedSection({
       <Pressable
         style={styles.sectionHeader}
         onPress={() => onToggleSection(section.key)}
+        accessibilityRole="button"
+        accessibilityLabel={`Toggle ${section.title} section`}
       >
         <View style={styles.sectionHeaderLeft}>
           <Feather
@@ -238,6 +240,9 @@ const CookwareItem = React.memo(function CookwareItem({
             opacity: isToggling || isDisabled ? 0.4 : 1,
           },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={`Toggle ${item.name}`}
+        accessibilityState={{ disabled: isToggling || isDisabled }}
       >
         {isOwned ? (
           <View style={styles.checkIndicator}>
@@ -576,6 +581,8 @@ export default function CookwareScreen() {
       <Pressable
         style={styles.skipButton}
         onPress={() => setShowFirstTimeSetup(false)}
+        accessibilityRole="button"
+        accessibilityLabel="Skip and customize manually"
       >
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
           Skip and customize manually
@@ -600,6 +607,8 @@ export default function CookwareScreen() {
             { backgroundColor: `${AppColors.warning}15` },
           ]}
           onPress={() => setShowUpgradePrompt(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to add more cookware"
         >
           <Feather name="alert-circle" size={16} color={AppColors.warning} />
           <ThemedText

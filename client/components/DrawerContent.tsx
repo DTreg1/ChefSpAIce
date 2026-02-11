@@ -50,6 +50,8 @@ function TrialBadge() {
         style={styles.trialBadge}
         onPress={handleManageSubscription}
         data-testid="drawer-trial-badge"
+        accessibilityRole="button"
+        accessibilityLabel={`Trial status: ${trialText}. Manage subscription`}
       >
         <Feather name="clock" size={12} color="#fff" />
         <ThemedText style={styles.trialText}>{trialText}</ThemedText>
@@ -73,6 +75,8 @@ function TrialBadge() {
         style={[styles.trialBadge, styles.pastDueBadge]}
         onPress={handleManageSubscription}
         data-testid="drawer-past-due-badge"
+        accessibilityRole="button"
+        accessibilityLabel={`Payment status: ${daysText}. Manage subscription`}
       >
         <Feather name="alert-circle" size={12} color="#fff" />
         <ThemedText style={styles.trialText}>{daysText}</ThemedText>
@@ -87,6 +91,8 @@ function TrialBadge() {
         style={[styles.trialBadge, styles.cancelingBadge]}
         onPress={handleManageSubscription}
         data-testid="drawer-canceling-badge"
+        accessibilityRole="button"
+        accessibilityLabel="Subscription ending soon. Manage subscription"
       >
         <Feather name="alert-triangle" size={12} color="#fff" />
         <ThemedText style={styles.trialText}>Ending soon</ThemedText>
@@ -384,6 +390,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 signOut();
               }}
               testID="button-drawer-sign-out"
+              accessibilityRole="button"
               accessibilityLabel="Sign Out"
             >
               <Feather
@@ -410,6 +417,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 navigation.navigate("Auth" as any);
               }}
               testID="button-drawer-create-account"
+              accessibilityRole="button"
               accessibilityLabel="Create Account"
             >
               <Feather

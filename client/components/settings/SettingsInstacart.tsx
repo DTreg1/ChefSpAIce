@@ -158,6 +158,8 @@ export function SettingsInstacart({
             onPress={handleClearRetailer}
             style={styles.clearButton}
             data-testid="button-clear-retailer"
+            accessibilityRole="button"
+            accessibilityLabel="Clear preferred retailer"
           >
             <Feather name="x" size={14} color={theme.textSecondary} />
             <ThemedText
@@ -187,6 +189,9 @@ export function SettingsInstacart({
               },
             ]}
             data-testid={`button-country-${code}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Select ${code === "US" ? "United States" : "Canada"}`}
+            accessibilityState={{ selected: countryCode === code }}
           >
             <ThemedText
               type="small"
@@ -231,6 +236,9 @@ export function SettingsInstacart({
             },
           ]}
           data-testid="button-find-stores"
+          accessibilityRole="button"
+          accessibilityLabel="Find nearby stores"
+          accessibilityState={{ disabled: isLoading || !postalCode.trim() }}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
@@ -291,6 +299,9 @@ export function SettingsInstacart({
                   },
                 ]}
                 data-testid={`button-retailer-${retailer.retailer_key}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${retailer.name} as preferred retailer${isSelected ? ', currently selected' : ''}`}
+                accessibilityState={{ selected: isSelected }}
               >
                 {retailer.retailer_logo_url ? (
                   <Image

@@ -796,6 +796,9 @@ export default function SubscriptionScreen() {
             style={[styles.refreshButton, { borderColor: theme.border }]}
             data-testid="button-restore-purchases"
             {...webAccessibilityProps(handleRestorePurchases)}
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
+            accessibilityState={{ disabled: isRestoring }}
           >
             {isRestoring ? (
               <ActivityIndicator
@@ -826,6 +829,8 @@ export default function SubscriptionScreen() {
             style={[styles.refreshButton, { borderColor: theme.border }]}
             data-testid="button-refresh-subscription"
             {...webAccessibilityProps(refetch)}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh subscription status"
           >
             <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
             <ThemedText

@@ -272,6 +272,8 @@ export default function TrialExpiredScreen() {
               onPress={handleNavigateToAuth}
               style={styles.signInLink}
               data-testid="link-sign-in"
+              accessibilityRole="button"
+              accessibilityLabel="Sign in to existing account"
             >
               <ThemedText
                 style={[styles.signInText, { color: AppColors.primary }]}
@@ -358,6 +360,9 @@ export default function TrialExpiredScreen() {
             disabled={isRestoring}
             style={[styles.restoreButton, { borderColor: theme.border }]}
             data-testid="button-restore-purchases"
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
+            accessibilityState={{ disabled: isRestoring }}
           >
             {isRestoring ? (
               <ActivityIndicator
@@ -402,6 +407,8 @@ export default function TrialExpiredScreen() {
             <Pressable
               onPress={() => Linking.openURL("https://chefspice.app/privacy")}
               data-testid="link-privacy-policy"
+              accessibilityRole="link"
+              accessibilityLabel="Open privacy policy"
             >
               <ThemedText
                 type="caption"
@@ -419,6 +426,8 @@ export default function TrialExpiredScreen() {
             <Pressable
               onPress={() => Linking.openURL("https://chefspice.app/terms")}
               data-testid="link-terms-of-use"
+              accessibilityRole="link"
+              accessibilityLabel="Open terms of use"
             >
               <ThemedText
                 type="caption"
@@ -444,6 +453,8 @@ export default function TrialExpiredScreen() {
                     }
                   }}
                   data-testid="link-apple-eula"
+                  accessibilityRole="link"
+                  accessibilityLabel={Platform.OS === 'ios' ? "Open EULA" : "Open Google Play terms"}
                 >
                   <ThemedText
                     type="caption"

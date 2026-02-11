@@ -413,6 +413,8 @@ export function TrialEndedModal({
                 onPress={onRestorePurchases}
                 style={styles.restoreButton}
                 data-testid="button-modal-restore-purchases"
+                accessibilityRole="button"
+                accessibilityLabel={isRestoring ? "Restoring purchases" : "Restore purchases"}
               >
                 <Ionicons name="refresh" size={14} color={theme.textSecondary} />
                 <ThemedText

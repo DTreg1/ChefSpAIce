@@ -209,7 +209,7 @@ export default function ProfileScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
         <View style={styles.avatarSection}>
-          <Pressable onPress={handlePickAvatar}>
+          <Pressable onPress={handlePickAvatar} accessibilityRole="button" accessibilityLabel="Change profile picture">
             {Platform.OS === "ios" ? (
               <BlurView
                 intensity={25}
@@ -295,7 +295,7 @@ export default function ProfileScreen() {
                 onBlur={handleSaveName}
                 onSubmitEditing={handleSaveName}
               />
-              <Pressable onPress={handleSaveName} style={styles.saveButton} accessibilityLabel="Save name">
+              <Pressable onPress={handleSaveName} style={styles.saveButton} accessibilityLabel="Save name" accessibilityRole="button">
                 <Feather name="check" size={20} color={AppColors.primary} />
               </Pressable>
             </View>
@@ -303,6 +303,8 @@ export default function ProfileScreen() {
             <Pressable
               onPress={() => setIsEditingName(true)}
               style={styles.nameContainer}
+              accessibilityRole="button"
+              accessibilityLabel="Edit display name"
             >
               <ThemedText type="h3">{userProfile.displayName}</ThemedText>
               <Feather name="edit-2" size={16} color={theme.textSecondary} />
@@ -344,6 +346,8 @@ export default function ProfileScreen() {
                       key={option}
                       onPress={() => setThemePreference(option)}
                       hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Set theme to ${option}`}
                       style={[
                         styles.themeToggleButton,
                         {
@@ -575,6 +579,7 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => navigation.navigate("Subscription")}
             accessibilityLabel="Subscription"
+            accessibilityRole="button"
             data-testid="link-subscription"
           >
             <View
@@ -604,6 +609,7 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => navigation.navigate("Analytics")}
             accessibilityLabel="Analytics"
+            accessibilityRole="button"
           >
             <View
               style={[
@@ -632,6 +638,7 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => navigation.navigate("StorageLocations")}
             accessibilityLabel="Storage locations"
+            accessibilityRole="button"
           >
             <View
               style={[
@@ -660,6 +667,7 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => navigation.navigate("CookingTerms")}
             accessibilityLabel="Cooking terms"
+            accessibilityRole="button"
           >
             <View
               style={[
@@ -688,6 +696,7 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => navigation.navigate("Cookware")}
             accessibilityLabel="Cookware"
+            accessibilityRole="button"
           >
             <View
               style={[
@@ -718,6 +727,7 @@ export default function ProfileScreen() {
                 style={styles.menuItem}
                 onPress={() => navigation.navigate("GlassLeaf")}
                 accessibilityLabel="Dev components"
+                accessibilityRole="button"
               >
                 <View
                   style={[
@@ -811,6 +821,8 @@ export default function ProfileScreen() {
                   style={styles.manageSubscriptionButton}
                   onPress={handleManageSubscription}
                   data-testid="button-manage-subscription"
+                  accessibilityRole="button"
+                  accessibilityLabel="Manage subscription"
                 >
                   <ThemedText type="body" style={{ color: AppColors.accent }}>
                     Manage Subscription
@@ -826,6 +838,8 @@ export default function ProfileScreen() {
                   style={styles.manageSubscriptionButton}
                   onPress={handleUpgradeSubscription}
                   data-testid="button-upgrade-subscription"
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose plan"
                 >
                   <ThemedText type="body" style={{ color: AppColors.primary }}>
                     Choose Plan
@@ -845,6 +859,7 @@ export default function ProfileScreen() {
                 onPress={handleLogout}
                 testID="button-sign-out"
                 accessibilityLabel="Sign Out"
+                accessibilityRole="button"
               >
                 <View
                   style={[

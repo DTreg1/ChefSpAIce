@@ -260,6 +260,7 @@ export default function StorageLocationsScreen() {
                       handleRemoveLocation(location.key, location.label)
                     }
                     accessibilityLabel="Remove location"
+                    accessibilityRole="button"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <Feather name="trash-2" size={18} color={AppColors.error} />
@@ -325,6 +326,8 @@ export default function StorageLocationsScreen() {
                       },
                     ]}
                     onPress={() => setSelectedIcon(icon)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select icon ${icon}`}
                   >
                     <Feather
                       name={icon as any}
@@ -375,6 +378,8 @@ export default function StorageLocationsScreen() {
           <Pressable
             style={styles.proUpgradeCard}
             onPress={() => setShowUpgradePrompt(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Upgrade to add custom storage locations"
           >
             <GlassCard style={styles.proUpgradeCardInner}>
               <View style={styles.proUpgradeContent}>

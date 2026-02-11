@@ -188,6 +188,7 @@ function ReceiptResultsView({
           onPress={onRetake}
           style={styles.retakeButton}
           accessibilityLabel="Retake photo"
+          accessibilityRole="button"
           data-testid="button-retake"
         >
           <Feather name="arrow-left" size={24} color={theme.text} />
@@ -652,6 +653,7 @@ export default function ReceiptScanScreen() {
                 onPress={handleClose}
                 style={styles.closeButton}
                 accessibilityLabel="Close scanner"
+                accessibilityRole="button"
                 data-testid="button-close"
               >
                 <Feather name="x" size={28} color="#FFFFFF" />
@@ -688,6 +690,8 @@ export default function ReceiptScanScreen() {
                 onPress={handlePickImage}
                 style={styles.controlButton}
                 data-testid="button-gallery"
+                accessibilityRole="button"
+                accessibilityLabel="Pick image from gallery"
               >
                 <View style={styles.controlButtonInner}>
                   <Feather name="image" size={24} color="#FFFFFF" />
@@ -701,6 +705,8 @@ export default function ReceiptScanScreen() {
                 onPress={handleCapture}
                 style={styles.captureButton}
                 data-testid="button-capture"
+                accessibilityRole="button"
+                accessibilityLabel="Capture receipt photo"
               >
                 <View style={styles.captureButtonOuter}>
                   <View style={styles.captureButtonInner} />
@@ -731,6 +737,7 @@ export default function ReceiptScanScreen() {
                 onPress={handleRetake}
                 style={styles.closeButton}
                 accessibilityLabel="Retake photo"
+                accessibilityRole="button"
                 data-testid="button-retake-preview"
               >
                 <Feather name="arrow-left" size={28} color="#FFFFFF" />

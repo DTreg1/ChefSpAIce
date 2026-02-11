@@ -57,6 +57,9 @@ export function SettingsChipSelector({
                 },
               ]}
               data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${option.value}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${isSelected ? 'Remove' : 'Add'} ${option.label}`}
+              accessibilityState={{ selected: isSelected }}
             >
               {option.icon ? (
                 <Feather
@@ -87,6 +90,8 @@ export function SettingsChipSelector({
               },
             ]}
             data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-add-new`}
+            accessibilityRole="button"
+            accessibilityLabel={`Add new ${title.toLowerCase()} option`}
           >
             <Feather name="plus" size={14} color={theme.textSecondary} />
             <ThemedText

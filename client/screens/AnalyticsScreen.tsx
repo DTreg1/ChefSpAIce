@@ -250,6 +250,8 @@ export default function AnalyticsScreen() {
                 },
               ]}
               onPress={() => setTimeRange(range)}
+              accessibilityRole="button"
+              accessibilityLabel={`Select ${range === "week" ? "weekly" : range === "month" ? "monthly" : "all time"} range`}
             >
               <ThemedText
                 type="small"

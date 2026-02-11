@@ -114,6 +114,8 @@ export default function CookingTermsScreen() {
             },
           ]}
           onPress={() => setSelectedCategory(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Filter by ${item.label} category`}
         >
           <ThemedText
             type="small"
@@ -226,7 +228,7 @@ export default function CookingTermsScreen() {
             autoCorrect={false}
           />
           {search.length > 0 ? (
-            <Pressable onPress={() => setSearch("")} accessibilityLabel="Clear search">
+            <Pressable onPress={() => setSearch("")} accessibilityLabel="Clear search" accessibilityRole="button">
               <Feather name="x" size={20} color={theme.textSecondary} />
             </Pressable>
           ) : null}
@@ -277,6 +279,7 @@ export default function CookingTermsScreen() {
               <View style={styles.modalHandle} />
               <Pressable
                 accessibilityLabel="Close term details"
+                accessibilityRole="button"
                 style={styles.closeButton}
                 onPress={() => setSelectedTerm(null)}
               >
@@ -354,6 +357,8 @@ export default function CookingTermsScreen() {
                           { backgroundColor: theme.backgroundSecondary },
                         ]}
                         onPress={() => handleRelatedTermPress(relatedTerm)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View related term ${relatedTerm}`}
                       >
                         <ThemedText type="small">{relatedTerm}</ThemedText>
                         <Feather

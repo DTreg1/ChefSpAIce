@@ -451,6 +451,9 @@ export default function AuthScreen() {
                     disabled={authLoading}
                     data-testid="button-signin-apple"
                     {...webAccessibilityProps(() => handleSocialAuth("apple"))}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign in with Apple"
+                    accessibilityState={{ disabled: authLoading }}
                   >
                     <Ionicons name="logo-apple" size={24} color={theme.text} />
                     <ThemedText style={styles.authSocialButtonText}>
@@ -472,6 +475,9 @@ export default function AuthScreen() {
                     disabled={authLoading}
                     data-testid="button-signin-google"
                     {...webAccessibilityProps(() => handleSocialAuth("google"))}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign in with Google"
+                    accessibilityState={{ disabled: authLoading }}
                   >
                     <Image
                       source={{ uri: "https://www.google.com/favicon.ico" }}
@@ -578,6 +584,7 @@ export default function AuthScreen() {
               />
               <Pressable
                 accessibilityLabel="Toggle password visibility"
+                accessibilityRole="button"
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.authEyeButton}
                 {...webAccessibilityProps(() => setShowPassword(!showPassword))}
@@ -641,6 +648,9 @@ export default function AuthScreen() {
             disabled={authLoading}
             data-testid="button-auth-submit"
             {...webAccessibilityProps(handleAuth)}
+            accessibilityRole="button"
+            accessibilityLabel={isSignUp ? "Create account" : "Sign in"}
+            accessibilityState={{ disabled: authLoading }}
           >
             {authLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -659,6 +669,8 @@ export default function AuthScreen() {
             style={styles.authSwitchButton}
             data-testid="button-switch-auth-mode"
             {...webAccessibilityProps(() => { setIsSignUp(!isSignUp); setAuthError(null); })}
+            accessibilityRole="button"
+            accessibilityLabel={isSignUp ? "Switch to sign in" : "Switch to sign up"}
           >
             <ThemedText
               style={[styles.authSwitchText, { color: theme.textSecondary }]}
@@ -680,6 +692,8 @@ export default function AuthScreen() {
               style={styles.forgotPasswordButton}
               data-testid="button-forgot-password"
               {...webAccessibilityProps(handleForgotPassword)}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot password"
             >
               <ThemedText
                 style={[styles.forgotPasswordText, { color: AppColors.primary }]}
@@ -702,6 +716,8 @@ export default function AuthScreen() {
                 onPress={handleOpenPrivacyPolicy}
                 data-testid="link-auth-privacy-policy"
                 {...webAccessibilityProps(handleOpenPrivacyPolicy)}
+                accessibilityRole="link"
+                accessibilityLabel="Open privacy policy"
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -718,6 +734,8 @@ export default function AuthScreen() {
                 onPress={handleOpenTermsOfUse}
                 data-testid="link-auth-terms-of-use"
                 {...webAccessibilityProps(handleOpenTermsOfUse)}
+                accessibilityRole="link"
+                accessibilityLabel="Open terms of service"
               >
                 <ThemedText
                   style={[styles.legalLink, { color: AppColors.primary }]}
@@ -734,6 +752,8 @@ export default function AuthScreen() {
               style={styles.guestButton}
               data-testid="button-continue-as-guest"
               {...webAccessibilityProps(handleContinueAsGuest)}
+              accessibilityRole="button"
+              accessibilityLabel="Continue as guest"
             >
               <ThemedText
                 style={[styles.guestButtonText, { color: theme.textSecondary }]}

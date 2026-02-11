@@ -359,6 +359,7 @@ export default function IngredientScannerScreen() {
             onPress={handleRetake}
             style={styles.headerButton}
             accessibilityLabel="Retake photo"
+            accessibilityRole="button"
           >
             <Feather name="arrow-left" size={24} color={theme.text} />
           </Pressable>
@@ -367,6 +368,7 @@ export default function IngredientScannerScreen() {
             onPress={handleClose}
             style={styles.headerButton}
             accessibilityLabel="Close scanner"
+            accessibilityRole="button"
           >
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
@@ -419,6 +421,8 @@ export default function IngredientScannerScreen() {
                     : theme.glass.border,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Toggle ingredient ${ingredient.simplifiedName || ingredient.name}`}
             >
               <View style={styles.ingredientCheckbox}>
                 {selectedIngredients.has(index) ? (
@@ -494,6 +498,7 @@ export default function IngredientScannerScreen() {
                 onPress={handleClose}
                 style={styles.closeButton}
                 accessibilityLabel="Close scanner"
+                accessibilityRole="button"
               >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
@@ -535,6 +540,9 @@ export default function IngredientScannerScreen() {
                     styles.captureButton,
                     isCapturing && styles.captureButtonDisabled,
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Capture ingredient label photo"
+                  accessibilityState={{ disabled: isCapturing }}
                 >
                   <View style={styles.captureButtonInner} />
                 </Pressable>

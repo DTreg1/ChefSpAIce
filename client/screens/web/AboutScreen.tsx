@@ -38,6 +38,8 @@ export default function AboutScreen() {
           <Pressable
             style={styles.logoContainer}
             onPress={() => navigate("/")}
+            accessibilityRole="link"
+            accessibilityLabel="Go to home page"
           >
             <MaterialCommunityIcons
               name="chef-hat"
@@ -55,6 +57,8 @@ export default function AboutScreen() {
                 onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
+                accessibilityRole="link"
+                accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[

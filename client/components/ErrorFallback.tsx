@@ -46,6 +46,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
     <ThemedView style={styles.container}>
       {__DEV__ ? (
         <Pressable
+          accessibilityRole="button"
           accessibilityLabel="View error details"
           onPress={() => setIsModalVisible(true)}
           style={({ pressed }) => [
@@ -79,6 +80,8 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Try again"
         >
           <ThemedText
             type="body"
@@ -103,6 +106,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                   Error Details
                 </ThemedText>
                 <Pressable
+                  accessibilityRole="button"
                   accessibilityLabel="Close error details"
                   onPress={() => setIsModalVisible(false)}
                   style={({ pressed }) => [

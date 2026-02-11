@@ -86,6 +86,7 @@ export function NutritionScoreBadge({
         onPress={onPress}
         hitSlop={8}
         accessibilityRole="button"
+        accessibilityLabel={`Nutrition score: grade ${scoreResult.grade}`}
         accessibilityHint="Tap to view nutrition details"
       >
         {content}

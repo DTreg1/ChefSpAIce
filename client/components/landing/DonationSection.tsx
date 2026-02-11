@@ -126,6 +126,9 @@ export function DonationSection({ isWide }: DonationSectionProps) {
                     {...webAccessibilityProps(() => handleDonate(item.amount))}
                     disabled={isDonating}
                     data-testid={`button-donate-${item.label}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Donate ${item.label}`}
+                    accessibilityState={{ disabled: isDonating }}
                   >
                     <Text style={styles.donationButtonText}>{item.label}</Text>
                   </Pressable>

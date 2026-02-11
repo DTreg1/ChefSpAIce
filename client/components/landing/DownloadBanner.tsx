@@ -33,6 +33,8 @@ function StoreBadge({
       onPress={onPress}
       {...webAccessibilityProps(onPress)}
       data-testid={`button-download-${store}`}
+      accessibilityRole="button"
+      accessibilityLabel={isIOS ? "Download on the App Store" : "Get it on Google Play"}
     >
       <MaterialCommunityIcons
         name={isIOS ? "apple" : "google-play"}
@@ -113,6 +115,8 @@ export function DownloadBanner() {
           onPress={handleDismiss}
           {...webAccessibilityProps(handleDismiss)}
           data-testid="button-dismiss-banner"
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss download banner"
         >
           <Feather name="x" size={16} color="rgba(255, 255, 255, 0.6)" />
         </Pressable>

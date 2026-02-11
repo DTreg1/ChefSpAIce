@@ -61,7 +61,8 @@ export function SettingsNutritionTargets({
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                accessibilityLabel="Decrease macro target"
+                accessibilityRole="button"
+                accessibilityLabel={`Decrease ${labels[macro]} target`}
               >
                 <Feather name="minus" size={16} color={theme.text} />
               </Pressable>
@@ -85,7 +86,8 @@ export function SettingsNutritionTargets({
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                accessibilityLabel="Increase macro target"
+                accessibilityRole="button"
+                accessibilityLabel={`Increase ${labels[macro]} target`}
               >
                 <Feather name="plus" size={16} color={theme.text} />
               </Pressable>

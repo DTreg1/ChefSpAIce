@@ -16,6 +16,7 @@ export default function GlassLeafScreen() {
 
       <Pressable
         accessibilityLabel="Go back"
+        accessibilityRole="button"
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => navigation.goBack()}
         data-testid="button-back"

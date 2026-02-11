@@ -443,6 +443,7 @@ export default function FoodCameraScreen() {
             style={styles.headerButton}
             onPress={handleRetake}
             accessibilityLabel="Retake photo"
+            accessibilityRole="button"
           >
             <Feather name="arrow-left" size={24} color={theme.text} />
           </Pressable>
@@ -451,6 +452,7 @@ export default function FoodCameraScreen() {
             style={styles.headerButton}
             onPress={handleClose}
             accessibilityLabel="Close camera"
+            accessibilityRole="button"
           >
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
@@ -494,6 +496,7 @@ export default function FoodCameraScreen() {
             style={styles.headerButton}
             onPress={handleRetake}
             accessibilityLabel="Retake photo"
+            accessibilityRole="button"
           >
             <Feather name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -504,6 +507,7 @@ export default function FoodCameraScreen() {
             style={styles.headerButton}
             onPress={handleClose}
             accessibilityLabel="Close camera"
+            accessibilityRole="button"
           >
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
@@ -554,6 +558,7 @@ export default function FoodCameraScreen() {
                 style={styles.headerButton}
                 onPress={handleClose}
                 accessibilityLabel="Close camera"
+                accessibilityRole="button"
               >
                 <Feather name="x" size={28} color="#FFFFFF" />
               </Pressable>
@@ -584,11 +589,12 @@ export default function FoodCameraScreen() {
           style={styles.galleryButton}
           onPress={pickFromGallery}
           accessibilityLabel="Pick from gallery"
+          accessibilityRole="button"
         >
           <Feather name="image" size={24} color="#FFFFFF" />
         </Pressable>
 
-        <Pressable style={styles.captureButton} onPress={takePhoto}>
+        <Pressable style={styles.captureButton} onPress={takePhoto} accessibilityRole="button" accessibilityLabel="Take photo">
           <View style={styles.captureInner} />
         </Pressable>
 
@@ -596,6 +602,7 @@ export default function FoodCameraScreen() {
           style={styles.closeButtonControl}
           onPress={handleClose}
           accessibilityLabel="Close camera"
+          accessibilityRole="button"
         >
           <Feather name="x" size={24} color="#FFFFFF" />
         </Pressable>

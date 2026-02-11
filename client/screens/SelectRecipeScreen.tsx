@@ -101,6 +101,8 @@ export default function SelectRecipeScreen() {
       <Pressable
         style={styles.recipeItem}
         onPress={() => handleSelectRecipe(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Select recipe ${item.title}`}
       >
         <GlassCard style={styles.recipeCard}>
           <View style={styles.recipeContent}>

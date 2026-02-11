@@ -24,6 +24,8 @@ export function SettingsLegalSupport({
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("PrivacyPolicy")}
         data-testid="button-privacy-policy"
+        accessibilityRole="button"
+        accessibilityLabel="View privacy policy"
       >
         <View style={styles.legalMenuIcon}>
           <Feather name="shield" size={18} color={theme.text} />
@@ -43,6 +45,8 @@ export function SettingsLegalSupport({
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => navigation.navigate("TermsOfService")}
         data-testid="button-terms-of-service"
+        accessibilityRole="button"
+        accessibilityLabel="View terms of service"
       >
         <View style={styles.legalMenuIcon}>
           <Feather name="file-text" size={18} color={theme.text} />
@@ -62,6 +66,8 @@ export function SettingsLegalSupport({
         style={[styles.legalMenuItem, { borderColor: theme.glass.border }]}
         onPress={() => Linking.openURL("https://chefspaice.com/support")}
         data-testid="button-support"
+        accessibilityRole="button"
+        accessibilityLabel="Open help and support"
       >
         <View style={styles.legalMenuIcon}>
           <Feather name="help-circle" size={18} color={theme.text} />

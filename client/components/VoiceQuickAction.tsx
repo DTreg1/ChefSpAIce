@@ -471,6 +471,8 @@ export function VoiceQuickAction() {
             style={styles.overlayBackground}
             onPress={handleCancel}
             data-testid="button-voice-overlay-dismiss"
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss voice overlay"
           />
 
           <Pressable
@@ -535,6 +537,7 @@ export function VoiceQuickAction() {
                 data-testid="button-voice-mic-overlay"
                 accessibilityRole="button"
                 accessibilityLabel={statusText}
+                accessibilityState={{ disabled: voiceState === "processing" || voiceState === "speaking" }}
               >
                 {voiceState === "processing" ? (
                   <ActivityIndicator size="large" color="#FFFFFF" />

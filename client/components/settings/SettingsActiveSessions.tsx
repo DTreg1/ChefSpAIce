@@ -189,6 +189,8 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
             style={[styles.retryButton, { borderColor: theme.glass?.border }]}
             onPress={fetchSessions}
             data-testid="button-retry-sessions"
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading sessions"
           >
             <ThemedText type="caption" style={{ color: AppColors.primary }}>
               Tap to retry
@@ -234,6 +236,9 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
                   onPress={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
                   data-testid={`button-revoke-session-${session.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Revoke session for ${parseUserAgent(session.userAgent)}`}
+                  accessibilityState={{ disabled: revokingId === session.id }}
                 >
                   {revokingId === session.id ? (
                     <ActivityIndicator size="small" color={AppColors.error} />
@@ -253,6 +258,9 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
               onPress={handleRevokeAll}
               disabled={isRevokingAll}
               data-testid="button-revoke-all-sessions"
+              accessibilityRole="button"
+              accessibilityLabel="Revoke all other sessions"
+              accessibilityState={{ disabled: isRevokingAll }}
             >
               {isRevokingAll ? (
                 <ActivityIndicator size="small" color={AppColors.error} />

@@ -140,6 +140,8 @@ export function FloatingChatButton() {
           onPressOut={handlePressOut}
           style={[styles.buttonWrapper, animatedStyle]}
           data-testid="button-floating-chat"
+          accessibilityRole="button"
+          accessibilityLabel={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
         >
           {innerContent}
           {!canUseAiAssistant && (

@@ -246,6 +246,8 @@ export default function ItemDetailScreen() {
               style={styles.removeButton}
               onPress={handleDelete}
               testID="button-remove-item"
+              accessibilityRole="button"
+              accessibilityLabel="Remove item from inventory"
             >
               <Feather name="trash-2" size={14} color={AppColors.warning} />
               <ThemedText
@@ -465,6 +467,8 @@ export default function ItemDetailScreen() {
                   },
                 ]}
                 onPress={() => setItem({ ...item, storageLocation: loc.key })}
+                accessibilityRole="button"
+                accessibilityLabel={`Select storage location ${loc.label}`}
               >
                 <Feather
                   name={loc.icon as any}
@@ -505,6 +509,8 @@ export default function ItemDetailScreen() {
                 },
               ]}
               onPress={() => openDatePicker("purchase")}
+              accessibilityRole="button"
+              accessibilityLabel="Select purchase date"
             >
               <ThemedText type="small" style={styles.label}>
                 Purchase
@@ -523,6 +529,8 @@ export default function ItemDetailScreen() {
 
             <Pressable
               testID="button-expiration-date"
+              accessibilityRole="button"
+              accessibilityLabel="Select expiration date"
               style={[
                 styles.dateButtonCompact,
                 {
@@ -585,6 +593,8 @@ export default function ItemDetailScreen() {
             <Pressable
               style={styles.datePickerOverlay}
               onPress={handleDatePickerDone}
+              accessibilityRole="button"
+              accessibilityLabel="Close date picker"
             >
               <Pressable
                 style={[
@@ -592,6 +602,8 @@ export default function ItemDetailScreen() {
                   { backgroundColor: theme.backgroundDefault },
                 ]}
                 onPress={(e) => e.stopPropagation()}
+                accessibilityRole="button"
+                accessibilityLabel="Date picker content"
               >
                 <View style={styles.datePickerHeader}>
                   <ThemedText type="h4">
@@ -602,6 +614,8 @@ export default function ItemDetailScreen() {
                   <Pressable
                     onPress={handleDatePickerDone}
                     testID="button-date-picker-done"
+                    accessibilityRole="button"
+                    accessibilityLabel="Done selecting date"
                   >
                     <ThemedText
                       style={{ color: AppColors.primary, fontWeight: "600" }}

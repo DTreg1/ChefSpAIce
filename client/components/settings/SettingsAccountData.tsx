@@ -80,6 +80,9 @@ export function SettingsAccountData({
             onPress={onExportData}
             disabled={isExporting}
             data-testid="button-export-data"
+            accessibilityRole="button"
+            accessibilityLabel="Export my data"
+            accessibilityState={{ disabled: isExporting }}
           >
             <View style={styles.legalMenuIcon}>
               {isExporting ? (
@@ -105,6 +108,9 @@ export function SettingsAccountData({
             onPress={onImportFilePick}
             disabled={isImporting}
             data-testid="button-import-data"
+            accessibilityRole="button"
+            accessibilityLabel="Import data from backup"
+            accessibilityState={{ disabled: isImporting }}
           >
             <View style={styles.legalMenuIcon}>
               {isImporting ? (

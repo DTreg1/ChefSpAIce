@@ -39,6 +39,8 @@ export default function TermsScreen() {
           <Pressable
             style={styles.logoContainer}
             onPress={() => navigate("/")}
+            accessibilityRole="link"
+            accessibilityLabel="Go to home page"
           >
             <Image
               source={chefHatLight}
@@ -58,6 +60,8 @@ export default function TermsScreen() {
                 onPress={() => navigate(link.path)}
                 style={styles.navLink}
                 data-testid={`nav-link-${link.label.toLowerCase()}`}
+                accessibilityRole="link"
+                accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
                   style={[

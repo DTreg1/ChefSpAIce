@@ -145,6 +145,8 @@ export function ScreenIdentifierOverlay({
         onPress={handleCopy}
         activeOpacity={0.8}
         data-testid="button-copy-screen-name"
+        accessibilityRole="button"
+        accessibilityLabel={`Copy screen name ${screenName}`}
       >
         <Text style={styles.label}>Screen:</Text>
         <Text style={styles.screenName}>{screenName}</Text>
@@ -158,6 +160,9 @@ export function ScreenIdentifierOverlay({
         activeOpacity={0.8}
         disabled={resetting}
         data-testid="button-reset-storage"
+        accessibilityRole="button"
+        accessibilityLabel="Reset app storage"
+        accessibilityState={{ disabled: resetting }}
       >
         <Text style={styles.resetText}>{resetting ? "..." : "Reset"}</Text>
       </TouchableOpacity>

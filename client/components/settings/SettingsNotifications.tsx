@@ -68,7 +68,8 @@ export function SettingsNotifications({
                 styles.dayButton,
                 { backgroundColor: theme.backgroundSecondary },
               ]}
-              accessibilityLabel="Decrease expiration days"
+              accessibilityRole="button"
+              accessibilityLabel="Decrease expiration alert days"
             >
               <Feather name="minus" size={16} color={theme.text} />
             </Pressable>
@@ -92,7 +93,8 @@ export function SettingsNotifications({
                 styles.dayButton,
                 { backgroundColor: theme.backgroundSecondary },
               ]}
-              accessibilityLabel="Increase expiration days"
+              accessibilityRole="button"
+              accessibilityLabel="Increase expiration alert days"
             >
               <Feather name="plus" size={16} color={theme.text} />
             </Pressable>

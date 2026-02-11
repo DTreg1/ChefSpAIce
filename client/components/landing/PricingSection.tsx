@@ -36,6 +36,8 @@ export function PricingSection({ isWide, onDownloadApp }: PricingSectionProps) {
           onPress={() => setIsAnnual(!isAnnual)}
           {...webAccessibilityProps(() => setIsAnnual(!isAnnual))}
           data-testid="toggle-billing-period"
+          accessibilityRole="button"
+          accessibilityLabel={`Switch billing period, currently ${isAnnual ? 'annual' : 'monthly'}`}
         >
           <View
             style={[

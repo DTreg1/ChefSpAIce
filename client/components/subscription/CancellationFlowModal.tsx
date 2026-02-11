@@ -378,6 +378,7 @@ export function CancellationFlowModal({
             onPress={() => setPauseDuration(months)}
             data-testid={`button-pause-${months}-month`}
             accessibilityRole="radio"
+            accessibilityLabel={`Pause for ${months} month${months > 1 ? 's' : ''}`}
             accessibilityState={{ selected: pauseDuration === months }}
           >
             <ThemedText

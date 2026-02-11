@@ -916,6 +916,8 @@ export default function AddItemScreen() {
                     },
                   ]}
                   data-testid={`chip-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select category ${cat}`}
                 >
                   <ThemedText
                     type="caption"
@@ -1017,6 +1019,8 @@ export default function AddItemScreen() {
                 },
               ]}
               onPress={() => openDatePicker("purchase")}
+              accessibilityRole="button"
+              accessibilityLabel="Select purchase date"
             >
               <ThemedText type="small" style={styles.label}>
                 Purchase
@@ -1043,6 +1047,8 @@ export default function AddItemScreen() {
                 },
               ]}
               onPress={() => openDatePicker("expiration")}
+              accessibilityRole="button"
+              accessibilityLabel="Select expiration date"
             >
               <View style={styles.dateLabelRow}>
                 <ThemedText type="small" style={styles.label}>
@@ -1116,6 +1122,8 @@ export default function AddItemScreen() {
             <Pressable
               style={styles.datePickerOverlay}
               onPress={handleDatePickerDone}
+              accessibilityRole="button"
+              accessibilityLabel="Close date picker"
             >
               <Pressable
                 style={[
@@ -1123,6 +1131,8 @@ export default function AddItemScreen() {
                   { backgroundColor: theme.backgroundDefault },
                 ]}
                 onPress={(e) => e.stopPropagation()}
+                accessibilityRole="button"
+                accessibilityLabel="Date picker content"
               >
                 <View style={styles.datePickerHeader}>
                   <ThemedText type="h4">
@@ -1130,7 +1140,7 @@ export default function AddItemScreen() {
                       ? "Expiration Date"
                       : "Purchase Date"}
                   </ThemedText>
-                  <Pressable onPress={handleDatePickerDone}>
+                  <Pressable onPress={handleDatePickerDone} accessibilityRole="button" accessibilityLabel="Done selecting date">
                     <ThemedText
                       style={{ color: AppColors.primary, fontWeight: "600" }}
                     >

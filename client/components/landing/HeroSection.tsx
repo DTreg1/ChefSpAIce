@@ -34,6 +34,8 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
             onPress={onSupport}
             {...webAccessibilityProps(onSupport)}
             data-testid="button-support"
+            accessibilityRole="button"
+            accessibilityLabel="Contact support"
           >
             <Text style={styles.signInButtonText}>Support</Text>
           </Pressable>

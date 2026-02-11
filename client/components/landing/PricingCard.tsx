@@ -91,6 +91,8 @@ export function PricingCard({
               onPress={onDownloadiOS}
               {...webAccessibilityProps(onDownloadiOS)}
               data-testid={`button-download-ios-${testId}`}
+              accessibilityRole="button"
+              accessibilityLabel="Download on the App Store"
             >
               <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
               <Text style={styles.downloadButtonText}>App Store</Text>
@@ -103,6 +105,7 @@ export function PricingCard({
               onPress={onDownloadAndroid}
               {...webAccessibilityProps(onDownloadAndroid)}
               data-testid={`button-download-android-${testId}`}
+              accessibilityRole="button"
               accessibilityLabel="Download on Google Play"
             >
               <MaterialCommunityIcons
@@ -125,6 +128,8 @@ export function PricingCard({
           onPress={onPress}
           {...webAccessibilityProps(onPress)}
           data-testid={`button-pricing-${testId}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${buttonText} for ${tier} plan`}
         >
           {isPopular ? (
             <LinearGradient

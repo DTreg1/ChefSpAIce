@@ -766,6 +766,7 @@ export function ChatModal() {
             accessibilityRole="button"
             accessibilityLabel={getStatusText()}
             accessibilityHint="Tap to start voice input. Press and hold for push-to-talk"
+            accessibilityState={{ disabled: voiceChat.isProcessing || voiceChat.isSpeaking }}
           >
             {voiceState === "processing" ? (
               <ActivityIndicator size="large" color={AppColors.warning} />

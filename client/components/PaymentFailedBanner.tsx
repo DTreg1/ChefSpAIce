@@ -47,6 +47,7 @@ export function PaymentFailedBanner() {
           pressed && styles.buttonPressed,
         ]}
         data-testid="button-update-payment"
+        accessibilityRole="button"
         accessibilityLabel="Update payment method"
       >
         <ThemedText style={styles.buttonText}>Update payment</ThemedText>

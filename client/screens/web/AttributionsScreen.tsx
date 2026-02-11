@@ -99,7 +99,7 @@ export default function AttributionsScreen() {
 
       {isWeb && (
         <View style={styles.header}>
-          <Pressable style={styles.logoContainer} onPress={handleGoHome}>
+          <Pressable style={styles.logoContainer} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Go to home page">
             <MaterialCommunityIcons
               name="chef-hat"
               size={32}
@@ -119,6 +119,8 @@ export default function AttributionsScreen() {
                   : "rgba(0,0,0,0.05)",
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle theme"
           >
             {isDark ? (
               <Feather name="sun" size={20} color={colors.textPrimary} />
@@ -176,7 +178,7 @@ export default function AttributionsScreen() {
           </Text>
         </View>
 
-        <Pressable style={styles.backButton} onPress={handleGoHome}>
+        <Pressable style={styles.backButton} onPress={handleGoHome} accessibilityRole="link" accessibilityLabel="Back to home">
           <Feather name="arrow-left" size={20} color="#FFFFFF" />
           <Text style={styles.backButtonText}>
             {isWeb ? "Back to Home" : "Go Back"}

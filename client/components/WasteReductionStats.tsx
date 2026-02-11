@@ -120,6 +120,8 @@ export function WasteReductionStats({
             <Pressable
               style={styles.badgeButton}
               onPress={() => setShowBadges(!showBadges)}
+              accessibilityRole="button"
+              accessibilityLabel={showBadges ? "Hide earned badges" : "Show earned badges"}
             >
               <ThemedText type="small" style={{ color: AppColors.primary }}>
                 {stats.badges.length} badge

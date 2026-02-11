@@ -41,13 +41,14 @@ export function TermTooltip({
       transparent
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss tooltip">
         <Pressable
           style={[
             styles.tooltipContainer,
             { paddingBottom: insets.bottom + Spacing.lg },
           ]}
           onPress={(e) => e.stopPropagation()}
+          accessibilityRole="none"
         >
           <GlassCard style={styles.tooltip} intensity="strong">
             <View style={styles.header}>

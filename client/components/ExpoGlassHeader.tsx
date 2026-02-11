@@ -192,6 +192,7 @@ export function ExpoGlassHeader({
               style={styles.hamburgerButton}
               onPress={handleGoBack}
               testID="button-go-back"
+              accessibilityRole="button"
               accessibilityLabel="Go back"
             >
               <Feather name="chevron-left" size={28} color={textColor} />
@@ -201,6 +202,7 @@ export function ExpoGlassHeader({
               style={styles.hamburgerButton}
               onPress={handleOpenDrawer}
               testID="button-open-drawer"
+              accessibilityRole="button"
               accessibilityLabel="Open menu"
             >
               <Feather name="menu" size={24} color={textColor} />
@@ -231,6 +233,7 @@ export function ExpoGlassHeader({
                     style={styles.searchCloseButton}
                     onPress={handleCloseSearch}
                     hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+                    accessibilityRole="button"
                     accessibilityLabel="Close search"
                   >
                     <Feather
@@ -261,6 +264,7 @@ export function ExpoGlassHeader({
                       style={styles.searchClearButton}
                       onPress={handleClearSearch}
                       hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+                      accessibilityRole="button"
                       accessibilityLabel="Clear search"
                     >
                       <Feather name="x" size={18} color={secondaryColor} />

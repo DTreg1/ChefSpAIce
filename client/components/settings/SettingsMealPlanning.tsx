@@ -46,6 +46,9 @@ export function SettingsMealPlanning({
                     : theme.border,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${preset.name}, ${preset.description}${isSelected ? ', selected' : ''}`}
+              accessibilityState={{ selected: isSelected }}
             >
               <View style={styles.presetHeader}>
                 <Feather

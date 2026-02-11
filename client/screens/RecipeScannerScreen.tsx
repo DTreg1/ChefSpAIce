@@ -248,6 +248,7 @@ export default function RecipeScannerScreen() {
             onPress={handleClose}
             style={styles.headerButton}
             accessibilityLabel="Close scanner"
+            accessibilityRole="button"
           >
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
@@ -398,6 +399,7 @@ export default function RecipeScannerScreen() {
                 onPress={handleClose}
                 style={styles.cameraButton}
                 accessibilityLabel="Close scanner"
+                accessibilityRole="button"
               >
                 <Feather name="x" size={24} color="#FFFFFF" />
               </Pressable>
@@ -445,6 +447,9 @@ export default function RecipeScannerScreen() {
                       styles.captureButton,
                       isCapturing && styles.captureButtonDisabled,
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Capture recipe photo"
+                    accessibilityState={{ disabled: isCapturing }}
                   >
                     <View style={styles.captureButtonInner} />
                   </Pressable>

@@ -1074,6 +1074,8 @@ export default function SettingsScreen() {
         <Pressable
           style={addStorageStyles.overlay}
           onPress={() => setShowAddStorageModal(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close add storage modal"
         >
           <Pressable
             style={[
@@ -1081,6 +1083,8 @@ export default function SettingsScreen() {
               { backgroundColor: theme.backgroundDefault },
             ]}
             onPress={(e) => e.stopPropagation()}
+            accessibilityRole="button"
+            accessibilityLabel="Add storage modal content"
           >
             <ThemedText type="h4" style={addStorageStyles.title}>
               Add Storage Area
@@ -1116,6 +1120,8 @@ export default function SettingsScreen() {
                   { backgroundColor: theme.backgroundSecondary },
                 ]}
                 data-testid="button-cancel-add-storage"
+                accessibilityRole="button"
+                accessibilityLabel="Cancel add storage area"
               >
                 <ThemedText style={addStorageStyles.buttonText}>Cancel</ThemedText>
               </Pressable>
@@ -1130,6 +1136,9 @@ export default function SettingsScreen() {
                 ]}
                 disabled={!newStorageAreaName.trim()}
                 data-testid="button-confirm-add-storage"
+                accessibilityRole="button"
+                accessibilityLabel="Add storage area"
+                accessibilityState={{ disabled: !newStorageAreaName.trim() }}
               >
                 <ThemedText style={[addStorageStyles.buttonText, { color: "#FFFFFF" }]}>
                   Add
