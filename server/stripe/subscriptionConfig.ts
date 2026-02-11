@@ -40,13 +40,6 @@ export interface ProductConfig {
 }
 
 export const PRODUCTS: Record<string, ProductConfig> = {
-  [SubscriptionTier.TRIAL]: {
-    name: "ChefSpAIce Trial",
-    description: "Trial tier with limited features",
-    tier: SubscriptionTier.TRIAL,
-    monthlyPrice: 0,
-    annualPrice: 0,
-  },
   [SubscriptionTier.PRO]: {
     name: "ChefSpAIce",
     description: "Unlimited pantry items, AI recipes, and cookware. Plus Recipe Scanning, Bulk Scanning, Live AI Kitchen Assistant, Custom Storage Areas, and Weekly Meal Prepping",

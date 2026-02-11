@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preRegisteredAt: now,
         privacyConsentedAt: now,
         subscriptionStatus: "none",
-        subscriptionTier: "TRIAL",
+        subscriptionTier: "PRO",
       });
 
       return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
@@ -322,8 +322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { tier, status } = req.body;
         
-        if (!tier || !['TRIAL', 'PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'TRIAL' or 'PRO'", "INVALID_TIER");
+        if (!tier || !['PRO'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'PRO'", "INVALID_TIER");
         }
 
         const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
@@ -363,8 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
         }
         
-        if (!tier || !['TRIAL', 'PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'TRIAL' or 'PRO'", "INVALID_TIER");
+        if (!tier || !['PRO'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'PRO'", "INVALID_TIER");
         }
 
         // Find user by email

@@ -125,7 +125,7 @@ export async function getUserEntitlements(
     throw new Error("User not found after refresh");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.TRIAL;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
   const limits = getTierLimits(tier);
   const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
 
@@ -177,7 +177,7 @@ export async function checkAiRecipeLimit(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.TRIAL;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
   const limits = getTierLimits(tier);
   const currentCount = user.aiRecipesGeneratedThisMonth || 0;
   const bonusCredits = user.aiRecipeBonusCredits || 0;
@@ -231,7 +231,7 @@ export async function checkFeatureAccess(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.TRIAL;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
   const limits = getTierLimits(tier);
 
   const limitKey = featureToLimitKey[feature];
@@ -365,7 +365,7 @@ export async function downgradeUserTier(userId: string): Promise<void> {
     await tx
       .update(users)
       .set({
-        subscriptionTier: SubscriptionTier.TRIAL,
+        subscriptionTier: SubscriptionTier.PRO,
         subscriptionStatus: "canceled",
         updatedAt: new Date(),
       })
@@ -428,12 +428,10 @@ export async function checkTrialExpiration(userId: string): Promise<boolean> {
 }
 
 /**
- * DESIGN DECISION: Trial users receive full PRO-tier access for the duration of
- * their 7-day trial. This is intentional — it lets new users experience every
- * premium feature before deciding to subscribe. When the trial expires,
- * `expireTrialSubscription()` downgrades them to the restricted TRIAL tier
- * (all limits set to 0 — fully locked out). The TRIAL tier limits in
- * shared/subscription.ts are only enforced *after* trial expiration.
+ * DESIGN DECISION: Trial is a 7-day free period of the PRO subscription, not a
+ * separate tier. New users start on PRO with "trialing" status and get full access.
+ * When the trial expires, `expireTrialSubscription()` changes the status to "expired"
+ * but the tier stays PRO. Access is controlled by subscription status, not tier.
  */
 export async function ensureTrialSubscription(
   userId: string,
@@ -598,7 +596,7 @@ export async function expireTrialSubscription(userId: string): Promise<void> {
     await tx
       .update(users)
       .set({
-        subscriptionTier: SubscriptionTier.TRIAL,
+        subscriptionTier: SubscriptionTier.PRO,
         subscriptionStatus: 'expired',
         updatedAt: new Date(),
       })

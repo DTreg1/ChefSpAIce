@@ -93,7 +93,7 @@ async function handleSubscriptionUpdate(
   await db
     .update(users)
     .set({
-      subscriptionTier: keepTier ? tier : 'TRIAL',
+      subscriptionTier: keepTier ? tier : 'PRO',
       subscriptionStatus: status,
       updatedAt: new Date(),
     })
@@ -101,7 +101,7 @@ async function handleSubscriptionUpdate(
 
   await invalidateSubscriptionCache(userId);
 
-  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'TRIAL', status });
+  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'PRO', status });
 }
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {

@@ -94,7 +94,7 @@ export function UpgradePrompt({
   featureName,
   remaining,
   max,
-  currentTier = "TRIAL",
+  currentTier = "PRO",
   onUpgrade,
   onDismiss,
 }: UpgradePromptProps) {

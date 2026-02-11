@@ -105,9 +105,9 @@ export interface SubscriptionContextValue {
 }
 
 const defaultEntitlements: Entitlements = {
-  maxPantryItems: TIER_CONFIG[SubscriptionTier.TRIAL].maxPantryItems,
-  maxAiRecipes: TIER_CONFIG[SubscriptionTier.TRIAL].maxAiRecipesPerMonth,
-  maxCookware: TIER_CONFIG[SubscriptionTier.TRIAL].maxCookwareItems,
+  maxPantryItems: TIER_CONFIG[SubscriptionTier.PRO].maxPantryItems,
+  maxAiRecipes: TIER_CONFIG[SubscriptionTier.PRO].maxAiRecipesPerMonth,
+  maxCookware: TIER_CONFIG[SubscriptionTier.PRO].maxCookwareItems,
   canCustomizeStorageAreas: false,
   canUseRecipeScanning: false,
   canUseBulkScanning: false,
@@ -122,7 +122,7 @@ const defaultUsage: Usage = {
 };
 
 const SubscriptionContext = createContext<SubscriptionContextValue>({
-  tier: SubscriptionTier.TRIAL,
+  tier: SubscriptionTier.PRO,
   status: "none",
   planType: null,
   isProUser: false,
@@ -228,10 +228,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
-          TIER_CONFIG[SubscriptionTier.TRIAL];
+          TIER_CONFIG[SubscriptionTier.PRO];
 
         const sub: SubscriptionData = {
-          tier: data.tier || SubscriptionTier.TRIAL,
+          tier: data.tier || SubscriptionTier.PRO,
           status: data.status || "none",
           planType: data.planType || null,
           entitlements: {
@@ -347,15 +347,15 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     return () => subscription.remove();
   }, [forceRefetch]);
 
-  const tier = subscriptionData?.tier ?? SubscriptionTier.TRIAL;
+  const tier = subscriptionData?.tier ?? SubscriptionTier.PRO;
   const status = subscriptionData?.status ?? "none";
   const planType = subscriptionData?.planType ?? null;
   const isProUser = tier === SubscriptionTier.PRO;
-  const isTrialUser = tier === SubscriptionTier.TRIAL;
+  const isTrialUser = status === "trialing";
   const isTrialing = status === "trialing";
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
-  const isActive = isTrialUser || status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
+  const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
   const isTrialExpired =
     status === "expired" || (planType === "trial" && status === "canceled");
 
