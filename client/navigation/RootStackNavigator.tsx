@@ -84,7 +84,7 @@ const TRIAL_DURATION_DAYS = 7;
 export type RootStackParamList = {
   SignIn: undefined;
   Auth:
-    | { selectedTier?: "basic" | "pro"; billingPeriod?: "monthly" | "annual" }
+    | { selectedTier?: "pro"; billingPeriod?: "monthly" | "annual" }
     | undefined;
   Main: undefined;
   Onboarding: undefined;

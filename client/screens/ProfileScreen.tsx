@@ -797,18 +797,18 @@ export default function ProfileScreen() {
                   <ThemedText type="body" style={{ fontWeight: "600" }}>
                     {isActive
                       ? isTrialing
-                        ? `Pro Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
+                        ? `Free Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
                         : tier === "PRO"
-                          ? "Pro Subscription"
+                          ? "Active Subscription"
                           : "Basic Plan"
                       : "Basic Plan"}
                   </ThemedText>
                   <ThemedText type="caption">
                     {isActive
                       ? isTrialing
-                        ? "Full Pro access during trial"
+                        ? "Full access during trial"
                         : tier === "PRO"
-                          ? `Pro Plan${planType === "annual" ? " (Annual)" : planType === "monthly" ? " (Monthly)" : ""}`
+                          ? `${planType === "annual" ? "Annual Plan" : planType === "monthly" ? "Monthly Plan" : "Subscription"}`
                           : "25 items, 5 AI recipes, 5 cookware"
                       : "25 items, 5 AI recipes, 5 cookware"}
                   </ThemedText>

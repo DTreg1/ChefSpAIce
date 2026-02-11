@@ -299,8 +299,7 @@ export default function TrialExpiredScreen() {
             <ThemedText
               style={[styles.actionDescription, { color: theme.textSecondary }]}
             >
-              Subscribe to continue using ChefSpAIce. Choose from our Basic or
-              Pro plans to unlock all features.
+              Subscribe to unlock all features.
             </ThemedText>
 
             <View style={styles.planPreview}>

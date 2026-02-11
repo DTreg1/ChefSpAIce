@@ -406,7 +406,7 @@ router.post("/generate", async (req: Request, res: Response, next: NextFunction)
     const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
     if (remaining < 1) {
       throw AppError.forbidden(
-        "Monthly AI recipe limit reached. Upgrade to Pro for unlimited recipes.",
+        "Monthly AI recipe limit reached. Upgrade your subscription for unlimited recipes.",
         "AI_RECIPE_LIMIT_REACHED",
       ).withDetails({ limit: limitCheck.limit, remaining: 0 });
     }
@@ -1182,7 +1182,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
     const hasAccess = await checkFeatureAccess(req.userId, "recipeScanning");
     if (!hasAccess) {
       throw AppError.forbidden(
-        "Recipe scanning is a Pro feature. Upgrade to Pro to scan recipes from images.",
+        "Recipe scanning requires an active subscription. Upgrade to scan recipes from images.",
         "FEATURE_NOT_AVAILABLE",
       ).withDetails({ feature: "recipeScanning" });
     }

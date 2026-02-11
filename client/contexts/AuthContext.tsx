@@ -111,13 +111,13 @@ interface AuthContextType extends AuthState {
     email: string,
     password: string,
     displayName?: string,
-    selectedTier?: "basic" | "pro",
+    selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   signInWithApple: (
-    selectedTier?: "basic" | "pro",
+    selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: (
-    selectedTier?: "basic" | "pro",
+    selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   setSignOutCallback: (callback: () => void) => void;
@@ -549,7 +549,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string,
       password: string,
       displayName?: string,
-      selectedTier?: "basic" | "pro",
+      selectedTier?: "pro",
     ) => {
       try {
         logger.log("[SignUp] Starting registration...", {
@@ -569,12 +569,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email,
             password,
             displayName,
-            selectedPlan:
-              selectedTier === "basic"
-                ? "monthly"
-                : selectedTier === "pro"
-                  ? "annual"
-                  : "monthly",
+            selectedPlan: "monthly",
           }),
         });
         logger.log("[SignUp] Response status:", response.status);
@@ -748,14 +743,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   interface AppleAuthPayload {
     identityToken: string | null;
     authorizationCode: string | null;
-    selectedTier?: "basic" | "pro";
+    selectedTier?: "pro";
     user: {
       email: string | null;
     };
   }
 
   const signInWithApple = useCallback(
-    async (selectedTier?: "basic" | "pro") => {
+    async (selectedTier?: "pro") => {
       try {
         if (isWeb) {
           return {
@@ -1028,7 +1023,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(
-    async (selectedTier?: "basic" | "pro") => {
+    async (selectedTier?: "pro") => {
       try {
         if (!promptGoogleAsync) {
           return { success: false, error: "Google sign in not available" };

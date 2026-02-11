@@ -346,7 +346,7 @@ export default function AddFoodBatchScreen() {
     if (typeof pantryLimit.remaining === "number" && selectedItems.length > pantryLimit.remaining) {
       Alert.alert(
         "Limit Exceeded",
-        `You can only add ${pantryLimit.remaining} more item${pantryLimit.remaining !== 1 ? 's' : ''} on your current plan. Please deselect some items or upgrade to Pro for unlimited items.`,
+        `You can only add ${pantryLimit.remaining} more item${pantryLimit.remaining !== 1 ? 's' : ''} on your current plan. Please deselect some items or upgrade your subscription for unlimited items.`,
       );
       return;
     }

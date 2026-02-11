@@ -31,7 +31,7 @@ export function MealPlanWeekNav({
           !canUseWeeklyPrepping && styles.navButtonLocked,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={canUseWeeklyPrepping ? "Go to previous week" : "Previous week, requires Pro upgrade"}
+        accessibilityLabel={canUseWeeklyPrepping ? "Go to previous week" : "Previous week, requires active subscription"}
         accessibilityState={{ disabled: !canUseWeeklyPrepping }}
       >
         {!canUseWeeklyPrepping && (
@@ -65,7 +65,7 @@ export function MealPlanWeekNav({
           !canUseWeeklyPrepping && styles.navButtonLocked,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={canUseWeeklyPrepping ? "Go to next week" : "Next week, requires Pro upgrade"}
+        accessibilityLabel={canUseWeeklyPrepping ? "Go to next week" : "Next week, requires active subscription"}
         accessibilityState={{ disabled: !canUseWeeklyPrepping }}
       >
         {!canUseWeeklyPrepping && (

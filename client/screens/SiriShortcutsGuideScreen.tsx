@@ -114,8 +114,8 @@ export default function SiriShortcutsGuideScreen() {
 
     if (!isProUser) {
       Alert.alert(
-        "Pro Subscription Required",
-        "Siri Shortcuts integration is a Pro feature. Please upgrade your subscription to use this feature.",
+        "Subscription Required",
+        "Siri Shortcuts integration requires an active subscription. Please upgrade to use this feature.",
       );
       return;
     }
@@ -175,8 +175,8 @@ export default function SiriShortcutsGuideScreen() {
     },
     {
       number: 3,
-      title: "ChefSpAIce Pro Subscription",
-      description: "Siri Shortcuts integration is a Pro feature. Upgrade in the app's Subscription settings if needed.",
+      title: "ChefSpAIce Subscription",
+      description: "Siri Shortcuts integration requires an active subscription. Upgrade in the app's Subscription settings if needed.",
     },
   ];
 
@@ -398,7 +398,7 @@ export default function SiriShortcutsGuideScreen() {
               <View style={styles.proRequiredBox}>
                 <Feather name="lock" size={16} color={AppColors.warning} />
                 <ThemedText type="small" style={styles.proRequiredText}>
-                  Pro subscription required. Upgrade to use Siri Shortcuts.
+                  Active subscription required. Upgrade to use Siri Shortcuts.
                 </ThemedText>
               </View>
             )}
@@ -540,7 +540,7 @@ export default function SiriShortcutsGuideScreen() {
               Shortcut isn't working
             </ThemedText>
             <ThemedText type="caption" style={styles.troubleshootAnswer}>
-              Check that you have an active Pro subscription and that your phone 
+              Check that you have an active subscription and that your phone 
               has an internet connection.
             </ThemedText>
           </View>

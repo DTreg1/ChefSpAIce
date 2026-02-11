@@ -100,7 +100,7 @@ function ScanOptionCard({
   return (
     <Pressable
       testID={`scan-option-${option.id}`}
-      accessibilityLabel={`${option.title}: ${option.subtitle}${isLocked ? " (Pro feature)" : ""}`}
+      accessibilityLabel={`${option.title}: ${option.subtitle}${isLocked ? " (requires subscription)" : ""}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [

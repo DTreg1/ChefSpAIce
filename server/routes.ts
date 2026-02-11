@@ -309,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password: plainPassword,
           sessionToken: rawSessionToken,
           tier: "PRO",
-        }, "Test user created with PRO trial. Session cookie set."));
+        }, "Test user created with trial subscription. Session cookie set."));
     }));
     
     // Version with auth
