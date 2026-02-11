@@ -477,6 +477,125 @@ export type InsertUserCookwareItem = z.infer<typeof insertUserCookwareItemSchema
 export type UserCookwareItem = typeof userCookwareItems.$inferSelect;
 
 // =============================================================================
+// SYNC DATA JSONB SCHEMAS
+// =============================================================================
+
+export const syncNutritionSchema = z.object({
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fat: z.number(),
+  fiber: z.number().optional(),
+  sugar: z.number().optional(),
+}).optional().nullable();
+
+export const syncIngredientSchema = z.object({
+  name: z.string(),
+  quantity: z.union([z.number(), z.string()]),
+  unit: z.string(),
+  fromInventory: z.boolean().optional(),
+});
+
+export const syncMealSchema = z.object({
+  type: z.string(),
+  recipeId: z.string().optional(),
+  customMeal: z.string().optional(),
+});
+
+export const syncInventoryItemSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  name: z.string(),
+  barcode: z.string().optional().nullable(),
+  quantity: z.number().default(1),
+  unit: z.string().default("unit"),
+  storageLocation: z.string().default("pantry"),
+  purchaseDate: z.string().optional().nullable(),
+  expirationDate: z.string().optional().nullable(),
+  category: z.string().default("other"),
+  usdaCategory: z.string().optional().nullable(),
+  nutrition: syncNutritionSchema,
+  notes: z.string().optional().nullable(),
+  imageUri: z.string().optional().nullable(),
+  fdcId: z.number().optional().nullable(),
+  updatedAt: z.string().optional(),
+  deletedAt: z.string().optional().nullable(),
+});
+
+export const syncRecipeSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  title: z.string(),
+  description: z.string().optional().nullable(),
+  ingredients: z.array(syncIngredientSchema),
+  instructions: z.array(z.string()),
+  prepTime: z.number().optional().nullable(),
+  cookTime: z.number().optional().nullable(),
+  servings: z.number().optional().nullable(),
+  imageUri: z.string().optional().nullable(),
+  cloudImageUri: z.string().optional().nullable(),
+  nutrition: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fat: z.number(),
+  }).optional().nullable(),
+  isFavorite: z.boolean().optional().nullable(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+export const syncMealPlanSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  date: z.string(),
+  meals: z.array(syncMealSchema).optional().nullable(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+export const syncShoppingItemSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  name: z.string(),
+  quantity: z.number().default(1),
+  unit: z.string().default("unit"),
+  isChecked: z.boolean().default(false),
+  category: z.string().optional().nullable(),
+  recipeId: z.string().optional().nullable(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+export const syncCookwareItemSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  name: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  alternatives: z.array(z.string()).optional().nullable(),
+  updatedAt: z.string().optional(),
+}).passthrough();
+
+export const syncWasteLogEntrySchema = z.object({
+  itemName: z.string(),
+  quantity: z.number().optional(),
+  unit: z.string().optional(),
+  reason: z.string().optional(),
+  date: z.string().optional(),
+}).passthrough();
+
+export const syncConsumedLogEntrySchema = z.object({
+  itemName: z.string(),
+  quantity: z.number().optional(),
+  unit: z.string().optional(),
+  date: z.string().optional(),
+}).passthrough();
+
+export const syncPreferencesSchema = z.record(z.unknown());
+export const syncAnalyticsSchema = z.record(z.unknown());
+export const syncOnboardingSchema = z.record(z.unknown());
+export const syncCustomLocationsSchema = z.record(z.unknown());
+export const syncUserProfileSchema = z.record(z.unknown());
+
+export type SyncInventoryItem = z.infer<typeof syncInventoryItemSchema>;
+export type SyncRecipe = z.infer<typeof syncRecipeSchema>;
+export type SyncMealPlan = z.infer<typeof syncMealPlanSchema>;
+export type SyncShoppingItem = z.infer<typeof syncShoppingItemSchema>;
+export type SyncCookwareItem = z.infer<typeof syncCookwareItemSchema>;
+
+// =============================================================================
 // REFERENCE DATA TABLES
 // =============================================================================
 

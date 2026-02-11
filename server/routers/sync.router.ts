@@ -4,6 +4,11 @@ import { eq, and, count, isNull } from "drizzle-orm";
 import { db } from "../db";
 import {
   userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems,
+  syncInventoryItemSchema, syncRecipeSchema, syncMealPlanSchema,
+  syncShoppingItemSchema, syncCookwareItemSchema,
+  syncWasteLogEntrySchema, syncConsumedLogEntrySchema,
+  syncPreferencesSchema, syncAnalyticsSchema, syncOnboardingSchema,
+  syncCustomLocationsSchema, syncUserProfileSchema,
 } from "../../shared/schema";
 import { checkPantryItemLimit, checkCookwareLimit } from "../services/subscriptionService";
 import { AppError } from "../middleware/errorHandler";
@@ -263,6 +268,90 @@ router.post("/import", async (req: Request, res: Response, next: NextFunction) =
     const importedMealPlans = Array.isArray(importData.mealPlans) ? importData.mealPlans as Record<string, unknown>[] : [];
     const importedShoppingList = Array.isArray(importData.shoppingList) ? importData.shoppingList as Record<string, unknown>[] : [];
     const importedCookware = Array.isArray(importData.cookware) ? importData.cookware as Record<string, unknown>[] : [];
+
+    const validationErrors: string[] = [];
+
+    for (let i = 0; i < importedInventory.length; i++) {
+      const result = syncInventoryItemSchema.safeParse(importedInventory[i]);
+      if (!result.success) {
+        validationErrors.push(`inventory[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    for (let i = 0; i < importedRecipes.length; i++) {
+      const result = syncRecipeSchema.safeParse(importedRecipes[i]);
+      if (!result.success) {
+        validationErrors.push(`recipes[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    for (let i = 0; i < importedMealPlans.length; i++) {
+      const result = syncMealPlanSchema.safeParse(importedMealPlans[i]);
+      if (!result.success) {
+        validationErrors.push(`mealPlans[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    for (let i = 0; i < importedShoppingList.length; i++) {
+      const result = syncShoppingItemSchema.safeParse(importedShoppingList[i]);
+      if (!result.success) {
+        validationErrors.push(`shoppingList[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    for (let i = 0; i < importedCookware.length; i++) {
+      const result = syncCookwareItemSchema.safeParse(importedCookware[i]);
+      if (!result.success) {
+        validationErrors.push(`cookware[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+
+    if (Array.isArray(importData.wasteLog)) {
+      for (let i = 0; i < importData.wasteLog.length; i++) {
+        const result = syncWasteLogEntrySchema.safeParse(importData.wasteLog[i]);
+        if (!result.success) {
+          validationErrors.push(`wasteLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        }
+      }
+    }
+    if (Array.isArray(importData.consumedLog)) {
+      for (let i = 0; i < importData.consumedLog.length; i++) {
+        const result = syncConsumedLogEntrySchema.safeParse(importData.consumedLog[i]);
+        if (!result.success) {
+          validationErrors.push(`consumedLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        }
+      }
+    }
+    if (importData.preferences !== undefined && importData.preferences !== null) {
+      const result = syncPreferencesSchema.safeParse(importData.preferences);
+      if (!result.success) {
+        validationErrors.push(`preferences: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    if (importData.analytics !== undefined && importData.analytics !== null) {
+      const result = syncAnalyticsSchema.safeParse(importData.analytics);
+      if (!result.success) {
+        validationErrors.push(`analytics: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    if (importData.onboarding !== undefined && importData.onboarding !== null) {
+      const result = syncOnboardingSchema.safeParse(importData.onboarding);
+      if (!result.success) {
+        validationErrors.push(`onboarding: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    if (importData.customLocations !== undefined && importData.customLocations !== null) {
+      const result = syncCustomLocationsSchema.safeParse(importData.customLocations);
+      if (!result.success) {
+        validationErrors.push(`customLocations: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+    if (importData.userProfile !== undefined && importData.userProfile !== null) {
+      const result = syncUserProfileSchema.safeParse(importData.userProfile);
+      if (!result.success) {
+        validationErrors.push(`userProfile: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      throw AppError.badRequest("Import data contains invalid items", "IMPORT_VALIDATION_FAILED").withDetails({ errors: validationErrors.slice(0, 20) });
+    }
 
     const truncationWarnings: string[] = [];
 

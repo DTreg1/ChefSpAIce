@@ -31,3 +31,8 @@ The application features a modern UI/UX with an iOS Liquid Glass Design aestheti
 - `encryptToken` / `decryptToken` handle individual values; `encryptTokenOrNull` / `decryptTokenOrNull` are null-safe wrappers.
 - `decryptTokenOrNull` gracefully handles legacy unencrypted tokens by returning the raw value on decryption failure.
 - Encrypted format: `base64(iv):base64(ciphertext):base64(authTag)` with 12-byte IV and 16-byte auth tag.
+
+## Sync Data Validation
+- Shared Zod schemas for all sync JSONB data shapes are defined in `shared/schema.ts` (prefixed with `sync*`): `syncNutritionSchema`, `syncIngredientSchema`, `syncMealSchema`, `syncInventoryItemSchema`, `syncRecipeSchema`, `syncMealPlanSchema`, `syncShoppingItemSchema`, `syncCookwareItemSchema`, `syncWasteLogEntrySchema`, `syncConsumedLogEntrySchema`, plus record schemas for preferences/analytics/onboarding/customLocations/userProfile.
+- `server/routers/sync/sync-helpers.ts` composes its item-level schemas from these shared sub-schemas for consistency between client and server.
+- The `/api/sync/import` endpoint validates all item arrays AND all JSONB sections (wasteLog, consumedLog, preferences, analytics, onboarding, customLocations, userProfile) against the shared schemas before any DB writes. Invalid data is rejected with `IMPORT_VALIDATION_FAILED` error code and up to 20 detailed validation errors.
