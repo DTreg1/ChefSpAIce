@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, userSessions, userSyncData, subscriptions, userAppliances, passwordResetTokens, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userCustomLocations, userSyncKV } from "@shared/schema";
-import { eq, and, inArray, lt, isNull } from "drizzle-orm";
+import { users, userSessions, userSyncData, subscriptions, passwordResetTokens, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userCustomLocations, userSyncKV } from "@shared/schema";
+import { eq, and, lt, isNull } from "drizzle-orm";
 import { extractExtraData, recipeKnownKeys, mealPlanKnownKeys, shoppingListKnownKeys, cookwareKnownKeys } from "./sync/sync-helpers";
 import { randomBytes } from "crypto";
 import { AUTH_COOKIE_NAME, setAuthCookie, clearAuthCookie } from "../lib/session-utils";
@@ -1227,7 +1227,7 @@ router.post("/migrate-guest-data", requireAuth, async (req: Request, res: Respon
 
     if (data.cookware !== undefined && Array.isArray(data.cookware)) {
       for (const item of data.cookware) {
-        const rec = typeof item === 'object' && item !== null ? item as Record<string, unknown> : { id: item };
+        const rec: Record<string, any> = typeof item === 'object' && item !== null ? item as Record<string, any> : { id: item };
         await db.insert(userCookwareItems).values({
           userId,
           itemId: String(rec.id ?? rec),

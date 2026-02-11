@@ -1,4 +1,4 @@
-import { eq, and, isNull, ilike } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db";
 import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userSyncKV } from "../../shared/schema";
@@ -864,12 +864,12 @@ export async function executeGenerateRecipe(
       };
     }
 
-    const inventoryForService: InventoryItem[] = userData.inventory.map((item: FoodItem) => ({
+    const inventoryForService: InventoryItem[] = userData.inventory.map((item) => ({
       id: item.id,
       name: item.name,
       quantity: item.quantity,
       unit: item.unit,
-      expiryDate: item.expirationDate,
+      expiryDate: item.expirationDate || "",
     }));
 
     const validMealType = args.mealType as "breakfast" | "lunch" | "dinner" | "snack" | "late night snack" | undefined;
@@ -893,8 +893,24 @@ export async function executeGenerateRecipe(
       };
     }
 
-    userData.recipes.push(result.recipe);
-    await updateUserSyncData(userId, { recipes: userData.recipes });
+    const recipeToSave = result.recipe;
+    await db.insert(userSavedRecipes).values({
+      userId,
+      itemId: recipeToSave.id,
+      title: recipeToSave.title,
+      description: recipeToSave.description || null,
+      ingredients: recipeToSave.ingredients || null,
+      instructions: recipeToSave.instructions || null,
+      prepTime: recipeToSave.prepTime || null,
+      cookTime: recipeToSave.cookTime || null,
+      servings: recipeToSave.servings || null,
+      imageUri: (recipeToSave as any).imageUri || null,
+      cloudImageUri: null,
+      nutrition: recipeToSave.nutrition || null,
+      isFavorite: recipeToSave.isFavorite ?? false,
+      extraData: null,
+    });
+    await updateSectionTimestamp(userId, "recipes");
 
     return {
       success: true,
@@ -946,7 +962,7 @@ export async function executeCreateMealPlan(
       };
     }
 
-    const inventoryList = userData.inventory.map((item: FoodItem) => item.name).join(", ");
+    const inventoryList = userData.inventory.map((item) => item.name).join(", ");
     const daysCount = args.daysCount || 7;
     const mealsPerDay = args.mealsPerDay || ["breakfast", "lunch", "dinner"];
     const planningStyle = args.planningStyle;
@@ -1030,7 +1046,7 @@ Return as JSON:
     const planData = JSON.parse(planContent);
     const startDate = args.startDate || getTodayDate();
     
-    const mealPlans: MealPlan[] = planData.days.map((day: { dayNumber: number; meals: Record<string, string> }, index: number) => {
+    const mealPlans = planData.days.map((day: { dayNumber: number; meals: Record<string, string> }, index: number) => {
       const date = new Date(startDate);
       date.setDate(date.getDate() + index);
       return {
@@ -1040,8 +1056,16 @@ Return as JSON:
       };
     });
 
-    userData.mealPlans = [...userData.mealPlans, ...mealPlans];
-    
+    for (const mp of mealPlans) {
+      await db.insert(userMealPlans).values({
+        userId,
+        itemId: mp.id,
+        date: mp.date,
+        meals: mp.meals,
+        extraData: null,
+      });
+    }
+
     if (planData.shoppingNeeded && planData.shoppingNeeded.length > 0) {
       const newShoppingItems = planData.shoppingNeeded.map((item: string) => ({
         id: generateId(),
@@ -1050,13 +1074,21 @@ Return as JSON:
         unit: "item",
         isChecked: false
       }));
-      userData.shoppingList = [...userData.shoppingList, ...newShoppingItems];
+      for (const si of newShoppingItems) {
+        await db.insert(userShoppingItems).values({
+          userId,
+          itemId: si.id,
+          name: si.name,
+          quantity: si.quantity,
+          unit: si.unit,
+          isChecked: si.isChecked,
+          extraData: null,
+        });
+      }
     }
 
-    await updateUserSyncData(userId, { 
-      mealPlans: userData.mealPlans,
-      shoppingList: userData.shoppingList
-    });
+    await updateSectionTimestamp(userId, "mealPlans");
+    await updateSectionTimestamp(userId, "shoppingList");
 
     let message = `Created a ${daysCount}-day ${styleDescription} meal plan for you!`;
     if (planningStyle === "batch_prep" && planData.prepDayInstructions) {
