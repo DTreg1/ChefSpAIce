@@ -19,6 +19,7 @@ import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/requireAdmin";
+import { runDrizzleMigrations } from "./migrate";
 
 const app = express();
 
@@ -509,6 +510,8 @@ async function initStripe(retries = 3, delay = 2000) {
     const adminPath = path.resolve(process.cwd(), "server", "templates", "admin-dashboard.html");
     res.sendFile(adminPath);
   });
+
+  await runDrizzleMigrations();
 
   configureExpoRouting(app);
 

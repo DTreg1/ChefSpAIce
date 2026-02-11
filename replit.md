@@ -53,6 +53,14 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - `decryptTokenOrNull` gracefully handles legacy unencrypted tokens by returning the raw value on decryption failure.
 - Encrypted format: `base64(iv):base64(ciphertext):base64(authTag)` with 12-byte IV and 16-byte auth tag.
 
+## Database Migrations
+- Uses `drizzle-kit generate` + `drizzle-kit migrate` instead of `drizzle-kit push` for safe, versioned schema changes.
+- Migration files live in `./migrations/` with metadata in `./migrations/meta/`.
+- **Workflow**: Edit `shared/schema.ts` → run `npm run db:generate` to create a new SQL migration file → migrations auto-apply on server startup via `server/migrate.ts`.
+- `server/migrate.ts` runs programmatic migrations using `drizzle-orm/node-postgres/migrator` before routes are registered.
+- The `drizzle.__drizzle_migrations` table tracks which migrations have been applied.
+- `npm run db:push` is still available as a convenience for development but should not be used in production.
+
 ## Sync Data Validation
 - Shared Zod schemas for all sync JSONB data shapes are defined in `shared/schema.ts` (prefixed with `sync*`): `syncNutritionSchema`, `syncIngredientSchema`, `syncMealSchema`, `syncInventoryItemSchema`, `syncRecipeSchema`, `syncMealPlanSchema`, `syncShoppingItemSchema`, `syncCookwareItemSchema`, `syncWasteLogEntrySchema`, `syncConsumedLogEntrySchema`, plus record schemas for preferences/analytics/onboarding/customLocations/userProfile.
 - `server/routers/sync/sync-helpers.ts` composes its item-level schemas from these shared sub-schemas for consistency between client and server.

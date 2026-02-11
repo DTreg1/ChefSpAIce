@@ -15,6 +15,13 @@
       "when": 1770395800000,
       "tag": "0001_text_to_jsonb",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770395900000,
+      "tag": "0002_delta_sync",
+      "breakpoints": true
     }
   ]
 }
