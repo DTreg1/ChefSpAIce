@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const requireTestSecret = (req: Request, res: Response, next: NextFunction) => {
       const secret = process.env.TEST_ENDPOINTS_SECRET;
-      if (secret && req.header("X-Test-Secret") !== secret) {
+      if (!secret || req.header("X-Test-Secret") !== secret) {
         return res.status(403).json({ error: "Invalid or missing X-Test-Secret header" });
       }
       next();

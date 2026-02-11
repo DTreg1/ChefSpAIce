@@ -261,8 +261,10 @@ function configureExpoRouting(app: express.Application) {
   }
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Debug logging for API routes
     if (req.path.startsWith("/api/test")) {
+      if (process.env.NODE_ENV === "production") {
+        return res.status(404).json({ error: "Not found" });
+      }
       logger.debug("Test API route", { method: req.method, path: req.path });
     }
     
