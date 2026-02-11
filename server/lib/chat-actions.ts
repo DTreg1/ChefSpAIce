@@ -5,6 +5,7 @@ import { userSyncData, feedback, userInventoryItems, userSavedRecipes, userMealP
 import OpenAI from "openai";
 import { generateRecipe as generateRecipeService, type InventoryItem } from "../services/recipeGenerationService";
 import { logger } from "./logger";
+import { AppError } from "../middleware/errorHandler";
 import { updateSectionTimestamp } from "../routers/sync/sync-helpers";
 
 const openai = new OpenAI({
@@ -932,10 +933,14 @@ export async function executeGenerateRecipe(
       }
     };
   } catch (error) {
-    logger.error("Error generating recipe", { error: error instanceof Error ? error.message : String(error) });
+    const errorMessage = error instanceof AppError ? error.message : "Failed to generate a recipe. Please try again.";
+    logger.error("Error generating recipe", {
+      error: error instanceof Error ? error.message : String(error),
+      code: error instanceof AppError ? error.errorCode : undefined,
+    });
     return {
       success: false,
-      message: "Failed to generate a recipe. Please try again.",
+      message: errorMessage,
       actionType: "generate_recipe"
     };
   }
