@@ -6,6 +6,7 @@ import { AppError } from "./errorHandler";
 import { logger } from "../lib/logger";
 import { hashToken, getSessionByToken } from "../lib/auth-utils";
 import { queueNotification } from "../services/notificationService";
+import { sessionCache } from "../lib/session-cache";
 
 const recentUaMismatchAlerts = new Set<string>();
 const UA_MISMATCH_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 1 notification per session per day
@@ -44,15 +45,24 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     const rawToken = authHeader.substring(7);
-    const session = await getSessionByToken(rawToken);
+    const tokenHash = hashToken(rawToken);
+
+    let session = await sessionCache.get(tokenHash);
+    if (!session) {
+      const dbSession = await getSessionByToken(rawToken);
+      if (dbSession) {
+        await sessionCache.set(tokenHash, dbSession);
+        session = dbSession;
+      }
+    }
 
     if (!session) {
       return next(AppError.unauthorized("Invalid or expired session", "INVALID_SESSION"));
     }
 
     if (new Date(session.expiresAt) < new Date()) {
-      const hashedToken = hashToken(rawToken);
-      await db.delete(userSessions).where(eq(userSessions.token, hashedToken));
+      await sessionCache.delete(tokenHash);
+      await db.delete(userSessions).where(eq(userSessions.token, tokenHash));
       return next(AppError.unauthorized("Session expired", "SESSION_EXPIRED"));
     }
 
