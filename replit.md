@@ -61,6 +61,12 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - The `drizzle.__drizzle_migrations` table tracks which migrations have been applied.
 - `npm run db:push` is still available as a convenience for development but should not be used in production.
 
+## Font Scaling & Accessibility
+- `ThemedText` (the primary text component) defaults to `allowFontScaling={true}` and `maxFontSizeMultiplier={1.5}` to respect system font size while preventing extreme scaling from breaking layouts. Both can be overridden via props.
+- All text-containing containers across the app use `minHeight` instead of fixed `height` so they expand gracefully when text scales up. This applies to buttons, badges, headers, tab bars, settings rows, auth screen elements, etc.
+- The tab bar recipe count badge uses `allowFontScaling={false}` (justified: tiny counter in constrained space). Tab labels use `maxFontSizeMultiplier={1.2}`.
+- Icon-only containers, decorative elements (progress bars, dividers), and image containers retain fixed dimensions since they contain no text.
+
 ## Sync Data Validation
 - Shared Zod schemas for all sync JSONB data shapes are defined in `shared/schema.ts` (prefixed with `sync*`): `syncNutritionSchema`, `syncIngredientSchema`, `syncMealSchema`, `syncInventoryItemSchema`, `syncRecipeSchema`, `syncMealPlanSchema`, `syncShoppingItemSchema`, `syncCookwareItemSchema`, `syncWasteLogEntrySchema`, `syncConsumedLogEntrySchema`, plus record schemas for preferences/analytics/onboarding/customLocations/userProfile.
 - `server/routers/sync/sync-helpers.ts` composes its item-level schemas from these shared sub-schemas for consistency between client and server.
