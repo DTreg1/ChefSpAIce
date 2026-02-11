@@ -85,7 +85,8 @@
         {
           "photosPermission": "ChefSpAIce needs photo library access to select images for your food items."
         }
-      ]
+      ],
+      "@sentry/react-native/expo"
     ],
     "experiments": {
       "reactCompiler": true
