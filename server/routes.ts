@@ -80,7 +80,7 @@ import { authLimiter, aiLimiter, generalLimiter } from "./middleware/rateLimiter
 import { requestIdMiddleware, globalErrorHandler, AppError } from "./middleware/errorHandler";
 import { successResponse, asyncHandler } from "./lib/apiResponse";
 import { logger } from "./lib/logger";
-import { hashToken } from "./lib/auth-utils";
+import { hashToken, anonymizeIpAddress } from "./lib/auth-utils";
 import { invalidateSubscriptionCache } from "./lib/subscription-cache";
 
 
@@ -286,6 +286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.insert(userSessions).values({
           userId: newUser.id,
           token: hashedSessionToken,
+          userAgent: req.headers["user-agent"] || "unknown",
+          ipAddress: anonymizeIpAddress(req.ip),
           expiresAt,
           createdAt: new Date(),
         });

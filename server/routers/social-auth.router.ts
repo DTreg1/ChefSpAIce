@@ -199,7 +199,10 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
       await ensureTrialSubscription(userId, plan);
     }
 
-    const { rawToken, expiresAt } = await createSession(userId);
+    const { rawToken, expiresAt } = await createSession(userId, {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip,
+    });
 
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, rawToken, req);
@@ -381,7 +384,10 @@ router.post("/google", async (req: Request, res: Response, next: NextFunction) =
       await ensureTrialSubscription(userId, plan);
     }
 
-    const { rawToken, expiresAt } = await createSession(userId);
+    const { rawToken, expiresAt } = await createSession(userId, {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip,
+    });
 
     // Set persistent auth cookie for web auto sign-in
     setAuthCookie(res, rawToken, req);
