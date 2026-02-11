@@ -22,6 +22,13 @@
       "when": 1770395900000,
       "tag": "0002_delta_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770796800000,
+      "tag": "0003_cancellation_and_winback",
+      "breakpoints": true
     }
   ]
 }

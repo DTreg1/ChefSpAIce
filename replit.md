@@ -67,6 +67,19 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - The tab bar recipe count badge uses `allowFontScaling={false}` (justified: tiny counter in constrained space). Tab labels use `maxFontSizeMultiplier={1.2}`.
 - Icon-only containers, decorative elements (progress bars, dividers), and image containers retain fixed dimensions since they contain no text.
 
+## Background Jobs
+- All background jobs use `setInterval` with `start`/`stop` export functions, started in `server/index.ts`.
+- **trialExpirationJob** (`server/jobs/trialExpirationJob.ts`): Runs hourly, expires trial subscriptions past their end date.
+- **sessionCleanupJob** (`server/jobs/sessionCleanupJob.ts`): Runs daily, cleans up expired user sessions.
+- **winbackJob** (`server/jobs/winbackJob.ts`): Runs weekly, finds canceled subscriptions 30+ days old, sends one-time winback notification offering $4.99 first month. Deduplicates by checking for any existing campaign per user (regardless of status). Acceptance tracked in `webhookHandlers.ts` when canceled users reactivate.
+
+## Winback Campaign System
+- Table: `winback_campaigns` tracks campaigns with status (sent/accepted/expired), offerAmount (499 = $4.99), offerType, and Stripe coupon references.
+- Job queries `subscriptions` where `status='canceled'` AND `canceledAt` <= 30 days ago.
+- Each user gets at most one winback campaign ever (dedupe checks any existing campaign row).
+- Webhook handler marks the most recent "sent" campaign as "accepted" (with `acceptedAt` timestamp) when a canceled/past_due subscription transitions to active.
+- Notification sent via `queueNotification()` with deepLink `chefspaice://subscription?offer=winback`.
+
 ## Sync Data Validation
 - Shared Zod schemas for all sync JSONB data shapes are defined in `shared/schema.ts` (prefixed with `sync*`): `syncNutritionSchema`, `syncIngredientSchema`, `syncMealSchema`, `syncInventoryItemSchema`, `syncRecipeSchema`, `syncMealPlanSchema`, `syncShoppingItemSchema`, `syncCookwareItemSchema`, `syncWasteLogEntrySchema`, `syncConsumedLogEntrySchema`, plus record schemas for preferences/analytics/onboarding/customLocations/userProfile.
 - `server/routers/sync/sync-helpers.ts` composes its item-level schemas from these shared sub-schemas for consistency between client and server.

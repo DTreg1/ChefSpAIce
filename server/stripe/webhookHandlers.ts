@@ -1,7 +1,7 @@
 import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { db } from "../db";
-import { subscriptions, users, conversionEvents } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { subscriptions, users, conversionEvents, winbackCampaigns } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { getPlanTypeFromPriceId, getTierFromPriceId } from "./subscriptionConfig";
 import Stripe from "stripe";
 import { SubscriptionTier } from "@shared/subscription";
@@ -422,6 +422,26 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
       source: "reactivation",
       stripeSessionId: `sub_reactivate_${subscription.id}_${Date.now()}`,
     }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
+
+    const [openCampaign] = await db
+      .select({ id: winbackCampaigns.id })
+      .from(winbackCampaigns)
+      .where(
+        and(
+          eq(winbackCampaigns.userId, userId),
+          eq(winbackCampaigns.status, "sent")
+        )
+      )
+      .orderBy(desc(winbackCampaigns.sentAt))
+      .limit(1);
+
+    if (openCampaign) {
+      await db
+        .update(winbackCampaigns)
+        .set({ status: "accepted", acceptedAt: new Date() })
+        .where(eq(winbackCampaigns.id, openCampaign.id));
+      logger.info("Winback campaign accepted", { userId, campaignId: openCampaign.id });
+    }
 
     logger.info("Subscription reactivated", { userId, fromTier: previousTier, toTier: tier });
   }

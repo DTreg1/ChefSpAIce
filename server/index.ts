@@ -15,6 +15,7 @@ import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { startTrialExpirationJob } from "./jobs/trialExpirationJob";
 import { startSessionCleanupJob } from "./jobs/sessionCleanupJob";
+import { startWinbackJob } from "./jobs/winbackJob";
 import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
 import { requireAuth } from "./middleware/auth";
@@ -540,6 +541,9 @@ async function initStripe(retries = 3, delay = 2000) {
 
       // Start session cleanup background job (runs daily)
       startSessionCleanupJob(24 * 60 * 60 * 1000);
+
+      // Start winback campaign job (runs weekly)
+      startWinbackJob(7 * 24 * 60 * 60 * 1000);
     },
   );
 })();

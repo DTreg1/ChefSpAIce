@@ -1295,6 +1295,38 @@ export type InsertCancellationReason = z.infer<typeof insertCancellationReasonSc
 export type CancellationReason = typeof cancellationReasons.$inferSelect;
 
 // =============================================================================
+// WINBACK CAMPAIGNS TABLE
+// =============================================================================
+
+export const winbackCampaigns = pgTable("winback_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  subscriptionId: varchar("subscription_id").references(() => subscriptions.id),
+  status: varchar("status", { length: 20 }).notNull().default("sent"),
+  offerType: varchar("offer_type", { length: 50 }).notNull().default("first_month_discount"),
+  offerAmount: integer("offer_amount").notNull().default(499),
+  stripeCouponId: varchar("stripe_coupon_id"),
+  stripePromotionCodeId: varchar("stripe_promotion_code_id"),
+  notificationId: integer("notification_id"),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  expiredAt: timestamp("expired_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_winback_campaigns_user").on(table.userId),
+  index("idx_winback_campaigns_status").on(table.status),
+  index("idx_winback_campaigns_sent_at").on(table.sentAt),
+]);
+
+export const insertWinbackCampaignSchema = createInsertSchema(winbackCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWinbackCampaign = z.infer<typeof insertWinbackCampaignSchema>;
+export type WinbackCampaign = typeof winbackCampaigns.$inferSelect;
+
+// =============================================================================
 // REFERRALS TABLE
 // =============================================================================
 
