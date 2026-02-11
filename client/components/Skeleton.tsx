@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
-import { Skeleton as MotiSkeleton } from "moti/skeleton";
+import { Skeleton as MotiSkeleton } from "@/components/AccessibleSkeleton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, GlassEffect } from "@/constants/theme";
 
