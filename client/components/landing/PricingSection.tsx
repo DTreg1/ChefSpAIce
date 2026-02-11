@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
   },
   pricingGrid: {
     flexDirection: "column",
+    alignItems: "center",
     gap: 20,
     width: "100%",
     maxWidth: 420,

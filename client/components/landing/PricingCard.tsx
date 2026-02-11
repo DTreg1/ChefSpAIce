@@ -153,6 +153,8 @@ const styles = StyleSheet.create({
   pricingCard: {
     padding: 28,
     alignItems: "center",
+    width: "100%",
+    maxWidth: 420,
   },
   pricingCardWide: {
     flex: 1,
