@@ -18,7 +18,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Linking, Alert } from "react-native";
 import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
-import { storage, UserPreferences } from "@/lib/storage";
+import { storage } from "@/lib/storage";
 
 interface InstacartProduct {
   name: string;
