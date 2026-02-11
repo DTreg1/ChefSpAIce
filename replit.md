@@ -62,6 +62,14 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - `decryptTokenOrNull` gracefully handles legacy unencrypted tokens by returning the raw value on decryption failure.
 - Encrypted format: `base64(iv):base64(ciphertext):base64(authTag)` with 12-byte IV and 16-byte auth tag.
 
+## Disaster Recovery
+- Full backup and restore procedures documented in `DISASTER_RECOVERY.md`.
+- Neon handles automated backups natively via WAL-based continuous history (no cron jobs needed).
+- Development DB: Restore via Replit checkpoint rollback.
+- Production DB: Restore via Replit's point-in-time restore feature or Neon Console.
+- For retention beyond the Neon plan window, use `pg_dump` to create manual backups.
+- Test recovery quarterly using Neon's instant branching (zero-copy clone, restore on the clone, validate, delete).
+
 ## Database Migrations
 - Uses `drizzle-kit generate` + `drizzle-kit migrate` instead of `drizzle-kit push` for safe, versioned schema changes.
 - Migration files live in `./migrations/` with metadata in `./migrations/meta/`.
