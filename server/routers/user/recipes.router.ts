@@ -16,6 +16,7 @@ import {
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { successResponse, errorResponse } from "../../lib/apiResponse";
+import { processImageFromBase64 } from "../../services/imageProcessingService";
 
 const router = Router();
 
@@ -1100,10 +1101,15 @@ router.post("/generate-image", async (req: Request, res: Response, next: NextFun
       throw new Error("No image data returned");
     }
 
-    // gpt-image-1 returns b64_json
     if (imageData.b64_json) {
+      const processed = await processImageFromBase64(imageData.b64_json);
+      const displayBase64 = processed.display.toString("base64");
+      const thumbnailBase64 = processed.thumbnail.toString("base64");
+
       return res.json(successResponse({
-        imageBase64: imageData.b64_json,
+        imageBase64: displayBase64,
+        thumbnailBase64,
+        format: "webp",
       }));
     } else if (imageData.url) {
       return res.json(successResponse({

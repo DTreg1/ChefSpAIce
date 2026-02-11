@@ -24,10 +24,11 @@ router.post("/upload", express.json({ limit: "10mb" }), async (req: Request, res
 
     const { recipeId, base64Data, contentType } = parseResult.data;
     
-    const cloudUrl = await uploadRecipeImage(recipeId, base64Data, contentType || "image/jpeg");
+    const { displayUrl, thumbnailUrl } = await uploadRecipeImage(recipeId, base64Data, contentType || "image/jpeg");
     
     res.json(successResponse({
-      cloudImageUri: cloudUrl,
+      cloudImageUri: displayUrl,
+      thumbnailUri: thumbnailUrl,
       recipeId,
     }));
   } catch (error) {

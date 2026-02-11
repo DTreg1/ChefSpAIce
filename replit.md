@@ -97,6 +97,17 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - Webhook handler marks the most recent "sent" campaign as "accepted" (with `acceptedAt` timestamp) when a canceled/past_due subscription transitions to active.
 - Notification sent via `queueNotification()` with deepLink `chefspaice://subscription?offer=winback`.
 
+## Image Processing Pipeline
+- Server-side image processing via `sharp` in `server/services/imageProcessingService.ts`.
+- All recipe images are resized and converted to WebP before storage:
+  - **Display**: Max 800px width, WebP quality 80
+  - **Thumbnail**: Max 200px width, WebP quality 70
+- Storage paths: `recipe-images/{recipeId}.webp` (display) and `recipe-images/{recipeId}-thumb.webp` (thumbnail).
+- `objectStorageService.ts` returns `{ displayUrl, thumbnailUrl }` from upload functions.
+- `recipeImages.router.ts` POST `/upload` returns `cloudImageUri` (display) and `thumbnailUri` (thumbnail).
+- AI-generated images (`/api/recipes/generate-image`) are processed server-side before being sent to clients, returning `imageBase64` (display), `thumbnailBase64`, and `format: "webp"`.
+- Backward compatible: `deleteRecipeImage` cleans up both `.webp` and legacy `.jpg` files; `getRecipeImageUrl` checks WebP first, falls back to JPG.
+
 ## Sync Data Validation
 - Shared Zod schemas for all sync JSONB data shapes are defined in `shared/schema.ts` (prefixed with `sync*`): `syncNutritionSchema`, `syncIngredientSchema`, `syncMealSchema`, `syncInventoryItemSchema`, `syncRecipeSchema`, `syncMealPlanSchema`, `syncShoppingItemSchema`, `syncCookwareItemSchema`, `syncWasteLogEntrySchema`, `syncConsumedLogEntrySchema`, plus record schemas for preferences/analytics/onboarding/customLocations/userProfile.
 - `server/routers/sync/sync-helpers.ts` composes its item-level schemas from these shared sub-schemas for consistency between client and server.
