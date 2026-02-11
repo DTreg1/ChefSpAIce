@@ -1,6 +1,6 @@
 # ChefSpAIce FigJam Diagrams
 
-Reference links to all architecture and flow diagrams for the project.
+Reference links to all architecture and flow diagrams for the project. Last updated: February 2026.
 
 ---
 
@@ -8,40 +8,40 @@ Reference links to all architecture and flow diagrams for the project.
 
 | Diagram | Link |
 |---------|------|
-| Food Item Lifecycle | [View in FigJam](https://www.figma.com/board/9qBLqQPMWaFuZe9CAo9CQC/Food-Item-Lifecycle?node-id=0-1&p=f&t=AiAzC2Dfju14zKhc-0) |
-| AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/8a7091ac-b67d-41b4-9742-e9cb34a3fdd9?utm_source=other&utm_content=edit_in_figjam) |
-| Barcode and Receipt Scanning Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/16c544a0-1a39-40a2-b088-1c7875a45ec1?utm_source=other&utm_content=edit_in_figjam) |
-| Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/7de3a2e0-ef1d-4dc7-9960-0661841a47aa?utm_source=other&utm_content=edit_in_figjam) |
-| USDA Food Search Flow (Sequential) | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/805ed432-3956-48ff-b37b-7a360c2743fc?utm_source=other&utm_content=edit_in_figjam) |
-| USDA Barcode Lookup Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/c1edbe4b-d2c3-4d0b-a36f-71748cb3bbc0?utm_source=other&utm_content=edit_in_figjam) |
-| USDA Portion Conversion System | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/97e40102-8480-4f0f-ac6d-02ead14a4589?utm_source=other&utm_content=edit_in_figjam) |
-| Food Item Data Flow: Search to Inventory | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/2efdc9c0-6d48-4ec0-93c7-85ac64a69220?utm_source=other&utm_content=edit_in_figjam) |
+| Food Item Lifecycle | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/b53ce98b-bec4-4b87-afb8-288cd4dff638?utm_source=other&utm_content=edit_in_figjam) |
+| AI Recipe Generation Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/d99df89c-c727-48ab-9457-f113f925feab?utm_source=other&utm_content=edit_in_figjam) |
+| Barcode and Receipt Scanning Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/e756a7af-791b-46aa-8d1a-bd5245d6da49?utm_source=other&utm_content=edit_in_figjam) |
+| Subscription Purchase Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/38212aab-0ac0-48d2-b8fc-36659aa951bf?utm_source=other&utm_content=edit_in_figjam) |
+| USDA Food Search Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/07dc8db2-e127-4425-aef4-e9b0a7f02fb5?utm_source=other&utm_content=edit_in_figjam) |
+| USDA Barcode Lookup Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/9c676233-5c90-4e25-b13f-049696d1270f?utm_source=other&utm_content=edit_in_figjam) |
+| USDA Portion Conversion System | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/9de20c6a-d2ec-4c74-8148-971b614c70e1?utm_source=other&utm_content=edit_in_figjam) |
+| Food Item Data Flow: Search to Inventory | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/e7a1b8f6-eae7-406d-9ea7-516db525f8ef?utm_source=other&utm_content=edit_in_figjam) |
 
 ## Sequence Diagrams
 
 | Diagram | Link |
 |---------|------|
-| Cloud Sync Process | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/e09a836c-793f-4b5e-9589-687a510d55d8?utm_source=other&utm_content=edit_in_figjam) |
-| Authentication Flow | [View in FigJam](https://www.figma.com/board/f9qt38CKu5i8LJzpDkCMtx/Authentication-Flow?node-id=1-2&t=IugMwBLfUGK5erC3-0) |
-| AI Recipe Request Flow | [View in FigJam](https://www.figma.com/board/voEqIA8MN1NddFBPwvglek/AI-Recipe-Request-Flow?node-id=1-2&t=os4zkPaD6sHijhZU-0) |
+| Cloud Sync Process | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/8dd9c97c-1176-47b5-9ddc-070b6ec8da5f?utm_source=other&utm_content=edit_in_figjam) |
+| Authentication Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/ca1c1d53-555b-43c9-8b8b-619e60101bb6?utm_source=other&utm_content=edit_in_figjam) |
+| AI Recipe Request Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/ab18c2a2-1ec6-43d2-95ad-400c3656b06d?utm_source=other&utm_content=edit_in_figjam) |
 
 ## State Diagrams
 
 | Diagram | Link |
 |---------|------|
-| Food Item States | [View in FigJam](https://www.figma.com/board/b2k3CTtPY4CtLYhbrJ3Ikb/Food-Item-States?node-id=0-1&p=f&t=BHzfiZYAVKyJ911m-0) |
-| Subscription States | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/4cbae2dd-cbe9-4e39-8bdf-29c40fc9274c?utm_source=other&utm_content=edit_in_figjam) |
-| Sync Status States | [View in FigJam](https://www.figma.com/board/RA82xK3RucMiJPvmFYVUk3/Sync-Status-States?node-id=0-1&p=f&t=cfna9gUpRFx9pE6U-0) |
+| Food Item States | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/18ccf134-9aa6-4ee5-ae5f-87e977a2e605?utm_source=other&utm_content=edit_in_figjam) |
+| Subscription States | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/69df50cc-1920-4626-891a-ffb9dc2fc98a?utm_source=other&utm_content=edit_in_figjam) |
+| Sync Status States | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/2714f84c-1120-4ec1-a237-b9b658e6f335?utm_source=other&utm_content=edit_in_figjam) |
 
 ## Decision Trees
 
 | Diagram | Link |
 |---------|------|
-| Recipe Suggestion Decision Tree | [View in FigJam](https://www.figma.com/board/v7Z9wBImmmGmZZCq1cQSV5/Recipe-Suggestion-Decision-Tree?node-id=0-1&p=f&t=2U2DZ9yMn6Wf6PmD-0) |
-| Expiration Notification Prioritization | [View in FigJam](https://www.figma.com/board/vBV9JOBlIdRdljRhv5gMAc/Expiration-Notification-Prioritization?node-id=0-1&p=f&t=h9UuNXRkRDnT5BkC-0) |
+| Recipe Suggestion Decision Tree | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/924651ff-d869-4272-893e-45de3cee5a7c?utm_source=other&utm_content=edit_in_figjam) |
+| Expiration Notification Prioritization | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/d6536348-1d7d-46fc-8839-9e8c3acb7097?utm_source=other&utm_content=edit_in_figjam) |
 
 ## Roadmaps
 
 | Diagram | Link |
 |---------|------|
-| ChefSpAIce Development Roadmap | [View in FigJam](https://www.figma.com/board/JCAT4TCKHydvVnSfkGW96t/ChefSpAIce-Development-Roadmap?node-id=1-2&t=Eo2mTMixEJ09WZCX-0) |
+| ChefSpAIce Development Roadmap | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/4f6e15c0-2de1-44e2-bc39-e2b3cc55bcc1?utm_source=other&utm_content=edit_in_figjam) |
