@@ -46,6 +46,15 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - **Account deletion**: Deletes from all normalized tables in transaction.
 - **Demo seed**: Seeds normalized tables directly.
 
+## IP Address Anonymization (GDPR)
+- All session creation paths anonymize IP addresses before storing them in the `userSessions` table via `anonymizeIpAddress()` in `server/lib/auth-utils.ts`.
+- Controlled by the `IP_ANONYMIZATION_MODE` environment variable (default: `truncate`):
+  - `truncate`: Stores only the /24 subnet (e.g., `192.168.1.0` for IPv4, first 4 groups for IPv6). Best for GDPR compliance while retaining subnet-level security monitoring.
+  - `hash`: One-way SHA-256 hash (first 16 hex chars) using `IP_HASH_SALT` secret as salt. Falls back to truncation if no salt is configured.
+  - `none`: Stores the full IP address (not recommended for EU users).
+- The `sessionCleanupJob` additionally nullifies IP addresses on sessions older than 30 days.
+- Log output in `auth.ts` middleware also uses `anonymizeIpAddress` for consistency.
+
 ## Token Encryption
 - OAuth tokens (accessToken, refreshToken) in the `auth_providers` table are encrypted at rest using AES-256-GCM via `server/lib/token-encryption.ts`.
 - Requires `TOKEN_ENCRYPTION_KEY` secret: exactly 64 hex characters (32 bytes). Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
