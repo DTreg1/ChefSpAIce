@@ -71,7 +71,7 @@ import referralRouter from "./routers/referral.router";
 import notificationsRouter from "./routers/notifications.router";
 import nutritionLookupRouter from "./routers/nutrition-lookup.router";
 import errorReportRouter from "./routers/error-report.router";
-import { db } from "./db";
+import { db, checkPoolHealth } from "./db";
 import { users, userSessions } from "../shared/schema";
 import { requireAuth } from "./middleware/auth";
 import { requireSubscription } from "./middleware/requireSubscription";
@@ -106,8 +106,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================================================
   // HEALTH CHECK - Used by client for network detection
   // =========================================================================
-  app.get("/api/health", (_req: Request, res: Response) => {
-    res.status(200).json(successResponse({ status: "ok", timestamp: new Date().toISOString() }));
+  app.get("/api/health", async (_req: Request, res: Response) => {
+    const { healthy, responseTimeMs, stats } = await checkPoolHealth();
+    const status = healthy ? "ok" : "degraded";
+    const httpStatus = healthy ? 200 : 503;
+    res.status(httpStatus).json(successResponse({
+      status,
+      timestamp: new Date().toISOString(),
+      database: {
+        healthy,
+        responseTimeMs,
+        pool: stats,
+      },
+    }));
   });
   app.head("/api/health", (_req: Request, res: Response) => {
     res.status(200).end();
