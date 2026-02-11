@@ -27,7 +27,6 @@ import { useTheme } from "@/hooks/useTheme";
 import type { ThemePreference } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { useOnboardingStatus } from "@/contexts/OnboardingContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
@@ -49,9 +48,8 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut } = useAuth();
-  const { tier, planType, isActive, isTrialing, trialDaysRemaining } =
+  const { tier, planType, isActive, isTrialing, trialDaysRemaining, handleManageSubscription } =
     useSubscription();
-  const { handleManageSubscription } = useManageSubscription();
   const { resetOnboarding } = useOnboardingStatus();
 
   const [inventory, setInventory] = useState<FoodItem[]>([]);

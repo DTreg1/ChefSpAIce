@@ -41,7 +41,7 @@ import { apiRequestJson, getApiUrl } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useOnlineStatus } from "@/hooks/useSyncStatus";
 
 const EXPIRING_THRESHOLD_DAYS = 3;
 

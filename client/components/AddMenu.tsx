@@ -36,7 +36,7 @@ import { AppColors, Spacing, GlassColors, Colors } from "@/constants/theme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useOnlineStatus } from "@/hooks/useSyncStatus";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,

@@ -24,14 +24,12 @@ import { GlassProvider } from "@/contexts/GlassContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 function TrialBadge() {
   const { isAuthenticated } = useAuth();
-  const { isTrialing, isPastDue, trialDaysRemaining, graceDaysRemaining, isLoading, subscription } =
+  const { isTrialing, isPastDue, trialDaysRemaining, graceDaysRemaining, isLoading, subscription, handleManageSubscription } =
     useSubscription();
-  const { handleManageSubscription } = useManageSubscription();
 
   if (isLoading || !isAuthenticated) {
     return null;

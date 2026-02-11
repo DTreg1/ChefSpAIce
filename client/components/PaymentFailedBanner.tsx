@@ -4,13 +4,11 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
 export function PaymentFailedBanner() {
   const { isAuthenticated } = useAuth();
-  const { isPastDue, graceDaysRemaining, isLoading } = useSubscription();
-  const { handleManageSubscription } = useManageSubscription();
+  const { isPastDue, graceDaysRemaining, isLoading, handleManageSubscription } = useSubscription();
 
   if (isLoading || !isAuthenticated || !isPastDue || graceDaysRemaining === null) {
     return null;

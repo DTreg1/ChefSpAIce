@@ -23,7 +23,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStoreKit } from "@/hooks/useStoreKit";
-import { useManageSubscription } from "@/hooks/useManageSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
@@ -64,6 +63,8 @@ export default function SubscriptionScreen() {
     entitlements,
     usage,
     refetch,
+    handleManageSubscription,
+    isManaging,
   } = useSubscription();
 
   const reason = route.params?.reason;
@@ -91,7 +92,6 @@ export default function SubscriptionScreen() {
     restorePurchases,
     presentPaywall,
   } = useStoreKit();
-  const { handleManageSubscription, isManaging } = useManageSubscription();
 
   const shouldUseStoreKit =
     (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;

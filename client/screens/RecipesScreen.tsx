@@ -74,7 +74,7 @@ import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useOnlineStatus } from "@/hooks/useSyncStatus";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { syncManager } from "@/lib/sync-manager";
 

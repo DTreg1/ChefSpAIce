@@ -43,3 +43,8 @@ export function useSyncStatus() {
     getFailedItemDetails: () => syncManager.getFailedItemDetails(),
   };
 }
+
+export function useOnlineStatus(): boolean {
+  const { isOnline } = useSyncStatus();
+  return isOnline;
+}
