@@ -11,7 +11,7 @@
 | Category | Previous | Current | Grade | Change |
 |---|---|---|---|---|
 | UI/UX Design | 8.0 | 8.5/10 | A- | +0.5 |
-| Core Features | 8.5 | 8.5/10 | A- | — |
+| Core Features | 8.5 | 9.0/10 | A | +0.5 |
 | Performance | 6.5 | 9.0/10 | A | +2.5 |
 | Security | 8.5 | 9.5/10 | A+ | +1.0 |
 | Error Handling | 8.0 | 9.0/10 | A | +1.0 |
@@ -20,7 +20,7 @@
 | Mobile | 8.0 | 9.0/10 | A | +1.0 |
 | Data Management | 7.5 | 9.0/10 | A | +1.5 |
 | Monetization | 9.0 | 9.5/10 | A+ | +0.5 |
-| **Overall** | **7.7** | **9.0/10** | **A** | **+1.3** |
+| **Overall** | **7.7** | **9.1/10** | **A** | **+1.4** |
 
 ---
 
@@ -121,23 +121,7 @@ Add server-side image processing for recipe and food images before storage. Resi
 The trial expiration, session cleanup, and winback jobs use setInterval which doesn't handle multi-instance deployments (duplicate execution) or missed jobs. Consider using a lightweight job queue backed by PostgreSQL (e.g., pg-boss or a simple advisory lock pattern) to ensure exactly-once execution.
 ```
 
-**Step 8 — Add recipe sharing and social features**
-- Category: Core Features
-- Impact: Growth limitation without viral sharing
-
-```
-Add the ability to share recipes via deep link or public URL. Generate a shareable recipe page at /recipe/:id that renders the recipe without requiring auth. Track share events for analytics. This enables organic growth through user-shared content.
-```
-
-**Step 9 — Add recipe image generation**
-- Category: Core Features
-- Impact: Text-only recipes lack visual appeal
-
-```
-Use OpenAI's DALL-E or a similar service to generate recipe images when a recipe is created. Store generated images in object storage. Display as hero images on recipe cards and detail screens. This significantly improves the visual appeal and engagement of the recipe experience.
-```
-
-**Step 10 — Unhandled rejection alerting**
+**Step 8 — Unhandled rejection alerting**
 - Category: Error Handling
 - Impact: Silent failures in production
 
@@ -145,7 +129,7 @@ Use OpenAI's DALL-E or a similar service to generate recipe images when a recipe
 The unhandledRejection and uncaughtException handlers in server/index.ts currently log but don't alert. Integrate with Sentry's server SDK or add a webhook notification (e.g., Slack or email) so critical unhandled errors trigger immediate visibility rather than being buried in logs.
 ```
 
-**Step 11 — Verify expo-camera compatibility with Expo SDK**
+**Step 9 — Verify expo-camera compatibility with Expo SDK**
 - Category: Mobile
 - Impact: Potential build failures from API mismatches
 
@@ -166,10 +150,8 @@ Verify that expo-camera v17 is compatible with the current Expo SDK version. Che
 | 5 | Data Management | P2 | Database backup/restore documentation |
 | 6 | Performance | P3 | Image optimization pipeline |
 | 7 | Performance | P3 | Job queue instead of setInterval |
-| 8 | Core Features | P3 | Recipe sharing/social features |
-| 9 | Core Features | P3 | Recipe image generation |
-| 10 | Error Handling | P3 | Unhandled rejection alerting |
-| 11 | Mobile | P3 | Verify expo-camera SDK compatibility |
+| 8 | Error Handling | P3 | Unhandled rejection alerting |
+| 9 | Mobile | P3 | Verify expo-camera SDK compatibility |
 
 ---
 
@@ -206,7 +188,7 @@ Verify that expo-camera v17 is compatible with the current Expo SDK version. Che
 
 ---
 
-### 2. Core Features — 8.5/10 (A-)
+### 2. Core Features — 9.0/10 (A)
 
 #### Strengths
 - AI recipe generation with inventory awareness, expiring items priority, equipment matching
@@ -222,13 +204,15 @@ Verify that expo-camera v17 is compatible with the current Expo SDK version. Che
 - Data export capabilities
 - AI chat with 13 function-calling tools
 - Offline sync retry with exponential backoff and banner
+- Recipe sharing via native Share API (mobile) and clipboard (web) with deep links and formatted message
+- AI-powered recipe image generation via OpenAI image API (/api/recipes/generate-image) with local storage, compression, and display on cards/detail views
+- Recipe scanning from photos (cookbooks, magazines, printed cards) via OpenAI vision
 
 #### Remaining Issues
 
 | Priority | Issue | Impact |
 |---|---|---|
-| P3 | No recipe sharing/social features (share to friends, public recipes) | Growth limitation |
-| P3 | No recipe image generation (only text-based recipes from AI) | Visual appeal gap |
+| P3 | No public recipe gallery or community/social recipe discovery | Growth limitation |
 
 ---
 
