@@ -52,7 +52,7 @@ interface GoogleTokenPayload {
 router.post("/apple", async (req: Request, res: Response, next: NextFunction) => {
   logger.info("Apple sign-in request received");
   try {
-    const { identityToken, authorizationCode, user, selectedPlan, selectedTier, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
+    const { identityToken, authorizationCode, user, isWebAuth, redirectUri } = req.body as AppleTokenPayload;
 
     logger.info("Apple auth payload received", { hasIdentityToken: !!identityToken, hasAuthCode: !!authorizationCode, isWebAuth });
 
@@ -88,15 +88,6 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
 
     const { sub: appleUserId, email: tokenEmail } = verifiedToken;
     const email = tokenEmail || user?.email || null;
-    // Support both selectedPlan (legacy) and selectedTier (new)
-    const validPlans = ['monthly', 'annual'];
-    const validTiers = ['basic', 'pro'];
-    const plan = validPlans.includes(selectedPlan || '') 
-      ? selectedPlan as 'monthly' | 'annual' 
-      : validTiers.includes(selectedTier || '') 
-        ? 'monthly'  // Default to monthly billing when tier is selected
-        : 'monthly';
-
     const { userId, isNewUser, dbUser } = await db.transaction(async (tx) => {
       const existingProvider = await tx
         .select({ userId: authProviders.userId })
@@ -225,16 +216,13 @@ router.post("/apple", async (req: Request, res: Response, next: NextFunction) =>
 
 router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { idToken, accessToken: rawAccessToken, selectedPlan } = req.body as GoogleTokenPayload;
+    const { idToken, accessToken: rawAccessToken } = req.body as GoogleTokenPayload;
     const accessToken = encryptTokenOrNull(rawAccessToken);
 
     if (!idToken) {
       throw AppError.badRequest("ID token is required", "MISSING_ID_TOKEN");
     }
     
-    const validPlans = ['monthly', 'annual'];
-    const plan = validPlans.includes(selectedPlan || '') ? selectedPlan as 'monthly' | 'annual' : 'monthly';
-
     const googleClient = new OAuth2Client();
     let payload;
 
