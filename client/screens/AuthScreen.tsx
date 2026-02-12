@@ -28,8 +28,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { syncManager } from "@/lib/sync-manager";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
-import { useStoreKit } from "@/hooks/useStoreKit";
-import { MONTHLY_PRICE } from "@shared/subscription";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -66,30 +64,6 @@ export default function AuthScreen() {
 
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
-
-  const {
-    isAvailable: isStoreKitAvailable,
-    offerings,
-  } = useStoreKit();
-
-  const shouldUseStoreKit =
-    (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
-
-  const getPreviewPrice = (): string => {
-    if (shouldUseStoreKit && offerings?.availablePackages) {
-      for (const pkg of offerings.availablePackages) {
-        const id = pkg.identifier.toLowerCase();
-        const isMonthly = pkg.packageType === "MONTHLY" || id.includes("monthly");
-        if (isMonthly) {
-          return `${pkg.product.priceString}/mo`;
-        }
-      }
-    }
-    if (Platform.OS === "ios" || Platform.OS === "android") {
-      return "ChefSpAIce";
-    }
-    return `$${MONTHLY_PRICE.toFixed(2)}/mo`;
-  };
 
   const handleOpenPrivacyPolicy = () => {
     if (Platform.OS === "web") {
@@ -291,7 +265,11 @@ export default function AuthScreen() {
         },
       ]}
     >
-      <View style={styles.header}></View>
+      <View style={styles.header}>
+        <ThemedText style={{ fontSize: 17, fontWeight: "600", textAlign: "center" }}>
+          {isSignUp ? "Sign Up" : "Sign In"}
+        </ThemedText>
+      </View>
 
       <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
@@ -306,7 +284,6 @@ export default function AuthScreen() {
         >
           {isSignUp && (
             <View style={styles.planSelectionContainer}>
-              {/* Free Trial Banner */}
               <View
                 style={[
                   styles.trialBanner,
@@ -319,11 +296,11 @@ export default function AuthScreen() {
                     { backgroundColor: AppColors.primary },
                   ]}
                 >
-                  <Feather name="gift" size={20} color="#FFFFFF" />
+                  <Feather name="zap" size={20} color="#FFFFFF" />
                 </View>
                 <View style={styles.trialTextContainer}>
                   <ThemedText style={styles.trialTitle}>
-                    7-Day Free Trial
+                    Your Smart Kitchen Awaits
                   </ThemedText>
                   <ThemedText
                     style={[
@@ -331,12 +308,11 @@ export default function AuthScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Full access to all features. No payment required.
+                    Create an account to get started with ChefSpAIce
                   </ThemedText>
                 </View>
               </View>
 
-              {/* Features List */}
               <View style={styles.featuresListContainer}>
                 <ThemedText style={styles.featuresListTitle}>
                   What you'll get:
@@ -363,42 +339,6 @@ export default function AuthScreen() {
                       </ThemedText>
                     </View>
                   ))}
-                </View>
-              </View>
-
-              {/* Subscription Options Preview */}
-              <View
-                style={[
-                  styles.subscriptionPreview,
-                  {
-                    backgroundColor: theme.glass.background,
-                    borderColor: theme.glass.border,
-                  },
-                ]}
-              >
-                <ThemedText
-                  style={[
-                    styles.subscriptionPreviewTitle,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  After your trial, subscribe to continue:
-                </ThemedText>
-                <View style={styles.planPreviewRow}>
-                  <View style={styles.planPreviewItem}>
-                    <ThemedText style={styles.planPreviewName}>
-                      ChefSpAIce
-                    </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.planPreviewPrice,
-                        { color: AppColors.primary },
-                      ]}
-                      data-testid="text-subscription-price"
-                    >
-                      {getPreviewPrice()}
-                    </ThemedText>
-                  </View>
                 </View>
               </View>
             </View>
