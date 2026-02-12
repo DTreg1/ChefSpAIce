@@ -422,13 +422,6 @@ async function initStripe(retries = 3, delay = 2000) {
 }
 
 (async () => {
-  // Health check endpoint - responds immediately, before any other middleware
-  // This is critical for Replit Autoscale deployment health checks
-  app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok", timestamp: Date.now() });
-  });
-
-
   app.use(requestIdMiddleware);
   setupCors(app);
 
