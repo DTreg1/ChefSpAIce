@@ -78,6 +78,12 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 - The `drizzle.__drizzle_migrations` table tracks which migrations have been applied.
 - `npm run db:push` is still available as a convenience for development but should not be used in production.
 
+## Grocery Search Screen
+- `client/screens/GrocerySearchScreen.tsx`: Native grocery search interface inspired by Instacart, accessible as a full-screen modal from ShoppingListScreen via the search icon in the header.
+- Features: search bar, "Top Searches" 4-column grid (8 products), "Trending" horizontal scroll (6 products), search results with add-to-list functionality.
+- Product images stored in `client/assets/food-images/`. Adding a product creates a ShoppingListItem via `storage.addShoppingListItem()`.
+- Registered in RootStackNavigator as `GrocerySearch` route.
+
 ## Font Scaling & Accessibility
 - `ThemedText` (the primary text component) defaults to `allowFontScaling={true}` and `maxFontSizeMultiplier={1.5}` to respect system font size while preventing extreme scaling from breaking layouts. Both can be overridden via props.
 - All text-containing containers across the app use `minHeight` instead of fixed `height` so they expand gracefully when text scales up. This applies to buttons, badges, headers, tab bars, settings rows, auth screen elements, etc.

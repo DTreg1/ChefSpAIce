@@ -223,6 +223,17 @@ export default function ShoppingListScreen() {
         screenKey="shopping"
         showSearch={false}
         menuItems={menuItems}
+        headerRight={
+          <Pressable
+            onPress={() => (navigation as any).navigate("GrocerySearch")}
+            style={styles.searchButton}
+            testID="button-grocery-search"
+            accessibilityRole="button"
+            accessibilityLabel="Browse and search groceries"
+          >
+            <Feather name="search" size={22} color={theme.text} />
+          </Pressable>
+        }
       />
       <FlatList
         accessibilityRole="list"
@@ -404,5 +415,8 @@ const styles = StyleSheet.create({
   instacartButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  searchButton: {
+    padding: Spacing.xs,
   },
 });

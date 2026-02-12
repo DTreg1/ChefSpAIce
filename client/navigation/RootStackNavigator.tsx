@@ -75,6 +75,7 @@ const LazySupportScreen = withSuspense(React.lazy(() => import("@/screens/web/Su
 const LazyAttributionsScreen = withSuspense(React.lazy(() => import("@/screens/web/AttributionsScreen")));
 const LazySubscriptionScreen = withSuspense(React.lazy(() => import("@/screens/SubscriptionScreen")));
 const LazyTrialExpiredScreen = withSuspense(React.lazy(() => import("@/screens/TrialExpiredScreen")));
+const LazyGrocerySearchScreen = withSuspense(React.lazy(() => import("@/screens/GrocerySearchScreen")));
 
 const isWeb = Platform.OS === "web";
 const TRIAL_DURATION_DAYS = 7;
@@ -126,6 +127,7 @@ export type RootStackParamList = {
   RecipeScanner: { mode?: "recipe" } | undefined;
   FoodCamera: undefined;
   ReceiptScan: undefined;
+  GrocerySearch: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -529,6 +531,14 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="ReceiptScan"
         component={LazyReceiptScanScreen}
+        options={{
+          presentation: "fullScreenModal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="GrocerySearch"
+        component={LazyGrocerySearchScreen}
         options={{
           presentation: "fullScreenModal",
           headerShown: false,
