@@ -1164,7 +1164,7 @@ export default function OnboardingScreen() {
         </View>
 
         <ThemedText style={{ fontSize: 13, color: theme.textSecondary, textAlign: "center", marginBottom: Spacing.lg }}>
-          No account needed — start your free 7-day trial instantly
+          Let's set up your kitchen in just a few steps
         </ThemedText>
 
         <GlassButton
