@@ -1,8 +1,7 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { AppColors } from "@/constants/theme";
-import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -47,11 +46,15 @@ export function AnimatedBackground({
 
   return (
     <View style={[styles.container, { backgroundColor: baseColor }]}>
-      <LinearGradient
-        colors={[highlightColor, "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `linear-gradient(to bottom right, ${highlightColor}, transparent)`,
+        }}
       />
       <style>
         {`
@@ -124,12 +127,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     overflow: "hidden",
     pointerEvents: "none",
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
 });
