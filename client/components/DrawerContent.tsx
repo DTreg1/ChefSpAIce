@@ -192,6 +192,12 @@ export function DrawerContent(props: DrawerContentComponentProps) {
       matchTab: "KitchenTab",
     },
     {
+      label: "Cookware",
+      icon: "tool",
+      route: "CookwareTab",
+      matchTab: "CookwareTab",
+    },
+    {
       label: "Recipes",
       icon: "book-open",
       route: "RecipesTab",
@@ -348,18 +354,6 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 navigation.navigate("Tabs", {
                   screen: "ProfileTab",
                   params: { screen: "CookingTerms" },
-                });
-              }}
-            />
-            <DrawerItem
-              label="Cookware"
-              icon="tool"
-              isActive={activeScreen === "Cookware"}
-              onPress={() => {
-                closeDrawer();
-                navigation.navigate("Tabs", {
-                  screen: "ProfileTab",
-                  params: { screen: "Cookware" },
                 });
               }}
             />

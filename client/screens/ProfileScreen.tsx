@@ -713,39 +713,6 @@ export default function ProfileScreen() {
               color={theme.textSecondary}
             />
           </Pressable>
-          {__DEV__ ? (
-            <>
-              <View
-                style={[
-                  styles.menuDivider,
-                  { backgroundColor: theme.glass.border },
-                ]}
-              />
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => navigation.navigate("GlassLeaf")}
-                accessibilityLabel="Dev components"
-                accessibilityRole="button"
-              >
-                <View
-                  style={[
-                    styles.menuIcon,
-                    { backgroundColor: `${AppColors.warning}15` },
-                  ]}
-                >
-                  <Feather name="code" size={20} color={AppColors.warning} />
-                </View>
-                <ThemedText type="body" style={styles.menuLabel}>
-                  Component Library
-                </ThemedText>
-                <Feather
-                  name="chevron-right"
-                  size={20}
-                  color={theme.textSecondary}
-                />
-              </Pressable>
-            </>
-          ) : null}
         </GlassCard>
 
         {isAuthenticated ? (
