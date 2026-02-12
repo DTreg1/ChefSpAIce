@@ -33,7 +33,18 @@ interface InstacartStatus {
 
 interface InstacartLinkResponse {
   products_link_url?: string;
-  error?: string;
+}
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    const msg = error.message;
+    const colonIndex = msg.indexOf(": ");
+    if (colonIndex > 0) {
+      return msg.substring(colonIndex + 2);
+    }
+    return msg;
+  }
+  return fallback;
 }
 
 export function useInstacart() {
@@ -106,14 +117,12 @@ export function useInstacart() {
         if (data.products_link_url) {
           return data.products_link_url;
         } else {
-          throw new Error(data.error || "Failed to create shopping link");
+          throw new Error("Failed to create shopping link");
         }
       } catch (error) {
         logger.error("[Instacart] Create shopping link failed:", error);
-        Alert.alert(
-          "Error",
-          "Failed to create Instacart shopping link. Please try again.",
-        );
+        const message = extractErrorMessage(error, "Failed to create Instacart shopping link. Please try again.");
+        Alert.alert("Error", message);
         return null;
       } finally {
         setIsLoading(false);
@@ -163,14 +172,12 @@ export function useInstacart() {
         if (data.products_link_url) {
           return data.products_link_url;
         } else {
-          throw new Error(data.error || "Failed to create recipe link");
+          throw new Error("Failed to create recipe link");
         }
       } catch (error) {
         logger.error("[Instacart] Create recipe link failed:", error);
-        Alert.alert(
-          "Error",
-          "Failed to create Instacart shopping link. Please try again.",
-        );
+        const message = extractErrorMessage(error, "Failed to create Instacart recipe link. Please try again.");
+        Alert.alert("Error", message);
         return null;
       } finally {
         setIsLoading(false);
