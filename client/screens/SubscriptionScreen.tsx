@@ -57,7 +57,6 @@ export default function SubscriptionScreen() {
     isTrialing,
     isActive,
     isLoading,
-    isTrialExpired,
     trialDaysRemaining,
     entitlements,
     usage,
@@ -69,7 +68,7 @@ export default function SubscriptionScreen() {
   const reason = route.params?.reason;
   const subscriptionInactive = !isActive && !isLoading && isAuthenticated;
   const isBlocking =
-    reason === "expired" || isTrialExpired || subscriptionInactive;
+    reason === "expired" || subscriptionInactive;
 
   useEffect(() => {
     if (!isBlocking) return;

@@ -39,7 +39,6 @@ All 12 JSONB columns have been dropped from `userSyncData`. The table now only h
 
 ### Sync Patterns
 - **POST /api/auth/sync**: Uses transactional delete-then-insert for each normalized section to ensure atomicity.
-- **POST /api/auth/migrate-guest-data**: Uses upsert (ON CONFLICT DO UPDATE) for each normalized section.
 - **chat-actions.ts**: `executeWasteItem`/`executeConsumeItem` INSERT directly into normalized tables; `getUserSyncData()` reads preferences from `userSyncKV` and logs from normalized tables.
 - **Entry IDs**: Client-provided IDs are preserved (`entry.id` → `entryId`/`locationId`); fallback to server-generated `randomBytes(12)`.
 - **Data export**: Reads all sections from normalized tables; `userSyncData` only provides metadata.

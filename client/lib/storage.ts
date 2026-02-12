@@ -88,10 +88,6 @@ const STORAGE_KEYS = {
   CUSTOM_STORAGE_LOCATIONS: "@chefspaice/custom_storage_locations",
   ONBOARDING_STEP: "@chefspaice/onboarding_step",
   PENDING_PURCHASE: "@chefspaice/pending_purchase",
-  GUEST_ID: "@chefspaice/guest_id",
-  TRIAL_START_DATE: "@chefspaice/trial_start_date",
-  IS_GUEST_USER: "@chefspaice/is_guest_user",
-  REGISTER_PROMPT_DISMISSED_AT: "@chefspaice/register_prompt_dismissed_at",
 } as const;
 
 export const DEFAULT_STORAGE_LOCATIONS = [
@@ -119,12 +115,6 @@ export interface UserProfile {
   avatarUri?: string;
   createdAt: string;
   isLoggedIn: boolean;
-}
-
-export interface GuestUserInfo {
-  guestId: string;
-  trialStartDate: string;
-  isGuest: boolean;
 }
 
 export interface FoodItem {
@@ -1123,7 +1113,6 @@ export const storage = {
       AsyncStorage.removeItem(STORAGE_KEYS.SHOPPING_LIST),
       AsyncStorage.removeItem(STORAGE_KEYS.CUSTOM_STORAGE_LOCATIONS),
       AsyncStorage.removeItem(STORAGE_KEYS.COOKWARE),
-      AsyncStorage.removeItem(STORAGE_KEYS.IS_GUEST_USER),
     ]);
     logger.log("[Storage] New user reset complete");
   },
@@ -1269,127 +1258,6 @@ export const storage = {
     await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_PURCHASE);
   },
 
-  // ==========================================================================
-  // GUEST USER STORAGE
-  // For users who haven't registered yet - allows trial usage before signup
-  // ==========================================================================
-
-  async getGuestId(): Promise<string | null> {
-    return await getItem<string>(STORAGE_KEYS.GUEST_ID);
-  },
-
-  async setGuestId(guestId: string): Promise<void> {
-    await setItem(STORAGE_KEYS.GUEST_ID, guestId);
-  },
-
-  async getTrialStartDate(): Promise<string | null> {
-    return await getItem<string>(STORAGE_KEYS.TRIAL_START_DATE);
-  },
-
-  async setTrialStartDate(date: string): Promise<void> {
-    await setItem(STORAGE_KEYS.TRIAL_START_DATE, date);
-  },
-
-  async getIsGuestUser(): Promise<boolean> {
-    const isGuest = await getItem<boolean>(STORAGE_KEYS.IS_GUEST_USER);
-    return isGuest ?? false;
-  },
-
-  async setIsGuestUser(isGuest: boolean): Promise<void> {
-    await setItem(STORAGE_KEYS.IS_GUEST_USER, isGuest);
-  },
-
-  async isGuestUser(): Promise<boolean> {
-    const authToken = await this.getAuthToken();
-    if (authToken) {
-      return false;
-    }
-    return await this.getIsGuestUser();
-  },
-
-  async initializeGuestUser(): Promise<GuestUserInfo> {
-    const existingGuestId = await this.getGuestId();
-
-    if (existingGuestId) {
-      const trialStartDate = await this.getTrialStartDate();
-      const isGuest = await this.getIsGuestUser();
-      logger.log("[Storage] Guest user already initialized:", existingGuestId);
-      return {
-        guestId: existingGuestId,
-        trialStartDate: trialStartDate || new Date().toISOString(),
-        isGuest,
-      };
-    }
-
-    const newGuestId = generateGuestId();
-    const trialStartDate = new Date().toISOString();
-
-    await Promise.all([
-      this.setGuestId(newGuestId),
-      this.setTrialStartDate(trialStartDate),
-      this.setIsGuestUser(true),
-    ]);
-
-    logger.log("[Storage] New guest user initialized:", newGuestId);
-
-    return {
-      guestId: newGuestId,
-      trialStartDate,
-      isGuest: true,
-    };
-  },
-
-  async clearGuestUser(): Promise<void> {
-    await Promise.all([
-      AsyncStorage.removeItem(STORAGE_KEYS.GUEST_ID),
-      AsyncStorage.removeItem(STORAGE_KEYS.TRIAL_START_DATE),
-      AsyncStorage.removeItem(STORAGE_KEYS.IS_GUEST_USER),
-    ]);
-    logger.log("[Storage] Guest user data cleared");
-  },
-
-  async getGuestUserInfo(): Promise<GuestUserInfo | null> {
-    const guestId = await this.getGuestId();
-    if (!guestId) {
-      return null;
-    }
-
-    const trialStartDate = await this.getTrialStartDate();
-    const isGuest = await this.getIsGuestUser();
-
-    return {
-      guestId,
-      trialStartDate: trialStartDate || new Date().toISOString(),
-      isGuest,
-    };
-  },
-
-  async getRegisterPromptDismissedAt(): Promise<string | null> {
-    return await getItem<string>(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT);
-  },
-
-  async setRegisterPromptDismissedAt(date: string): Promise<void> {
-    await setItem(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT, date);
-  },
-
-  async clearRegisterPromptDismissedAt(): Promise<void> {
-    await AsyncStorage.removeItem(STORAGE_KEYS.REGISTER_PROMPT_DISMISSED_AT);
-  },
-
-  async shouldShowRegisterPrompt(hoursToWait: number = 24): Promise<boolean> {
-    const dismissedAt = await this.getRegisterPromptDismissedAt();
-    if (!dismissedAt) {
-      return true;
-    }
-
-    const dismissedDate = new Date(dismissedAt);
-    const now = new Date();
-    const hoursSinceDismissal =
-      (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60);
-
-    return hoursSinceDismissal >= hoursToWait;
-  },
-
   async syncToCloud(): Promise<{ success: boolean; error?: string }> {
     try {
       const token = await this.getAuthToken();
@@ -1465,118 +1333,6 @@ export const storage = {
     }
   },
 
-  async migrateGuestDataToAccount(
-    token: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const isGuest = await this.getIsGuestUser();
-      if (!isGuest) {
-        logger.log(
-          "[Storage] migrateGuestDataToAccount: Not a guest user, skipping migration",
-        );
-        return { success: true };
-      }
-
-      const guestId = await this.getGuestId();
-      logger.log("[Storage] migrateGuestDataToAccount: Starting migration", {
-        guestId,
-      });
-
-      const [
-        inventory,
-        recipes,
-        mealPlans,
-        shoppingList,
-        preferences,
-        wasteLog,
-        consumedLog,
-        cookware,
-        onboarding,
-        customLocations,
-        userProfile,
-      ] = await Promise.all([
-        this.getInventory(),
-        this.getRawRecipes(),
-        this.getMealPlans(),
-        this.getShoppingList(),
-        this.getPreferences(),
-        this.getWasteLog(),
-        this.getConsumedLog(),
-        this.getCookware(),
-        this.getOnboardingStatus(),
-        this.getCustomStorageLocations(),
-        this.getUserProfile(),
-      ]);
-
-      const hasData =
-        inventory.length > 0 ||
-        recipes.length > 0 ||
-        mealPlans.length > 0 ||
-        shoppingList.length > 0 ||
-        cookware.length > 0 ||
-        customLocations.length > 0 ||
-        onboarding.cookwareSetupCompleted;
-
-      if (!hasData) {
-        logger.log(
-          "[Storage] migrateGuestDataToAccount: No guest data to migrate",
-        );
-        await this.setIsGuestUser(false);
-        return { success: true };
-      }
-
-      const migrationData = {
-        guestId,
-        data: {
-          inventory,
-          recipes,
-          mealPlans,
-          shoppingList,
-          preferences,
-          wasteLog,
-          consumedLog,
-          cookware,
-          onboarding,
-          customLocations,
-          userProfile,
-        },
-      };
-
-      const baseUrl = getApiUrl();
-      const url = new URL("/api/auth/migrate-guest-data", baseUrl);
-
-      const response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(migrationData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        logger.log(
-          "[Storage] migrateGuestDataToAccount: Migration failed",
-          errorData,
-        );
-        return {
-          success: false,
-          error: errorData.error || "Failed to migrate guest data",
-        };
-      }
-
-      await this.setIsGuestUser(false);
-      await this.clearRegisterPromptDismissedAt();
-
-      logger.log("[Storage] migrateGuestDataToAccount: Migration successful");
-      return { success: true };
-    } catch (error) {
-      logger.error("Guest data migration error:", error);
-      return { success: false, error: "Failed to migrate guest data" };
-    }
-  },
-
   async syncFromCloud(): Promise<{ success: boolean; error?: string }> {
     try {
       const token = await this.getAuthToken();
@@ -1633,13 +1389,6 @@ export const storage = {
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-export function generateGuestId(): string {
-  const timestamp = Date.now().toString(36);
-  const randomPart1 = Math.random().toString(36).substring(2, 10);
-  const randomPart2 = Math.random().toString(36).substring(2, 10);
-  return `guest_${timestamp}_${randomPart1}${randomPart2}`;
 }
 
 export function getDaysUntilExpiration(expirationDate: string): number {

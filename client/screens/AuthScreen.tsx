@@ -158,15 +158,6 @@ export default function AuthScreen() {
         );
   };
 
-  const handleContinueAsGuest = () => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: "Onboarding" }],
-      }),
-    );
-  };
-
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
       setAuthError("Please enter email and password");
@@ -746,22 +737,6 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          {isSignUp && Platform.OS !== "web" && (
-            <Pressable
-              onPress={handleContinueAsGuest}
-              style={styles.guestButton}
-              data-testid="button-continue-as-guest"
-              {...webAccessibilityProps(handleContinueAsGuest)}
-              accessibilityRole="button"
-              accessibilityLabel="Continue as guest"
-            >
-              <ThemedText
-                style={[styles.guestButtonText, { color: theme.textSecondary }]}
-              >
-                Skip for now - Start your free trial
-              </ThemedText>
-            </Pressable>
-          )}
         </Animated.View>
       </KeyboardAwareScrollViewCompat>
     </View>
@@ -1063,15 +1038,5 @@ const styles = StyleSheet.create({
   },
   legalSeparator: {
     fontSize: 12,
-  },
-  guestButton: {
-    alignItems: "center",
-    paddingVertical: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  guestButtonText: {
-    fontSize: 14,
-    fontWeight: "400",
-    textDecorationLine: "underline" as const,
   },
 });

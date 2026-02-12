@@ -42,12 +42,10 @@ import { InventoryFunFact } from "@/components/inventory/InventoryFunFact";
 import { InventoryNutritionSummary } from "@/components/inventory/InventoryNutritionSummary";
 import { InventoryGroupSection } from "@/components/inventory/InventoryGroupSection";
 import { useFunFact } from "@/components/inventory/useFunFact";
-import { TrialStatusBadge } from "@/components/TrialStatusBadge";
 import { TrialExpiringModal } from "@/components/TrialExpiringModal";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
-import { useTrialStatus } from "@/hooks/useTrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -95,11 +93,10 @@ export default function InventoryScreen() {
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
 
-  const { isTrialing: localTrialing, daysRemaining: localDaysRemaining } = useTrialStatus();
   const { isActive: hasActiveSubscription, isTrialing: serverTrialing, trialDaysRemaining: serverDaysRemaining } = useSubscription();
 
-  const showTrialing = localTrialing || serverTrialing;
-  const effectiveDaysRemaining = serverTrialing && serverDaysRemaining !== null ? serverDaysRemaining : localDaysRemaining;
+  const showTrialing = serverTrialing;
+  const effectiveDaysRemaining = serverTrialing && serverDaysRemaining !== null ? serverDaysRemaining : 0;
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
   const [expiringModalDismissed, setExpiringModalDismissed] = useState(false);
@@ -456,7 +453,6 @@ export default function InventoryScreen() {
         headerRight={
           <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
             <SyncStatusIndicator />
-            <TrialStatusBadge compact />
           </View>
         }
       />

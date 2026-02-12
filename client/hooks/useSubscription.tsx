@@ -83,7 +83,6 @@ export interface SubscriptionContextValue {
   isTrialing: boolean;
   isActive: boolean;
   isLoading: boolean;
-  isTrialExpired: boolean;
   trialDaysRemaining: number | null;
   entitlements: Entitlements;
   usage: Usage;
@@ -130,7 +129,6 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   isTrialing: false,
   isActive: true,
   isLoading: true,
-  isTrialExpired: false,
   trialDaysRemaining: null,
   entitlements: defaultEntitlements,
   usage: defaultUsage,
@@ -356,8 +354,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
   const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
-  const isTrialExpired =
-    status === "expired" || (planType === "trial" && status === "canceled");
 
   const trialDaysRemaining = useMemo(() => {
     if (!isTrialing || !subscriptionData?.trialEndsAt) return null;
@@ -366,13 +362,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     const diff = trialEnd.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [isTrialing, subscriptionData?.trialEndsAt]);
-
-  // Show trial ended modal when trial expires
-  useEffect(() => {
-    if (isTrialExpired && !isLoading && isAuthenticated) {
-      setShowTrialEndedModal(true);
-    }
-  }, [isTrialExpired, isLoading, isAuthenticated]);
 
   // Handle plan selection from trial ended modal
   const handleSelectPlan = useCallback(
@@ -573,7 +562,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       isTrialing,
       isActive,
       isLoading,
-      isTrialExpired,
       trialDaysRemaining,
       entitlements,
       usage,
@@ -595,7 +583,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       isTrialing,
       isActive,
       isLoading,
-      isTrialExpired,
       trialDaysRemaining,
       entitlements,
       usage,

@@ -59,8 +59,6 @@ import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-import { TrialStatusBadge } from "@/components/TrialStatusBadge";
-import { RegisterPrompt } from "@/components/RegisterPrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
@@ -907,9 +905,6 @@ export default function SettingsScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <TrialStatusBadge />
-        <RegisterPrompt variant="card" showInSettings />
-
         {isAuthenticated ? (
           <SettingsCloudSync user={user} theme={theme} />
         ) : null}

@@ -4,12 +4,13 @@
  * =============================================================================
  *
  * The top-level navigation structure for ChefSpAIce.
- * Controls the main navigation flow based on auth, guest, and onboarding state.
+ * Controls the main navigation flow based on auth and onboarding state.
  *
  * NAVIGATION STRUCTURE:
  *
  * RootStack (this file)
- * ├── Onboarding - First-time user setup (for new guests)
+ * ├── Onboarding - First-time user setup
+ * ├── Auth - Sign in / Sign up
  * ├── Main (DrawerNavigator)
  * │   ├── TabNavigator
  * │   │   ├── InventoryStack (Inventory, ItemDetail)
@@ -27,19 +28,13 @@
  * ├── FoodCamera - AI food recognition
  * └── FoodSearch - USDA food database search
  *
- * GUEST USER FLOW (Apple-compliant):
- * - New mobile users start as guests with a trial period
- * - Guest ID and trial start date are stored locally
- * - Flow: New user → Onboarding → Main (during trial)
- * - When trial expires → Subscription screen
- * - Registration is optional and enables cloud sync
- *
  * NAVIGATION PRIORITY:
  * 1. Web + unauthenticated → Landing
- * 2. Guest trial expired → TrialExpired
- * 3. Authenticated + subscription inactive → Subscription
- * 4. Needs onboarding → Onboarding
- * 5. Otherwise → Main
+ * 2. Not authenticated + needsOnboarding → Onboarding
+ * 3. Not authenticated → Auth
+ * 4. Authenticated + needsOnboarding → Onboarding
+ * 5. Authenticated + subscription inactive → Subscription
+ * 6. Otherwise → Main
  *
  * @module navigation/RootStackNavigator
  */
@@ -74,11 +69,9 @@ const LazyTermsScreen = withSuspense(React.lazy(() => import("@/screens/web/Term
 const LazySupportScreen = withSuspense(React.lazy(() => import("@/screens/web/SupportScreen")));
 const LazyAttributionsScreen = withSuspense(React.lazy(() => import("@/screens/web/AttributionsScreen")));
 const LazySubscriptionScreen = withSuspense(React.lazy(() => import("@/screens/SubscriptionScreen")));
-const LazyTrialExpiredScreen = withSuspense(React.lazy(() => import("@/screens/TrialExpiredScreen")));
 const LazyGrocerySearchScreen = withSuspense(React.lazy(() => import("@/screens/GrocerySearchScreen")));
 
 const isWeb = Platform.OS === "web";
-const TRIAL_DURATION_DAYS = 7;
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -90,7 +83,6 @@ export type RootStackParamList = {
   Landing: undefined;
   LogoPreview: undefined;
   Subscription: { reason?: "expired" | "resubscribe" } | undefined;
-  TrialExpired: undefined;
   About: undefined;
   Privacy: undefined;
   Terms: undefined;
@@ -151,13 +143,12 @@ function AuthGuardedNavigator() {
   const { isActive, isLoading: subscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [isTrialExpired, setIsTrialExpired] = useState(false);
   const hasInitialized = useRef(false);
   const prevAuthState = useRef({ isAuthenticated });
   const prevSubscriptionState = useRef({ isActive, subscriptionLoading });
 
   useEffect(() => {
-    checkOnboardingAndGuestStatus();
+    checkOnboardingStatus();
   }, [isAuthenticated]);
 
   // Set up sign out callback to navigate to the appropriate screen
@@ -299,9 +290,9 @@ function AuthGuardedNavigator() {
 
   useEffect(() => {
     if (isLoading || authLoading || subscriptionLoading) return;
-    if (!isAuthenticated && !(!isWeb && !isTrialExpired)) return;
+    if (!isAuthenticated) return;
     if (needsOnboarding) return;
-    if (isAuthenticated && !isActive) return;
+    if (!isActive) return;
 
     const timer = setTimeout(async () => {
       const pending = await consumePendingDeepLink();
@@ -369,40 +360,15 @@ function AuthGuardedNavigator() {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [isLoading, authLoading, subscriptionLoading, isAuthenticated, isActive, needsOnboarding, isTrialExpired, navigation]);
+  }, [isLoading, authLoading, subscriptionLoading, isAuthenticated, isActive, needsOnboarding, navigation]);
 
-  const checkTrialExpired = (trialStartDate: string): boolean => {
-    const startDate = new Date(trialStartDate);
-    const now = new Date();
-    const diffTime = now.getTime() - startDate.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays > TRIAL_DURATION_DAYS;
-  };
-
-  const checkOnboardingAndGuestStatus = async () => {
+  const checkOnboardingStatus = async () => {
     try {
-      // Check onboarding status
       const needs = await storage.needsOnboarding();
       logger.log(`[Nav] Onboarding check: needsOnboarding=${needs}`);
       setNeedsOnboarding(needs);
-
-      // For mobile users, initialize or retrieve guest user info
-      if (!isWeb && !isAuthenticated) {
-        const guest = await storage.initializeGuestUser();
-
-        // Check if trial has expired
-        const expired = checkTrialExpired(guest.trialStartDate);
-        setIsTrialExpired(expired);
-        logger.log(
-          `[Nav] Guest user: id=${guest.guestId}, trialStart=${guest.trialStartDate}, expired=${expired}`,
-        );
-      } else {
-        // For authenticated users, trial expiration doesn't apply
-        // Subscription status is checked separately
-        setIsTrialExpired(false);
-      }
     } catch (err) {
-      logger.error("[Nav] Error checking onboarding/guest status:", err);
+      logger.error("[Nav] Error checking onboarding status:", err);
     } finally {
       setIsLoading(false);
     }
@@ -412,61 +378,33 @@ function AuthGuardedNavigator() {
     return <LoadingScreen />;
   }
 
-  // Determine initial route with guest user support:
-  // Priority order:
-  // 1. Web + unauthenticated → Landing (marketing page)
-  // 2. Guest trial expired → TrialExpired (must register/subscribe to continue)
-  // 3. Authenticated + subscription inactive → Subscription (resubscribe)
-  // 4. Needs onboarding → Onboarding (first-time setup)
-  // 5. Otherwise → Main (active trial or subscription)
   const getInitialRoute = (): keyof RootStackParamList => {
-    // Show landing page for web users who aren't authenticated
     if (isWeb && !isAuthenticated) {
       logger.log("[Nav] Initial route: Landing (web, unauthenticated)");
       return "Landing";
     }
 
-    // For mobile guest users (not authenticated)
-    if (!isAuthenticated) {
-      // Check if trial has expired - show trial expired screen for guests
-      if (isTrialExpired) {
-        logger.log(
-          "[Nav] Initial route: TrialExpired (guest trial expired)",
-        );
-        return "TrialExpired";
-      }
-
-      // New guest user or returning guest who needs onboarding
-      if (needsOnboarding) {
-        logger.log(
-          "[Nav] Initial route: Onboarding (new guest or needs onboarding)",
-        );
-        return "Onboarding";
-      }
-
-      // Returning guest with active trial - go to main app
-      logger.log(
-        "[Nav] Initial route: Main (guest with active trial)",
-      );
-      return "Main";
+    if (!isAuthenticated && needsOnboarding) {
+      logger.log("[Nav] Initial route: Onboarding (unauthenticated, needs onboarding)");
+      return "Onboarding";
     }
 
-    // For authenticated users
-    // User needs onboarding - send to Onboarding first
+    if (!isAuthenticated) {
+      logger.log("[Nav] Initial route: Auth (unauthenticated)");
+      return "Auth";
+    }
+
     if (needsOnboarding) {
       logger.log("[Nav] Initial route: Onboarding (authenticated, needsOnboarding=true)");
       return "Onboarding";
     }
 
-    // Authenticated user with no active subscription - send to Subscription to resubscribe
     if (!isActive) {
       logger.log("[Nav] Initial route: Subscription (authenticated, inactive subscription)");
       return "Subscription";
     }
 
-    logger.log(
-      "[Nav] Initial route: Main (authenticated, onboarding complete, active subscription)",
-    );
+    logger.log("[Nav] Initial route: Main (authenticated, active subscription)");
     return "Main";
   };
 
@@ -503,11 +441,6 @@ function AuthGuardedNavigator() {
       <Stack.Screen
         name="Subscription"
         component={LazySubscriptionScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="TrialExpired"
-        component={LazyTrialExpiredScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

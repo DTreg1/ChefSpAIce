@@ -4,7 +4,6 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
-import { RegisterPrompt } from "@/components/RegisterPrompt";
 import { Spacing, AppColors } from "@/constants/theme";
 
 interface InventoryFunFactProps {
@@ -26,7 +25,6 @@ export function InventoryFunFact({
 }: InventoryFunFactProps) {
   return (
     <View style={styles.listHeader}>
-      <RegisterPrompt variant="banner" />
       {showFunFact && (
         <GlassCard style={styles.funFactCard}>
           {funFact && (

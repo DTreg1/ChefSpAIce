@@ -19,7 +19,7 @@
  *
  * SECURITY:
  * - Handles 401 errors by auto-logging out
- * - Clears all local data on sign out
+ * - Clears auth credentials on sign out (local data preserved)
  * - Secure token storage
  *
  * PLATFORM HANDLING:
@@ -97,9 +97,6 @@ export interface AuthState {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
-  isGuestUser: boolean;
-  guestId: string | null;
-  guestTrialStartDate: Date | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -124,25 +121,12 @@ interface AuthContextType extends AuthState {
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
   isGoogleAuthAvailable: boolean;
-  initializeAsGuest: () => Promise<void>;
-  upgradeGuestToRegistered: (
-    email: string,
-    password: string,
-    displayName?: string,
-  ) => Promise<{ success: boolean; error?: string }>;
-  linkGuestToExistingAccount: (
-    email: string,
-    password: string,
-  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   isLoading: true,
-  isGuestUser: false,
-  guestId: null,
-  guestTrialStartDate: null,
   isAuthenticated: false,
   isAppleAuthAvailable: false,
   isGoogleAuthAvailable: false,
@@ -152,9 +136,6 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => ({ success: false }),
   signOut: async () => {},
   setSignOutCallback: () => {},
-  initializeAsGuest: async () => {},
-  upgradeGuestToRegistered: async () => ({ success: false }),
-  linkGuestToExistingAccount: async () => ({ success: false }),
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -211,9 +192,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     token: null,
     isLoading: true,
-    isGuestUser: false,
-    guestId: null,
-    guestTrialStartDate: null,
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const signOutCallbackRef = useRef<(() => void | Promise<void>) | null>(null);
@@ -274,26 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
             if (!verified) {
               logger.log("[Auth] Biometric verification failed, showing login");
-              const guestInfo = await storage.getGuestUserInfo();
-              if (guestInfo && guestInfo.isGuest) {
-                setState({
-                  user: null,
-                  token: null,
-                  isLoading: false,
-                  isGuestUser: true,
-                  guestId: guestInfo.guestId,
-                  guestTrialStartDate: guestInfo.trialStartDate
-                    ? new Date(guestInfo.trialStartDate)
-                    : null,
-                });
-              } else {
-                setState((prev) => ({
-                  ...prev,
-                  isLoading: false,
-                  user: null,
-                  token: null,
-                }));
-              }
+              setState({ user: null, token: null, isLoading: false });
               return;
             }
             logger.log("[Auth] Biometric verification successful");
@@ -323,9 +282,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user,
             token,
             isLoading: false,
-            isGuestUser: false,
-            guestId: null,
-            guestTrialStartDate: null,
           });
 
           // Automatically sync from cloud when app loads with stored auth
@@ -388,9 +344,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user: data.user,
                 token: data.token,
                 isLoading: false,
-                isGuestUser: false,
-                guestId: null,
-                guestTrialStartDate: null,
               });
 
               logger.log("[Auth] Restored session from cookie");
@@ -415,43 +368,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // No registered user found - check for existing guest session or create new one
-        const guestInfo = await storage.getGuestUserInfo();
-
-        if (guestInfo && guestInfo.isGuest) {
-          // Restore existing guest session
-          const trialStartDate = guestInfo.trialStartDate
-            ? new Date(guestInfo.trialStartDate)
-            : null;
-
-          logger.log("[Auth] Restored guest session:", guestInfo.guestId);
-
-          setState({
-            user: null,
-            token: null,
-            isLoading: false,
-            isGuestUser: true,
-            guestId: guestInfo.guestId,
-            guestTrialStartDate: trialStartDate,
-          });
-        } else {
-          // No guest session exists - initialize a new one
-          const newGuestInfo = await storage.initializeGuestUser();
-          const trialStartDate = newGuestInfo.trialStartDate
-            ? new Date(newGuestInfo.trialStartDate)
-            : null;
-
-          logger.log("[Auth] Initialized new guest session:", newGuestInfo.guestId);
-
-          setState({
-            user: null,
-            token: null,
-            isLoading: false,
-            isGuestUser: true,
-            guestId: newGuestInfo.guestId,
-            guestTrialStartDate: trialStartDate,
-          });
-        }
+        // No stored auth found - user is unauthenticated
+        setState({ user: null, token: null, isLoading: false });
       } catch (error) {
         logger.error("Error loading auth state:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -506,33 +424,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .syncPendingPurchases()
         .catch((err) => logger.warn("Failed to sync pending purchases:", err));
 
-      // Check if user was a guest and migrate their data
-      const isGuest = await storage.getIsGuestUser();
-      if (isGuest) {
-        logger.log("[SignIn] Migrating guest data to account...");
-        const migrationResult = await storage.migrateGuestDataToAccount(
-          data.token,
-        );
-        if (migrationResult.success) {
-          logger.log("[SignIn] Guest data migration successful");
-        } else {
-          logger.log(
-            "[SignIn] Guest data migration failed:",
-            migrationResult.error,
-          );
-        }
-      }
-
-      // Clear guest status since user is now authenticated
-      await storage.clearGuestUser();
-
       setState({
         user: data.user,
         token: data.token,
         isLoading: false,
-        isGuestUser: false,
-        guestId: null,
-        guestTrialStartDate: null,
       });
 
       await storage.syncFromCloud();
@@ -613,40 +508,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logger.warn("Failed to sync pending purchases:", err),
           );
 
-        // Check if user was a guest and migrate their data
-        const isGuest = await storage.getIsGuestUser();
-        if (isGuest) {
-          logger.log("[SignUp] Migrating guest data to new account...");
-          const migrationResult = await storage.migrateGuestDataToAccount(
-            data.token,
-          );
-          if (migrationResult.success) {
-            logger.log("[SignUp] Guest data migration successful");
-          } else {
-            logger.log(
-              "[SignUp] Guest data migration failed:",
-              migrationResult.error,
-            );
-            // Continue anyway - user can still use the app, data will be local
-          }
-        } else {
-          // Reset onboarding status for non-guest new users
-          // This prevents stale local data from previous sessions from affecting the new user
-          await storage.resetOnboarding();
-          // Sync fresh state to cloud (with onboarding reset)
-          await storage.syncToCloud();
-        }
-
-        // Clear guest status since user is now authenticated
-        await storage.clearGuestUser();
+        await storage.resetOnboarding();
+        await storage.syncToCloud();
 
         setState({
           user: data.user,
           token: data.token,
           isLoading: false,
-          isGuestUser: false,
-          guestId: null,
-          guestTrialStartDate: null,
         });
 
         return { success: true };
@@ -660,7 +528,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      // Call logout endpoint to clear cookie
       const baseUrl = getApiUrl();
       const logoutUrl = new URL("/api/auth/logout", baseUrl);
       const token = state.token;
@@ -669,62 +536,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }).catch(() => {
-        // Ignore network errors during logout
-      });
+      }).catch(() => {});
 
-      // Clear stored auth data
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
       await clearBiometricPreference();
 
-      // Reset onboarding status so the app treats this as a fresh user
-      // This is important when account is deleted and 401 forces sign out
-      await storage.resetOnboarding();
-
-      // Clear all user-specific data so the new guest starts fresh
-      await Promise.all([
-        AsyncStorage.removeItem("@chefspaice/inventory"),
-        AsyncStorage.removeItem("@chefspaice/recipes"),
-        AsyncStorage.removeItem("@chefspaice/preferences"),
-        AsyncStorage.removeItem("@chefspaice/meal_plans"),
-        AsyncStorage.removeItem("@chefspaice/shopping_list"),
-        AsyncStorage.removeItem("@chefspaice/chat_history"),
-        AsyncStorage.removeItem("@chefspaice/user_profile"),
-        AsyncStorage.removeItem("@chefspaice/cookware"),
-        AsyncStorage.removeItem("@chefspaice/custom_storage_locations"),
-        AsyncStorage.removeItem("@chefspaice/waste_log"),
-        AsyncStorage.removeItem("@chefspaice/consumed_log"),
-        AsyncStorage.removeItem("@chefspaice/analytics"),
-        AsyncStorage.removeItem("@chefspaice/onboarding_step"),
-        AsyncStorage.removeItem("@chefspaice/pending_purchase"),
-        AsyncStorage.removeItem("@chefspaice/register_prompt_dismissed_at"),
-        AsyncStorage.removeItem("@chefspaice/onboarding"),
-      ]);
-
-      // Clear all cached query data for security
       queryClient.clear();
 
-      // Clear any previous guest data (old guest data is gone after sign out)
-      await storage.clearGuestUser();
+      logger.log("[Auth] Signed out");
 
-      // Initialize a new guest session for the signed out user
-      const newGuestInfo = await storage.initializeGuestUser();
-      const trialStartDate = newGuestInfo.trialStartDate
-        ? new Date(newGuestInfo.trialStartDate)
-        : null;
-
-      logger.log("[Auth] Signed out, initialized new guest session:", newGuestInfo.guestId);
-
-      // Reset auth state and set up as new guest
-      setState({
-        user: null,
-        token: null,
-        isLoading: false,
-        isGuestUser: true,
-        guestId: newGuestInfo.guestId,
-        guestTrialStartDate: trialStartDate,
-      });
+      setState({ user: null, token: null, isLoading: false });
 
       if (signOutCallbackRef.current) {
         await signOutCallbackRef.current();
@@ -934,38 +756,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logger.warn("Failed to sync pending purchases:", err),
           );
 
-        const isGuest = await storage.getIsGuestUser();
-        if (isGuest) {
-          logger.log("[AppleAuth] Migrating guest data to account...");
-          const migrationResult = await storage.migrateGuestDataToAccount(
-            authToken,
-          );
-          if (migrationResult.success) {
-            logger.log("[AppleAuth] Guest data migration successful");
-          } else {
-            logger.log(
-              "[AppleAuth] Guest data migration failed:",
-              migrationResult.error,
-            );
-          }
-        }
-
-        const isNewUser = userData.isNewUser === true && !isGuest;
+        const isNewUser = userData.isNewUser === true;
         logger.log("[Auth] Apple sign-in result - isNewUser:", isNewUser);
 
         if (isNewUser) {
           await storage.resetForNewUser();
         }
 
-        await storage.clearGuestUser();
-
         setState({
           user: authData.user,
           token: authToken,
           isLoading: false,
-          isGuestUser: false,
-          guestId: null,
-          guestTrialStartDate: null,
         });
 
         if (isNewUser) {
@@ -1109,44 +910,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logger.warn("Failed to sync pending purchases:", err),
           );
 
-        // Check if user was a guest and migrate their data FIRST
-        const isGuest = await storage.getIsGuestUser();
-        if (isGuest) {
-          logger.log("[GoogleAuth] Migrating guest data to account...");
-          const migrationResult = await storage.migrateGuestDataToAccount(
-            authToken,
-          );
-          if (migrationResult.success) {
-            logger.log("[GoogleAuth] Guest data migration successful");
-          } else {
-            logger.log(
-              "[GoogleAuth] Guest data migration failed:",
-              migrationResult.error,
-            );
-          }
-        }
-
-        // Reset all local data for new users to ensure they see onboarding
-        // This clears any leftover data from previous accounts
-        // Note: isNewUser is returned inside data.user from the server
-        // But if they were a guest, don't reset - use their migrated data
-        const isNewUser = userData.isNewUser === true && !isGuest;
+        const isNewUser = userData.isNewUser === true;
         logger.log("[Auth] Google sign-in result - isNewUser:", isNewUser);
 
         if (isNewUser) {
           await storage.resetForNewUser();
         }
 
-        // Clear guest status since user is now authenticated
-        await storage.clearGuestUser();
-
         setState({
           user: authData.user,
           token: authToken,
           isLoading: false,
-          isGuestUser: false,
-          guestId: null,
-          guestTrialStartDate: null,
         });
 
         if (isNewUser) {
@@ -1167,58 +941,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isGoogleAuthAvailable = !isWeb && !!promptGoogleAsync;
 
-  const initializeAsGuest = useCallback(async () => {
-    try {
-      // Clear any existing auth state first
-      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
-      await storage.clearAuthToken();
-      await storage.clearGuestUser();
-
-      // Initialize a new guest session
-      const newGuestInfo = await storage.initializeGuestUser();
-      const trialStartDate = newGuestInfo.trialStartDate
-        ? new Date(newGuestInfo.trialStartDate)
-        : null;
-
-      logger.log("[Auth] Initialized as guest:", newGuestInfo.guestId);
-
-      setState({
-        user: null,
-        token: null,
-        isLoading: false,
-        isGuestUser: true,
-        guestId: newGuestInfo.guestId,
-        guestTrialStartDate: trialStartDate,
-      });
-    } catch (error) {
-      logger.error("Error initializing as guest:", error);
-    }
-  }, []);
-
-  const upgradeGuestToRegistered = useCallback(
-    async (email: string, password: string, displayName?: string) => {
-      // This is essentially signUp, but ensures we're coming from a guest state
-      // The signUp function already handles guest data migration
-      if (!state.isGuestUser) {
-        return { success: false, error: "User is not a guest" };
-      }
-      return signUp(email, password, displayName);
-    },
-    [state.isGuestUser, signUp],
-  );
-
-  const linkGuestToExistingAccount = useCallback(
-    async (email: string, password: string) => {
-      // This is essentially signIn, but ensures we're coming from a guest state
-      // The signIn function already handles guest data migration
-      if (!state.isGuestUser) {
-        return { success: false, error: "User is not a guest" };
-      }
-      return signIn(email, password);
-    },
-    [state.isGuestUser, signIn],
-  );
-
   const value = useMemo(
     () => ({
       ...state,
@@ -1231,9 +953,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOut,
       setSignOutCallback,
-      initializeAsGuest,
-      upgradeGuestToRegistered,
-      linkGuestToExistingAccount,
     }),
     [
       state,
@@ -1245,9 +964,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOut,
       setSignOutCallback,
-      initializeAsGuest,
-      upgradeGuestToRegistered,
-      linkGuestToExistingAccount,
     ],
   );
 
