@@ -31,8 +31,8 @@
   
   <!-- Background with green + glass effect -->
   <g clip-path="url(#roundedClip)">
-    <!-- Solid green base (matches AppLogo #1a2e05) -->
-    <rect x="0" y="0" width="180" height="180" fill="#1a2e05"/>
+    <!-- Solid green base (matches AppLogo #27AE60) -->
+    <rect x="0" y="0" width="180" height="180" fill="#27AE60"/>
     
     <!-- Glass overlay -->
     <rect x="0" y="0" width="180" height="180" fill="url(#glassGradient)"/>

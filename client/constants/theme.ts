@@ -18,7 +18,7 @@ export const AppColors = {
   confidenceLow: "#f97316",
   paymentWarning: "#b45309",
   offline: "#f59e0b",
-  backgroundBase: "#1a2e05",
+  backgroundBase: "#27AE60",
   backgroundHighlight: "#3d6b1c",
   backgroundHighlightLight: "#4a7a25",
   expiryUrgent: "#ef4444",
