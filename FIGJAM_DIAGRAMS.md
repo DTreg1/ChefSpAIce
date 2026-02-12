@@ -16,6 +16,7 @@ Reference links to all architecture and flow diagrams for the project. Last upda
 | USDA Barcode Lookup Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/9c676233-5c90-4e25-b13f-049696d1270f?utm_source=other&utm_content=edit_in_figjam) |
 | USDA Portion Conversion System | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/9de20c6a-d2ec-4c74-8148-971b614c70e1?utm_source=other&utm_content=edit_in_figjam) |
 | Food Item Data Flow: Search to Inventory | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/e7a1b8f6-eae7-406d-9ea7-516db525f8ef?utm_source=other&utm_content=edit_in_figjam) |
+| Instacart Integration Flow | [View in FigJam](https://www.figma.com/online-whiteboard/create-diagram/99f40702-eb9f-4e0e-a3f5-693e8eeca6c5?utm_source=other&utm_content=edit_in_figjam) |
 
 ## Sequence Diagrams
 
