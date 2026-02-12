@@ -7,6 +7,7 @@ import {
   Alert,
   AppState,
   AppStateStatus,
+  ActivityIndicator,
 } from "react-native";
 import { logger } from "@/lib/logger";
 import Animated, {
@@ -33,7 +34,6 @@ import * as FileSystem from "expo-file-system/legacy";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { EmptyState } from "@/components/EmptyState";
 import {
   ImageAnalysisResult,
@@ -394,7 +394,7 @@ export default function FoodCameraScreen() {
     }
   };
 
-  if (!permission) return <CookPotLoader />;
+  if (!permission) return <ActivityIndicator size="large" />;
 
   if (!permission.granted) {
     return (

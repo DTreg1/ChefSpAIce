@@ -45,7 +45,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import { View, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import { logger } from "@/lib/logger";
@@ -56,8 +56,6 @@ import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { storage } from "@/lib/storage";
-import { CookPotLoader } from "@/components/CookPotLoader";
-
 const LazyDrawerNavigator = withSuspense(React.lazy(() => import("@/navigation/DrawerNavigator")));
 const LazyAddItemScreen = withSuspense(React.lazy(() => import("@/screens/AddItemScreen")));
 const LazyAddFoodBatchScreen = withSuspense(React.lazy(() => import("@/screens/AddFoodBatchScreen")));
@@ -135,7 +133,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function LoadingScreen() {
   return (
     <View style={styles.loadingContainer}>
-      <CookPotLoader size="lg" />
+      <ActivityIndicator size="large" />
     </View>
   );
 }

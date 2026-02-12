@@ -6,6 +6,7 @@ import {
   ScrollView,
   Platform,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -25,7 +26,6 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -1112,7 +1112,8 @@ export default function OnboardingScreen() {
         style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       >
         <View style={styles.loadingContainer}>
-          <CookPotLoader size="lg" text="Loading..." />
+          <ActivityIndicator size="large" />
+          <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading...</ThemedText>
         </View>
       </View>
     );

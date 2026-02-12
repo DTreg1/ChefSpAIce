@@ -32,7 +32,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { MenuItemConfig } from "@/components/HeaderMenu";
 import { GlassButton } from "@/components/GlassButton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -641,7 +640,8 @@ export default function CookwareScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <CookPotLoader size="lg" text="Loading cookware..." />
+        <ActivityIndicator size="large" />
+        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading cookware...</ThemedText>
       </ThemedView>
     );
   }

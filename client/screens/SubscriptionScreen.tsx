@@ -18,7 +18,6 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -454,7 +453,8 @@ export default function SubscriptionScreen() {
           { backgroundColor: theme.backgroundRoot },
         ]}
       >
-        <CookPotLoader size="lg" text="Loading subscription..." />
+        <ActivityIndicator size="large" />
+        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading subscription...</ThemedText>
       </View>
     );
   }

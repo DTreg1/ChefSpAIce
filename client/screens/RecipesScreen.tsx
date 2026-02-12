@@ -42,6 +42,7 @@ import {
   Platform,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,7 +60,6 @@ import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { RecipeSettingsModal } from "@/components/RecipeSettingsModal";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import {
@@ -706,18 +706,16 @@ export default function RecipesScreen() {
                       : "Almost done"
               }
             >
-              <CookPotLoader
-                size="lg"
-                text={
-                  progressStage === "loading"
-                    ? "Loading your kitchen..."
-                    : progressStage === "recipe"
-                      ? "Creating your recipe..."
-                      : progressStage === "image"
-                        ? "Generating image..."
-                        : "Almost done..."
-                }
-              />
+              <ActivityIndicator size="large" />
+              <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>
+                {progressStage === "loading"
+                  ? "Loading your kitchen..."
+                  : progressStage === "recipe"
+                    ? "Creating your recipe..."
+                    : progressStage === "image"
+                      ? "Generating image..."
+                      : "Almost done..."}
+              </ThemedText>
             </View>
           </View>
         </View>

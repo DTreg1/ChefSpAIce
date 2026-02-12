@@ -6,6 +6,7 @@ import {
   Platform,
   AppState,
   AppStateStatus,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -21,7 +22,6 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -83,7 +83,7 @@ export default function BarcodeScannerScreen() {
     navigation.goBack();
   };
 
-  if (!permission) return <CookPotLoader />;
+  if (!permission) return <ActivityIndicator size="large" />;
 
   if (!permission.granted) {
     return (

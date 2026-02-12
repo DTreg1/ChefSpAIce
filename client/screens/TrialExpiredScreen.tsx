@@ -20,7 +20,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -128,7 +127,8 @@ export default function TrialExpiredScreen() {
           { backgroundColor: theme.backgroundRoot },
         ]}
       >
-        <CookPotLoader size="lg" text="Loading..." />
+        <ActivityIndicator size="large" />
+        <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading...</ThemedText>
       </ThemedView>
     );
   }

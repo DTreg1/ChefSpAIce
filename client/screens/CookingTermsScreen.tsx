@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Linking,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -20,7 +21,6 @@ import { MenuItemConfig } from "@/components/HeaderMenu";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { CookingTerm } from "@/components/TermHighlighter";
@@ -179,7 +179,8 @@ export default function CookingTermsScreen() {
     if (isLoading) {
       return (
         <View style={styles.emptyState}>
-          <CookPotLoader size="lg" text="Loading cooking terms..." />
+          <ActivityIndicator size="large" />
+          <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Loading cooking terms...</ThemedText>
         </View>
       );
     }

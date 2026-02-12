@@ -28,7 +28,6 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassButton } from "@/components/GlassButton";
-import { CookPotLoader } from "@/components/CookPotLoader";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
@@ -309,7 +308,7 @@ export default function IngredientScannerScreen() {
     });
   };
 
-  if (!permission) return <CookPotLoader />;
+  if (!permission) return <ActivityIndicator size="large" />;
 
   if (!permission.granted) {
     return (

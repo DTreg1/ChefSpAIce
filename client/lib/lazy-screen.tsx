@@ -1,11 +1,10 @@
 import React, { Suspense } from "react";
-import { View, StyleSheet } from "react-native";
-import { CookPotLoader } from "@/components/CookPotLoader";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 
 function LazyFallback() {
   return (
     <View style={styles.container}>
-      <CookPotLoader size="lg" />
+      <ActivityIndicator size="large" />
     </View>
   );
 }
