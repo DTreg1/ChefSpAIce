@@ -541,6 +541,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       await storage.clearAuthToken();
       await clearBiometricPreference();
+      await storage.resetOnboarding();
 
       queryClient.clear();
 
