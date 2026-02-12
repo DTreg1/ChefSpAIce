@@ -540,6 +540,7 @@ export default function SettingsScreen() {
       }
 
       await storage.deleteAccount();
+      await storage.resetOnboarding();
       await signOut();
 
       setShowDeleteModal(false);

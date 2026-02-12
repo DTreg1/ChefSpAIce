@@ -160,13 +160,32 @@ function AuthGuardedNavigator() {
     checkOnboardingAndGuestStatus();
   }, [isAuthenticated]);
 
-  // Set up sign out callback to navigate to Landing (web) or Auth (mobile)
+  // Set up sign out callback to navigate to the appropriate screen
+  // After account deletion, onboarding is reset so user should see Onboarding
+  // After regular sign out, user should see Auth (mobile) or Landing (web)
   useEffect(() => {
-    setSignOutCallback(() => {
+    setSignOutCallback(async () => {
+      if (isWeb) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Landing" }],
+          }),
+        );
+        return;
+      }
+
+      let needs = false;
+      try {
+        needs = await storage.needsOnboarding();
+      } catch (err) {
+        logger.error("[Nav] Error checking onboarding in sign-out callback:", err);
+      }
+      logger.log(`[Nav] Sign-out callback: needsOnboarding=${needs}`);
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Auth" }],
+          routes: [{ name: needs ? "Onboarding" : "Auth" }],
         }),
       );
     });
@@ -180,17 +199,36 @@ function AuthGuardedNavigator() {
       return;
     }
 
-    // If user was authenticated but now is not, redirect to Landing (web) or Auth (mobile)
+    // If user was authenticated but now is not, redirect appropriately
     const wasAuthenticated = prevAuthState.current.isAuthenticated;
     const isNowUnauthenticated = !isAuthenticated;
 
     if (wasAuthenticated && isNowUnauthenticated) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: isWeb ? "Landing" : "Auth" }],
-        }),
-      );
+      (async () => {
+        if (isWeb) {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: "Landing" }],
+            }),
+          );
+          return;
+        }
+
+        let needs = false;
+        try {
+          needs = await storage.needsOnboarding();
+        } catch (err) {
+          logger.error("[Nav] Error checking onboarding in auth change:", err);
+        }
+        logger.log(`[Nav] Auth state change: needsOnboarding=${needs}`);
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: needs ? "Onboarding" : "Auth" }],
+          }),
+        );
+      })();
     }
 
     prevAuthState.current = { isAuthenticated };

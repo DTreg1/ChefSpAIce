@@ -120,7 +120,7 @@ interface AuthContextType extends AuthState {
     selectedTier?: "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  setSignOutCallback: (callback: () => void) => void;
+  setSignOutCallback: (callback: () => void | Promise<void>) => void;
   isAuthenticated: boolean;
   isAppleAuthAvailable: boolean;
   isGoogleAuthAvailable: boolean;
@@ -216,10 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     guestTrialStartDate: null,
   });
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
-  const signOutCallbackRef = useRef<(() => void) | null>(null);
+  const signOutCallbackRef = useRef<(() => void | Promise<void>) | null>(null);
   const signOutRef = useRef<(() => Promise<void>) | null>(null);
 
-  const setSignOutCallback = useCallback((callback: () => void) => {
+  const setSignOutCallback = useCallback((callback: () => void | Promise<void>) => {
     signOutCallbackRef.current = callback;
   }, []);
 
@@ -726,9 +726,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         guestTrialStartDate: trialStartDate,
       });
 
-      // Call navigation callback to redirect to SignIn
       if (signOutCallbackRef.current) {
-        signOutCallbackRef.current();
+        await signOutCallbackRef.current();
       }
     } catch (error) {
       logger.error("Sign out error:", error);
