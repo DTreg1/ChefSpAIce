@@ -28,6 +28,9 @@ const LazyTermsScreen = withSuspense(
 const LazySupportScreen = withSuspense(
   React.lazy(() => import("@/screens/web/SupportScreen"))
 );
+const LazyCookPotPreviewScreen = withSuspense(
+  React.lazy(() => import("@/screens/web/CookPotPreviewScreen"))
+);
 
 const PAGE_META: Record<string, { title: string; description: string }> = {
   "/": {
@@ -87,6 +90,7 @@ function WebRoutes() {
         <Route path="/privacy" component={LazyPrivacyScreen} />
         <Route path="/terms" component={LazyTermsScreen} />
         <Route path="/support" component={LazySupportScreen} />
+        <Route path="/cookpot-preview" component={LazyCookPotPreviewScreen} />
       </View>
     </View>
   );
