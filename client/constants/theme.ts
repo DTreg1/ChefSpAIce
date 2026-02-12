@@ -18,7 +18,7 @@ export const AppColors = {
   confidenceLow: "#f97316",
   paymentWarning: "#b45309",
   offline: "#f59e0b",
-  backgroundBase: "#27AE60",
+  backgroundBase: "#1a2e05",
   backgroundHighlight: "#3d6b1c",
   backgroundHighlightLight: "#4a7a25",
   expiryUrgent: "#ef4444",
@@ -29,7 +29,7 @@ export const AppColors = {
   expiryTextLight: "#ffffff",
   expiryTextSoon: "#92400e",
   expiryTextNeutral: "#374151",
-  sourceOpenFoodFacts: "#27AE60",
+  sourceOpenFoodFacts: "#1a2e05",
   sourceLocal: "#6C757D",
 };
 
@@ -264,7 +264,7 @@ export const WebInfoColors = {
   textMuted: "rgba(255, 255, 255, 0.7)",
   footerBg: "rgba(0, 0, 0, 0.3)",
   iconLight: "rgba(255, 255, 255, 0.8)",
-  brandGreen: "#27AE60",
+  brandGreen: "#1a2e05",
 };
 
 export const Fonts = Platform.select({

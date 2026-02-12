@@ -190,11 +190,11 @@ export async function exportInventoryToPDF(
           .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #27AE60;
+            border-bottom: 2px solid #1a2e05;
             padding-bottom: 15px;
           }
           .header h1 {
-            color: #27AE60;
+            color: #1a2e05;
             margin: 0;
           }
           .header p {
@@ -205,7 +205,7 @@ export async function exportInventoryToPDF(
             margin-bottom: 25px;
           }
           .location-section h2 {
-            color: #27AE60;
+            color: #1a2e05;
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
           }
@@ -324,11 +324,11 @@ export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
           .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #27AE60;
+            border-bottom: 2px solid #1a2e05;
             padding-bottom: 15px;
           }
           .header h1 {
-            color: #27AE60;
+            color: #1a2e05;
             margin: 0;
           }
           .header p {
@@ -341,7 +341,7 @@ export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
             border-bottom: 1px solid #eee;
           }
           .recipe-card h2 {
-            color: #27AE60;
+            color: #1a2e05;
             margin-bottom: 5px;
           }
           .description {
@@ -362,7 +362,7 @@ export async function exportRecipesToPDF(recipes: Recipe[]): Promise<void> {
           .tag {
             display: inline-block;
             background: #e8f5e9;
-            color: #27AE60;
+            color: #1a2e05;
             padding: 4px 10px;
             border-radius: 12px;
             margin-right: 8px;
@@ -433,7 +433,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
             margin: 0 auto;
           }
           h1 {
-            color: #27AE60;
+            color: #1a2e05;
             margin-bottom: 10px;
             font-size: 28px;
           }
@@ -463,7 +463,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
           .meta-value {
             font-size: 18px;
             font-weight: 600;
-            color: #27AE60;
+            color: #1a2e05;
           }
           .tags {
             margin-bottom: 25px;
@@ -471,7 +471,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
           .tag {
             display: inline-block;
             background: #e8f5e9;
-            color: #27AE60;
+            color: #1a2e05;
             padding: 5px 12px;
             border-radius: 15px;
             margin-right: 8px;
@@ -481,9 +481,9 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
             margin-bottom: 25px;
           }
           .section h2 {
-            color: #27AE60;
+            color: #1a2e05;
             font-size: 18px;
-            border-bottom: 2px solid #27AE60;
+            border-bottom: 2px solid #1a2e05;
             padding-bottom: 5px;
             margin-bottom: 15px;
           }
@@ -500,7 +500,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
           }
           .quantity {
             font-weight: 600;
-            color: #27AE60;
+            color: #1a2e05;
           }
           .optional {
             color: #999;
@@ -523,7 +523,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
             left: 0;
             width: 35px;
             height: 35px;
-            background: #27AE60;
+            background: #1a2e05;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -546,7 +546,7 @@ export async function exportSingleRecipeToPDF(recipe: Recipe): Promise<void> {
           .nutrition-value {
             font-size: 24px;
             font-weight: 700;
-            color: #27AE60;
+            color: #1a2e05;
           }
           .nutrition-label {
             font-size: 12px;

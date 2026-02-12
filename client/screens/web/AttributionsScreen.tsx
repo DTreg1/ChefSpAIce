@@ -11,7 +11,7 @@ import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigation } from "@react-navigation/native";
 
-const BRAND_GREEN = "#27AE60";
+const BRAND_GREEN = "#1a2e05";
 const isWeb = Platform.OS === "web";
 
 function getThemeColors(isDark: boolean) {
