@@ -9,7 +9,7 @@ export function webAccessibilityProps(onPress?: () => void) {
     tabIndex: 0 as 0,
     "data-focusable": true,
     onKeyPress: onPress
-      ? (e: any) => {
+      ? (e: { nativeEvent?: { key?: string }; key?: string; preventDefault?: () => void }) => {
           const key = e.nativeEvent?.key ?? e.key;
           if (key === "Enter" || key === " ") {
             e.preventDefault?.();

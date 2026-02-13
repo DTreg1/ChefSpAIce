@@ -6,13 +6,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type { Recipe } from "@/lib/storage";
+import type { ThemeColors } from "@/lib/types";
 
 interface RecipeHeaderProps {
   recipe: Recipe;
   selectedServings: number;
   termHighlightingEnabled: boolean;
   onTermPress: (term: CookingTerm) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function RecipeHeader({

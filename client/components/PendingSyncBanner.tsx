@@ -119,7 +119,7 @@ export function PendingSyncBanner() {
       ]}
       pointerEvents={shouldShow ? "box-none" : "none"}
       accessibilityLiveRegion="polite"
-      accessibilityRole={"text" as any}
+      accessibilityRole="summary"
       accessibilityLabel={`${totalPending} changes pending sync`}
       testID="banner-pending-sync"
       data-testid="banner-pending-sync"

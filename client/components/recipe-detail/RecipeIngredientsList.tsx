@@ -12,6 +12,7 @@ import {
   IngredientAvailability,
 } from "@/lib/storage";
 import { hasSwapsAvailable } from "@/lib/ingredient-swaps";
+import type { ThemeColors } from "@/lib/types";
 
 function getAvailabilityIndicator(status?: IngredientAvailability): {
   color: string;
@@ -41,7 +42,7 @@ interface RecipeIngredientsListProps {
   instacartConfigured: boolean | null;
   instacartLoading: boolean;
   onOrderInstacart: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function RecipeIngredientsList({

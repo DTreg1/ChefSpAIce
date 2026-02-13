@@ -4,7 +4,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { DrawerNavigationProp } from "@react-navigation/drawer";
 import type { IdentifiedFood } from "@/components/ImageAnalysisResult";
-import type { Recipe } from "@/lib/storage";
+import type { Recipe, RecipeIngredient, NutritionInfo } from "@/lib/storage";
+import { Colors } from "@/constants/theme";
+
+export type ThemeColors = typeof Colors.light;
 
 export type RecipeSettings = {
   servings: number;
@@ -209,38 +212,23 @@ export interface GeneratedRecipe {
   id?: string;
   title: string;
   description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: string;
-    unit?: string;
-    notes?: string;
-  }>;
-  instructions: Array<{
-    step: number;
-    text: string;
-    time?: number;
-  }>;
+  ingredients: RecipeIngredient[];
+  instructions: string[];
   prepTime?: number;
   cookTime?: number;
   servings?: number;
   cuisine?: string;
-  nutrition?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    fiber?: number;
-    sugar?: number;
-    sodium?: number;
-    servingSize?: string;
-  };
+  nutrition?: NutritionInfo;
   requiredCookware?: string[];
+  optionalCookware?: string[];
+  usedExpiringItems?: string[];
   tags?: string[];
   imageUri?: string;
 }
 
 export interface ImageGenerationResponse {
   imageUrl?: string;
+  imageBase64?: string;
   url?: string;
 }
 

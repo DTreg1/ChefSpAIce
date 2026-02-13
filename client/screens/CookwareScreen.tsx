@@ -39,6 +39,7 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
 import { getCookwareImage } from "@/assets/cookware";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import type { RootNavigation } from "@/lib/types";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
 import { syncManager } from "@/lib/sync-manager";
@@ -708,9 +709,9 @@ export default function CookwareScreen() {
           onUpgrade={() => {
             setShowUpgradePrompt(false);
             // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
-            const rootNav = navigation.getParent()?.getParent()?.getParent();
+            const rootNav = navigation.getParent()?.getParent()?.getParent() as RootNavigation | undefined;
             if (rootNav) {
-              rootNav.navigate("Main" as any, {
+              rootNav.navigate("Main", {
                 screen: "Tabs",
                 params: {
                   screen: "ProfileTab",

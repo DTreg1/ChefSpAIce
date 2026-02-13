@@ -477,7 +477,7 @@ export default function ItemDetailScreen() {
                 accessibilityLabel={`Select storage location ${loc.label}`}
               >
                 <Feather
-                  name={loc.icon as any}
+                  name={loc.icon as keyof typeof Feather.glyphMap}
                   size={24}
                   color={
                     item.storageLocation === loc.key ? "#FFFFFF" : theme.text

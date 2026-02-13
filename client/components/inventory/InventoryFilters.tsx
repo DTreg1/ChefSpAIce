@@ -4,6 +4,7 @@ import { View, StyleSheet, Pressable } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
 import { FoodGroup, FOOD_GROUPS } from "./inventory-utils";
+import type { ThemeColors } from "@/lib/types";
 
 export type { FoodGroup };
 export { FOOD_GROUPS };
@@ -11,7 +12,7 @@ export { FOOD_GROUPS };
 interface InventoryFiltersProps {
   selectedFoodGroups: FoodGroup[];
   onToggleFoodGroup: (group: FoodGroup) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function InventoryFilters({

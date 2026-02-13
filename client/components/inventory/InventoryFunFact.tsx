@@ -5,13 +5,14 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface InventoryFunFactProps {
   funFact: string | null;
   funFactLoading: boolean;
   funFactTimeRemaining: string;
   onRefresh: () => void;
-  theme: any;
+  theme: ThemeColors;
   showFunFact: boolean;
 }
 

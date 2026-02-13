@@ -157,8 +157,8 @@ export function CancellationFlowModal({
       Alert.alert("Offer Applied!", "Your 50% discount has been applied for the next 3 months.");
       onCanceled();
       handleClose();
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Something went wrong. Please try again.");
+    } catch (error: unknown) {
+      Alert.alert("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -182,8 +182,8 @@ export function CancellationFlowModal({
       Alert.alert("Subscription Paused", `Your subscription has been paused for ${pauseDuration} month${pauseDuration > 1 ? "s" : ""}.`);
       onCanceled();
       handleClose();
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Something went wrong. Please try again.");
+    } catch (error: unknown) {
+      Alert.alert("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -211,8 +211,8 @@ export function CancellationFlowModal({
       Alert.alert("Subscription Canceled", "Your subscription will remain active until the end of your current billing period.");
       onCanceled();
       handleClose();
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Something went wrong. Please try again.");
+    } catch (error: unknown) {
+      Alert.alert("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

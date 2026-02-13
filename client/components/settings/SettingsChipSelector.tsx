@@ -1,14 +1,17 @@
-import React from "react";
+import React, { ComponentProps } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
+
+type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
 interface ChipOption {
   value: string;
   label: string;
-  icon?: string;
+  icon?: FeatherIconName;
 }
 
 interface SettingsChipSelectorProps {
@@ -19,7 +22,7 @@ interface SettingsChipSelectorProps {
   onToggle: (value: string) => void;
   onAdd?: () => void;
   selectedColor?: string;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsChipSelector({
@@ -63,7 +66,7 @@ export function SettingsChipSelector({
             >
               {option.icon ? (
                 <Feather
-                  name={option.icon as any}
+                  name={option.icon!}
                   size={14}
                   color={isSelected ? "#FFFFFF" : theme.text}
                 />
@@ -86,7 +89,7 @@ export function SettingsChipSelector({
               {
                 backgroundColor: "transparent",
                 borderColor: theme.border,
-                borderStyle: "dashed" as any,
+                borderStyle: "dashed" as const,
               },
             ]}
             data-testid={`button-${title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-add-new`}

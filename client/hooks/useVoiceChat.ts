@@ -123,7 +123,7 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
         uri,
         type: "audio/m4a",
         name: "recording.m4a",
-      } as any);
+      } as unknown as Blob);
 
       const response = await fetch(url.toString(), {
         method: "POST",
@@ -137,7 +137,7 @@ export function useVoiceChat(options: VoiceChatOptions = {}) {
         throw new Error(errorData.message || "Voice chat request failed");
       }
 
-      const data = (await response.json()).data as any;
+      const data = (await response.json()).data as { userTranscript: string; assistantMessage: string; audioUrl?: string };
       const { userTranscript, assistantMessage, audioUrl } = data;
 
       const userMessage: VoiceChatMessage = {

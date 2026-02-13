@@ -51,7 +51,6 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 
@@ -74,7 +73,7 @@ import {
 import { storage, Recipe, FoodItem } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { exportRecipesToCSV, exportRecipesToPDF } from "@/lib/export";
-import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import type { ApplianceItem, RecipesNavigation } from "@/lib/types";
 import { useSearch } from "@/contexts/SearchContext";
 import { logger } from "@/lib/logger";
 import { useOnlineStatus } from "@/hooks/useSyncStatus";
@@ -86,7 +85,7 @@ export default function RecipesScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+    useNavigation<RecipesNavigation>();
   const { isTablet, isLargeTablet } = useDeviceType();
 
   const isOnline = useOnlineStatus();
@@ -219,10 +218,10 @@ export default function RecipesScreen() {
           const url = new URL("/api/appliances", baseUrl);
           const response = await fetch(url, { credentials: "include" });
           if (response.ok) {
-            const allAppliances = (await response.json()).data as any;
+            const allAppliances: ApplianceItem[] = (await response.json()).data;
             const cookwareNames = allAppliances
-              .filter((a: any) => cookwareIds.includes(a.id))
-              .map((a: any) => a.name.toLowerCase());
+              .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+              .map((a: ApplianceItem) => a.name.toLowerCase());
             setUserCookware(cookwareNames);
           }
         } catch (err) {
@@ -760,7 +759,7 @@ export default function RecipesScreen() {
             }
             onUpgrade={() => {
               dismissUpgradePrompt();
-              navigation.navigate("Subscription" as any);
+              navigation.navigate("Subscription");
             }}
             onDismiss={dismissUpgradePrompt}
           />

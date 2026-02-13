@@ -225,7 +225,7 @@ export function WasteReductionStats({
                     ]}
                   >
                     <Feather
-                      name={badge.iconName as any}
+                      name={badge.iconName as keyof typeof Feather.glyphMap}
                       size={16}
                       color="#FFFFFF"
                     />

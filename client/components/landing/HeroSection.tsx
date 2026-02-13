@@ -92,7 +92,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
               <View style={styles.trustLogoIconContainer}>
                 {logo.iconType === "material" ? (
                   <MaterialCommunityIcons
-                    name={logo.icon as any}
+                    name={logo.icon as keyof typeof MaterialCommunityIcons.glyphMap}
                     size={24}
                     color="rgba(255, 255, 255, 0.8)"
                   />
@@ -100,7 +100,7 @@ export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
                   <ReplitLogo size={24} color="rgba(255, 255, 255, 0.8)" />
                 ) : (
                   <Feather
-                    name={logo.icon as any}
+                    name={logo.icon as keyof typeof Feather.glyphMap}
                     size={24}
                     color="rgba(255, 255, 255, 0.8)"
                   />

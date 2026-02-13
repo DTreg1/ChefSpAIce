@@ -23,7 +23,7 @@ import React from "react";
 import { Platform, View, ViewProps } from "react-native";
 import { logger } from "@/lib/logger";
 
-let GlassViewNative: React.ComponentType<any> | null = null;
+let GlassViewNative: React.ComponentType<ViewProps & { glassEffectStyle?: string; tintColor?: string; isInteractive?: boolean }> | null = null;
 let isLiquidGlassAvailableNative: (() => boolean) | null = null;
 let moduleLoadAttempted = false;
 let cachedIsIPhone: boolean | null = null;
@@ -68,7 +68,7 @@ function isDefinitelyIPhone(): boolean {
 
   // Fallback: Check Platform.isPad if interfaceIdiom is unavailable
   // If isPad is true, this is definitely NOT an iPhone
-  if ((Platform as any).isPad === true) {
+  if ((Platform as unknown as { isPad?: boolean }).isPad === true) {
     cachedIsIPhone = false;
     return false;
   }

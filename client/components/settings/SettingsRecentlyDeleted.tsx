@@ -12,9 +12,10 @@ import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { storage, FoodItem } from "@/lib/storage";
 import { logger } from "@/lib/logger";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsRecentlyDeletedProps {
-  theme: any;
+  theme: ThemeColors;
 }
 
 function formatTimeAgo(dateStr: string): string {

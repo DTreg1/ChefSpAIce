@@ -135,7 +135,7 @@ export default function SettingsScreen() {
   const [isDownloadingData, setIsDownloadingData] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [pendingImportFile, setPendingImportFile] = useState<any>(null);
+  const [pendingImportFile, setPendingImportFile] = useState<{ version: string; data: unknown } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const recentlyDeletedRef = useRef<View>(null);
@@ -182,7 +182,11 @@ export default function SettingsScreen() {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       if (response.ok) {
-        const data = (await response.json()).data as any;
+        const data = (await response.json()).data as {
+          referralCode: string;
+          shareLink: string;
+          stats: { totalReferrals: number; completedSignups: number };
+        };
         setReferralData(data);
       }
     } catch (error) {
@@ -642,7 +646,7 @@ export default function SettingsScreen() {
         throw new Error(text || "Export failed");
       }
 
-      const backupData = (await res.json()).data as any;
+      const backupData = (await res.json()).data as Record<string, unknown>;
       const jsonString = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -697,7 +701,7 @@ export default function SettingsScreen() {
         throw new Error(text || "Download failed");
       }
 
-      const responseData = (await res.json()).data as any;
+      const responseData = (await res.json()).data as Record<string, unknown>;
       const jsonString = JSON.stringify(responseData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -728,8 +732,8 @@ export default function SettingsScreen() {
         document.body.appendChild(input);
         fileInputRef.current = input;
       }
-      fileInputRef.current.onchange = (e: any) => {
-        const file = e.target?.files?.[0];
+      fileInputRef.current.onchange = (e: Event) => {
+        const file = (e.target as HTMLInputElement)?.files?.[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -795,7 +799,7 @@ export default function SettingsScreen() {
         throw new Error(body.error || "Import failed");
       }
 
-      const result = body.data as any;
+      const result = body.data as { warnings?: string[] };
 
       let message = "Your data has been imported successfully.";
       if (result.warnings && result.warnings.length > 0) {

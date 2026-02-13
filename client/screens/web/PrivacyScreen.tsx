@@ -10,6 +10,7 @@ import {
 import { GradientBackground } from "@/components/GradientBackground.web";
 import { WebInfoColors } from "@/constants/theme";
 import { useNavigate } from "@/lib/web-router";
+import { webClickable } from "@/lib/types";
 
 const isWeb = Platform.OS === "web";
 const chefHatLight = require("../../assets/images/transparent/chef-hat-light-128.png");
@@ -310,7 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    cursor: "pointer" as any,
+    ...webClickable,
     marginBottom: 16,
   },
   logoText: { fontSize: 24, fontWeight: "700" },
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  navLink: { cursor: "pointer" as any },
+  navLink: { ...webClickable },
   navLinkText: { fontSize: 14, fontWeight: "500" },
   content: {
     paddingHorizontal: 24,

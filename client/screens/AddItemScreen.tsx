@@ -56,6 +56,7 @@ import {
 } from "@/lib/storage";
 import { StorageLocation } from "@/lib/shelf-life-data";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootNavigation } from "@/lib/types";
 
 interface StorageLocationOption {
   key: string;
@@ -139,7 +140,7 @@ function getConfidenceIcon(
 export default function AddItemScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "AddItem">>();
   const { checkLimit, entitlements } = useSubscription();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -1231,7 +1232,7 @@ export default function AddItemScreen() {
             max={typeof entitlements.maxPantryItems === "number" ? entitlements.maxPantryItems : 25}
             onUpgrade={() => {
               setShowUpgradePrompt(false);
-              navigation.navigate("Main" as any, {
+              navigation.navigate("Main", {
                 screen: "Tabs",
                 params: {
                   screen: "ProfileTab",

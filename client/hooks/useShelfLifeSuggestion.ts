@@ -180,7 +180,7 @@ async function fetchAIShelfLife(
     throw new Error(`API error: ${response.status}`);
   }
 
-  return (await response.json()).data as any;
+  return (await response.json()).data as AIShelfLifeResponse;
 }
 
 interface LocalSuggestionResult {

@@ -11,7 +11,6 @@ import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, CommonActions } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
 
 import * as Haptics from "expo-haptics";
@@ -32,7 +31,7 @@ import {
   hasSeenSwipeHint,
   markSwipeHintSeen,
 } from "@/lib/storage";
-import { InventoryStackParamList } from "@/navigation/InventoryStackNavigator";
+import type { InventoryNavigation } from "@/lib/types";
 import { useSearch } from "@/contexts/SearchContext";
 import { useInventoryExport } from "@/hooks/useInventoryExport";
 import { logger } from "@/lib/logger";
@@ -64,7 +63,7 @@ export default function InventoryScreen() {
   const { theme } = useTheme();
   const { isTablet } = useDeviceType();
   const navigation =
-    useNavigation<NativeStackNavigationProp<InventoryStackParamList>>();
+    useNavigation<InventoryNavigation>();
   const queryClient = useQueryClient();
   const { handleExport, exporting } = useInventoryExport();
 
@@ -436,7 +435,7 @@ export default function InventoryScreen() {
           title="Your pantry is empty"
           description="Add your first item to start tracking!"
           actionLabel="Add Item"
-          onAction={() => navigation.navigate("AddItem" as any)}
+          onAction={() => navigation.navigate("AddItem")}
         />
       </View>
     );

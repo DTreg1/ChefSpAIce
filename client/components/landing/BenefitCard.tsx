@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   benefitCardWide: {
-    width: "45%" as any,
+    width: "45%" as unknown as number,
     minWidth: 280,
   },
   benefitIconContainer: {

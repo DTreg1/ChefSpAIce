@@ -3,11 +3,12 @@ import { View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import { BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface RecipeHeroProps {
   imageUri?: string;
   title: string;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function RecipeHero({ imageUri, title, theme }: RecipeHeroProps) {

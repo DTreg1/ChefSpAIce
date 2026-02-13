@@ -189,7 +189,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       });
 
       if (response.ok) {
-        const data = (await response.json()).data as any;
+        const data = (await response.json()).data as Record<string, unknown>;
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
@@ -382,7 +382,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           body: JSON.stringify({}),
         });
         if (response.ok) {
-          const data = (await response.json()).data as any;
+          const data = (await response.json()).data as { url?: string };
           if (data.url) {
             (window as Window).location.href = data.url;
           }

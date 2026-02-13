@@ -4,10 +4,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { Spacing } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsCloudSyncProps {
-  user: any;
-  theme: any;
+  user: { email?: string } | null;
+  theme: ThemeColors;
 }
 
 export function SettingsCloudSync({ user, theme }: SettingsCloudSyncProps) {

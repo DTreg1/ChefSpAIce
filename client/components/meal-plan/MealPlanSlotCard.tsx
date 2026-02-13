@@ -15,7 +15,7 @@ import { Recipe } from "@/lib/storage";
 interface MealSlot {
   id: string;
   name: string;
-  icon: any;
+  icon: "sunrise" | "sun" | "moon" | "coffee" | "sunset";
 }
 
 interface MealPlanSlotCardProps {

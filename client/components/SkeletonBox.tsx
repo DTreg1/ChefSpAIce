@@ -7,7 +7,7 @@ interface SkeletonBoxProps {
   width: number | string;
   height: number;
   borderRadius?: number;
-  style?: any;
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
 }
 
 export function SkeletonBox({ width, height, borderRadius = 8, style }: SkeletonBoxProps) {

@@ -46,6 +46,7 @@ import { getRecipeDeepLink } from "@/lib/deep-linking";
 
 import { getApiUrl, apiRequestJson } from "@/lib/query-client";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import type { ApplianceItem, ImageGenerationResponse, RecipesNavigation } from "@/lib/types";
 import { logger } from "@/lib/logger";
 
 import { RecipeHero } from "@/components/recipe-detail/RecipeHero";
@@ -59,7 +60,7 @@ export default function RecipeDetailScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<RecipesNavigation>();
   const route = useRoute<RouteProp<RecipesStackParamList, "RecipeDetail">>();
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -140,8 +141,8 @@ export default function RecipeDetailScreen() {
         if (response.ok) {
           const allAppliances = (await response.json()).data;
           const cookwareNames = allAppliances
-            .filter((a: any) => cookwareIds.includes(a.id))
-            .map((a: any) => a.name.toLowerCase());
+            .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+            .map((a: ApplianceItem) => a.name.toLowerCase());
           setUserCookware(cookwareNames);
         }
       } catch (err) {
@@ -221,7 +222,7 @@ export default function RecipeDetailScreen() {
 
       try {
         logger.log("[RecipeDetail] Generating image for AI recipe:", recipe.id);
-        const imageData: any = await apiRequestJson(
+        const imageData = await apiRequestJson<ImageGenerationResponse>(
           "POST",
           "/api/recipes/generate-image",
           {

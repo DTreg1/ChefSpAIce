@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { apiRequestJson } from "@/lib/query-client";
+import type { ThemeColors } from "@/lib/types";
 
 interface Session {
   id: string;
@@ -22,7 +23,7 @@ interface Session {
 }
 
 interface SettingsActiveSessionsProps {
-  theme: any;
+  theme: ThemeColors;
 }
 
 function parseUserAgent(ua: string): string {
@@ -103,8 +104,9 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
     try {
       const data = await apiRequestJson<{ sessions: Session[] }>("GET", "/api/auth/sessions");
       setSessions(data.sessions || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load sessions");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(errMsg || "Failed to load sessions");
     } finally {
       setIsLoading(false);
     }
@@ -128,8 +130,9 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
             try {
               await apiRequestJson("DELETE", `/api/auth/sessions/${sessionId}`);
               await fetchSessions();
-            } catch (err: any) {
-              Alert.alert("Error", err.message || "Failed to revoke session");
+            } catch (err: unknown) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              Alert.alert("Error", errMsg || "Failed to revoke session");
             } finally {
               setRevokingId(null);
             }
@@ -153,8 +156,9 @@ export function SettingsActiveSessions({ theme }: SettingsActiveSessionsProps) {
             try {
               await apiRequestJson("DELETE", "/api/auth/sessions");
               await fetchSessions();
-            } catch (err: any) {
-              Alert.alert("Error", err.message || "Failed to revoke sessions");
+            } catch (err: unknown) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              Alert.alert("Error", errMsg || "Failed to revoke sessions");
             } finally {
               setIsRevokingAll(false);
             }

@@ -10,12 +10,13 @@ import {
   MacroTargets,
 } from "@/lib/storage";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsNutritionTargetsProps {
   preferences: UserPreferences;
   onMacroChange: (macro: keyof MacroTargets, delta: number) => void;
   onResetMacros: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsNutritionTargets({

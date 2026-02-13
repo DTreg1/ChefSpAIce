@@ -14,7 +14,6 @@ import {
   useRoute,
   RouteProp,
 } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -36,6 +35,7 @@ import {
   DEFAULT_MACRO_TARGETS,
 } from "@/lib/storage";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import type { ApplianceItem, GeneratedRecipe, ImageGenerationResponse, RootNavigation, RecipesNavigation } from "@/lib/types";
 import { apiRequestJson, getApiUrl, getStoredAuthToken } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
@@ -79,8 +79,7 @@ function getMealTypeFromTime(): { mealType: string; greeting: string } {
 export default function GenerateRecipeScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RecipesStackParamList>>();
+  const navigation = useNavigation<RecipesNavigation>();
   const route = useRoute<RouteProp<RecipesStackParamList, "GenerateRecipe">>();
   const customSettings = route.params?.customSettings;
   const {
@@ -172,8 +171,8 @@ export default function GenerateRecipeScreen() {
             if (response.ok) {
               const allAppliances = (await response.json()).data;
               const userCookware = allAppliances
-                .filter((a: any) => cookwareIds.includes(a.id))
-                .map((a: any) => ({
+                .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+                .map((a: ApplianceItem) => ({
                   id: a.id,
                   name: a.name,
                   alternatives: a.alternatives || [],
@@ -281,7 +280,7 @@ export default function GenerateRecipeScreen() {
         ingredientCount: effectiveIngredientCount,
       };
 
-      let generatedRecipe: any;
+      let generatedRecipe: GeneratedRecipe | undefined;
 
       const baseUrl = getApiUrl();
       const streamUrl = new URL("/api/recipes/generate-stream", baseUrl);
@@ -408,7 +407,7 @@ export default function GenerateRecipeScreen() {
       // Generate image before saving (so recipe loads complete)
       setProgressStage("image");
       try {
-        const imageData: any = await apiRequestJson(
+        const imageData = await apiRequestJson<ImageGenerationResponse>(
           "POST",
           "/api/recipes/generate-image",
           {
@@ -779,9 +778,9 @@ export default function GenerateRecipeScreen() {
             onUpgrade={() => {
               setShowUpgradePrompt(false);
               // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
-              const rootNav = navigation.getParent()?.getParent()?.getParent();
+              const rootNav = navigation.getParent()?.getParent()?.getParent() as RootNavigation | undefined;
               if (rootNav) {
-                rootNav.navigate("Main" as any, {
+                rootNav.navigate("Main", {
                   screen: "Tabs",
                   params: {
                     screen: "ProfileTab",
@@ -820,9 +819,12 @@ export default function GenerateRecipeScreen() {
               }
               onUpgrade={() => {
                 setShowUpgradePrompt(false);
-                navigation.navigate("Main" as any, {
-                  screen: "ProfileTab",
-                  params: { screen: "Subscription" },
+                navigation.navigate("Main", {
+                  screen: "Tabs",
+                  params: {
+                    screen: "ProfileTab",
+                    params: { screen: "Subscription" },
+                  },
                 });
               }}
               onDismiss={() => setShowUpgradePrompt(false)}

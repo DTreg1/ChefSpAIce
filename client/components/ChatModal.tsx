@@ -27,6 +27,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { useNavigation } from "@react-navigation/native";
+import type { RootNavigation } from "@/lib/types";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -82,7 +83,7 @@ export function ChatModal() {
     visible: isChatOpen,
     onDismiss: closeChat,
   });
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const flatListRef = useRef<FlatList>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -192,7 +193,7 @@ export function ChatModal() {
 
       setTipLoading(true);
       try {
-        const data = await apiRequestJson<any>(
+        const data = await apiRequestJson<{ suggestions: string[] }>(
           "POST",
           "/api/suggestions/waste-reduction",
           { expiringItems },
@@ -340,7 +341,7 @@ export function ChatModal() {
         }),
       });
 
-      const data = (await response.json()).data as any;
+      const data = (await response.json()).data as { reply?: string; refreshData?: boolean };
 
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -456,7 +457,7 @@ export function ChatModal() {
       });
 
       if (response.ok) {
-        const data = (await response.json()).data as any;
+        const data = (await response.json()).data as { audioUrl?: string };
         if (data.audioUrl) {
           await replayVoice.play(data.audioUrl);
         }

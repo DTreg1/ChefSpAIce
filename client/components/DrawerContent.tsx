@@ -11,6 +11,7 @@ import {
   DrawerContentComponentProps,
 } from "@react-navigation/drawer";
 import { DrawerActions } from "@react-navigation/native";
+import type { DrawerNavigation } from "@/lib/types";
 import {
   GlassView,
   isLiquidGlassAvailable,
@@ -384,7 +385,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               ]}
               onPress={() => {
                 closeDrawer();
-                navigation.navigate("Auth" as any);
+                (navigation as unknown as DrawerNavigation).navigate("Auth");
               }}
               testID="button-drawer-create-account"
               accessibilityRole="button"

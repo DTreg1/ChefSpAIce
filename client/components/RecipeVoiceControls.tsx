@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
       web: {
         backdropFilter: "blur(10px) saturate(180%)",
         WebkitBackdropFilter: "blur(10px) saturate(180%)",
-      } as any,
+      } as Record<string, string>,
     }),
   },
 });

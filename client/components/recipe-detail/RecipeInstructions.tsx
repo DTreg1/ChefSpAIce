@@ -7,16 +7,21 @@ import { GlassCard } from "@/components/GlassCard";
 import { TermHighlighter, CookingTerm } from "@/components/TermHighlighter";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { Recipe } from "@/lib/storage";
+import type { ThemeColors } from "@/lib/types";
 
 interface RecipeInstructionsProps {
   recipe: Recipe;
   showVoiceControls: boolean;
-  voiceNav: any;
+  voiceNav: {
+    currentStep: number;
+    isSpeaking: boolean;
+    goToStep: (step: number) => void;
+  };
   termHighlightingEnabled: boolean;
   onTermPress: (term: CookingTerm) => void;
   stepPositions: React.MutableRefObject<Record<number, number>>;
   onInstructionSectionLayout: (y: number) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function RecipeInstructions({

@@ -6,11 +6,12 @@ import { GlassCard } from "@/components/GlassCard";
 import { UserPreferences } from "@/lib/storage";
 import { MEAL_PLAN_PRESETS, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsMealPlanningProps {
   preferences: UserPreferences;
   onSelectPreset: (presetId: string) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsMealPlanning({

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import {
   View,
+  ViewProps,
   StyleSheet,
   Pressable,
   Alert,
@@ -133,7 +134,7 @@ export default function ShoppingListScreen() {
       entering={FadeIn}
       exiting={FadeOut}
       layout={Layout.springify()}
-      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as any } : {})}
+      {...(Platform.OS === "web" ? { accessibilityRole: "listitem" as ViewProps["accessibilityRole"] } : {})}
       accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}${item.isChecked ? ', checked' : ''}`}
     >
       <GlassCard>
@@ -231,7 +232,7 @@ export default function ShoppingListScreen() {
         menuItems={menuItems}
         headerRight={
           <Pressable
-            onPress={() => (navigation as any).navigate("GrocerySearch")}
+            onPress={() => navigation.navigate("GrocerySearch" as never)}
             style={styles.searchButton}
             testID="button-grocery-search"
             accessibilityRole="button"

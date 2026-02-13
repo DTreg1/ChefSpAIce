@@ -148,7 +148,7 @@ export function IngredientSwapModal({
                 accessibilityLabel={`${filter.label} dietary filter`}
               >
                 <Feather
-                  name={filter.icon as any}
+                  name={filter.icon as keyof typeof Feather.glyphMap}
                   size={14}
                   color={isSelected ? "#FFFFFF" : theme.textSecondary}
                 />

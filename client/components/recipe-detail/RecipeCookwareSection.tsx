@@ -6,12 +6,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { Recipe } from "@/lib/storage";
+import type { RecipesNavigation } from "@/lib/types";
+import type { ThemeColors } from "@/lib/types";
 
 interface RecipeCookwareSectionProps {
   recipe: Recipe;
   userCookware: string[];
-  navigation: any;
-  theme: any;
+  navigation: RecipesNavigation;
+  theme: ThemeColors;
 }
 
 export function RecipeCookwareSection({

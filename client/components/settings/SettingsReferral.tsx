@@ -5,14 +5,23 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsReferralProps {
   isLoadingReferral: boolean;
-  referralData: any;
+  referralData: {
+    referralCode: string;
+    stats: {
+      successfulReferrals: number;
+      rewardsEarned: number;
+      creditsRemaining: number;
+      creditsNeededForReward: number;
+    };
+  } | null;
   referralCopied: boolean;
   onCopyReferralCode: () => void;
   onShareReferral: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsReferral({

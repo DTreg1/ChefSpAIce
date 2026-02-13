@@ -1,20 +1,28 @@
 import { useRef, useEffect, useCallback } from "react";
-import { AccessibilityInfo, Platform, findNodeHandle } from "react-native";
+import { AccessibilityInfo, Platform, View, findNodeHandle } from "react-native";
+
+interface FocusableElement {
+  focus?: (options?: { preventScroll?: boolean }) => void;
+  tabIndex?: number | null;
+  addEventListener?: (type: string, handler: (e: KeyboardEvent) => void) => void;
+  removeEventListener?: (type: string, handler: (e: KeyboardEvent) => void) => void;
+  querySelectorAll?: (selector: string) => NodeListOf<HTMLElement>;
+}
 
 interface UseFocusTrapOptions {
   visible: boolean;
   onDismiss?: () => void;
 }
 
-function setNativeFocus(ref: React.RefObject<any>) {
+function setNativeFocus(ref: React.RefObject<View | FocusableElement | null>) {
   if (!ref.current) return;
-  const handle = findNodeHandle(ref.current);
+  const handle = findNodeHandle(ref.current as View);
   if (handle) {
     AccessibilityInfo.setAccessibilityFocus(handle);
   }
 }
 
-function focusWebElement(ref: React.RefObject<any>) {
+function focusWebElement(ref: React.RefObject<FocusableElement | null>) {
   if (!ref.current) return;
   const el = ref.current;
   if (typeof el.focus === "function") {
@@ -30,11 +38,11 @@ function focusWebElement(ref: React.RefObject<any>) {
 }
 
 export function useFocusTrap({ visible, onDismiss }: UseFocusTrapOptions) {
-  const focusTargetRef = useRef<any>(null);
-  const triggerRef = useRef<any>(null);
-  const containerRef = useRef<any>(null);
+  const focusTargetRef = useRef<View | FocusableElement | null>(null);
+  const triggerRef = useRef<View | FocusableElement | null>(null);
+  const containerRef = useRef<FocusableElement | null>(null);
   const previouslyFocusedWeb = useRef<HTMLElement | null>(null);
-  const previouslyFocusedNative = useRef<any>(null);
+  const previouslyFocusedNative = useRef<View | FocusableElement | null>(null);
   const wasVisible = useRef(false);
 
   useEffect(() => {

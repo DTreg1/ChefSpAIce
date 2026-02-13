@@ -181,7 +181,7 @@ export function VoiceQuickAction() {
       throw new Error("Failed to synthesize speech");
     }
 
-    const { audioUrl } = (await response.json()).data as any;
+    const { audioUrl } = (await response.json()).data as { audioUrl: string };
     return audioUrl;
   };
 

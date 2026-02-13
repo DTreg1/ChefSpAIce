@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { SwipeableItemCard } from "./SwipeableItemCard";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { FoodItem } from "@/lib/storage";
+import type { ThemeColors } from "@/lib/types";
 
 interface GroupedSectionData {
   title: string;
@@ -23,7 +24,7 @@ interface InventoryGroupSectionProps {
   onConsumed: (item: FoodItem) => void;
   onWasted: (item: FoodItem) => void;
   onItemPress: (itemId: string) => void;
-  theme: any;
+  theme: ThemeColors;
   showSwipeHintOnFirst?: boolean;
 }
 

@@ -3,11 +3,14 @@ import {
   StyleSheet,
   Pressable,
   View,
+  ViewProps,
   ViewStyle,
   Platform,
   StyleProp,
 } from "react-native";
 import { GlassView, isLiquidGlassAvailable } from "@/lib/glass-effect-safe";
+
+type A11yRole = ViewProps["accessibilityRole"];
 
 /*
  * ============================================
@@ -217,7 +220,7 @@ export function GlassCard({
       return (
         <View
           testID={testID}
-          accessibilityRole={accessibilityRole as any}
+          accessibilityRole={accessibilityRole as A11yRole}
           accessibilityLabel={accessibilityLabel}
           accessibilityHint={accessibilityHint}
           style={[
@@ -239,7 +242,7 @@ export function GlassCard({
       return (
         <GlassView
           testID={testID}
-          accessibilityRole={accessibilityRole as any}
+          accessibilityRole={accessibilityRole as A11yRole}
           accessibilityLabel={accessibilityLabel}
           glassEffectStyle={glassEffectStyle}
           style={[styles.card, style]}
@@ -250,7 +253,7 @@ export function GlassCard({
     }
 
     return (
-      <View testID={testID} accessibilityRole={accessibilityRole as any} accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint}>
+      <View testID={testID} accessibilityRole={accessibilityRole as A11yRole} accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint}>
         <BlurView
           intensity={blurIntensity}
           tint={glassTint}
@@ -270,7 +273,7 @@ export function GlassCard({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole={(accessibilityRole as any) ?? "button"}
+        accessibilityRole={(accessibilityRole as A11yRole) ?? "button"}
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         onPress={onPress}
@@ -296,7 +299,7 @@ export function GlassCard({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole={(accessibilityRole as any) ?? "button"}
+        accessibilityRole={(accessibilityRole as A11yRole) ?? "button"}
         accessibilityLabel={accessibilityLabel || title}
         accessibilityHint={accessibilityHint}
         onPress={onPress}
@@ -317,7 +320,7 @@ export function GlassCard({
   return (
     <AnimatedPressable
       testID={testID}
-      accessibilityRole={(accessibilityRole as any) ?? "button"}
+      accessibilityRole={(accessibilityRole as A11yRole) ?? "button"}
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
       onPress={onPress}
@@ -354,7 +357,7 @@ const styles = StyleSheet.create({
       web: {
         backdropFilter: "blur(10px) saturate(180%)",
         WebkitBackdropFilter: "blur(10px) saturate(180%)",
-      } as any,
+      } as Record<string, string>,
     }),
   },
   cardTitle: {

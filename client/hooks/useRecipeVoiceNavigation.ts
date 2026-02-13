@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTextToSpeech } from "./useTextToSpeech";
 import { useVoiceInput } from "./useVoiceInput";
@@ -48,7 +48,7 @@ export function useRecipeVoiceNavigation(
     lastCommand: "",
   });
 
-  const _stepRefs = useRef<Array<any>>([]);
+  const _stepRefs = useRef<Array<View | null>>([]);
   void _stepRefs; // reserved for future scroll-to-step feature
   const isReadingFullRecipeRef = useRef(false);
   const isMountedRef = useRef(true);

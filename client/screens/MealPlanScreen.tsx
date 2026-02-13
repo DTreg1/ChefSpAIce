@@ -10,7 +10,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import DraggableFlatList, {
@@ -37,13 +36,13 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { Spacing, AppColors, GlassEffect } from "@/constants/theme";
 import { storage, MealPlan, Recipe, UserPreferences } from "@/lib/storage";
-import { MealPlanStackParamList } from "@/navigation/MealPlanStackNavigator";
+import type { MealPlanNavigation, RootNavigation } from "@/lib/types";
 import { getPresetById, DEFAULT_PRESET_ID } from "@/constants/meal-plan";
 
 interface DraggableSlotItem {
   slotId: string;
   slotName: string;
-  slotIcon: any;
+  slotIcon: "sunrise" | "sun" | "moon" | "coffee" | "sunset";
   recipe: Recipe | undefined;
 }
 
@@ -51,8 +50,7 @@ export default function MealPlanScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<MealPlanStackParamList>>();
+  const navigation = useNavigation<MealPlanNavigation>();
   const { checkFeature } = useSubscription();
   const { isTablet } = useDeviceType();
 
@@ -379,7 +377,7 @@ export default function MealPlanScreen() {
                 title="No meal plan yet"
                 description="Create your first weekly plan!"
                 actionLabel="Create Plan"
-                onAction={() => navigation.navigate("SelectRecipe" as any, {
+                onAction={() => navigation.navigate("SelectRecipe", {
                   date: format(selectedDay, "yyyy-MM-dd"),
                   mealType: "dinner" as const,
                 })}
@@ -457,7 +455,7 @@ export default function MealPlanScreen() {
                 title="No meal plan yet"
                 description="Create your first weekly plan!"
                 actionLabel="Create Plan"
-                onAction={() => navigation.navigate("SelectRecipe" as any, {
+                onAction={() => navigation.navigate("SelectRecipe", {
                   date: format(selectedDay, "yyyy-MM-dd"),
                   mealType: "dinner" as const,
                 })}
@@ -581,9 +579,9 @@ export default function MealPlanScreen() {
           featureName="Weekly Meal Prepping"
           onUpgrade={() => {
             setShowUpgradePrompt(false);
-            const rootNav = navigation.getParent()?.getParent()?.getParent();
+            const rootNav = navigation.getParent()?.getParent()?.getParent() as RootNavigation | undefined;
             if (rootNav) {
-              rootNav.navigate("Main" as any, {
+              rootNav.navigate("Main", {
                 screen: "Tabs",
                 params: {
                   screen: "ProfileTab",

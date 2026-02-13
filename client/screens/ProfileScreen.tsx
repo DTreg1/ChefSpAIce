@@ -15,7 +15,6 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
 import { ExpoGlassHeader } from "@/components/ExpoGlassHeader";
@@ -38,15 +37,14 @@ import {
   UserProfile,
   UserPreferences,
 } from "@/lib/storage";
-import { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
+import type { ProfileNavigation } from "@/lib/types";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark, colorScheme, themePreference, setThemePreference } =
     useTheme();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+  const navigation = useNavigation<ProfileNavigation>();
   const { user, isAuthenticated, signOut } = useAuth();
   const { tier, planType, isActive, handleManageSubscription } =
     useSubscription();
@@ -174,7 +172,7 @@ export default function ProfileScreen() {
 
   const handleUpgradeSubscription = () => {
     // Navigate to SubscriptionScreen where users can choose between Basic and Pro
-    navigation.navigate("Subscription" as any);
+    navigation.navigate("Subscription");
   };
 
   const accountCreatedDate =

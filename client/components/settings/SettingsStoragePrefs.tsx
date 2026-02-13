@@ -5,11 +5,12 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsStoragePrefsProps {
   learnedPrefsCount: number;
   onResetStoragePreferences: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsStoragePrefs({

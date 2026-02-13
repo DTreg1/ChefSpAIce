@@ -4,10 +4,11 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import type { ProfileNavigation, ThemeColors } from "@/lib/types";
 
 interface SettingsLegalSupportProps {
-  navigation: any;
-  theme: any;
+  navigation: ProfileNavigation;
+  theme: ThemeColors;
 }
 
 export function SettingsLegalSupport({

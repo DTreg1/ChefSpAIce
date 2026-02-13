@@ -55,7 +55,7 @@ export function DonationSection({ isWide }: DonationSectionProps) {
         return;
       }
 
-      const data = (await response.json()).data as any;
+      const data = (await response.json()).data as { url?: string; error?: string };
 
       if (data.url) {
         if (isWeb) {

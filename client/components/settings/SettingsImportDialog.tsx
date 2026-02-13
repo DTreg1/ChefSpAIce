@@ -4,12 +4,13 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsImportDialogProps {
   showImportDialog: boolean;
   onImportData: (mode: "merge" | "replace") => void;
   onClose: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsImportDialog({
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   modalContent: {
-    width: "90%" as any,
+    width: "90%" as const,
     maxWidth: 440,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,

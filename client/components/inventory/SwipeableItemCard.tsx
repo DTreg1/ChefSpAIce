@@ -29,6 +29,7 @@ import {
   getDaysUntilExpiration,
   formatDate,
 } from "@/lib/storage";
+import type { ThemeColors } from "@/lib/types";
 
 const SWIPE_THRESHOLD = 20;
 const ACTION_WIDTH = 80;
@@ -38,7 +39,7 @@ interface SwipeableItemCardProps {
   onConsumed: (item: FoodItem) => void;
   onWasted: (item: FoodItem) => void;
   onPress: (itemId: string) => void;
-  theme: any;
+  theme: ThemeColors;
   showHint?: boolean;
 }
 

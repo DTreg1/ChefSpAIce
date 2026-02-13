@@ -4,10 +4,17 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsBiometricProps {
-  biometric: any;
-  theme: any;
+  biometric: {
+    isAvailable: boolean;
+    isEnrolled: boolean;
+    biometricType: string | null;
+    isEnabled: boolean;
+    setEnabled: (value: boolean) => Promise<void>;
+  };
+  theme: ThemeColors;
 }
 
 export function SettingsBiometric({ biometric, theme }: SettingsBiometricProps) {

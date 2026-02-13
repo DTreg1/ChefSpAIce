@@ -29,7 +29,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, AppColors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
-import { storage, generateId } from "@/lib/storage";
+import { storage, generateId, type Recipe } from "@/lib/storage";
 
 interface ScannedRecipe {
   title: string;
@@ -186,7 +186,7 @@ export default function RecipeScannerScreen() {
         source: "scanned",
       };
 
-      await storage.addRecipe(newRecipe as any);
+      await storage.addRecipe(newRecipe as Recipe);
 
       if (Platform.OS !== "web") {
         await Haptics.notificationAsync(

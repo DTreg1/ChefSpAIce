@@ -60,6 +60,7 @@ import {
   authenticateBiometric,
   clearBiometricPreference,
 } from "@/hooks/useBiometricAuth";
+import type { AuthResponseData, RestoreSessionData, ApiResponseBody } from "@/lib/types";
 
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
@@ -180,7 +181,7 @@ function useAppleWebAuth() {
     {
       clientId: APPLE_CLIENT_ID,
       scopes: ['name', 'email'],
-      responseType: 'code' as any,
+      responseType: 'code' as AuthSession.ResponseType,
       redirectUri,
     },
     appleDiscovery
@@ -309,7 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (response.ok) {
-              const data = (await response.json()).data as any;
+              const data = (await response.json()).data as RestoreSessionData;
               const authData: StoredAuthData = {
                 user: data.user,
                 token: null,
@@ -388,13 +389,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const body = await response.json();
+      const body: ApiResponseBody<AuthResponseData> = await response.json();
 
       if (!response.ok) {
         return { success: false, error: body.error || "Sign in failed" };
       }
 
-      const data = body.data as any;
+      const data = body.data as AuthResponseData;
 
       // Validate required fields from server response
       if (!data.user || !data.user.id || !data.token) {
@@ -467,14 +468,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         logger.log("[SignUp] Response status:", response.status);
 
-        const body = await response.json();
+        const body: ApiResponseBody<AuthResponseData> = await response.json();
         logger.log("[SignUp] Response data:", body);
 
         if (!response.ok) {
           return { success: false, error: body.error || "Registration failed" };
         }
 
-        const data = body.data as any;
+        const data = body.data as AuthResponseData;
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {
@@ -627,7 +628,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             clearTimeout(timeoutId);
 
-            const _body: any = await response.json();
+            const _body: ApiResponseBody<AuthResponseData> = await response.json();
             data = response.ok ? _body.data : _body;
           } catch (fetchError: unknown) {
             clearTimeout(timeoutId);
@@ -682,7 +683,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             clearTimeout(timeoutId);
 
-            const _body: any = await response.json();
+            const _body: ApiResponseBody<AuthResponseData> = await response.json();
             data = response.ok ? _body.data : _body;
           } catch (fetchError: unknown) {
             clearTimeout(timeoutId);
@@ -858,7 +859,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }),
         });
 
-        const body = await response.json();
+        const body: ApiResponseBody<AuthResponseData> = await response.json();
 
         if (!response.ok) {
           return {
@@ -867,7 +868,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
-        const data = body.data as any;
+        const data = body.data as AuthResponseData;
 
         // Validate required fields from server response
         if (!data.user || !data.user.id || !data.token) {

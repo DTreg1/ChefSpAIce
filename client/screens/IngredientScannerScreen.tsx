@@ -34,7 +34,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
-import { storage, generateId } from "@/lib/storage";
+import { storage, generateId, type FoodItem } from "@/lib/storage";
 
 interface ScannedIngredient {
   name: string;
@@ -250,7 +250,7 @@ export default function IngredientScannerScreen() {
         addedDate: new Date().toISOString(),
       };
 
-      await storage.addInventoryItem(newItem as any);
+      await storage.addInventoryItem(newItem as FoodItem);
     }
 
     if (Platform.OS !== "web") {

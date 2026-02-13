@@ -131,7 +131,7 @@ export default function SiriShortcutsGuideScreen() {
         },
       });
 
-      const data = (await response.json()).data as any;
+      const data = (await response.json()).data as { success?: boolean; apiKey?: string; message?: string };
       if (data.success && data.apiKey) {
         setApiKey(data.apiKey);
         Alert.alert(

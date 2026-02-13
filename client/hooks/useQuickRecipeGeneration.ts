@@ -15,6 +15,7 @@ import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { useSubscription } from "@/hooks/useSubscription";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
+import type { ApplianceItem, GeneratedRecipe, ImageGenerationResponse } from "@/lib/types";
 
 const EXPIRING_THRESHOLD_DAYS = 5;
 
@@ -122,8 +123,8 @@ export function useQuickRecipeGeneration() {
           if (response.ok) {
             const allAppliances = (await response.json()).data;
             cookware = allAppliances
-              .filter((a: any) => cookwareIds.includes(a.id))
-              .map((a: any) => ({
+              .filter((a: ApplianceItem) => cookwareIds.includes(a.id))
+              .map((a: ApplianceItem) => ({
                 id: a.id,
                 name: a.name,
                 alternatives: a.alternatives || [],
@@ -163,7 +164,7 @@ export function useQuickRecipeGeneration() {
           item.daysUntilExpiry <= EXPIRING_THRESHOLD_DAYS,
       );
 
-      const generatedRecipe: any = await apiRequestJson("POST", "/api/recipes/generate", {
+      const generatedRecipe = await apiRequestJson<GeneratedRecipe>("POST", "/api/recipes/generate", {
         prioritizeExpiring: true,
         quickRecipe: true,
         inventory: inventoryPayload,
@@ -222,7 +223,7 @@ export function useQuickRecipeGeneration() {
 
       setProgressStage("image");
       try {
-        const imageData: any = await apiRequestJson(
+        const imageData = await apiRequestJson<ImageGenerationResponse>(
           "POST",
           "/api/recipes/generate-image",
           {

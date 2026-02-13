@@ -273,7 +273,7 @@ export async function initializeNotifications(): Promise<void> {
 }
 
 export function addNotificationResponseListener(
-  callback: (response: any) => void,
+  callback: (response: unknown) => void,
 ): { remove: () => void } {
   if (shouldSkipNotificationsImport()) {
     return { remove: () => {} };

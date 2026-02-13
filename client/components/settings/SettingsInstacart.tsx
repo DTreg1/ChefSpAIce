@@ -14,6 +14,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { storage, UserPreferences } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
+import type { ThemeColors } from "@/lib/types";
 
 interface Retailer {
   retailer_key: string;
@@ -24,7 +25,7 @@ interface Retailer {
 interface SettingsInstacartProps {
   preferences: UserPreferences;
   onPreferencesChange: (prefs: UserPreferences) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsInstacart({

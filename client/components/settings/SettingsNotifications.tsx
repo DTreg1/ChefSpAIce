@@ -5,12 +5,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { UserPreferences } from "@/lib/storage";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsNotificationsProps {
   preferences: UserPreferences;
   onToggleNotifications: (value: boolean) => void;
   onExpirationDaysChange: (days: number) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsNotifications({

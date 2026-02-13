@@ -13,6 +13,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsAccountDataProps {
   isAuthenticated: boolean;
@@ -34,7 +35,7 @@ interface SettingsAccountDataProps {
   onResetForTesting: () => void;
   onDeletionLevelsPress: () => void;
   onDeletionLevelsClose: () => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsAccountData({
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   deleteModalContent: {
-    width: "100%" as any,
+    width: "100%" as const,
     maxWidth: 420,
     borderRadius: 16,
     padding: 20,

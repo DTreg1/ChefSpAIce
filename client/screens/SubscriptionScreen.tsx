@@ -186,7 +186,7 @@ export default function SubscriptionScreen() {
     if (Platform.OS === "web") {
       window.open("/privacy", "_blank");
     } else {
-      navigation.navigate("Privacy" as any);
+      navigation.navigate("Privacy");
     }
   };
 
@@ -194,7 +194,7 @@ export default function SubscriptionScreen() {
     if (Platform.OS === "web") {
       window.open("/terms", "_blank");
     } else {
-      navigation.navigate("Terms" as any);
+      navigation.navigate("Terms");
     }
   };
 
@@ -272,7 +272,7 @@ export default function SubscriptionScreen() {
         const pricesResponse = await fetch(
           `${baseUrl}/api/subscriptions/prices`,
         );
-        const prices = (await pricesResponse.json()).data as any;
+        const prices = (await pricesResponse.json()).data as Record<string, { id: string }>;
 
         const priceKey = plan === "monthly" ? "standardMonthly" : "standardAnnual";
         const fallbackKey = plan === "monthly" ? "monthly" : "annual";
@@ -313,7 +313,7 @@ export default function SubscriptionScreen() {
               return;
             }
 
-            const preview = (await previewResponse.json()).data as any;
+            const preview = (await previewResponse.json()).data as { immediatePayment: number; currency: string };
             setProrationPreview(preview);
 
             const formattedAmount = (preview.immediatePayment / 100).toFixed(2);
@@ -346,7 +346,7 @@ export default function SubscriptionScreen() {
                       );
 
                       if (upgradeResponse.ok) {
-                        const upgradeData = (await upgradeResponse.json()).data as any;
+                        const upgradeData = (await upgradeResponse.json()).data as { upgraded: boolean };
                         if (upgradeData.upgraded) {
                           await refetch();
                           Alert.alert("Success", `Your plan has been upgraded to ${tierName}!`);
@@ -393,7 +393,7 @@ export default function SubscriptionScreen() {
         );
 
         if (response.ok) {
-          const data = (await response.json()).data as any;
+          const data = (await response.json()).data as { url?: string };
           if (data.url) {
             window.location.href = data.url;
           }

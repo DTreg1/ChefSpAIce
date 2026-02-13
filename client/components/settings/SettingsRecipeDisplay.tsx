@@ -5,11 +5,12 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { UserPreferences } from "@/lib/storage";
 import { Spacing, AppColors } from "@/constants/theme";
+import type { ThemeColors } from "@/lib/types";
 
 interface SettingsRecipeDisplayProps {
   preferences: UserPreferences;
   onToggleTermHighlighting: (value: boolean) => void;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function SettingsRecipeDisplay({

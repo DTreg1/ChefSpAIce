@@ -10,7 +10,6 @@ import {
 import { logger } from "@/lib/logger";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -25,7 +24,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, DEFAULT_STORAGE_LOCATIONS } from "@/lib/storage";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootNavigation } from "@/lib/types";
 
 interface StorageLocationOption {
   key: string;
@@ -52,8 +51,7 @@ export default function StorageLocationsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { checkFeature } = useSubscription();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<RootNavigation>();
 
   const [customLocations, setCustomLocations] = useState<
     StorageLocationOption[]
@@ -427,9 +425,9 @@ export default function StorageLocationsScreen() {
             onUpgrade={() => {
               setShowUpgradePrompt(false);
               // Use getParent 3x to reach root: Stack -> Tab -> Drawer -> Root
-              const rootNav = navigation.getParent()?.getParent()?.getParent();
+              const rootNav = navigation.getParent()?.getParent()?.getParent() as RootNavigation | undefined;
               if (rootNav) {
-                rootNav.navigate("Main" as any, {
+                rootNav.navigate("Main", {
                   screen: "Tabs",
                   params: {
                     screen: "ProfileTab",

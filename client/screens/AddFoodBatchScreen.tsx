@@ -38,6 +38,7 @@ import {
   DEFAULT_STORAGE_LOCATIONS,
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootNavigation } from "@/lib/types";
 import { IdentifiedFood } from "@/components/ImageAnalysisResult";
 
 const SWIPE_THRESHOLD = -80;
@@ -265,7 +266,7 @@ export default function AddFoodBatchScreen() {
   const insets = useSafeAreaInsets();
   const MODAL_HEADER_HEIGHT = 56;
   const { theme } = useTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
   const { checkLimit, entitlements } = useSubscription();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -575,7 +576,7 @@ export default function AddFoodBatchScreen() {
             max={typeof entitlements.maxPantryItems === "number" ? entitlements.maxPantryItems : 25}
             onUpgrade={() => {
               setShowUpgradePrompt(false);
-              navigation.navigate("Main" as any, {
+              navigation.navigate("Main", {
                 screen: "Tabs",
                 params: {
                   screen: "ProfileTab",

@@ -21,6 +21,27 @@ interface VoiceInputState {
   error: string | null;
 }
 
+interface SpeechRecognitionResult {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: SpeechRecognitionResult;
+  readonly isFinal: boolean;
+}
+
+interface WebSpeechRecognitionEvent extends Event {
+  readonly results: { readonly length: number; [index: number]: SpeechRecognitionResultList };
+  readonly resultIndex: number;
+}
+
+interface WebSpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
 interface WebSpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
@@ -28,8 +49,8 @@ interface WebSpeechRecognition extends EventTarget {
   start: () => void;
   stop: () => void;
   abort: () => void;
-  onresult: ((event: any) => void) | null;
-  onerror: ((event: any) => void) | null;
+  onresult: ((event: WebSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: WebSpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
   onaudiostart: (() => void) | null;
   onaudioend: (() => void) | null;
@@ -61,7 +82,7 @@ async function transcribeAudio(uri: string): Promise<string> {
     uri,
     type: "audio/m4a",
     name: "recording.m4a",
-  } as any);
+  } as unknown as Blob);
 
   const response = await fetch(url.toString(), {
     method: "POST",
@@ -74,7 +95,7 @@ async function transcribeAudio(uri: string): Promise<string> {
     throw new Error(errorData.message || "Transcription failed");
   }
 
-  const { transcript } = (await response.json()).data as any;
+  const { transcript } = (await response.json()).data as { transcript: string };
   return transcript;
 }
 
@@ -130,7 +151,7 @@ export function useVoiceInput(options: VoiceInputOptions = {}) {
       recognition.interimResults = true;
       recognition.lang = locale;
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: WebSpeechRecognitionEvent) => {
         const lastResult = event.results[event.results.length - 1];
         const transcript = lastResult[0].transcript;
 
@@ -146,7 +167,7 @@ export function useVoiceInput(options: VoiceInputOptions = {}) {
         }
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: WebSpeechRecognitionErrorEvent) => {
         let errorMessage = "Speech recognition error";
         let friendlyMessage = "Something went wrong with voice input";
 

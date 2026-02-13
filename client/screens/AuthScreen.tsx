@@ -14,8 +14,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useNavigation, CommonActions } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootNavigation } from "@/lib/types";
 
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -30,7 +29,7 @@ import { syncManager } from "@/lib/sync-manager";
 import { webAccessibilityProps } from "@/lib/web-accessibility";
 import { logger } from "@/lib/logger";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = RootNavigation;
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) return "Password must be at least 8 characters";
@@ -70,7 +69,7 @@ export default function AuthScreen() {
     if (Platform.OS === "web") {
       window.open("/privacy", "_blank");
     } else {
-      navigation.navigate("Privacy" as any);
+      navigation.navigate("Privacy");
     }
   };
 
@@ -78,7 +77,7 @@ export default function AuthScreen() {
     if (Platform.OS === "web") {
       window.open("/terms", "_blank");
     } else {
-      navigation.navigate("Terms" as any);
+      navigation.navigate("Terms");
     }
   };
 
@@ -204,7 +203,7 @@ export default function AuthScreen() {
         credentials: "include",
       },
     );
-    const subscriptionData = (await subscriptionResponse.json()).data as any;
+    const subscriptionData = (await subscriptionResponse.json()).data as { status?: string } | null;
     const isSubscriptionActive =
       subscriptionData?.status === "active";
 

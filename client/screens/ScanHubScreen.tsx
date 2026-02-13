@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -20,7 +19,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootNavigation } from "@/lib/types";
 
 type ScanOption = {
   id: string;
@@ -165,7 +164,7 @@ export default function ScanHubScreen() {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<RootNavigation>();
   const { checkFeature } = useSubscription();
   const [upgradePrompt, setUpgradePrompt] = useState<{
     visible: boolean;
@@ -245,7 +244,7 @@ export default function ScanHubScreen() {
             onUpgrade={() => {
               setUpgradePrompt({ ...upgradePrompt, visible: false });
               // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
-              navigation.navigate("Main" as any, {
+              navigation.navigate("Main", {
                 screen: "Tabs",
                 params: {
                   screen: "ProfileTab",

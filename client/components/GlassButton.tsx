@@ -2,12 +2,15 @@ import React, { ReactNode, memo, useMemo, useCallback } from "react";
 import {
   StyleSheet,
   Pressable,
+  ViewProps,
   ViewStyle,
   StyleProp,
   ActivityIndicator,
   View,
   Platform,
 } from "react-native";
+
+type A11yRole = ViewProps["accessibilityRole"];
 import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
@@ -134,7 +137,7 @@ export const GlassButton = memo(function GlassButton({
     return (
       <AnimatedPressable
         testID={testID}
-        accessibilityRole={(accessibilityRole as any) ?? "button"}
+        accessibilityRole={(accessibilityRole as A11yRole) ?? "button"}
         accessibilityLabel={
           accessibilityLabel ||
           (typeof children === "string" ? children : undefined)
@@ -181,7 +184,7 @@ export const GlassButton = memo(function GlassButton({
   return (
     <AnimatedPressable
       testID={testID}
-      accessibilityRole={(accessibilityRole as any) ?? "button"}
+      accessibilityRole={(accessibilityRole as A11yRole) ?? "button"}
       accessibilityLabel={
         accessibilityLabel ||
         (typeof children === "string" ? children : undefined)

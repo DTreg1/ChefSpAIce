@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigation } from "@react-navigation/native";
+import { webClickable } from "@/lib/types";
 
 const BRAND_GREEN = "#1a2e05";
 const isWeb = Platform.OS === "web";
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    cursor: "pointer" as any,
+    ...webClickable,
   },
   logoText: { fontSize: 24, fontWeight: "700" },
   themeToggle: { padding: 10, borderRadius: 10 },

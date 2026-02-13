@@ -7,10 +7,11 @@ import { GlassCard } from "@/components/GlassCard";
 import { NutritionBadge } from "@/components/NutritionBadge";
 import { Spacing, AppColors } from "@/constants/theme";
 import type { NutritionInfo } from "@/lib/storage";
+import type { ThemeColors } from "@/lib/types";
 
 interface RecipeNutritionCardProps {
   nutrition: NutritionInfo;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export function RecipeNutritionCard({ nutrition, theme }: RecipeNutritionCardProps) {
