@@ -259,15 +259,15 @@ export function SwipeableItemCard({
             accessibilityLabel={`${item.name}, ${item.quantity} ${item.unit}, expires ${formatDate(item.expirationDate)}`}
             accessibilityHint="Opens item details. Long press for more options."
             accessibilityActions={[
-              { name: "consumed", label: "Mark as consumed" },
-              { name: "delete", label: "Delete item" },
+              { name: "consume", label: "Mark as consumed" },
+              { name: "markWasted", label: "Mark as wasted" },
             ]}
             onAccessibilityAction={(event) => {
               switch (event.nativeEvent.actionName) {
-                case "consumed":
+                case "consume":
                   handleConsumed();
                   break;
-                case "delete":
+                case "markWasted":
                   handleWasted();
                   break;
               }
