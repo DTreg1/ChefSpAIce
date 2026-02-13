@@ -18,7 +18,7 @@ interface HeroSectionProps {
 export function HeroSection({ isWide, isDark, onSupport }: HeroSectionProps) {
   return (
     <>
-      <View style={styles.header} data-testid="header">
+      <View style={styles.header} data-testid="header" role="banner" accessibilityLabel="Site header">
         <View style={styles.logoContainer}>
           <Image source={logoImage} style={{ width: 28, height: 28 }} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants" />
           <Text style={styles.logoText} data-testid="text-logo">

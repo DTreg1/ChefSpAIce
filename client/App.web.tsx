@@ -9,6 +9,7 @@ import { injectWebFocusCSS } from "@/lib/web-accessibility";
 import { WebRouterProvider, Route, useRoute, useNavigate } from "@/lib/web-router";
 import { usePageMeta } from "@/lib/web-meta";
 import { withSuspense } from "@/lib/lazy-screen";
+import { useTheme } from "@/hooks/useTheme";
 
 injectWebFocusCSS();
 
@@ -78,7 +79,7 @@ function WebRoutes() {
   return (
     <View style={styles.container}>
       <PageMetaUpdater />
-      <View style={styles.content}>
+      <View style={styles.content} nativeID="main-content" role="main">
         <Route path="/" component={LandingPage} />
         <Route path="/about" component={LazyAboutScreen} />
         <Route path="/privacy" component={LazyPrivacyScreen} />
@@ -89,11 +90,22 @@ function WebRoutes() {
   );
 }
 
+function ThemeAttributeSetter() {
+  const { isDark } = useTheme();
+  React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    }
+  }, [isDark]);
+  return null;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <ThemeProvider>
+          <ThemeAttributeSetter />
           <ErrorBoundary>
             <WebRouterProvider>
               <WebRoutes />

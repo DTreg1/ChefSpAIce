@@ -20,7 +20,7 @@ export function FooterSection({
   onSupport,
 }: FooterSectionProps) {
   return (
-    <View style={styles.footer} data-testid="footer">
+    <View style={styles.footer} data-testid="footer" role="contentinfo">
       <View style={styles.footerContent}>
         <View style={styles.footerLogo}>
           <Image source={logoImage} style={{ width: 28, height: 28 }} accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants" />
@@ -46,6 +46,8 @@ export function FooterSection({
 
         <View
           style={[styles.footerLinks, isWide ? {} : styles.footerLinksWrap]}
+          role="navigation"
+          accessibilityLabel="Footer navigation"
         >
           <Pressable onPress={() => onAbout?.()} {...webAccessibilityProps(() => onAbout?.())} data-testid="link-about" accessibilityRole="button" accessibilityLabel="About ChefSpAIce">
             <Text style={styles.footerLink}>About</Text>

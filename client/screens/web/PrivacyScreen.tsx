@@ -35,7 +35,7 @@ export default function PrivacyScreen() {
       <AnimatedBackground />
 
       {isWeb && (
-        <View style={styles.header}>
+        <View style={styles.header} role="banner" accessibilityLabel="Site header">
           <Pressable
             style={styles.logoContainer}
             onPress={() => navigate("/")}
@@ -53,7 +53,7 @@ export default function PrivacyScreen() {
               ChefSpAIce
             </Text>
           </Pressable>
-          <View style={styles.navLinks}>
+          <View style={styles.navLinks} role="navigation" accessibilityLabel="Site navigation">
             {NAV_LINKS.map((link) => (
               <Pressable
                 key={link.path}
@@ -287,7 +287,7 @@ export default function PrivacyScreen() {
       </View>
 
       {isWeb && (
-        <View style={[styles.footer, { backgroundColor: colors.footerBg }]}>
+        <View style={[styles.footer, { backgroundColor: colors.footerBg }]} role="contentinfo">
           <Text style={[styles.copyright, { color: colors.textMuted }]}>
             © {new Date().getFullYear()} ChefSpAIce. All rights reserved.
           </Text>
