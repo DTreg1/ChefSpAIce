@@ -25,7 +25,7 @@ import Animated, {
 
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
-import { AppColors } from "@/constants/theme";
+import { AppColors, TabBarColors } from "@/constants/theme";
 import { AddMenu } from "./AddMenu";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 
@@ -36,22 +36,7 @@ const TAB_BORDER_RADIUS = 296;
 const ICON_SIZE = 22;
 const INDICATOR_PADDING = 4;
 
-const COLORS = {
-  light: {
-    selected: "#0088FF",
-    unselected: "#404040",
-    selectionBg: "#EDEDED",
-    pillBg: "rgba(255, 255, 255, 0.92)",
-    pillBorder: "rgba(200, 200, 200, 0.5)",
-  },
-  dark: {
-    selected: "#0A84FF",
-    unselected: "#8E8E93",
-    selectionBg: "rgba(255, 255, 255, 0.12)",
-    pillBg: "rgba(28, 28, 30, 0.95)",
-    pillBorder: "rgba(255, 255, 255, 0.1)",
-  },
-};
+const COLORS = TabBarColors;
 
 interface TabLayout {
   x: number;

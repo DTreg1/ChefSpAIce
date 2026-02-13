@@ -31,7 +31,7 @@ const TAB_BAR_HEIGHT = 55;
 
 export function FloatingChatButton() {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+  const { isDark, theme } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
   const scale = useSharedValue(1);
 
@@ -65,7 +65,7 @@ export function FloatingChatButton() {
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
   const iconContent = isChatOpen ? (
-    <Feather name="x" size={28} color="#FFFFFF" />
+    <Feather name="x" size={28} color={theme.buttonText} />
   ) : (
     <Image
       source={chefHatLight}
