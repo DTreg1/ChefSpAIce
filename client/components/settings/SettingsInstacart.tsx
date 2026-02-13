@@ -134,6 +134,7 @@ export function SettingsInstacart({
                 cachePolicy="memory-disk"
                 transition={200}
                 data-testid="img-preferred-retailer-logo"
+                accessibilityLabel={`${preferences.preferredRetailerName || 'Preferred retailer'} logo`}
               />
             ) : (
               <View
@@ -314,6 +315,7 @@ export function SettingsInstacart({
                     cachePolicy="memory-disk"
                     transition={200}
                     data-testid={`img-retailer-logo-${retailer.retailer_key}`}
+                    accessibilityLabel={`${retailer.name} logo`}
                   />
                 ) : (
                   <View

@@ -182,6 +182,7 @@ export default function GrocerySearchScreen() {
           style={styles.topSearchImage}
           contentFit="contain"
           cachePolicy="memory-disk"
+          accessibilityLabel={`Product image of ${product.name}`}
         />
         {addedProductIds.has(product.id) && <AddedOverlay />}
       </View>
@@ -210,6 +211,7 @@ export default function GrocerySearchScreen() {
             style={styles.trendingImage}
             contentFit="contain"
             cachePolicy="memory-disk"
+            accessibilityLabel={`Product image of ${product.name}`}
           />
           {addedProductIds.has(product.id) && <AddedOverlay />}
         </View>
@@ -233,6 +235,7 @@ export default function GrocerySearchScreen() {
               style={styles.searchResultImage}
               contentFit="contain"
               cachePolicy="memory-disk"
+              accessibilityLabel={`Product image of ${product.name}`}
             />
             <View style={styles.searchResultInfo}>
               <ThemedText type="body" testID={`text-product-name-${product.id}`}>
