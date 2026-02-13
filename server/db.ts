@@ -14,7 +14,58 @@ const pool = new pg.Pool({
   connectionTimeoutMillis: 5000,
 });
 
-export const db = drizzle(pool, { schema });
+const SLOW_QUERY_WARN_MS = 500;
+const SLOW_QUERY_ERROR_MS = 2000;
+
+const originalQuery = pool.query.bind(pool) as typeof pool.query;
+
+(pool as { query: typeof pool.query }).query = function wrappedQuery(
+  this: pg.Pool,
+  ...args: Parameters<typeof pool.query>
+) {
+  const start = performance.now();
+  const first = args[0];
+  const sql =
+    typeof first === "string"
+      ? first
+      : typeof first === "object" && first !== null && "text" in first
+        ? (first as { text: string }).text
+        : "unknown";
+
+  const result = (originalQuery as Function).apply(this, args);
+
+  if (result && typeof result.then === "function") {
+    (result as Promise<unknown>).then(
+      () => {
+        const duration = Math.round(performance.now() - start);
+        logQueryDuration(sql, duration);
+      },
+      () => {
+        const duration = Math.round(performance.now() - start);
+        logQueryDuration(sql, duration);
+      },
+    );
+  }
+
+  return result;
+} as typeof pool.query;
+
+function logQueryDuration(sql: string, durationMs: number) {
+  if (durationMs >= SLOW_QUERY_ERROR_MS) {
+    logger.error("Slow query (critical)", { sql, durationMs });
+  } else if (durationMs >= SLOW_QUERY_WARN_MS) {
+    logger.warn("Slow query", { sql, durationMs });
+  }
+}
+
+export const db = drizzle(pool, {
+  schema,
+  logger: {
+    logQuery(query: string, _params: unknown[]) {
+      logger.debug("Query executed", { sql: query });
+    },
+  },
+});
 
 export interface PoolStats {
   totalCount: number;
