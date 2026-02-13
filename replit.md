@@ -11,6 +11,7 @@ See `docs/bundle-analysis.md` for full report. Key findings:
 - **Top optimization:** Disable Sentry session replay to save ~400 KB source
 
 ## Recent Changes
+- **2026-02-13**: Added object storage recovery procedure documentation at `docs/object-storage-recovery.md`. Covers storage layout, three recovery options (AI re-generation, manifest export, secondary backup), and recommendation.
 - **2026-02-13**: Added weekly `soft-delete-cleanup` background job that permanently deletes inventory items where `deletedAt` is older than 30 days. Aligns with UI's "recently deleted" feature and prevents soft-deleted rows from accumulating. Job file: `server/jobs/softDeleteCleanupJob.ts`.
 - **2026-02-13**: Added retention offer duplicate prevention in `/apply-retention-offer` endpoint. Before creating a Stripe coupon, checks Stripe subscription discounts for active "Retention Offer" coupons and queries new `retention_offers` DB table for any offer applied in the last 6 months. Rejects with `RETENTION_OFFER_ALREADY_APPLIED` (409). New `retentionOffers` table tracks all retention offers for analytics.
 - **2026-02-13**: Added server-side waste analytics endpoint (`GET /api/analytics/waste-summary`) that aggregates `userWasteLogs` and `userConsumedLogs` by week/month, calculates waste reduction scores, and tracks streaks (consecutive weeks with score >= 80). AnalyticsScreen fetches server data and displays weekly trend bar charts and streak badges with client-side fallback.
