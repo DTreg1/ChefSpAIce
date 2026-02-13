@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import type { NutritionInfo } from "@/lib/storage";
 
 interface NutritionBadgeProps {
@@ -63,13 +63,13 @@ export function NutritionBadge({
           >
             <ThemedText
               type="caption"
-              style={[styles.macroText, { color: AppColors.success }]}
+              style={[styles.macroText, { color: theme.success }]}
             >
               P {protein}g
             </ThemedText>
             <ThemedText
               type="caption"
-              style={[styles.percentText, { color: AppColors.success }]}
+              style={[styles.percentText, { color: theme.success }]}
             >
               {proteinPercent}%
             </ThemedText>
@@ -82,13 +82,13 @@ export function NutritionBadge({
           >
             <ThemedText
               type="caption"
-              style={[styles.macroText, { color: AppColors.accent }]}
+              style={[styles.macroText, { color: theme.accent }]}
             >
               C {carbs}g
             </ThemedText>
             <ThemedText
               type="caption"
-              style={[styles.percentText, { color: AppColors.accent }]}
+              style={[styles.percentText, { color: theme.accent }]}
             >
               {carbsPercent}%
             </ThemedText>
@@ -101,13 +101,13 @@ export function NutritionBadge({
           >
             <ThemedText
               type="caption"
-              style={[styles.macroText, { color: AppColors.secondary }]}
+              style={[styles.macroText, { color: theme.secondary }]}
             >
               F {fat}g
             </ThemedText>
             <ThemedText
               type="caption"
-              style={[styles.percentText, { color: AppColors.secondary }]}
+              style={[styles.percentText, { color: theme.secondary }]}
             >
               {fatPercent}%
             </ThemedText>

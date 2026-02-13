@@ -205,7 +205,7 @@ function LocationChip({
             <Feather
               name="star"
               size={10}
-              color={isSelected ? "#FFFFFF" : AppColors.secondary}
+              color={isSelected ? "#FFFFFF" : theme.secondary}
               style={{ marginRight: 2 }}
             />
           ) : null}
@@ -217,8 +217,8 @@ function LocationChip({
                 color: isSelected
                   ? "#FFFFFF"
                   : isLearned
-                    ? AppColors.secondary
-                    : AppColors.primary,
+                    ? theme.secondary
+                    : theme.primary,
               },
             ]}
           >
@@ -293,10 +293,10 @@ export function StorageSuggestionBadge({
             ]}
             accessibilityLabel={`Shelf life: approximately ${shelfLifeDays} days`}
           >
-            <Feather name="clock" size={12} color={AppColors.primary} />
+            <Feather name="clock" size={12} color={theme.primary} />
             <ThemedText
               type="caption"
-              style={{ color: AppColors.primary, fontWeight: "600" }}
+              style={{ color: theme.primary, fontWeight: "600" }}
             >
               ~{shelfLifeDays}d
             </ThemedText>
