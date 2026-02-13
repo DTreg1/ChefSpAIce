@@ -1014,6 +1014,479 @@ KEY PRINCIPLES:
   }
 });
 
+router.post("/generate-stream", validateBody(generateRecipeSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.userId) {
+      throw AppError.unauthorized("Authentication required");
+    }
+
+    const limitCheck = await checkAiRecipeLimit(req.userId);
+    const remaining = typeof limitCheck.remaining === 'number' ? limitCheck.remaining : Infinity;
+    if (remaining < 1) {
+      throw AppError.forbidden(
+        "Monthly AI recipe limit reached. Upgrade your subscription for unlimited recipes.",
+        "AI_RECIPE_LIMIT_REACHED",
+      ).withDetails({ limit: limitCheck.limit, remaining: 0 });
+    }
+
+    const {
+      prioritizeExpiring,
+      quickRecipe,
+      ingredients: selectedIngredientIds,
+      servings,
+      maxTime,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      inventory,
+      equipment,
+      macroTargets,
+      previousRecipeTitles,
+      ingredientCount,
+    } = req.body;
+
+    if (!inventory || inventory.length === 0) {
+      if (selectedIngredientIds && selectedIngredientIds.length === 0) {
+        throw AppError.badRequest(
+          "No ingredients available",
+          "NO_INGREDIENTS",
+        ).withDetails({ details: "Please add items to your inventory or select ingredients" });
+      }
+    }
+
+    const { expiringItems, otherItems } = organizeInventory(
+      inventory || [],
+      selectedIngredientIds,
+    );
+
+    if (expiringItems.length === 0 && otherItems.length === 0) {
+      throw AppError.badRequest(
+        "No ingredients to use",
+        "NO_INGREDIENTS",
+      ).withDetails({ details: "Please add items to your inventory" });
+    }
+
+    const effectiveMaxTime = quickRecipe ? 20 : maxTime;
+
+    const prompt = buildSmartPrompt({
+      expiringItems,
+      otherItems,
+      prioritizeExpiring,
+      quickRecipe,
+      servings,
+      maxTime: effectiveMaxTime,
+      dietaryRestrictions,
+      cuisine,
+      mealType,
+      equipment,
+      macroTargets,
+      previousRecipeTitles,
+      ingredientCount,
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      logger.debug("Smart generation prompt (stream)", {
+        promptPreview: prompt.substring(0, 500),
+      });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    let aborted = false;
+    req.on('close', () => { aborted = true; });
+
+    const effectiveIngredientCount = ingredientCount || { min: 4, max: 6 };
+
+    const stream = await withCircuitBreaker("openai", () => openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a creative culinary assistant that creates the BEST possible recipes from user-provided ingredients.
+
+KEY PRINCIPLES:
+1. Use ONLY ingredients from the user's inventory - use fuzzy matching ("chicken" matches "chicken breast")
+2. Water and ice are always available
+3. Target ${effectiveIngredientCount.min}-${effectiveIngredientCount.max} ingredients for focused, quality dishes
+4. When using a substitute ingredient, add a subtle note (e.g., "Using lime here - lemon works too")
+5. Use clean, appetizing ingredient names for display while tracking inventory matches
+6. Always respond with valid JSON matching the exact schema provided`,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2048,
+      stream: true,
+    }));
+
+    let fullContent = "";
+
+    for await (const chunk of stream) {
+      if (aborted) break;
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        fullContent += delta;
+        res.write(`data: ${JSON.stringify({ type: "chunk", text: delta })}\n\n`);
+      }
+    }
+
+    if (aborted) {
+      res.end();
+      return;
+    }
+
+    if (!fullContent) {
+      res.write(`data: ${JSON.stringify({ type: "error", message: "No response from AI" })}\n\n`);
+      res.end();
+      return;
+    }
+
+    let recipe: GeneratedRecipe = JSON.parse(fullContent);
+
+    const ALLOWED_UTILITIES = new Set([
+      "water",
+      "tap water",
+      "cold water",
+      "hot water",
+      "warm water",
+      "ice water",
+      "ice",
+      "ice cubes",
+    ]);
+
+    const fuzzyMatch = (
+      recipeIngredient: string,
+      inventoryItem: string,
+    ): boolean => {
+      const normalize = (s: string) => {
+        let normalized = s
+          .toLowerCase()
+          .trim()
+          .replace(/[,()]/g, " ")
+          .replace(
+            /\b(fresh|organic|raw|cooked|frozen|canned|dried|whole|sliced|diced|chopped|minced|ground|crushed|shredded|grated|peeled|boneless|skinless|lean|extra\s*virgin|light|heavy|low[\s-]?fat|fat[\s-]?free|unsalted|salted|sweetened|unsweetened|plain|greek|regular|large|medium|small|ripe|overripe|unripe|commercially\s*prepared|store[\s-]?bought|homemade|white|wheat|multigrain|enriched)\b/g,
+            "",
+          )
+          .replace(/\b(loaf|loaves|slice|slices|bag|package|can|jar|bottle|box|bunch|head)\s+of\s+/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const vesWordsToF: Record<string, string> = {
+          knives: "knife",
+          loaves: "loaf",
+          leaves: "leaf",
+          halves: "half",
+          calves: "calf",
+          shelves: "shelf",
+          wolves: "wolf",
+          selves: "self",
+        };
+
+        for (const [plural, singular] of Object.entries(vesWordsToF)) {
+          if (normalized.endsWith(plural)) {
+            normalized = normalized.slice(0, -plural.length) + singular;
+            break;
+          }
+        }
+
+        if (!normalized.endsWith("f") && !normalized.endsWith("fe")) {
+          const singularWordsEndingInS = new Set([
+            "couscous",
+            "hummus",
+            "molasses",
+            "asparagus",
+            "citrus",
+            "hibiscus",
+            "cactus",
+            "octopus",
+            "surplus",
+            "bonus",
+            "mucus",
+            "radius",
+            "focus",
+            "bass",
+            "moss",
+            "grass",
+            "class",
+            "glass",
+            "mass",
+            "pass",
+            "brass",
+            "swiss",
+            "stress",
+            "dress",
+            "press",
+            "chess",
+            "less",
+            "mess",
+            "brussels",
+            "sprouts",
+            "oats",
+            "grits",
+            "nuts",
+            "greens",
+            "beans",
+          ]);
+
+          const skipDepluralization = singularWordsEndingInS.has(normalized);
+
+          if (!skipDepluralization) {
+            if (normalized.endsWith("ies")) {
+              normalized = normalized.slice(0, -3) + "y";
+            } else if (normalized.endsWith("oes")) {
+              normalized = normalized.slice(0, -2);
+            } else if (normalized.match(/(sh|ch|x|z|ss)es$/)) {
+              normalized = normalized.slice(0, -2);
+            } else if (normalized.endsWith("s") && normalized.length > 3) {
+              normalized = normalized.slice(0, -1);
+            }
+          }
+        }
+
+        normalized = normalized.replace(/[-_]/g, " ");
+
+        return normalized;
+      };
+
+      const normRecipe = normalize(recipeIngredient);
+      const normInventory = normalize(inventoryItem);
+
+      if (normRecipe === normInventory) return true;
+
+      if (
+        normRecipe.includes(normInventory) ||
+        normInventory.includes(normRecipe)
+      )
+        return true;
+
+      const wordsRecipe = normRecipe.split(/\s+/).filter((w) => w.length > 1);
+      const wordsInventory = normInventory
+        .split(/\s+/)
+        .filter((w) => w.length > 1);
+
+      const coreRecipe = wordsRecipe[wordsRecipe.length - 1] || normRecipe;
+      const coreInventory =
+        wordsInventory[wordsInventory.length - 1] || normInventory;
+      if (coreRecipe === coreInventory) return true;
+
+      const matchingWords = wordsRecipe.filter((wr) =>
+        wordsInventory.some(
+          (wi) =>
+            wr === wi ||
+            (wr.length > 3 &&
+              wi.length > 3 &&
+              (wr.includes(wi) || wi.includes(wr))),
+        ),
+      );
+
+      if (
+        matchingWords.length > 0 &&
+        matchingWords.length >=
+          Math.max(1, Math.min(wordsRecipe.length, wordsInventory.length) * 0.4)
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const isAllowedUtility = (ingredientName: string): boolean => {
+      const normalized = ingredientName.toLowerCase().trim();
+      return ALLOWED_UTILITIES.has(normalized);
+    };
+
+    const inventoryItems = [...expiringItems, ...otherItems];
+
+    const originalIngredientCount = recipe.ingredients?.length || 0;
+    recipe.ingredients = (recipe.ingredients || [])
+      .map((ing) => {
+        const matchedInventoryItem = inventoryItems.find((invItem) =>
+          fuzzyMatch(ing.name, invItem.name),
+        );
+
+        if (matchedInventoryItem) {
+          const recipeQty = typeof ing.quantity === 'number' ? ing.quantity : parseFloat(String(ing.quantity)) || 1;
+          const recipeUnit = ing.unit || '';
+          const inventoryQty = matchedInventoryItem.quantity || 1;
+          const inventoryUnit = matchedInventoryItem.unit || null;
+
+          const comparison = compareQuantities(
+            inventoryQty,
+            inventoryUnit,
+            recipeQty,
+            recipeUnit,
+          );
+
+          return {
+            ...ing,
+            fromInventory: true,
+            availabilityStatus: comparison.status,
+            percentAvailable: comparison.percentAvailable ?? 100,
+          };
+        }
+
+        if (isAllowedUtility(ing.name)) {
+          if (process.env.NODE_ENV !== "production") {
+            logger.debug("Allowing utility ingredient (stream)", { ingredient: ing.name });
+          }
+          return {
+            ...ing,
+            fromInventory: false,
+            availabilityStatus: 'available' as AvailabilityStatus,
+            percentAvailable: 100,
+          };
+        }
+
+        if (process.env.NODE_ENV !== "production") {
+          logger.debug("Removing ingredient not in inventory (stream)", { ingredient: ing.name });
+        }
+        return null;
+      })
+      .filter((ing): ing is NonNullable<typeof ing> => ing !== null);
+
+    const inventoryIngredients = recipe.ingredients.filter(
+      (ing) => ing.fromInventory === true,
+    );
+    if (inventoryIngredients.length < 2) {
+      res.write(`data: ${JSON.stringify({ type: "error", message: "Could not generate a valid recipe. Not enough matching ingredients were found." })}\n\n`);
+      res.end();
+      return;
+    }
+
+    const validIngredientTerms = recipe.ingredients.flatMap((ing) => {
+      const name = ing.name.toLowerCase();
+      const words = name.split(/\s+/).filter((w) => w.length > 2);
+      return [name, ...words];
+    });
+
+    const findUnmatchedIngredients = (text: string): string[] => {
+      const textLower = text.toLowerCase();
+      const foodTerms = [
+        "chicken", "beef", "pork", "fish", "salmon", "tuna", "shrimp", "lamb", "bacon",
+        "ham", "turkey", "sausage", "steak", "ground meat", "meatball", "tofu", "tempeh",
+        "seitan", "duck", "veal", "crab", "lobster", "scallop",
+        "tomato", "tomatoes", "onion", "onions", "garlic", "mushroom", "mushrooms",
+        "carrot", "carrots", "potato", "potatoes", "broccoli", "spinach", "lettuce",
+        "cucumber", "zucchini", "squash", "eggplant", "bell pepper", "jalapeño", "celery",
+        "cabbage", "kale", "asparagus", "cauliflower", "green beans", "artichoke", "beet",
+        "radish", "turnip", "leek", "shallot", "scallion",
+        "apple", "banana", "orange", "lemon", "lime", "avocado", "mango", "pineapple",
+        "strawberry", "blueberry", "raspberry", "grape", "peach", "pear", "melon",
+        "watermelon", "cherry", "kiwi", "coconut", "pomegranate", "fig", "date",
+        "cheese", "cheddar", "mozzarella", "parmesan", "feta", "cream cheese", "cream",
+        "milk", "yogurt", "sour cream", "butter", "ghee", "ricotta",
+        "rice", "pasta", "noodle", "bread", "tortilla", "quinoa", "couscous", "oat",
+        "barley", "farro", "bulgur", "flour", "cornmeal", "polenta",
+        "egg", "eggs",
+        "mayo", "mayonnaise", "ketchup", "mustard", "soy sauce", "vinegar", "hot sauce",
+        "sriracha", "worcestershire", "tahini", "pesto",
+        "beans", "lentil", "chickpea", "black beans", "kidney beans", "pinto beans",
+        "cilantro", "basil", "parsley", "thyme", "rosemary", "oregano", "dill", "mint",
+        "sage", "chive", "ginger",
+        "corn", "peas", "olive", "caper", "pickle", "honey", "maple syrup", "almond",
+        "walnut", "cashew", "peanut", "pecan", "pistachio",
+      ];
+
+      return foodTerms.filter((term) => {
+        if (!textLower.includes(term)) return false;
+        if (ALLOWED_UTILITIES.has(term)) return false;
+        return !validIngredientTerms.some(
+          (valid) => valid.includes(term) || term.includes(valid),
+        );
+      });
+    };
+
+    const descPhantoms = findUnmatchedIngredients(recipe.description || "");
+    if (descPhantoms.length > 0) {
+      if (process.env.NODE_ENV !== "production") {
+        logger.debug("Description mentions invalid ingredients, rewriting (stream)", { phantomIngredients: descPhantoms });
+      }
+      const ingredientList = inventoryIngredients.map((i) => i.name).join(", ");
+      recipe.description = `A delicious dish featuring ${ingredientList}.`;
+    }
+
+    const instructionsText = (recipe.instructions || []).join(" ");
+    const instrPhantoms = findUnmatchedIngredients(instructionsText);
+    if (instrPhantoms.length > 0) {
+      if (process.env.NODE_ENV !== "production") {
+        logger.debug("Instructions mention invalid ingredients, filtering (stream)", { phantomIngredients: instrPhantoms });
+      }
+      recipe.instructions = (recipe.instructions || []).map((step) => {
+        let cleanStep = step;
+        instrPhantoms.forEach((phantom) => {
+          const regex = new RegExp(`\\b${phantom}s?\\b`, "gi");
+          cleanStep = cleanStep.replace(regex, "ingredients");
+        });
+        return cleanStep;
+      });
+    }
+
+    recipe.ingredients = recipe.ingredients.map((ing) => ({
+      ...ing,
+      unit: normalizeUnit(ing.unit) || ing.unit,
+    }));
+
+    const filteredCount = originalIngredientCount - recipe.ingredients.length;
+    if (filteredCount > 0 && process.env.NODE_ENV !== "production") {
+      logger.debug("Filtered out ingredients not in inventory (stream)", { filteredCount });
+    }
+
+    if (quickRecipe) {
+      const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+      if (totalTime > 20) {
+        if (process.env.NODE_ENV !== "production") {
+          logger.debug("Quick recipe time exceeded, clamping to 20 min total (stream)", { totalTime });
+        }
+        const ratio = 20 / totalTime;
+        recipe.prepTime = Math.max(
+          5,
+          Math.floor((recipe.prepTime || 10) * ratio),
+        );
+        recipe.cookTime = Math.max(5, 20 - recipe.prepTime);
+      }
+    }
+
+    const usedExpiringCount = recipe.usedExpiringItems?.length || 0;
+    recipe.usedExpiringCount = usedExpiringCount;
+
+    logger.info("Recipe generated (stream)", { title: recipe.title, usedExpiringCount, totalExpiringItems: expiringItems.length });
+
+    await incrementAiRecipeCount(req.userId!);
+
+    const updatedLimit = await checkAiRecipeLimit(req.userId!);
+
+    res.write(`data: ${JSON.stringify({
+      type: "done",
+      recipe: {
+        ...recipe,
+        totalExpiringItems: expiringItems.length,
+        prioritizedExpiring: prioritizeExpiring,
+        subscription: {
+          aiRecipesRemaining: updatedLimit.remaining,
+          aiRecipesLimit: updatedLimit.limit,
+        },
+      },
+    })}\n\n`);
+
+    res.end();
+  } catch (error) {
+    if (res.headersSent) {
+      const message = error instanceof Error ? error.message : "Recipe generation failed";
+      res.write(`data: ${JSON.stringify({ type: "error", message })}\n\n`);
+      res.end();
+    } else {
+      next(error);
+    }
+  }
+});
+
 // Generate recipe image endpoint
 const generateImageSchema = z.object({
   title: z.string().min(1, "Recipe title is required").max(100),

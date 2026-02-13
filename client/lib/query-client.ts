@@ -36,7 +36,7 @@ import { offlineMutationQueue } from "@/lib/offline-queue";
 
 const AUTH_TOKEN_KEY = "@chefspaice/auth_token";
 
-async function getStoredAuthToken(): Promise<string | null> {
+export async function getStoredAuthToken(): Promise<string | null> {
   try {
     const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
     return token ? JSON.parse(token) : null;

@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { View, StyleSheet, Modal, Platform, Alert, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Modal, Platform, Alert, ActivityIndicator, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -36,7 +36,7 @@ import {
   DEFAULT_MACRO_TARGETS,
 } from "@/lib/storage";
 import { RecipesStackParamList } from "@/navigation/RecipesStackNavigator";
-import { apiRequestJson, getApiUrl } from "@/lib/query-client";
+import { apiRequestJson, getApiUrl, getStoredAuthToken } from "@/lib/query-client";
 import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
@@ -104,6 +104,7 @@ export default function GenerateRecipeScreen() {
   const [_progressStage, setProgressStage] = useState<"recipe" | "image">(
     "recipe",
   );
+  const [streamingText, setStreamingText] = useState("");
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const autoGenerateTriggered = useRef(false);
@@ -215,6 +216,7 @@ export default function GenerateRecipeScreen() {
 
     setGenerating(true);
     setProgressStage("recipe");
+    setStreamingText("");
     setShowProgressModal(true);
 
     try {
@@ -235,7 +237,6 @@ export default function GenerateRecipeScreen() {
         ? userPreferences.dietaryRestrictions.join(", ")
         : undefined;
 
-      // Use custom cuisine if specified, otherwise random from preferences
       const cuisinePreference = customSettings?.cuisine
         ? customSettings.cuisine
         : userPreferences?.cuisinePreferences?.length
@@ -249,14 +250,13 @@ export default function GenerateRecipeScreen() {
       const macroTargets =
         userPreferences?.macroTargets || DEFAULT_MACRO_TARGETS;
 
-      // Use custom settings if provided, otherwise use defaults
       const effectiveServings = customSettings?.servings ?? 1;
       const effectiveMaxTime =
         customSettings?.maxTime ?? (isQuickRecipe ? 20 : 60);
       const effectiveMealType = customSettings?.mealType ?? mealType;
       const effectiveIngredientCount = customSettings?.ingredientCount;
 
-      const generatedRecipe: any = await apiRequestJson("POST", "/api/recipes/generate", {
+      const requestBody = {
         prioritizeExpiring: true,
         quickRecipe: isQuickRecipe,
         inventory: inventoryPayload,
@@ -267,9 +267,86 @@ export default function GenerateRecipeScreen() {
         dietaryRestrictions,
         cuisine: cuisinePreference,
         macroTargets,
-        previousRecipeTitles: previousRecipeTitles.slice(-5), // Send last 5 for variety
+        previousRecipeTitles: previousRecipeTitles.slice(-5),
         ingredientCount: effectiveIngredientCount,
+      };
+
+      let generatedRecipe: any;
+
+      const baseUrl = getApiUrl();
+      const streamUrl = new URL("/api/recipes/generate-stream", baseUrl);
+      const token = await getStoredAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const streamRes = await fetch(streamUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(requestBody),
+        credentials: "include",
       });
+
+      if (!streamRes.ok) {
+        const errorText = await streamRes.text();
+        throw new Error(`${streamRes.status}: ${errorText}`);
+      }
+
+      const contentType = streamRes.headers.get("content-type") || "";
+      if (!contentType.includes("text/event-stream")) {
+        const json = await streamRes.json();
+        const data = json?.data ?? json;
+        generatedRecipe = data;
+      } else {
+        const reader = streamRes.body?.getReader();
+        if (!reader) {
+          throw new Error("No response body for streaming");
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            if (!payload) continue;
+
+            try {
+              const event = JSON.parse(payload);
+              if (event.type === "chunk") {
+                accumulated += event.text;
+                setStreamingText(accumulated);
+              } else if (event.type === "done") {
+                generatedRecipe = event.recipe;
+              } else if (event.type === "error") {
+                throw new Error(event.message || "Recipe generation failed");
+              }
+            } catch (parseErr) {
+              if (parseErr instanceof Error && parseErr.message !== "Recipe generation failed" && !parseErr.message.includes("Could not generate")) {
+                logger.error("[Stream] Parse error:", parseErr);
+              } else {
+                throw parseErr;
+              }
+            }
+          }
+        }
+
+        if (!generatedRecipe) {
+          throw new Error("Stream ended without a completed recipe");
+        }
+      }
 
       const usedExpiringItems = generatedRecipe.usedExpiringItems || [];
       const expiringItemsUsed = usedExpiringItems.length;
@@ -638,9 +715,22 @@ export default function GenerateRecipeScreen() {
       >
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.progressModal}>
-            <ActivityIndicator size="large" />
+            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" />
             <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}</ThemedText>
-            {expiringItems.length > 0 ? (
+            {streamingText.length > 0 ? (
+              <ScrollView
+                style={styles.streamPreview}
+                contentContainerStyle={styles.streamPreviewContent}
+              >
+                <ThemedText
+                  type="small"
+                  style={{ color: theme.textSecondary, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}
+                  data-testid="text-streaming-preview"
+                >
+                  {streamingText.slice(-400)}
+                </ThemedText>
+              </ScrollView>
+            ) : expiringItems.length > 0 ? (
               <View style={styles.progressExpiringNote} accessibilityLiveRegion="polite">
                 <Feather name="clock" size={16} color={AppColors.warning} />
                 <ThemedText type="caption" style={{ color: AppColors.warning }}>
@@ -860,6 +950,16 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     backgroundColor: "rgba(255, 152, 0, 0.1)",
     borderRadius: BorderRadius.sm,
+  },
+  streamPreview: {
+    maxHeight: 120,
+    width: "100%",
+    marginTop: Spacing.sm,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    borderRadius: BorderRadius.sm,
+  },
+  streamPreviewContent: {
+    padding: Spacing.sm,
   },
   webUpgradeOverlay: {
     position: "absolute",
