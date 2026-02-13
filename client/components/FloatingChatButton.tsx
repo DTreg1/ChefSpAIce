@@ -1,5 +1,6 @@
 import React from "react";
-import { StyleSheet, Pressable, Platform, View, Image } from "react-native";
+import { StyleSheet, Pressable, Platform, View } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
@@ -69,7 +70,8 @@ export function FloatingChatButton() {
     <Image
       source={chefHatLight}
       style={{ width: 28, height: 28 }}
-      resizeMode="contain"
+      contentFit="contain"
+      cachePolicy="memory-disk"
       accessibilityElementsHidden={true}
       importantForAccessibility="no-hide-descendants"
     />

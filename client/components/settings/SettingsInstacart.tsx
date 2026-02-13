@@ -5,9 +5,9 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  Image,
   ScrollView,
 } from "react-native";
+import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
@@ -130,6 +130,9 @@ export function SettingsInstacart({
               <Image
                 source={{ uri: preferences.preferredRetailerLogo }}
                 style={styles.retailerLogo}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                transition={200}
                 data-testid="img-preferred-retailer-logo"
               />
             ) : (
@@ -307,6 +310,9 @@ export function SettingsInstacart({
                   <Image
                     source={{ uri: retailer.retailer_logo_url }}
                     style={styles.retailerLogo}
+                    contentFit="contain"
+                    cachePolicy="memory-disk"
+                    transition={200}
                     data-testid={`img-retailer-logo-${retailer.retailer_key}`}
                   />
                 ) : (

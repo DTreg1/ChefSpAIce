@@ -3,9 +3,9 @@ import {
   View,
   StyleSheet,
   Platform,
-  Image,
   Pressable,
 } from "react-native";
+import { Image } from "expo-image";
 import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
@@ -244,7 +244,8 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               <Image
                 source={require("../assets/images/icon.png")}
                 style={styles.logo}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
                 accessibilityElementsHidden={true}
                 importantForAccessibility="no-hide-descendants"
               />

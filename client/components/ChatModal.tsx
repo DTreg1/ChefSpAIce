@@ -9,8 +9,8 @@ import {
   Platform,
   ActivityIndicator,
   useWindowDimensions,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { logger } from "@/lib/logger";
 import { GlassView } from "@/components/GlassViewWithContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -571,7 +571,8 @@ export function ChatModal() {
       <Image
         source={chefHatDark}
         style={{ width: 32, height: 32, opacity: 0.7 }}
-        resizeMode="contain"
+        contentFit="contain"
+        cachePolicy="memory-disk"
         accessibilityElementsHidden={true}
         importantForAccessibility="no-hide-descendants"
       />
@@ -873,7 +874,8 @@ export function ChatModal() {
           <Image
             source={chefHatDark}
             style={{ width: 18, height: 18 }}
-            resizeMode="contain"
+            contentFit="contain"
+            cachePolicy="memory-disk"
             accessibilityElementsHidden={true}
             importantForAccessibility="no-hide-descendants"
           />

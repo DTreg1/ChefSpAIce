@@ -5,9 +5,9 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Image,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
@@ -180,7 +180,8 @@ export default function GrocerySearchScreen() {
         <Image
           source={productImages[product.imageKey]}
           style={styles.topSearchImage}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
         />
         {addedProductIds.has(product.id) && <AddedOverlay />}
       </View>
@@ -207,7 +208,8 @@ export default function GrocerySearchScreen() {
           <Image
             source={productImages[product.imageKey]}
             style={styles.trendingImage}
-            resizeMode="contain"
+            contentFit="contain"
+            cachePolicy="memory-disk"
           />
           {addedProductIds.has(product.id) && <AddedOverlay />}
         </View>
@@ -229,7 +231,8 @@ export default function GrocerySearchScreen() {
             <Image
               source={productImages[product.imageKey]}
               style={styles.searchResultImage}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
             />
             <View style={styles.searchResultInfo}>
               <ThemedText type="body" testID={`text-product-name-${product.id}`}>

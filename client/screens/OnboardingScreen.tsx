@@ -5,9 +5,9 @@ import {
   Pressable,
   ScrollView,
   Platform,
-  Image,
   ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
@@ -671,7 +671,8 @@ function FoodItemRow({
               <Image
                 source={STARTER_FOOD_IMAGES[food.id]}
                 style={styles.foodImage}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
                 accessibilityLabel={`Image of ${food.name}`}
               />
             ) : (

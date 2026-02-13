@@ -5,10 +5,10 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
-  Image,
   TextInput,
   Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -414,6 +414,9 @@ export default function AuthScreen() {
                     <Image
                       source={{ uri: "https://www.google.com/favicon.ico" }}
                       style={styles.authGoogleIcon}
+                      contentFit="contain"
+                      cachePolicy="memory-disk"
+                      transition={200}
                       accessibilityLabel="Google logo"
                     />
                     <ThemedText style={styles.authSocialButtonText}>
