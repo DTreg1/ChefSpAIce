@@ -3,6 +3,11 @@
 ## Overview
 ChefSpAIce is an AI-powered kitchen inventory management application designed to simplify meal preparation and grocery shopping. It offers intelligent recipe generation, comprehensive meal planning, and automated shopping list creation. The project aims to deliver a seamless user experience with a single subscription model, leveraging its innovative AI features and intuitive design to capture market potential.
 
+## Recent Changes
+- **2026-02-13**: Replaced in-memory Map caches with database-backed `api_cache` table (key TEXT PK, value JSONB, expiresAt TIMESTAMP). New `DatabaseCacheStore` in `server/lib/cache.ts` implements `CacheStore` interface using DB upserts. `nutritionLookupService.ts` migrated from raw Map to `CacheService`. Daily `cache-cleanup` cron job deletes expired rows. Cache now survives server restarts.
+- **2026-02-13**: Added Expo push notifications. Server uses `expo-server-sdk` to send push notifications after inserting into the notifications table. New `/api/user/push-token` endpoint for clients to register tokens. Token refresh runs automatically on app startup.
+- **2026-02-13**: Consolidated all subscription tiers into a single STANDARD tier.
+
 ## User Preferences
 - Communication: Simple, everyday language
 
