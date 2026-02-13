@@ -568,6 +568,17 @@ async function initStripe(retries = 3, delay = 2000) {
       });
     },
   );
+
+  const shutdown = async (signal: string) => {
+    logger.info("Shutdown signal received", { signal });
+    server.close(() => {
+      logger.info("HTTP server closed");
+    });
+    await flushSentry(5000);
+    process.exit(0);
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 })();
 
 process.on("unhandledRejection", (reason, promise) => {
