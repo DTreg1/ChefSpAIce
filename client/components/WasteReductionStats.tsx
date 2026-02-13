@@ -30,7 +30,7 @@ const TIER_COLORS = {
 export function WasteReductionStats({
   compact = false,
 }: WasteReductionStatsProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const [stats, setStats] = useState<StatsType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState({
     itemsSaved: 0,
@@ -76,7 +76,11 @@ export function WasteReductionStats({
           <ThemedText type="h4">Waste Reduction</ThemedText>
         </View>
         <View style={styles.compactStats}>
-          <View style={styles.compactStatItem}>
+          <View
+            style={styles.compactStatItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${monthlyStats.itemsSaved} items saved this month`}
+          >
             <Animated.View style={counterStyle}>
               <ThemedText type="h2" style={{ color: AppColors.success }}>
                 {monthlyStats.itemsSaved}
@@ -84,7 +88,11 @@ export function WasteReductionStats({
             </Animated.View>
             <ThemedText type="caption">Items saved this month</ThemedText>
           </View>
-          <View style={styles.compactStatItem}>
+          <View
+            style={styles.compactStatItem}
+            accessibilityRole="text"
+            accessibilityLabel={`$${monthlyStats.valueSaved.toFixed(0)} value saved`}
+          >
             <ThemedText type="h2" style={{ color: AppColors.primary }}>
               ${monthlyStats.valueSaved.toFixed(0)}
             </ThemedText>
@@ -113,7 +121,7 @@ export function WasteReductionStats({
       <GlassCard style={styles.mainCard}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Feather name="award" size={24} color={AppColors.success} />
+            <Feather name="award" size={20} color={AppColors.success} />
             <ThemedText type="h4">Your Impact</ThemedText>
           </View>
           {stats.badges.length > 0 ? (
@@ -137,25 +145,37 @@ export function WasteReductionStats({
         </View>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+          <View
+            style={[styles.statCard, { backgroundColor: theme.glass.backgroundSubtle }]}
+            accessibilityRole="text"
+            accessibilityLabel={`${stats.totalItemsSavedFromWaste} items saved from waste`}
+          >
             <Animated.View style={counterStyle}>
-              <ThemedText type="h1" style={{ color: AppColors.success }}>
+              <ThemedText type="h2" style={{ color: AppColors.success }}>
                 {stats.totalItemsSavedFromWaste}
               </ThemedText>
             </Animated.View>
-            <ThemedText type="small">Items saved from waste</ThemedText>
+            <ThemedText type="caption">Items saved from waste</ThemedText>
           </View>
 
-          <View style={styles.statCard}>
-            <ThemedText type="h1" style={{ color: AppColors.primary }}>
+          <View
+            style={[styles.statCard, { backgroundColor: theme.glass.backgroundSubtle }]}
+            accessibilityRole="text"
+            accessibilityLabel={`$${stats.estimatedValueSaved.toFixed(0)} estimated savings`}
+          >
+            <ThemedText type="h2" style={{ color: AppColors.primary }}>
               ${stats.estimatedValueSaved.toFixed(0)}
             </ThemedText>
-            <ThemedText type="small">Estimated savings</ThemedText>
+            <ThemedText type="caption">Estimated savings</ThemedText>
           </View>
         </View>
 
-        <View style={styles.secondaryStats}>
-          <View style={styles.secondaryStat}>
+        <View style={[styles.secondaryStats, { borderTopColor: theme.glass.border }]}>
+          <View
+            style={styles.secondaryStat}
+            accessibilityRole="text"
+            accessibilityLabel={`${stats.recipesGeneratedWithExpiring} smart recipes`}
+          >
             <Feather name="book-open" size={16} color={theme.textSecondary} />
             <ThemedText type="body">
               {stats.recipesGeneratedWithExpiring}
@@ -163,13 +183,21 @@ export function WasteReductionStats({
             <ThemedText type="caption">Smart recipes</ThemedText>
           </View>
 
-          <View style={styles.secondaryStat}>
+          <View
+            style={styles.secondaryStat}
+            accessibilityRole="text"
+            accessibilityLabel={`${stats.currentStreak} day current streak`}
+          >
             <Feather name="zap" size={16} color={AppColors.warning} />
             <ThemedText type="body">{stats.currentStreak}</ThemedText>
             <ThemedText type="caption">Current streak</ThemedText>
           </View>
 
-          <View style={styles.secondaryStat}>
+          <View
+            style={styles.secondaryStat}
+            accessibilityRole="text"
+            accessibilityLabel={`${stats.longestStreak} day best streak`}
+          >
             <Feather name="trending-up" size={16} color={AppColors.secondary} />
             <ThemedText type="body">{stats.longestStreak}</ThemedText>
             <ThemedText type="caption">Best streak</ThemedText>
@@ -177,7 +205,7 @@ export function WasteReductionStats({
         </View>
 
         {showBadges && stats.badges.length > 0 ? (
-          <View style={styles.badgesContainer}>
+          <View style={[styles.badgesContainer, { borderTopColor: theme.glass.border }]}>
             <ThemedText type="h4" style={styles.badgesTitle}>
               Earned Badges
             </ThemedText>
@@ -219,23 +247,35 @@ export function WasteReductionStats({
 
       <GlassCard style={styles.monthlyCard}>
         <View style={styles.monthlyHeader}>
-          <Feather name="calendar" size={18} color={theme.textSecondary} />
+          <Feather name="calendar" size={20} color={theme.textSecondary} />
           <ThemedText type="h4">This Month</ThemedText>
         </View>
         <View style={styles.monthlyStats}>
-          <View style={styles.monthlyStatItem}>
+          <View
+            style={styles.monthlyStatItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${monthlyStats.itemsSaved} items saved this month`}
+          >
             <ThemedText type="h3" style={{ color: AppColors.success }}>
               {monthlyStats.itemsSaved}
             </ThemedText>
             <ThemedText type="caption">Items saved</ThemedText>
           </View>
-          <View style={styles.monthlyStatItem}>
+          <View
+            style={styles.monthlyStatItem}
+            accessibilityRole="text"
+            accessibilityLabel={`$${monthlyStats.valueSaved.toFixed(0)} value saved this month`}
+          >
             <ThemedText type="h3" style={{ color: AppColors.primary }}>
               ${monthlyStats.valueSaved.toFixed(0)}
             </ThemedText>
             <ThemedText type="caption">Value saved</ThemedText>
           </View>
-          <View style={styles.monthlyStatItem}>
+          <View
+            style={styles.monthlyStatItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${monthlyStats.recipesGenerated} recipes this month`}
+          >
             <ThemedText type="h3" style={{ color: AppColors.secondary }}>
               {monthlyStats.recipesGenerated}
             </ThemedText>
@@ -278,14 +318,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
-    backgroundColor: "rgba(0,0,0,0.03)",
   },
   secondaryStats: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
   },
   secondaryStat: {
     alignItems: "center",
@@ -294,7 +332,6 @@ const styles = StyleSheet.create({
   badgesContainer: {
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
     gap: Spacing.md,
   },
   badgesTitle: {
@@ -311,9 +348,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   badgeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: Spacing["2xl"] + Spacing.xs,
+    height: Spacing["2xl"] + Spacing.xs,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },

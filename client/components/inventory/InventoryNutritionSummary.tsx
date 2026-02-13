@@ -23,10 +23,10 @@ export function InventoryNutritionSummary({
 }: InventoryNutritionSummaryProps) {
   return (
     <View style={styles.listFooter} accessibilityLiveRegion="polite">
-      <GlassCard style={styles.nutritionSummary}>
+      <GlassCard style={styles.nutritionSummary} accessibilityRole="summary" accessibilityLabel={`Nutrition summary: ${nutritionTotals.calories.toLocaleString()} calories, ${nutritionTotals.protein}g protein, ${nutritionTotals.carbs}g carbs, ${nutritionTotals.fat}g fat`}>
         <View style={styles.nutritionSummaryContent}>
           <Feather name="zap" size={16} color={AppColors.primary} />
-          <ThemedText style={styles.nutritionSummaryText}>
+          <ThemedText type="caption" style={styles.nutritionSummaryText}>
             {nutritionTotals.calories.toLocaleString()} cal |{" "}
             {nutritionTotals.protein}g protein | {nutritionTotals.carbs}g
             carbs | {nutritionTotals.fat}g fat
@@ -44,8 +44,7 @@ export function InventoryNutritionSummary({
 const styles = StyleSheet.create({
   listFooter: {},
   nutritionSummary: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.xs,
+    gap: Spacing.sm,
   },
   nutritionSummaryContent: {
     flexDirection: "row",
@@ -55,10 +54,9 @@ const styles = StyleSheet.create({
   nutritionSummaryText: {
     flex: 1,
     flexShrink: 1,
-    fontSize: 12,
   },
   nutritionSummaryMeta: {
     marginTop: Spacing.xs,
-    marginLeft: 24,
+    marginLeft: Spacing.xl,
   },
 });

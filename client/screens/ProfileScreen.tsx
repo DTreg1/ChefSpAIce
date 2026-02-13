@@ -416,25 +416,25 @@ export default function ProfileScreen() {
             Inventory Overview
           </ThemedText>
           <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`${inventory.length} total items`}>
               <ThemedText type="h2" style={{ color: AppColors.primary }}>
                 {inventory.length}
               </ThemedText>
               <ThemedText type="caption">Total Items</ThemedText>
             </View>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`${freshCount} fresh items`}>
               <ThemedText type="h2" style={{ color: AppColors.success }}>
                 {freshCount}
               </ThemedText>
               <ThemedText type="caption">Fresh</ThemedText>
             </View>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`${expiringCount} expiring items`}>
               <ThemedText type="h2" style={{ color: AppColors.warning }}>
                 {expiringCount}
               </ThemedText>
               <ThemedText type="caption">Expiring</ThemedText>
             </View>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`${expiredCount} expired items`}>
               <ThemedText type="h2" style={{ color: AppColors.error }}>
                 {expiredCount}
               </ThemedText>
@@ -497,21 +497,21 @@ export default function ProfileScreen() {
             Recipe Stats
           </ThemedText>
           <View style={styles.recipeStats}>
-            <View style={styles.recipeStat}>
-              <Feather name="book-open" size={24} color={AppColors.primary} />
-              <ThemedText type="h3">{recipes.length}</ThemedText>
+            <View style={styles.recipeStat} accessibilityRole="text" accessibilityLabel={`${recipes.length} total recipes`}>
+              <Feather name="book-open" size={20} color={AppColors.primary} />
+              <ThemedText type="h2">{recipes.length}</ThemedText>
               <ThemedText type="caption">Total Recipes</ThemedText>
             </View>
-            <View style={styles.recipeStat}>
-              <Feather name="heart" size={24} color={AppColors.error} />
-              <ThemedText type="h3">
+            <View style={styles.recipeStat} accessibilityRole="text" accessibilityLabel={`${recipes.filter((r) => r.isFavorite).length} favorite recipes`}>
+              <Feather name="heart" size={20} color={AppColors.error} />
+              <ThemedText type="h2">
                 {recipes.filter((r) => r.isFavorite).length}
               </ThemedText>
               <ThemedText type="caption">Favorites</ThemedText>
             </View>
-            <View style={styles.recipeStat}>
-              <Feather name="zap" size={24} color={AppColors.secondary} />
-              <ThemedText type="h3">
+            <View style={styles.recipeStat} accessibilityRole="text" accessibilityLabel={`${recipes.filter((r) => r.isAIGenerated).length} AI generated recipes`}>
+              <Feather name="zap" size={20} color={AppColors.secondary} />
+              <ThemedText type="h2">
                 {recipes.filter((r) => r.isAIGenerated).length}
               </ThemedText>
               <ThemedText type="caption">AI Generated</ThemedText>

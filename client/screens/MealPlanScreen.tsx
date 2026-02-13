@@ -384,7 +384,7 @@ export default function MealPlanScreen() {
                         isToday && { borderColor: AppColors.primary, borderWidth: 2 },
                       ]}
                     >
-                      <View style={styles.tabletDayHeader}>
+                      <View style={[styles.tabletDayHeader, { borderBottomColor: theme.glass.border }]}>
                         <ThemedText type="h4" style={styles.tabletDayTitle}>
                           {format(day, "EEE")}
                         </ThemedText>
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   dragHintRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: Spacing.xs,
   },
   draggableListContainer: {
     gap: Spacing.sm,
@@ -646,6 +646,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: "center",
+    gap: Spacing.xs,
   },
   hintRow: {
     flexDirection: "row",
@@ -664,8 +665,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
-    gap: 2,
+    gap: Spacing.xs / 2,
   },
   tabletDayTitle: {
     fontWeight: "700",

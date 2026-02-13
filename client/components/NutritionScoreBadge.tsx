@@ -118,7 +118,7 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         ]}
       >
         <View style={styles.incompleteHeader}>
-          <Feather name="help-circle" size={24} color={theme.textSecondary} />
+          <Feather name="help-circle" size={20} color={theme.textSecondary} />
           <View style={styles.incompleteInfo}>
             <ThemedText type="body" style={{ color: theme.textSecondary }}>
               Nutrition Score Unavailable
@@ -163,7 +163,7 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
         </View>
       </View>
 
-      <View style={styles.scoreBar}>
+      <View style={[styles.scoreBar, { backgroundColor: theme.glass.backgroundSubtle }]}>
         <View
           style={[
             styles.scoreBarFill,
@@ -184,7 +184,7 @@ export function NutritionScoreDetail({ nutrition }: NutritionScoreDetailProps) {
 
       {scoreResult.isIncomplete ? (
         <View style={styles.partialWarning}>
-          <Feather name="info" size={12} color={AppColors.warning} />
+          <Feather name="info" size={16} color={AppColors.warning} />
           <ThemedText type="caption" style={{ color: AppColors.warning }}>
             Score based on partial nutrition data
           </ThemedText>
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: Spacing.xs,
   },
   badge: {
     alignItems: "center",
@@ -222,9 +222,9 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   largeBadge: {
-    minWidth: 48,
-    minHeight: 48,
-    borderRadius: 24,
+    minWidth: Spacing["4xl"],
+    minHeight: Spacing["4xl"],
+    borderRadius: Spacing.xl,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -235,17 +235,16 @@ const styles = StyleSheet.create({
   },
   detailInfo: {
     flex: 1,
-    gap: 2,
+    gap: Spacing.xs / 2,
   },
   scoreBar: {
-    height: 6,
-    backgroundColor: "rgba(128, 128, 128, 0.2)",
-    borderRadius: 3,
+    height: Spacing.xs + 2,
+    borderRadius: BorderRadius.xs,
     overflow: "hidden",
   },
   scoreBarFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: BorderRadius.xs,
   },
   description: {
     textAlign: "center",
@@ -255,7 +254,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: Spacing.xs,
     paddingTop: Spacing.xs,
   },
   incompleteContainer: {
@@ -270,6 +269,6 @@ const styles = StyleSheet.create({
   },
   incompleteInfo: {
     flex: 1,
-    gap: 2,
+    gap: Spacing.xs / 2,
   },
 });

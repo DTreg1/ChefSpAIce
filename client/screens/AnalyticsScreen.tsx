@@ -201,7 +201,7 @@ export default function AnalyticsScreen() {
           <View
             style={[styles.gaugeInner, { backgroundColor: getScoreColor() }]}
           >
-            <ThemedText type="h1" style={styles.gaugeScore}>
+            <ThemedText type="h2" style={styles.gaugeScore}>
               {score}
             </ThemedText>
           </View>
@@ -281,10 +281,12 @@ export default function AnalyticsScreen() {
                 styles.healthItem,
                 { backgroundColor: `${AppColors.success}15` },
               ]}
+              accessibilityRole="text"
+              accessibilityLabel={`${freshCount} fresh items`}
             >
               <Feather
                 name="check-circle"
-                size={24}
+                size={20}
                 color={AppColors.success}
               />
               <ThemedText type="h2" style={{ color: AppColors.success }}>
@@ -297,10 +299,12 @@ export default function AnalyticsScreen() {
                 styles.healthItem,
                 { backgroundColor: `${AppColors.warning}15` },
               ]}
+              accessibilityRole="text"
+              accessibilityLabel={`${expiringCount} expiring items`}
             >
               <Feather
                 name="alert-triangle"
-                size={24}
+                size={20}
                 color={AppColors.warning}
               />
               <ThemedText type="h2" style={{ color: AppColors.warning }}>
@@ -313,8 +317,10 @@ export default function AnalyticsScreen() {
                 styles.healthItem,
                 { backgroundColor: `${AppColors.error}15` },
               ]}
+              accessibilityRole="text"
+              accessibilityLabel={`${expiredCount} expired items`}
             >
-              <Feather name="x-circle" size={24} color={AppColors.error} />
+              <Feather name="x-circle" size={20} color={AppColors.error} />
               <ThemedText type="h2" style={{ color: AppColors.error }}>
                 {expiredCount}
               </ThemedText>
@@ -422,20 +428,28 @@ export default function AnalyticsScreen() {
           {filteredWaste.length > 0 ? (
             <View style={styles.wasteBreakdown}>
               <View style={styles.wasteSummary}>
-                <View style={styles.wasteStatItem}>
+                <View
+                  style={styles.wasteStatItem}
+                  accessibilityRole="text"
+                  accessibilityLabel={`${filteredWaste.length} items wasted`}
+                >
                   <Feather name="trash-2" size={20} color={AppColors.error} />
-                  <ThemedText type="h3" style={{ color: AppColors.error }}>
+                  <ThemedText type="h2" style={{ color: AppColors.error }}>
                     {filteredWaste.length}
                   </ThemedText>
                   <ThemedText type="caption">Items Wasted</ThemedText>
                 </View>
-                <View style={styles.wasteStatItem}>
+                <View
+                  style={styles.wasteStatItem}
+                  accessibilityRole="text"
+                  accessibilityLabel={`${filteredConsumed.length} items used`}
+                >
                   <Feather
                     name="check-square"
                     size={20}
                     color={AppColors.success}
                   />
-                  <ThemedText type="h3" style={{ color: AppColors.success }}>
+                  <ThemedText type="h2" style={{ color: AppColors.success }}>
                     {filteredConsumed.length}
                   </ThemedText>
                   <ThemedText type="caption">Items Used</ThemedText>
@@ -485,15 +499,23 @@ export default function AnalyticsScreen() {
             Based on consumed items with nutrition data
           </ThemedText>
           <View style={styles.nutritionGrid}>
-            <View style={styles.nutritionItem}>
+            <View
+              style={styles.nutritionItem}
+              accessibilityRole="text"
+              accessibilityLabel={`${totalNutrition.calories.toLocaleString()} total calories`}
+            >
               <Feather name="zap" size={20} color={AppColors.primary} />
-              <ThemedText type="h3" style={{ color: AppColors.primary }}>
+              <ThemedText type="h2" style={{ color: AppColors.primary }}>
                 {totalNutrition.calories.toLocaleString()}
               </ThemedText>
               <ThemedText type="caption">Total Calories</ThemedText>
             </View>
-            <View style={styles.nutritionItem}>
-              <ThemedText type="h4" style={{ color: AppColors.secondary }}>
+            <View
+              style={styles.nutritionItem}
+              accessibilityRole="text"
+              accessibilityLabel={`approximately ${avgDailyCalories} daily average calories`}
+            >
+              <ThemedText type="h3" style={{ color: AppColors.secondary }}>
                 ~{avgDailyCalories}
               </ThemedText>
               <ThemedText type="caption">Daily Avg</ThemedText>
