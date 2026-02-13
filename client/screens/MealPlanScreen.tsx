@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -104,7 +105,7 @@ export default function MealPlanScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try { await syncManager.fullSync(); } catch {}
+    try { await syncManager.fullSync(); } catch { Alert.alert("Sync failed", "We'll try again shortly"); }
     await loadData();
     setRefreshing(false);
   };

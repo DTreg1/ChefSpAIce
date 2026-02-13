@@ -6,6 +6,7 @@ import {
   RefreshControl,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -438,7 +439,7 @@ export default function CookwareScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await syncManager.fullSync(); } catch {}
+    try { await syncManager.fullSync(); } catch { Alert.alert("Sync failed", "We'll try again shortly"); }
     try {
       const ids = await storage.getCookware();
       setOwnedCookwareIds(ids);

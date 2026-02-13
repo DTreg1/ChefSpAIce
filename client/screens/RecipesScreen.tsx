@@ -43,6 +43,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { FlashList } from "@shopify/flash-list";
@@ -241,7 +242,7 @@ export default function RecipesScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try { await syncManager.fullSync(); } catch {}
+    try { await syncManager.fullSync(); } catch { Alert.alert("Sync failed", "We'll try again shortly"); }
     await loadData();
     setRefreshing(false);
   };

@@ -61,7 +61,7 @@ export default function ShoppingListScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try { await syncManager.fullSync(); } catch {}
+    try { await syncManager.fullSync(); } catch { Alert.alert("Sync failed", "We'll try again shortly"); }
     await loadItems();
     setRefreshing(false);
   };
