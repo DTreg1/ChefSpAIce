@@ -21,6 +21,7 @@ import {
   getExpirationStatus,
   getDaysUntilExpiration,
 } from "@/lib/storage";
+import { apiRequestJson } from "@/lib/query-client";
 
 type TimeRange = "week" | "month" | "all";
 
@@ -34,6 +35,11 @@ export default function AnalyticsScreen() {
   const [wasteLog, setWasteLog] = useState<WasteLogEntry[]>([]);
   const [consumedLog, setConsumedLog] = useState<ConsumedLogEntry[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
+  const [wasteSummary, setWasteSummary] = useState<{
+    currentPeriod: { wasteCount: number; consumedCount: number; totalItems: number; wasteScore: number; periodLabel: string };
+    trends: Array<{ weekStart: string; wasteCount: number; consumedCount: number; wasteScore: number }>;
+    streak: { currentStreak: number; longestStreak: number; lastUpdated: string | null };
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     const [items, waste, consumed] = await Promise.all([
@@ -44,7 +50,18 @@ export default function AnalyticsScreen() {
     setInventory(items);
     setWasteLog(waste);
     setConsumedLog(consumed);
-  }, []);
+
+    try {
+      const period = timeRange === "week" ? "week" : "month";
+      const data = await apiRequestJson<{
+        currentPeriod: { wasteCount: number; consumedCount: number; totalItems: number; wasteScore: number; periodLabel: string };
+        trends: Array<{ weekStart: string; wasteCount: number; consumedCount: number; wasteScore: number }>;
+        streak: { currentStreak: number; longestStreak: number; lastUpdated: string | null };
+      }>("GET", `/api/analytics/waste-summary?period=${period}&weeks=12`);
+      setWasteSummary(data);
+    } catch (e) {
+    }
+  }, [timeRange]);
 
   useFocusEffect(
     useCallback(() => {
@@ -267,7 +284,65 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
-        {renderScoreGauge(wasteReductionScore)}
+        {renderScoreGauge(wasteSummary?.currentPeriod.wasteScore ?? wasteReductionScore)}
+
+        {wasteSummary && wasteSummary.trends.length > 0 ? (
+          <GlassCard style={styles.section} data-testid="section-weekly-trends">
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Weekly Trends
+            </ThemedText>
+            <ThemedText type="caption" style={styles.sectionSubtitle}>
+              Waste reduction score over time
+            </ThemedText>
+            <View style={styles.trendChart} data-testid="chart-waste-trends">
+              {wasteSummary.trends.slice(-8).map((t, i) => {
+                const barHeight = Math.max(4, (t.wasteScore / 100) * 80);
+                const barColor = t.wasteScore >= 80
+                  ? AppColors.success
+                  : t.wasteScore >= 60
+                    ? AppColors.warning
+                    : AppColors.error;
+                const weekLabel = t.weekStart.slice(5);
+                return (
+                  <View key={t.weekStart} style={styles.trendBarContainer}>
+                    <View style={[styles.trendBarTrack, { backgroundColor: theme.backgroundSecondary }]}>
+                      <View
+                        style={[styles.trendBarFill, { height: barHeight, backgroundColor: barColor }]}
+                      />
+                    </View>
+                    <ThemedText type="caption" style={styles.trendBarLabel}>
+                      {weekLabel}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </View>
+          </GlassCard>
+        ) : null}
+
+        {wasteSummary && wasteSummary.streak.currentStreak > 0 ? (
+          <GlassCard style={styles.section} data-testid="section-streak">
+            <View style={styles.streakHeader}>
+              <Feather name="zap" size={24} color={AppColors.warning} />
+              <View>
+                <ThemedText type="h4" data-testid="text-streak-count">
+                  {wasteSummary.streak.currentStreak} Week Streak
+                </ThemedText>
+                <ThemedText type="caption">
+                  Consecutive weeks with 80+ waste score
+                </ThemedText>
+              </View>
+            </View>
+            {wasteSummary.streak.longestStreak > wasteSummary.streak.currentStreak ? (
+              <View style={[styles.longestStreakBadge, { backgroundColor: `${AppColors.secondary}15` }]}>
+                <Feather name="award" size={14} color={AppColors.secondary} />
+                <ThemedText type="small" style={{ color: AppColors.secondary }} data-testid="text-longest-streak">
+                  Best: {wasteSummary.streak.longestStreak} weeks
+                </ThemedText>
+              </View>
+            ) : null}
+          </GlassCard>
+        ) : null}
 
         <WasteReductionStats />
 
@@ -825,5 +900,46 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     opacity: 0.7,
     textAlign: "center",
+  },
+  trendChart: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "flex-end",
+    height: 100,
+    paddingTop: Spacing.md,
+  },
+  trendBarContainer: {
+    alignItems: "center",
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  trendBarTrack: {
+    width: 16,
+    height: 80,
+    borderRadius: BorderRadius.sm,
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  trendBarFill: {
+    width: "100%",
+    borderRadius: BorderRadius.sm,
+  },
+  trendBarLabel: {
+    fontSize: 9,
+  },
+  streakHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  longestStreakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    alignSelf: "flex-start",
+    marginTop: Spacing.sm,
   },
 });
