@@ -15,6 +15,7 @@ import { getStripeSync } from "./stripe/stripeClient";
 import { WebhookHandlers } from "./stripe/webhookHandlers";
 import { registerSessionCleanupJob } from "./jobs/sessionCleanupJob";
 import { registerWinbackJob } from "./jobs/winbackJob";
+import { registerCacheCleanupJob } from "./jobs/cacheCleanupJob";
 import { startJobScheduler } from "./jobs/jobScheduler";
 import { logger } from "./lib/logger";
 import { AppError, globalErrorHandler, requestIdMiddleware } from "./middleware/errorHandler";
@@ -563,6 +564,7 @@ async function initStripe(retries = 3, delay = 2000) {
 
       registerSessionCleanupJob(24 * 60 * 60 * 1000);
       registerWinbackJob(7 * 24 * 60 * 60 * 1000);
+      registerCacheCleanupJob(24 * 60 * 60 * 1000);
       startJobScheduler().catch((err) => {
         logger.error("Job scheduler startup failed", { error: err instanceof Error ? err.message : String(err) });
       });

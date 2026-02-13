@@ -1434,6 +1434,20 @@ export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
 export type ErrorReport = typeof errorReports.$inferSelect;
 
 // =============================================================================
+// API CACHE TABLE
+// =============================================================================
+
+export const apiCache = pgTable("api_cache", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+}, (table) => [
+  index("idx_api_cache_expires").on(table.expiresAt),
+]);
+
+export type ApiCache = typeof apiCache.$inferSelect;
+
+// =============================================================================
 // NUTRITION UTILITY FUNCTIONS
 // =============================================================================
 
