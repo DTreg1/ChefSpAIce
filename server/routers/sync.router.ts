@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { eq, and, count, isNull } from "drizzle-orm";
+import { eq, and, count, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   userSyncData, userInventoryItems, userSavedRecipes, userMealPlans, userShoppingItems, userCookwareItems, userWasteLogs, userConsumedLogs, userCustomLocations, userSyncKV,
@@ -24,6 +24,15 @@ import recipesRouter from "./sync/recipes-sync";
 import mealPlansRouter from "./sync/meal-plans-sync";
 import shoppingRouter from "./sync/shopping-sync";
 import cookwareRouter from "./sync/cookware-sync";
+
+function parseImportedTimestamp(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return new Date(0);
+}
 
 const router = Router();
 
@@ -520,6 +529,7 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
       const upsertPromises: Promise<unknown>[] = [];
 
       for (const item of finalInventory) {
+        const itemUpdatedAt = parseImportedTimestamp(item.updatedAt);
         upsertPromises.push(db.insert(userInventoryItems).values({
           userId,
           itemId: String(item.id),
@@ -536,7 +546,7 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
           notes: item.notes as string | undefined,
           imageUri: item.imageUri as string | undefined,
           fdcId: item.fdcId as number | undefined,
-          updatedAt: new Date(),
+          updatedAt: itemUpdatedAt,
         }).onConflictDoUpdate({
           target: [userInventoryItems.userId, userInventoryItems.itemId],
           set: {
@@ -553,13 +563,15 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
             notes: item.notes as string | undefined,
             imageUri: item.imageUri as string | undefined,
             fdcId: item.fdcId as number | undefined,
-            updatedAt: new Date(),
+            updatedAt: itemUpdatedAt,
           },
+          where: sql`${userInventoryItems.updatedAt} IS NULL OR ${userInventoryItems.updatedAt} < excluded.updated_at`,
         }));
       }
 
       for (const r of importedRecipes) {
         const extra = extractExtraData(r, recipeKnownKeys);
+        const recipeUpdatedAt = parseImportedTimestamp(r.updatedAt);
         upsertPromises.push(db.insert(userSavedRecipes).values({
           userId,
           itemId: String(r.id),
@@ -575,7 +587,7 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
           nutrition: r.nutrition as Record<string, unknown> | undefined,
           isFavorite: r.isFavorite as boolean | undefined,
           extraData: extra,
-          updatedAt: new Date(),
+          updatedAt: recipeUpdatedAt,
         }).onConflictDoUpdate({
           target: [userSavedRecipes.userId, userSavedRecipes.itemId],
           set: {
@@ -591,33 +603,37 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
             nutrition: r.nutrition as Record<string, unknown> | undefined,
             isFavorite: r.isFavorite as boolean | undefined,
             extraData: extra,
-            updatedAt: new Date(),
+            updatedAt: recipeUpdatedAt,
           },
+          where: sql`${userSavedRecipes.updatedAt} IS NULL OR ${userSavedRecipes.updatedAt} < excluded.updated_at`,
         }));
       }
 
       for (const m of importedMealPlans) {
         const extra = extractExtraData(m, mealPlanKnownKeys);
+        const mealPlanUpdatedAt = parseImportedTimestamp(m.updatedAt);
         upsertPromises.push(db.insert(userMealPlans).values({
           userId,
           itemId: String(m.id),
           date: String(m.date || ""),
           meals: m.meals as unknown,
           extraData: extra,
-          updatedAt: new Date(),
+          updatedAt: mealPlanUpdatedAt,
         }).onConflictDoUpdate({
           target: [userMealPlans.userId, userMealPlans.itemId],
           set: {
             date: String(m.date || ""),
             meals: m.meals as unknown,
             extraData: extra,
-            updatedAt: new Date(),
+            updatedAt: mealPlanUpdatedAt,
           },
+          where: sql`${userMealPlans.updatedAt} IS NULL OR ${userMealPlans.updatedAt} < excluded.updated_at`,
         }));
       }
 
       for (const s of importedShoppingList) {
         const extra = extractExtraData(s, shoppingListKnownKeys);
+        const shoppingUpdatedAt = parseImportedTimestamp(s.updatedAt);
         upsertPromises.push(db.insert(userShoppingItems).values({
           userId,
           itemId: String(s.id),
@@ -628,7 +644,7 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
           category: s.category as string | undefined,
           recipeId: s.recipeId as string | undefined,
           extraData: extra,
-          updatedAt: new Date(),
+          updatedAt: shoppingUpdatedAt,
         }).onConflictDoUpdate({
           target: [userShoppingItems.userId, userShoppingItems.itemId],
           set: {
@@ -639,13 +655,15 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
             category: s.category as string | undefined,
             recipeId: s.recipeId as string | undefined,
             extraData: extra,
-            updatedAt: new Date(),
+            updatedAt: shoppingUpdatedAt,
           },
+          where: sql`${userShoppingItems.updatedAt} IS NULL OR ${userShoppingItems.updatedAt} < excluded.updated_at`,
         }));
       }
 
       for (const c of finalCookware) {
         const extra = extractExtraData(c, cookwareKnownKeys);
+        const cookwareUpdatedAt = parseImportedTimestamp(c.updatedAt);
         upsertPromises.push(db.insert(userCookwareItems).values({
           userId,
           itemId: String(c.id),
@@ -653,7 +671,7 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
           category: c.category as string | undefined,
           alternatives: c.alternatives as string[] | undefined,
           extraData: extra,
-          updatedAt: new Date(),
+          updatedAt: cookwareUpdatedAt,
         }).onConflictDoUpdate({
           target: [userCookwareItems.userId, userCookwareItems.itemId],
           set: {
@@ -661,8 +679,9 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
             category: c.category as string | undefined,
             alternatives: c.alternatives as string[] | undefined,
             extraData: extra,
-            updatedAt: new Date(),
+            updatedAt: cookwareUpdatedAt,
           },
+          where: sql`${userCookwareItems.updatedAt} IS NULL OR ${userCookwareItems.updatedAt} < excluded.updated_at`,
         }));
       }
 
