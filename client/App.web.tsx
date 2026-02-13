@@ -6,27 +6,33 @@ import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { injectWebFocusCSS } from "@/lib/web-accessibility";
-import { WebRouterProvider, Route, useRoute, useNavigate } from "@/lib/web-router";
+import {
+  WebRouterProvider,
+  Route,
+  useRoute,
+  useNavigate,
+} from "@/lib/web-router";
 import { usePageMeta } from "@/lib/web-meta";
 import { withSuspense } from "@/lib/lazy-screen";
 import { useTheme } from "@/hooks/useTheme";
+import { AnimatedBackground } from "@/components/AnimatedBackground.web";
 
 injectWebFocusCSS();
 
 const LazyLandingScreen = withSuspense(
-  React.lazy(() => import("@/screens/LandingScreen"))
+  React.lazy(() => import("@/screens/LandingScreen")),
 );
 const LazyAboutScreen = withSuspense(
-  React.lazy(() => import("@/screens/web/AboutScreen"))
+  React.lazy(() => import("@/screens/web/AboutScreen")),
 );
 const LazyPrivacyScreen = withSuspense(
-  React.lazy(() => import("@/screens/web/PrivacyScreen"))
+  React.lazy(() => import("@/screens/web/PrivacyScreen")),
 );
 const LazyTermsScreen = withSuspense(
-  React.lazy(() => import("@/screens/web/TermsScreen"))
+  React.lazy(() => import("@/screens/web/TermsScreen")),
 );
 const LazySupportScreen = withSuspense(
-  React.lazy(() => import("@/screens/web/SupportScreen"))
+  React.lazy(() => import("@/screens/web/SupportScreen")),
 );
 const PAGE_META: Record<string, { title: string; description: string }> = {
   "/": {
@@ -108,6 +114,7 @@ export default function App() {
           <ThemeAttributeSetter />
           <ErrorBoundary>
             <WebRouterProvider>
+              <AnimatedBackground />
               <WebRoutes />
             </WebRouterProvider>
           </ErrorBoundary>
