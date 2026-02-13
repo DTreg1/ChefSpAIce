@@ -50,6 +50,7 @@ const pool = new pg.Pool({
   max: POOL_MAX,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  statement_timeout: 30000,
 });
 
 const originalQuery = pool.query.bind(pool) as typeof pool.query;
