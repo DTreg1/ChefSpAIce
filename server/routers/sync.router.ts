@@ -245,6 +245,8 @@ router.post("/export", async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+const IMPORT_MAX_ARRAY_SIZE = 10_000;
+
 const importRequestSchema = z.object({
   backup: z.object({
     version: z.literal(1),
@@ -299,6 +301,30 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
     const importedMealPlans = Array.isArray(importData.mealPlans) ? importData.mealPlans as Record<string, unknown>[] : [];
     const importedShoppingList = Array.isArray(importData.shoppingList) ? importData.shoppingList as Record<string, unknown>[] : [];
     const importedCookware = Array.isArray(importData.cookware) ? importData.cookware as Record<string, unknown>[] : [];
+    const importedWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog as Record<string, unknown>[] : [];
+    const importedConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog as Record<string, unknown>[] : [];
+    const importedCustomLocations = Array.isArray(importData.customLocations) ? importData.customLocations as Record<string, unknown>[] : [];
+
+    const arraySizeChecks: { name: string; length: number }[] = [
+      { name: "inventory", length: importedInventory.length },
+      { name: "recipes", length: importedRecipes.length },
+      { name: "mealPlans", length: importedMealPlans.length },
+      { name: "shoppingList", length: importedShoppingList.length },
+      { name: "cookware", length: importedCookware.length },
+      { name: "wasteLog", length: importedWasteLog.length },
+      { name: "consumedLog", length: importedConsumedLog.length },
+      { name: "customLocations", length: importedCustomLocations.length },
+    ];
+    const oversized = arraySizeChecks.filter(c => c.length > IMPORT_MAX_ARRAY_SIZE);
+    if (oversized.length > 0) {
+      throw AppError.badRequest(
+        "Import payload contains arrays that exceed the maximum allowed size",
+        "IMPORT_ARRAY_TOO_LARGE",
+      ).withDetails({
+        limit: IMPORT_MAX_ARRAY_SIZE,
+        violations: oversized.map(o => ({ section: o.name, count: o.length })),
+      });
+    }
 
     const validationErrors: string[] = [];
 
@@ -333,20 +359,16 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
       }
     }
 
-    if (Array.isArray(importData.wasteLog)) {
-      for (let i = 0; i < importData.wasteLog.length; i++) {
-        const result = syncWasteLogEntrySchema.safeParse(importData.wasteLog[i]);
-        if (!result.success) {
-          validationErrors.push(`wasteLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
-        }
+    for (let i = 0; i < importedWasteLog.length; i++) {
+      const result = syncWasteLogEntrySchema.safeParse(importedWasteLog[i]);
+      if (!result.success) {
+        validationErrors.push(`wasteLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
       }
     }
-    if (Array.isArray(importData.consumedLog)) {
-      for (let i = 0; i < importData.consumedLog.length; i++) {
-        const result = syncConsumedLogEntrySchema.safeParse(importData.consumedLog[i]);
-        if (!result.success) {
-          validationErrors.push(`consumedLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
-        }
+    for (let i = 0; i < importedConsumedLog.length; i++) {
+      const result = syncConsumedLogEntrySchema.safeParse(importedConsumedLog[i]);
+      if (!result.success) {
+        validationErrors.push(`consumedLog[${i}]: ${result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
       }
     }
     if (importData.preferences !== undefined && importData.preferences !== null) {
@@ -697,7 +719,6 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
       await db.delete(userCustomLocations).where(eq(userCustomLocations.userId, userId));
     }
 
-    const importedWasteLog = Array.isArray(importData.wasteLog) ? importData.wasteLog : [];
     for (const entry of importedWasteLog) {
       const rec = entry as Record<string, unknown>;
       const wasteLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "reason", "date"]);
@@ -723,7 +744,6 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
       });
     }
 
-    const importedConsumedLog = Array.isArray(importData.consumedLog) ? importData.consumedLog : [];
     for (const entry of importedConsumedLog) {
       const rec = entry as Record<string, unknown>;
       const consumedLogKnownKeys = new Set(["id", "itemName", "quantity", "unit", "date"]);
@@ -747,7 +767,6 @@ router.post("/import", validateBody(importRequestSchema), async (req: Request, r
       });
     }
 
-    const importedCustomLocations = Array.isArray(importData.customLocations) ? importData.customLocations : [];
     for (const loc of importedCustomLocations) {
       const rec = loc as Record<string, unknown>;
       const locationKnownKeys = new Set(["id", "name", "type"]);

@@ -82,10 +82,18 @@ function setupCors(app: express.Application) {
 
 function setupBodyParsing(app: express.Application) {
   app.use(cookieParser());
-  
+
+  // Import endpoint needs a higher body size limit (5 MB) for large backups.
+  // Must be registered before the global 1 MB parser so it takes effect.
+  app.use("/api/sync/import", express.json({
+    limit: "5mb",
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }));
+
   // 1 MB default limit protects against oversized payloads while covering
   // typical API requests (JSON data, form submissions, sync payloads).
-  // The recipe-image upload route overrides this with a higher limit below.
   app.use(
     express.json({
       limit: "1mb",
