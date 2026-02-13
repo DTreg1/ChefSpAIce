@@ -16,7 +16,8 @@ const REVENUECAT_ANDROID_KEY =
 const REVENUECAT_TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY || "";
 
 export const ENTITLEMENTS = {
-  PRO: "pro",
+  STANDARD: "standard",
+  PRO: "standard",
 } as const;
 
 export type PaywallResult =
@@ -50,20 +51,20 @@ class StoreKitService {
     }
 
     try {
-      let tier: "PRO" = "PRO";
+      let tier: "STANDARD" = "STANDARD";
       let status: string = "active";
 
-      if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
-        const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.PRO];
+      if (customerInfo.entitlements.active[ENTITLEMENTS.STANDARD]) {
+        const entitlement = customerInfo.entitlements.active[ENTITLEMENTS.STANDARD];
         if (entitlement.periodType === "TRIAL") {
-          status = "trialing";
+          status = "active";
         }
       } else {
         status = "expired";
       }
 
       const activeEntitlement =
-        customerInfo.entitlements.active[ENTITLEMENTS.PRO];
+        customerInfo.entitlements.active[ENTITLEMENTS.STANDARD];
       const expirationDate = activeEntitlement?.expirationDate || null;
 
       const baseUrl = getApiUrl();
@@ -295,7 +296,7 @@ class StoreKitService {
 
   async hasActiveSubscription(): Promise<{
     isActive: boolean;
-    tier: "pro" | null;
+    tier: "standard" | null;
   }> {
     if (!this.initialized || Platform.OS === "web") {
       return { isActive: false, tier: null };
@@ -304,8 +305,8 @@ class StoreKitService {
     try {
       const customerInfo = await Purchases.getCustomerInfo();
 
-      if (customerInfo.entitlements.active[ENTITLEMENTS.PRO]) {
-        return { isActive: true, tier: "pro" };
+      if (customerInfo.entitlements.active[ENTITLEMENTS.STANDARD]) {
+        return { isActive: true, tier: "standard" };
       }
 
       return { isActive: false, tier: null };
@@ -422,7 +423,7 @@ class StoreKitService {
     }
 
     try {
-      const entitlementId = requiredEntitlementId || ENTITLEMENTS.PRO;
+      const entitlementId = requiredEntitlementId || ENTITLEMENTS.STANDARD;
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: entitlementId,
       });

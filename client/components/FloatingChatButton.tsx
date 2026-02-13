@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, Pressable, Platform, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -8,10 +8,6 @@ import {
   isLiquidGlassAvailable,
 } from "@/components/GlassViewWithContext";
 import { BlurView } from "expo-blur";
-
-import { useNavigation } from "@react-navigation/native";
-
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import Animated, {
   useAnimatedStyle,
@@ -23,10 +19,7 @@ import Animated, {
 
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useSubscription } from "@/hooks/useSubscription";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AppColors, Spacing } from "@/constants/theme";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const chefHatLight = require("../assets/images/transparent/chef-hat-light-128.png");
 
@@ -39,13 +32,7 @@ export function FloatingChatButton() {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const { isVisible, isChatOpen, openChat, closeChat } = useFloatingChat();
-  const { checkFeature } = useSubscription();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scale = useSharedValue(1);
-
-  const canUseAiAssistant = checkFeature("canUseAiKitchenAssistant");
 
   const handlePressIn = () => {
     scale.value = withSpring(0.9, { damping: 15, stiffness: 400 });
@@ -70,11 +57,6 @@ export function FloatingChatButton() {
     if (isChatOpen) {
       closeChat();
     } else {
-      // Check if user has access to AI Kitchen Assistant
-      if (!canUseAiAssistant) {
-        setShowUpgradePrompt(true);
-        return;
-      }
       openChat();
     }
   };
@@ -125,54 +107,28 @@ export function FloatingChatButton() {
   const innerContent = renderInnerContent();
 
   return (
-    <>
-      <Animated.View
-        entering={FadeIn.duration(300)}
-        exiting={FadeOut.duration(200)}
-        style={[
-          styles.container,
-          { bottom: bottomPosition, right: Spacing.lg },
-        ]}
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(200)}
+      style={[
+        styles.container,
+        { bottom: bottomPosition, right: Spacing.lg },
+      ]}
+    >
+      <AnimatedPressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[styles.buttonWrapper, animatedStyle]}
+        data-testid="button-floating-chat"
+        accessibilityRole="button"
+        accessibilityLabel={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
+        accessibilityHint={isChatOpen ? "Double-tap to close the AI chat" : "Double-tap to open the AI kitchen assistant"}
+        accessibilityState={{ expanded: isChatOpen }}
       >
-        <AnimatedPressable
-          onPress={handlePress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={[styles.buttonWrapper, animatedStyle]}
-          data-testid="button-floating-chat"
-          accessibilityRole="button"
-          accessibilityLabel={isChatOpen ? "Close chat assistant" : "Open chat assistant"}
-          accessibilityHint={isChatOpen ? "Double-tap to close the AI chat" : "Double-tap to open the AI kitchen assistant"}
-          accessibilityState={{ expanded: isChatOpen }}
-        >
-          {innerContent}
-          {!canUseAiAssistant && (
-            <View style={styles.lockBadge}>
-              <Feather name="lock" size={10} color="#FFFFFF" />
-            </View>
-          )}
-        </AnimatedPressable>
-      </Animated.View>
-
-      {showUpgradePrompt && (
-        <UpgradePrompt
-          type="feature"
-          featureName="AI Kitchen Assistant"
-          onUpgrade={() => {
-            setShowUpgradePrompt(false);
-            // Navigate: Root -> Main (Drawer) -> Tabs (TabNav) -> ProfileTab -> Subscription
-            navigation.navigate("Main" as any, {
-              screen: "Tabs",
-              params: {
-                screen: "ProfileTab",
-                params: { screen: "Subscription" },
-              },
-            });
-          }}
-          onDismiss={() => setShowUpgradePrompt(false)}
-        />
-      )}
-    </>
+        {innerContent}
+      </AnimatedPressable>
+    </Animated.View>
   );
 }
 
@@ -230,27 +186,5 @@ const styles = StyleSheet.create({
   buttonOverlay: {
     backgroundColor: `${AppColors.primary}CC`,
     borderRadius: BUTTON_SIZE / 2,
-  },
-  lockBadge: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    width: 20,
-    minHeight: 20,
-    borderRadius: 10,
-    backgroundColor: AppColors.warning,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
   },
 });

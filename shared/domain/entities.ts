@@ -11,6 +11,4 @@ export interface Permission {
   tier: SubscriptionTier;
   limits: TierLimits;
   isAdmin: boolean;
-  isTrialActive: boolean;
-  trialEndsAt: Date | null;
 }

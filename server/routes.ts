@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preRegisteredAt: now,
         privacyConsentedAt: now,
         subscriptionStatus: "none",
-        subscriptionTier: "PRO",
+        subscriptionTier: "STANDARD",
       });
 
       return res.json(successResponse(null, "Thanks! We'll notify you when the app is available in the App Store and Google Play."));
@@ -266,8 +266,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email,
             password: passwordHash,
             displayName: `Test User ${testId}`,
-            subscriptionTier: "PRO",
-            subscriptionStatus: "trialing",
+            subscriptionTier: "STANDARD",
+            subscriptionStatus: "active",
             hasCompletedOnboarding: true,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -308,8 +308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email,
           password: plainPassword,
           sessionToken: rawSessionToken,
-          tier: "PRO",
-        }, "Test user created with trial subscription. Session cookie set."));
+          tier: "STANDARD",
+        }, "Test user created with active subscription. Session cookie set."));
     }));
     
     // Version with auth
@@ -322,11 +322,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { tier, status } = req.body;
         
-        if (!tier || !['PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'PRO'", "INVALID_TIER");
+        if (!tier || !['STANDARD'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'STANDARD'", "INVALID_TIER");
         }
 
-        const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
+        const validStatuses = ['active', 'canceled', 'expired'];
         const newStatus = status && validStatuses.includes(status) ? status : 'active';
 
         // Update user's subscription tier directly
@@ -363,8 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw AppError.badRequest("Email is required", "EMAIL_REQUIRED");
         }
         
-        if (!tier || !['PRO'].includes(tier)) {
-          throw AppError.badRequest("Invalid tier. Must be 'PRO'", "INVALID_TIER");
+        if (!tier || !['STANDARD'].includes(tier)) {
+          throw AppError.badRequest("Invalid tier. Must be 'STANDARD'", "INVALID_TIER");
         }
 
         // Find user by email
@@ -378,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw AppError.notFound("User not found", "USER_NOT_FOUND");
         }
 
-        const validStatuses = ['active', 'trialing', 'canceled', 'expired'];
+        const validStatuses = ['active', 'canceled', 'expired'];
         const newStatus = status && validStatuses.includes(status) ? status : 'active';
 
         // Update user's subscription tier directly

@@ -7,7 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 
-export const PRO_FEATURES = [
+export const STANDARD_FEATURES = [
   { key: "pantryItems", name: "Unlimited Pantry Items", included: true },
   { key: "aiRecipes", name: "Unlimited AI Recipes", included: true },
   { key: "cookware", name: "Unlimited Cookware Items", included: true },
@@ -18,10 +18,13 @@ export const PRO_FEATURES = [
   { key: "weeklyMealPrep", name: "Weekly Meal Prepping", included: true },
 ];
 
-export type ProFeature = (typeof PRO_FEATURES)[number];
+export const PRO_FEATURES = STANDARD_FEATURES;
+
+export type StandardFeature = (typeof STANDARD_FEATURES)[number];
+export type ProFeature = StandardFeature;
 
 interface FeatureComparisonTableProps {
-  features: ProFeature[];
+  features: StandardFeature[];
 }
 
 export function FeatureComparisonTable({

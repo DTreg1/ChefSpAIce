@@ -3,6 +3,9 @@
 ## Overview
 ChefSpAIce is a kitchen inventory management application designed to streamline meal preparation and grocery shopping. It offers AI-powered recipe generation, comprehensive meal planning, and automated shopping list creation. The project aims to provide a seamless user experience with a single subscription model, targeting market potential through its innovative AI features and intuitive design.
 
+## Recent Changes
+- **2026-02-13**: Consolidated all subscription tiers into a single STANDARD tier. Removed PRO naming, trial logic (trialing status, trialEndsAt, isTrialActive), and free-tier gating. Trial-related UI components (TrialEndedModal, UpgradePrompt, PaymentFailedBanner, etc.) converted to no-ops. Database migrated: all users updated from PRO→STANDARD tier and trialing→active status. The only subscription tier is now STANDARD with status values: active, canceled, expired.
+
 ## User Preferences
 - Communication: Simple, everyday language
 

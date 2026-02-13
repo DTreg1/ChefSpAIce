@@ -14,7 +14,6 @@ import { getApiUrl } from "@/lib/query-client";
 import { logger } from "@/lib/logger";
 import { trackSubscriptionChange } from "@/lib/crash-reporter";
 import { SubscriptionTier, TIER_CONFIG } from "@shared/subscription";
-import { TrialEndedModal } from "@/components/TrialEndedModal";
 import { useStoreKit } from "@/hooks/useStoreKit";
 
 declare global {
@@ -26,7 +25,6 @@ declare global {
 }
 
 type SubscriptionStatus =
-  | "trialing"
   | "active"
   | "past_due"
   | "canceled"
@@ -53,7 +51,7 @@ interface Usage {
 export interface SubscriptionData {
   tier: SubscriptionTier;
   status: SubscriptionStatus;
-  planType: "monthly" | "annual" | "trial" | null;
+  planType: "monthly" | "annual" | null;
   entitlements: Entitlements;
   usage: Usage;
   remaining: {
@@ -61,7 +59,6 @@ export interface SubscriptionData {
     aiRecipes: number | "unlimited";
     cookware: number | "unlimited";
   };
-  trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   paymentFailedAt: string | null;
@@ -77,13 +74,10 @@ export interface LimitCheckResult {
 export interface SubscriptionContextValue {
   tier: SubscriptionTier;
   status: SubscriptionStatus;
-  planType: "monthly" | "annual" | "trial" | null;
-  isProUser: boolean;
-  isTrialUser: boolean;
-  isTrialing: boolean;
+  planType: "monthly" | "annual" | null;
+  isStandardUser: boolean;
   isActive: boolean;
   isLoading: boolean;
-  trialDaysRemaining: number | null;
   entitlements: Entitlements;
   usage: Usage;
   subscription: SubscriptionData | null;
@@ -104,9 +98,9 @@ export interface SubscriptionContextValue {
 }
 
 const defaultEntitlements: Entitlements = {
-  maxPantryItems: TIER_CONFIG[SubscriptionTier.PRO].maxPantryItems,
-  maxAiRecipes: TIER_CONFIG[SubscriptionTier.PRO].maxAiRecipesPerMonth,
-  maxCookware: TIER_CONFIG[SubscriptionTier.PRO].maxCookwareItems,
+  maxPantryItems: TIER_CONFIG[SubscriptionTier.STANDARD].maxPantryItems,
+  maxAiRecipes: TIER_CONFIG[SubscriptionTier.STANDARD].maxAiRecipesPerMonth,
+  maxCookware: TIER_CONFIG[SubscriptionTier.STANDARD].maxCookwareItems,
   canCustomizeStorageAreas: false,
   canUseRecipeScanning: false,
   canUseBulkScanning: false,
@@ -121,15 +115,12 @@ const defaultUsage: Usage = {
 };
 
 const SubscriptionContext = createContext<SubscriptionContextValue>({
-  tier: SubscriptionTier.PRO,
+  tier: SubscriptionTier.STANDARD,
   status: "none",
   planType: null,
-  isProUser: false,
-  isTrialUser: true,
-  isTrialing: false,
+  isStandardUser: false,
   isActive: true,
   isLoading: true,
-  trialDaysRemaining: null,
   entitlements: defaultEntitlements,
   usage: defaultUsage,
   subscription: null,
@@ -163,37 +154,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [subscriptionData, setSubscriptionData] =
     useState<SubscriptionData | null>(cachedSub || null);
   const [isLoading, setIsLoading] = useState(!hasFetched);
-  const [showTrialEndedModal, setShowTrialEndedModal] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
 
   const {
     isAvailable: isStoreKitAvailable,
-    offerings,
-    purchasePackage,
-    presentPaywall,
-    restorePurchases,
     presentCustomerCenter,
     isCustomerCenterAvailable,
   } = useStoreKit();
-
-  const storeKitPrices = useMemo(() => {
-    const shouldUseStoreKit = (Platform.OS === "ios" || Platform.OS === "android") && isStoreKitAvailable;
-    if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
-
-    const prices: { proMonthly?: string; proAnnual?: string } = {};
-    for (const pkg of offerings.availablePackages) {
-      const id = pkg.identifier.toLowerCase();
-      const priceStr = pkg.product.priceString;
-      if (pkg.packageType === 'MONTHLY' || id.includes('monthly')) {
-        prices.proMonthly = priceStr;
-      } else if (pkg.packageType === 'ANNUAL' || id.includes('annual')) {
-        prices.proAnnual = priceStr;
-      }
-    }
-    return Object.keys(prices).length > 0 ? prices : null;
-  }, [isStoreKitAvailable, offerings]);
 
   const lastFetchRef = useRef<number>(0);
   const lastTrackedSubRef = useRef<string>("");
@@ -226,10 +193,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
         const tierConfig =
           TIER_CONFIG[data.tier as SubscriptionTier] ||
-          TIER_CONFIG[SubscriptionTier.PRO];
+          TIER_CONFIG[SubscriptionTier.STANDARD];
 
         const sub: SubscriptionData = {
-          tier: data.tier || SubscriptionTier.PRO,
+          tier: data.tier || SubscriptionTier.STANDARD,
           status: data.status || "none",
           planType: data.planType || null,
           entitlements: {
@@ -261,7 +228,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             aiRecipes: data.remaining?.aiRecipes ?? "unlimited",
             cookware: data.remaining?.cookware ?? "unlimited",
           },
-          trialEndsAt: data.trialEndsAt || null,
           currentPeriodEnd: data.currentPeriodEnd || null,
           cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
           paymentFailedAt: data.paymentFailedAt || null,
@@ -345,136 +311,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     return () => subscription.remove();
   }, [forceRefetch]);
 
-  const tier = subscriptionData?.tier ?? SubscriptionTier.PRO;
+  const tier = subscriptionData?.tier ?? SubscriptionTier.STANDARD;
   const status = subscriptionData?.status ?? "none";
   const planType = subscriptionData?.planType ?? null;
-  const isProUser = tier === SubscriptionTier.PRO;
-  const isTrialUser = status === "trialing";
-  const isTrialing = status === "trialing";
+  const isStandardUser = tier === SubscriptionTier.STANDARD;
   const isPastDue = status === "past_due";
   const graceDaysRemaining = subscriptionData?.graceDaysRemaining ?? null;
-  const isActive = status === "active" || status === "trialing" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
-
-  const trialDaysRemaining = useMemo(() => {
-    if (!isTrialing || !subscriptionData?.trialEndsAt) return null;
-    const trialEnd = new Date(subscriptionData.trialEndsAt);
-    const now = new Date();
-    const diff = trialEnd.getTime() - now.getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }, [isTrialing, subscriptionData?.trialEndsAt]);
-
-  // Handle plan selection from trial ended modal
-  const handleSelectPlan = useCallback(
-    async (_tier: "pro", plan: "monthly" | "annual") => {
-      setIsPurchasing(true);
-
-      try {
-        if (Platform.OS === "ios" || Platform.OS === "android") {
-          if (!isStoreKitAvailable) {
-            Alert.alert(
-              "Not Available",
-              "In-app purchases are not available on this device. Please try again later.",
-              [{ text: "OK" }],
-            );
-            return;
-          }
-
-          let pkg = null;
-          if (offerings?.availablePackages) {
-            const expectedPackageId = `pro_${plan}`;
-            pkg = offerings.availablePackages.find((p) => {
-              const id = p.identifier.toLowerCase();
-              const matchesType = plan === "monthly"
-                ? p.packageType === "MONTHLY"
-                : p.packageType === "ANNUAL";
-              return (
-                id === expectedPackageId ||
-                (id.includes("pro") && id.includes(plan)) ||
-                (id.includes("pro") && matchesType) ||
-                matchesType
-              );
-            });
-          }
-
-          if (pkg) {
-            const success = await purchasePackage(pkg);
-            if (success) {
-              Alert.alert("Success", "Thank you for subscribing to ChefSpAIce!");
-              setShowTrialEndedModal(false);
-              await forceRefetch();
-            }
-          } else {
-            const result = await presentPaywall();
-            if (result === "purchased" || result === "restored") {
-              setShowTrialEndedModal(false);
-              await forceRefetch();
-              Alert.alert("Success", "Thank you for subscribing!");
-            }
-          }
-          return;
-        }
-
-        if (Platform.OS === "web") {
-          const baseUrl = getApiUrl();
-
-          const pricesResponse = await fetch(
-            `${baseUrl}/api/subscriptions/prices`,
-          );
-          const prices = (await pricesResponse.json()).data as any;
-
-          const priceKey = plan === "monthly" ? "proMonthly" : "proAnnual";
-          const fallbackKey = plan === "monthly" ? "monthly" : "annual";
-          const priceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
-
-          if (!priceId) {
-            Alert.alert(
-              "Price Not Available",
-              `The ${plan} subscription pricing is not yet configured. Please contact support or try a different option.`,
-              [{ text: "OK" }],
-            );
-            return;
-          }
-
-          const response = await fetch(
-            `${baseUrl}/api/subscriptions/create-checkout-session`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
-              credentials: "include",
-              body: JSON.stringify({
-                priceId,
-                tier: "pro",
-                successUrl: `${window.location.origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-                cancelUrl: `${window.location.origin}/subscription-canceled`,
-              }),
-            },
-          );
-
-          if (response.ok) {
-            const data = (await response.json()).data as any;
-            if (data.url) {
-              window.location.href = data.url;
-            }
-          } else {
-            const errorBody = await response.json();
-            Alert.alert(
-              "Error",
-              errorBody.error || "Failed to start checkout. Please try again.",
-            );
-          }
-        }
-      } catch (error) {
-        logger.error("Error starting checkout:", error);
-        Alert.alert("Error", "Something went wrong. Please try again later.");
-      } finally {
-        setIsPurchasing(false);
-      }
-    },
-    [isStoreKitAvailable, offerings, purchasePackage, forceRefetch, token],
-  );
+  const isActive = status === "active" || (isPastDue && graceDaysRemaining !== null && graceDaysRemaining > 0);
 
   const entitlements = subscriptionData?.entitlements ?? defaultEntitlements;
   const usage = subscriptionData?.usage ?? defaultUsage;
@@ -557,12 +400,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       tier,
       status,
       planType,
-      isProUser,
-      isTrialUser,
-      isTrialing,
+      isStandardUser,
       isActive,
       isLoading,
-      trialDaysRemaining,
       entitlements,
       usage,
       subscription: subscriptionData,
@@ -578,12 +418,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       tier,
       status,
       planType,
-      isProUser,
-      isTrialUser,
-      isTrialing,
+      isStandardUser,
       isActive,
       isLoading,
-      trialDaysRemaining,
       entitlements,
       usage,
       subscriptionData,
@@ -600,30 +437,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
-      <TrialEndedModal
-        visible={showTrialEndedModal}
-        onSelectPlan={handleSelectPlan}
-        isLoading={isPurchasing}
-        onRestorePurchases={isStoreKitAvailable ? async () => {
-          setIsRestoringPurchases(true);
-          try {
-            const success = await restorePurchases();
-            if (success) {
-              Alert.alert("Success", "Purchases restored successfully!");
-              setShowTrialEndedModal(false);
-              await forceRefetch();
-            } else {
-              Alert.alert("No Purchases Found", "No previous purchases were found to restore.");
-            }
-          } catch (error) {
-            Alert.alert("Error", "Failed to restore purchases. Please try again.");
-          } finally {
-            setIsRestoringPurchases(false);
-          }
-        } : undefined}
-        isRestoring={isRestoringPurchases}
-        storeKitPrices={storeKitPrices}
-      />
     </SubscriptionContext.Provider>
   );
 }

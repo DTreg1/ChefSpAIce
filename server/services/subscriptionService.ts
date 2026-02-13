@@ -67,7 +67,6 @@ export interface UserEntitlements {
     aiRecipes: number | "unlimited";
     cookware: number | "unlimited";
   };
-  trialEndsAt: Date | null;
 }
 
 export interface LimitCheckResult {
@@ -121,7 +120,7 @@ export async function getUserEntitlements(
     throw new Error("User not found after refresh");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.STANDARD;
   const limits = getTierLimits(tier);
   const aiRecipesUsedThisMonth = user.aiRecipesGeneratedThisMonth || 0;
 
@@ -139,7 +138,6 @@ export async function getUserEntitlements(
       aiRecipes: getRemainingQuota(tier, "maxAiRecipesPerMonth", aiRecipesUsedThisMonth),
       cookware: getRemainingQuota(tier, "maxCookwareItems", cookwareCount),
     },
-    trialEndsAt: user.trialEndsAt,
   };
 }
 
@@ -173,7 +171,7 @@ export async function checkAiRecipeLimit(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.STANDARD;
   const limits = getTierLimits(tier);
   const currentCount = user.aiRecipesGeneratedThisMonth || 0;
   const bonusCredits = user.aiRecipeBonusCredits || 0;
@@ -227,7 +225,7 @@ export async function checkFeatureAccess(
     throw new Error("User not found");
   }
 
-  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.PRO;
+  const tier = (user.subscriptionTier as SubscriptionTier) || SubscriptionTier.STANDARD;
   const limits = getTierLimits(tier);
 
   const limitKey = featureToLimitKey[feature];
@@ -361,7 +359,7 @@ export async function downgradeUserTier(userId: string): Promise<void> {
     await tx
       .update(users)
       .set({
-        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionTier: SubscriptionTier.STANDARD,
         subscriptionStatus: "canceled",
         updatedAt: new Date(),
       })
@@ -399,27 +397,7 @@ export async function checkAndRedeemReferralCredits(userId: string): Promise<voi
       if (subscription) {
         const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 
-        if (subscription.status === "trialing") {
-          const newTrialEnd = new Date((subscription.trialEnd?.getTime() || Date.now()) + thirtyDays);
-          const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
-
-          await tx
-            .update(subscriptions)
-            .set({
-              trialEnd: newTrialEnd,
-              currentPeriodEnd: newPeriodEnd,
-              updatedAt: new Date(),
-            })
-            .where(eq(subscriptions.userId, userId));
-
-          await tx
-            .update(users)
-            .set({
-              trialEndsAt: newTrialEnd,
-              updatedAt: new Date(),
-            })
-            .where(eq(users.id, userId));
-        } else if (subscription.status === "active") {
+        if (subscription.status === "active") {
           const newPeriodEnd = new Date((subscription.currentPeriodEnd?.getTime() || Date.now()) + thirtyDays);
 
           await tx

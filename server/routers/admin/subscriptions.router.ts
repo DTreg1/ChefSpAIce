@@ -118,10 +118,7 @@ router.get("/stats", async (_req: Request, res: Response, next: NextFunction) =>
       .from(subscriptions)
       .where(eq(subscriptions.status, "active"));
 
-    const [totalTrialingResult] = await db
-      .select({ count: count() })
-      .from(subscriptions)
-      .where(eq(subscriptions.status, "trialing"));
+    const totalTrialingResult = { count: 0 };
 
     const [totalPastDueResult] = await db
       .select({ count: count() })

@@ -7,14 +7,14 @@ export const SUBSCRIPTION_CONFIG = {
     amount: MONTHLY_PRICE * 100,
     interval: 'month',
     name: 'ChefSpAIce Monthly',
-    tier: SubscriptionTier.PRO,
+    tier: SubscriptionTier.STANDARD,
   },
   PRO_ANNUAL: {
     priceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
     amount: ANNUAL_PRICE * 100,
     interval: 'year',
     name: 'ChefSpAIce Annual',
-    tier: SubscriptionTier.PRO,
+    tier: SubscriptionTier.STANDARD,
   },
   MONTHLY: {
     priceId: process.env.STRIPE_MONTHLY_PRICE_ID || process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
@@ -39,10 +39,10 @@ export interface ProductConfig {
 }
 
 export const PRODUCTS: Record<string, ProductConfig> = {
-  [SubscriptionTier.PRO]: {
+  [SubscriptionTier.STANDARD]: {
     name: "ChefSpAIce",
     description: "Unlimited pantry items, AI recipes, and cookware. Plus Recipe Scanning, Bulk Scanning, Live AI Kitchen Assistant, Custom Storage Areas, and Weekly Meal Prepping",
-    tier: SubscriptionTier.PRO,
+    tier: SubscriptionTier.STANDARD,
     monthlyPrice: MONTHLY_PRICE * 100,
     annualPrice: ANNUAL_PRICE * 100,
   },
@@ -67,7 +67,7 @@ export function getPlanTypeFromPriceId(
 }
 
 export function getTierFromProductName(productName: string): SubscriptionTier {
-  return SubscriptionTier.PRO;
+  return SubscriptionTier.STANDARD;
 }
 
 export async function getTierFromPriceId(
@@ -82,7 +82,7 @@ export async function getTierFromPriceId(
     const interval = price.recurring?.interval;
     const planType: "monthly" | "annual" = interval === "year" ? "annual" : "monthly";
     
-    return { tier: SubscriptionTier.PRO, planType };
+    return { tier: SubscriptionTier.STANDARD, planType };
   } catch (error) {
     logger.error("Error fetching price details", { error: error instanceof Error ? error.message : String(error) });
     return null;

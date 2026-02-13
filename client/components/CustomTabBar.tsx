@@ -62,7 +62,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { hideFloatingChat, showFloatingChat } = useFloatingChat();
-  const { isProUser, usage, entitlements } = useSubscription();
+  const { isStandardUser, usage, entitlements } = useSubscription();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
   const addButtonScale = useSharedValue(1);
@@ -78,7 +78,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       ? entitlements.maxAiRecipes
       : 5;
   const remainingAiRecipes = maxAiRecipes - usage.aiRecipesUsedThisMonth;
-  const showRecipeBadge = !isProUser && remainingAiRecipes >= 0;
+  const showRecipeBadge = !isStandardUser && remainingAiRecipes >= 0;
 
   const hiddenRoutes = [
     "AddTab",

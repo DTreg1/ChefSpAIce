@@ -48,7 +48,7 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const { user, isAuthenticated, signOut } = useAuth();
-  const { tier, planType, isActive, isTrialing, trialDaysRemaining, handleManageSubscription } =
+  const { tier, planType, isActive, handleManageSubscription } =
     useSubscription();
   const { resetOnboarding } = useOnboardingStatus();
 
@@ -762,26 +762,18 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.subscriptionInfo}>
                   <ThemedText type="body" style={{ fontWeight: "600" }}>
-                    {isActive
-                      ? isTrialing
-                        ? `Free Trial${trialDaysRemaining !== null ? ` - ${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} left` : ""}`
-                        : tier === "PRO"
-                          ? "Active Subscription"
-                          : "Basic Plan"
-                      : "Basic Plan"}
+                    {isActive && tier === "STANDARD"
+                      ? "Active Subscription"
+                      : "No Plan"}
                   </ThemedText>
                   <ThemedText type="caption">
-                    {isActive
-                      ? isTrialing
-                        ? "Full access during trial"
-                        : tier === "PRO"
-                          ? `${planType === "annual" ? "Annual Plan" : planType === "monthly" ? "Monthly Plan" : "Subscription"}`
-                          : "25 items, 5 AI recipes, 5 cookware"
-                      : "25 items, 5 AI recipes, 5 cookware"}
+                    {isActive && tier === "STANDARD"
+                      ? `${planType === "annual" ? "Annual Plan" : planType === "monthly" ? "Monthly Plan" : "Subscription"}`
+                      : "Subscribe to get full access"}
                   </ThemedText>
                 </View>
               </View>
-              {isActive && tier === "PRO" && !isTrialing ? (
+              {isActive && tier === "STANDARD" ? (
                 <Pressable
                   style={styles.manageSubscriptionButton}
                   onPress={handleManageSubscription}

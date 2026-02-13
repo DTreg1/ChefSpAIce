@@ -52,16 +52,16 @@ function verifyWebhookSecret(req: Request): boolean {
   return providedSecret === REVENUECAT_WEBHOOK_SECRET;
 }
 
-function mapProductIdToTier(productId: string): 'PRO' {
-  return 'PRO';
+function mapProductIdToTier(productId: string): 'STANDARD' {
+  return 'STANDARD';
 }
 
-function mapEntitlementToTier(entitlementId: string | undefined): 'PRO' | null {
+function mapEntitlementToTier(entitlementId: string | undefined): 'STANDARD' | null {
   if (!entitlementId) return null;
   
   const lowerEntitlement = entitlementId.toLowerCase();
-  if (lowerEntitlement === 'pro' || lowerEntitlement === 'basic') {
-    return 'PRO';
+  if (lowerEntitlement === 'pro' || lowerEntitlement === 'basic' || lowerEntitlement === 'standard') {
+    return 'STANDARD';
   }
   return null;
 }
@@ -93,7 +93,7 @@ async function handleSubscriptionUpdate(
   await db
     .update(users)
     .set({
-      subscriptionTier: keepTier ? tier : 'PRO',
+      subscriptionTier: keepTier ? tier : 'STANDARD',
       subscriptionStatus: status,
       updatedAt: new Date(),
     })
@@ -101,7 +101,7 @@ async function handleSubscriptionUpdate(
 
   await invalidateSubscriptionCache(userId);
 
-  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'PRO', status });
+  logger.info("RevenueCat updated subscription", { userId, tier: keepTier ? tier : 'STANDARD', status });
 }
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {

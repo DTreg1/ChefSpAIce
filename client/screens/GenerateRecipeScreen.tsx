@@ -86,7 +86,7 @@ export default function GenerateRecipeScreen() {
     checkLimit,
     usage,
     entitlements,
-    isProUser,
+    isStandardUser,
     refetch: refetchSubscription,
   } = useSubscription();
 
@@ -473,7 +473,7 @@ export default function GenerateRecipeScreen() {
           {/* AI Recipe Usage Indicator */}
           <View style={styles.usageIndicatorRow}>
             <ThemedText type="caption">AI Recipes</ThemedText>
-            {isProUser ? (
+            {isStandardUser ? (
               <View style={styles.unlimitedBadge}>
                 <MaterialCommunityIcons
                   name="infinity"

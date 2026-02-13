@@ -139,11 +139,11 @@ export async function linkStripeCustomerToUser(userId: string, customerId: strin
 }
 
 /**
- * Checks if a subscription is currently active (paid or trialing).
+ * Checks if a subscription is currently active.
  */
 export function isSubscriptionActive(subscription: Subscription | null): boolean {
   if (!subscription) return false;
-  return subscription.status === "trialing" || subscription.status === "active";
+  return subscription.status === "active";
 }
 
 /**

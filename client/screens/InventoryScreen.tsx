@@ -93,29 +93,14 @@ export default function InventoryScreen() {
     ...DEFAULT_STORAGE_LOCATIONS.map((loc) => ({ key: loc.key, label: loc.label, icon: loc.icon })),
   ]);
 
-  const { isActive: hasActiveSubscription, isTrialing: serverTrialing, trialDaysRemaining: serverDaysRemaining } = useSubscription();
-
-  const showTrialing = serverTrialing;
-  const effectiveDaysRemaining = serverTrialing && serverDaysRemaining !== null ? serverDaysRemaining : 0;
+  const { isActive: hasActiveSubscription } = useSubscription();
 
   const [showExpiringModal, setShowExpiringModal] = useState(false);
   const [expiringModalDismissed, setExpiringModalDismissed] = useState(false);
 
   useEffect(() => {
-    const checkMilestone = async () => {
-      if (!showTrialing || hasActiveSubscription) return;
-
-      if (effectiveDaysRemaining === 1 && !expiringModalDismissed) {
-        const dismissed = await AsyncStorage.getItem("@trial_expiring_modal_dismissed");
-        if (!dismissed) {
-          setShowExpiringModal(true);
-        } else {
-          setExpiringModalDismissed(true);
-        }
-      }
-    };
-    checkMilestone();
-  }, [showTrialing, effectiveDaysRemaining, hasActiveSubscription, expiringModalDismissed]);
+    // No trial milestone checks needed
+  }, [hasActiveSubscription]);
 
   const handleDismissExpiringModal = async () => {
     setShowExpiringModal(false);

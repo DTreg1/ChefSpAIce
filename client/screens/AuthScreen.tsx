@@ -206,8 +206,7 @@ export default function AuthScreen() {
     );
     const subscriptionData = (await subscriptionResponse.json()).data as any;
     const isSubscriptionActive =
-      subscriptionData?.status === "active" ||
-      subscriptionData?.status === "trialing";
+      subscriptionData?.status === "active";
 
     if (isSubscriptionActive) {
       markOnboardingComplete();

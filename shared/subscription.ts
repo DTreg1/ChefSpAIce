@@ -1,5 +1,5 @@
 export enum SubscriptionTier {
-  PRO = "PRO",
+  STANDARD = "STANDARD",
 }
 
 export interface TierLimits {
@@ -14,7 +14,7 @@ export interface TierLimits {
 }
 
 export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
-  [SubscriptionTier.PRO]: {
+  [SubscriptionTier.STANDARD]: {
     maxPantryItems: -1,
     maxAiRecipesPerMonth: -1,
     maxCookwareItems: -1,
@@ -30,11 +30,11 @@ export const MONTHLY_PRICE = 9.99;
 export const ANNUAL_PRICE = 99.90;
 
 export const MONTHLY_PRICES = {
-  PRO: MONTHLY_PRICE,
+  STANDARD: MONTHLY_PRICE,
 } as const;
 
 export const ANNUAL_PRICES = {
-  PRO: ANNUAL_PRICE,
+  STANDARD: ANNUAL_PRICE,
 } as const;
 
 export function getTierLimits(tier: SubscriptionTier): TierLimits {

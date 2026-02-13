@@ -123,10 +123,6 @@ async function updateUserSubscriptionTier(
   if (stripeSubscriptionId) {
     updateData.stripeSubscriptionId = stripeSubscriptionId;
   }
-  if (trialEnd) {
-    updateData.trialEndsAt = trialEnd;
-  }
-
   await db
     .update(users)
     .set(updateData)
@@ -168,7 +164,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
   const priceId = subscription.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
+  let tier: SubscriptionTier = session.metadata?.tier as SubscriptionTier || SubscriptionTier.STANDARD;
   
   if (priceId) {
     const tierInfo = await getTierFromPriceId(priceId, stripe);
@@ -217,7 +213,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
     });
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  const previousTier = user?.subscriptionTier || SubscriptionTier.PRO;
+  const previousTier = user?.subscriptionTier || SubscriptionTier.STANDARD;
   const selectedTier = tier;
 
   logger.info("Subscription conversion", {
@@ -237,8 +233,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
     }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
   }
 
-  const status = subscription.status === "trialing" ? "trialing" : "active";
-  await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, stripeSubscriptionId, trialEnd);
+  await updateUserSubscriptionTier(userId, tier, "active", stripeCustomerId, stripeSubscriptionId, trialEnd);
   await invalidateSubscriptionCache(userId);
 
   logger.info("Subscription record created/updated", { userId, tier });
@@ -269,7 +264,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.STANDARD;
   
   if (priceId) {
     const stripe = await getUncachableStripeClient();
@@ -318,23 +313,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
       },
     });
 
-  if (subscription.status === "trialing") {
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const previousTier = user?.subscriptionTier || SubscriptionTier.PRO;
-
-    await db.insert(conversionEvents).values({
-      userId,
-      fromTier: previousTier,
-      toTier: tier,
-      source: "trial_started",
-      stripeSessionId: `sub_created_trial_${subscription.id}`,
-    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
-
-    logger.info("Trial started conversion event recorded", { userId, fromTier: previousTier, toTier: tier });
-  }
-
-  const status = subscription.status === "trialing" ? "trialing" : "active";
-  await updateUserSubscriptionTier(userId, tier, status, stripeCustomerId, subscription.id, trialEnd);
+  await updateUserSubscriptionTier(userId, tier, "active", stripeCustomerId, subscription.id, trialEnd);
   await invalidateSubscriptionCache(userId);
 
   logger.info("Subscription created", { userId, tier });
@@ -363,7 +342,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
   const priceId = sub.items?.data?.[0]?.price?.id;
   let planType = getPlanTypeFromPriceId(priceId || "") || "monthly";
   
-  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.PRO;
+  let tier: SubscriptionTier = subscription.metadata?.tier as SubscriptionTier || SubscriptionTier.STANDARD;
   
   if (priceId) {
     const stripe = await getUncachableStripeClient();
@@ -397,7 +376,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  const previousTier = user?.subscriptionTier || SubscriptionTier.PRO;
+  const previousTier = user?.subscriptionTier || SubscriptionTier.STANDARD;
   const previousStatus = user?.subscriptionStatus || "none";
 
   if (previousTier !== tier) {
@@ -415,18 +394,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
       source: "subscription_update",
       stripeSessionId: `sub_update_${subscription.id}_${Date.now()}`,
     }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
-  }
-
-  if (previousStatus === "trialing" && subscription.status === "active") {
-    await db.insert(conversionEvents).values({
-      userId,
-      fromTier: tier,
-      toTier: tier,
-      source: "trial_converted",
-      stripeSessionId: `sub_trial_convert_${subscription.id}_${Date.now()}`,
-    }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
-
-    logger.info("Trial converted to active", { userId, tier });
   }
 
   if ((previousStatus === "canceled" || previousStatus === "past_due") && subscription.status === "active") {
@@ -461,8 +428,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     logger.info("Subscription reactivated", { userId, fromTier: previousTier, toTier: tier });
   }
 
-  const statusStr = subscription.status === "trialing" ? "trialing" : 
-                    subscription.status === "active" ? "active" : subscription.status;
+  const statusStr = subscription.status === "active" ? "active" : subscription.status;
   await updateUserSubscriptionTier(userId, tier, statusStr, stripeCustomerId, undefined, trialEnd);
   await invalidateSubscriptionCache(userId);
 
@@ -500,14 +466,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
   const userId = await findUserByStripeCustomerId(stripeCustomerId);
   if (userId) {
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const previousTier = user?.subscriptionTier || SubscriptionTier.PRO;
+    const previousTier = user?.subscriptionTier || SubscriptionTier.STANDARD;
     const previousStatus = user?.subscriptionStatus || "active";
 
     if (finalStatus === "expired" && previousStatus === "canceled") {
       await db.insert(conversionEvents).values({
         userId,
         fromTier: previousTier,
-        toTier: SubscriptionTier.PRO,
+        toTier: SubscriptionTier.STANDARD,
         source: "expiration",
         stripeSessionId: `sub_expired_${subscription.id}_${Date.now()}`,
       }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
@@ -517,7 +483,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
       await db.insert(conversionEvents).values({
         userId,
         fromTier: previousTier,
-        toTier: SubscriptionTier.PRO,
+        toTier: SubscriptionTier.STANDARD,
         source: "cancellation",
         stripeSessionId: `sub_canceled_${subscription.id}_${Date.now()}`,
       }).onConflictDoNothing({ target: conversionEvents.stripeSessionId });
@@ -525,7 +491,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
       logger.info("Subscription cancellation event recorded", { userId, fromTier: previousTier });
     }
 
-    await updateUserSubscriptionTier(userId, SubscriptionTier.PRO, finalStatus);
+    await updateUserSubscriptionTier(userId, SubscriptionTier.STANDARD, finalStatus);
     await invalidateSubscriptionCache(userId);
   }
 

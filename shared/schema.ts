@@ -81,13 +81,13 @@ import { z } from "zod";
  * - primaryProviderId: Provider's unique ID for this user
  *
  * Subscription fields:
- * - subscriptionTier: "PRO" (default: PRO)
- * - subscriptionStatus: "trialing", "active", "canceled", or "expired" (default: trialing)
+ * - subscriptionTier: "STANDARD" (default: STANDARD)
+ * - subscriptionStatus: "active", "canceled", or "expired" (default: active)
  * - stripeCustomerId: Stripe customer ID for payment processing
  * - stripeSubscriptionId: Stripe subscription ID for managing subscription
  * - aiRecipesGeneratedThisMonth: Counter for AI recipe generation limit (resets monthly)
  * - aiRecipesResetDate: When the monthly AI recipe counter resets
- * - trialEndsAt: When the 7-day trial expires
+ * - trialEndsAt: Legacy field (no longer used)
  *
  * Pre-registration fields (for landing page signups):
  * - preRegistrationSource: Where the user signed up from ("landing", "app", etc.)
@@ -129,8 +129,8 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   primaryProvider: varchar("primary_provider"),
   primaryProviderId: varchar("primary_provider_id"),
-  subscriptionTier: text("subscription_tier").notNull().default("PRO"),
-  subscriptionStatus: text("subscription_status").notNull().default("trialing"),
+  subscriptionTier: text("subscription_tier").notNull().default("STANDARD"),
+  subscriptionStatus: text("subscription_status").notNull().default("active"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   aiRecipesGeneratedThisMonth: integer("ai_recipes_generated_this_month")
@@ -1185,7 +1185,6 @@ export type Feedback = typeof feedback.$inferSelect;
  * - stripeSubscriptionId: Stripe's subscription ID
  * - stripePriceId: Which price/plan they're on
  * - status: Current subscription state
- *   - "trialing": In 7-day free trial
  *   - "active": Paid and active
  *   - "past_due": Payment failed, grace period
  *   - "canceled": User canceled (may still have access until period end)
@@ -1193,7 +1192,6 @@ export type Feedback = typeof feedback.$inferSelect;
  *   - "incomplete": Setup not finished
  * - planType: "monthly" or "annual"
  * - currentPeriodStart/End: Current billing period dates
- * - trialStart/End: Trial period dates (if applicable)
  * - cancelAtPeriodEnd: If true, won't renew
  * - canceledAt: When the user canceled (if applicable)
  */

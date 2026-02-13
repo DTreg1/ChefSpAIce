@@ -99,12 +99,12 @@ export default function SiriShortcutsGuideScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { isAuthenticated } = useAuth();
-  const { isProUser } = useSubscription();
+  const { isStandardUser } = useSubscription();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const apiUrl = getApiUrl();
-  const canGenerateKey = isAuthenticated && isProUser;
+  const canGenerateKey = isAuthenticated && isStandardUser;
 
   const handleGenerateApiKey = async () => {
     if (!isAuthenticated) {
@@ -112,7 +112,7 @@ export default function SiriShortcutsGuideScreen() {
       return;
     }
 
-    if (!isProUser) {
+    if (!isStandardUser) {
       Alert.alert(
         "Subscription Required",
         "Siri Shortcuts integration requires an active subscription. Please upgrade to use this feature.",
@@ -394,7 +394,7 @@ export default function SiriShortcutsGuideScreen() {
                 Please sign in to generate an API key.
               </ThemedText>
             )}
-            {isAuthenticated && !isProUser && (
+            {isAuthenticated && !isStandardUser && (
               <View style={styles.proRequiredBox}>
                 <Feather name="lock" size={16} color={AppColors.warning} />
                 <ThemedText type="small" style={styles.proRequiredText}>

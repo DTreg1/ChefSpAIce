@@ -66,7 +66,6 @@ SplashScreen.preventAutoHideAsync();
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
-import { storeKitService } from "@/lib/storekit-service";
 import { storage } from "@/lib/storage";
 import { linkingConfig, savePendingDeepLink } from '@/lib/deep-linking';
 import * as Linking from 'expo-linking';
@@ -75,7 +74,6 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PendingSyncBanner } from "@/components/PendingSyncBanner";
-import { PaymentFailedBanner } from "@/components/PaymentFailedBanner";
 import { FloatingChatProvider } from "@/contexts/FloatingChatContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import {
@@ -83,13 +81,11 @@ import {
   useOnboardingStatus,
 } from "@/contexts/OnboardingContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider, useSubscription } from "./hooks/useSubscription";
+import { SubscriptionProvider } from "./hooks/useSubscription";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ChatModal } from "@/components/ChatModal";
 import { VoiceQuickAction } from "@/components/VoiceQuickAction";
 import { ScreenIdentifierOverlay } from "@/components/ScreenIdentifierOverlay";
-import { useExpirationNotifications } from "@/hooks/useExpirationNotifications";
-import { usePaymentNotifications } from "@/hooks/usePaymentNotifications";
 import { initOfflineProcessor } from "@/lib/offline-processor";
 import { navigationRef } from "@/lib/navigationRef";
 
@@ -102,7 +98,6 @@ const SCREENS_WITHOUT_CHAT = [
   "Auth",
   "Landing",
   "Onboarding",
-  "Subscription",
   "Profile",
   "Settings",
 ];
@@ -144,34 +139,19 @@ function MobileAppContent() {
     isAuthenticated,
     isLoading: isAuthLoading,
     user,
-    setSignOutCallback,
   } = useAuth();
   const { isOnboardingComplete, isCheckingOnboarding } = useOnboardingStatus();
-  const { isActive: isSubscriptionActive, isLoading: isSubscriptionLoading } =
-    useSubscription();
   const [currentRoute, setCurrentRoute] = useState<string | undefined>(
     undefined,
   );
-  // Using shared navigationRef from @/lib/navigationRef
-  // so non-React code (e.g. SyncManager) can navigate.
-
-  useExpirationNotifications();
-  usePaymentNotifications();
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      storeKitService.setUserId(user.id);
       setUser({ id: user.id, email: user.email });
     } else {
       setUser(null);
     }
   }, [isAuthenticated, user?.id, user?.email]);
-
-  useEffect(() => {
-    setSignOutCallback(() => {
-      storeKitService.logout();
-    });
-  }, [setSignOutCallback]);
 
   useEffect(() => {
     initOfflineProcessor();
@@ -240,9 +220,7 @@ function MobileAppContent() {
   const showChat =
     currentRoute !== undefined &&
     !isAuthLoading &&
-    !isSubscriptionLoading &&
     isAuthenticated &&
-    isSubscriptionActive &&
     !isCheckingOnboarding &&
     isOnboardingComplete &&
     !SCREENS_WITHOUT_CHAT.includes(currentRoute);
@@ -260,9 +238,6 @@ function MobileAppContent() {
 
         {/* Shows when changes are pending sync */}
         <PendingSyncBanner />
-
-        {/* Shows when payment has failed during grace period */}
-        <PaymentFailedBanner />
 
         {/* Web max-width container for better readability on large screens */}
         <View style={styles.webContainer}>
@@ -304,7 +279,6 @@ function MobileAppContent() {
  */
 function RootWrapper() {
   useEffect(() => {
-    storeKitService.initialize();
     storage.cleanupDeletedInventory().then((purged) => {
       if (purged > 0) {
         logger.log(`[Cleanup] Purged ${purged} expired soft-deleted inventory items`);

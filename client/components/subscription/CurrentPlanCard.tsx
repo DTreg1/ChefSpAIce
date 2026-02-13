@@ -12,8 +12,6 @@ interface CurrentPlanCardProps {
   monthlyPrice: string;
   tier: string;
   statusInfo: { label: string; color: string };
-  isTrialing: boolean;
-  trialDaysRemaining: number | null;
 }
 
 export function CurrentPlanCard({
@@ -21,12 +19,10 @@ export function CurrentPlanCard({
   monthlyPrice,
   tier,
   statusInfo,
-  isTrialing,
-  trialDaysRemaining,
 }: CurrentPlanCardProps) {
   const { theme } = useTheme();
 
-  const isActiveSubscriber = tier === "PRO";
+  const isActiveSubscriber = tier === "STANDARD";
 
   return (
     <GlassCard style={styles.planCard}>
@@ -63,51 +59,25 @@ export function CurrentPlanCard({
             </ThemedText>
           </View>
         </View>
-        {!isTrialing && (
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${statusInfo.color}20` },
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: statusInfo.color },
-              ]}
-            />
-            <ThemedText
-              style={[styles.statusText, { color: statusInfo.color }]}
-            >
-              {statusInfo.label}
-            </ThemedText>
-          </View>
-        )}
-      </View>
-
-      {isTrialing && trialDaysRemaining !== null && (
         <View
           style={[
-            styles.trialBanner,
-            { backgroundColor: `${AppColors.warning}15` },
+            styles.statusBadge,
+            { backgroundColor: `${statusInfo.color}20` },
           ]}
         >
-          <Feather name="clock" size={16} color={AppColors.warning} />
-          <View style={styles.trialTextContainer}>
-            <ThemedText
-              style={[styles.trialTitle, { color: AppColors.warning }]}
-            >
-              Trial expires in {trialDaysRemaining} day
-              {trialDaysRemaining !== 1 ? "s" : ""}
-            </ThemedText>
-            <ThemedText
-              style={[styles.trialSubtitle, { color: theme.textSecondary }]}
-            >
-              Subscribe to continue using ChefSpAIce after your trial.
-            </ThemedText>
-          </View>
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: statusInfo.color },
+            ]}
+          />
+          <ThemedText
+            style={[styles.statusText, { color: statusInfo.color }]}
+          >
+            {statusInfo.label}
+          </ThemedText>
         </View>
-      )}
+      </View>
     </GlassCard>
   );
 }
@@ -168,25 +138,5 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-  },
-  trialBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.md,
-    gap: Spacing.sm,
-  },
-  trialTextContainer: {
-    flex: 1,
-  },
-  trialTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  trialSubtitle: {
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 18,
   },
 });

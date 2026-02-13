@@ -6,7 +6,7 @@ import { AppError } from "./errorHandler";
 import { SubscriptionTier } from "@shared/subscription";
 import { subscriptionCache, type CachedSubscriptionStatus } from "../lib/subscription-cache";
 
-const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
+const ACTIVE_STATUSES = ["active", "past_due"];
 const GRACE_PERIOD_DAYS = 7;
 
 export async function requireSubscription(
@@ -49,7 +49,7 @@ export async function requireSubscription(
     const { subscriptionStatus, subscriptionPaymentFailedAt, subscriptionUpdatedAt, userTier } = result;
 
     if (!subscriptionStatus) {
-      if (userTier === SubscriptionTier.PRO) {
+      if (userTier === SubscriptionTier.STANDARD) {
         req.subscriptionTier = userTier;
         return next();
       }
@@ -74,7 +74,7 @@ export async function requireSubscription(
       }
     }
 
-    req.subscriptionTier = userTier || SubscriptionTier.PRO;
+    req.subscriptionTier = userTier || SubscriptionTier.STANDARD;
     next();
   } catch (error) {
     next(error);

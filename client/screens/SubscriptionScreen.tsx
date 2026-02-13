@@ -53,11 +53,9 @@ export default function SubscriptionScreen() {
   const {
     tier: currentTier,
     status: currentStatus,
-    isProUser,
-    isTrialing,
+    isStandardUser,
     isActive,
     isLoading,
-    trialDaysRemaining,
     entitlements,
     usage,
     refetch,
@@ -97,16 +95,16 @@ export default function SubscriptionScreen() {
   const storeKitPrices = useMemo(() => {
     if (!shouldUseStoreKit || !offerings?.availablePackages) return null;
 
-    const prices: { proMonthly?: string; proAnnual?: string } = {};
+    const prices: { standardMonthly?: string; standardAnnual?: string } = {};
 
     for (const pkg of offerings.availablePackages) {
       const id = pkg.identifier.toLowerCase();
       const priceStr = pkg.product.priceString;
 
       if (pkg.packageType === 'MONTHLY' || id.includes('monthly')) {
-        prices.proMonthly = priceStr;
+        prices.standardMonthly = priceStr;
       } else if (pkg.packageType === 'ANNUAL' || id.includes('annual')) {
-        prices.proAnnual = priceStr;
+        prices.standardAnnual = priceStr;
       }
     }
 
@@ -133,11 +131,6 @@ export default function SubscriptionScreen() {
     switch (currentStatus) {
       case "active":
         return { label: "Active", color: AppColors.success };
-      case "trialing":
-        return {
-          label: `Trial (${trialDaysRemaining} days left)`,
-          color: AppColors.warning,
-        };
       case "past_due":
         return { label: "Past Due", color: AppColors.error };
       case "canceled":
@@ -150,28 +143,28 @@ export default function SubscriptionScreen() {
   };
 
   const getPlanName = (): string => {
-    if (currentTier === SubscriptionTier.PRO) return "ChefSpAIce";
-    return isTrialing ? "Trial" : "No Plan";
+    if (currentTier === SubscriptionTier.STANDARD) return "ChefSpAIce";
+    return "No Plan";
   };
 
   const getMonthlyPrice = (): string => {
-    if (currentTier === SubscriptionTier.PRO) {
+    if (currentTier === SubscriptionTier.STANDARD) {
       if (shouldUseStoreKit) {
-        return storeKitPrices?.proMonthly ? `${storeKitPrices.proMonthly}/month` : "Active Plan";
+        return storeKitPrices?.standardMonthly ? `${storeKitPrices.standardMonthly}/month` : "Active Plan";
       }
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         return "Active Plan";
       }
       return `$${MONTHLY_PRICE.toFixed(2)}/month`;
     }
-    return isTrialing ? "7-Day Trial" : "—";
+    return "—";
   };
 
   const getSubscribeButtonPrice = () => {
     const plan = selectedPlan;
 
     if (storeKitPrices) {
-      const key = plan === 'monthly' ? 'proMonthly' : 'proAnnual';
+      const key = plan === 'monthly' ? 'standardMonthly' : 'standardAnnual';
       if (storeKitPrices[key]) {
         return `${storeKitPrices[key]}/${plan === 'monthly' ? 'mo' : 'yr'}`;
       }
@@ -206,7 +199,7 @@ export default function SubscriptionScreen() {
   };
 
   const handleUpgrade = async (
-    tier: "pro" = "pro",
+    tier: "standard" = "standard",
     plan: "monthly" | "annual" = "annual",
   ) => {
     setIsCheckingOut(true);
@@ -225,7 +218,7 @@ export default function SubscriptionScreen() {
 
         let pkg = null;
         if (offerings?.availablePackages) {
-          const expectedPackageId = `pro_${plan}`;
+          const expectedPackageId = `standard_${plan}`;
           pkg = offerings.availablePackages.find((p) => {
             const id = p.identifier.toLowerCase();
             const matchesType = plan === "monthly"
@@ -233,8 +226,8 @@ export default function SubscriptionScreen() {
               : p.packageType === "ANNUAL";
             return (
               id === expectedPackageId ||
-              (id.includes("pro") && id.includes(plan)) ||
-              (id.includes("pro") && matchesType) ||
+              (id.includes("standard") && id.includes(plan)) ||
+              (id.includes("standard") && matchesType) ||
               matchesType
             );
           });
@@ -281,7 +274,7 @@ export default function SubscriptionScreen() {
         );
         const prices = (await pricesResponse.json()).data as any;
 
-        const priceKey = plan === "monthly" ? "proMonthly" : "proAnnual";
+        const priceKey = plan === "monthly" ? "standardMonthly" : "standardAnnual";
         const fallbackKey = plan === "monthly" ? "monthly" : "annual";
         const selectedPriceId = prices[priceKey]?.id || prices[fallbackKey]?.id;
 
@@ -295,8 +288,8 @@ export default function SubscriptionScreen() {
         }
 
         const isExistingPaidSubscriber =
-          (currentStatus === "active" || currentStatus === "trialing") &&
-          currentTier === SubscriptionTier.PRO;
+          currentStatus === "active" &&
+          currentTier === SubscriptionTier.STANDARD;
 
         if (isExistingPaidSubscriber) {
           setIsPreviewingProration(true);
@@ -494,8 +487,7 @@ export default function SubscriptionScreen() {
                 Subscription Required
               </ThemedText>
               <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                Your trial has ended. Choose a plan below to continue using
-                ChefSpAIce.
+                Subscribe to continue using ChefSpAIce.
               </ThemedText>
             </View>
           </GlassCard>
@@ -506,8 +498,6 @@ export default function SubscriptionScreen() {
           monthlyPrice={getMonthlyPrice()}
           tier={currentTier}
           statusInfo={statusInfo}
-          isTrialing={isTrialing}
-          trialDaysRemaining={trialDaysRemaining}
         />
 
         <GlassCard style={styles.usageCard}>
@@ -602,7 +592,7 @@ export default function SubscriptionScreen() {
           features={PRO_FEATURES}
         />
 
-        {!isTrialing && (!isAuthenticated || !isProUser) && (
+        {(!isAuthenticated || !isStandardUser) && (
           <GlassCard style={styles.upgradeCard}>
             <View style={styles.upgradeHeader}>
               <Feather
@@ -634,7 +624,7 @@ export default function SubscriptionScreen() {
             />
 
             <GlassButton
-              onPress={() => handleUpgrade("pro", selectedPlan)}
+              onPress={() => handleUpgrade("standard", selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={
@@ -662,7 +652,7 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        {isProUser && isActive && !isTrialing && (
+        {isStandardUser && isActive && (
           <GlassCard style={styles.manageCard}>
             <View style={styles.sectionHeader}>
               <Feather
@@ -726,7 +716,7 @@ export default function SubscriptionScreen() {
           </GlassCard>
         )}
 
-        {isTrialing && (
+        {false && (
           <GlassCard style={styles.upgradeCard}>
             <View style={styles.upgradeHeader}>
               <Feather
@@ -749,7 +739,7 @@ export default function SubscriptionScreen() {
                 { color: theme.textSecondaryOnGlass },
               ]}
             >
-              Your trial ends soon. Subscribe to continue using ChefSpAIce.
+              Subscribe to continue using ChefSpAIce.
             </ThemedText>
 
             <PlanToggle
@@ -759,7 +749,7 @@ export default function SubscriptionScreen() {
             />
 
             <GlassButton
-              onPress={() => handleUpgrade("pro", selectedPlan)}
+              onPress={() => handleUpgrade("standard", selectedPlan)}
               disabled={isCheckingOut}
               style={styles.upgradeButton}
               icon={

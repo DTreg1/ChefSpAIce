@@ -26,36 +26,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 
-function TrialBadge() {
+function StatusBadge() {
   const { isAuthenticated } = useAuth();
-  const { isTrialing, isPastDue, trialDaysRemaining, graceDaysRemaining, isLoading, subscription, handleManageSubscription } =
+  const { isPastDue, graceDaysRemaining, isLoading, subscription, handleManageSubscription } =
     useSubscription();
 
   if (isLoading || !isAuthenticated) {
     return null;
-  }
-
-  if (isTrialing && trialDaysRemaining !== null) {
-    const trialText =
-      trialDaysRemaining === 0
-        ? "Trial ends today"
-        : trialDaysRemaining === 1
-          ? "1 day left"
-          : `${trialDaysRemaining} days left`;
-
-    return (
-      <Pressable
-        style={styles.trialBadge}
-        onPress={handleManageSubscription}
-        data-testid="drawer-trial-badge"
-        accessibilityRole="button"
-        accessibilityLabel={`Trial status: ${trialText}. Manage subscription`}
-      >
-        <Feather name="clock" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>{trialText}</ThemedText>
-        <Feather name="chevron-right" size={12} color="#fff" />
-      </Pressable>
-    );
   }
 
   if (isPastDue) {
@@ -70,14 +47,14 @@ function TrialBadge() {
 
     return (
       <Pressable
-        style={[styles.trialBadge, styles.pastDueBadge]}
+        style={[styles.statusBadge, styles.pastDueBadge]}
         onPress={handleManageSubscription}
         data-testid="drawer-past-due-badge"
         accessibilityRole="button"
         accessibilityLabel={`Payment status: ${daysText}. Manage subscription`}
       >
         <Feather name="alert-circle" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>{daysText}</ThemedText>
+        <ThemedText style={styles.statusText}>{daysText}</ThemedText>
         <Feather name="chevron-right" size={12} color="#fff" />
       </Pressable>
     );
@@ -86,14 +63,14 @@ function TrialBadge() {
   if (subscription?.cancelAtPeriodEnd) {
     return (
       <Pressable
-        style={[styles.trialBadge, styles.cancelingBadge]}
+        style={[styles.statusBadge, styles.cancelingBadge]}
         onPress={handleManageSubscription}
         data-testid="drawer-canceling-badge"
         accessibilityRole="button"
         accessibilityLabel="Subscription ending soon. Manage subscription"
       >
         <Feather name="alert-triangle" size={12} color="#fff" />
-        <ThemedText style={styles.trialText}>Ending soon</ThemedText>
+        <ThemedText style={styles.statusText}>Ending soon</ThemedText>
         <Feather name="chevron-right" size={12} color="#fff" />
       </Pressable>
     );
@@ -276,7 +253,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <ThemedText type="small" style={styles.tagline}>
               Reduce waste, eat fresh
             </ThemedText>
-            <TrialBadge />
+            <StatusBadge />
           </View>
 
           <View
@@ -495,7 +472,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  trialBadge: {
+  statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
@@ -513,7 +490,7 @@ const styles = StyleSheet.create({
   cancelingBadge: {
     backgroundColor: AppColors.error,
   },
-  trialText: {
+  statusText: {
     fontSize: 11,
     fontWeight: "600",
     color: "#fff",
