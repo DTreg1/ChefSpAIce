@@ -130,6 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", generalLimiter);
   app.use("/api/auth/login", authLimiter);
   app.use("/api/auth/register", authLimiter);
+  app.use("/api/auth/apple", authLimiter);
+  app.use("/api/auth/google", authLimiter);
   app.use("/api/chat", aiLimiter);
   app.use("/api/suggestions", aiLimiter);
   app.use("/api/recipes/generate", aiLimiter);
