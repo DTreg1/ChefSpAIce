@@ -520,6 +520,15 @@ async function initStripe(retries = 3, delay = 2000) {
 
   setupErrorHandler(app);
 
+  const encKey = process.env.TOKEN_ENCRYPTION_KEY;
+  if (encKey) {
+    if (!/^[0-9a-fA-F]{64}$/.test(encKey)) {
+      throw new Error("TOKEN_ENCRYPTION_KEY must be exactly 64 hex characters");
+    }
+  } else {
+    logger.warn("TOKEN_ENCRYPTION_KEY not set — OAuth token encryption disabled");
+  }
+
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(
     {
