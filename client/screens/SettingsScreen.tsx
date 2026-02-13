@@ -33,6 +33,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -151,6 +152,11 @@ export default function SettingsScreen() {
   >([]);
   const [showAddStorageModal, setShowAddStorageModal] = useState(false);
   const [newStorageAreaName, setNewStorageAreaName] = useState("");
+
+  const { focusTargetRef: storageFocusRef, containerRef: storageContainerRef, onAccessibilityEscape: onStorageEscape } = useFocusTrap({
+    visible: showAddStorageModal,
+    onDismiss: () => setShowAddStorageModal(false),
+  });
 
   const menuItems: MenuItemConfig[] = [];
 
@@ -1066,6 +1072,7 @@ export default function SettingsScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setShowAddStorageModal(false)}
+        accessibilityViewIsModal={true}
       >
         <Pressable
           style={addStorageStyles.overlay}
@@ -1074,6 +1081,7 @@ export default function SettingsScreen() {
           accessibilityLabel="Close add storage modal"
         >
           <Pressable
+            ref={storageContainerRef}
             style={[
               addStorageStyles.modal,
               { backgroundColor: theme.backgroundDefault },
@@ -1081,8 +1089,9 @@ export default function SettingsScreen() {
             onPress={(e) => e.stopPropagation()}
             accessibilityRole="button"
             accessibilityLabel="Add storage modal content"
+            onAccessibilityEscape={onStorageEscape}
           >
-            <ThemedText type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
+            <ThemedText ref={storageFocusRef} type="h4" style={addStorageStyles.title} accessibilityRole="header" accessibilityLabel="Add Storage Area">
               Add Storage Area
             </ThemedText>
             <ThemedText

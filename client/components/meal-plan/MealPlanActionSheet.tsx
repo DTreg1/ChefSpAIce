@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { Recipe } from "@/lib/storage";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface MealPlanActionSheetProps {
   visible: boolean;
@@ -23,6 +24,10 @@ export function MealPlanActionSheet({
   onClose,
 }: MealPlanActionSheetProps) {
   const { theme } = useTheme();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
 
   return (
     <Modal
@@ -30,6 +35,7 @@ export function MealPlanActionSheet({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      accessibilityViewIsModal={true}
     >
       <Pressable
         style={styles.modalOverlay}
@@ -38,12 +44,14 @@ export function MealPlanActionSheet({
         accessibilityLabel="Close meal options"
       >
         <View
+          ref={containerRef}
           style={[
             styles.actionSheet,
             { backgroundColor: theme.backgroundDefault },
           ]}
+          onAccessibilityEscape={onAccessibilityEscape}
         >
-          <ThemedText type="h4" style={styles.actionSheetTitle}>
+          <ThemedText ref={focusTargetRef} type="h4" style={styles.actionSheetTitle}>
             {recipe?.title || "Meal Options"}
           </ThemedText>
 

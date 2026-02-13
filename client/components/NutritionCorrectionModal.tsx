@@ -22,6 +22,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { GlassCard } from "@/components/GlassCard";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import type { NutritionFacts } from "@shared/schema";
@@ -49,6 +50,10 @@ export function NutritionCorrectionModal({
 }: NutritionCorrectionModalProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -194,6 +199,8 @@ export function NutritionCorrectionModal({
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(150)}
+          ref={containerRef}
+          onAccessibilityEscape={onAccessibilityEscape}
           style={[
             styles.container,
             {
@@ -204,7 +211,7 @@ export function NutritionCorrectionModal({
         >
           <GlassCard style={styles.card}>
             <View style={styles.header}>
-              <ThemedText type="h3" style={styles.title}>
+              <ThemedText type="h3" style={styles.title} ref={focusTargetRef}>
                 Report Nutrition Issue
               </ThemedText>
               <Pressable onPress={handleClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">

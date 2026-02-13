@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -48,6 +49,11 @@ export default function ItemDetailScreen() {
   const [item, setItem] = useState<FoodItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const { focusTargetRef: datePickerFocusRef, containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
+    visible: showDatePicker,
+    onDismiss: () => setShowDatePicker(false),
+  });
   const [datePickerField, setDatePickerField] = useState<
     "purchase" | "expiration"
   >("expiration");
@@ -589,6 +595,7 @@ export default function ItemDetailScreen() {
             transparent
             animationType="slide"
             onRequestClose={handleDatePickerDone}
+            accessibilityViewIsModal={true}
           >
             <Pressable
               style={styles.datePickerOverlay}
@@ -597,6 +604,7 @@ export default function ItemDetailScreen() {
               accessibilityLabel="Close date picker"
             >
               <Pressable
+                ref={datePickerContainerRef}
                 style={[
                   styles.datePickerContainer,
                   { backgroundColor: theme.backgroundDefault },
@@ -604,9 +612,10 @@ export default function ItemDetailScreen() {
                 onPress={(e) => e.stopPropagation()}
                 accessibilityRole="button"
                 accessibilityLabel="Date picker content"
+                onAccessibilityEscape={onDatePickerEscape}
               >
                 <View style={styles.datePickerHeader}>
-                  <ThemedText type="h4">
+                  <ThemedText ref={datePickerFocusRef} type="h4">
                     {datePickerField === "expiration"
                       ? "Expiration Date"
                       : "Purchase Date"}

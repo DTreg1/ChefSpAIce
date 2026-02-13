@@ -9,6 +9,7 @@ import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import type { CookingTerm } from "@/components/TermHighlighter";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface TermTooltipProps {
   term: CookingTerm | null;
@@ -31,6 +32,10 @@ export function TermTooltip({
 }: TermTooltipProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
 
   if (!term) return null;
 
@@ -40,6 +45,7 @@ export function TermTooltip({
       animationType="slide"
       transparent
       onRequestClose={onClose}
+      accessibilityViewIsModal={true}
     >
       <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss tooltip">
         <Pressable
@@ -50,10 +56,10 @@ export function TermTooltip({
           onPress={(e) => e.stopPropagation()}
           accessibilityRole="none"
         >
-          <GlassCard style={styles.tooltip} intensity="strong">
+          <GlassCard ref={containerRef} style={styles.tooltip} intensity="strong" onAccessibilityEscape={onAccessibilityEscape}>
             <View style={styles.header}>
               <View style={styles.titleRow}>
-                <ThemedText type="h3">{term.term}</ThemedText>
+                <ThemedText ref={focusTargetRef} type="h3">{term.term}</ThemedText>
                 <Pressable
                   onPress={onClose}
                   style={styles.closeButton}

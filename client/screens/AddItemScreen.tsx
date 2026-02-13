@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -213,6 +214,15 @@ export default function AddItemScreen() {
   const [expirationDate, setExpirationDate] = useState(getInitialExpiration());
   const [notes, setNotes] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const { focusTargetRef: datePickerFocusRef, containerRef: datePickerContainerRef, onAccessibilityEscape: onDatePickerEscape } = useFocusTrap({
+    visible: showDatePicker,
+    onDismiss: () => setShowDatePicker(false),
+  });
+  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+    visible: showUpgradePrompt,
+    onDismiss: () => setShowUpgradePrompt(false),
+  });
   const [datePickerField, setDatePickerField] = useState<
     "purchase" | "expiration"
   >("expiration");
@@ -1118,6 +1128,7 @@ export default function AddItemScreen() {
             transparent
             animationType="slide"
             onRequestClose={handleDatePickerDone}
+            accessibilityViewIsModal={true}
           >
             <Pressable
               style={styles.datePickerOverlay}
@@ -1126,6 +1137,7 @@ export default function AddItemScreen() {
               accessibilityLabel="Close date picker"
             >
               <Pressable
+                ref={datePickerContainerRef}
                 style={[
                   styles.datePickerContainer,
                   { backgroundColor: theme.backgroundDefault },
@@ -1133,9 +1145,10 @@ export default function AddItemScreen() {
                 onPress={(e) => e.stopPropagation()}
                 accessibilityRole="button"
                 accessibilityLabel="Date picker content"
+                onAccessibilityEscape={onDatePickerEscape}
               >
                 <View style={styles.datePickerHeader}>
-                  <ThemedText type="h4">
+                  <ThemedText ref={datePickerFocusRef} type="h4">
                     {datePickerField === "expiration"
                       ? "Expiration Date"
                       : "Purchase Date"}
@@ -1209,8 +1222,9 @@ export default function AddItemScreen() {
         accessibilityViewIsModal={true}
         data-testid="modal-upgrade-pantry-limit"
       >
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }}>
+        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
+            ref={upgradeFocusRef}
             type="limit"
             limitName="pantry items"
             remaining={0}

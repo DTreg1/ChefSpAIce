@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -248,6 +249,11 @@ export default function AddFoodBatchScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "AddFoodBatch">>();
   const { checkLimit, entitlements } = useSubscription();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+    visible: showUpgradePrompt,
+    onDismiss: () => setShowUpgradePrompt(false),
+  });
 
   const initialItems: BatchItem[] = (route.params?.items || []).map(
     (item: IdentifiedFood, idx: number) => ({
@@ -540,8 +546,9 @@ export default function AddFoodBatchScreen() {
         accessibilityViewIsModal={true}
         data-testid="modal-upgrade-pantry-limit"
       >
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }}>
+        <View ref={upgradeContainerRef} style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 24 }} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
+            ref={upgradeFocusRef}
             type="limit"
             limitName="pantry items"
             remaining={0}

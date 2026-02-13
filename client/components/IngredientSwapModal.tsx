@@ -17,6 +17,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
   findSwapsForIngredient,
@@ -43,6 +44,10 @@ export function IngredientSwapModal({
   onSelectSwap,
 }: IngredientSwapModalProps) {
   const { theme, isDark } = useTheme();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
   const [selectedFilters, setSelectedFilters] = useState<DietaryFilter[]>([]);
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
@@ -91,7 +96,7 @@ export function IngredientSwapModal({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Feather name="repeat" size={20} color={AppColors.primary} />
-          <ThemedText type="h3" style={styles.headerTitle}>
+          <ThemedText type="h3" style={styles.headerTitle} ref={focusTargetRef}>
             Swap Ingredient
           </ThemedText>
         </View>
@@ -303,6 +308,8 @@ export function IngredientSwapModal({
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(150)}
+          ref={containerRef}
+          onAccessibilityEscape={onAccessibilityEscape}
           style={styles.modalContainer}
         >
           {useLiquidGlass ? (

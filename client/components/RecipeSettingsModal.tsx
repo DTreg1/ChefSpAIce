@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { useTheme } from "@/hooks/useTheme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage, UserPreferences, DEFAULT_MACRO_TARGETS } from "@/lib/storage";
 import type { RecipeSettings } from "@/navigation/RecipesStackNavigator";
@@ -74,6 +75,10 @@ export function RecipeSettingsModal({
   onGenerate,
 }: RecipeSettingsModalProps) {
   const { theme, isDark } = useTheme();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
   const [saving, setSaving] = useState(false);
 
   const [servings, setServings] = useState(4);
@@ -212,13 +217,15 @@ export function RecipeSettingsModal({
         style={styles.overlay}
       >
         <View
+          ref={containerRef}
+          onAccessibilityEscape={onAccessibilityEscape}
           style={[
             styles.modalContainer,
             { backgroundColor: theme.backgroundRoot },
           ]}
         >
           <View style={styles.header}>
-            <ThemedText type="h3">Recipe Settings</ThemedText>
+            <ThemedText type="h3" ref={focusTargetRef}>Recipe Settings</ThemedText>
             <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close recipe settings">
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>

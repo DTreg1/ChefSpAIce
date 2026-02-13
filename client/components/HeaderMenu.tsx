@@ -11,6 +11,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export interface MenuItemConfig {
   label: string;
@@ -32,6 +33,10 @@ export function HeaderMenu({
 }: HeaderMenuProps) {
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const { focusTargetRef, triggerRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible: isOpen,
+    onDismiss: () => setIsOpen(false),
+  });
 
   const handleItemPress = async (item: MenuItemConfig) => {
     setIsOpen(false);
@@ -45,6 +50,7 @@ export function HeaderMenu({
   return (
     <>
       <Pressable
+        ref={triggerRef}
         style={styles.menuButton}
         onPress={() => setIsOpen(true)}
         testID={testID}
@@ -70,6 +76,7 @@ export function HeaderMenu({
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View
+                ref={containerRef}
                 style={[
                   styles.dropdown,
                   {
@@ -78,10 +85,12 @@ export function HeaderMenu({
                   },
                 ]}
                 accessibilityRole="menu"
+                onAccessibilityEscape={onAccessibilityEscape}
               >
                 {items.map((item, index) => (
                   <Pressable
                     key={item.label}
+                    ref={index === 0 ? focusTargetRef : undefined}
                     style={[
                       styles.menuItem,
                       index < items.length - 1 && {

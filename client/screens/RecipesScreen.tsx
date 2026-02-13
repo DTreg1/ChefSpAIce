@@ -32,6 +32,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -119,6 +120,15 @@ export default function RecipesScreen() {
     entitlements,
     checkLimit,
   } = useQuickRecipeGeneration();
+
+  const { focusTargetRef: progressFocusRef, containerRef: progressContainerRef, onAccessibilityEscape: onProgressEscape } = useFocusTrap({
+    visible: isGenerating,
+    onDismiss: () => {},
+  });
+  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+    visible: showUpgradePrompt,
+    onDismiss: dismissUpgradePrompt,
+  });
 
   useEffect(() => {
     if (loading) {
@@ -684,15 +694,18 @@ export default function RecipesScreen() {
         }
       />
 
-      <Modal visible={isGenerating} transparent animationType="fade">
+      <Modal visible={isGenerating} transparent animationType="fade" accessibilityViewIsModal={true}>
         <View style={styles.progressModalOverlay}>
           <View
+            ref={progressContainerRef}
             style={[
               styles.progressModalContent,
               { backgroundColor: theme.glass.background },
             ]}
+            onAccessibilityEscape={onProgressEscape}
           >
             <View
+              ref={progressFocusRef}
               accessibilityLiveRegion="polite"
               accessibilityLabel={
                 progressStage === "loading"
@@ -724,9 +737,11 @@ export default function RecipesScreen() {
         transparent
         animationType="fade"
         onRequestClose={dismissUpgradePrompt}
+        accessibilityViewIsModal={true}
       >
-        <View style={styles.upgradeModalOverlay}>
+        <View ref={upgradeContainerRef} style={styles.upgradeModalOverlay} onAccessibilityEscape={onUpgradeEscape}>
           <UpgradePrompt
+            ref={upgradeFocusRef}
             type="limit"
             limitName="AI recipes"
             remaining={(() => {

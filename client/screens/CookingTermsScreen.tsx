@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   View,
   StyleSheet,
@@ -52,6 +53,11 @@ export default function CookingTermsScreen() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTerm, setSelectedTerm] = useState<CookingTerm | null>(null);
+
+  const { focusTargetRef: termFocusRef, containerRef: termContainerRef, onAccessibilityEscape: onTermEscape } = useFocusTrap({
+    visible: selectedTerm !== null,
+    onDismiss: () => setSelectedTerm(null),
+  });
 
   const { data: terms, isLoading } = useQuery<CookingTerm[]>({
     queryKey: ["/api/cooking-terms"],
@@ -257,13 +263,16 @@ export default function CookingTermsScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setSelectedTerm(null)}
+        accessibilityViewIsModal={true}
       >
         {selectedTerm ? (
           <View
+            ref={termContainerRef}
             style={[
               styles.modalContainer,
               { backgroundColor: theme.backgroundRoot },
             ]}
+            onAccessibilityEscape={onTermEscape}
           >
             <View
               style={[styles.modalHeader, { borderBottomColor: theme.border }]}
@@ -283,7 +292,7 @@ export default function CookingTermsScreen() {
               style={styles.modalContent}
               contentContainerStyle={styles.modalScrollContent}
             >
-              <ThemedText type="h2" style={styles.modalTitle}>
+              <ThemedText ref={termFocusRef} type="h2" style={styles.modalTitle}>
                 {selectedTerm.term}
               </ThemedText>
 

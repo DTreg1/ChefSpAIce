@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { Spacing, AppColors, BorderRadius } from "@/constants/theme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface SettingsAccountDataProps {
   isAuthenticated: boolean;
@@ -59,6 +60,14 @@ export function SettingsAccountData({
   theme,
 }: SettingsAccountDataProps) {
   const modalBg = theme.surface;
+  const { focusTargetRef: focusTargetRef1, triggerRef: triggerRef1, containerRef: containerRef1, onAccessibilityEscape: onAccessibilityEscape1 } = useFocusTrap({
+    visible: showDeletionLevelsModal,
+    onDismiss: onDeletionLevelsClose,
+  });
+  const { focusTargetRef: focusTargetRef2, containerRef: containerRef2, onAccessibilityEscape: onAccessibilityEscape2 } = useFocusTrap({
+    visible: showDeleteModal,
+    onDismiss: onCancelDelete,
+  });
 
   const handleDeletionOption = (callback: () => void) => {
     onDeletionLevelsClose();
@@ -165,6 +174,7 @@ export function SettingsAccountData({
       </View>
 
       <Pressable
+        ref={triggerRef1}
         style={[
           styles.dangerMenuItem,
           { borderColor: theme.glass.border },
@@ -191,10 +201,11 @@ export function SettingsAccountData({
         transparent
         animationType="fade"
         onRequestClose={onDeletionLevelsClose}
+        accessibilityViewIsModal={true}
       >
         <View style={styles.deleteModalOverlay} data-testid="modal-deletion-levels">
-          <View style={[styles.deleteModalContent, { backgroundColor: modalBg }]}>
-            <View style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
+          <View ref={containerRef1} style={[styles.deleteModalContent, { backgroundColor: modalBg }]} onAccessibilityEscape={onAccessibilityEscape1}>
+            <View ref={focusTargetRef1} style={[styles.warningBanner, { backgroundColor: `${theme.textSecondary}15`, marginBottom: Spacing.md }]}>
               <Feather name="sliders" size={24} color={theme.text} />
               <ThemedText type="body" style={{ fontWeight: "600" }}>
                 Manage Account Data
@@ -287,10 +298,11 @@ export function SettingsAccountData({
         transparent
         animationType="fade"
         onRequestClose={onCancelDelete}
+        accessibilityViewIsModal={true}
       >
         <View style={styles.deleteModalOverlay}>
-          <View style={[styles.deleteModalContent, { backgroundColor: modalBg }]}>
-            <View style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
+          <View ref={containerRef2} style={[styles.deleteModalContent, { backgroundColor: modalBg }]} onAccessibilityEscape={onAccessibilityEscape2}>
+            <View ref={focusTargetRef2} style={[styles.warningBanner, { backgroundColor: `${AppColors.error}15` }]}>
               <Feather name="alert-triangle" size={24} color={AppColors.error} />
               <ThemedText type="body" style={{ color: AppColors.error, fontWeight: "600" }}>
                 Delete Account

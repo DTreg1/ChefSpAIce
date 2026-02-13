@@ -15,6 +15,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
 import { useTheme } from "@/hooks/useTheme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { AppColors, Spacing, BorderRadius } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 
@@ -71,6 +72,10 @@ export function CancellationFlowModal({
   token,
 }: CancellationFlowModalProps) {
   const { theme, isDark } = useTheme();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible,
+    onDismiss: onClose,
+  });
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [details, setDetails] = useState("");
@@ -233,7 +238,7 @@ export function CancellationFlowModal({
   const renderStep1 = () => (
     <View>
       <View style={styles.header}>
-        <ThemedText type="h2" style={styles.title}>
+        <ThemedText type="h2" style={styles.title} ref={focusTargetRef}>
           We're sorry to see you go
         </ThemedText>
         <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>
@@ -592,6 +597,8 @@ export function CancellationFlowModal({
     <Modal visible={visible} transparent animationType="fade" accessibilityViewIsModal={true}>
       <View style={styles.overlay}>
         <BlurView
+          ref={containerRef}
+          onAccessibilityEscape={onAccessibilityEscape}
           intensity={80}
           tint={isDark ? "dark" : "light"}
           style={[

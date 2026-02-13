@@ -15,6 +15,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Fonts } from "@/constants/theme";
 import { logger } from "@/lib/logger";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export type ErrorFallbackProps = {
   error: Error;
@@ -24,6 +25,10 @@ export type ErrorFallbackProps = {
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const { theme } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const { focusTargetRef, triggerRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible: isModalVisible,
+    onDismiss: () => setIsModalVisible(false),
+  });
 
   const handleRestart = async () => {
     try {
@@ -46,6 +51,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
     <ThemedView style={styles.container}>
       {__DEV__ ? (
         <Pressable
+          ref={triggerRef}
           accessibilityRole="button"
           accessibilityLabel="View error details"
           onPress={() => setIsModalVisible(true)}
@@ -98,11 +104,12 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           animationType="slide"
           transparent={true}
           onRequestClose={() => setIsModalVisible(false)}
+          accessibilityViewIsModal={true}
         >
           <View style={styles.modalOverlay}>
-            <ThemedView style={styles.modalContainer}>
+            <ThemedView ref={containerRef} style={styles.modalContainer} onAccessibilityEscape={onAccessibilityEscape}>
               <View style={styles.modalHeader}>
-                <ThemedText type="h2" style={styles.modalTitle}>
+                <ThemedText ref={focusTargetRef} type="h2" style={styles.modalTitle}>
                   Error Details
                 </ThemedText>
                 <Pressable

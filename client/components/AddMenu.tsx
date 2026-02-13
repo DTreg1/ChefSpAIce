@@ -37,6 +37,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useQuickRecipeGeneration } from "@/hooks/useQuickRecipeGeneration";
 import { useOnlineStatus } from "@/hooks/useSyncStatus";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const MENU_COLORS = {
   addItem: AppColors.primary,
@@ -204,6 +205,14 @@ export const AddMenu = memo(function AddMenu({
   const overlayOpacity = useSharedValue(0);
   const [shouldRender, setShouldRender] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible: isOpen,
+    onDismiss: onClose,
+  });
+  const { focusTargetRef: focusTargetRef2, containerRef: containerRef2, onAccessibilityEscape: onAccessibilityEscape2 } = useFocusTrap({
+    visible: showUpgradePrompt,
+    onDismiss: () => setShowUpgradePrompt(false),
+  });
   const useLiquidGlass = Platform.OS === "ios" && isLiquidGlassAvailable();
 
   const { checkLimit, entitlements } = useSubscription();
@@ -392,8 +401,8 @@ export const AddMenu = memo(function AddMenu({
 
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close menu" accessibilityRole="button" />
 
-        <View style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]} accessibilityRole="menu">
-          <View style={styles.menuRow}>
+        <View ref={containerRef} style={[styles.menuContainer, { bottom: tabBarHeight + 20 }]} accessibilityRole="menu" onAccessibilityEscape={onAccessibilityEscape}>
+          <View ref={focusTargetRef} style={styles.menuRow}>
             {menuItems.map((item, index) => (
               <MenuItem
                 key={item.id}
@@ -417,7 +426,7 @@ export const AddMenu = memo(function AddMenu({
         onRequestClose={handleDismissUpgrade}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.upgradeModalOverlay}>
+        <View ref={containerRef2} style={styles.upgradeModalOverlay} onAccessibilityEscape={onAccessibilityEscape2}>
           <UpgradePrompt
             type="limit"
             limitName="pantry items"

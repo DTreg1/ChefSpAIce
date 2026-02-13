@@ -30,6 +30,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useFloatingChat } from "@/contexts/FloatingChatContext";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import {
@@ -77,6 +78,10 @@ export function ChatModal() {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { isChatOpen, closeChat, initialMessage, setInitialMessage } = useFloatingChat();
+  const { focusTargetRef, containerRef, onAccessibilityEscape } = useFocusTrap({
+    visible: isChatOpen,
+    onDismiss: closeChat,
+  });
   const navigation = useNavigation<any>();
   const flatListRef = useRef<FlatList>(null);
 
@@ -879,7 +884,7 @@ export function ChatModal() {
             accessibilityElementsHidden={true}
             importantForAccessibility="no-hide-descendants"
           />
-          <ThemedText type="caption" style={styles.headerTitle}>
+          <ThemedText type="caption" style={styles.headerTitle} ref={focusTargetRef}>
             Kitchen Chef
           </ThemedText>
         </GlassView>
@@ -1107,6 +1112,8 @@ export function ChatModal() {
       </Animated.View>
 
       <Animated.View
+        ref={containerRef}
+        onAccessibilityEscape={onAccessibilityEscape}
         style={[
           styles.chatContainer,
           {

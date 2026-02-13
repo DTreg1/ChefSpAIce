@@ -41,6 +41,7 @@ import { analytics } from "@/lib/analytics";
 import { saveRecipeImage, saveRecipeImageFromUrl } from "@/lib/recipe-image";
 import { logger } from "@/lib/logger";
 import { useOnlineStatus } from "@/hooks/useSyncStatus";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const EXPIRING_THRESHOLD_DAYS = 3;
 
@@ -108,6 +109,15 @@ export default function GenerateRecipeScreen() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const autoGenerateTriggered = useRef(false);
+
+  const { focusTargetRef: progressFocusRef, containerRef: progressContainerRef, onAccessibilityEscape: onProgressEscape } = useFocusTrap({
+    visible: showProgressModal,
+    onDismiss: () => setShowProgressModal(false),
+  });
+  const { focusTargetRef: upgradeFocusRef, containerRef: upgradeContainerRef, onAccessibilityEscape: onUpgradeEscape } = useFocusTrap({
+    visible: showUpgradePrompt,
+    onDismiss: () => setShowUpgradePrompt(false),
+  });
   const isOnline = useOnlineStatus();
 
   const { mealType, greeting } = useMemo(() => getMealTypeFromTime(), []);
@@ -716,10 +726,11 @@ export default function GenerateRecipeScreen() {
         transparent
         animationType="fade"
         statusBarTranslucent
+        accessibilityViewIsModal={true}
       >
         <View style={styles.modalOverlay}>
-          <GlassCard style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait">
-            <ActivityIndicator size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
+          <GlassCard ref={progressContainerRef} style={styles.progressModal} accessibilityRole="alert" accessibilityLabel="Generating recipe, please wait" onAccessibilityEscape={onProgressEscape}>
+            <ActivityIndicator ref={progressFocusRef} size="large" data-testid="spinner-recipe-generating" accessibilityLabel="Loading, generating recipe" />
             <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{`Creating Your ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`}</ThemedText>
             {streamingText.length > 0 ? (
               <ScrollView
@@ -789,9 +800,11 @@ export default function GenerateRecipeScreen() {
           transparent
           animationType="fade"
           statusBarTranslucent
+          accessibilityViewIsModal={true}
         >
-          <View style={styles.modalOverlay}>
+          <View ref={upgradeContainerRef} style={styles.modalOverlay} onAccessibilityEscape={onUpgradeEscape}>
             <UpgradePrompt
+              ref={upgradeFocusRef}
               type="limit"
               limitName="AI Recipes"
               remaining={Math.max(
