@@ -18,6 +18,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { validateBody } from "../../middleware/validateBody";
 import { successResponse, errorResponse } from "../../lib/apiResponse";
 import { processImageFromBase64 } from "../../services/imageProcessingService";
+import { withCircuitBreaker } from "../../lib/circuit-breaker";
 
 const router = Router();
 
@@ -475,7 +476,7 @@ router.post("/generate", validateBody(generateRecipeSchema), async (req: Request
 
     const effectiveIngredientCount = ingredientCount || { min: 4, max: 6 };
     
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -497,7 +498,7 @@ KEY PRINCIPLES:
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 2048,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
@@ -1078,13 +1079,13 @@ router.post("/generate-image", validateBody(generateImageSchema), async (req: Re
 
     logger.info("Generating recipe image", { title: safeTitle });
 
-    const response = await openai.images.generate({
+    const response = await withCircuitBreaker("openai", () => openai.images.generate({
       model: "gpt-image-1",
       prompt: imagePrompt,
       n: 1,
       size: "1024x1024",
       quality: "low",
-    });
+    }));
 
     const imageData = response.data?.[0];
 
@@ -1200,7 +1201,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
 
     logger.info("Scanning recipe image", { imageSizeKB: (base64Image.length / 1024).toFixed(1) });
 
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -1227,7 +1228,7 @@ router.post("/scan", async (req: Request, res: Response, next: NextFunction) => 
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 4096,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
 

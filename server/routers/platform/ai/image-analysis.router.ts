@@ -11,6 +11,7 @@ import {
 import { AppError } from "../../../middleware/errorHandler";
 import { logger } from "../../../lib/logger";
 import { successResponse } from "../../../lib/apiResponse";
+import { withCircuitBreaker } from "../../../lib/circuit-breaker";
 
 const router = Router();
 
@@ -116,7 +117,7 @@ router.post("/analyze-food", async (req: Request, res: Response, next: NextFunct
     logger.info("Analyzing food image", { filename, sizeKB: (fileData.length / 1024).toFixed(1), mimeType });
 
     const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -143,7 +144,7 @@ router.post("/analyze-food", async (req: Request, res: Response, next: NextFunct
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 2048,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
     const parseResult = parseAnalysisResponse(content || null);

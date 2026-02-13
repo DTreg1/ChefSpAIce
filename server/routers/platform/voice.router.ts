@@ -5,6 +5,7 @@ import { AppError } from "../../middleware/errorHandler";
 import { logger } from "../../lib/logger";
 import { successResponse } from "../../lib/apiResponse";
 import { validateBody } from "../../middleware/validateBody";
+import { withCircuitBreaker } from "../../lib/circuit-breaker";
 
 const router = Router();
 
@@ -194,7 +195,7 @@ router.post("/speak", async (req: Request, res: Response, next: NextFunction) =>
 
     const { text, voice } = parseResult.data;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini-audio-preview",
       modalities: ["text", "audio"],
       audio: {
@@ -212,7 +213,7 @@ router.post("/speak", async (req: Request, res: Response, next: NextFunction) =>
         },
       ],
       max_completion_tokens: 4096,
-    });
+    }));
 
     const audioData = completion.choices[0]?.message?.audio;
 
@@ -275,7 +276,7 @@ Return ONLY valid JSON in this format:
 
     const userPrompt = `Parse this voice command for FreshPantry:\n"${text}"\n\nReturn JSON only.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
@@ -284,7 +285,7 @@ Return ONLY valid JSON in this format:
       response_format: { type: "json_object" },
       max_completion_tokens: 256,
       temperature: 0.3,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
 
@@ -385,12 +386,12 @@ router.post("/chat", async (req: Request, res: Response, next: NextFunction) => 
     const audioFile = new File([fileData], filename, { type: mimeType });
 
     logger.info("Transcribing user audio");
-    const transcriptionResponse = await openai.audio.transcriptions.create({
+    const transcriptionResponse = await withCircuitBreaker("openai", () => openai.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
       language: "en",
       response_format: "json",
-    });
+    }));
 
     const userTranscript = transcriptionResponse.text;
     logger.info("User transcript received", { transcriptPreview: userTranscript.substring(0, 50) });
@@ -406,12 +407,12 @@ router.post("/chat", async (req: Request, res: Response, next: NextFunction) => 
     messages.push({ role: "user", content: userTranscript });
 
     logger.info("Getting AI chef response");
-    const chatCompletion = await openai.chat.completions.create({
+    const chatCompletion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
       max_completion_tokens: 512,
       temperature: 0.7,
-    });
+    }));
 
     const aiResponse = chatCompletion.choices[0]?.message?.content;
 
@@ -422,7 +423,7 @@ router.post("/chat", async (req: Request, res: Response, next: NextFunction) => 
     logger.info("Chef response received", { responsePreview: aiResponse.substring(0, 50) });
 
     logger.info("Generating speech for AI response");
-    const ttsCompletion = await openai.chat.completions.create({
+    const ttsCompletion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini-audio-preview",
       modalities: ["text", "audio"],
       audio: {
@@ -440,7 +441,7 @@ router.post("/chat", async (req: Request, res: Response, next: NextFunction) => 
         },
       ],
       max_completion_tokens: 4096,
-    });
+    }));
 
     const audioData = ttsCompletion.choices[0]?.message?.audio;
 

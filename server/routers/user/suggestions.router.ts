@@ -10,6 +10,7 @@ import {
 import { logger } from "../../lib/logger";
 import { AppError } from "../../middleware/errorHandler";
 import { successResponse } from "../../lib/apiResponse";
+import { withCircuitBreaker } from "../../lib/circuit-breaker";
 
 const router = Router();
 
@@ -93,7 +94,7 @@ Return JSON:
   "signsOfSpoilage": "<what to look for when it goes bad>"
 }`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -108,7 +109,7 @@ Return JSON:
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 256,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
@@ -219,7 +220,7 @@ Return JSON:
 }`;
 
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
@@ -234,7 +235,7 @@ Return JSON:
         ],
         response_format: { type: "json_object" },
         max_completion_tokens: 512,
-      });
+      }));
 
       const content = completion.choices[0]?.message?.content;
       if (!content) {
@@ -316,7 +317,7 @@ Examples of good facts:
 
 Return JSON: { "fact": "<your fun fact>" }`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await withCircuitBreaker("openai", () => openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -330,7 +331,7 @@ Return JSON: { "fact": "<your fun fact>" }`;
       ],
       response_format: { type: "json_object" },
       max_completion_tokens: 150,
-    });
+    }));
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
