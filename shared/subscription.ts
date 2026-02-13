@@ -27,7 +27,7 @@ export const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
 };
 
 export const MONTHLY_PRICE = 9.99;
-export const ANNUAL_PRICE = 99.90;
+export const ANNUAL_PRICE = 83.88;
 
 export const MONTHLY_PRICES = {
   STANDARD: MONTHLY_PRICE,

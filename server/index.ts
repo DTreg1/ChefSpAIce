@@ -417,8 +417,63 @@ async function initStripe(retries = 3, delay = 2000) {
       .catch((err: Error) => {
         logger.error("Error syncing Stripe data", { error: err.message });
       });
+
+    ensureStripePrices().catch((err) => {
+      logger.error("Failed to ensure Stripe prices", { error: err instanceof Error ? err.message : String(err) });
+    });
   } catch (error) {
     logger.error("Failed to initialize Stripe", { error: error instanceof Error ? error.message : String(error) });
+  }
+}
+
+async function ensureStripePrices() {
+  const { getUncachableStripeClient } = await import("./stripe/stripeClient");
+  const { ANNUAL_PRICE, MONTHLY_PRICE } = await import("@shared/subscription");
+  const stripe = await getUncachableStripeClient();
+
+  const products = await stripe.products.list({ active: true, limit: 100 });
+  let product = products.data.find((p) => p.name === "ChefSpAIce" || p.metadata?.app === "chefspaice");
+
+  if (!product) {
+    product = await stripe.products.create({
+      name: "ChefSpAIce",
+      description: "AI-powered kitchen inventory management",
+      metadata: { app: "chefspaice" },
+    });
+    logger.info("Created Stripe product", { productId: product.id });
+  }
+
+  const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 });
+  const annualAmount = Math.round(ANNUAL_PRICE * 100);
+  const monthlyAmount = Math.round(MONTHLY_PRICE * 100);
+
+  const hasAnnual = prices.data.some(
+    (p) => p.recurring?.interval === "year" && p.unit_amount === annualAmount
+  );
+  const hasMonthly = prices.data.some(
+    (p) => p.recurring?.interval === "month" && p.unit_amount === monthlyAmount
+  );
+
+  if (!hasAnnual) {
+    const annualPrice = await stripe.prices.create({
+      product: product.id,
+      unit_amount: annualAmount,
+      currency: "usd",
+      recurring: { interval: "year" },
+      metadata: { tier: "STANDARD", type: "annual" },
+    });
+    logger.info("Created annual Stripe price", { priceId: annualPrice.id, amount: annualAmount });
+  }
+
+  if (!hasMonthly) {
+    const monthlyPrice = await stripe.prices.create({
+      product: product.id,
+      unit_amount: monthlyAmount,
+      currency: "usd",
+      recurring: { interval: "month" },
+      metadata: { tier: "STANDARD", type: "monthly" },
+    });
+    logger.info("Created monthly Stripe price", { priceId: monthlyPrice.id, amount: monthlyAmount });
   }
 }
 
