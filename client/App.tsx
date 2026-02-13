@@ -73,7 +73,6 @@ import * as Linking from 'expo-linking';
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { PaymentFailedBanner } from "@/components/PaymentFailedBanner";
@@ -106,12 +105,6 @@ const SCREENS_WITHOUT_CHAT = [
   "Subscription",
   "Profile",
   "Settings",
-];
-
-const CONTENT_HEAVY_SCREENS = [
-  "ItemDetail",
-  "RecipeDetail",
-  "Chat",
 ];
 
 /**
@@ -262,12 +255,6 @@ function MobileAppContent() {
         onStateChange={onStateChange}
         linking={linking}
       >
-        {/* Animated gradient background - disabled on content-heavy screens for performance */}
-        <AnimatedBackground
-          bubbleCount={20}
-          enabled={!currentRoute || !CONTENT_HEAVY_SCREENS.includes(currentRoute)}
-        />
-
         {/* Shows when device is offline */}
         <OfflineIndicator />
 

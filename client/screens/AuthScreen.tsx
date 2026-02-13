@@ -19,6 +19,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import { storage } from "@/lib/storage";
@@ -265,6 +266,7 @@ export default function AuthScreen() {
         },
       ]}
     >
+      <AnimatedBackground />
       <View style={styles.header}>
         <ThemedText style={{ fontSize: 17, fontWeight: "600", textAlign: "center" }}>
           {isSignUp ? "Sign Up" : "Sign In"}

@@ -4,7 +4,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { injectWebFocusCSS } from "@/lib/web-accessibility";
 import { WebRouterProvider, Route, useRoute, useNavigate } from "@/lib/web-router";
@@ -78,7 +77,6 @@ function PageMetaUpdater() {
 function WebRoutes() {
   return (
     <View style={styles.container}>
-      <AnimatedBackground bubbleCount={20} />
       <PageMetaUpdater />
       <View style={styles.content}>
         <Route path="/" component={LandingPage} />

@@ -26,6 +26,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { GlassCard } from "@/components/GlassCard";
 import { GlassButton } from "@/components/GlassButton";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
@@ -2176,6 +2177,7 @@ export default function OnboardingScreen() {
         },
       ]}
     >
+      <AnimatedBackground />
       {step === "welcome" && renderWelcomeStep()}
       {step === "preferences" && renderPreferencesStep()}
       {step === "storage" && renderStorageStep()}
