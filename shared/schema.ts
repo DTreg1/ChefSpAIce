@@ -1448,6 +1448,34 @@ export const apiCache = pgTable("api_cache", {
 export type ApiCache = typeof apiCache.$inferSelect;
 
 // =============================================================================
+// RETENTION OFFERS TABLE
+// =============================================================================
+
+export const retentionOffers = pgTable("retention_offers", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
+  stripeCouponId: varchar("stripe_coupon_id").notNull(),
+  discountPercent: integer("discount_percent").notNull(),
+  durationMonths: integer("duration_months").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("applied"),
+  appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+}, (table) => [
+  index("idx_retention_offers_user").on(table.userId),
+  index("idx_retention_offers_applied").on(table.appliedAt),
+  index("idx_retention_offers_status").on(table.status),
+]);
+
+export const insertRetentionOfferSchema = createInsertSchema(retentionOffers).omit({
+  id: true,
+  appliedAt: true,
+});
+
+export type InsertRetentionOffer = z.infer<typeof insertRetentionOfferSchema>;
+export type RetentionOffer = typeof retentionOffers.$inferSelect;
+
+// =============================================================================
 // NUTRITION UTILITY FUNCTIONS
 // =============================================================================
 
