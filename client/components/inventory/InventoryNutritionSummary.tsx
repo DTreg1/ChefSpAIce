@@ -23,7 +23,7 @@ export function InventoryNutritionSummary({
 }: InventoryNutritionSummaryProps) {
   return (
     <View style={styles.listFooter} accessibilityLiveRegion="polite">
-      <GlassCard style={styles.nutritionSummary} accessibilityRole="summary" accessibilityLabel={`Nutrition summary: ${nutritionTotals.calories.toLocaleString()} calories, ${nutritionTotals.protein}g protein, ${nutritionTotals.carbs}g carbs, ${nutritionTotals.fat}g fat`}>
+      <GlassCard style={styles.nutritionSummary} accessibilityLabel={`Nutrition summary: ${nutritionTotals.calories.toLocaleString()} calories, ${nutritionTotals.protein}g protein, ${nutritionTotals.carbs}g carbs, ${nutritionTotals.fat}g fat`}>
         <View style={styles.nutritionSummaryContent}>
           <Feather name="zap" size={16} color={AppColors.primary} />
           <ThemedText type="caption" style={styles.nutritionSummaryText}>

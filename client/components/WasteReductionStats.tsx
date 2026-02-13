@@ -30,7 +30,7 @@ const TIER_COLORS = {
 export function WasteReductionStats({
   compact = false,
 }: WasteReductionStatsProps) {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const [stats, setStats] = useState<StatsType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState({
     itemsSaved: 0,
