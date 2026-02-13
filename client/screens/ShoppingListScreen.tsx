@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   Pressable,
   Alert,
@@ -9,6 +8,7 @@ import {
   RefreshControl,
   Platform,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation, CommonActions } from "@react-navigation/native";
@@ -29,14 +29,6 @@ import { Spacing, BorderRadius, AppColors } from "@/constants/theme";
 import * as Haptics from "expo-haptics";
 import { storage, ShoppingListItem } from "@/lib/storage";
 
-const ITEM_HEIGHT = 80;
-const SEPARATOR_HEIGHT = Spacing.sm;
-
-const getItemLayout = (_data: any, index: number) => ({
-  length: ITEM_HEIGHT,
-  offset: (ITEM_HEIGHT + SEPARATOR_HEIGHT) * index,
-  index,
-});
 
 export default function ShoppingListScreen() {
   const insets = useSafeAreaInsets();
@@ -235,7 +227,7 @@ export default function ShoppingListScreen() {
           </Pressable>
         }
       />
-      <FlatList
+      <FlashList
         accessibilityRole="list"
         accessibilityLabel="Shopping list items"
         style={styles.list}
@@ -272,9 +264,7 @@ export default function ShoppingListScreen() {
             </View>
           ) : null
         }
-        getItemLayout={getItemLayout}
-        initialNumToRender={10}
-        maxToRenderPerBatch={5}
+
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshControl={
           <RefreshControl

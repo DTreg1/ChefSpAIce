@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   Pressable,
   RefreshControl,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
@@ -672,7 +672,7 @@ export default function CookwareScreen() {
       ) : (
         <>
           {renderHeader()}
-          <FlatList
+          <FlashList
             style={styles.list}
             contentContainerStyle={[
               styles.listContent,
@@ -686,8 +686,7 @@ export default function CookwareScreen() {
             keyExtractor={(item) => item.key}
             renderItem={renderGroupedSection}
             ListEmptyComponent={renderEmptyState}
-            initialNumToRender={10}
-            maxToRenderPerBatch={5}
+
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

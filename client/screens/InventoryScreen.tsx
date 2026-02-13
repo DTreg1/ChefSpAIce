@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Alert,
   Platform,
   Pressable,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, CommonActions } from "@react-navigation/native";
@@ -457,7 +457,7 @@ export default function InventoryScreen() {
         accessibilityLabel={inventoryStatusLabel}
         style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
       />
-      <FlatList
+      <FlashList
         key={isTablet ? "tablet" : "phone"}
         style={styles.list}
         accessibilityRole="list"
@@ -472,14 +472,12 @@ export default function InventoryScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         data={groupedSections}
         numColumns={isTablet ? 2 : 1}
-        {...(isTablet && { columnWrapperStyle: { gap: Spacing.md } })}
         keyExtractor={(item) => item.key}
         renderItem={renderGroupedSection}
         ListHeaderComponent={renderListHeader}
         ListFooterComponent={renderListFooter}
         ListEmptyComponent={renderEmptyState}
-        initialNumToRender={10}
-        maxToRenderPerBatch={5}
+
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

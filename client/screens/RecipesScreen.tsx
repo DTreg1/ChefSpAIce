@@ -34,7 +34,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   Pressable,
   RefreshControl,
@@ -44,6 +43,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -497,7 +497,7 @@ export default function RecipesScreen() {
         accessibilityLabel={recipesStatusLabel}
         style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
       />
-      <FlatList
+      <FlashList
         accessibilityRole="list"
         accessibilityLabel="Recipe collection"
         style={styles.list}
@@ -513,9 +513,7 @@ export default function RecipesScreen() {
         keyExtractor={(item) => item.id}
         key={isLargeTablet ? "large-tablet" : isTablet ? "tablet" : "phone"}
         numColumns={isLargeTablet ? 4 : isTablet ? 3 : 2}
-        columnWrapperStyle={{ gap: Spacing.md }}
-        initialNumToRender={10}
-        maxToRenderPerBatch={5}
+
         renderItem={renderRecipeCard}
         ListHeaderComponent={
           <View style={styles.searchSection}>

@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   TextInput,
   Pressable,
   Platform,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -232,7 +232,7 @@ export default function SelectRecipeScreen() {
             ) : null}
           </View>
         ) : (
-          <FlatList
+          <FlashList
             data={filteredRecipes}
             renderItem={renderRecipeItem}
             keyExtractor={(item) => item.id}
@@ -240,8 +240,7 @@ export default function SelectRecipeScreen() {
               styles.listContent,
               { paddingBottom: insets.bottom + Spacing.xl },
             ]}
-            initialNumToRender={10}
-            maxToRenderPerBatch={5}
+
             showsVerticalScrollIndicator={false}
           />
         )}
