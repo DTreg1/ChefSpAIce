@@ -491,6 +491,24 @@ async function initStripe(retries = 3, delay = 2000) {
   );
 
   setupBodyParsing(app);
+
+  const CONTENT_TYPE_EXEMPT_PREFIXES = [
+    "/api/stripe/webhook",
+    "/api/recipe-images/upload",
+  ];
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (
+      ["POST", "PUT", "PATCH"].includes(req.method) &&
+      req.body &&
+      Object.keys(req.body).length > 0 &&
+      !CONTENT_TYPE_EXEMPT_PREFIXES.some((prefix) => req.path.startsWith(prefix)) &&
+      !req.is("application/json")
+    ) {
+      return res.status(415).json({ error: "Content-Type must be application/json" });
+    }
+    next();
+  });
+
   setupRequestLogging(app);
 
   // Serve showcase images from local assets directory
