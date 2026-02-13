@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import type { Logger } from "drizzle-orm/logger";
 import pg from "pg";
 import * as schema from "@shared/schema";
 import { logger } from "./lib/logger";
@@ -7,6 +8,43 @@ const POOL_MAX = 20;
 const POOL_WARNING_THRESHOLD = 16;
 const HEALTH_CHECK_INTERVAL_MS = 30_000;
 
+const SLOW_QUERY_WARN_MS = 500;
+const SLOW_QUERY_ERROR_MS = 2000;
+
+class QueryLogger implements Logger {
+  private pending = new Map<number, { sql: string; start: number }>();
+  private nextId = 0;
+
+  logQuery(query: string, _params: unknown[]): void {
+    const id = this.nextId++;
+    this.pending.set(id, { sql: query, start: performance.now() });
+
+    queueMicrotask(() => {
+      const entry = this.pending.get(id);
+      if (!entry) return;
+      this.pending.delete(id);
+      this.finalize(entry.sql, entry.start);
+    });
+  }
+
+  settle(sql: string, start: number): void {
+    this.finalize(sql, start);
+  }
+
+  private finalize(sql: string, start: number): void {
+    const durationMs = Math.round(performance.now() - start);
+    if (durationMs >= SLOW_QUERY_ERROR_MS) {
+      logger.error("Slow query (critical)", { sql, durationMs });
+    } else if (durationMs >= SLOW_QUERY_WARN_MS) {
+      logger.warn("Slow query", { sql, durationMs });
+    } else {
+      logger.debug("Query executed", { sql, durationMs });
+    }
+  }
+}
+
+const queryLogger = new QueryLogger();
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: POOL_MAX,
@@ -14,11 +52,7 @@ const pool = new pg.Pool({
   connectionTimeoutMillis: 5000,
 });
 
-const SLOW_QUERY_WARN_MS = 500;
-const SLOW_QUERY_ERROR_MS = 2000;
-
 const originalQuery = pool.query.bind(pool) as typeof pool.query;
-
 (pool as { query: typeof pool.query }).query = function wrappedQuery(
   this: pg.Pool,
   ...args: Parameters<typeof pool.query>
@@ -36,35 +70,17 @@ const originalQuery = pool.query.bind(pool) as typeof pool.query;
 
   if (result && typeof result.then === "function") {
     (result as Promise<unknown>).then(
-      () => {
-        const duration = Math.round(performance.now() - start);
-        logQueryDuration(sql, duration);
-      },
-      () => {
-        const duration = Math.round(performance.now() - start);
-        logQueryDuration(sql, duration);
-      },
+      () => queryLogger.settle(sql, start),
+      () => queryLogger.settle(sql, start),
     );
   }
 
   return result;
 } as typeof pool.query;
 
-function logQueryDuration(sql: string, durationMs: number) {
-  if (durationMs >= SLOW_QUERY_ERROR_MS) {
-    logger.error("Slow query (critical)", { sql, durationMs });
-  } else if (durationMs >= SLOW_QUERY_WARN_MS) {
-    logger.warn("Slow query", { sql, durationMs });
-  }
-}
-
 export const db = drizzle(pool, {
   schema,
-  logger: {
-    logQuery(query: string, _params: unknown[]) {
-      logger.debug("Query executed", { sql: query });
-    },
-  },
+  logger: queryLogger,
 });
 
 export interface PoolStats {
