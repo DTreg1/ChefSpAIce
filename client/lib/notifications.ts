@@ -203,6 +203,56 @@ export async function scheduleExpirationNotifications(): Promise<number> {
   return scheduledCount;
 }
 
+export async function registerPushToken(): Promise<string | null> {
+  const notif = await getNotificationsModule();
+  if (!notif) return null;
+
+  const hasPermission = await requestNotificationPermissions();
+  if (!hasPermission) return null;
+
+  try {
+    const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+
+    const tokenData = await notif.getExpoPushTokenAsync({
+      ...(projectId ? { projectId } : {}),
+    });
+
+    const token = tokenData.data;
+
+    const authToken = await storage.getAuthToken();
+    if (!authToken) return token;
+
+    const { getApiUrl } = await import("@/lib/query-client");
+    const baseUrl = getApiUrl();
+
+    await fetch(new URL("/api/user/push-token", baseUrl).toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    logger.info("Push token registered with server");
+    return token;
+  } catch (error) {
+    logger.error("Failed to register push token:", error);
+    return null;
+  }
+}
+
+export async function refreshPushToken(): Promise<void> {
+  try {
+    const authToken = await storage.getAuthToken();
+    if (!authToken) return;
+
+    await registerPushToken();
+  } catch (error) {
+    logger.error("Failed to refresh push token:", error);
+  }
+}
+
 export async function initializeNotifications(): Promise<void> {
   if (shouldSkipNotificationsImport()) {
     return;
@@ -216,6 +266,7 @@ export async function initializeNotifications(): Promise<void> {
     }
 
     await scheduleExpirationNotifications();
+    await refreshPushToken();
   } catch (error) {
     logger.error("Failed to initialize notifications:", error);
   }
