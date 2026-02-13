@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     }),
   },
   fabGlass: {
-    backgroundColor: `${AppColors.accent}CC`,
+    backgroundColor: AppColors.accent,
     overflow: "hidden",
   },
   fabBlurContainer: {
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     }),
   },
   fabOverlay: {
-    backgroundColor: `${AppColors.accent}CC`,
+    backgroundColor: AppColors.accent,
     borderRadius: BUTTON_SIZE / 2,
   },
   overlay: {

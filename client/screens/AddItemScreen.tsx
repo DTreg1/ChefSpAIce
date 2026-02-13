@@ -95,16 +95,16 @@ const CATEGORY_TO_SHELF_LIFE_MAP: Record<string, string> = {
   "Pantry Staples": "pantry",
 };
 
-function getConfidenceColor(confidence: ConfidenceLevel): string {
+function getConfidenceColor(confidence: ConfidenceLevel, theme: { confidenceHigh: string; confidenceMedium: string; confidenceLow: string; textSecondary: string }): string {
   switch (confidence) {
     case "high":
-      return AppColors.confidenceHigh;
+      return theme.confidenceHigh;
     case "medium":
-      return AppColors.confidenceMedium;
+      return theme.confidenceMedium;
     case "low":
-      return AppColors.confidenceLow;
+      return theme.confidenceLow;
     default:
-      return AppColors.textSecondary;
+      return theme.textSecondary;
   }
 }
 
@@ -564,7 +564,7 @@ export default function AddItemScreen() {
 
     if (!suggestion) return null;
 
-    const confidenceColor = getConfidenceColor(suggestion.confidence);
+    const confidenceColor = getConfidenceColor(suggestion.confidence, theme);
     const confidenceIcon = getConfidenceIcon(suggestion.confidence);
     const confidenceLabel = getConfidenceLabel(suggestion.confidence);
     const suggestionAnnouncement = `${confidenceLabel}. Suggested expiration: ${suggestion.suggestedDays} days for ${shelfLifeCategory} stored in ${storageLocation}${isFromAI ? ". AI powered suggestion" : ""}`;
@@ -676,7 +676,7 @@ export default function AddItemScreen() {
             type="caption"
             style={[
               styles.lowConfidenceText,
-              { color: AppColors.confidenceLow },
+              { color: theme.confidenceLow },
             ]}
             accessibilityRole="alert"
           >
@@ -1070,14 +1070,14 @@ export default function AddItemScreen() {
                       styles.suggestionBadgeSmall,
                       {
                         backgroundColor:
-                          getConfidenceColor(suggestion.confidence) + "20",
+                          getConfidenceColor(suggestion.confidence, theme) + "20",
                       },
                     ]}
                   >
                     <Feather
                       name={getConfidenceIcon(suggestion.confidence)}
                       size={10}
-                      color={getConfidenceColor(suggestion.confidence)}
+                      color={getConfidenceColor(suggestion.confidence, theme)}
                     />
                   </View>
                 ) : null}

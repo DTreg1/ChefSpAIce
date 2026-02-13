@@ -1,5 +1,3 @@
-import { AppColors } from "@/constants/theme";
-
 export interface IdentifiedFood {
   name: string;
   category: string;
@@ -16,10 +14,10 @@ export interface AnalysisResult {
   error?: string;
 }
 
-export function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return AppColors.confidenceHigh;
-  if (confidence >= 0.5) return AppColors.confidenceMedium;
-  return AppColors.confidenceLow;
+export function getConfidenceColor(confidence: number, colors: { confidenceHigh: string; confidenceMedium: string; confidenceLow: string }): string {
+  if (confidence >= 0.8) return colors.confidenceHigh;
+  if (confidence >= 0.5) return colors.confidenceMedium;
+  return colors.confidenceLow;
 }
 
 export function getConfidenceLabel(

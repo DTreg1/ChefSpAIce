@@ -66,9 +66,9 @@ function SwipeableItem({
   const marginBottom = useSharedValue(Spacing.md);
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return AppColors.confidenceHigh;
-    if (confidence >= 0.5) return AppColors.confidenceMedium;
-    return AppColors.confidenceLow;
+    if (confidence >= 0.8) return theme.confidenceHigh;
+    if (confidence >= 0.5) return theme.confidenceMedium;
+    return theme.confidenceLow;
   };
 
   const getConfidenceLabel = (confidence: number) => {

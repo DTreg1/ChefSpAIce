@@ -251,7 +251,7 @@ export function ImageAnalysisResult({
         {editedItems.map((item, index) => {
           const isExpanded = expandedItem === index;
           const isSelected = selectedItems.has(index);
-          const confidenceColor = getConfidenceColor(item.confidence);
+          const confidenceColor = getConfidenceColor(item.confidence, theme);
 
           return (
             <Animated.View
@@ -360,18 +360,18 @@ export function ImageAnalysisResult({
                     <View
                       style={[
                         styles.reviewWarning,
-                        { backgroundColor: AppColors.confidenceLow + "15" },
+                        { backgroundColor: theme.confidenceLow + "15" },
                       ]}
                     >
                       <Feather
                         name="alert-circle"
                         size={14}
-                        color={AppColors.confidenceLow}
+                        color={theme.confidenceLow}
                       />
                       <ThemedText
                         type="caption"
                         style={{
-                          color: AppColors.confidenceLow,
+                          color: theme.confidenceLow,
                           marginLeft: 6,
                         }}
                       >
